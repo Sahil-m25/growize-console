@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/allotment.reversed.json",
+  "title": "allotment.reversed",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Head of Finance, with a second hand",
+  "x-consumed-by": "Lead gate column; the shelf",
+  "x-rule": "A reversal event (D19). Returns the units to the shelf and un-ticks rung 7.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "allotment.reversed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "units",
+        "reason",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "units": {
+          "type": "number"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reversed_by": {
+          "type": "string"
+        },
+        "approved_by": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "x-reverses": "allotment.done"
+}

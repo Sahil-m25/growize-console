@@ -1,0 +1,1863 @@
+<title>Where It Breaks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============================================================================================
+   TWO BOOKS, ONE INVESTOR — the cross-analysis.
+   The register family's paper and type. One new rule: every fact is tinted by WHO WRITES IT —
+   the console's green, the portal's slate blue, the investor's own app in ochre, and the outside
+   authorities (the bank, Zoho Sign, the mailer) in grey. That is "one fact, one writer" as a colour.
+   ============================================================================================ */
+:root{
+  color-scheme:light;
+  --paper:#eef0ec; --card:#fbfcfa; --sunk:#e4e8e3; --stone:#e9ece8;
+  --ink:#131a17; --ink-2:#4a544e; --ink-3:#79827c;
+  --rule:rgba(19,26,23,.16); --rule-2:rgba(19,26,23,.07);
+  --ir:#2e7d6e;  --ir-bg:#e2edea;  --ir-line:#b3d2c9;
+  --fin:#2f5d8a; --fin-bg:#e6edf4; --fin-line:#bdd0e2;
+  --app:#9a6a00; --app-bg:#f7efd9; --app-line:#e2cf96;
+  --ext:#6b7570; --ext-bg:#e7eae8; --ext-line:#c4cac7;
+  --bad:#ab3a34; --bad-bg:#f8e5e3; --bad-line:#e5b9b5;
+  --good:#12833c; --good-bg:#e6f2e9;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --voice:"Newsreader",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sh:0 1px 2px rgba(19,26,23,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --paper:#0c110f; --card:#151b19; --sunk:#101614; --stone:#1a201e;
+  --ink:#e9eeeb; --ink-2:#b0b8b3; --ink-3:#828a85;
+  --rule:rgba(233,238,235,.17); --rule-2:rgba(233,238,235,.08);
+  --ir:#57ad9b;  --ir-bg:#16302a;  --ir-line:#2c554c;
+  --fin:#7aa8d4; --fin-bg:#182633; --fin-line:#2f4a63;
+  --app:#dfa62f; --app-bg:#312709; --app-line:#5a4a14;
+  --ext:#9aa39e; --ext-bg:#1e2422; --ext-line:#3a423e;
+  --bad:#e8706a; --bad-bg:#36191a; --bad-line:#5a2a2a;
+  --good:#4bc46c; --good-bg:#123020;
+  --sh:0 1px 2px rgba(0,0,0,.5);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0c110f; --card:#151b19; --sunk:#101614; --stone:#1a201e;
+  --ink:#e9eeeb; --ink-2:#b0b8b3; --ink-3:#828a85;
+  --rule:rgba(233,238,235,.17); --rule-2:rgba(233,238,235,.08);
+  --ir:#57ad9b;  --ir-bg:#16302a;  --ir-line:#2c554c;
+  --fin:#7aa8d4; --fin-bg:#182633; --fin-line:#2f4a63;
+  --app:#dfa62f; --app-bg:#312709; --app-line:#5a4a14;
+  --ext:#9aa39e; --ext-bg:#1e2422; --ext-line:#3a423e;
+  --bad:#e8706a; --bad-bg:#36191a; --bad-line:#5a2a2a;
+  --good:#4bc46c; --good-bg:#123020;
+  --sh:0 1px 2px rgba(0,0,0,.5);
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0}
+a{color:var(--fin)}
+:focus-visible{outline:2px solid var(--fin);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 26px 90px}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:2px solid var(--ink);padding:52px 0 18px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+.eyebrow b{color:var(--ink);font-weight:600}
+.mast h1{font-size:clamp(38px,7vw,66px);line-height:.98;margin:16px 0 14px;letter-spacing:-.035em}
+.mast .lede{font-family:var(--voice);font-size:19.5px;line-height:1.5;color:var(--ink-2);max-width:64ch}
+.mast .lede b{color:var(--ink);font-weight:500}
+
+/* ---------- gauges: real readings ---------- */
+.gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(124px,1fr));gap:1px;
+  background:var(--rule-2);border-bottom:1px solid var(--rule);margin-bottom:48px}
+.gauge{background:var(--paper);padding:14px 4px 16px 0}
+.gauge b{display:block;font-family:var(--mono);font-size:25px;font-weight:500;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.gauge span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px;letter-spacing:.03em;line-height:1.35}
+.gauge.bad b{color:var(--bad)}
+.gauge.ok b{color:var(--good)}
+
+/* ---------- writers: the colour code ---------- */
+.w{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;
+  padding:2px 7px;border-radius:4px;display:inline-block;vertical-align:1px;line-height:1.5;max-width:100%}
+.w.ir{color:var(--ir);background:var(--ir-bg);border:1px solid var(--ir-line)}
+.w.fin{color:var(--fin);background:var(--fin-bg);border:1px solid var(--fin-line)}
+.w.app{color:var(--app);background:var(--app-bg);border:1px solid var(--app-line)}
+.w.ext{color:var(--ext);background:var(--ext-bg);border:1px solid var(--ext-line)}
+.w.bad{color:var(--bad);background:var(--bad-bg);border:1px solid var(--bad-line)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:12.5px;color:var(--ink-3);margin:14px 0 0}
+
+/* ---------- sections ---------- */
+.block{margin-top:60px}
+.sechead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--ink);
+  padding-bottom:9px;margin:0 0 6px}
+.sechead h2{font-size:23px;letter-spacing:-.025em}
+.sechead .note{font-size:13px;color:var(--ink-3);margin-left:auto}
+.body{max-width:68ch;color:var(--ink-2)}
+.body p+p{margin-top:12px}
+.body strong{color:var(--ink);font-weight:600}
+.body.voice{font-family:var(--voice);font-size:17.5px;line-height:1.5;color:var(--ink)}
+.body.voice p+p{margin-top:14px}
+.term{font-family:var(--mono);font-size:.88em;background:var(--sunk);padding:1px 5px;border-radius:4px;color:var(--ink);
+  white-space:nowrap}
+.ref{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+q.said{font-family:var(--voice);font-style:italic;quotes:"\201C" "\201D"}
+
+/* ---------- the keep list ---------- */
+.keep{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px 28px;margin-top:18px}
+.keep div{padding:10px 0;border-bottom:1px solid var(--rule-2);font-size:14px;color:var(--ink-2);
+  display:flex;flex-direction:column;gap:4px}
+.keep div b{color:var(--ink);font-weight:600}
+
+/* ---------- findings ---------- */
+.entry{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,11fr);gap:0 40px;
+  border-bottom:1px solid var(--rule-2);padding:26px 0}
+.entry:last-of-type{border-bottom:0}
+.claim{position:sticky;top:22px;align-self:start;padding-left:48px}
+.claim .num{position:absolute;left:0;top:2px;font-family:var(--mono);font-size:12px;font-weight:600;
+  color:var(--ink);background:var(--sunk);border:1px solid var(--rule);border-radius:4px;padding:2px 7px}
+.claim .num.h{color:var(--bad);background:var(--bad-bg);border-color:var(--bad-line)}
+.claim h3{font-size:17px;line-height:1.35;letter-spacing:-.015em}
+.claim .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.sv{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;
+  border-radius:4px;font-weight:600}
+.sv.h{color:var(--bad);background:var(--bad-bg)}
+.sv.m{color:var(--app);background:var(--app-bg)}
+.sv.l{color:var(--ink-2);background:var(--sunk)}
+.built{min-width:0}
+.claim{min-width:0}
+.built p{color:var(--ink-2);max-width:66ch}
+.built p+p{margin-top:9px}
+.built strong{color:var(--ink);font-weight:600}
+.built .fix{margin-top:12px;padding:10px 13px;background:var(--stone);border-left:2px solid var(--ink);
+  border-radius:0 6px 6px 0;font-size:13.5px;color:var(--ink-2);max-width:66ch}
+.built .fix b{color:var(--ink);font-weight:600}
+.built .scene{margin-top:10px;font-family:var(--voice);font-size:15.5px;line-height:1.5;color:var(--ink);
+  border-left:2px solid var(--bad-line);padding-left:12px;max-width:62ch}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--card);box-shadow:var(--sh);
+  margin-top:18px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+th{text-align:left;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:600;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap;
+  position:sticky;top:0;background:var(--card);z-index:1}
+td{padding:9px 12px;border-bottom:1px solid var(--rule-2);vertical-align:top;color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink);font-weight:600}
+td .ref{display:block;margin-top:2px}
+td.mono{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--ink)}
+tr.grp td{background:var(--stone);color:var(--ink);font-weight:600;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;padding:7px 12px}
+
+/* ---------- figures ---------- */
+figure{margin:22px 0 0;padding:0}
+figure svg{display:block;max-width:100%;height:auto;color:var(--ink)}
+figcaption{font-size:13px;color:var(--ink-3);margin-top:10px;max-width:70ch;line-height:1.5}
+figcaption b{color:var(--ink);font-weight:600}
+.figw{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--card);padding:16px;box-shadow:var(--sh)}
+
+/* ---------- the swimlane ---------- */
+.lane{display:grid;grid-template-columns:110px repeat(7,minmax(128px,1fr));gap:1px;background:var(--rule-2);
+  border:1px solid var(--rule);border-radius:8px;overflow:hidden;min-width:1040px}
+.lane>div{background:var(--card);padding:8px 8px;font-size:12px;color:var(--ink-2);min-height:44px}
+.lane .ph{background:var(--stone);font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink);font-weight:600;display:flex;align-items:flex-end}
+.lane .who{background:var(--stone);font-weight:600;color:var(--ink);font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+.lane .who small{font-weight:400;color:var(--ink-3);font-size:11px}
+.ev{display:block;padding:4px 6px;border-radius:5px;margin:0 0 5px;border-left:3px solid;line-height:1.35}
+.ev:last-child{margin-bottom:0}
+.ev.ir{border-color:var(--ir);background:var(--ir-bg)}
+.ev.fin{border-color:var(--fin);background:var(--fin-bg)}
+.ev.app{border-color:var(--app);background:var(--app-bg)}
+.ev.ext{border-color:var(--ext);background:var(--ext-bg)}
+.ev b{color:var(--ink);font-weight:600;font-size:12.5px}
+.ev i{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--ink-3);display:block;margin-top:1px}
+.ev .hint{color:var(--ink-3)}
+.gate{display:block;font-family:var(--mono);font-size:10.5px;color:var(--bad);margin:2px 0 6px;letter-spacing:.02em}
+
+/* ---------- decision cards ---------- */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:18px}
+.opt{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;box-shadow:var(--sh)}
+.opt h4{font-size:15px;margin-bottom:6px}
+.opt p{font-size:13.5px;color:var(--ink-2)}
+.opt p+p{margin-top:8px}
+.opt.lean{border-color:var(--fin-line);background:var(--fin-bg)}
+.opt .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);
+  display:block;margin-bottom:8px}
+
+.foot{margin-top:70px;padding-top:20px;border-top:2px solid var(--ink);display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 40px;font-size:13px;color:var(--ink-2)}
+.foot b{color:var(--ink);font-weight:600;display:block;margin-bottom:4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+
+@media(max-width:820px){
+  .entry{grid-template-columns:minmax(0,1fr);gap:14px 0;padding:22px 0}
+  .claim{position:relative;top:auto}
+  .mast{padding-top:36px}
+  .wrap{padding:0 18px 70px}
+  .body.voice{font-size:16.5px}
+}
+</style>
+
+<style>
+.gauges{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.gauge.warn b{color:var(--app)}
+.pat{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px}
+.pat div{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;box-shadow:var(--sh);min-width:0}
+.pat b{display:block;color:var(--ink);font-size:14.5px;margin-bottom:5px}
+.pat p{font-size:13.5px;color:var(--ink-2)}
+.pat i{display:block;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:8px;overflow-wrap:anywhere}
+ol.rank{margin:12px 0 0;padding:0;list-style:none;counter-reset:r}
+ol.rank li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 12px;padding:10px 0;border-bottom:1px solid var(--rule-2);counter-increment:r}
+ol.rank li::before{content:counter(r);font-family:var(--voice);font-size:24px;line-height:1;color:var(--ink-3)}
+ol.rank li b{color:var(--ink);font-size:14.5px}
+ol.rank li p{font-size:13.5px;color:var(--ink-2);margin-top:2px;max-width:80ch}
+ol.rank li a{font-family:var(--mono);font-size:11px;color:var(--fin);text-decoration:none;margin-left:6px}
+.matrix table{min-width:0}
+.matrix td,.matrix th{text-align:right}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.cov{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px}
+.cov div{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.cov b{display:block;font-family:var(--voice);font-size:30px;line-height:1;color:var(--ink)}
+.cov b.bad{color:var(--bad)} .cov b.good{color:var(--good)} .cov b.warn{color:var(--app)}
+.cov span{display:block;font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}
+.nav a{font-family:var(--mono);font-size:11px;color:var(--ink-2);text-decoration:none;border:1px solid var(--rule);border-radius:20px;padding:3px 10px;background:var(--card)}
+.nav a b{color:var(--ink);font-weight:600;margin-right:5px}
+.nav a:hover{border-color:var(--ink)}
+.grp{margin-top:50px;scroll-margin-top:16px}
+.grp .lede{font-size:14px;color:var(--ink-2);max-width:70ch;margin:8px 0 6px}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) 190px;gap:4px 14px;padding:14px 0;border-bottom:1px solid var(--rule-2);align-items:start}
+.row:last-child{border-bottom:0}
+.row .id{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);background:var(--sunk);border:1px solid var(--rule);border-radius:4px;padding:2px 6px;text-align:center;margin-top:2px}
+.row .where{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:2px}
+.row .t{font-size:15.5px;font-weight:600;color:var(--ink);line-height:1.35}
+.row .tr{font-size:13.5px;color:var(--ink-2);margin-top:4px;max-width:80ch}
+.row .tr b{color:var(--ink);font-weight:600}
+.row .fx{font-size:13.5px;color:var(--ink);margin-top:5px;max-width:80ch}
+.row .fx b{color:var(--good);font-weight:600}
+.row .rf{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px}
+.side{display:grid;gap:6px;font-size:12px;color:var(--ink-2);min-width:0}
+.side .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:block}
+.lk{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:4px;display:inline-block;border:1px solid}
+.lk.nc{color:var(--bad);background:var(--bad-bg);border-color:var(--bad-line)}
+.lk.likely{color:var(--app);background:var(--app-bg);border-color:var(--app-line)}
+.lk.possible{color:var(--fin);background:var(--fin-bg);border-color:var(--fin-line)}
+.lk.rare{color:var(--ext);background:var(--ext-bg);border-color:var(--ext-line)}
+.tg{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:3px;display:inline-block;margin:2px 3px 0 0;border:1px solid var(--rule);color:var(--ink-2)}
+.tg.halt,.tg.security{color:var(--bad);border-color:var(--bad-line)}
+.tg.silent{color:var(--ink);border-color:var(--ink)}
+.tg.legal{color:var(--fin);border-color:var(--fin-line)}
+.tg.money{color:var(--ir);border-color:var(--ir-line)}
+.tg.wrong{color:var(--app);border-color:var(--app-line)}
+.dn{color:var(--bad)} .dl{color:var(--app)} .da{color:var(--good)}
+.cn{font-family:var(--mono);font-size:11px;color:var(--ink)}
+.srcs{margin-top:44px;font-size:12.5px;color:var(--ink-3);max-width:80ch;line-height:1.6}
+.srcs a{color:var(--fin)}
+@media(max-width:760px){.row{grid-template-columns:52px minmax(0,1fr)}.row .side{grid-column:1 / -1;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.row > div{min-width:0}}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <div class="eyebrow"><b>Growize</b><span>failure-mode analysis of the Build Book v1.2 — both portals, the app, the seam, the automation</span><span>5 September 2026</span></div>
+  <h1>Where It Breaks</h1>
+  <p class="lede">Every place the design as written can halt, go wrong, or fail without telling anyone — with the chance of each in the first year,
+    what would notice it today, and what should. <b>145 modes; 27 are near-certain; 53 are silent; 40 carry a legal edge; the book’s six alerts see 11 of them in time.</b>
+    The verdict is not that the design is fragile — it is that its watchers watch themselves, its gates only open, and its approvals are people.
+    Read the five patterns first; most of the register is one of them.</p>
+  <div class="legend"><span class="lk nc">near-certain</span> will happen in year one, most inside ninety days &nbsp; <span class="lk likely">likely</span> more often than not &nbsp;
+    <span class="lk possible">possible</span> one in ten to one in three &nbsp; <span class="lk rare">rare</span> under one in ten, kept for what it costs</div>
+</header>
+
+<div class="gauges">
+  <div class="gauge bad"><b>145</b><span>ways the design as written halts, goes wrong or stays silent</span></div>
+  <div class="gauge bad"><b>27</b><span>near-certain in year one — most inside ninety days</span></div>
+  <div class="gauge bad"><b>53</b><span>silent — nobody is told when they happen</span></div>
+  <div class="gauge bad"><b>11 / 145</b><span>caught in time by the book’s six alerts today</span></div>
+  <div class="gauge"><b>52</b><span>halts — work stops until a person intervenes</span></div>
+  <div class="gauge warn"><b>88</b><span>watched by the eleven canaries of §22; 40 removed by design; 17 found by a drill</span></div>
+</div>
+
+<section class="block" style="margin-top:34px">
+  <div class="sechead"><h2>The verdict, in five sentences</h2><span class="note">honest, and in order of what to fix</span></div>
+  <div class="body voice">
+    <p><strong>It will break in the first month, in five known places, and all five are one-line design changes:</strong> money is refused before verification,
+      a full payment fits no gate, KYC has no step, every approval is one person, and the BU Owner has no seat.</p>
+    <p><strong>The dangerous failures are the silent ones,</strong> and they share five shapes: gates that only open, two actors per consequence, one named
+      person everywhere, watchers that watch themselves, and a reconcile that compares records while the failures live between records.</p>
+    <p><strong>The six alerts are the wrong six.</strong> They see 11 of 145 modes in time; eleven canaries — one of them off-platform — see 88,
+      and a design change removes 40 more.</p>
+    <p><strong>Nothing here argues against the base.</strong> Zoho primary, two orgs, two projects and eMudhra all stand; what changes is reversal events,
+      one actor per fact, delegation, a KYC step, a job runner, an allow-list mapper and a heartbeat that lives somewhere else.</p>
+    <p><strong>Two items are due before any of it:</strong> the licence lapses on 13 September, and the securities opinion still has no date.</p>
+  </div>
+</section>
+
+<section class="block">
+  <div class="sechead"><h2>Five patterns</h2><span class="note">most of the register is one of these</span></div>
+  <div class="pat"><div><b>Two state machines, one direction</b><p>The Lead has rungs; the Contact has a lifecycle; gate columns join them and only ever open. Nothing steps back, nothing asserts they agree, and the funnel reads the timestamps as truth. Eleven rows in this register are this one shape.</p><i>GA2 · GA3 · GA4 · GA5 · GA7 · GA12 · MO13 · CL1 · CL3 · HO1 · MO8</i></div><div><b>Two actors per consequence</b><p>The acknowledgement, the hold and account.opened each have a function and a workflow that both fire. Two emails, two holds, two invites — and no way to tell which one is the record.</p><i>AU2 · MO9 · CA5 · CA7</i></div><div><b>One named person everywhere</b><p>Every approval, every alert, every administrator function and half the queues resolve to a single named human. A leave day is an outage; a departure is a migration.</p><i>DO1 · DO11 · OA12 · OA13 · MO12 · CA1 · CA3 · LT5</i></div><div><b>Watchers that watch themselves</b><p>The alerts, the reconcile and the outbox run on the same cron in the same project. What stops them also stops the news that they stopped.</p><i>SE1 · SE2 · MI10 · PL1 · PL8</i></div><div><b>Reconciliation by record, not by relationship</b><p>The nightly diff compares fields on records. Handovers, links, gates, queues, duplicates and dropped webhooks live between records and are invisible to it.</p><i>GA12 · HO3 · HO6 · MI9 · MI13 · CA2</i></div></div>
+</section>
+
+<section class="block">
+  <div class="sechead"><h2>The ten most dangerous silent failures</h2><span class="note">ranked by damage × silence</span></div>
+  <ol class="rank"><li><div><b>Money the ledger cannot see</b><a href="#MO5">MO5</a><a href="#MO6">MO6</a><p>a credit before the Contact exists, to the wrong account, or whose webhook was missed never becomes a Receipt; ‘Money waiting’ only sees Receipts that exist. Nothing in the book compares the bank statement to the ledger.</p></div></li><li><div><b>Money gated on an instrument nobody read</b><a href="#GA6">GA6</a><p>§21 auto-verifies when certificate and hash agree; §12 says a human checks it is the right document. Wrong units, price or name gets verified and opens the money gate.</p></div></li><li><div><b>Identity leaks back into the mirror</b><a href="#MI7">MI7</a><p>the mapper strips named fields; the next field anyone adds in Zoho is mirrored into jsonb by default. The leak the portal was built to close, reopened by a picklist.</p></div></li><li><div><b>Fully paid, never allotted</b><a href="#GA5">GA5</a><p>auto-allot is evaluated on whichever fact fires it; KYC passing a week later re-evaluates nothing; the investor sits in no queue.</p></div></li><li><div><b>Gates that only open</b><a href="#GA2">GA2</a><p>a reversed receipt, a blocked document or a refund never nulls a gate column; there are no reversal events. Reserved without money, forever, and a funnel that counts the refund as a sale.</p></div></li><li><div><b>Units changed after handover</b><a href="#MO13">MO13</a><p>units_intended edits on the Lead; due is computed on the frozen Contact; the balance never matches, or the wrong units are allotted at the wrong price.</p></div></li><li><div><b>Residency and the freeze</b><a href="#KY4">KY4</a><a href="#KY3">KY3</a><p>an NRI typed as resident is allotted with no FEMA record and no filing; a frozen investor is paid because payouts read the bank’s beneficiary, not Zoho’s flag.</p></div></li><li><div><b>Alerts made by the thing they watch</b><a href="#SE2">SE2</a><a href="#SE1">SE1</a><p>the six alerts run on the cron in the project they monitor. When pg_cron stops — after a restore, an upgrade, a looping job — the alerts stop with it.</p></div></li><li><div><b>Transitions the reconcile cannot see</b><a href="#GA12">GA12</a><a href="#MI10">MI10</a><p>a dropped handover or gate webhook is not a field difference; a reconcile that dies at the function limit reports success. Both look like a quiet night.</p></div></li><li><div><b>Two records for one person</b><a href="#HO3">HO3</a><a href="#HO6">HO6</a><p>a partial handover retried, or a returning investor, creates a second Contact; holdings double or halve; nothing asserts one Lead per Contact or one uid per Contact.</p></div></li></ol>
+</section>
+
+<section class="block">
+  <div class="sechead"><h2>The five most likely halts</h2><span class="note">in the order they will be met</span></div>
+  <ol class="rank"><li><div><b>Money is refused before verification</b><a href="#MO1">MO1</a><p>The validation rule refuses money paid before verification — the bank’s Receipt is refused and the money exists nowhere. Week one.</p></div></li><li><div><b>Full payment in one credit satisfies neither blueprint</b><a href="#MO2">MO2</a><p>A hundred per cent in one credit satisfies neither blueprint: no advance, no hold, no account. The best investor gets no app.</p></div></li><li><div><b>KYC has no step</b><a href="#KY1">KY1</a><p>KYC has no rung, no owner and no collection step; rung 7 is unreachable and every handover raises a failed-rule alert.</p></div></li><li><div><b>One named approver, no delegation</b><a href="#DO1">DO1</a><p>Six approvals, one named person each, no delegation and no ageing. The first leave day stops sending, lapses, bank changes and erasures.</p></div></li><li><div><b>Q6 unresolved at build</b><a href="#OA13">OA13</a><p>Q6 unresolved: the approval process needs an approver at save, so the Head of Finance approves their own lapses — or nothing is extended.</p></div></li></ol>
+  <p class="body" style="margin-top:12px;font-size:13.5px">Runners-up: <a href="#MO12">MO12</a> · <a href="#MO4">MO4</a> · <a href="#CA4">CA4</a> · <a href="#GA4">GA4</a> · <a href="#PL1">PL1</a> · <a href="#DO7">DO7</a> · <a href="#PL15">PL15</a> · <a href="#PL6">PL6</a> — two-person matching, the NRI shortfall, the KAM’s Team seat,
+    the automatic Allotted tick, nightly jobs in edge functions, a lost eMudhra callback, the licence on 13 September, the invite throttle at cutover.</p>
+</section>
+
+<section class="block">
+  <div class="sechead"><h2>The chances</h2><span class="note">modes by chance and effect — a mode can have two effects</span></div>
+  <div class="tw matrix"><table><tr><th>Chance, year one</th><th>halt</th><th>silent</th><th>wrong state</th><th>money</th><th>legal</th><th>security</th><th>cost</th><th>all</th></tr><tr><td><span class="lk nc">near-certain</span></td><td>14</td><td>12</td><td>2</td><td>2</td><td>6</td><td>3</td><td>2</td><td><b>27</b></td></tr><tr><td><span class="lk likely">likely</span></td><td>25</td><td>26</td><td>25</td><td>6</td><td>15</td><td>1</td><td>3</td><td><b>59</b></td></tr><tr><td><span class="lk possible">possible</span></td><td>12</td><td>13</td><td>17</td><td>8</td><td>16</td><td>10</td><td>3</td><td><b>53</b></td></tr><tr><td><span class="lk rare">rare</span></td><td>1</td><td>2</td><td>1</td><td>·</td><td>3</td><td>1</td><td>·</td><td><b>6</b></td></tr><tr><td><b>all</b></td><td><b>52</b></td><td><b>53</b></td><td><b>45</b></td><td><b>16</b></td><td><b>40</b></td><td><b>15</b></td><td><b>8</b></td><td><b>145</b></td></tr></table></div>
+  <div class="why" style="margin-top:14px"><b>How to read it.</b> Near-certain does not mean catastrophic: most of the 27 are halts that will be met in the first
+    weeks of real use and fixed the same day — <em>if</em> the design change is made before launch, they are never met at all. The rows to fear are the
+    38 that are both silent and near-certain or likely: they are the ones nobody will be fixing the same day, because nobody will know.</div>
+</section>
+
+<section class="block" id="watch">
+  <div class="sechead"><h2>What watches it today, and what should</h2><span class="note">the six alerts of §15, replaced by eleven canaries in §22</span></div>
+  <div class="cov">
+    <div><b class="bad">11</b><span>modes the six alerts catch in time</span></div>
+    <div><b class="warn">29</b><span>modes noticed late — after the duplicate, the lapse, the complaint or the drill</span></div>
+    <div><b class="bad">105</b><span>modes nothing in the book would notice</span></div>
+    <div><b class="good">88</b><span>modes the eleven canaries watch</span></div>
+    <div><b class="good">40</b><span>modes a design change removes</span></div>
+    <div><b>17</b><span>modes only a test or a drill finds — the test is built in the phase that creates the risk</span></div>
+  </div>
+  <div class="tw" style="margin-top:16px"><table>
+    <thead><tr><th>Code</th><th>Canary</th><th>What it checks</th><th>Modes</th></tr></thead>
+    <tbody><tr><td class="mono">DM</td><td><b>Dead-man heartbeat</b></td><td>an off-platform monitor expects a ping from every job and worker; silence pages</td><td>4</td></tr><tr><td class="mono">INBOUND</td><td><b>Inbound silence and failures</b></td><td>webhook signature failures, dead-letters, and Zoho’s edit count against the inbound count per day</td><td>1</td></tr><tr><td class="mono">OUTBOX</td><td><b>Outbox age and order</b></td><td>undelivered rows by age, dead-letter age, per-record ordering, resync age</td><td>5</td></tr><tr><td class="mono">INV</td><td><b>Cross-org invariants, nightly</b></td><td>rung ≤ lifecycle ≤ gates; one Lead per Contact; one uid per Contact; fully paid and not allotted; Reserved without an advance; gates without receipts; Lead units ≠ Contact units; two open holds; sends to withdrawn consent; touches with rule ids; signed without a file; record counts Zoho vs mirror; duplicates by normalised phone, email, PAN</td><td>31</td></tr><tr><td class="mono">PII</td><td><b>Identity and drift scan</b></td><td>allow-list check of every jsonb column and the event archive for anything that looks like a PAN, an account number, an Aadhaar, an address; schema and field-list diff between the two projects and against both orgs’ field lists</td><td>6</td></tr><tr><td class="mono">BUDGET</td><td><b>Quotas and caps</b></td><td>Zoho credits and concurrency refusals, workflow and function failure notices, Send Mail and workflow email quotas, attachment storage, eMudhra credits, bounce and complaint rates</td><td>9</td></tr><tr><td class="mono">MONEY</td><td><b>Money, with the statement</b></td><td>unmatched credits over three days, suspense credits, holds inside seven days, refunds pending, due below zero, and a weekly statement-versus-ledger reconciliation per credit and per debit</td><td>8</td></tr><tr><td class="mono">PAPER</td><td><b>Paper and approvals</b></td><td>an eMudhra poller (sent over 48 hours with no status change), approvals pending over two days, instruments expiring inside three days, template version at send ≠ approved</td><td>5</td></tr><tr><td class="mono">PEOPLE</td><td><b>Owners and acknowledgement</b></td><td>records, requests and routes that resolve to a deactivated user, the integration user or nobody; alerts unacknowledged for thirty minutes escalate to the second person; a daily page of unresolved alerts</td><td>5</td></tr><tr><td class="mono">CLOCK</td><td><b>Clocks, computed here</b></td><td>FEMA, MCA, hold, DPDP and refund clocks computed in Supabase from the receipt event in Asia/Kolkata; licence, certificate, card, token and key rotations inside thirty days</td><td>6</td></tr><tr><td class="mono">PLATFORM</td><td><b>Platform health</b></td><td>pg_cron last-run age, function error rates, token refresh failures, the integration token probe, a KMS decrypt probe, backup object age and size in S3, compute and disk headroom, billing state</td><td>8</td></tr></tbody></table></div>
+  <div class="rule" style="margin-top:14px"><b>Three rules for the canaries.</b> Every alert has a second recipient and a thirty-minute escalation. Every alert
+    fires on age or on an invariant, never on a raw count, and never twice for the same record on the same day. And the heartbeat lives on a second provider:
+    a job that stops must stop something that is not itself.</div>
+</section>
+
+<section class="block" id="register">
+  <div class="sechead"><h2>The register</h2><span class="note">145 modes in fourteen groups · how it happens, what follows, the chance, who would see it, the fix</span></div>
+  <div class="nav"><a href="#g-HO"><b>HO</b>Handover and identity · 11</a><a href="#g-GA"><b>GA</b>Gates and rungs · 12</a><a href="#g-MO"><b>MO</b>Money · 19</a><a href="#g-DO"><b>DO</b>Documents, signing and approvals · 13</a><a href="#g-KY"><b>KY</b>KYC, FEMA and life events · 8</a><a href="#g-CA"><b>CA</b>Care, requests and seats · 7</a><a href="#g-AU"><b>AU</b>Automation honesty · 8</a><a href="#g-OA"><b>OA</b>Sessions, tokens and administrators · 13</a><a href="#g-MI"><b>MI</b>The mirror and the reconcile · 15</a><a href="#g-SE"><b>SE</b>The seam — outbox, webhooks, idempotency · 12</a><a href="#g-PL"><b>PL</b>Platform, keys and backups · 15</a><a href="#g-ML"><b>ML</b>Mail and push · 4</a><a href="#g-CL"><b>CL</b>Close and analytics · 3</a><a href="#g-LT"><b>LT</b>Legal and timing · 5</a></div>
+  <section class="grp" id="g-HO">
+  <div class="sechead"><h2>HO · Handover and identity</h2><span class="note">11 modes · 1 near-certain</span></div>
+  <p class="lede">Where a lead becomes a Contact, and where one person becomes two records.</p>
+  <div class="row" id="HO1">
+  <span class="id">HO1</span>
+  <div><div class="where">rung 3 → Lost</div><div class="t">Lost after Said yes has no Investor-org effect</div>
+    <div class="tr"><b>How.</b> the IR marks a lead Lost after the handover has created the Contact; the Contact blueprint has no Withdrawn state and lead.lost carries no Investor-org action. <b>Then.</b> an orphan Contact — PII and a paid KYC check for a non-investor, the exact thing D11 exists to avoid — that every view and rule still selects.</div>
+    <div class="fx"><b>Fix.</b> lead.lost → Contact Withdrawn; live Documents blocked; a timed erasure; a Contacts-whose-Lead-is-Lost invariant.</div>
+    <div class="rf">§6 · §11 · D11</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="HO2">
+  <span class="id">HO2</span>
+  <div><div class="where">Lost → re-opened → Said yes</div><div class="t">The handover fires twice</div>
+    <div class="tr"><b>How.</b> a lead is re-opened and reaches Said yes again; the handover webhook creates and never finds; investor_contact_id is read-only once set, so the write-back fails after Contact #2 exists. <b>Then.</b> two ARL codes for one person, then a halt on the write-back.</div>
+    <div class="fx"><b>Fix.</b> short-circuit when investor_contact_id is set; find-or-create on lead_uuid.</div>
+    <div class="rf">§8 · §5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — outbox stalled, after the duplicate exists</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="HO3">
+  <span class="id">HO3</span>
+  <div><div class="where">rung 3</div><div class="t">A partial handover duplicates on retry</div>
+    <div class="tr"><b>How.</b> the handover is four writes — create the Contact, copy the NDA, write the Lead back, invite — with no transaction; event_id dedupe covers custom modules only and lead_uuid is not unique on Contacts, so a failure after step one retries into a second Contact. <b>Then.</b> an unlinked or duplicated Contact the reconcile never sees, because it compares records, not links.</div>
+    <div class="fx"><b>Fix.</b> lead_uuid unique on Contacts (one of the module’s unique fields) with upsert; Lead write-back before the NDA copy; a nightly one-Lead-per-Contact assertion.</div>
+    <div class="rf">§8 · §7</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="HO4">
+  <span class="id">HO4</span>
+  <div><div class="where">both orgs</div><div class="t">The unique-field cap forces dedupe into code</div>
+    <div class="tr"><b>How.</b> event_id, lead_uuid, emudhra_request_id, app_request_id and utr all want uniqueness, and Zoho allows only a couple of unique fields per module (confirm the cap for the edition); DUPLICATE_DATA answers are then treated as failures and retried, or as successes without the existing id. <b>Then.</b> duplicate rows on whichever module lost the unique slot; retries that never converge.</div>
+    <div class="fx"><b>Fix.</b> one unique key per module chosen on purpose (event_id on custom modules, lead_uuid on Contacts); the rest deduped in the events table before the call; DUPLICATE_DATA handled as found-existing with a lookup.</div>
+    <div class="rf">§5 · §6 · §8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="HO5">
+  <span class="id">HO5</span>
+  <div><div class="where">capture</div><div class="t">One person, two leads</div>
+    <div class="tr"><b>How.</b> dedupe runs only on the event-sheet upload; Add lead, phone formats (+91, 0, spaces) and email case are unnormalised; PAN does not exist before handover. <b>Then.</b> two IRs chase one person; two handovers; two Contacts.</div>
+    <div class="fx"><b>Fix.</b> E.164 phone and lower-cased email as normalised unique keys on both modules and both doors; a possible-duplicate queue; PAN as the third key from the KYC step.</div>
+    <div class="rf">§21 · §5 · §14</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="HO6">
+  <span class="id">HO6</span>
+  <div><div class="where">rung 3</div><div class="t">A returning investor becomes a second investor</div>
+    <div class="tr"><b>How.</b> a second lead for an existing Contact mints a second ARL, re-runs paid KYC and invites an email that already has an auth user — the invite fails, or one uid maps to two Contacts and holdings double. <b>Then.</b> holdings shown twice or halved; a second identity for one person.</div>
+    <div class="fx"><b>Fix.</b> the handover searches by phone, email and PAN first and adds an Allotment to the existing Contact; uid ↔ Contact is a unique map.</div>
+    <div class="rf">§8 · §7 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="HO7">
+  <span class="id">HO7</span>
+  <div><div class="where">rung 3</div><div class="t">Said yes cannot be undone</div>
+    <div class="tr"><b>How.</b> a mis-click, or an IR gaming a handover count, mints an ARL, moves PII across orgs and triggers a paid KYC check. <b>Then.</b> PII moved and money spent on a non-investor; a metric that rewards it.</div>
+    <div class="fx"><b>Fix.</b> typed confirmation and a fifteen-minute delay before the webhook; the handover count is not an IR metric.</div>
+    <div class="rf">§5 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="HO8">
+  <span class="id">HO8</span>
+  <div><div class="where">rungs 3–7</div><div class="t">Nobody owns contact details between handover and allotment</div>
+    <div class="tr"><b>How.</b> contact columns freeze on the Lead at handover; the KAM exists only from Allotted; Finance is ‘never identity’ — so an email typo can be fixed only by Compliance. <b>Then.</b> documents and invites sent to a wrong address until someone notices.</div>
+    <div class="fx"><b>Fix.</b> Finance Ops owns contact fields until allotment; details.changed re-issues open requests.</div>
+    <div class="rf">§5 · §2</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the investor complains</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="HO9">
+  <span class="id">HO9</span>
+  <div><div class="where">Leads org</div><div class="t">Native Convert, Merge, Import and Mass update stay on human profiles</div>
+    <div class="tr"><b>How.</b> a converted lead disappears from the views; a merge or a delete discards the record id the Contact and the write-backs reference; a recycle-bin restore brings a stale copy back. <b>Then.</b> a lead vanishes or its write-backs stall; a merged id is never mirrored.</div>
+    <div class="fx"><b>Fix.</b> strip those permissions from every human profile; resolve everything by lead_uuid; a nightly sweep of the deleted-records endpoint tombstones mirror rows.</div>
+    <div class="rf">§4 · §5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — outbox stalled, for merges only</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="HO10">
+  <span class="id">HO10</span>
+  <div><div class="where">every integration</div><div class="t">A 19-digit Zoho id parsed as a number</div>
+    <div class="tr"><b>How.</b> Zoho ids are 19-digit integers delivered as strings; anything that casts one to a JavaScript Number loses precision above 2^53 and the id silently points at nothing — or at a neighbour. <b>Then.</b> references that resolve to no record, or the wrong one, with no error.</div>
+    <div class="fx"><b>Fix.</b> ids are strings end to end and bigint in Postgres; a CI test round-trips a real id through every layer.</div>
+    <div class="rf">§7 · §8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="HO11">
+  <span class="id">HO11</span>
+  <div><div class="where">handover function</div><div class="t">One function holds both orgs’ tokens</div>
+    <div class="tr"><b>How.</b> the handover creates in the Investor org and writes back to the Leads org, so one function holds a token for each — the cross-org token Z8 forbade, in the place most likely to be reached from outside. <b>Then.</b> a single compromise reads every lead and every investor.</div>
+    <div class="fx"><b>Fix.</b> the handover is two functions, one per project, each holding one org’s token, joined by the seam.</div>
+    <div class="rf">§8 · Z8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div>
+</section><section class="grp" id="g-GA">
+  <div class="sechead"><h2>GA · Gates and rungs</h2><span class="note">12 modes · 1 near-certain</span></div>
+  <p class="lede">Two state machines — the Lead’s rung and the Contact’s lifecycle — joined by gate columns that only ever open.</p>
+  <div class="row" id="GA1">
+  <span class="id">GA1</span>
+  <div><div class="where">gate columns</div><div class="t">A human writes a gate column</div>
+    <div class="tr"><b>How.</b> ‘integration only’ must hold on every profile including Administrator and does not cover Import, Mass update or a script run with the integration token; an admin types advance_confirmed_at to unblock an IR. <b>Then.</b> Reserved without money.</div>
+    <div class="fx"><b>Fix.</b> a workflow on any gate edit where Modified By ≠ integration alerts and reverts; the nightly gate-without-receipt invariant.</div>
+    <div class="rf">§5 · §10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="GA2">
+  <span class="id">GA2</span>
+  <div><div class="where">reversals</div><div class="t">Gates never close</div>
+    <div class="tr"><b>How.</b> a reversed Receipt, a blocked Document or a post-lock refund never nulls the gate column; there is no money.reversed or allotment.reversed event. <b>Then.</b> Reserved with no money, Lost unreachable, the funnel counting a refund as a sale — forever.</div>
+    <div class="fx"><b>Fix.</b> reversal events (money.reversed, paper.blocked, allotment.reversed) null the column and step the rung back as system.</div>
+    <div class="rf">§6 · §11 · §5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="GA3">
+  <span class="id">GA3</span>
+  <div><div class="where">rungs 5–6</div><div class="t">Two state machines, no consistency check</div>
+    <div class="tr"><b>How.</b> who moves the Contact from Supplementary sent to Advance received to Balance received is unstated; the Lead sits at Reserved while the Contact sits at Supplementary verified. <b>Then.</b> a silent halt — auto-allot transitions only from Balance received.</div>
+    <div class="fx"><b>Fix.</b> the Contact lifecycle is derived by one function from facts; a nightly assertion that Lead rung ≤ Contact lifecycle ≤ gate columns.</div>
+    <div class="rf">§6 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — a failed-rule alert, at best</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="GA4">
+  <span class="id">GA4</span>
+  <div><div class="where">rung 7 (Q3)</div><div class="t">The automatic Allotted tick cannot land</div>
+    <div class="tr"><b>How.</b> the Contact allots before the IR ticked Reserved or Fully paid; a blueprint cannot skip rungs; the tick fails once and nothing retries. <b>Then.</b> a Contact Allotted with a KAM while the Lead sits two rungs back, then gets marked Lost.</div>
+    <div class="fx"><b>Fix.</b> the system performs the earlier gated transitions itself; Lost refused while any Receipt exists.</div>
+    <div class="rf">§2 Q3 · §5 · §10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — one alert, no retry</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="GA5">
+  <span class="id">GA5</span>
+  <div><div class="where">rung 7</div><div class="t">Auto-allot evaluates once</div>
+    <div class="tr"><b>How.</b> ‘letter ∧ due 0 ∧ KYC ∧ FEMA’ is checked on whichever fact fires the rule; KYC passing a week later re-evaluates nothing. <b>Then.</b> fully paid, never allotted, in no queue.</div>
+    <div class="fx"><b>Fix.</b> trigger on all four facts plus a daily sweep; an eligible-not-allotted queue on the portal dashboard.</div>
+    <div class="rf">§21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="GA6">
+  <span class="id">GA6</span>
+  <div><div class="where">rung 4</div><div class="t">Auto-verify opens the money gate on an instrument nobody read</div>
+    <div class="tr"><b>How.</b> §12 makes verification a human check of the right document; §21 verifies when certificate and hash agree — wrong units, price or name gets verified and gates money. <b>Then.</b> money taken against the wrong instrument.</div>
+    <div class="fx"><b>Fix.</b> automation verifies the signature only; the human tick precedes supp_verified_at.</div>
+    <div class="rf">§12 vs §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the review list, after the gate opened</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="GA7">
+  <span class="id">GA7</span>
+  <div><div class="where">rung 5</div><div class="t">Reserved on a partial advance</div>
+    <div class="tr"><b>How.</b> the condition is ‘a matched Receipt of kind advance’ with no amount; half an advance matched by hand opens the hold, the shelf and the app. <b>Then.</b> a reservation the investor has not paid for.</div>
+    <div class="fx"><b>Fix.</b> gate on advance received ≥ 10 % of due.</div>
+    <div class="rf">§6 · §13</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="GA8">
+  <span class="id">GA8</span>
+  <div><div class="where">Finance</div><div class="t">No un-match, no un-verify</div>
+    <div class="tr"><b>How.</b> a wrong verify or match reaches the Lead the same minute; no action reverses it. <b>Then.</b> a wrong state propagated to the IR, the app and the funnel.</div>
+    <div class="fx"><b>Fix.</b> a ten-minute delay before write-back; a maker-checker un-match that emits the reversal event.</div>
+    <div class="rf">§8 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="GA9">
+  <span class="id">GA9</span>
+  <div><div class="where">Zoho workflows</div><div class="t">A workflow’s field update triggers no other workflow</div>
+    <div class="tr"><b>How.</b> Zoho’s loop guard: a field update made by a workflow does not fire other rules; permanent_at, frozen and hold columns set by a rule never call the webhook. <b>Then.</b> the mirror and the app never learn the state changed.</div>
+    <div class="fx"><b>Fix.</b> every workflow that sets a state also calls the webhook itself; the nightly reconcile diffs state columns explicitly.</div>
+    <div class="rf">§10 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the nightly diff, only if it compares those fields</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Inbound silence and failures</span></div></div>
+</div><div class="row" id="GA10">
+  <span class="id">GA10</span>
+  <div><div class="where">blueprints by API</div><div class="t">A transition the integration user may not perform</div>
+    <div class="tr"><b>How.</b> API transitions need the transition id, every mandatory field and a performer named in the transition; the integration profile is left off ‘who can perform’ and the write-back answers 400. <b>Then.</b> gate write-backs dead-letter.</div>
+    <div class="fx"><b>Fix.</b> transitions fetched by name at runtime; the integration profile on every transition; a sandbox test per transition.</div>
+    <div class="rf">§10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — outbox stalled</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="GA11">
+  <span class="id">GA11</span>
+  <div><div class="where">record locks</div><div class="t">Locks block the system’s own write-back</div>
+    <div class="tr"><b>How.</b> a matched receipt is locked, a record under approval is locked, a blueprint state is locked; the gate or state write from the integration user is refused. <b>Then.</b> stuck records the outbox retries forever.</div>
+    <div class="fx"><b>Fix.</b> locks exempt the integration profile; approvals live on a child record, never on the record a blueprint moves.</div>
+    <div class="rf">§10 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — outbox stalled</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Outbox age and order</span></div></div>
+</div><div class="row" id="GA12">
+  <span class="id">GA12</span>
+  <div><div class="where">Zoho → seam</div><div class="t">A dropped handover or gate webhook is invisible</div>
+    <div class="tr"><b>How.</b> workflow webhooks fire once and are not retried; a delivery that failed during a deploy never left, and a record-level reconcile compares fields, not transitions that did not happen. <b>Then.</b> the IR waits for a gate that opened in Zoho; a Contact that was never created.</div>
+    <div class="fx"><b>Fix.</b> the reconcile also lists Leads at rung 3+ without investor_contact_id and Contacts with matched receipts whose Lead gate is null; a re-fire action.</div>
+    <div class="rf">§11 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div>
+</section><section class="grp" id="g-MO">
+  <div class="sechead"><h2>MO · Money</h2><span class="note">19 modes · 4 near-certain</span></div>
+  <p class="lede">Receipts, matching, holds, lapses and refunds, and the bank feed that carries credits only.</p>
+  <div class="row" id="MO1">
+  <span class="id">MO1</span>
+  <div><div class="where">rung 4 → 5</div><div class="t">Money is refused before verification</div>
+    <div class="tr"><b>How.</b> ‘no money before the supplementary is verified’ is a validation rule on Receipts; the bank webhook’s Receipt for an investor who pays on signing is refused. <b>Then.</b> the money exists nowhere in the book; the investor has paid and no one knows.</div>
+    <div class="fx"><b>Fix.</b> recording is always allowed; the rule blocks matching, not recording.</div>
+    <div class="rf">§10 · §13 · §8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg silent">silent</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — dead-letter, to one phone</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO2">
+  <span class="id">MO2</span>
+  <div><div class="where">rungs 5–6</div><div class="t">Full payment in one credit satisfies neither blueprint</div>
+    <div class="tr"><b>How.</b> auto-match books 100 % as balance; no advance Receipt, no hold, no account.opened (‘on an advance’); the Contact cannot reach Advance received, the Lead cannot tick Reserved. <b>Then.</b> both blueprints halt; the investor who paid everything gets no app.</div>
+    <div class="fx"><b>Fix.</b> kind = full satisfies both gates; the account opens at first matched money ≥ 10 %.</div>
+    <div class="rf">§6 · §21 · §13</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO3">
+  <span class="id">MO3</span>
+  <div><div class="where">rung 6</div><div class="t">Instalments, overpayments and short amounts</div>
+    <div class="tr"><b>How.</b> nothing equals due, so every credit is manual; an overpayment matched as balance leaves due &lt; 0 and the permanent formula never fires; a short credit sits unmatched. <b>Then.</b> Balance received unreachable; a permanent account that never turns permanent.</div>
+    <div class="fx"><b>Fix.</b> due ≤ 0 → permanent; an excess Receipt kind; matching accepts sums against due.</div>
+    <div class="rf">§6 · §10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — money waiting, after three days</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO4">
+  <span class="id">MO4</span>
+  <div><div class="where">rung 6 · NRI</div><div class="t">The FX shortfall</div>
+    <div class="tr"><b>How.</b> remittances land ₹300–₹3,000 short of due after bank charges; no tolerance or write-off rule exists. <b>Then.</b> every NRI balance is a manual exception.</div>
+    <div class="fx"><b>Fix.</b> a tolerance approved once, recorded as a write-off Receipt; the shortfall list on the Finance dashboard.</div>
+    <div class="rf">§13 · §6</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO5">
+  <span class="id">MO5</span>
+  <div><div class="where">bank feed</div><div class="t">A credit with no Contact, or to the wrong account</div>
+    <div class="tr"><b>How.</b> money arrives before Said yes, or to the main account because the virtual account is minted late (an unstated step); it cannot become a Receipt and ‘Money waiting’ sees only Receipts that exist. <b>Then.</b> money the ledger cannot see; an investor chased for money already paid.</div>
+    <div class="fx"><b>Fix.</b> suspense Receipts; the virtual account minted at handover; the weekly statement reconciliation.</div>
+    <div class="rf">§13 · §15 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO6">
+  <span class="id">MO6</span>
+  <div><div class="where">bank feed</div><div class="t">A missed credit webhook is never reconciled</div>
+    <div class="tr"><b>How.</b> the bank’s webhook fails during a deploy or a rate limit; no statement is ever compared to the ledger. <b>Then.</b> the credit never exists; the hold lapses on a paid investor.</div>
+    <div class="fx"><b>Fix.</b> weekly statement import reconciled per credit and per debit against the ledger; unmatched statement lines are alerts.</div>
+    <div class="rf">§13 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg money">money</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO7">
+  <span class="id">MO7</span>
+  <div><div class="where">auto-match</div><div class="t">A third-party remitter matched on amount</div>
+    <div class="tr"><b>How.</b> the rule matches on amount alone; a credit from the wrong virtual account, a relative or an employer is booked to the investor. <b>Then.</b> money accepted from a party never KYC’d.</div>
+    <div class="fx"><b>Fix.</b> match on virtual account and amount; compare remitter name and account to the KYC’d account; mismatch to review, never auto.</div>
+    <div class="rf">§21 · §14</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO8">
+  <span class="id">MO8</span>
+  <div><div class="where">hold</div><div class="t">The lapse races the balance</div>
+    <div class="tr"><b>How.</b> the lapse item rises at the deadline while the balance sits unmatched or lands on day 31; the lapse checks neither due nor unmatched credits. <b>Then.</b> a paid investor forfeited.</div>
+    <div class="fx"><b>Fix.</b> lapse refused when due ≤ 0 or an unmatched credit exists; deadline = received_on + 30, shown to the investor.</div>
+    <div class="rf">§13 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO9">
+  <span class="id">MO9</span>
+  <div><div class="where">hold</div><div class="t">Reminders after extension, lapse or erasure; two holds</div>
+    <div class="tr"><b>How.</b> T-7 and T-1 key on deadline while the extension writes extended_to; queued sends fire unless they re-check state; two advance Receipts open two Holds. <b>Then.</b> wrong reminders, a double reservation, a DPDP breach.</div>
+    <div class="fx"><b>Fix.</b> one effective-deadline formula; one Hold per Contact per programme; sends re-check state and consent at send time.</div>
+    <div class="rf">§6 · §20 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MO10">
+  <span class="id">MO10</span>
+  <div><div class="where">refund</div><div class="t">Refunds and forfeits never match</div>
+    <div class="tr"><b>How.</b> they wait for ‘the bank’s debit event’ but the virtual-account feed carries credits only; if the Head who lapsed also matches, maker = checker refuses. <b>Then.</b> a permanent money-waiting alert; refunds nobody can close.</div>
+    <div class="fx"><b>Fix.</b> the debit statement import as the second hand; Ops records, the Head matches.</div>
+    <div class="rf">§13 · §10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — money waiting, forever</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO11">
+  <span class="id">MO11</span>
+  <div><div class="where">refund</div><div class="t">Refund to the wrong account</div>
+    <div class="tr"><b>How.</b> lapse closes the app account so the investor cannot change bank; a closed NRO account bounces the refund and no returned state exists; a bank change from a hijacked mailbox diverts it. <b>Then.</b> money sent to a dead account, or to a thief.</div>
+    <div class="fx"><b>Fix.</b> refund to the source account unless a verified change predates the lapse; a returned state; bank change and exit frozen during a refund case.</div>
+    <div class="rf">§13 · §21 · §4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg money">money</span><span class="tg legal">legal</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO12">
+  <span class="id">MO12</span>
+  <div><div class="where">maker-checker</div><div class="t">Two-person Finance</div>
+    <div class="tr"><b>How.</b> Ops records, the Head matches; with either away nobody may match manual receipts. <b>Then.</b> matching stops for a week at a time.</div>
+    <div class="fx"><b>Fix.</b> a second checker profile for matching only; the bank feed is the checker for every virtual-account credit.</div>
+    <div class="rf">§2 · §10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — money waiting, after three days</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO13">
+  <span class="id">MO13</span>
+  <div><div class="where">rung 6</div><div class="t">Units changed after handover</div>
+    <div class="tr"><b>How.</b> units_intended stays editable on the Lead and frozen on the Contact; due is computed on the Contact, so an upsized investor’s balance never matches — or matches the old due and the wrong units are allotted. <b>Then.</b> the wrong number of units, paid for at the wrong price.</div>
+    <div class="fx"><b>Fix.</b> units live on the Contact after handover, changed only by an approved event that recomputes due; a Lead-units ≠ Contact-units invariant.</div>
+    <div class="rf">§5 · §6</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MO14">
+  <span class="id">MO14</span>
+  <div><div class="where">penny-drop</div><div class="t">A verdict from a probe</div>
+    <div class="tr"><b>How.</b> penny-drop false negatives freeze real investors; false positives (a name that matches loosely) pass a wrong account. <b>Then.</b> a payout to an account that was never the investor’s.</div>
+    <div class="fx"><b>Fix.</b> the provider’s result is evidence, stored raw with its reference; two failures go to a human; a pass needs the name match and the KYC’d name.</div>
+    <div class="rf">§21 · §14</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO15">
+  <span class="id">MO15</span>
+  <div><div class="where">lock / Q5</div><div class="t">A reversal after the lock undoes nothing downstream</div>
+    <div class="tr"><b>How.</b> un-allot is defined, but the payout schedule, Form 4 and the LLP supplement are not undone; only exits have a checklist. <b>Then.</b> a partner on paper who has been refunded.</div>
+    <div class="fx"><b>Fix.</b> a post-lock reversal runs the exit checklist.</div>
+    <div class="rf">§10 · §21 · Q5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk rare">rare</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO16">
+  <span class="id">MO16</span>
+  <div><div class="where">lapse</div><div class="t">App access after lapse is undefined</div>
+    <div class="tr"><b>How.</b> the auth user persists; a lapsed investor logs in and raises exit or bank-change requests; if closing deletes the auth user, a returning investor’s invite collides. <b>Then.</b> requests from a non-investor; or a locked-out returning one.</div>
+    <div class="fx"><b>Fix.</b> lifecycle Lapsed drives RLS (a read-only statement and refund status); the auth user is never deleted.</div>
+    <div class="rf">§13 · §7 · Q4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MO17">
+  <span class="id">MO17</span>
+  <div><div class="where">Receipts</div><div class="t">Zoho multi-currency converts at its own rate table</div>
+    <div class="tr"><b>How.</b> a foreign remittance recorded with Zoho’s currency features is converted at the org’s rate, not the INR the bank credited. <b>Then.</b> the mirror shows an amount the bank never paid.</div>
+    <div class="fx"><b>Fix.</b> the ledger stores INR as credited; the foreign amount and rate are facts on the Receipt; Zoho currency conversion off on Receipts; a sum-of-receipts invariant.</div>
+    <div class="rf">§6 · §13</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MO18">
+  <span class="id">MO18</span>
+  <div><div class="where">idempotency</div><div class="t">UTRs over- and under-deduplicate</div>
+    <div class="tr"><b>How.</b> UTRs repeat across banks and days (a dedupe on UTR alone drops a real second credit); the same credit arrives with different formatting from the feed and the statement (booked twice). <b>Then.</b> a lost credit, or a doubled one.</div>
+    <div class="fx"><b>Fix.</b> idempotency = (bank, account, UTR, amount, value date), UTR normalised; the statement reconciliation as the check.</div>
+    <div class="rf">§13 · §8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg money">money</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Money, with the statement</span></div></div>
+</div><div class="row" id="MO19">
+  <span class="id">MO19</span>
+  <div><div class="where">every clock</div><div class="t">IST and UTC day boundaries</div>
+    <div class="tr"><b>How.</b> ‘day 30’, ‘T-7’, ‘inside seven days’ and the FIRMS thirty days are computed in UTC by Supabase and in the org time zone by Zoho; a 23:30 IST credit lands ‘tomorrow’. <b>Then.</b> off-by-one deadlines at the edge, a forfeit a day early, a filing a day late.</div>
+    <div class="fx"><b>Fix.</b> every clock in Asia/Kolkata from the receipt event by one function; timestamptz stored, day arithmetic in IST.</div>
+    <div class="rf">§6 · §13 · §16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Clocks, computed here</span></div></div>
+</div>
+</section><section class="grp" id="g-DO">
+  <div class="sechead"><h2>DO · Documents, signing and approvals</h2><span class="note">13 modes · 2 near-certain</span></div>
+  <p class="lede">eMudhra, e-stamps, templates, and the six approvals that each resolve to one person.</p>
+  <div class="row" id="DO1">
+  <span class="id">DO1</span>
+  <div><div class="where">approvals</div><div class="t">One named approver, no delegation</div>
+    <div class="tr"><b>How.</b> six actions, one person each; absence halts sending, extension, lapse, bank change, reversal and erasure; nothing ages a pending approval. <b>Then.</b> the first leave day stops the portal.</div>
+    <div class="fx"><b>Fix.</b> ‘any one of’ approver groups with a named alternate; an ageing alert at two days.</div>
+    <div class="rf">§20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Paper and approvals</span></div></div>
+</div><div class="row" id="DO2">
+  <span class="id">DO2</span>
+  <div><div class="where">approvals</div><div class="t">The template changed after approval</div>
+    <div class="tr"><b>How.</b> approval sits on the Document row; sign-send resolves the emSigner template at send time. <b>Then.</b> an unapproved instrument gets signed.</div>
+    <div class="fx"><b>Fix.</b> refuse when template_version at send ≠ approved; immutable template versions.</div>
+    <div class="rf">§12 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="DO3">
+  <span class="id">DO3</span>
+  <div><div class="where">documents</div><div class="t">A re-issue while the first gets signed</div>
+    <div class="tr"><b>How.</b> ‘re-issue once under the same approval’ races a late callback or the ten-minute poll; two live copies break the one-copy rule, so the signed write is refused — or both get signed; an NDA re-send overwrites nda_emudhra_ref. <b>Then.</b> a halt, or two signed instruments.</div>
+    <div class="fx"><b>Fix.</b> cancel at eMudhra before re-issuing; signed wins and expires the other; NDA requests are rows, not a field.</div>
+    <div class="rf">§21 · §10 · §5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — webhook failure alert</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Paper and approvals</span></div></div>
+</div><div class="row" id="DO4">
+  <span class="id">DO4</span>
+  <div><div class="where">e-stamp / PoA</div><div class="t">A stamp reused, a PoA never registered</div>
+    <div class="tr"><b>How.</b> e_stamp_certificate is presence-checked text; a re-issue or a draft edited after stamping reuses it on a different instrument; the wet-ink PoA upload checks no duty and is verified by a click. <b>Then.</b> an instrument with the wrong stamp; a PoA that does not bind.</div>
+    <div class="fx"><b>Fix.</b> stamp after approval on the frozen PDF hash, single-use, bound to version, parties and consideration; dutiable uploads require it; PoA carries registration and witness fields.</div>
+    <div class="rf">§12 · §16 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="DO5">
+  <span class="id">DO5</span>
+  <div><div class="where">NDA / supplementary</div><div class="t">The signer is not the lead</div>
+    <div class="tr"><b>How.</b> eMudhra proves who held the Aadhaar or DSC; nothing compares the certificate name to the Lead or the KYC’d PAN; the NDA is verified by the provider’s completion alone. <b>Then.</b> the wrong counterparty; the wrong LLP partner.</div>
+    <div class="fx"><b>Fix.</b> fuzzy name match certificate ↔ Lead / KYC; a mismatch goes to review and is never auto-verified.</div>
+    <div class="rf">§2 · §12 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Paper and approvals</span></div></div>
+</div><div class="row" id="DO6">
+  <span class="id">DO6</span>
+  <div><div class="where">signing</div><div class="t">The signer cannot sign</div>
+    <div class="tr"><b>How.</b> a resident without an Aadhaar-linked mobile cannot Aadhaar-eSign; an NRI needs a Class 3 DSC that takes days and is still ‘to confirm’. <b>Then.</b> a halt at rung 4 for a share of every cohort.</div>
+    <div class="fx"><b>Fix.</b> a documented fallback mode per case — video-verified eSign, or notarised wet ink with the upload path — before phase 1.</div>
+    <div class="rf">§12 · D7 · Q18</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="DO7">
+  <span class="id">DO7</span>
+  <div><div class="where">eMudhra</div><div class="t">The callback is lost and there is no poller</div>
+    <div class="tr"><b>How.</b> the completion callback fails once (deploy, timeout, a changed URL); nothing polls; the document stays ‘sent’; a re-issue makes a second signed instrument. <b>Then.</b> stuck at rungs 2, 4 and 7; two signed copies.</div>
+    <div class="fx"><b>Fix.</b> the poller first, the callback as an accelerator; a Finance ‘fetch status’ action.</div>
+    <div class="rf">§12 · Q18</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Paper and approvals</span></div></div>
+</div><div class="row" id="DO8">
+  <span class="id">DO8</span>
+  <div><div class="where">eMudhra</div><div class="t">The callback body is trusted</div>
+    <div class="tr"><b>How.</b> a forged or replayed completion body sets signed. <b>Then.</b> ‘signed’ without a signature.</div>
+    <div class="fx"><b>Fix.</b> verify the signature and source, then re-fetch the request from eMudhra; only the fetched status counts.</div>
+    <div class="rf">§12</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="DO9">
+  <span class="id">DO9</span>
+  <div><div class="where">eMudhra</div><div class="t">Signed, PDF and hash are not atomic</div>
+    <div class="tr"><b>How.</b> status set to signed, then the PDF fetch or the attach fails. <b>Then.</b> an instrument the book calls signed with no file behind it.</div>
+    <div class="fx"><b>Fix.</b> fetch PDF → hash → attach → then status, in that order; the nightly hash job flags signed-without-file.</div>
+    <div class="rf">§12 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="DO10">
+  <span class="id">DO10</span>
+  <div><div class="where">eMudhra</div><div class="t">Credits exhausted behind a 200</div>
+    <div class="tr"><b>How.</b> the API answers 200 with a failure body when credits or quota are out. <b>Then.</b> sends that look sent.</div>
+    <div class="fx"><b>Fix.</b> parse the body’s status, never the HTTP code alone; a credit-balance canary.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div><div class="row" id="DO11">
+  <span class="id">DO11</span>
+  <div><div class="where">approvals</div><div class="t">An approval stuck on a deactivated approver</div>
+    <div class="tr"><b>How.</b> the approver leaves or is on leave; the record under approval is locked for edits. <b>Then.</b> every dependent action halts and the record cannot be moved.</div>
+    <div class="fx"><b>Fix.</b> approver roles, not names; reassignment on deactivation; the two-day ageing alert.</div>
+    <div class="rf">§20 · §4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Paper and approvals</span></div></div>
+</div><div class="row" id="DO12">
+  <span class="id">DO12</span>
+  <div><div class="where">backups</div><div class="t">Bulk Read has no attachments</div>
+    <div class="tr"><b>How.</b> the nightly export covers records; signed instruments exist only in Zoho and Zoho’s own backup; Object Lock protects hashes of files you cannot restore. <b>Then.</b> the one thing the business must be able to produce in court is the one thing the backup does not hold.</div>
+    <div class="fx"><b>Fix.</b> copy the signed PDF and certificate to S3 at signing — the one exception to D8 — and sample-restore quarterly.</div>
+    <div class="rf">§15 · D8 · Q19</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the quarterly drill</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="DO13">
+  <span class="id">DO13</span>
+  <div><div class="where">attachments</div><div class="t">Attachment storage full</div>
+    <div class="tr"><b>How.</b> Zoho attachment storage per seat fills; uploads answer an error the portal shows as ‘try again’. <b>Then.</b> uploads stop on a busy day.</div>
+    <div class="fx"><b>Fix.</b> a storage canary at 80 %; storage bought ahead.</div>
+    <div class="rf">§15 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div>
+</section><section class="grp" id="g-KY">
+  <div class="sechead"><h2>KY · KYC, FEMA and life events</h2><span class="note">8 modes · 1 near-certain</span></div>
+  <p class="lede">The checks nobody is named to collect, and the states the model does not have.</p>
+  <div class="row" id="KY1">
+  <span class="id">KY1</span>
+  <div><div class="where">rungs 3–7</div><div class="t">KYC has no step</div>
+    <div class="tr"><b>How.</b> PAN never exists in the Leads org; the Contact is created without it; ‘Contact created → verify PAN’ fires on null; nobody is named to collect PAN, Aadhaar and address before the supplementary needs them, and the app exists only from rung 5. <b>Then.</b> rung 7 unreachable; a failed-rule alert per handover.</div>
+    <div class="fx"><b>Fix.</b> a KYC step owned by Finance Ops or Compliance after Said yes with an app-less upload link; the rule fires on PAN entered.</div>
+    <div class="rf">§6 · §21 · §14</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — a failed-rule alert per handover — fatigue</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="KY2">
+  <span class="id">KY2</span>
+  <div><div class="where">KYC</div><div class="t">Aadhaar e-KYC without its consent</div>
+    <div class="tr"><b>How.</b> e-KYC runs at Contact creation ‘where the investor consents’, but the only consent on file is the lead’s capture consent. <b>Then.</b> an Aadhaar Act problem, or a silent skip.</div>
+    <div class="fx"><b>Fix.</b> specific consent captured in the KYC link flow, versioned.</div>
+    <div class="rf">§21 · §16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="KY3">
+  <span class="id">KY3</span>
+  <div><div class="where">post-allotment</div><div class="t">The freeze never reaches the bank</div>
+    <div class="tr"><b>How.</b> payouts go ‘to the beneficiary registered with the bank’; Books or a standing instruction ignores the frozen flag; ‘failed after allotment’ is reachable only by voluntary re-submission. <b>Then.</b> a payout to a frozen investor.</div>
+    <div class="fx"><b>Fix.</b> the payout run reads frozen as a hard precondition; no standing instructions; annual re-KYC; a payout-to-frozen invariant.</div>
+    <div class="rf">§10 · §13 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="KY4">
+  <span class="id">KY4</span>
+  <div><div class="where">capture</div><div class="t">Residency typed wrong, or changed</div>
+    <div class="tr"><b>How.</b> residency is typed by the IR and never verified; an NRI flagged resident gets no FEMA record, no DSC path and is allotted without FIRMS; emigration after allotment changes nothing. <b>Then.</b> a foreign investment with no filing.</div>
+    <div class="fx"><b>Fix.</b> residency confirmed at the KYC step from the documents; a residency change opens a Compliance item.</div>
+    <div class="rf">§2 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — discovered when eSign fails</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="KY5">
+  <span class="id">KY5</span>
+  <div><div class="where">FEMA</div><div class="t">The FIRC on the bank’s timetable</div>
+    <div class="tr"><b>How.</b> the FIRMS clock runs from receipt but the FIRC comes when the AD bank issues it; Q11’s sixty-day refund is itself a repatriation. <b>Then.</b> a late-submission fee; a halt at rung 7.</div>
+    <div class="fx"><b>Fix.</b> the FEMA record at the claim; a FIRC request task the same day; an LSF runbook.</div>
+    <div class="rf">§6 · Q11</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — the clock, at seven days</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Clocks, computed here</span></div></div>
+</div><div class="row" id="KY6">
+  <span class="id">KY6</span>
+  <div><div class="where">nominee / death</div><div class="t">States the model does not have</div>
+    <div class="tr"><b>How.</b> nominee fields carry no KYC, no guardian for a minor, no verification event; a death mid-hold lapses and forfeits against an estate and refunds to a frozen account; there is no Deceased or Paused state. <b>Then.</b> the worst letter the company will ever send.</div>
+    <div class="fx"><b>Fix.</b> a Paused (estate) state on Contact and Hold that stops clocks; nominee verification as a Request kind with guardian fields; resolve Q10 first.</div>
+    <div class="rf">§6 · Q10</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk rare">rare</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="KY7">
+  <span class="id">KY7</span>
+  <div><div class="where">Leads org</div><div class="t">Lead erasure has no owner</div>
+    <div class="tr"><b>How.</b> erasure(contact) is Compliance-only in the Investor org; a lead who never handed over has no path and no owner. <b>Then.</b> a DPDP ninety-day clock nobody sees.</div>
+    <div class="fx"><b>Fix.</b> erasure(lead) run by the manager or by Compliance with a Leads seat; the DPDP clock computed here.</div>
+    <div class="rf">§16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Clocks, computed here</span></div></div>
+</div><div class="row" id="KY8">
+  <span class="id">KY8</span>
+  <div><div class="where">KYC provider</div><div class="t">An outage or a changed response read as a verdict</div>
+    <div class="tr"><b>How.</b> the provider is down or changes its schema; a null result is read as failed (every check freezes) or as passed (every check passes). <b>Then.</b> a cohort frozen, or a cohort waved through.</div>
+    <div class="fx"><b>Fix.</b> provider results stored raw with a status enum where unknown ≠ passed ≠ failed; retries with backoff; an alert on the unknown rate.</div>
+    <div class="rf">§21 · Q24</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div>
+</section><section class="grp" id="g-CA">
+  <div class="sechead"><h2>CA · Care, requests and seats</h2><span class="note">7 modes · 3 near-certain</span></div>
+  <p class="lede">Where a request goes when its owner is gone, and what a Team seat can actually do.</p>
+  <div class="row" id="CA1">
+  <span class="id">CA1</span>
+  <div><div class="where">requests</div><div class="t">Routed to nobody</div>
+    <div class="tr"><b>How.</b> assignment to a deactivated user, the unseated BU Owner (Q6) or a pool account’s null KAM falls to Zoho’s default owner — the integration user or the rule’s creator. <b>Then.</b> a request nobody will ever open.</div>
+    <div class="fx"><b>Fix.</b> every route ends in a role queue with a fallback; a route resolving to the integration user is a failed rule and an alert.</div>
+    <div class="rf">§21 · §2</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — SLA escalation, if it fires</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Owners and acknowledgement</span></div></div>
+</div><div class="row" id="CA2">
+  <span class="id">CA2</span>
+  <div><div class="where">pool / intro</div><div class="t">Pool accounts are invisible</div>
+    <div class="tr"><b>How.</b> intro_at is the named KAM’s first care-log entry and the KAM’s day lists by KAM; one-unit investors are in no list; a template email that writes no care-log row leaves intro_at null. <b>Then.</b> investors nobody calls.</div>
+    <div class="fx"><b>Fix.</b> the pool is a named owner with its own cadence; template sends create the care entry; an allotted-no-intro view.</div>
+    <div class="rf">§6 · §20 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="CA3">
+  <span class="id">CA3</span>
+  <div><div class="where">leavers</div><div class="t">Reassignment is incomplete and sessions outlive the person</div>
+    <div class="tr"><b>How.</b> cases move to the Head of AM by runbook, but kam, care-log ownership and Requests received_by keep the leaver; no mover exists for the Head of AM; IR deactivation moves read-only Onboarded leads; the leaver’s portal session lasts eight more hours. <b>Then.</b> open work owned by a ghost; a leaver reading the mirror after lunch.</div>
+    <div class="fx"><b>Fix.</b> one deactivation function reassigning kam, Requests, Cases and open leads only; an alternate Head of AM; sessions bound to a live token check or capped at fifteen minutes.</div>
+    <div class="rf">§15 · §21 · §4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Owners and acknowledgement</span></div></div>
+</div><div class="row" id="CA4">
+  <span class="id">CA4</span>
+  <div><div class="where">seats</div><div class="t">The KAM on a Team seat</div>
+    <div class="tr"><b>How.</b> §2 has KAMs writing details of their own book; §4 gives no create or update on Contacts; conversion is one-way; Team users may not see org-module Contacts or use the API. <b>Then.</b> a halt on the KAM’s first day, or a seat bought twice.</div>
+    <div class="fx"><b>Fix.</b> prove the KAM’s whole day on a Team seat in the sandbox, API included, before buying.</div>
+    <div class="rf">§4 · Q16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — at build</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="CA5">
+  <span class="id">CA5</span>
+  <div><div class="where">SLA</div><div class="t">Weekends and escalation loops</div>
+    <div class="tr"><b>How.</b> CRM Cases have no business-hours SLA; a Friday request breaches on Sunday; ‘escalate at breach’ re-assigns, which re-fires routing. <b>Then.</b> duplicate acknowledgements; a loop.</div>
+    <div class="fx"><b>Fix.</b> business-hours SLA in the portal; escalation sets a flag and never re-assigns; one acknowledgement per app_request_id.</div>
+    <div class="rf">§21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="CA6">
+  <span class="id">CA6</span>
+  <div><div class="where">consent</div><div class="t">Withdrawal and erasure are ignored</div>
+    <div class="tr"><b>How.</b> withdrawn_at sits on marketing; care calls, gone-quiet, Cadence steps and hold or FEMA reminders never read it; a masked Contact keeps resurfacing. <b>Then.</b> messages to someone who withdrew; a DPDP breach.</div>
+    <div class="fx"><b>Fix.</b> every view and rule filters on purpose consent and lifecycle; erasure moves the Contact to a terminal state nothing selects; a sends-to-withdrawn invariant.</div>
+    <div class="rf">§6 · §16 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="CA7">
+  <span class="id">CA7</span>
+  <div><div class="where">app → portal</div><div class="t">A request the app calls sent</div>
+    <div class="tr"><b>How.</b> the app writes a request to the outbox; on a retry the Investor-org Case is created twice, and when the seam is down the app still says ‘sent’. <b>Then.</b> two cases, or none, behind a green tick.</div>
+    <div class="fx"><b>Fix.</b> app_request_id idempotent at the inbox; the app shows ‘received’ only from the mirrored Case row.</div>
+    <div class="rf">§11 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — outbox stalled</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Outbox age and order</span></div></div>
+</div>
+</section><section class="grp" id="g-AU">
+  <div class="sechead"><h2>AU · Automation honesty</h2><span class="note">8 modes · 1 near-certain</span></div>
+  <p class="lede">Rules that fire on history, consequences with two actors, caps that fail open.</p>
+  <div class="row" id="AU1">
+  <span class="id">AU1</span>
+  <div><div class="where">cutover</div><div class="t">Rules fire on the backfill</div>
+    <div class="tr"><b>How.</b> existing investors from the Growize Main DB must be created in the Investor org and no phase in §17 does it; API creates fire PAN, penny-drop and Aadhaar checks, holds, welcomes, acknowledgements and pushes for every historic row. <b>Then.</b> wrong states, mass mail, provider bills, and a week of cleanup.</div>
+    <div class="fx"><b>Fix.</b> a migration phase with workflows suspended, rules re-enabled after post-migration assertions.</div>
+    <div class="rf">§17 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="AU2">
+  <span class="id">AU2</span>
+  <div><div class="where">duplicate mechanisms</div><div class="t">Two actors per consequence</div>
+    <div class="tr"><b>How.</b> the acknowledgement is sent by the bank-webhook function (§21) and by a workflow on matched receipt (§20); the hold by §13’s receipt and §21’s rule; account.opened by both. <b>Then.</b> two emails, two Holds, two invites.</div>
+    <div class="fx"><b>Fix.</b> one actor per consequence, as a fact → actor table in the book.</div>
+    <div class="rf">§13 · §20 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="AU3">
+  <span class="id">AU3</span>
+  <div><div class="where">touches</div><div class="t">Cadence sends are not system touches</div>
+    <div class="tr"><b>How.</b> Cadence sends from the person’s mailbox and lands on the record’s Emails list; nothing writes a Touch with by = system. <b>Then.</b> a funnel that counts robot mail as conversations.</div>
+    <div class="fx"><b>Fix.</b> Touches are the only counted source; Cadence steps write by = system; a nightly test that no human Touch carries a rule id.</div>
+    <div class="rf">§20 · Q23</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="AU4">
+  <span class="id">AU4</span>
+  <div><div class="where">reminders</div><div class="t">Over-reminding, then dropped sends</div>
+    <div class="tr"><b>How.</b> captured T-1, gone-quiet, NDA-7-days, Cadence and the Monday digest hit one IR; hold T-7 and T-1 plus FEMA hit one investor; workflow email quotas then drop later sends. <b>Then.</b> fatigue, then silence on the send that mattered.</div>
+    <div class="fx"><b>Fix.</b> one reminder per record per day through a suppression table; quota monitoring.</div>
+    <div class="rf">§21 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div><div class="row" id="AU5">
+  <span class="id">AU5</span>
+  <div><div class="where">rules</div><div class="t">The rule’s owner leaves</div>
+    <div class="tr"><b>How.</b> workflow emails from a deactivated sender and Deluge functions authored by a deactivated user fail; the honesty rules require an owner, not a successor. <b>Then.</b> unit checks, document counts and gate webhooks stop quietly.</div>
+    <div class="fx"><b>Fix.</b> rules and functions owned by a service administrator identity; ownership recorded in the repo.</div>
+    <div class="rf">§21 · D18</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — only if the failure notice is read</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Owners and acknowledgement</span></div></div>
+</div><div class="row" id="AU6">
+  <span class="id">AU6</span>
+  <div><div class="where">caps</div><div class="t">Custom-function and workflow caps fail open</div>
+    <div class="tr"><b>How.</b> the invariants (unit checks, gate guards) live in functions with daily execution caps; on an event day the cap is hit and the rule simply does not run. <b>Then.</b> the guard that was supposed to refuse says nothing.</div>
+    <div class="fx"><b>Fix.</b> every invariant enforced in the portal backend as well, never only in a function; a cap canary; a capped rule fails closed where Zoho allows it.</div>
+    <div class="rf">§10 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div><div class="row" id="AU7">
+  <span class="id">AU7</span>
+  <div><div class="where">fields</div><div class="t">A rename nulls the mapper</div>
+    <div class="tr"><b>How.</b> a field’s API name changes, a field is deleted or relabelled, a picklist value is renamed; the mapper reads null and writes null. <b>Then.</b> a column that goes blank across the mirror overnight.</div>
+    <div class="fx"><b>Fix.</b> the mapper validated nightly against both orgs’ field lists; an unknown or missing field is an alert; the customisation export diffed on every change.</div>
+    <div class="rf">§9 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Identity and drift scan</span></div></div>
+</div><div class="row" id="AU8">
+  <span class="id">AU8</span>
+  <div><div class="where">Send Mail</div><div class="t">The hundred-a-day cap</div>
+    <div class="tr"><b>How.</b> Send Mail is capped at 100 emails a day per user; statement day exceeds it; consent flags and bounce flags refuse others. <b>Then.</b> sends that fail late in the afternoon, after Finance has moved on.</div>
+    <div class="fx"><b>Fix.</b> bulk goes through a workflow or Campaigns path, or is batched across days by the portal; a quota canary at 70 %.</div>
+    <div class="rf">§20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the sender sees an error</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div>
+</section><section class="grp" id="g-OA">
+  <div class="sechead"><h2>OA · Sessions, tokens and administrators</h2><span class="note">13 modes · 2 near-certain</span></div>
+  <p class="lede">OAuth, the integration user, the one Super administrator, and the unresolved BU Owner.</p>
+  <div class="row" id="OA1">
+  <span class="id">OA1</span>
+  <div><div class="where">OAuth</div><div class="t">An access token minted per call</div>
+    <div class="tr"><b>How.</b> each portal call refreshes an access token; Zoho rate-limits refreshes per client. <b>Then.</b> a 4xx storm on the first busy morning.</div>
+    <div class="fx"><b>Fix.</b> access tokens cached per user until expiry in the token store.</div>
+    <div class="rf">§4 · §8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — errors in the log</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="OA2">
+  <span class="id">OA2</span>
+  <div><div class="where">OAuth</div><div class="t">Refresh tokens silently capped</div>
+    <div class="tr"><b>How.</b> every login with prompt = consent mints a new refresh token; Zoho caps refresh tokens per client per user and silently revokes the oldest. <b>Then.</b> a user whose writes fail after a colleague’s login.</div>
+    <div class="fx"><b>Fix.</b> one refresh token per user, stored once; login reuses it; an alert on refresh failure.</div>
+    <div class="rf">§4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the user’s next write fails</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="OA3">
+  <span class="id">OA3</span>
+  <div><div class="where">OAuth</div><div class="t">Revocation or a regenerated secret with no alert</div>
+    <div class="tr"><b>How.</b> a client secret is regenerated in the Zoho console; a user revokes the app; nothing watches the refresh path. <b>Then.</b> every write from that user dead-letters until someone looks.</div>
+    <div class="fx"><b>Fix.</b> a refresh-failure canary; the secret in Vault; a rotation runbook.</div>
+    <div class="rf">§4 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="OA4">
+  <span class="id">OA4</span>
+  <div><div class="where">integration user</div><div class="t">The integration token dies</div>
+    <div class="tr"><b>How.</b> the integration user’s password is reset, its token revoked or the user deactivated. <b>Then.</b> every system write dead-letters.</div>
+    <div class="fx"><b>Fix.</b> an integration-token health probe every five minutes.</div>
+    <div class="rf">§4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — outbox stalled</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="OA5">
+  <span class="id">OA5</span>
+  <div><div class="where">sessions</div><div class="t">Deactivated staff keep eight-hour sessions</div>
+    <div class="tr"><b>How.</b> Zoho deactivation ends portal access ‘at the next refresh’; the mirror session lasts the day. <b>Then.</b> a leaver reading investor data after being walked out.</div>
+    <div class="fx"><b>Fix.</b> the session is bound to a live token check, or capped at fifteen minutes; a deactivation webhook revokes sessions.</div>
+    <div class="rf">§4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="OA6">
+  <span class="id">OA6</span>
+  <div><div class="where">OAuth</div><div class="t">A scope added later</div>
+    <div class="tr"><b>How.</b> Send Mail (§20) and any scope added after launch require every user to re-consent; until then those calls answer 401. <b>Then.</b> a feature that fails for everyone who has not logged in again.</div>
+    <div class="fx"><b>Fix.</b> every scope §20 and §21 need declared at the start; a re-consent banner when a token lacks one.</div>
+    <div class="rf">§4 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the user’s error</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="OA7">
+  <span class="id">OA7</span>
+  <div><div class="where">data centre</div><div class="t">The wrong accounts host</div>
+    <div class="tr"><b>How.</b> the org is on zoho.in while its profile country reads US; a client built against accounts.zoho.com answers invalid_client. <b>Then.</b> nothing logs in.</div>
+    <div class="fx"><b>Fix.</b> the DC from the token response’s api_domain, asserted at start-up.</div>
+    <div class="rf">§3 · §4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — at build</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="OA8">
+  <span class="id">OA8</span>
+  <div><div class="where">SDK</div><div class="t">The Node SDK on Deno</div>
+    <div class="tr"><b>How.</b> the Zoho Node SDK assumes Node; edge functions run Deno. <b>Then.</b> a rewrite in week two.</div>
+    <div class="fx"><b>Fix.</b> REST calls with a small token store, or the SDK in a Node worker outside the edge.</div>
+    <div class="rf">§4 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — at build</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="OA9">
+  <span class="id">OA9</span>
+  <div><div class="where">secrets</div><div class="t">A debug route or the service key in a client build</div>
+    <div class="tr"><b>How.</b> a debug endpoint survives to production; a service_role key ships in the app bundle. <b>Then.</b> every investor’s row readable.</div>
+    <div class="fx"><b>Fix.</b> no debug routes in production; a secrets scan in CI; key rotation on the day it is found.</div>
+    <div class="rf">§7 · §9</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="OA10">
+  <span class="id">OA10</span>
+  <div><div class="where">integration user</div><div class="t">The tempting shared login</div>
+    <div class="tr"><b>How.</b> its token sets gate columns and states; ‘no human ever acts through it’ is policy; every fix-by-script is a human acting as the system. <b>Then.</b> attribution lost exactly where it matters; a licence question.</div>
+    <div class="fx"><b>Fix.</b> the token only in the backend; a break-glass function with a reason and a log; an alert on integration writes outside function windows.</div>
+    <div class="rf">§4 · §5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — Zoho shows only ‘integration’</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="OA11">
+  <span class="id">OA11</span>
+  <div><div class="where">grants</div><div class="t">A grant outside the line</div>
+    <div class="tr"><b>How.</b> staff_grants opens mirror pages the Zoho role would refuse; a manager grants outside their line; Zoho never sees it. <b>Then.</b> access with no record in the system of record.</div>
+    <div class="fx"><b>Fix.</b> grants only within the granter’s line, mirrored as a temporary Zoho role change or refused.</div>
+    <div class="rf">§4</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — reveal_log covers reveals only</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="OA12">
+  <span class="id">OA12</span>
+  <div><div class="where">administrators</div><div class="t">One Super administrator</div>
+    <div class="tr"><b>How.</b> one person approves lock reversals and owns templates, OAuth clients and integration users; absence halts, departure needs Zoho’s transfer procedure. <b>Then.</b> the org has a single point of failure with a phone.</div>
+    <div class="fx"><b>Fix.</b> two Super administrators per org; vaulted credentials; approver is a role.</div>
+    <div class="rf">§2 · §20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Owners and acknowledgement</span></div></div>
+</div><div class="row" id="OA13">
+  <span class="id">OA13</span>
+  <div><div class="where">BU Owner</div><div class="t">Q6 unresolved at build</div>
+    <div class="tr"><b>How.</b> an approval process needs an approver at save; the builder picks the Head of Finance, who then prepares and approves lapse, forfeit and refund — or picks nobody and extensions halt. <b>Then.</b> maker-checker broken by construction, or a halt.</div>
+    <div class="fx"><b>Fix.</b> decide Q6 in phase 0; approval rules assert approver ≠ submitter.</div>
+    <div class="rf">§20 · Q6</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div>
+</section><section class="grp" id="g-MI">
+  <div class="sechead"><h2>MI · The mirror and the reconcile</h2><span class="note">15 modes · 4 near-certain</span></div>
+  <p class="lede">What the write-through cannot see, what the nightly diff cannot compare, and what a view can expose.</p>
+  <div class="row" id="MI1">
+  <span class="id">MI1</span>
+  <div><div class="where">write-through</div><div class="t">The write response lacks computed fields</div>
+    <div class="tr"><b>How.</b> Zoho’s create/update response omits formula fields, auto-numbers and workflow-set values; the write-through mirrors a partial record; the ARL code arrives only on the next GET. <b>Then.</b> the app shows a record with blanks until the nightly diff.</div>
+    <div class="fx"><b>Fix.</b> a GET after any write to a module with formulas, auto-numbers or workflows; the mirror row carries complete = false until the GET lands.</div>
+    <div class="rf">§8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the nightly diff</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MI2">
+  <span class="id">MI2</span>
+  <div><div class="where">resync</div><div class="t">The resync queue lives in the database that just failed</div>
+    <div class="tr"><b>How.</b> step 4 fails because the project is down; the resync row cannot be written either. <b>Then.</b> a write that reached Zoho and never reaches the mirror.</div>
+    <div class="fx"><b>Fix.</b> the Zoho-side webhook is the second path; a resync-age canary; on recovery, the reconcile runs once by hand.</div>
+    <div class="rf">§8 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Outbox age and order</span></div></div>
+</div><div class="row" id="MI3">
+  <span class="id">MI3</span>
+  <div><div class="where">retries</div><div class="t">A retry with a new event_id</div>
+    <div class="tr"><b>How.</b> the client mints a new event_id on retry; the same touch or receipt is written twice. <b>Then.</b> touch counts and receipts inflated.</div>
+    <div class="fx"><b>Fix.</b> the client-minted event_id is reused across retries of the same action.</div>
+    <div class="rf">§8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="MI4">
+  <span class="id">MI4</span>
+  <div><div class="where">ordering</div><div class="t">Out-of-order upserts</div>
+    <div class="tr"><b>How.</b> Modified_Time resolves to one second; a webhook and a write-through for the same record interleave; the older state overwrites the newer. <b>Then.</b> a state that flips back for a night.</div>
+    <div class="fx"><b>Fix.</b> compare-and-set on Modified_Time plus a version counter; equal timestamps re-GET.</div>
+    <div class="rf">§8 · §9</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MI5">
+  <span class="id">MI5</span>
+  <div><div class="where">mapper</div><div class="t">Partial payloads merged as whole</div>
+    <div class="tr"><b>How.</b> a webhook carries a subset of fields; the mapper cannot tell absent from null and nulls the rest. <b>Then.</b> columns blanked by a partial update.</div>
+    <div class="fx"><b>Fix.</b> the mapper distinguishes absent from null and merges per field; a test per module.</div>
+    <div class="rf">§9</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="MI6">
+  <span class="id">MI6</span>
+  <div><div class="where">views</div><div class="t">A materialised view refreshed per write</div>
+    <div class="tr"><b>How.</b> every write-through refreshes the read model; on an event day the refresh locks and the writes queue. <b>Then.</b> the portal slows to a crawl on the day it matters.</div>
+    <div class="fx"><b>Fix.</b> plain views, or a scheduled refresh; a load test in phase 6.</div>
+    <div class="rf">§9 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="MI7">
+  <span class="id">MI7</span>
+  <div><div class="where">mapper</div><div class="t">A deny-list mapper leaks the next field</div>
+    <div class="tr"><b>How.</b> the mapper strips named identity fields; anyone adding a field to Zoho (a second PAN field, a note with an address) is mirrored into jsonb by default. <b>Then.</b> identity in the mirror — the leak the portal was built to close.</div>
+    <div class="fx"><b>Fix.</b> an allow-list mapper; a nightly PII scan of every jsonb column and the event archive.</div>
+    <div class="rf">§9 · §14</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span><span class="tg legal">legal</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Identity and drift scan</span></div></div>
+</div><div class="row" id="MI8">
+  <span class="id">MI8</span>
+  <div><div class="where">reconcile</div><div class="t">False diffs and alert fatigue</div>
+    <div class="tr"><b>How.</b> timestamp-only and formatting differences count as diffs; the same record alerts nightly; the precedent is 5,890 rows nobody read. <b>Then.</b> the real diff hides in the noise.</div>
+    <div class="fx"><b>Fix.</b> the diff ignores timestamp-only and formatting changes; one alert per record per day; alerts on counts with a fatigue budget.</div>
+    <div class="rf">§9 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — it is the alert</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MI9">
+  <span class="id">MI9</span>
+  <div><div class="where">reconcile</div><div class="t">The forty-eight-hour window</div>
+    <div class="tr"><b>How.</b> the reconcile compares records modified in the last two days; a change older than that which never arrived is invisible forever. <b>Then.</b> a stale row that never heals.</div>
+    <div class="fx"><b>Fix.</b> a weekly full-module count and hash comparison; a monthly full pass.</div>
+    <div class="rf">§9</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MI10">
+  <span class="id">MI10</span>
+  <div><div class="where">reconcile</div><div class="t">The reconcile exceeds the function limits</div>
+    <div class="tr"><b>How.</b> the nightly reconcile over thousands of records runs in an edge function with CPU-time and wall-clock limits; it stops mid-way, every night. <b>Then.</b> a partial reconcile that reports success.</div>
+    <div class="fx"><b>Fix.</b> a real runner — pg_cron in batches, or a small worker — and the dead-man heartbeat.</div>
+    <div class="rf">§9 · §15 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Dead-man heartbeat</span></div></div>
+</div><div class="row" id="MI11">
+  <span class="id">MI11</span>
+  <div><div class="where">views</div><div class="t">A view without security_invoker</div>
+    <div class="tr"><b>How.</b> views over the mirror run with the owner’s privileges; RLS on the tables underneath is bypassed and an investor’s query sees every investor. <b>Then.</b> every investor’s holdings readable by any investor.</div>
+    <div class="fx"><b>Fix.</b> security_invoker = true on every view; an RLS test per view in CI.</div>
+    <div class="rf">§7 · §9</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="MI12">
+  <span class="id">MI12</span>
+  <div><div class="where">views</div><div class="t">Under-exposure that looks like staleness</div>
+    <div class="tr"><b>How.</b> a filter bug hides rows; the app says ‘being updated’ and the investor waits for a sync that already happened. <b>Then.</b> a support ticket the reconcile cannot explain.</div>
+    <div class="fx"><b>Fix.</b> count invariants per investor against Zoho; a fail-closed reason code the System page shows.</div>
+    <div class="rf">§9 · E2</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MI13">
+  <span class="id">MI13</span>
+  <div><div class="where">deletions</div><div class="t">Deletions, merges and restores never mirrored</div>
+    <div class="tr"><b>How.</b> a record deleted or merged in Zoho stays in the mirror; a recycle-bin restore brings back a stale copy. <b>Then.</b> a ghost investor in the app.</div>
+    <div class="fx"><b>Fix.</b> a nightly sweep of the deleted-records endpoint; mirror rows tombstoned; merges resolved by lead_uuid.</div>
+    <div class="rf">§9</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="MI14">
+  <span class="id">MI14</span>
+  <div><div class="where">two projects</div><div class="t">The projects drift</div>
+    <div class="tr"><b>How.</b> migrations, extensions and settings diverge between the leads and investors projects; a fix lands in one. <b>Then.</b> the seam’s two ends disagree on a schema.</div>
+    <div class="fx"><b>Fix.</b> one migrations repo with shared modules; CI applies to both; a nightly drift check.</div>
+    <div class="rf">§7 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Identity and drift scan</span></div></div>
+</div><div class="row" id="MI15">
+  <span class="id">MI15</span>
+  <div><div class="where">app builds</div><div class="t">Old builds read a new payload</div>
+    <div class="tr"><b>How.</b> a read-model column changes shape; a build that has not updated renders it wrong. <b>Then.</b> wrong figures on a phone that skipped an update.</div>
+    <div class="fx"><b>Fix.</b> schema_version on every read model; the latest-app-version gate refuses older builds on money screens.</div>
+    <div class="rf">§9 · §7</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div>
+</section><section class="grp" id="g-SE">
+  <div class="sechead"><h2>SE · The seam — outbox, webhooks, idempotency</h2><span class="note">12 modes · 1 near-certain</span></div>
+  <p class="lede">The plumbing between two orgs and two projects, and the alerts it produces about itself.</p>
+  <div class="row" id="SE1">
+  <span class="id">SE1</span>
+  <div><div class="where">pg_cron / pg_net</div><div class="t">The workers stop silently</div>
+    <div class="tr"><b>How.</b> after a restore, an upgrade, a crash or a job that errors in a loop, the cron worker or the pg_net worker stops; the outbox, the reconcile and every scheduled canary stop with it. <b>Then.</b> nothing moves and nothing says so.</div>
+    <div class="fx"><b>Fix.</b> the dead-man heartbeat off-platform; a cron last-run canary.</div>
+    <div class="rf">§8 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Dead-man heartbeat</span></div></div>
+</div><div class="row" id="SE2">
+  <span class="id">SE2</span>
+  <div><div class="where">alerts</div><div class="t">The alerts are produced by what they watch</div>
+    <div class="tr"><b>How.</b> the six alerts run on pg_cron in the project they monitor; when that dies, so do they. <b>Then.</b> the one failure that hides all the others.</div>
+    <div class="fx"><b>Fix.</b> an external heartbeat monitor on a second provider that expects pings; silence pages a person.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Dead-man heartbeat</span></div></div>
+</div><div class="row" id="SE3">
+  <span class="id">SE3</span>
+  <div><div class="where">HMAC</div><div class="t">Key rotation dead-letters everything</div>
+    <div class="tr"><b>How.</b> both sides must roll the seam secret at once; a mismatch fails every signature. <b>Then.</b> the seam stops during a rotation.</div>
+    <div class="fx"><b>Fix.</b> two active keys (kid) during rotation; the runbook.</div>
+    <div class="rf">§11 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — webhook failures</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Outbox age and order</span></div></div>
+</div><div class="row" id="SE4">
+  <span class="id">SE4</span>
+  <div><div class="where">HMAC</div><div class="t">Replay</div>
+    <div class="tr"><b>How.</b> no timestamp or nonce in the signed body; a captured event can be re-applied. <b>Then.</b> a repeated money.confirmed.</div>
+    <div class="fx"><b>Fix.</b> timestamp and event_id inside the signed body; the inbox rejects seen ids and stale timestamps.</div>
+    <div class="rf">§11</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span><span class="tg money">money</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="SE5">
+  <span class="id">SE5</span>
+  <div><div class="where">Zoho webhook</div><div class="t">The payload is trusted</div>
+    <div class="tr"><b>How.</b> the workflow webhook carries a static token; a forged or stale payload is written to the mirror. <b>Then.</b> the mirror says what an attacker or a late delivery says.</div>
+    <div class="fx"><b>Fix.</b> the webhook is a hint: re-GET the record with the integration token and write that; never the payload.</div>
+    <div class="rf">§9 · §11</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="SE6">
+  <span class="id">SE6</span>
+  <div><div class="where">idempotency</div><div class="t">A key from (record_id, Modified_Time)</div>
+    <div class="tr"><b>How.</b> two changes inside one second share the key; the second is dropped as a duplicate. <b>Then.</b> a lost update every busy minute.</div>
+    <div class="fx"><b>Fix.</b> key on Zoho’s notification id plus a payload hash; re-GET regardless.</div>
+    <div class="rf">§8 · §11</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="SE7">
+  <span class="id">SE7</span>
+  <div><div class="where">timeouts</div><div class="t">Timeout, then success</div>
+    <div class="tr"><b>How.</b> Zoho applied the write, the portal saw a timeout and retried; two Receipts, two Documents, two Touches. <b>Then.</b> duplicates on the module that carries money.</div>
+    <div class="fx"><b>Fix.</b> event_id unique on every custom module; before a retry, search by event_id.</div>
+    <div class="rf">§8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg money">money</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="SE8">
+  <span class="id">SE8</span>
+  <div><div class="where">dead letters</div><div class="t">Nobody drains the dead-letter queue</div>
+    <div class="tr"><b>How.</b> 5xx after three attempts dead-letters; the queue grows; the alert fires once and is muted. <b>Then.</b> facts that never arrive, ageing quietly.</div>
+    <div class="fx"><b>Fix.</b> the dead-letter queue has an owner; backoff retries for twenty-four hours on 5xx and 429; an alert on age, not count.</div>
+    <div class="rf">§8 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — outbox stalled, once</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Outbox age and order</span></div></div>
+</div><div class="row" id="SE9">
+  <span class="id">SE9</span>
+  <div><div class="where">loops</div><div class="t">A seam loop</div>
+    <div class="tr"><b>How.</b> an inbound event writes Zoho, whose webhook re-emits, which re-writes; each pass costs credits. <b>Then.</b> a credit budget burned by a loop overnight.</div>
+    <div class="fx"><b>Fix.</b> an origin tag on events; the mapper ignores its own writes (Modified_By = integration ∧ origin = seam).</div>
+    <div class="rf">§11 · §8</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — API budget</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div><div class="row" id="SE10">
+  <span class="id">SE10</span>
+  <div><div class="where">event days</div><div class="t">The thundering herd</div>
+    <div class="tr"><b>How.</b> quarter-end and launch days hit 20 concurrent calls, the credit budget and the workflow caps together. <b>Then.</b> queues, refusals and capped rules on the busiest day.</div>
+    <div class="fx"><b>Fix.</b> an outbox rate limiter; batched touch writes; a slow-mode banner; credits bought ahead.</div>
+    <div class="rf">§8 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg cost">cost</span></div>
+    <div><span class="k">seen today by</span><span class="da">alert</span> — API budget</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div><div class="row" id="SE11">
+  <span class="id">SE11</span>
+  <div><div class="where">recovery</div><div class="t">The outbox drains out of order</div>
+    <div class="tr"><b>How.</b> after an outage the outbox drains in arbitrary order; an older fact overwrites a newer column. <b>Then.</b> a state that steps back after a recovery.</div>
+    <div class="fx"><b>Fix.</b> per-record ordering in the outbox (a sequence per aggregate); compare-and-set on write.</div>
+    <div class="rf">§8 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk rare">rare</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="SE12">
+  <span class="id">SE12</span>
+  <div><div class="where">inbox</div><div class="t">An inbox that accepts unsigned calls</div>
+    <div class="tr"><b>How.</b> a debug path or a misconfiguration leaves the inbox reachable without HMAC. <b>Then.</b> anyone can post an event.</div>
+    <div class="fx"><b>Fix.</b> the inbox requires HMAC always; a CI test that an unsigned call answers 401.</div>
+    <div class="rf">§11</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div>
+</section><section class="grp" id="g-PL">
+  <div class="sechead"><h2>PL · Platform, keys and backups</h2><span class="note">15 modes · 6 near-certain</span></div>
+  <p class="lede">Supabase limits, KMS, S3 and Object Lock, and the licence that lapses on 13 September.</p>
+  <div class="row" id="PL1">
+  <span class="id">PL1</span>
+  <div><div class="where">edge functions</div><div class="t">The nightly jobs die in an edge function</div>
+    <div class="tr"><b>How.</b> the reconcile, the export, the hash job and the archiver are written as edge functions; CPU-time and wall-clock limits kill them; no runner is named in the book. <b>Then.</b> every nightly job partial, every night.</div>
+    <div class="fx"><b>Fix.</b> a job runner: pg_cron in batches with pg_net, or a small worker; the dead-man heartbeat.</div>
+    <div class="rf">§15 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Dead-man heartbeat</span></div></div>
+</div><div class="row" id="PL2">
+  <span class="id">PL2</span>
+  <div><div class="where">compute</div><div class="t">Saturation on event days</div>
+    <div class="tr"><b>How.</b> Micro compute with pg_cron, the reconcile, the app and both portals; the pooler exhausts; reads time out. <b>Then.</b> the app is down on launch day.</div>
+    <div class="fx"><b>Fix.</b> Small compute from the start; the pooler; a load test in phase 6; a headroom canary.</div>
+    <div class="rf">§3 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="PL3">
+  <span class="id">PL3</span>
+  <div><div class="where">restore</div><div class="t">The restore lacks cron, secrets and extensions</div>
+    <div class="tr"><b>How.</b> pg_dump carries the schema and the data, not the cron jobs, Vault secrets, extension settings or storage buckets. <b>Then.</b> a restore that comes up dead.</div>
+    <div class="fx"><b>Fix.</b> cron jobs, secrets and settings in the ops repo as migrations; a restore checklist walked quarterly.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — the first drill</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="PL4">
+  <span class="id">PL4</span>
+  <div><div class="where">PITR</div><div class="t">The leads project has no PITR</div>
+    <div class="tr"><b>How.</b> a bad migration or a script wipes the leads project at 14:00; the audit trail between the nightly dumps is gone. <b>Then.</b> a day of touches and gate history lost.</div>
+    <div class="fx"><b>Fix.</b> PITR on both projects (D19).</div>
+    <div class="rf">§15 · D14</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="PL5">
+  <span class="id">PL5</span>
+  <div><div class="where">KMS</div><div class="t">The key is unreachable or scheduled for deletion</div>
+    <div class="tr"><b>How.</b> AWS KMS is unreachable, the key policy changes, or a CMK is scheduled for deletion (a waiting period, then unrecoverable). <b>Then.</b> no reveals, no decrypts — and if the key is gone, no bank details ever again.</div>
+    <div class="fx"><b>Fix.</b> deletion protection and a multi-region key; a KMS decrypt probe; the waiting period documented in the runbook.</div>
+    <div class="rf">§14 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk rare">rare</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="PL6">
+  <span class="id">PL6</span>
+  <div><div class="where">Auth email</div><div class="t">The built-in email throttle at cutover</div>
+    <div class="tr"><b>How.</b> Supabase’s built-in email is rate-limited to a handful an hour and meant for testing; the cutover invites hundreds. <b>Then.</b> invites that never arrive.</div>
+    <div class="fx"><b>Fix.</b> custom SMTP before phase 5; invites batched.</div>
+    <div class="rf">§7 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="PL7">
+  <span class="id">PL7</span>
+  <div><div class="where">billing</div><div class="t">A lapsed card</div>
+    <div class="tr"><b>How.</b> the Supabase or AWS card expires; the project is restricted or the bucket locked. <b>Then.</b> a platform outage with a receipt.</div>
+    <div class="fx"><b>Fix.</b> billing alerts; two payment methods; card expiry in the clock canary.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Clocks, computed here</span></div></div>
+</div><div class="row" id="PL8">
+  <span class="id">PL8</span>
+  <div><div class="where">backups</div><div class="t">The backup did not land</div>
+    <div class="tr"><b>How.</b> the S3 object is missing or zero bytes; the job ran, the upload failed, nobody looks. <b>Then.</b> the exit that does not exist.</div>
+    <div class="fx"><b>Fix.</b> a backup canary: object age and size per source, every morning.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div><div class="row" id="PL9">
+  <span class="id">PL9</span>
+  <div><div class="where">Object Lock</div><div class="t">Object Lock versus erasure</div>
+    <div class="tr"><b>How.</b> compliance-mode backups hold cleartext for a year; a DPDP erasure cannot reach them. <b>Then.</b> an erasure the company cannot honour.</div>
+    <div class="fx"><b>Fix.</b> per-investor data keys (crypto-shredding) or a documented retention exception in the notice; backups under envelope keys.</div>
+    <div class="rf">§15 · §16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="PL10">
+  <span class="id">PL10</span>
+  <div><div class="where">Bulk Read</div><div class="t">Encrypted fields exported in the clear</div>
+    <div class="tr"><b>How.</b> the export runs under the integration user, which reads encrypted fields; the nightly Bulk Read writes PAN and bank fields to S3 in cleartext — or omits them and the backup is incomplete. <b>Then.</b> identity in a bucket, or a ledger without its identities.</div>
+    <div class="fx"><b>Fix.</b> the export strips encrypted fields; PAN and bank in backups only under the envelope key; a PII scan of the export.</div>
+    <div class="rf">§14 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Identity and drift scan</span></div></div>
+</div><div class="row" id="PL11">
+  <span class="id">PL11</span>
+  <div><div class="where">KMS</div><div class="t">Cross-account key drift</div>
+    <div class="tr"><b>How.</b> the S3 account’s key policy changes; backups keep writing and can no longer be read. <b>Then.</b> a year of unreadable backups.</div>
+    <div class="fx"><b>Fix.</b> a quarterly decrypt test of a sampled object.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk rare">rare</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="PL12">
+  <span class="id">PL12</span>
+  <div><div class="where">S3 keys</div><div class="t">Long-lived keys in a function secret</div>
+    <div class="tr"><b>How.</b> an access key in a function secret never rotates. <b>Then.</b> a bucket readable by whoever finds the key.</div>
+    <div class="fx"><b>Fix.</b> short-lived credentials (OIDC) or rotation on a schedule.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg security">security</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="PL13">
+  <span class="id">PL13</span>
+  <div><div class="where">event archive</div><div class="t">Identity in the archive</div>
+    <div class="tr"><b>How.</b> event payloads carry names, UTRs and addresses into an immutable archive. <b>Then.</b> PII that Object Lock keeps for a year.</div>
+    <div class="fx"><b>Fix.</b> archive payloads pass the same allow-list; identity reachable only through the mirror.</div>
+    <div class="rf">§11 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Identity and drift scan</span></div></div>
+</div><div class="row" id="PL14">
+  <span class="id">PL14</span>
+  <div><div class="where">Zoho orgs</div><div class="t">The rebuild is untested</div>
+    <div class="tr"><b>How.</b> the customisation export exists; nobody has rebuilt an org from it; sandbox and production ids differ. <b>Then.</b> a rebuild that takes a month.</div>
+    <div class="fx"><b>Fix.</b> a quarterly rebuild in the sandbox from the export.</div>
+    <div class="rf">§15 · §17</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Found by a drill or a test</span></div></div>
+</div><div class="row" id="PL15">
+  <span class="id">PL15</span>
+  <div><div class="where">licence</div><div class="t">The licence lapses on 13 September</div>
+    <div class="tr"><b>How.</b> paid_expiry 2026-09-13 on the live org; the thirty-day alert that exists to prevent this does not exist yet. <b>Then.</b> writes stop, the sync stops, the app serves the mirror until it goes stale.</div>
+    <div class="fx"><b>Fix.</b> renew this week; the clock canary from phase 0.</div>
+    <div class="rf">§15 · E12</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg halt">halt</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Clocks, computed here</span></div></div>
+</div>
+</section><section class="grp" id="g-ML">
+  <div class="sechead"><h2>ML · Mail and push</h2><span class="note">4 modes · 0 near-certain</span></div>
+  <p class="lede">Sends that are logged before they happen, and messages that land in spam.</p>
+  <div class="row" id="ML1">
+  <span class="id">ML1</span>
+  <div><div class="where">touches</div><div class="t">A touch logged before the send</div>
+    <div class="tr"><b>How.</b> the Touch row is written, then Send Mail fails. <b>Then.</b> a conversation that never happened, counted.</div>
+    <div class="fx"><b>Fix.</b> log after the 2xx; a failed send is a failed touch.</div>
+    <div class="rf">§20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="ML2">
+  <span class="id">ML2</span>
+  <div><div class="where">templates</div><div class="t">Empty merge fields</div>
+    <div class="tr"><b>How.</b> a template with a missing field sends ‘Dear ,’ or a blank amount. <b>Then.</b> a statement with no numbers.</div>
+    <div class="fx"><b>Fix.</b> template lint; a send with an empty required field is refused.</div>
+    <div class="rf">§20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="ML3">
+  <span class="id">ML3</span>
+  <div><div class="where">deliverability</div><div class="t">No SPF, DKIM or DMARC</div>
+    <div class="tr"><b>How.</b> the sending domain is unauthenticated; hold reminders and statements land in spam. <b>Then.</b> a lapse the investor never saw coming.</div>
+    <div class="fx"><b>Fix.</b> DNS records before phase 4; a bounce and complaint canary.</div>
+    <div class="rf">§20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Quotas and caps</span></div></div>
+</div><div class="row" id="ML4">
+  <span class="id">ML4</span>
+  <div><div class="where">push</div><div class="t">Expired device tokens</div>
+    <div class="tr"><b>How.</b> FCM and APNs tokens expire; pushes fail silently. <b>Then.</b> the investor never hears about the update.</div>
+    <div class="fx"><b>Fix.</b> token refresh in the app; push failures logged; email fallback.</div>
+    <div class="rf">§7 · §21</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Platform health</span></div></div>
+</div>
+</section><section class="grp" id="g-CL">
+  <div class="sechead"><h2>CL · Close and analytics</h2><span class="note">3 modes · 0 near-certain</span></div>
+  <p class="lede">The copy that never runs and the funnel that never forgets.</p>
+  <div class="row" id="CL1">
+  <span class="id">CL1</span>
+  <div><div class="where">rung 8</div><div class="t">Onboarded is never ticked</div>
+    <div class="tr"><b>How.</b> with Allotted automatic the IR has no prompt; leads sit at Allotted; the close copy never runs; conversion_days and touch counts stay empty; leads never go read-only. <b>Then.</b> a funnel with no closes.</div>
+    <div class="fx"><b>Fix.</b> the close copy on allotment.done or the KAM intro; Onboarded a system transition; the IR notified.</div>
+    <div class="rf">§8 · §2</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div><div class="row" id="CL2">
+  <span class="id">CL2</span>
+  <div><div class="where">close copy</div><div class="t">Twice, or overwritten</div>
+    <div class="tr"><b>How.</b> webhook retries re-run the copy; placeholders typed by anyone else are overwritten; a post-Onboarded reversal leaves the read-only lead saying Onboarded. <b>Then.</b> wrong analytics, silently.</div>
+    <div class="fx"><b>Fix.</b> idempotent on event_id with closed_at set once; placeholders locked to the integration user.</div>
+    <div class="rf">§8 · §2 · §5</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="CL3">
+  <span class="id">CL3</span>
+  <div><div class="where">analytics</div><div class="t">Metrics survive refunds; the threshold is not summed</div>
+    <div class="tr"><b>How.</b> gate timestamps are never cleared, so Reserved → Fully paid counts refunded, lapsed and reversed investors forever; the ₹100 crore deemed-CIS threshold is not summed across programmes. <b>Then.</b> a board number that is wrong, and a regulatory one.</div>
+    <div class="fx"><b>Fix.</b> outcome-aware views net of reversal events; raised-to-date across programmes on the BU digest.</div>
+    <div class="rf">§5 · §16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg wrong">wrong state</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Cross-org invariants, nightly</span></div></div>
+</div>
+</section><section class="grp" id="g-LT">
+  <div class="sechead"><h2>LT · Legal and timing</h2><span class="note">5 modes · 1 near-certain</span></div>
+  <p class="lede">Clocks, instruments and opinions on the calendar of other institutions.</p>
+  <div class="row" id="LT1">
+  <span class="id">LT1</span>
+  <div><div class="where">clocks</div><div class="t">Clocks over a Zoho outage</div>
+    <div class="tr"><b>How.</b> reminders are Zoho workflows and the nightly clock check reads the mirror; a multi-day outage near day 27 silences both. <b>Then.</b> a late-submission fee.</div>
+    <div class="fx"><b>Fix.</b> clocks kept in Supabase from the receipt event; the recovery runbook lists every clock inside ten days.</div>
+    <div class="rf">§6 · §15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk rare">rare</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — partial</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Clocks, computed here</span></div></div>
+</div><div class="row" id="LT2">
+  <span class="id">LT2</span>
+  <div><div class="where">allotment</div><div class="t">A partner admitted without the signed supplement</div>
+    <div class="tr"><b>How.</b> auto-allot fires on the letter; the LLP supplement (a separate signature) and Form 4 come after; if never signed, Form 4 cannot be filed while the app says Allotted. <b>Then.</b> a partner in the app who is not one in law.</div>
+    <div class="fx"><b>Fix.</b> Allotted requires the signed supplement; the Form 4 date from its execution.</div>
+    <div class="rf">§2 · §6 · §16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dl">late</span> — an overdue task</div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="LT3">
+  <span class="id">LT3</span>
+  <div><div class="where">securities opinion</div><div class="t">Conditions after sales</div>
+    <div class="tr"><b>How.</b> ‘nothing scales before it’ has no switch; a conditional opinion after fifty units meets no pause, no rescission path, and lapse rules that forfeit ten per cent. <b>Then.</b> selling under a condition the sales did not meet.</div>
+    <div class="fx"><b>Fix.</b> a sales-paused flag that blocks reservations and auto-match; a rescission Receipt kind with the forfeit waived.</div>
+    <div class="rf">§16 · Q20</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk possible">possible</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Removed by design</span></div></div>
+</div><div class="row" id="LT4">
+  <span class="id">LT4</span>
+  <div><div class="where">erasure</div><div class="t">A partial erasure</div>
+    <div class="tr"><b>How.</b> erasure touches six systems in one function; a failed step leaves PII in one of them and the request is closed. <b>Then.</b> an erasure that was not one.</div>
+    <div class="fx"><b>Fix.</b> erasure as a checklist with per-system status; a verification sweep before the request closes.</div>
+    <div class="rf">§16</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk likely">likely</span></div>
+    <div><span class="k">effect</span><span class="tg legal">legal</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Identity and drift scan</span></div></div>
+</div><div class="row" id="LT5">
+  <span class="id">LT5</span>
+  <div><div class="where">on-call</div><div class="t">One phone</div>
+    <div class="tr"><b>How.</b> six alerts plus every failed rule go to one person; asleep or on leave, every halt above is invisible. <b>Then.</b> the whole register, unwatched.</div>
+    <div class="fx"><b>Fix.</b> a two-person rota; thirty-minute escalation; a daily unresolved-alerts page.</div>
+    <div class="rf">§15</div></div>
+  <div class="side"><div><span class="k">chance, year one</span><span class="lk nc">near-certain</span></div>
+    <div><span class="k">effect</span><span class="tg silent">silent</span></div>
+    <div><span class="k">seen today by</span><span class="dn">nothing</span></div>
+    <div><span class="k">seen after §22 by</span><span class="cn">Owners and acknowledgement</span></div></div>
+</div>
+</section>
+</section>
+
+<div class="srcs"><b>Method.</b> Two independent reads of <em>The Growize Build Book</em> v1.2 — one walking every workflow and state machine, one walking every
+  integration and piece of infrastructure — merged, de-duplicated and re-scored against the six alerts of §15. Chances are judgements for the first year of real
+  use with the team and the volumes the book assumes (three thousand leads, two hundred investors, one on-call), not measurements. Platform facts as verified
+  earlier in the register: Zoho CRM API limits and encryption, Zoho workflow behaviour (webhooks fire once; a workflow’s field update does not trigger other
+  workflows), Bulk Read scope, Supabase edge-function limits and view semantics (<span class="term">security_invoker</span>), S3 Object Lock, AWS KMS deletion
+  waiting periods, the live org’s <span class="term">paid_expiry 2026-09-13</span>, and the 5,890 rows of <span class="term">sync_alerts</span>. Where a platform cap
+  is edition-dependent the row says confirm. Companions: <em>The Growize Build Book</em> (§22 carries the decisions and the canaries), <em>Eighty-Two Fixes, One
+  Book</em> (segment F carries the fixes as tickable items).</div>
+</div>

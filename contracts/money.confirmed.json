@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/money.confirmed.json",
+  "title": "money.confirmed",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Head of Finance matching",
+  "x-consumed-by": "Lead gate column; the Claims answer",
+  "x-rule": "Matching is what confirms the money and what opens the gate. The validation rule refuses the same hand that recorded it (D22).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "money.confirmed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "kind",
+        "amount",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "advance",
+            "balance",
+            "full"
+          ]
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Whole rupees. Never a float, never a string."
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "utr": {
+          "type": "string"
+        },
+        "matched_by": {
+          "type": "string"
+        },
+        "receipt_id": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

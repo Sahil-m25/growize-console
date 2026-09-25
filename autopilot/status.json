@@ -1,0 +1,949 @@
+{
+ "at": "2026-09-25T17:14:45.443Z",
+ "targets": {
+  "build_start": "2026-09-24T21:00:00+05:30",
+  "build_target": "2026-10-03T23:59:00+05:30",
+  "test_days": 6,
+  "note": "D66: no fixed days. Build everything (IR console, then IM portal) by Saturday 3 Oct; then test and harden (tester, UAT, staging on the Zoho sandbox); go live when each product's gates pass. Change the target here; every forecast follows."
+ },
+ "pace": 18.26,
+ "pace_source": "needed to hit the target",
+ "needed_pace": 18.26,
+ "measured_pace": 0,
+ "counts": {
+  "console": {
+   "built": 0,
+   "total": 147,
+   "review": 0,
+   "waiting": 0
+  }
+ },
+ "finish": {
+  "all": "2026-10-03T18:29:00.000Z",
+  "console": "2026-10-03T18:29:00.000Z"
+ },
+ "test_end": "2026-10-09T18:29:00.000Z",
+ "on_track": true,
+ "stopped": false,
+ "last_round": null,
+ "projected": {
+  "M02-S01": "2026-09-25T18:33:37.786Z",
+  "M02-S02": "2026-09-25T19:52:30.130Z",
+  "M02-S03": "2026-09-25T21:11:22.474Z",
+  "M02-S04": "2026-09-25T22:30:14.818Z",
+  "M02-S05": "2026-09-25T23:49:07.162Z",
+  "M02-S06": "2026-09-26T01:07:59.506Z",
+  "M02-S08": "2026-09-26T02:26:51.850Z",
+  "M02-S09": "2026-09-26T03:45:44.194Z",
+  "M02-S10": "2026-09-26T05:04:36.538Z",
+  "M02-S11": "2026-09-26T06:23:28.882Z",
+  "M02-S12": "2026-09-26T07:42:21.226Z",
+  "M02-S13": "2026-09-26T09:01:13.570Z",
+  "M02-S14": "2026-09-26T10:20:05.914Z",
+  "M20-S01": "2026-09-26T11:38:58.257Z",
+  "M20-S05": "2026-09-26T12:57:50.601Z",
+  "M20-S06": "2026-09-26T14:16:42.945Z",
+  "M20-S08": "2026-09-26T15:35:35.289Z",
+  "M02-S07": "2026-09-26T16:54:27.633Z",
+  "M01-S01": "2026-09-26T18:13:19.977Z",
+  "M01-S02": "2026-09-26T19:32:12.321Z",
+  "M01-S03": "2026-09-26T20:51:04.665Z",
+  "M01-S04": "2026-09-26T22:09:57.009Z",
+  "M01-S05": "2026-09-26T23:28:49.353Z",
+  "M01-S07": "2026-09-27T00:47:41.697Z",
+  "M01-S08": "2026-09-27T02:06:34.041Z",
+  "M01-S09": "2026-09-27T03:25:26.385Z",
+  "M03-S01": "2026-09-27T04:44:18.728Z",
+  "M03-S02": "2026-09-27T06:03:11.072Z",
+  "M03-S03": "2026-09-27T07:22:03.416Z",
+  "M03-S04": "2026-09-27T08:40:55.760Z",
+  "M03-S05": "2026-09-27T09:59:48.104Z",
+  "M03-S06": "2026-09-27T11:18:40.448Z",
+  "M03-S07": "2026-09-27T12:37:32.792Z",
+  "M03-S08": "2026-09-27T13:56:25.136Z",
+  "M03-S09": "2026-09-27T15:15:17.480Z",
+  "M19-S01": "2026-09-27T16:34:09.824Z",
+  "M19-S02": "2026-09-27T17:53:02.168Z",
+  "M19-S03": "2026-09-27T19:11:54.512Z",
+  "M19-S04": "2026-09-27T20:30:46.856Z",
+  "M19-S05": "2026-09-27T21:49:39.200Z",
+  "M19-S06": "2026-09-27T23:08:31.543Z",
+  "M01-S06": "2026-09-28T00:27:23.887Z",
+  "M04-S01": "2026-09-28T01:46:16.231Z",
+  "M04-S02": "2026-09-28T03:05:08.575Z",
+  "M04-S03": "2026-09-28T04:24:00.919Z",
+  "M05-S01": "2026-09-28T05:42:53.263Z",
+  "M05-S02": "2026-09-28T07:01:45.607Z",
+  "M05-S03": "2026-09-28T08:20:37.951Z",
+  "M05-S08": "2026-09-28T09:39:30.295Z",
+  "M06-S01": "2026-09-28T10:58:22.639Z",
+  "M06-S02": "2026-09-28T12:17:14.983Z",
+  "M06-S03": "2026-09-28T13:36:07.327Z",
+  "M06-S05": "2026-09-28T14:54:59.671Z",
+  "M07-S01": "2026-09-28T16:13:52.014Z",
+  "M07-S02": "2026-09-28T17:32:44.358Z",
+  "M07-S03": "2026-09-28T18:51:36.702Z",
+  "M07-S04": "2026-09-28T20:10:29.046Z",
+  "M07-S05": "2026-09-28T21:29:21.390Z",
+  "M07-S06": "2026-09-28T22:48:13.734Z",
+  "M09-S01": "2026-09-29T00:07:06.078Z",
+  "M09-S02": "2026-09-29T01:25:58.422Z",
+  "M09-S03": "2026-09-29T02:44:50.766Z",
+  "M09-S04": "2026-09-29T04:03:43.110Z",
+  "M09-S07": "2026-09-29T05:22:35.454Z",
+  "M09-S08": "2026-09-29T06:41:27.798Z",
+  "M19-S10": "2026-09-29T08:00:20.142Z",
+  "M19-S11": "2026-09-29T09:19:12.485Z",
+  "M04-S04": "2026-09-29T10:38:04.829Z",
+  "M05-S04": "2026-09-29T11:56:57.173Z",
+  "M07-S07": "2026-09-29T13:15:49.517Z",
+  "M01-S10": "2026-09-29T14:34:41.861Z",
+  "M05-S06": "2026-09-29T15:53:34.205Z",
+  "M05-S07": "2026-09-29T17:12:26.549Z",
+  "M08-S01": "2026-09-29T18:31:18.893Z",
+  "M08-S02": "2026-09-29T19:50:11.237Z",
+  "M08-S03": "2026-09-29T21:09:03.581Z",
+  "M08-S04": "2026-09-29T22:27:55.925Z",
+  "M08-S05": "2026-09-29T23:46:48.269Z",
+  "M08-S07": "2026-09-30T01:05:40.613Z",
+  "M08-S08": "2026-09-30T02:24:32.957Z",
+  "M10-S01": "2026-09-30T03:43:25.300Z",
+  "M10-S02": "2026-09-30T05:02:17.644Z",
+  "M10-S03": "2026-09-30T06:21:09.988Z",
+  "M10-S05": "2026-09-30T07:40:02.332Z",
+  "M10-S07": "2026-09-30T08:58:54.676Z",
+  "M11-S01": "2026-09-30T10:17:47.020Z",
+  "M11-S02": "2026-09-30T11:36:39.364Z",
+  "M11-S03": "2026-09-30T12:55:31.708Z",
+  "M11-S04": "2026-09-30T14:14:24.052Z",
+  "M11-S05": "2026-09-30T15:33:16.396Z",
+  "M11-S07": "2026-09-30T16:52:08.740Z",
+  "M12-S01": "2026-09-30T18:11:01.084Z",
+  "M12-S02": "2026-09-30T19:29:53.428Z",
+  "M12-S03": "2026-09-30T20:48:45.771Z",
+  "M12-S04": "2026-09-30T22:07:38.115Z",
+  "M12-S05": "2026-09-30T23:26:30.459Z",
+  "M12-S06": "2026-10-01T00:45:22.803Z",
+  "M12-S07": "2026-10-01T02:04:15.147Z",
+  "M12-S10": "2026-10-01T03:23:07.491Z",
+  "M12-S11": "2026-10-01T04:41:59.835Z",
+  "M12-S12": "2026-10-01T06:00:52.179Z",
+  "M12-S13": "2026-10-01T07:19:44.523Z",
+  "M14-S01": "2026-10-01T08:38:36.867Z",
+  "M14-S02": "2026-10-01T09:57:29.211Z",
+  "M14-S03": "2026-10-01T11:16:21.555Z",
+  "M10-S08": "2026-10-01T12:35:13.899Z",
+  "M10-S09": "2026-10-01T13:54:06.242Z",
+  "M12-S08": "2026-10-01T15:12:58.586Z",
+  "M12-S09": "2026-10-01T16:31:50.930Z",
+  "M12-S14": "2026-10-01T17:50:43.274Z",
+  "M19-S08": "2026-10-01T19:09:35.618Z",
+  "M13-S01": "2026-10-01T20:28:27.962Z",
+  "M13-S02": "2026-10-01T21:47:20.306Z",
+  "M13-S03": "2026-10-01T23:06:12.650Z",
+  "M13-S04": "2026-10-02T00:25:04.994Z",
+  "M13-S06": "2026-10-02T01:43:57.338Z",
+  "M15-S01": "2026-10-02T03:02:49.682Z",
+  "M15-S03": "2026-10-02T04:21:42.026Z",
+  "M15-S05": "2026-10-02T05:40:34.370Z",
+  "M16-S01": "2026-10-02T06:59:26.714Z",
+  "M16-S03": "2026-10-02T08:18:19.057Z",
+  "M16-S04": "2026-10-02T09:37:11.401Z",
+  "M16-S06": "2026-10-02T10:56:03.745Z",
+  "M16-S09": "2026-10-02T12:14:56.089Z",
+  "M17-S01": "2026-10-02T13:33:48.433Z",
+  "M17-S02": "2026-10-02T14:52:40.777Z",
+  "M17-S05": "2026-10-02T16:11:33.121Z",
+  "M17-S06": "2026-10-02T17:30:25.465Z",
+  "M20-S07": "2026-10-02T18:49:17.809Z",
+  "M13-S05": "2026-10-02T20:08:10.153Z",
+  "M16-S02": "2026-10-02T21:27:02.497Z",
+  "M16-S07": "2026-10-02T22:45:54.841Z",
+  "M16-S08": "2026-10-03T00:04:47.185Z",
+  "M18-S01": "2026-10-03T01:23:39.528Z",
+  "M18-S02": "2026-10-03T02:42:31.872Z",
+  "M18-S03": "2026-10-03T04:01:24.216Z",
+  "M18-S04": "2026-10-03T05:20:16.560Z",
+  "M18-S05": "2026-10-03T06:39:08.904Z",
+  "M18-S06": "2026-10-03T07:58:01.248Z",
+  "M18-S08": "2026-10-03T09:16:53.592Z",
+  "M18-S09": "2026-10-03T10:35:45.936Z",
+  "M18-S12": "2026-10-03T11:54:38.280Z",
+  "M20-S03": "2026-10-03T13:13:30.624Z",
+  "M20-S04": "2026-10-03T14:32:22.968Z",
+  "M18-S10": "2026-10-03T15:51:15.312Z",
+  "M19-S07": "2026-10-03T17:10:07.656Z",
+  "M10-S20": "2026-10-03T18:29:00.000Z"
+ },
+ "people_next": [
+  {
+   "q": "console",
+   "story": "M02-S01",
+   "id": "M02-S01-T01",
+   "doer": "Sahil",
+   "title": "Renew Enterprise and buy the test-user seat",
+   "hours": 1,
+   "need_by": "2026-09-25T18:33:37.786Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S02",
+   "id": "M02-S02-T02",
+   "doer": "Sahil",
+   "title": "Rung vocabulary and gate columns",
+   "hours": 2,
+   "need_by": "2026-09-25T19:52:30.130Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T01",
+   "doer": "Sahil",
+   "title": "Role hierarchy",
+   "hours": 1.5,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T02",
+   "doer": "Sahil",
+   "title": "Profiles per seat",
+   "hours": 3,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T03",
+   "doer": "Sahil",
+   "title": "Field-level security wall",
+   "hours": 2,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T04",
+   "doer": "Sahil",
+   "title": "Private sharing and B-12 rules",
+   "hours": 1.5,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S06",
+   "id": "M02-S06-T01",
+   "doer": "Sahil",
+   "title": "Remove Convert permission",
+   "hours": 1,
+   "need_by": "2026-09-26T01:07:59.506Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S10",
+   "id": "M02-S10-T02",
+   "doer": "Sahil",
+   "title": "Register OAuth clients",
+   "hours": 1,
+   "need_by": "2026-09-26T05:04:36.538Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S11",
+   "id": "M02-S11-T03",
+   "doer": "Sahil",
+   "title": "Apply the decision",
+   "hours": 1,
+   "need_by": "2026-09-26T06:23:28.882Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S12",
+   "id": "M02-S12-T01",
+   "doer": "Sahil",
+   "title": "Create the Receipts module",
+   "hours": 3,
+   "need_by": "2026-09-26T07:42:21.226Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S12",
+   "id": "M02-S12-T02",
+   "doer": "Sahil",
+   "title": "Sharing, FLS and payment status",
+   "hours": 2,
+   "need_by": "2026-09-26T07:42:21.226Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S13",
+   "id": "M02-S13-T01",
+   "doer": "Sahil",
+   "title": "Create the slot fields",
+   "hours": 3,
+   "need_by": "2026-09-26T09:01:13.570Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S13",
+   "id": "M02-S13-T02",
+   "doer": "Sahil",
+   "title": "FLS on identity slots",
+   "hours": 1,
+   "need_by": "2026-09-26T09:01:13.570Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S14",
+   "id": "M02-S14-T01",
+   "doer": "Sahil",
+   "title": "Zoho Sign plan, DC and webhook",
+   "hours": 1.5,
+   "need_by": "2026-09-26T10:20:05.914Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S14",
+   "id": "M02-S14-T02",
+   "doer": "Sahil",
+   "title": "Create the sign fields",
+   "hours": 1.5,
+   "need_by": "2026-09-26T10:20:05.914Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S14",
+   "id": "M02-S14-T03",
+   "doer": "Sahil",
+   "title": "Webhook writer credential",
+   "hours": 1,
+   "need_by": "2026-09-26T10:20:05.914Z"
+  },
+  {
+   "q": "console",
+   "story": "M20-S08",
+   "id": "M20-S08-T01",
+   "doer": "Sahil",
+   "title": "Plan choice and purchase request",
+   "hours": 1,
+   "need_by": "2026-09-26T15:35:35.289Z"
+  },
+  {
+   "q": "console",
+   "story": "M20-S08",
+   "id": "M20-S08-T02",
+   "doer": "Sahil",
+   "title": "OAuth client and secrets",
+   "hours": 1,
+   "need_by": "2026-09-26T15:35:35.289Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S07",
+   "id": "M02-S07-T01",
+   "doer": "Sahil",
+   "title": "Unhide activities and enable sync",
+   "hours": 1.5,
+   "need_by": "2026-09-26T16:54:27.633Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S05",
+   "id": "M03-S05-T01",
+   "doer": "Sahil",
+   "title": "Buy seats and invite users",
+   "hours": 2,
+   "need_by": "2026-09-27T09:59:48.104Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S06",
+   "id": "M03-S06-T01",
+   "doer": "Sahil",
+   "title": "Auditor profile read-only",
+   "hours": 1,
+   "need_by": "2026-09-27T11:18:40.448Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S07",
+   "id": "M03-S07-T01",
+   "doer": "Sahil",
+   "title": "Sharing for KAM books",
+   "hours": 3,
+   "need_by": "2026-09-27T12:37:32.792Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S08",
+   "id": "M03-S08-T01",
+   "doer": "Sahil",
+   "title": "FLS on kyc_status",
+   "hours": 1,
+   "need_by": "2026-09-27T13:56:25.136Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S09",
+   "id": "M03-S09-T01",
+   "doer": "Sahil",
+   "title": "Origin fields on Contacts",
+   "hours": 1,
+   "need_by": "2026-09-27T15:15:17.480Z"
+  },
+  {
+   "q": "console",
+   "story": "M04-S03",
+   "id": "M04-S03-T01",
+   "doer": "Sahil",
+   "title": "Consent fields",
+   "hours": 1,
+   "need_by": "2026-09-28T04:24:00.919Z"
+  },
+  {
+   "q": "console",
+   "story": "M09-S02",
+   "id": "M09-S02-T01",
+   "doer": "Sahil",
+   "title": "Record sharing for the KAM book",
+   "hours": 2,
+   "need_by": "2026-09-29T01:25:58.422Z"
+  },
+  {
+   "q": "console",
+   "story": "M09-S04",
+   "id": "M09-S04-T01",
+   "doer": "Sahil",
+   "title": "Ownership fields and workflow",
+   "hours": 1.5,
+   "need_by": "2026-09-29T04:03:43.110Z"
+  },
+  {
+   "q": "console",
+   "story": "M09-S08",
+   "id": "M09-S08-T01",
+   "doer": "Sahil",
+   "title": "Originating IR field and sharing rule",
+   "hours": 2,
+   "need_by": "2026-09-29T06:41:27.798Z"
+  },
+  {
+   "q": "console",
+   "story": "M01-S10",
+   "id": "M01-S10-T03",
+   "doer": "Sahil",
+   "title": "Approval process on forfeit/refund",
+   "hours": 2,
+   "need_by": "2026-09-29T14:34:41.861Z"
+  },
+  {
+   "q": "console",
+   "story": "M08-S03",
+   "id": "M08-S03-T03",
+   "doer": "Sahil",
+   "title": "Receipt validation rules that never block",
+   "hours": 1,
+   "need_by": "2026-09-29T21:09:03.581Z"
+  },
+  {
+   "q": "console",
+   "story": "M08-S04",
+   "id": "M08-S04-T01",
+   "doer": "Sahil",
+   "title": "Hold record and its approvals",
+   "hours": 3,
+   "need_by": "2026-09-29T22:27:55.925Z"
+  },
+  {
+   "q": "console",
+   "story": "M08-S07",
+   "id": "M08-S07-T01",
+   "doer": "Sahil",
+   "title": "Contacts lifecycle blueprint starting at 'Said yes'",
+   "hours": 3,
+   "need_by": "2026-09-30T01:05:40.613Z"
+  },
+  {
+   "q": "console",
+   "story": "M08-S08",
+   "id": "M08-S08-T01",
+   "doer": "Sahil",
+   "title": "app_mark formula and permanent_at workflow",
+   "hours": 2,
+   "need_by": "2026-09-30T02:24:32.957Z"
+  },
+  {
+   "q": "console",
+   "story": "M10-S01",
+   "id": "M10-S01-T01",
+   "doer": "Sahil",
+   "title": "Receipts module",
+   "hours": 3,
+   "need_by": "2026-09-30T03:43:25.300Z"
+  },
+  {
+   "q": "console",
+   "story": "M10-S02",
+   "id": "M10-S02-T01",
+   "doer": "Sahil",
+   "title": "Maker-checker rule and record lock",
+   "hours": 1.5,
+   "need_by": "2026-09-30T05:02:17.644Z"
+  },
+  {
+   "q": "console",
+   "story": "M10-S05",
+   "id": "M10-S05-T01",
+   "doer": "Sahil",
+   "title": "Statements module",
+   "hours": 1,
+   "need_by": "2026-09-30T07:40:02.332Z"
+  },
+  {
+   "q": "console",
+   "story": "M10-S07",
+   "id": "M10-S07-T01",
+   "doer": "Sahil",
+   "title": "Allotment lookup and Payment_Status workflow",
+   "hours": 2,
+   "need_by": "2026-09-30T08:58:54.676Z"
+  },
+  {
+   "q": "console",
+   "story": "M11-S01",
+   "id": "M11-S01-T01",
+   "doer": "Sahil",
+   "title": "Map blocks to LLPs",
+   "hours": 1.5,
+   "need_by": "2026-09-30T10:17:47.020Z"
+  },
+  {
+   "q": "console",
+   "story": "M11-S02",
+   "id": "M11-S02-T01",
+   "doer": "Sahil",
+   "title": "Canonical allotment module",
+   "hours": 2,
+   "need_by": "2026-09-30T11:36:39.364Z"
+  },
+  {
+   "q": "console",
+   "story": "M11-S03",
+   "id": "M11-S03-T01",
+   "doer": "Sahil",
+   "title": "Adopt the shelf",
+   "hours": 2,
+   "need_by": "2026-09-30T12:55:31.708Z"
+  }
+ ],
+ "people_due_soon": [
+  {
+   "q": "console",
+   "story": "M02-S01",
+   "id": "M02-S01-T01",
+   "doer": "Sahil",
+   "title": "Renew Enterprise and buy the test-user seat",
+   "hours": 1,
+   "need_by": "2026-09-25T18:33:37.786Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S02",
+   "id": "M02-S02-T02",
+   "doer": "Sahil",
+   "title": "Rung vocabulary and gate columns",
+   "hours": 2,
+   "need_by": "2026-09-25T19:52:30.130Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T01",
+   "doer": "Sahil",
+   "title": "Role hierarchy",
+   "hours": 1.5,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T02",
+   "doer": "Sahil",
+   "title": "Profiles per seat",
+   "hours": 3,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T03",
+   "doer": "Sahil",
+   "title": "Field-level security wall",
+   "hours": 2,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S04",
+   "id": "M02-S04-T04",
+   "doer": "Sahil",
+   "title": "Private sharing and B-12 rules",
+   "hours": 1.5,
+   "need_by": "2026-09-25T22:30:14.818Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S06",
+   "id": "M02-S06-T01",
+   "doer": "Sahil",
+   "title": "Remove Convert permission",
+   "hours": 1,
+   "need_by": "2026-09-26T01:07:59.506Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S10",
+   "id": "M02-S10-T02",
+   "doer": "Sahil",
+   "title": "Register OAuth clients",
+   "hours": 1,
+   "need_by": "2026-09-26T05:04:36.538Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S11",
+   "id": "M02-S11-T03",
+   "doer": "Sahil",
+   "title": "Apply the decision",
+   "hours": 1,
+   "need_by": "2026-09-26T06:23:28.882Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S12",
+   "id": "M02-S12-T01",
+   "doer": "Sahil",
+   "title": "Create the Receipts module",
+   "hours": 3,
+   "need_by": "2026-09-26T07:42:21.226Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S12",
+   "id": "M02-S12-T02",
+   "doer": "Sahil",
+   "title": "Sharing, FLS and payment status",
+   "hours": 2,
+   "need_by": "2026-09-26T07:42:21.226Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S13",
+   "id": "M02-S13-T01",
+   "doer": "Sahil",
+   "title": "Create the slot fields",
+   "hours": 3,
+   "need_by": "2026-09-26T09:01:13.570Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S13",
+   "id": "M02-S13-T02",
+   "doer": "Sahil",
+   "title": "FLS on identity slots",
+   "hours": 1,
+   "need_by": "2026-09-26T09:01:13.570Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S14",
+   "id": "M02-S14-T01",
+   "doer": "Sahil",
+   "title": "Zoho Sign plan, DC and webhook",
+   "hours": 1.5,
+   "need_by": "2026-09-26T10:20:05.914Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S14",
+   "id": "M02-S14-T02",
+   "doer": "Sahil",
+   "title": "Create the sign fields",
+   "hours": 1.5,
+   "need_by": "2026-09-26T10:20:05.914Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S14",
+   "id": "M02-S14-T03",
+   "doer": "Sahil",
+   "title": "Webhook writer credential",
+   "hours": 1,
+   "need_by": "2026-09-26T10:20:05.914Z"
+  },
+  {
+   "q": "console",
+   "story": "M20-S08",
+   "id": "M20-S08-T01",
+   "doer": "Sahil",
+   "title": "Plan choice and purchase request",
+   "hours": 1,
+   "need_by": "2026-09-26T15:35:35.289Z"
+  },
+  {
+   "q": "console",
+   "story": "M20-S08",
+   "id": "M20-S08-T02",
+   "doer": "Sahil",
+   "title": "OAuth client and secrets",
+   "hours": 1,
+   "need_by": "2026-09-26T15:35:35.289Z"
+  },
+  {
+   "q": "console",
+   "story": "M02-S07",
+   "id": "M02-S07-T01",
+   "doer": "Sahil",
+   "title": "Unhide activities and enable sync",
+   "hours": 1.5,
+   "need_by": "2026-09-26T16:54:27.633Z"
+  }
+ ],
+ "testing_phase": [
+  {
+   "q": "console",
+   "story": "M01-S01",
+   "id": "M01-S01-T09",
+   "doer": "Tester",
+   "title": "Testing phase review (Investors side)",
+   "hours": 12,
+   "need_by": "2026-09-26T18:13:19.977Z"
+  },
+  {
+   "q": "console",
+   "story": "M01-S08",
+   "id": "M01-S08-T06",
+   "doer": "Tester",
+   "title": "Exploratory: money writes offline and double pressed",
+   "hours": 3,
+   "need_by": "2026-09-27T02:06:34.041Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S06",
+   "id": "M03-S06-T04",
+   "doer": "Tester",
+   "title": "Exploratory: every page as the Auditor",
+   "hours": 4,
+   "need_by": "2026-09-27T11:18:40.448Z"
+  },
+  {
+   "q": "console",
+   "story": "M03-S07",
+   "id": "M03-S07-T04",
+   "doer": "Finance users (UAT)",
+   "title": "UAT: KAM day on own book",
+   "hours": 2,
+   "need_by": "2026-09-27T12:37:32.792Z"
+  },
+  {
+   "q": "console",
+   "story": "M19-S02",
+   "id": "M19-S02-T05",
+   "doer": "Tester",
+   "title": "Testing phase review",
+   "hours": 16,
+   "need_by": "2026-09-27T17:53:02.168Z"
+  },
+  {
+   "q": "console",
+   "story": "M05-S08",
+   "id": "M05-S08-T04",
+   "doer": "Finance users (UAT)",
+   "title": "UAT: a KAM's and the Head of AM's day",
+   "hours": 2,
+   "need_by": "2026-09-28T09:39:30.295Z"
+  },
+  {
+   "q": "console",
+   "story": "M09-S03",
+   "id": "M09-S03-T04",
+   "doer": "Tester",
+   "title": "Exploratory: investors and records by seat",
+   "hours": 4,
+   "need_by": "2026-09-29T02:44:50.766Z"
+  },
+  {
+   "q": "console",
+   "story": "M19-S11",
+   "id": "M19-S11-T04",
+   "doer": "Tester",
+   "title": "Review REVIEW rows and import",
+   "hours": 2,
+   "need_by": "2026-09-29T09:19:12.485Z"
+  },
+  {
+   "q": "console",
+   "story": "M05-S04",
+   "id": "M05-S04-T02",
+   "doer": "Tester",
+   "title": "Test call times (Sat–Sun)",
+   "hours": 1,
+   "need_by": "2026-09-29T11:56:57.173Z"
+  },
+  {
+   "q": "console",
+   "story": "M01-S10",
+   "id": "M01-S10-T08",
+   "doer": "Tester",
+   "title": "Exploratory: reveal and step-up",
+   "hours": 3,
+   "need_by": "2026-09-29T14:34:41.861Z"
+  },
+  {
+   "q": "console",
+   "story": "M01-S10",
+   "id": "M01-S10-T09",
+   "doer": "Finance users (UAT)",
+   "title": "UAT: Finance reveal and step-up",
+   "hours": 2,
+   "need_by": "2026-09-29T14:34:41.861Z"
+  },
+  {
+   "q": "console",
+   "story": "M08-S03",
+   "id": "M08-S03-T07",
+   "doer": "Finance users (UAT)",
+   "title": "UAT: record and match a week of receipts",
+   "hours": 3,
+   "need_by": "2026-09-29T21:09:03.581Z"
+  },
+  {
+   "q": "console",
+   "story": "M10-S05",
+   "id": "M10-S05-T05",
+   "doer": "Tester",
+   "title": "Manual reconciliation against a real-format statement",
+   "hours": 3,
+   "need_by": "2026-09-30T07:40:02.332Z"
+  },
+  {
+   "q": "console",
+   "story": "M11-S05",
+   "id": "M11-S05-T06",
+   "doer": "Finance users (UAT)",
+   "title": "UAT: allot this week's paid investors",
+   "hours": 2,
+   "need_by": "2026-09-30T15:33:16.396Z"
+  },
+  {
+   "q": "console",
+   "story": "M12-S10",
+   "id": "M12-S10-T03",
+   "doer": "Tester",
+   "title": "Run in the testing phase",
+   "hours": 2,
+   "need_by": "2026-10-01T03:23:07.491Z"
+  },
+  {
+   "q": "console",
+   "story": "M15-S03",
+   "id": "M15-S03-T08",
+   "doer": "Finance users (UAT)",
+   "title": "UAT: Activity log and Team",
+   "hours": 2,
+   "need_by": "2026-10-02T04:21:42.026Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S02",
+   "id": "M18-S02-T06",
+   "doer": "Tester",
+   "title": "Exploratory leak session",
+   "hours": 4,
+   "need_by": "2026-10-03T02:42:31.872Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S03",
+   "id": "M18-S03-T04",
+   "doer": "Tester",
+   "title": "Phone and screen-reader smoke",
+   "hours": 3,
+   "need_by": "2026-10-03T04:01:24.216Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S08",
+   "id": "M18-S08-T02",
+   "doer": "Tester",
+   "title": "Exploratory sessions S2-S4",
+   "hours": 6,
+   "need_by": "2026-10-03T09:16:53.592Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S08",
+   "id": "M18-S08-T04",
+   "doer": "Two IRs (usability)",
+   "title": "Run usability session with two IRs",
+   "hours": 2,
+   "need_by": "2026-10-03T09:16:53.592Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S08",
+   "id": "M18-S08-T05",
+   "doer": "IRs + IR Manager (UAT)",
+   "title": "UAT run",
+   "hours": 8,
+   "need_by": "2026-10-03T09:16:53.592Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S08",
+   "id": "M18-S08-T06",
+   "doer": "Finance users (UAT)",
+   "title": "Finance UAT session",
+   "hours": 6,
+   "need_by": "2026-10-03T09:16:53.592Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S08",
+   "id": "M18-S08-T07",
+   "doer": "KAMs (UAT)",
+   "title": "KAM UAT session",
+   "hours": 5,
+   "need_by": "2026-10-03T09:16:53.592Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S08",
+   "id": "M18-S08-T09",
+   "doer": "Tester",
+   "title": "Retest and sign-off",
+   "hours": 2,
+   "need_by": "2026-10-03T09:16:53.592Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S09",
+   "id": "M18-S09-T04",
+   "doer": "Tester",
+   "title": "Weekend regression on staging",
+   "hours": 6,
+   "need_by": "2026-10-03T10:35:45.936Z"
+  },
+  {
+   "q": "console",
+   "story": "M18-S10",
+   "id": "M18-S10-T03",
+   "doer": "Tester",
+   "title": "Runbook walk-through",
+   "hours": 1,
+   "need_by": "2026-10-03T15:51:15.312Z"
+  }
+ ]
+}

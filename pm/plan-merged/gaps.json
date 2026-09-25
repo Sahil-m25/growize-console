@@ -1,0 +1,192 @@
+[
+ [
+  "Owner decision",
+  "OD7: Farm data: farm progress as Notes on the LLP or a module; 'released' as a field or the LLP status.",
+  "M11",
+  [
+   "M11-S03",
+   "M11-S08"
+  ]
+ ],
+ [
+  "Owner decision",
+  "OD8: Documents: who-sees-what per seat and scope; the typed slot list per scope; LLP papers to the app by read or push; signing method per investor type.",
+  "M02, M12",
+  [
+   "M02-S13",
+   "M02-S14",
+   "M12-S01",
+   "M12-S02",
+   "M12-S04"
+  ]
+ ],
+ [
+  "Owner decision",
+  "OD9: Grants storage under zero copy (Zoho vs app store); Payment_Status kept by Zoho workflow or console commit (Sahil).",
+  "M02, M03",
+  [
+   "M02-S12",
+   "M03-S02"
+  ]
+ ],
+ [
+  "Owner decision",
+  "OD10: Dates and targets: go-live once gates pass, UAT people, KPI targets, whether refunds are in plan.",
+  "M01, M18, M20",
+  [
+   "M01-S10",
+   "M18-S08",
+   "M18-S09",
+   "M20-S01"
+  ]
+ ],
+ [
+  "Owner approval",
+  "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+  "M02, M03, M04, M05, M07, M08, M09, M10, M11, M12, M13, M14, M16, M18, M20",
+  [
+   "M02-S02",
+   "M02-S03",
+   "M02-S04",
+   "M02-S06",
+   "M02-S07",
+   "M02-S08",
+   "M02-S10",
+   "M02-S11",
+   "M02-S12",
+   "M02-S13",
+   "M02-S14",
+   "M03-S04",
+   "M03-S07",
+   "M03-S09",
+   "M04-S03",
+   "M05-S08",
+   "M07-S04",
+   "M08-S01",
+   "M08-S02",
+   "M08-S03",
+   "M08-S04",
+   "M08-S07",
+   "M08-S08",
+   "M08-S09",
+   "M09-S01",
+   "M09-S02",
+   "M09-S03",
+   "M09-S04",
+   "M09-S08",
+   "M10-S01",
+   "M10-S02",
+   "M10-S05",
+   "M10-S07",
+   "M10-S08",
+   "M11-S01",
+   "M11-S02",
+   "M11-S03",
+   "M11-S04",
+   "M11-S05",
+   "M11-S07",
+   "M11-S08",
+   "M12-S01",
+   "M12-S02",
+   "M12-S03",
+   "M12-S06",
+   "M12-S07",
+   "M12-S11",
+   "M12-S12",
+   "M13-S02",
+   "M13-S03",
+   "M13-S06",
+   "M14-S01",
+   "M16-S01",
+   "M16-S03",
+   "M16-S04",
+   "M16-S06",
+   "M16-S08",
+   "M16-S10",
+   "M18-S06",
+   "M18-S12",
+   "M20-S07"
+  ]
+ ],
+ [
+  "Owner approval",
+  "AP3: Zoho Sign plan with API + webhooks (Enterprise or API plan, India DC).",
+  "M02, M12, M18, M20",
+  [
+   "M02-S14",
+   "M12-S04",
+   "M12-S05",
+   "M12-S08",
+   "M18-S13",
+   "M20-S08"
+  ]
+ ],
+ [
+  "Owner approval",
+  "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs.",
+  "M01, M02, M17, M19",
+  [
+   "M01-S05",
+   "M02-S09",
+   "M02-S10",
+   "M17-S08",
+   "M19-S02",
+   "M19-S03"
+  ]
+ ],
+ [
+  "Material",
+  "MA1: Investor app codebase, its staging URL, the contract signing secret, and how a Supabase user maps to a Zoho Contact.",
+  "M08, M10, M12, M13, M20",
+  [
+   "M08-S08",
+   "M10-S06",
+   "M12-S08",
+   "M13-S01",
+   "M13-S05",
+   "M13-S07",
+   "M13-S08",
+   "M20-S07"
+  ]
+ ],
+ [
+  "Material",
+  "MA2: Zoho Sign templates (NDA, supplementary agreement, allocation letter, FEMA declaration) from Finance.",
+  "M02, M12, M20",
+  [
+   "M02-S08",
+   "M02-S14",
+   "M12-S04",
+   "M20-S08"
+  ]
+ ],
+ [
+  "Material",
+  "MA3: Finance: receipt field list and picklists, a sample bank statement CSV, old payments per allotment.",
+  "M02, M18",
+  [
+   "M02-S12",
+   "M18-S12"
+  ]
+ ],
+ [
+  "Material",
+  "MA4: Plan targets and periods; approved pitch deck and yield note; a sample intake sheet.",
+  "M04, M12, M16",
+  [
+   "M04-S05",
+   "M12-S13",
+   "M16-S04"
+  ]
+ ],
+ [
+  "Context",
+  "CX1: Which existing Contacts came from which IR (backfill); Block A–F vs the real LLPs (production has one: EKA LLP, 22 units, Open for Reservation).",
+  "M03, M11, M14",
+  [
+   "M03-S09",
+   "M11-S01",
+   "M14-S01"
+  ]
+ ]
+]

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/money.claimed.json",
+  "title": "money.claimed",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "IR",
+  "x-consumed-by": "Finance queue; Claims row",
+  "x-rule": "Typed fields, never prose. Recording is always allowed; matching is what the rules gate (D21).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "money.claimed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "kind",
+        "amount",
+        "said_on"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "advance",
+            "balance",
+            "full"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "neft",
+            "rtgs",
+            "imps",
+            "upi",
+            "cheque",
+            "other"
+          ]
+        },
+        "reference": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Whole rupees. Never a float, never a string."
+        },
+        "said_on": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/welcome.delivered.json",
+  "title": "welcome.delivered",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "The mailer",
+  "x-consumed-by": "The console display",
+  "x-rule": "Delivery is a fact from the mailer, never an assumption made after sending.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "welcome.delivered"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "message_id": {
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "email",
+            "push",
+            "sms"
+          ]
+        }
+      }
+    }
+  }
+}

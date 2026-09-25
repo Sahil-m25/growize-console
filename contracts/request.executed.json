@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/request.executed.json",
+  "title": "request.executed",
+  "x-direction": "app \u2194 investor",
+  "x-produced-by": "Finance, Compliance or the owner",
+  "x-consumed-by": "The app's request row and notifications",
+  "x-rule": "The app is told what happened. It never infers a result from silence.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "request.executed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "app_request_id",
+        "state"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "app_request_id": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "executed",
+            "refused",
+            "withdrawn"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

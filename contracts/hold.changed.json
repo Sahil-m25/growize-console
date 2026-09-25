@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/hold.changed.json",
+  "title": "hold.changed",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Head of Finance or the BU Owner",
+  "x-consumed-by": "The console display",
+  "x-rule": "The deadline is computed in Asia/Kolkata from the event, by one function (rule 9).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "hold.changed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "deadline",
+        "state"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "enum": [
+            "open",
+            "extended",
+            "lapsed",
+            "released"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "by": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

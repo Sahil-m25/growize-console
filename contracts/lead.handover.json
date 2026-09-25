@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/lead.handover.json",
+  "title": "lead.handover",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "IR moving the lead to Said yes",
+  "x-consumed-by": "Investor org (creates the Contact), both mirrors",
+  "x-rule": "Creates the Contact at said yes. The lead continues; the close copy fills the placeholders at Onboarded (D11).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "lead.handover"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "contact",
+        "ir_name",
+        "consent"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contact": {
+          "type": "object",
+          "required": [
+            "full_name",
+            "email",
+            "mobile"
+          ],
+          "properties": {
+            "full_name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "mobile": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "residency": {
+              "enum": [
+                "resident",
+                "nri"
+              ]
+            }
+          },
+          "description": "Identity fields go to Zoho only. The mapper never writes them to the mirror (D13)."
+        },
+        "source": {
+          "type": "string"
+        },
+        "campaign": {
+          "type": "string"
+        },
+        "event": {
+          "type": "string"
+        },
+        "ir_name": {
+          "type": "string"
+        },
+        "units_intended": {
+          "type": "number"
+        },
+        "nda": {
+          "type": "object",
+          "properties": {
+            "emudhra_ref": {
+              "type": "string"
+            },
+            "hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "consent": {
+          "type": "object",
+          "required": [
+            "service",
+            "version"
+          ],
+          "properties": {
+            "service": {
+              "type": "boolean"
+            },
+            "marketing": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

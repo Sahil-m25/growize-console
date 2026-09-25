@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/request.raised.json",
+  "title": "request.raised",
+  "x-direction": "app \u2194 investor",
+  "x-produced-by": "investor",
+  "x-consumed-by": "Requests / Cases; the KAM's queue",
+  "x-rule": "Guards stay in the app's edge functions. The payload is masked before it reaches the mirror.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "request.raised"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "kind",
+        "app_request_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "bank_change",
+            "payout_mandate",
+            "exit",
+            "nominee",
+            "details",
+            "statement",
+            "other"
+          ]
+        },
+        "app_request_id": {
+          "type": "string"
+        },
+        "payload_masked": {
+          "type": "object"
+        },
+        "raised_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

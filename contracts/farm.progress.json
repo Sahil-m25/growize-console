@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/farm.progress.json",
+  "title": "farm.progress",
+  "x-direction": "outside \u2192 investor",
+  "x-produced-by": "The FMS",
+  "x-consumed-by": "investors project project_updates",
+  "x-rule": "Never Zoho. The FMS stays a separate vertical (D15).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "farm.progress"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "project",
+        "phase"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "media_url": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

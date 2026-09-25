@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/details.changed.json",
+  "title": "details.changed",
+  "x-direction": "app \u2194 investor",
+  "x-produced-by": "investor or KAM",
+  "x-consumed-by": "Contact; bank_match \u2192 pending on a name change",
+  "x-rule": "Signed documents are re-issued, never edited.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "details.changed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "fields"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "by": {
+          "type": "string"
+        },
+        "bank_match_reset": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/paper.signed.json",
+  "title": "paper.signed",
+  "x-direction": "outside \u2192 investor",
+  "x-produced-by": "eMudhra",
+  "x-consumed-by": "Documents; the attachment; the hash",
+  "x-rule": "The webhook is a hint. The document is re-fetched and that is what is written (rule 8).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "paper.signed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "signed_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "type": "string"
+        },
+        "signer": {
+          "type": "string"
+        },
+        "signed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "certificate": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

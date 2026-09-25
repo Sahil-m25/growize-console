@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/lead.lost.json",
+  "title": "lead.lost",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "IR",
+  "x-consumed-by": "Investor org",
+  "x-rule": "Refused by the blueprint if any Receipt exists. Money already taken cannot be lost, only reversed.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "lead.lost"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

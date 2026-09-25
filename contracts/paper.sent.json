@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/paper.sent.json",
+  "title": "paper.sent",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Finance",
+  "x-consumed-by": "Lead gate columns; the console paperwork card",
+  "x-rule": "State moves on the document, not on the conversation.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "paper.sent"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "document_type",
+        "state",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "document_type": {
+          "enum": [
+            "nda",
+            "supplementary",
+            "allocation_letter",
+            "fema",
+            "receipt",
+            "poa"
+          ]
+        },
+        "state": {
+          "const": "sent"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "emudhra_ref": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/allotment.done.json",
+  "title": "allotment.done",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "The blueprint transition",
+  "x-consumed-by": "Lead gate column allotted_at; console rung 7",
+  "x-rule": "The system ticks rung 7 itself. One consequence, one actor (rule 5).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "allotment.done"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "units",
+        "project",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "units": {
+          "type": "number"
+        },
+        "project": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

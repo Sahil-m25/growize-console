@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/paper.blocked.json",
+  "title": "paper.blocked",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Finance or Compliance",
+  "x-consumed-by": "Lead gate columns; the console paperwork card",
+  "x-rule": "A reversal event (D19). Closes a gate that a previous paper.verified opened.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "paper.blocked"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "document_type",
+        "reason",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "document_type": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "blocked_by": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "x-reverses": "paper.verified"
+}

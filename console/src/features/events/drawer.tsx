@@ -1,0 +1,45 @@
+"use client";
+
+/* ── features/events/drawer.tsx — the event door, p:event.edit ───────────────────────────────
+   Registers the redesigned prototype's `DRAWERS["event.edit"]` (ir-console-redesigned.html
+   ~12855–12876) as the panel `"p:event.edit"` — a panel IS a drawer (DrawerKind's own comment,
+   `src/lib/store.tsx`): same registry, same frame, same docked/overlay behaviour, and its
+   `canOpenDrawer` gate already answers `true` for any `p:` key (src/lib/selectors/access.ts), so
+   this needs no change to the shell's `DrawerKind` union or its gate to exist. `saveEvent`/
+   `dropEvent` (src/lib/store.tsx) are the actions both feet dispatch.
+
+   Also registers `p:event.drop` — the confirm door `dropEvent` opens before it removes anything,
+   this port's stand-in for the prototype's shared `askFirst`/DRAWERS.ask (see EventEditor.tsx).
+
+   Importing this module is what registers both; `./index.ts` does that import so it runs before
+   either events screen can open one. */
+
+import type { ConsoleState } from "@/lib/store";
+import { registerDrawer, type DrawerProps } from "@/components/shell";
+import { EventDropBody, EventDropFoot, EventEditorBody, EventEditorFoot } from "./EventEditor";
+
+const eventFor = (state: ConsoleState, id: string | null) => (id ? state.EVENTS.find((x) => x.id === id) ?? null : null);
+
+registerDrawer("p:event.edit", {
+  w: 540,
+  /* stale (and the drawer closes itself) once the id it opened for stops naming a record — an
+     id of null ("Add event") is always fine. drwCheck's own rule, 03-app.js:6181. */
+  ok: (state, id) => id === null || !!eventFor(state, id),
+  title: (state, { id }) => (eventFor(state, id) ? "Edit event" : "Add event"),
+  sub: (state, { id }) => eventFor(state, id)?.n ?? "Choose dates and who will work it",
+  Body: EventEditorBody,
+  Foot: EventEditorFoot,
+});
+
+/* "Remove <name> from the diary" — DRAWERS.ask's one caller here, see EventEditor.tsx's own note.
+   Always about a record: stale (and closed) the moment its event stops existing. */
+registerDrawer("p:event.drop", {
+  w: 440,
+  ok: (state, id) => !!eventFor(state, id),
+  title: (state, { id }) => {
+    const e = eventFor(state, id);
+    return e ? `Remove ${e.n} from the diary` : "Unavailable";
+  },
+  Body: EventDropBody,
+  Foot: EventDropFoot,
+});

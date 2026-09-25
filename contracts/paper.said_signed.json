@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/paper.said_signed.json",
+  "title": "paper.said_signed",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "IR",
+  "x-consumed-by": "Finance queue ordering",
+  "x-rule": "A hint. What the IR was told is not what happened; only the provider's event and Finance's eye are facts.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "paper.said_signed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "channel"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "enum": [
+            "call",
+            "whatsapp",
+            "email",
+            "meeting"
+          ]
+        },
+        "count": {
+          "type": "integer"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "said_on": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

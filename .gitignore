@@ -1,0 +1,33 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+
+# Next.js build output — regenerable, and it is 506 MiB of this repo
+.next/
+*.tsbuildinfo
+
+# graphify: the generated graph and its working files. Corrected 22 Sep —
+# the old entry named tools/graphify/graph.html, a path that does not exist,
+# so the real generated file was never ignored.
+tools/graphify/graphify-out/graph.html
+tools/graphify/graphify-out/auto-update.log
+tools/graphify/graphify-out/cache/
+
+ops/diagnose/reports/*.json
+supabase/.temp/
+
+.typesafe-key
+
+# autopilot: the Slack webhook is a secret; transcripts and Jev evidence are large and regenerable
+autopilot/.slack-webhook
+autopilot/logs/
+autopilot/*/results/

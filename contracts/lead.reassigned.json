@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/lead.reassigned.json",
+  "title": "lead.reassigned",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "manager",
+  "x-consumed-by": "Investor org (Contact.ir_name)",
+  "x-rule": "The Contact's ir_name follows the lead. Delegation, never impersonation.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "lead.reassigned"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "new_ir_name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "new_ir_name": {
+          "type": "string"
+        },
+        "previous_ir_name": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/money.not_found.json",
+  "title": "money.not_found",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Finance",
+  "x-consumed-by": "The Claims answer",
+  "x-rule": "The claim stays exactly as the IR wrote it. Finance answers; it never edits someone else's record of what they were told.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "money.not_found"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "claim_id": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

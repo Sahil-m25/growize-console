@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/paper.verified.json",
+  "title": "paper.verified",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Finance",
+  "x-consumed-by": "Lead gate columns; opens supp_verified_at",
+  "x-rule": "A human check that this is the right document. The signature was already proved by the provider.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "paper.verified"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "document_type",
+        "state",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "document_type": {
+          "type": "string"
+        },
+        "state": {
+          "const": "verified"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "verified_by": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/_envelope.json",
+  "title": "Event envelope",
+  "description": "Every event that crosses a seam carries this envelope. Build Book \u00a711.",
+  "type": "object",
+  "required": [
+    "event_id",
+    "type",
+    "schema_version",
+    "occurred_at",
+    "actor",
+    "ids",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Client-minted. Consumers dedupe on this. Reused across retries."
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z_]+$"
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "An unknown version dead-letters. It never guesses."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 with the +05:30 offset. Computed from the fact, not from delivery."
+    },
+    "actor": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "user",
+            "system",
+            "investor",
+            "external"
+          ]
+        },
+        "zoho_user_id": {
+          "type": "string"
+        },
+        "org": {
+          "enum": [
+            "leads",
+            "investor"
+          ]
+        },
+        "investor_contact_id": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "For kind=external: emudhra, bank, fms, mailer, fcm."
+        }
+      }
+    },
+    "ids": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lead_uuid": {
+          "type": "string"
+        },
+        "investor_contact_id": {
+          "type": "string"
+        },
+        "arl_code": {
+          "type": "string",
+          "pattern": "^ARL-INV-[0-9]{4}$"
+        }
+      }
+    },
+    "payload": {
+      "type": "object"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "portal",
+        "console",
+        "app",
+        "integration",
+        "webhook"
+      ],
+      "description": "So the mapper ignores its own writes."
+    }
+  }
+}

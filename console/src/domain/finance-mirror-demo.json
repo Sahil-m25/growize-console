@@ -1,0 +1,219 @@
+{
+  "source": "Investor Management portal",
+  "mode": "local-demo",
+  "accounts": [
+    {
+      "leadId": "L6",
+      "accountId": "ARL-INV-0208",
+      "holdEnds": "23 Sep",
+      "payments": [
+        {
+          "id": "T-0029",
+          "kind": "advance",
+          "amount": 250000,
+          "mode": "NEFT",
+          "reference": "HDFC2608551",
+          "on": "24 Aug 11:06",
+          "recordedBy": "meena",
+          "recordedByName": "Meena Raghavan",
+          "reconciliation": "matched",
+          "note": null
+        }
+      ],
+      "documents": [
+        {
+          "id": "D-038",
+          "title": "Advance receipt",
+          "class": "Financial",
+          "state": "issued",
+          "sentOn": "25 Aug 09:02",
+          "sentBy": "meena",
+          "sentByName": "Meena Raghavan",
+          "signatureMethod": null,
+          "signatureReference": "RCT-2508-0208",
+          "completedOn": null,
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        },
+        {
+          "id": "D-037",
+          "title": "Supplementary agreement",
+          "class": "Commercial",
+          "state": "signed",
+          "sentOn": "12 Aug 17:00",
+          "sentBy": "harsha",
+          "sentByName": "Harsha Bhat",
+          "signatureMethod": "Aadhaar OTP",
+          "signatureReference": "EMU-2608-77120",
+          "completedOn": "24 Aug 11:06",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        },
+        {
+          "id": "D-036",
+          "title": "Non-disclosure agreement",
+          "class": "Confidentiality",
+          "state": "signed",
+          "sentOn": "02 Aug 10:22",
+          "sentBy": "meena",
+          "sentByName": "Meena Raghavan",
+          "signatureMethod": "Aadhaar OTP",
+          "signatureReference": "EMU-0208-64008",
+          "completedOn": "03 Aug 09:40",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        }
+      ],
+      "units": 1,
+      "unitPrice": 2500000
+    },
+    {
+      "leadId": "L7",
+      "accountId": "ARL-INV-0209",
+      "holdEnds": "21 Sep",
+      "payments": [
+        {
+          "id": "T-0030",
+          "kind": "advance",
+          "amount": 1000000,
+          "mode": "SWIFT",
+          "reference": "EMIR2608119",
+          "on": "22 Aug 11:15",
+          "recordedBy": "meena",
+          "recordedByName": "Meena Raghavan",
+          "reconciliation": "matched",
+          "note": "NRE inward · FIRC awaited"
+        }
+      ],
+      "documents": [
+        {
+          "id": "D-041",
+          "title": "FEMA declaration",
+          "class": "Regulatory",
+          "state": "awaiting",
+          "sentOn": "26 Aug 16:20",
+          "sentBy": "meena",
+          "sentByName": "Meena Raghavan",
+          "signatureMethod": "Class 3 DSC",
+          "signatureReference": null,
+          "completedOn": null,
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": "09 Sep",
+          "reason": null
+        },
+        {
+          "id": "D-040",
+          "title": "Supplementary agreement",
+          "class": "Commercial",
+          "state": "signed",
+          "sentOn": "19 Aug 18:40",
+          "sentBy": "harsha",
+          "sentByName": "Harsha Bhat",
+          "signatureMethod": "Class 3 DSC",
+          "signatureReference": "EMU-1908-70551",
+          "completedOn": "22 Aug 09:10",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        },
+        {
+          "id": "D-039",
+          "title": "Non-disclosure agreement",
+          "class": "Confidentiality",
+          "state": "signed",
+          "sentOn": "05 Aug 08:06",
+          "sentBy": "meena",
+          "sentByName": "Meena Raghavan",
+          "signatureMethod": "Class 3 DSC",
+          "signatureReference": "EMU-0508-66120",
+          "completedOn": "06 Aug 14:22",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        }
+      ],
+      "units": 4,
+      "unitPrice": 2500000
+    },
+    {
+      "leadId": "L13",
+      "accountId": "ARL-INV-0210",
+      "holdEnds": null,
+      "payments": [
+        {
+          "id": "T-0031",
+          "kind": "full",
+          "amount": 2500000,
+          "mode": "RTGS",
+          "reference": "ICIC2508430",
+          "on": "20 Aug 14:30",
+          "recordedBy": "harsha",
+          "recordedByName": "Harsha Bhat",
+          "reconciliation": "matched",
+          "note": null
+        }
+      ],
+      "documents": [
+        {
+          "id": "D-035b",
+          "title": "Non-disclosure agreement",
+          "class": "Confidentiality",
+          "state": "signed",
+          "sentOn": "09 Jul 11:20",
+          "sentBy": "meena",
+          "sentByName": "Meena Raghavan",
+          "signatureMethod": "Aadhaar OTP",
+          "signatureReference": "EMU-0907-58440",
+          "completedOn": "10 Jul 09:02",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        },
+        {
+          "id": "D-035",
+          "title": "Allocation letter",
+          "class": "Commercial",
+          "state": "signed",
+          "sentOn": "21 Jul 10:12",
+          "sentBy": "harsha",
+          "sentByName": "Harsha Bhat",
+          "signatureMethod": "Aadhaar OTP",
+          "signatureReference": "EMU-2508-71004",
+          "completedOn": "22 Jul 11:30",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        },
+        {
+          "id": "D-034",
+          "title": "Supplementary agreement",
+          "class": "Commercial",
+          "state": "signed",
+          "sentOn": "18 Jul 16:00",
+          "sentBy": "harsha",
+          "sentByName": "Harsha Bhat",
+          "signatureMethod": "Aadhaar OTP",
+          "signatureReference": "EMU-1807-69912",
+          "completedOn": "19 Jul 10:05",
+          "verifiedBy": null,
+          "verifiedByName": null,
+          "expiresOn": null,
+          "reason": null
+        }
+      ],
+      "units": 1,
+      "unitPrice": 2500000
+    }
+  ]
+}

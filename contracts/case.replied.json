@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/case.replied.json",
+  "title": "case.replied",
+  "x-direction": "app \u2194 investor",
+  "x-produced-by": "The KAM",
+  "x-consumed-by": "The app's case thread",
+  "x-rule": "A reply is a human touch. Automated mail on the same case is not (rule 6).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "case.replied"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "message"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "by": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

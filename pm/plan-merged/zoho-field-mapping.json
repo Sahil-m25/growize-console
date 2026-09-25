@@ -1,0 +1,873 @@
+[
+ [
+  "Investor",
+  "id",
+  "ARL investor code, e.g. ARL-INV-0205; the join key with the investor app",
+  "Contacts",
+  "ARL_ID",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 20,
+   "unique": {
+    "case_sensitive": false
+   },
+   "tooltip": {
+    "name": "info_icon",
+    "value": "ARL investor code (ARL-INV-nnnn); join key with the investor app"
+   }
+  }
+ ],
+ [
+  "Investor",
+  "n",
+  "full name",
+  "Contacts",
+  "First_Name + Last_Name (Full_Name)",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "ph",
+  "the investor's mobile number, e.g. +91 98450 33021 (Indian or overseas); the only phone the prototype keeps",
+  "Contacts",
+  "Mobile",
+  "exists",
+  "Mobile holds it with country code; Phone stays unused"
+ ],
+ [
+  "Investor",
+  "em",
+  "email",
+  "Contacts",
+  "Email",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "city",
+  "city",
+  "Contacts",
+  "Mailing_City",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "addr",
+  "postal address",
+  "Contacts",
+  "Mailing_Street / Mailing_Flat_House_No_Building_Apartment_Name / Mailing_Zip / Mailing_State / Mailing_Country",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "nri",
+  "true when the investor lives abroad (NRI or OCI), false for residents",
+  "Contacts",
+  "Residency (Resident / NRI / OCI)",
+  "exists",
+  "nri=false -> Resident; nri=true -> NRI or OCI (Residency keeps the finer distinction)"
+ ],
+ [
+  "Investor",
+  "fema",
+  "FEMA applies (NRI)",
+  "Contacts",
+  "FEMA_Applicable (boolean)",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "pan",
+  "PAN, e.g. AVRPM4471K; masked except for Finance/KYC",
+  "Contacts",
+  "PAN_Number",
+  "exists",
+  "Plain text today; FLS hides it from every profile but Finance/KYC (wall, M02-S04)"
+ ],
+ [
+  "Investor",
+  "aadh",
+  "the last 4 digits of the investor's Aadhaar, e.g. '7712' \u2014 the prototype never holds more than these 4 digits",
+  "Contacts",
+  "Aadhaar_Last4",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 4,
+   "tooltip": {
+    "name": "info_icon",
+    "value": "Last 4 digits only (D54 B-16)"
+   }
+  }
+ ],
+ [
+  "Investor",
+  "aref",
+  "the UIDAI reference number that stands in for the full Aadhaar, e.g. UIDAI-2507-889021; no existing field holds it",
+  "Contacts",
+  "Aadhaar_Ref",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 40
+  }
+ ],
+ [
+  "Investor",
+  "kyc",
+  "passed / pending / failed",
+  "Contacts",
+  "KYC (Completed / In Progress / Failed / Not Started / NA)",
+  "exists",
+  "passed=Completed, pending=In Progress, failed=Failed"
+ ],
+ [
+  "Investor",
+  "kycOn",
+  "date KYC passed",
+  "Contacts",
+  "KYC_Completed_On",
+  "new_field",
+  {
+   "data_type": "date"
+  }
+ ],
+ [
+  "Investor",
+  "bank.acct",
+  "payout bank account number",
+  "Contacts",
+  "Bank_Account_Number (encrypted)",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "bank.ifsc",
+  "IFSC",
+  "Contacts",
+  "ISFC_Code",
+  "exists",
+  "Existing API name is misspelt (ISFC); used as is"
+ ],
+ [
+  "Investor",
+  "bank.name",
+  "account holder name",
+  "Contacts",
+  "Account_Holder_Full_name",
+  "exists",
+  null
+ ],
+ [
+  "Investor",
+  "bank.drop",
+  "penny-drop result: matched / pending / mismatch",
+  "Contacts",
+  "Bank_Verification",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Pending",
+     "actual_value": "Pending"
+    },
+    {
+     "display_value": "Matched",
+     "actual_value": "Matched"
+    },
+    {
+     "display_value": "Mismatch",
+     "actual_value": "Mismatch"
+    }
+   ]
+  }
+ ],
+ [
+  "Investor",
+  "ir",
+  "IR whose lead became this investor (D69; 'own' = owner at Said yes)",
+  "Contacts",
+  "Originating_IR",
+  "new_field",
+  {
+   "data_type": "userlookup",
+   "tooltip": {
+    "name": "info_icon",
+    "value": "IR who owned the lead at Said yes (D69/D74)"
+   }
+  }
+ ],
+ [
+  "Investor",
+  "lead",
+  "link to the lead record this investor came from (e.g. L6); leads are no longer converted (D54), so the Contact must point back to its lead",
+  "Contacts",
+  "Origin_Lead",
+  "new_field",
+  {
+   "data_type": "lookup",
+   "lookup": {
+    "module": {
+     "api_name": "Leads"
+    },
+    "display_label": "Investor (from lead)"
+   }
+  }
+ ],
+ [
+  "Investor",
+  "since",
+  "date the investor said yes",
+  "Contacts",
+  "Said_Yes_At",
+  "new_field",
+  {
+   "data_type": "datetime"
+  }
+ ],
+ [
+  "Investor",
+  "src",
+  "source: Events / Founder network / Referral \u2014 investor",
+  "Leads",
+  "Origin_Lead -> Lead_Source",
+  "setup_edit",
+  "Shown from the origin lead's Lead_Source. Setup: add 'Founder network' and 'Referral \u2014 investor' to Leads.Lead_Source (it already has Events and Referral). Nothing stored twice."
+ ],
+ [
+  "Investor",
+  "nominee (name)",
+  "nominee's name, e.g. 'S. Menon' from 'S. Menon (spouse)'",
+  "Contacts",
+  "Nominee_Name",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 120
+  }
+ ],
+ [
+  "Investor",
+  "nominee (relation)",
+  "nominee's relation, e.g. spouse",
+  "Contacts",
+  "Nominee_Relation",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Spouse",
+     "actual_value": "Spouse"
+    },
+    {
+     "display_value": "Child",
+     "actual_value": "Child"
+    },
+    {
+     "display_value": "Parent",
+     "actual_value": "Parent"
+    },
+    {
+     "display_value": "Sibling",
+     "actual_value": "Sibling"
+    },
+    {
+     "display_value": "Other",
+     "actual_value": "Other"
+    }
+   ]
+  }
+ ],
+ [
+  "Investor",
+  "kam",
+  "key account manager",
+  "Contacts",
+  "KAM",
+  "new_field",
+  {
+   "data_type": "userlookup"
+  }
+ ],
+ [
+  "Investor",
+  "kamOn",
+  "date the KAM was named",
+  "Contacts",
+  "KAM_Since",
+  "new_field",
+  {
+   "data_type": "date"
+  }
+ ],
+ [
+  "Investor",
+  "intro",
+  "introduction call time",
+  "Contacts",
+  "KAM_Intro_At",
+  "new_field",
+  {
+   "data_type": "datetime"
+  }
+ ],
+ [
+  "Investor app",
+  "APP.mark",
+  "app account tentative / permanent (Head of Finance may take back within a week)",
+  "Contacts",
+  "App_Account_Mark",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Tentative",
+     "actual_value": "Tentative"
+    },
+    {
+     "display_value": "Permanent",
+     "actual_value": "Permanent"
+    }
+   ]
+  }
+ ],
+ [
+  "Investor app",
+  "APP.markAt",
+  "when the mark was set",
+  "Contacts",
+  "App_Mark_At",
+  "new_field",
+  {
+   "data_type": "datetime"
+  }
+ ],
+ [
+  "Investor app",
+  "APP.welcome.at",
+  "when the welcome was delivered",
+  "Contacts",
+  "App_Welcome_At",
+  "new_field",
+  {
+   "data_type": "datetime"
+  }
+ ],
+ [
+  "Investor app",
+  "APP.welcome.ch",
+  "channel the welcome went by (email / WhatsApp / SMS)",
+  "Contacts",
+  "App_Welcome_Channel",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Email",
+     "actual_value": "Email"
+    },
+    {
+     "display_value": "WhatsApp",
+     "actual_value": "WhatsApp"
+    },
+    {
+     "display_value": "SMS",
+     "actual_value": "SMS"
+    },
+    {
+     "display_value": "App push",
+     "actual_value": "App push"
+    }
+   ]
+  }
+ ],
+ [
+  "Investor app",
+  "APP.markBy",
+  "the person who last changed the app account mark by hand (Head of Finance); empty when the system set it automatically on a confirmed receipt",
+  "Contacts",
+  "App_Mark_By",
+  "new_field",
+  {
+   "data_type": "userlookup"
+  }
+ ],
+ [
+  "Investor app",
+  "APP.hist",
+  "history of mark changes: to, at, by",
+  "Contacts",
+  "Zoho field history tracking on App_Account_Mark (records old value, new value, who, when)",
+  "setup_edit",
+  "Turn on field history for App_Account_Mark in Setup"
+ ],
+ [
+  "Investor docs",
+  "KYC papers",
+  "personal scope: PAN proof",
+  "Contacts",
+  "PAN_Proof",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Investor docs",
+  "bank proof",
+  "personal scope: the cancelled cheque or bank letter that proves the payout account",
+  "Contacts",
+  "Bank_Proof",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Investor docs",
+  "FEMA declaration",
+  "personal scope, NRI only",
+  "Contacts",
+  "FEMA_Declaration",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Farm",
+  "n",
+  "farm/block name",
+  "LLP_Creation_Module",
+  "Name",
+  "exists",
+  null
+ ],
+ [
+  "Farm",
+  "k",
+  "short block code, e.g. A",
+  "LLP_Creation_Module",
+  "Block_Code",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 10
+  }
+ ],
+ [
+  "Farm",
+  "acres",
+  "acreage",
+  "LLP_Creation_Module",
+  "Acreage_Acres",
+  "exists",
+  null
+ ],
+ [
+  "Farm",
+  "units",
+  "total units",
+  "LLP_Creation_Module",
+  "Total_Units",
+  "exists",
+  null
+ ],
+ [
+  "Farm",
+  "released",
+  "units released for sale on the farm, e.g. 62 of 62 on Block A, 0 on Block C",
+  "LLP_Creation_Module",
+  "Units_Released",
+  "new_field",
+  {
+   "data_type": "integer",
+   "tooltip": {
+    "name": "info_icon",
+    "value": "Units released for sale; <= Total_Units"
+   }
+  }
+ ],
+ [
+  "Farm",
+  "soil",
+  "soil type",
+  "LLP_Creation_Module",
+  "Soil_Type",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 60
+  }
+ ],
+ [
+  "Farm",
+  "crop",
+  "crop stage",
+  "LLP_Creation_Module",
+  "Crop_Stage",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Survey pending",
+     "actual_value": "Survey pending"
+    },
+    {
+     "display_value": "Prepared, not planted",
+     "actual_value": "Prepared, not planted"
+    },
+    {
+     "display_value": "Year 1 \u2014 establishment",
+     "actual_value": "Year 1 \u2014 establishment"
+    },
+    {
+     "display_value": "Year 2 \u2014 growth",
+     "actual_value": "Year 2 \u2014 growth"
+    },
+    {
+     "display_value": "Year 3 \u2014 bearing",
+     "actual_value": "Year 3 \u2014 bearing"
+    },
+    {
+     "display_value": "Flowering",
+     "actual_value": "Flowering"
+    },
+    {
+     "display_value": "Harvest",
+     "actual_value": "Harvest"
+    }
+   ]
+  }
+ ],
+ [
+  "Farm docs",
+  "LLP deed",
+  "project scope",
+  "LLP_Creation_Module",
+  "LLP_Deed",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Farm docs",
+  "Insurance policy",
+  "project scope",
+  "LLP_Creation_Module",
+  "Insurance_Policy_Document",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Farm",
+  "status typo",
+  "'Darft' picklist value",
+  "LLP_Creation_Module",
+  "LLP_Status",
+  "setup_edit",
+  "Rename 'Darft' to 'Draft' in Setup"
+ ],
+ [
+  "Farm notes",
+  "FIELD",
+  "dated field note on a farm: headline, text, who, when (the stage shown with it is the farm's crop stage at that time)",
+  "LLP_Creation_Module",
+  "Notes on the LLP record (Note_Title = headline, Note_Content = text, Created_By = who, Created_Time = when) + Crop_Stage on the LLP",
+  "exists",
+  null
+ ],
+ [
+  "Payment",
+  "TXN",
+  "receipt: kind advance/full/refund, amount, mode NEFT/RTGS/SWIFT, UTR, date, entered by, matched/pending",
+  "Receipts",
+  "new module",
+  "new_module",
+  "New module Receipts. Fields: Allotment (lookup LLP_Unit_Allocation), Investor (lookup Contacts), LLP (lookup LLP_Creation_Module), Kind (Advance/Full/Part/Refund), Amount (currency), Mode (NEFT/RTGS/IMPS/SWIFT/Cheque), UTR (text, unique), Received_On (datetime), Entered_By (user), Match_State (Pending/Matched/Not found), Matched_By (user), Reversal_Of (lookup Receipts), Note"
+ ],
+ [
+  "Document",
+  "DOCS",
+  "one paper: type, scope, state sent/signed/verified, signing method, Zoho Sign request id, sent/signed times",
+  "Documents",
+  "new module",
+  "new_module",
+  "Fields: Doc_Type, Scope (Personal/Allotment/Project), Investor, Allotment, LLP, State, Sign_Method, Sign_Request_Id, Sent_At, Signed_At, Verified_By, File (fileupload)"
+ ],
+ [
+  "Ticket",
+  "TKT",
+  "investor request: title, category (Bank/Query/Records/Access/Compliance), opened, opened by (investor/staff), owner, priority high/normal, state open/closed, text, SLA",
+  "Cases",
+  "Cases standard fields: Subject=title, Description=text, Contact_Name=investor, Owner=owner, Priority, Status, Case_Origin=opened by, Created_Time=opened; new: Category picklist, SLA_Due datetime, Closed_At datetime. Cases is hidden today: enable in Setup",
+  "setup_edit",
+  null
+ ],
+ [
+  "Update",
+  "UPD",
+  "investor update: id, title, category (Produce/Statement/Compliance), published on, by, audience (all / allocated / one farm), count sent, text",
+  "Investor_Updates",
+  "new module",
+  "new_module",
+  "Fields: Title (Name), Category (Produce/Statement/Compliance/Other), Audience (All / Allocated / One LLP), LLP (lookup LLP_Creation_Module), Body, Published_At, Published_By, Sent_Count, Delivered_Count (from push.delivered, D73)"
+ ],
+ [
+  "KAM log",
+  "CONTACT",
+  "conversation: channel, mood, note",
+  "Calls (standard) or Notes",
+  "open",
+  "open",
+  "OD6 still open"
+ ],
+ [
+  "Allotment",
+  "investor",
+  "who holds it",
+  "LLP_UnitAllocation_Module",
+  "Customer -> Contacts",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "farm",
+  "which farm LLP",
+  "LLP_UnitAllocation_Module",
+  "LLP -> LLP_Creation_Module",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "st",
+  "reserved until the balance lands, then allocated",
+  "LLP_UnitAllocation_Module",
+  "Allocation_Status (Reserved / Issued / Cancelled)",
+  "exists",
+  "allocated = Issued"
+ ],
+ [
+  "Allotment",
+  "units reserved",
+  "units held while the allotment is Reserved",
+  "LLP_UnitAllocation_Module",
+  "Reserved_Units",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "units allotted",
+  "units once issued, and the capital they represent",
+  "LLP_UnitAllocation_Module",
+  "Issued_Units / Capital_Invested",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "unit price",
+  "price per unit",
+  "LLP_UnitAllocation_Module",
+  "Unit_Price",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "amount received",
+  "money received against this allotment",
+  "LLP_UnitAllocation_Module",
+  "Total_Amount_Received",
+  "exists",
+  "Live records: 25,00,000 received on a 25,00,000 unit"
+ ],
+ [
+  "Allotment",
+  "balance due",
+  "amount still to be paid",
+  "LLP_UnitAllocation_Module",
+  "Total_Amount_Receivable",
+  "exists",
+  "0 on the two fully paid live records"
+ ],
+ [
+  "Allotment",
+  "token",
+  "token / advance paid to reserve",
+  "LLP_UnitAllocation_Module",
+  "Token_Advance_Amount",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "paid state",
+  "none / partial / full",
+  "LLP_UnitAllocation_Module",
+  "computed: Received = 0 -> Yet to initiate; Receivable > 0 -> Partial; Receivable = 0 and Received > 0 -> Full",
+  "derived",
+  "No field stored twice"
+ ],
+ [
+  "Allotment",
+  "exit",
+  "exit requested / in progress / done",
+  "LLP_UnitAllocation_Module",
+  "Customer_Status (Active / Exit Requested / Exit in progress / Exited Partially / Exited Fully)",
+  "exists",
+  null
+ ],
+ [
+  "Allotment",
+  "agreement",
+  "supplementary agreement signed (yes/no summary)",
+  "LLP_UnitAllocation_Module",
+  "computed: Supplementary_Agreement file present and its Documents record Signed",
+  "derived",
+  null
+ ],
+ [
+  "Allotment",
+  "hold",
+  "reservation held until, e.g. 23 Sep",
+  "LLP_UnitAllocation_Module",
+  "Hold_Until",
+  "new_field",
+  {
+   "data_type": "date"
+  }
+ ],
+ [
+  "Allotment",
+  "extension.state",
+  "hold extension request: waiting / approved / declined",
+  "LLP_UnitAllocation_Module",
+  "Hold_Extension_State",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Requested",
+     "actual_value": "Requested"
+    },
+    {
+     "display_value": "Approved",
+     "actual_value": "Approved"
+    },
+    {
+     "display_value": "Declined",
+     "actual_value": "Declined"
+    }
+   ]
+  }
+ ],
+ [
+  "Allotment",
+  "extension.days",
+  "days asked for",
+  "LLP_UnitAllocation_Module",
+  "Hold_Extension_Days",
+  "new_field",
+  {
+   "data_type": "integer"
+  }
+ ],
+ [
+  "Allotment",
+  "extension.why",
+  "reason given",
+  "LLP_UnitAllocation_Module",
+  "Hold_Extension_Reason",
+  "new_field",
+  {
+   "data_type": "textarea",
+   "textarea": {
+    "type": "small"
+   }
+  }
+ ],
+ [
+  "Allotment",
+  "extension.by",
+  "who asked (the IR)",
+  "LLP_UnitAllocation_Module",
+  "Hold_Extension_Asked_By",
+  "new_field",
+  {
+   "data_type": "userlookup"
+  }
+ ],
+ [
+  "Allotment",
+  "extension.on",
+  "when the extension was decided",
+  "LLP_UnitAllocation_Module",
+  "Hold_Extension_Decided_At",
+  "new_field",
+  {
+   "data_type": "datetime"
+  }
+ ],
+ [
+  "Allotment docs",
+  "Supplementary agreement",
+  "allotment scope, signed PDF",
+  "LLP_UnitAllocation_Module",
+  "Supplementary_Agreement",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Allotment docs",
+  "Allocation letter",
+  "allotment scope, signed PDF",
+  "LLP_UnitAllocation_Module",
+  "Allocation_Letter",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Allotment docs",
+  "Unit certificate",
+  "allotment scope",
+  "LLP_UnitAllocation_Module",
+  "Unit_Certificate",
+  "new_field",
+  {
+   "data_type": "fileupload"
+  }
+ ],
+ [
+  "Allotment",
+  "legacy payments",
+  "ten fixed Amount_n / UTR_n / Date_n columns",
+  "LLP_UnitAllocation_Module",
+  "kept as history; new payments go to the Receipts module (D54 A-24)",
+  "exists",
+  null
+ ]
+]

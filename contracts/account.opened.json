@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/account.opened.json",
+  "title": "account.opened",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "The receipt (system)",
+  "x-consumed-by": "Lead gate column; the console display",
+  "x-rule": "Opens at the first confirmed money, tentative (D10).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "account.opened"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "arl_code",
+        "at",
+        "state"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "arl_code": {
+          "type": "string",
+          "pattern": "^ARL-INV-[0-9]{4}$"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "enum": [
+            "tentative",
+            "permanent",
+            "locked"
+          ]
+        }
+      }
+    }
+  }
+}

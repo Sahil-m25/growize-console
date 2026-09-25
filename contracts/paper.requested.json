@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/paper.requested.json",
+  "title": "paper.requested",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "IR",
+  "x-consumed-by": "Finance queue",
+  "x-rule": "A hint that orders a queue. Never a precondition for anything Finance does.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "paper.requested"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "round"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "round": {
+          "enum": [
+            "primary",
+            "supplementary"
+          ]
+        },
+        "draft_url": {
+          "type": "string"
+        },
+        "agreed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

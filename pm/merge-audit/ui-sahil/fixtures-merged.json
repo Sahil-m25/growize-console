@@ -1,0 +1,482 @@
+{
+ "DEMO_STAFF": {
+  "description": "The demo staff as shipped: four IRs (Rohit, Kavya, Nikhil, Ananya), IR Manager Tasneem, Digital Infrastructure Sahil, plus Finance (Harsha), Marketing (Gokul, inactive), Ops Lead (Jhalak), BU Owner (Arvind), Corporate Ops (Pradeep). Nobody outside the three seats holds a granted page.",
+  "prototype": "",
+  "staging": "Sandbox users per the seat plan: six console users on IR / IR Manager / Digital Infrastructure roles; Finance, Marketing, Ops Lead, BU Owner and Corporate Ops users exist on their own roles with no console grant."
+ },
+ "GOKUL_ACTIVE": {
+  "description": "Gokul S (Marketing) is an active member of staff.",
+  "prototype": "PEOPLE.gokul.on=true; draw();",
+  "staging": "Activate Gokul's Zoho user on the Marketing role in the sandbox."
+ },
+ "KAVYA_DEACTIVATED": {
+  "description": "Kavya Nair (IR) has been deactivated.",
+  "prototype": "PEOPLE.kavya.on=false; draw();",
+  "staging": "Deactivate Kavya's Zoho user in the sandbox (Setup \u2192 Users \u2192 Deactivate)."
+ },
+ "JHALAK_GRANTED_LEADS": {
+  "description": "Digital Infrastructure has granted Jhalak Mehta (Ops Lead) 'See it' on Leads; nobody is signed in.",
+  "prototype": "signIn('sahil'); capSave('jhalak','leads','view'); endSession(); AUTHED=false; SIGNEDIN=false; SIGNOUT=null; draw();",
+  "staging": "Signed in as Sahil on staging, grant Jhalak Leads 'See it' in Teams \u2192 Jhalak \u2192 Granted access, then sign out."
+ },
+ "KAVYA_SESSION_EXPIRED": {
+  "description": "Kavya was signed in and her session has just passed 12 hours.",
+  "prototype": "signIn('kavya'); signOut('expired');",
+  "staging": "Set the session store's issued-at for Kavya's session to 12h 1m ago, then make any request."
+ },
+ "BROWSER_OFFLINE": {
+  "description": "The browser has lost its connection.",
+  "prototype": "Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>false}); dispatchEvent(new Event('offline'));",
+  "staging": "Chrome DevTools \u2192 Network \u2192 Offline."
+ },
+ "ZOHO_TEST_USER": {
+  "description": "The restricted test user exists on the IR role and IR profile, with an API token from the console's OAuth client.",
+  "prototype": "",
+  "staging": "Created in E02-S05 (production org for S0 checks, sandbox for staging)."
+ },
+ "ZOHO_CONTACT_WITH_IDENTITY": {
+  "description": "A Contact owned by the super admin holding PAN, bank account and Aadhaar values, and a Lead with PAN.",
+  "prototype": "",
+  "staging": "Create 'Test Identity' Contact with dummy PAN ABCDE1234F, bank 000111222333, Aadhaar 999988887777 (sandbox only)."
+ },
+ "ZOHO_OTHER_OWNER_LEAD": {
+  "description": "A Lead owned by a user other than the test user, not shared with them.",
+  "prototype": "",
+  "staging": "Create 'Other Owner Lead' owned by the super admin."
+ },
+ "ZOHO_TEST_LEAD": {
+  "description": "A Lead owned by the test user with the tester's email address.",
+  "prototype": "",
+  "staging": "Create 'Tester Lead' owned by the test user, Email = tester's address, consent recorded."
+ },
+ "STAGING_DEPLOYED": {
+  "description": "The console is deployed on staging against the sandbox org.",
+  "prototype": "",
+  "staging": "E01-S07 pipeline green; staging URL live."
+ },
+ "STAGING_USERS": {
+  "description": "The six console users have Zoho seats and can sign in on staging.",
+  "prototype": "",
+  "staging": "E03-S06 done in the sandbox."
+ },
+ "CLOCK_28AUG_1000": {
+  "description": "The console's clock reads Fri 28 Aug 2026, 10:00 (so today's 16:30 call is still ahead).",
+  "prototype": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw();",
+  "staging": "Run the staging test day with the sandbox seed's 'today' = the test date and start before 16:00 local time, or set the staging app's CLOCK_OVERRIDE to 10:00."
+ },
+ "DEMO_BOOK": {
+  "description": "The demo book as shipped, today = Fri 28 Aug 2026. Rohit carries Sanjay Menon (intro email overdue since 22 Aug, mobile +91 98860 30012), Meera Krishnan (call back today 16:30, NDA waiting for her signature, mobile +91 98450 12277), Prakash Bhat (balance due 29 Aug) and Preethi Nayak (closed as lost). Ritu Anand and Harish Kamath have no owner. Rahul Sethi (+91 99720 61140) and Farida Contractor are Ananya's; Deepa Varghese is Kavya's (reservation note today 16:30).",
+  "prototype": "",
+  "staging": "Seed the sandbox Leads, Calls and Tasks from the demo seed script (same names, owners, stages, next steps, phones and dates, with 'today' mapped to the test day)."
+ },
+ "ROHIT_GRANTED_ALL_LEADS": {
+  "description": "Digital Infrastructure has granted Rohit Deshpande (IR) 'all leads' on Leads, so his search covers the whole organisation while his book stays his own; nobody is signed in.",
+  "prototype": "GRANT.rohit={...(GRANT.rohit||{}),leads:[...capsFor('rohit','leads'),'all']}; draw();",
+  "staging": "Signed in as Sahil, grant Rohit Leads 'All leads' in Teams \u2192 Rohit \u2192 Granted access, then sign out."
+ },
+ "E04_SHEET_READY": {
+  "description": "The event sheet for Prestige Falcon City (23\u201324 Aug) is filled and ready to load: 38 rows, 31 valid, 4 already on the book, 3 missing a required field.",
+  "prototype": "",
+  "staging": "Create the Prestige Falcon City event in the sandbox and upload the 38-row sample sheet to its sheet tab."
+ },
+ "CSV_SAMPLE_FILE": {
+  "description": "A file leads.csv on the tester's machine with columns Full Name, Mobile Number, Email, City, Units, Consent and six rows: Asha Rao 9886100001 (good), 'B' (one-character name), Dup Guy +91 98860 30012 (on the book), Asha Two 09886100001 (same as row 2), Bad Mail with email 'bad@', OK Two +971501234567 (good).",
+  "prototype": "",
+  "staging": "Save the sample file from pm/out/B.fixtures.json description to the tester's desktop."
+ },
+ "ZOHO_DUP_CHECK_ON": {
+  "description": "Zoho duplicate check on Leads.Mobile is enabled in the sandbox.",
+  "prototype": "",
+  "staging": "Setup \u2192 Data Administration \u2192 Duplicate check \u2192 Leads \u2192 Mobile unique."
+ },
+ "L4_CALL_IN_ZOHO": {
+  "description": "Meera Krishnan's call back today 16:30 exists in Zoho as a scheduled Call with a 15-minute reminder.",
+  "prototype": "",
+  "staging": "Create the Call on Meera Krishnan's Lead in the sandbox, today 16:30, reminder 15 min."
+ },
+ "DEMO_BOOK__C": {
+  "description": "The demo book as shipped: Rohit owns Sanjay Menon (L2), Meera Krishnan (L4) and Prakash Bhat (L6); Kavya owns Anand Pillai (L1), Girish Rao (L3), Deepa Varghese (L5), Joseph Mathew (L7), R. Sundaram (L13) and the lost Suresh Menon (L14); Nikhil owns Vikram Shetty and Nandini Reddy; Ananya owns Rahul Sethi, Lakshmi Iyer, Farida Contractor; Tasneem manages the four IRs; Sahil is Digital Infrastructure (view only on leads); Harsha is Finance and has no console login.",
+  "prototype": "",
+  "staging": "Seed the sandbox Leads with the same owners, secondaries and stages (import pm fixtures CSV); users per the seat plan; Harsha exists only as a Finance user with no console grant."
+ },
+ "CLOCK_28AUG_1536": {
+  "description": "The clock reads 28 Aug 2026, 15:36 (the demo's 'today', mid-afternoon), so morning and afternoon slots are past and evening is still ahead.",
+  "prototype": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}",
+  "staging": "Run against a sandbox where the test date is fixed: set the test user's timezone and run the case between 15:00 and 17:59 on the seeded 'today', or shift the seeded dates to the run day."
+ },
+ "NO_DIALER": {
+  "description": "The test browser has no phone dialer: tapping Call records the tap and stays on the page (a real phone would open the dialer).",
+  "prototype": "document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^=\"tel:\"]');if(a)e.preventDefault();},true);",
+  "staging": "Same browser setting on staging (block tel: navigation in the test browser profile)."
+ },
+ "L2_NOTE_EVENINGS_ONLY": {
+  "description": "Sanjay Menon's latest note (by Rohit, 27 Aug 10:05): 'Asked us not to call before 6pm. Evenings only.' \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Add that Note on the sandbox Lead for Sanjay Menon, owned by Rohit."
+ },
+ "L1_NO_CONSENT": {
+  "description": "Anand Pillai (Kavya's) has no contact permission recorded \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead Anand Pillai with the consent fields empty."
+ },
+ "L4_NO_NDA": {
+  "description": "Meera Krishnan's NDA is out for signature, not back signed; her next step is 'Call back' 28 Aug 16:30 and her last contact an inbound reply 26 Aug 10:52 \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead Meera Krishnan with NDA round 'sent', open Call back task due 28 Aug 16:30."
+ },
+ "L6_RESERVED_BALANCE_REPORTED": {
+  "description": "Prakash Bhat (Rohit's) is reserved with \u20b92.5 L advance, hold ends 2 Sep, and Rohit's balance report (RTGS, \u20b922.5 L) is waiting for Finance \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead reserved with a confirmed advance receipt written by the IM portal user, Holds end date 2 Sep, and a Payment_Claims record in state waiting."
+ },
+ "L6_HOLD_ENDS_30AUG": {
+  "description": "Prakash Bhat's reservation hold ends 30 Aug (2 days away).",
+  "prototype": "PAY.L6.hold='30 Aug';",
+  "staging": "Set the Hold end date on Prakash Bhat's hold record to two days after the run date."
+ },
+ "L7_RESERVED_NO_REPORT": {
+  "description": "Joseph Mathew (Kavya's) is reserved with a part payment, hold ends 18 Sep, no payment report open \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead reserved with a part receipt, no Payment_Claims record."
+ },
+ "L5_SAID_YES_NO_ADVANCE": {
+  "description": "Deepa Varghese (Kavya's) said yes; no advance received and no report \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead at 'Investor said yes' with no receipt and no claim."
+ },
+ "L3_ENGAGED_5_DAYS_AGO": {
+  "description": "Girish Rao (Kavya's) reached 'Engagement done' on 23 Aug, five days ago, with two notes \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead at Engagement done with the stage timestamp 5 days before the run date, two Notes."
+ },
+ "L11_QUALIFIED": {
+  "description": "Nandini Reddy (Nikhil's) is at Qualified \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead at Qualified owned by Nikhil."
+ },
+ "L14_LOST_LOCK_IN": {
+  "description": "Suresh Menon (Kavya's) was closed as lost on 29 Jul: 'Lock-in too long \u2014 Wanted an exit inside three years.' \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Sandbox Lead with Lead_Status Lost, reason 'Lock-in too long'."
+ },
+ "ANANYA_ON_LEAVE_NIKHIL_COVERS": {
+  "description": "Ananya is on planned leave and Nikhil covers her book until 29 Aug \u2014 already in the demo data.",
+  "prototype": "",
+  "staging": "Cover window Ananya \u2192 Nikhil ending the day after the run date; record shares added by the cover automation."
+ },
+ "L4_MOVE_REQUESTED_TO_NIKHIL": {
+  "description": "Rohit has asked to move Meera Krishnan to Nikhil Rao, reason 'Load rebalancing'; the request is waiting for a manager.",
+  "prototype": "REQ.L4={by:'rohit',at:'28 Aug 15:30',to:'nikhil',why:'Load rebalancing',state:'waiting'};",
+  "staging": "Create the pending move request on Meera Krishnan's Lead (Requests record) as Rohit."
+ },
+ "DEMO_DATA": {
+  "description": "The demo book as shipped: Rohit, Kavya, Nikhil, Ananya (IRs), Tasneem (IR Manager), Sahil (Digital Infrastructure); events E-01\u2026E-07 with the Prestige Falcon City sheet ready to load; seven days of team activity.",
+  "prototype": "",
+  "staging": "Sandbox seeded from the demo seed script (leads L1\u2013L16, U1, events as Campaigns, audit archive with the demo week)."
+ },
+ "L2_NDA_SENT_BY_FINANCE": {
+  "description": "Sanjay Menon (Rohit's lead) \u2014 Finance has sent the NDA for signature; Rohit has not yet told him.",
+  "prototype": "PAPER.L2={nda:{sent:{by:'harsha',at:'24 Sep 10:00',via:'Zoho Sign'},chase:[]}}; draw();",
+  "staging": "On Sanjay Menon's NDA agreement record set Sent = 24 Sep 10:00 by Harsha via Zoho Sign; told/said/verified empty."
+ },
+ "L2_NDA_TOLD_BY_WHATSAPP": {
+  "description": "Sanjay Menon \u2014 NDA sent by Finance and Rohit has told him by WhatsApp; awaiting signature, no reminders.",
+  "prototype": "PAPER.L2={nda:{sent:{by:'harsha',at:'24 Sep 10:00',via:'Zoho Sign'},told:{by:'rohit',at:'24 Sep 10:30',ch:'msg'},chase:[]}}; draw();",
+  "staging": "As L2_NDA_SENT_BY_FINANCE plus Told = WhatsApp by Rohit at 24 Sep 10:30."
+ },
+ "L2_NO_EMAIL_CONSENT": {
+  "description": "Sanjay Menon has consented to calls and WhatsApp but not email.",
+  "prototype": "LEADS.find(l=>l.id==='L2').con={call:true,msg:true,email:false,visit:false}; draw();",
+  "staging": "Sanjay Menon: Consent_Call = yes, Consent_WhatsApp = yes, Consent_Email = no."
+ },
+ "L5_SUPP_NOT_STARTED": {
+  "description": "Deepa Varghese (Kavya's lead) \u2014 NDA signed, no supplementary agreement draft yet.",
+  "prototype": "delete PAPER.L5.supp; draw();",
+  "staging": "Deepa Varghese's supplementary agreement record exists with no draft link/version."
+ },
+ "L5_SUPP_DRAFT_V1": {
+  "description": "Deepa Varghese \u2014 supplementary draft 1 sent (https://writer.zoho.in/SUPP-L5-v1), not yet agreed.",
+  "prototype": "PAPER.L5.supp={draft:{by:'kavya',at:'24 Sep 11:00',link:'https://writer.zoho.in/SUPP-L5-v1',v:1},chase:[]}; draw();",
+  "staging": "Supplementary record: Draft link = https://writer.zoho.in/SUPP-L5-v1, Draft version = 1, Agreed empty."
+ },
+ "L11_DECK_NOT_SENT": {
+  "description": "Nandini Reddy (Nikhil's lead) \u2014 NDA signed, Pitch deck not yet sent.",
+  "prototype": "delete SENT.L11['Pitch deck']; draw();",
+  "staging": "Nandini Reddy: Pitch deck sent date empty; NDA verified."
+ },
+ "L4_NO_NEXT_STEP": {
+  "description": "Meera Krishnan (Rohit's lead) has no dated next step; her NDA awaits signature.",
+  "prototype": "LEADS.find(l=>l.id==='L4').nx=null; draw();",
+  "staging": "Close Meera Krishnan's open call-back task."
+ },
+ "L4_NDA_DOC_WAITING": {
+  "description": "Finance's NDA document D-099 for Meera Krishnan is in Waiting (sent 23 Aug 20:12).",
+  "prototype": "DOCS.push({lead:'L4',id:'D-099',t:'Non-disclosure agreement',cls:'Confidentiality',state:'sent',on:'23 Aug 20:12',by:'harsha'}); draw();",
+  "staging": "IM portal: NDA document D-099 on Meera Krishnan in state Sent."
+ },
+ "E04_SHEET_LOADED_BY_ROHIT": {
+  "description": "Rohit has loaded the Prestige Falcon City sheet round-robin: 31 new leads (Kavya 11, Rohit 10, Nikhil 10); nobody is signed in.",
+  "prototype": "signIn('rohit'); go('event',null,'E-04'); loadSheet('E-04'); endSession(); AUTHED=false; SIGNEDIN=false; SIGNOUT=null; draw();",
+  "staging": "As Rohit on staging, load the E-04 sheet with 'Round-robin across who staffed it', then sign out."
+ },
+ "UPDATES_TODAY_L4_L5": {
+  "description": "Today: Rohit logged a call on Meera Krishnan, Kavya logged a call on Deepa Varghese, and Harsha (Finance) recorded 'NDA signed copy verified' on Meera Krishnan.",
+  "prototype": "const t=iso(TODAY); LOG.unshift({d:t,at:'28 Aug 18:01',who:'rohit',what:'Call logged',lead:'L4',note:'',kind:'call'}); LOG.unshift({d:t,at:'28 Aug 18:02',who:'kavya',what:'Call logged',lead:'L5',note:'',kind:'call'}); LOG.unshift({d:t,at:'28 Aug 18:03',who:'harsha',what:'NDA signed copy verified',lead:'L4',note:'',kind:'doc'});",
+  "staging": "Make the three changes in the sandbox as those users (Harsha via the IM portal) so they reach the audit archive / timeline."
+ },
+ "ROHIT_ACCESS_CHANGED_BY_SAHIL": {
+  "description": "Today Sahil granted Rohit 'view' on Numbers.",
+  "prototype": "LOG.unshift({d:iso(TODAY),at:'28 Aug 18:05',who:'sahil',what:'Changed access',lead:null,note:'Rohit Deshpande \u00b7 Numbers \u00b7 view granted',kind:'admin',about:'rohit'});",
+  "staging": "As Sahil, Teams \u2192 Rohit \u2192 grant Numbers 'See it'."
+ },
+ "ROHIT_CALL_ON_L5": {
+  "description": "An old line: Rohit logged a call on Deepa Varghese (Kavya's lead) while covering.",
+  "prototype": "LOG.unshift({d:iso(TODAY),at:'28 Aug 18:06',who:'rohit',what:'Call logged',lead:'L5',note:'cover',kind:'call'});",
+  "staging": "Archive row for Rohit's call on Deepa Varghese (cover ended), Deepa owned by Kavya."
+ },
+ "CLOCK_28AUG_1000__E": {
+  "description": "Demo date 28 Aug 2026, 10:00 (use case clock)",
+  "prototype": "",
+  "staging": "Sandbox data dated relative to the run; tests read dates from the seed manifest."
+ },
+ "RITU_ASSIGNED_TO_KAVYA_TODAY": {
+  "description": "Ritu Anand (unowned) was assigned to Kavya Nair today.",
+  "prototype": "assign(LEADS.find(l=>l.n==='Ritu Anand').id,'kavya'); return true;",
+  "staging": "Seed lead 'Ritu Anand' owned by Kavya, Owner_Assigned_At = run day.",
+  "after_signin": true
+ },
+ "GIRISH_SAID_YES_TODAY": {
+  "description": "Girish Rao (L3) reached 'Investor said yes' today.",
+  "prototype": "const l=LEADS.find(x=>x.id==='L3'); l.done=ST.CONVERTED; l.at[4]=stamp(); return true;",
+  "staging": "Seed lead Girish Rao at stage Investor said yes, dated run day, linked Contact created.",
+  "after_signin": true
+ },
+ "DEEPA_LOST_AFTER_YES": {
+  "description": "Deepa Varghese (L5) closed as lost, reason 'Price too high', after saying yes.",
+  "prototype": "closeLost('L5','Price too high','test'); return true;",
+  "staging": "Seed Deepa Varghese said yes on 18 Aug, then Lost with reason Price too high.",
+  "after_signin": true
+ },
+ "NO_TRANSFERS": {
+  "description": "No lead has reached 'Investor said yes'.",
+  "prototype": "LEADS.forEach(l=>{ if(l.done>=ST.CONVERTED) l.done=ST.ENGAGED; }); return true;",
+  "staging": "Empty sandbox book except leads below said-yes.",
+  "after_signin": true
+ },
+ "JHALAK_HAS_LEADS_VIEW": {
+  "description": "Jhalak Mehta has been granted Leads \u00b7 See it (her only page).",
+  "prototype": "capSave('jhalak','leads','view'); return true;",
+  "staging": "Grant record: Jhalak \u2192 Leads view (console grant store)."
+ },
+ "DEMO_DATA__F": {
+  "description": "The demo book as shipped: Rohit, Kavya, Nikhil, Ananya (IRs), Tasneem (IR Manager), Sahil (Digital Infrastructure); Rohit's book is Sanjay Menon, Meera Krishnan, Prakash Bhat, Preethi Nayak, Ritu Anand and Harish Kamath; Anand Pillai, Girish Rao, Joseph Mathew and others belong to other IRs; three payments recorded by Finance (Joseph Mathew SWIFT, Prakash Bhat NEFT, R. Sundaram RTGS).",
+  "prototype": "",
+  "staging": "Sandbox seeded from the demo seed script (leads L1\u2013L16, U1\u2013U2 with the same owners; three Receipts with full UTRs)."
+ },
+ "NEXT_SAVE_REFUSED": {
+  "description": "The next save the signed-in person makes is refused by the system of record (a one-off failure).",
+  "prototype": "const __s=signIn; window.signIn=function(k){ __s(k); FAILNEXT=true; };",
+  "staging": "Sandbox fault injection: the next PUT/POST from this user's token returns a Zoho error (e.g. 500 INTERNAL_ERROR) once."
+ },
+ "BROWSER_OFFLINE__F": {
+  "description": "The person's browser has lost its connection.",
+  "prototype": "Object.defineProperty(navigator,'onLine',{get:()=>false,configurable:true}); window.dispatchEvent(new Event('offline'));",
+  "staging": "Browser devtools network set to Offline after sign-in."
+ },
+ "LEGACY_COPY_ROWS": {
+  "description": "Three investor-copy rows from before the console with no live lead: Meenakshi Sundaram (ARL-INV-0207), Abhijit Sen (ARL-INV-0206), Radhika Menon (ARL-INV-0205). Present in the demo data.",
+  "prototype": "",
+  "staging": "The three legacy investor-copy records loaded by the migration script (E15-S06) as read-only history."
+ },
+ "LEGACY_CONVERTED_LEADS": {
+  "description": "The 5 Leads converted natively before the console, with their 4 Contacts and 2 Deals.",
+  "prototype": "",
+  "staging": "Present in production as found on 23 Sep; in the sandbox, copied by the migration dry run with Legacy_Record set."
+ },
+ "LOAD_TEST_TOKENS": {
+  "description": "Six restricted test-user tokens (IR \u00d74, IR Manager, Digital Infrastructure) and the wired cache and gate.",
+  "prototype": "",
+  "staging": "Restricted test user switched through each role; tokens stored for the load-test harness."
+ },
+ "RESTRICTED_TEST_USER": {
+  "description": "The restricted test user exists with the wall in place (field-level security, Private sharing).",
+  "prototype": "",
+  "staging": "A-12/A-21 done: test user on each IR/IR Manager/Digital Infrastructure profile in turn."
+ },
+ "LEADS_FETCH_429": {
+  "description": "The Leads read returns a sub-concurrency 429 from Zoho.",
+  "prototype": "",
+  "staging": "Fault injection on the Leads COQL route returning 429 TOO_MANY_REQUESTS (sub-concurrency body)."
+ },
+ "ZOHO_BACKUP_AVAILABLE": {
+  "description": "At least one weekly Zoho data backup has completed and been copied to private storage.",
+  "prototype": "",
+  "staging": "Enable weekly backup; wait for the first run."
+ },
+ "PRODUCTION_LIVE": {
+  "description": "Production deployed with seats enabled and the go-live checklist complete.",
+  "prototype": "",
+  "staging": "Production, not sandbox."
+ },
+ "IM:DEMO_PORTAL": {
+  "description": "The portal's demo data as shipped: nine sign-ins, 15 investors (Imran holds 4, Neha 4, 7 unheld), Prakash Bhat reserved with \u20b92.5 L advance and hold to 23 Sep, Joseph Mathew KYC pending, Block A 29 allotted, 12 log entries by Meena, Fahad and Harsha; demo clock 2 Sep 2026.",
+  "prototype": "",
+  "staging": "Sandbox seed from E16-S03 extended with the 15 investor Contacts, Receipts T-0029 etc., Holds, Documents and the 12 log events; nine sandbox users on the portal roles.",
+  "after_signin": false
+ },
+ "IM:BROWSER_OFFLINE": {
+  "description": "The browser reports it is offline.",
+  "prototype": "IMX.evalIn(\"Object.defineProperty(Navigator.prototype,'onLine',{configurable:true,get:()=>false}); window.dispatchEvent(new Event('offline'));\");",
+  "staging": "Playwright context.setOffline(true) after the page loads.",
+  "after_signin": false
+ },
+ "IM:HOLD_EXPIRED_PRAKASH": {
+  "description": "Prakash Bhat's reservation hold ran out on 30 Aug (3 days before the demo clock).",
+  "prototype": "IMX.evalIn(\"const x=INV.find(i=>i.id==='ARL-INV-0208'); x.hold='30 Aug'; draw();\");",
+  "staging": "Set the Holds record for ARL-INV-0208 deadline to 30 Aug in the sandbox.",
+  "after_signin": false
+ },
+ "IM:REVEAL_BY_HARSHA": {
+  "description": "Harsha revealed Prakash Bhat's PAN on 01 Sep 16:10 for a TDS check.",
+  "prototype": "IMX.evalIn(\"LOG.unshift({at:'01 Sep 16:10',who:'harsha',what:'Revealed a PAN',inv:'ARL-INV-0208',note:'A filing or a TDS check',kind:'pii'}); draw();\");",
+  "staging": "Insert the Plane C reveal event for harsha / ARL-INV-0208 / pan / reason in the staging identity log.",
+  "after_signin": false
+ },
+ "IM:STAGING_SEATS": {
+  "description": "Staging with the nine portal users on their roles and profiles, the restricted test user, and FLS on pan/bank_account.",
+  "prototype": "",
+  "staging": "IM02-S01 provisioning in the sandbox; tokens for each user held by the test harness.",
+  "after_signin": false
+ },
+ "IM:ZOHO_UNREACHABLE": {
+  "description": "Zoho API unreachable for more than five minutes after a first successful load.",
+  "prototype": "",
+  "staging": "Route the staging Zoho client to a blackhole host after the first page load and advance the clock 6 minutes.",
+  "after_signin": false
+ },
+ "IM:STEPUP_FAILED_HARSHA": {
+  "description": "Harsha failed one step-up while revealing a PAN on ARL-INV-0208.",
+  "prototype": "",
+  "staging": "Fail one Zoho re-authentication as Harsha on staging before the case runs.",
+  "after_signin": false
+ },
+ "IM:DEMO_BOOK": {
+  "description": "The book as shipped: 15 investors; Prakash Bhat (ARL-INV-0208) reserved on a \u20b92.5 L advance with an open IR claim of \u20b925 L; Joseph Mathew (ARL-INV-0209, NRI) reserved on \u20b910 L, KYC pending, FEMA outstanding; Blocks A and B released (96 units), C and D not.",
+  "prototype": "",
+  "staging": "Seed the sandbox from the demo book (E16-S03 seeder): Contacts, Receipts, Documents, Holds, Allotments, the LLP shelf and the console's Payment Claim N-08.",
+  "after_signin": false
+ },
+ "IM:MEENA_RECORDED_PRAKASH_BALANCE": {
+  "description": "Meena has recorded Prakash Bhat's \u20b922.5 L balance (T-0049, RTGS HDFC2708994) and nobody has matched it yet.",
+  "prototype": "IMX.evalIn(\"TXN.unshift({id:'T-0049',inv:'ARL-INV-0208',kind:'balance',amt:2250000,mode:'RTGS',utr:'HDFC2708994',on:'28 Aug 11:00',by:'meena',rec:'pending'}); TSEQ=49; draw();\");",
+  "staging": "As Meena's test user, POST /Receipts for ARL-INV-0208 kind balance, amount 2250000, mode RTGS, utr HDFC2708994, received_on 28 Aug; leave state unmatched.",
+  "after_signin": false
+ },
+ "IM:PRAKASH_SUPP_UNSIGNED": {
+  "description": "Prakash Bhat's supplementary agreement is out for signature and not yet verified.",
+  "prototype": "IMX.evalIn(\"const d=DOCS.find(x=>x.id==='D-037'); d.state='awaiting'; d.ref=null; d.on=null; d.exp='09 Sep'; draw();\");",
+  "staging": "Set Prakash Bhat's Supplementary agreement Document to state 'sent' (not verified) in the sandbox.",
+  "after_signin": false
+ },
+ "IM:PRAKASH_HOLD_RAN_OUT": {
+  "description": "Prakash Bhat's hold ended on 30 Aug, three days ago, and his claim has been answered 'not there'.",
+  "prototype": "IMX.evalIn(\"INV.find(x=>x.id==='ARL-INV-0208').hold='30 Aug'; ANS['N-08']={state:'notfound',by:'harsha',at:'31 Aug 10:00',why:'Not in the account yet'}; draw();\");",
+  "staging": "Set Prakash Bhat's Hold deadline to 30 Aug in the sandbox and answer the claim not found.",
+  "after_signin": false
+ },
+ "IM:PRAKASH_PAID_LETTER_OUT": {
+  "description": "Prakash Bhat's balance is in and matched (T-0049), his claim is answered, his app account is permanent, and the allocation letter (D-045) is out for signature.",
+  "prototype": "IMX.evalIn(\"TXN.unshift({id:'T-0049',inv:'ARL-INV-0208',kind:'balance',amt:2250000,mode:'RTGS',utr:'HDFC2708994',on:'28 Aug 11:00',by:'meena',rec:'matched'}); TSEQ=49; const x=INV.find(y=>y.id==='ARL-INV-0208'); x.st='paid'; delete x.hold; ANS['N-08']={state:'confirmed',by:'harsha',at:'28 Aug 11:05'}; const a=APP['ARL-INV-0208']; a.hist.unshift({to:a.mark,from:a.markAt,until:'28 Aug 11:05',by:a.markBy}); a.mark='permanent'; a.markAt='28 Aug 11:05'; a.markBy='harsha'; DOCS.unshift({id:'D-045',inv:'ARL-INV-0208',t:'Allocation letter',cls:'Commercial',state:'awaiting',sent:'28 Aug 12:00',by:'harsha',sig:'Aadhaar OTP',ref:null,exp:'11 Sep'}); DSEQ=45; draw();\");",
+  "staging": "Seed a matched balance Receipt for ARL-INV-0208 (recorded by Meena, matched by Harsha), close the Hold, and send the Allocation letter Document (state sent).",
+  "after_signin": false
+ },
+ "IM:JOSEPH_LETTER_OUT": {
+  "description": "Joseph Mathew's allocation letter (D-045) is out for signature while his balance, KYC and FEMA are all still open.",
+  "prototype": "IMX.evalIn(\"DOCS.unshift({id:'D-045',inv:'ARL-INV-0209',t:'Allocation letter',cls:'Commercial',state:'awaiting',sent:'28 Aug 12:00',by:'harsha',sig:'Class 3 DSC',ref:null,exp:'11 Sep'}); DSEQ=45; draw();\");",
+  "staging": "Send an Allocation letter Document to ARL-INV-0209 (state sent) without changing his receipts, KYC or FEMA.",
+  "after_signin": false
+ },
+ "IM:KIRAN_ON_FULL_BLOCK_B": {
+  "description": "Block B's release is cut to the 11 units already held, so it has no free units; Kiran Rao (ARL-INV-0220, 2 units on Block B, KYC passed, supplementary signed) has paid nothing yet.",
+  "prototype": "IMX.evalIn(\"FARMS.find(f=>f.k==='B').released=11; INV.push({id:'ARL-INV-0220',n:'Kiran Rao',ph:'+91 90000 11220',em:'kiran.rao@gmail.com',city:'Bengaluru',addr:'1, MG Road, Bengaluru 560001',nri:false,pan:'AKRPR1234K',aadh:'1111',aref:'UIDAI-2508-100220',kyc:'passed',kycOn:'01 Sep',bank:{acct:'50100000220220',ifsc:'HDFC0000001',name:'KIRAN RAO',drop:'matched'},units:2,blocks:{B:2},st:'new',ir:'rohit',src:'Events',since:'01 Sep',nominee:'\\u2014'}); DOCS.unshift({id:'D-045',inv:'ARL-INV-0220',t:'Supplementary agreement',cls:'Commercial',state:'signed',sent:'01 Sep 10:00',by:'harsha',sig:'Aadhaar OTP',ref:'EMU-0109-80001',on:'01 Sep 12:00'}); DSEQ=45; draw();\");",
+  "staging": "Set LLP Block B released_units = 11 (all held); create Contact Kiran Rao ARL-INV-0220 for 2 units on Block B with KYC passed and a verified Supplementary agreement, no receipts.",
+  "after_signin": false
+ },
+ "IM:KAM_TEST_USER": {
+  "description": "The restricted test user on the Key Account Manager profile (E02-S05), holding Imran's book.",
+  "prototype": "",
+  "staging": "Restricted test user assigned the KAM role/profile with Imran's four Contacts shared to it.",
+  "after_signin": false
+ },
+ "IM:SAMPLE_STATEMENT": {
+  "description": "A 20-line weekly net-banking CSV: 17 credits matching receipts by UTR and amount (one of them T-0049), 2 credits with no receipt, 1 debit (bank charges).",
+  "prototype": "",
+  "staging": "Upload tests/fixtures/statement-week-43.csv to the Statements module in the sandbox; T-0049 seeded unmatched.",
+  "after_signin": false
+ },
+ "IM:DEMO_BOOK__C": {
+  "description": "The demo book as shipped (clock 2 Sep 2026): 15 investors; Joseph Mathew (NRI, KYC pending, FEMA declaration D-041 out since 26 Aug); Prakash Bhat reserved with \u20b922.5 L due and an open 'paid in full' claim from Rohit; 8 tickets (6 open); 3 updates; 5 IR events in the inbox.",
+  "prototype": "",
+  "staging": "Sandbox seed E16-S03 'im-demo': the same Contacts, Documents, Receipts, Cases and Updates, with Joseph Mathew's FEMA declaration in state sent.",
+  "after_signin": false
+ },
+ "IM:KIRAN_SAID_YES": {
+  "description": "Kiran Joshi (ARL-INV-0220, resident, KYC passed, 2 units Block A) has just said yes to Rohit (lead L21, source Events). The signed NDA (D-046, EMU-2008-88010) was copied from the lead. No supplementary agreement and no money.",
+  "prototype": "IMX.evalIn(\"INV.push({id:\\\"ARL-INV-0220\\\",n:\\\"Kiran Joshi\\\",ph:\\\"+91 98450 60220\\\",em:\\\"kiran.joshi@gmail.com\\\",city:\\\"Bengaluru\\\",addr:\\\"5, 7th Main, HSR Layout, Bengaluru 560102\\\",nri:false,pan:\\\"AKJPJ5520Q\\\",aadh:\\\"6620\\\",aref:\\\"UIDAI-2508-900220\\\",kyc:\\\"passed\\\",kycOn:\\\"29 Aug\\\",bank:{acct:\\\"50100299002200\\\",ifsc:\\\"HDFC0000240\\\",name:\\\"KIRAN JOSHI\\\",drop:\\\"matched\\\"},units:2,blocks:{A:2},st:\\\"prospect\\\",ir:\\\"rohit\\\",src:\\\"Events\\\",since:\\\"28 Aug\\\",nominee:\\\"\\u2014\\\",lead:\\\"L21\\\",kam:null,kamOn:null,intro:null});DOCS.unshift({id:\\\"D-046\\\",inv:\\\"ARL-INV-0220\\\",t:\\\"Non-disclosure agreement\\\",cls:\\\"Confidentiality\\\",state:\\\"signed\\\",sent:\\\"20 Aug 10:00\\\",by:\\\"meena\\\",sig:\\\"Aadhaar OTP\\\",ref:\\\"EMU-2008-88010\\\",on:\\\"20 Aug 15:30\\\"});draw();\");",
+  "staging": "In the sandbox, move lead L21 (owner: IR test user 'rohit') to Said yes in the console so the Contact is upserted with the NDA copy; nothing else.",
+  "after_signin": false
+ },
+ "IM:KIRAN_SUPP_SAID_SIGNED": {
+  "description": "As KIRAN_SAID_YES, plus the supplementary agreement D-047 sent by Harsha on 27 Aug (Aadhaar OTP, link expires 10 Sep) and Rohit's hint on 01 Sep 18:10: 'They say the supplementary is signed and sent'.",
+  "prototype": "IMX.evalIn(\"INV.push({id:\\\"ARL-INV-0220\\\",n:\\\"Kiran Joshi\\\",ph:\\\"+91 98450 60220\\\",em:\\\"kiran.joshi@gmail.com\\\",city:\\\"Bengaluru\\\",addr:\\\"5, 7th Main, HSR Layout, Bengaluru 560102\\\",nri:false,pan:\\\"AKJPJ5520Q\\\",aadh:\\\"6620\\\",aref:\\\"UIDAI-2508-900220\\\",kyc:\\\"passed\\\",kycOn:\\\"29 Aug\\\",bank:{acct:\\\"50100299002200\\\",ifsc:\\\"HDFC0000240\\\",name:\\\"KIRAN JOSHI\\\",drop:\\\"matched\\\"},units:2,blocks:{A:2},st:\\\"prospect\\\",ir:\\\"rohit\\\",src:\\\"Events\\\",since:\\\"28 Aug\\\",nominee:\\\"\\u2014\\\",lead:\\\"L21\\\",kam:null,kamOn:null,intro:null});DOCS.unshift({id:\\\"D-046\\\",inv:\\\"ARL-INV-0220\\\",t:\\\"Non-disclosure agreement\\\",cls:\\\"Confidentiality\\\",state:\\\"signed\\\",sent:\\\"20 Aug 10:00\\\",by:\\\"meena\\\",sig:\\\"Aadhaar OTP\\\",ref:\\\"EMU-2008-88010\\\",on:\\\"20 Aug 15:30\\\"});DOCS.unshift({id:\\\"D-047\\\",inv:\\\"ARL-INV-0220\\\",t:\\\"Supplementary agreement\\\",cls:\\\"Commercial\\\",state:\\\"awaiting\\\",sent:\\\"27 Aug 11:00\\\",by:\\\"harsha\\\",sig:\\\"Aadhaar OTP\\\",ref:null,exp:\\\"10 Sep\\\"});INBOX.unshift({id:\\\"N-09\\\",inv:\\\"ARL-INV-0220\\\",kind:\\\"signed\\\",doc:\\\"supp\\\",at:\\\"01 Sep 18:10\\\",ir:\\\"rohit\\\",state:\\\"seen\\\",t:\\\"They say the supplementary is signed and sent\\\",d:\\\"Signed on his phone this evening.\\\"});draw();\");",
+  "staging": "KIRAN_SAID_YES, then send the supplementary from the portal (eMudhra sandbox) and log 'they say it is signed' on L21 as the IR test user.",
+  "after_signin": false
+ },
+ "IM:KIRAN_SUPP_VERIFIED": {
+  "description": "As KIRAN_SAID_YES, plus the supplementary agreement D-047 signed and verified on 01 Sep (EMU-0109-88990). No money yet.",
+  "prototype": "IMX.evalIn(\"INV.push({id:\\\"ARL-INV-0220\\\",n:\\\"Kiran Joshi\\\",ph:\\\"+91 98450 60220\\\",em:\\\"kiran.joshi@gmail.com\\\",city:\\\"Bengaluru\\\",addr:\\\"5, 7th Main, HSR Layout, Bengaluru 560102\\\",nri:false,pan:\\\"AKJPJ5520Q\\\",aadh:\\\"6620\\\",aref:\\\"UIDAI-2508-900220\\\",kyc:\\\"passed\\\",kycOn:\\\"29 Aug\\\",bank:{acct:\\\"50100299002200\\\",ifsc:\\\"HDFC0000240\\\",name:\\\"KIRAN JOSHI\\\",drop:\\\"matched\\\"},units:2,blocks:{A:2},st:\\\"prospect\\\",ir:\\\"rohit\\\",src:\\\"Events\\\",since:\\\"28 Aug\\\",nominee:\\\"\\u2014\\\",lead:\\\"L21\\\",kam:null,kamOn:null,intro:null});DOCS.unshift({id:\\\"D-046\\\",inv:\\\"ARL-INV-0220\\\",t:\\\"Non-disclosure agreement\\\",cls:\\\"Confidentiality\\\",state:\\\"signed\\\",sent:\\\"20 Aug 10:00\\\",by:\\\"meena\\\",sig:\\\"Aadhaar OTP\\\",ref:\\\"EMU-2008-88010\\\",on:\\\"20 Aug 15:30\\\"});DOCS.unshift({id:\\\"D-047\\\",inv:\\\"ARL-INV-0220\\\",t:\\\"Supplementary agreement\\\",cls:\\\"Commercial\\\",state:\\\"signed\\\",sent:\\\"27 Aug 11:00\\\",by:\\\"harsha\\\",sig:\\\"Aadhaar OTP\\\",ref:\\\"EMU-0109-88990\\\",on:\\\"01 Sep 12:00\\\",vby:\\\"meena\\\"});draw();\");",
+  "staging": "KIRAN_SUPP_SAID_SIGNED, then verify D-047 as the Finance Ops test user.",
+  "after_signin": false
+ },
+ "IM:PRAKASH_ALLOCATION_OUT": {
+  "description": "Prakash Bhat (reserved, \u20b922.5 L due) has an allocation letter D-048 out since 01 Sep (Aadhaar OTP). Rohit's only paper note on him is the 24 Aug one about the supplementary.",
+  "prototype": "IMX.evalIn(\"DOCS.unshift({id:\\\"D-048\\\",inv:\\\"ARL-INV-0208\\\",t:\\\"Allocation letter\\\",cls:\\\"Commercial\\\",state:\\\"awaiting\\\",sent:\\\"01 Sep 10:00\\\",by:\\\"harsha\\\",sig:\\\"Aadhaar OTP\\\",ref:null,exp:\\\"15 Sep\\\"});draw();\");",
+  "staging": "Send an allocation letter to the sandbox Prakash Bhat Contact as Harsha; do not match the balance.",
+  "after_signin": false
+ },
+ "IM:TK0114_HANDED": {
+  "description": "Imran has handed TK-0114 'Change the bank account for payouts' (Radhika Menon) to Finance; it is now Meena's.",
+  "prototype": "IMX.evalIn(\"const t=TKT.find(x=>x.id===\\\"TK-0114\\\");t.own=\\\"meena\\\";t.handed={by:\\\"imran\\\",at:\\\"01 Sep 16:00\\\"};draw();\");",
+  "staging": "As the KAM test user 'imran', press Hand it to Finance on TK-0114 in the sandbox.",
+  "after_signin": false
+ },
+ "IM:SANDBOX_DOC_SENT": {
+  "description": "A sandbox Document in state sent with an eMudhra sandbox request id.",
+  "prototype": "",
+  "staging": "Send any template to the sandbox test Contact via the eMudhra sandbox.",
+  "after_signin": false
+ },
+ "IM:SANDBOX_APP_REQUEST": {
+  "description": "A sandbox investor with an app login (Portals) and a welcome sent.",
+  "prototype": "",
+  "staging": "Seed 'im-demo' Contact ARL-INV-0219 with a Portals user.",
+  "after_signin": false
+ },
+ "IM:SANDBOX_SEAM_USERS": {
+  "description": "Restricted test users per profile (IR, IR Manager, Finance Ops, Head of Finance, KAM, Administrator) and sandbox leads L-UAT-1, L-UAT-2.",
+  "prototype": "",
+  "staging": "T11 restricted users (E03-S06) plus two leads at Supplementary owned by the IR test user.",
+  "after_signin": false
+ },
+ "IM:SANDBOX_SEED": {
+  "description": "The full 'im-demo' sandbox seed on staging.",
+  "prototype": "",
+  "staging": "E16-S03 seed and reset.",
+  "after_signin": false
+ },
+ "SIDE_INVESTORS": {
+  "description": "Shared pages open on their Investors half (the Investors-side cases were written for the Investors pages).",
+  "prototype": "Object.assign(MSIDE,{today:'im',activity:'im',numbers:'im',system:'im'}); go(VIEW);",
+  "after_signin": true
+ }
+}

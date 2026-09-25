@@ -1,0 +1,9 @@
+# D23 — Whether Leads and Investor share one Zoho org is decided by a sandbox test in week one, not by argument
+
+_7 Sep 2026 · tests D2 · Q29_
+
+Added 7 Sep 2026. The seat counts have collapsed — two or three IRs and a manager on one side, a Finance pair, KAMs and two administrators on the other — and two of those people need a seat in each org, since a Zoho login may belong to several organisations but each is licensed separately. **Two orgs cost:** roughly ₹5,000 a month in duplicate seats, two sandboxes, two exports, and the handover as code — the function that carries five of the near-certain failure modes in Appendix A (HO1, HO2, HO3, HO6, HO11) and the whole of week 5. **One org gives:** Zoho’s native Lead-to-Contact conversion instead of that function, with the identity wall becoming profiles and field-level security within the org. **What two orgs still buy:** an administrator scoped to leads alone can never see investor identity — a protection already spent for Sahil and Pradeep, who are administrators on both sides, but real if a leads-only administrator is ever hired. **The test (week 1, one day, run by the tester):** build the wall inside one sandbox org and attack it from the screen, the API, an export and a report. It holds → one org, and week 5 loses the handover. It does not → two orgs as designed in D2. **Unchanged either way:** two Supabase projects, leads and investors, separate.
+
+**23 Sep 2026 (D51):** This test is now the most consequential in the trial (T11, run second after T1). If the wall holds, one Enterprise org is the answer and D46/D49's cross-org machinery is dropped. Full record: `D51-one-enterprise-org-built-from-the-super-admin.md`.
+
+**23 Sep 2026 (D52):** **Decided: one org.** The test this decision called for becomes T11's attack on the chosen design, run before real investor data enters the org — no longer the decider. Full record: `D52-one-enterprise-org-for-leads-and-investors.md`.

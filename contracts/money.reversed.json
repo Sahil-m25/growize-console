@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/money.reversed.json",
+  "title": "money.reversed",
+  "x-direction": "investor \u2192 leads",
+  "x-produced-by": "Head of Finance, with a second hand",
+  "x-consumed-by": "Lead gate column; the shelf; the app account",
+  "x-rule": "A reversal event (D19). Closes every gate money.confirmed opened, un-reserves the shelf, and can return the app account to tentative.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "money.reversed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "kind",
+        "amount",
+        "reason",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "advance",
+            "balance",
+            "full"
+          ]
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Whole rupees. Never a float, never a string."
+        },
+        "reason": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reversed_by": {
+          "type": "string"
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "original_receipt_id": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "x-reverses": "money.confirmed"
+}

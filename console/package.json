@@ -1,0 +1,24 @@
+{
+  "name": "@growize/console",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Growize IR lead console — the twelve pages of stage 2, built to console/prototype/ir-console.html",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.7",
+    "playwright": "^1.50.1",
+    "typescript": "5.8.3"
+  }
+}

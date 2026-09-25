@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/lead.closed.json",
+  "title": "lead.closed",
+  "x-direction": "leads \u2192 investor",
+  "x-produced-by": "IR moving to Onboarded",
+  "x-consumed-by": "Investor org (the close copy)",
+  "x-rule": "Fills the placeholders the handover left open (D11).",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "lead.closed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "lead_summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "lead_summary": {
+          "type": "string"
+        },
+        "conversion_days": {
+          "type": "integer"
+        },
+        "touch_counts": {
+          "type": "object",
+          "properties": {
+            "human": {
+              "type": "integer"
+            },
+            "system": {
+              "type": "integer"
+            }
+          },
+          "description": "A system touch is never a human touch (rule 6)."
+        },
+        "campaign": {
+          "type": "string"
+        },
+        "event": {
+          "type": "string"
+        },
+        "ir_notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
