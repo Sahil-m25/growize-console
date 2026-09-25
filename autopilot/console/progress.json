@@ -80,6 +80,15 @@
    "commits": [
     "7d0862a"
    ]
+  },
+  "M19-S03": {
+   "status": "done",
+   "attempts": 1,
+   "at": "2026-09-25T19:00:02.267Z",
+   "note": "manifest+reset+local fixture endpoint built and tested; live sandbox run needs Test_Seed/Seed_Key fields and creds",
+   "commits": [
+    "0f325a3"
+   ]
   }
  },
  "subtasks": {
@@ -292,6 +301,18 @@
   "M02-S09-T03": {
    "status": "done",
    "at": "2026-09-25T18:54:57.412Z"
+  },
+  "M19-S03-T01": {
+   "status": "done",
+   "at": "2026-09-25T19:00:02.267Z"
+  },
+  "M19-S03-T02": {
+   "status": "done",
+   "at": "2026-09-25T19:00:02.267Z"
+  },
+  "M19-S03-T03": {
+   "status": "done",
+   "at": "2026-09-25T19:00:02.267Z"
   }
  },
  "rounds": [
@@ -439,6 +460,20 @@
    "status": "waiting",
    "attempt": 1,
    "note": "share/unshare client + job skeleton, unit-tested; sandbox proof (T01/T03, TC-E02-017/018 live) waits on Zoho sandbox + test user"
+  },
+  {
+   "at": "2026-09-25T18:55:38.062Z",
+   "story": "M19-S03",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-25T19:00:02.267Z",
+   "story": "M19-S03",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "manifest+reset+local fixture endpoint built and tested; live sandbox run needs Test_Seed/Seed_Key fields and creds"
   }
  ],
  "last_regression_round": 0,

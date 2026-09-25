@@ -15,3 +15,4 @@ The autopilot adds items here and never waits for them. Tick an item when it is 
 - [ ] M02-S08-T01 (M02-S08, Autopilot, Build) Mailbox and templates — --note
 - [ ] M02-S08-T02 (M02-S08, Autopilot (Jev), Build) Send and check — --note
 - [ ] M02-S09-T01 (M02-S09, Autopilot, Build) Prove share/unshare — With super admin + test user, add and revoke a share on one lead; record request/response.
+- [ ] M19-S03-T01 (M19-S03, Autopilot, Build) Seed manifest and reset script — JSON manifest of the merged prototype's demo book (people, leads, investors, LLPs, allotments, receipts, notes, paperwork); reset = delete records tagged 'test-seed' then upsert the manifest; refuses unless org id = sandbox.
