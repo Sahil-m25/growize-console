@@ -31,3 +31,4 @@ supabase/.temp/
 autopilot/.slack-webhook
 autopilot/logs/
 autopilot/*/results/
+tools/graphify/graphify-out/

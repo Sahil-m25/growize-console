@@ -47,6 +47,8 @@ this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; s
    - Once the sandbox exists: point the app at the Zoho sandbox, set `SEED_CMD` to the sandbox seeder, and set `SESSIONS_DIR` to the saved test sessions (E16-S02). Saved sessions replace the sign-in steps.
 
 7. **Test with Jev.**
+   - **reticle** (plugin `reticle@reticlehq`): before Jev, drive the story's flow in the running app with reticle; any failed request or console error is a failure to fix first. Jev's verdict still decides done/review.
+
    `node autopilot/test-story.mjs <QUEUE> <STORY>` runs the story's UI cases plus its epic's calibration cases through `pm/jev-ui-runner.mjs` against the app (`APP_URL`, default http://localhost:3001 for `ir`, 3002 for `im`).
    - **Exit 0:** every fact is ≥ 0.80, every step was clear, and every calibration case failed. Go to step 8.
    - **Exit 1:** something failed. Read the result file it names: which step picked which control, which fact failed.

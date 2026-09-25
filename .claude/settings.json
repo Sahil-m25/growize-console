@@ -21,7 +21,9 @@
       "Bash(mkdir:*)",
       "Bash(sleep:*)",
       "Bash(curl -s http://localhost:*)",
-      "Bash(curl -sf http://localhost:*)"
+      "Bash(curl -sf http://localhost:*)",
+      "Bash(graphify:*)",
+      "Bash(bash scripts/setup.sh:*)"
     ],
     "deny": [
       "Bash(git push:*)",
@@ -33,6 +35,44 @@
       "Read(./.typesafe-key)",
       "Read(./.env)",
       "Read(./**/*.pem)"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "chisle": {
+      "source": {
+        "source": "github",
+        "repo": "JayPokale/Chisle"
+      }
+    },
+    "reticlehq": {
+      "source": {
+        "source": "github",
+        "repo": "reticlehq/reticle"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ponytail@ponytail": true,
+    "chisle@chisle": true,
+    "reticle@reticlehq": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/graphify-update.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/graphify-update.py\" || true"
+          }
+        ]
+      }
     ]
   }
 }

@@ -6,6 +6,8 @@
 > The older folder `growize/` is the archive (IR/IM plans, old prototypes, merge audits, graphify). Where this
 > file points at something not here (graphify, `docs/plan.html`, `portal/`), it lives in the archive.
 
+> Tools: Jev, reticle, graphify, ponytail and chisle are wired at project scope — see `tools/PLUGINS.md`; fresh clones run `scripts/setup.sh` first.
+
 
 You are working in a monorepo that builds four things over thirteen weeks: the **lead console**,
 the **Investor Management portal**, the **investor app**, and (later, out of scope) a master
