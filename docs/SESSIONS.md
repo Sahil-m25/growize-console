@@ -265,3 +265,4 @@ One line per session: date · what changed · which decision or test case it ser
 **25 Sep 2026 — build start check.** Generated pm/plan-merged/ui-cases.json (325 UI cases + 18 per-epic calibration cases) so Jev can test console stories; rebuilt the console queue (147 stories, 90 with UI cases); dropped answered gaps OD3/OD4/OD5 and refreshed AP2; run.ps1/run.sh now default to the console queue and no longer call build_plan.py for retired queues. Typecheck passes. Uncommitted work on master still needs a checkpoint commit before the first round.
 
 **26 Sep 2026 — M02-S01 (D51, D53, D54; TC-E02-001/002).** Seat plan in ops/SEAT-PLAN.md; renewal and test-user seat left to Sahil in BLOCKED.md. Jev run 0/0: the story has only manual cases and playwright is not installed in the repo.
+2026-09-26 M02-S02 not built: Zoho CRM connector permission denied and no sandbox; marked review, T02 to BLOCKED.md (TC-E02-003/004)

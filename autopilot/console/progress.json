@@ -8,6 +8,12 @@
    "commits": [
     "5c95302"
    ]
+  },
+  "M02-S02": {
+   "status": "review",
+   "attempts": 1,
+   "at": "2026-09-25T18:37:53.974Z",
+   "note": "Zoho CRM getFields denied (no permission granted in this session); no Zoho sandbox/OAuth (AP4); Leads sheet of mapping workbook not in repo (json has 1 Leads row); nothing built"
   }
  },
  "subtasks": {
@@ -22,6 +28,23 @@
   "M02-S01-T01": {
    "status": "blocked",
    "at": "2026-09-25T18:36:31.153Z",
+   "note": "waiting on Sahil"
+  },
+  "M02-S02-T01": {
+   "status": "review",
+   "at": "2026-09-25T18:37:53.974Z"
+  },
+  "M02-S02-T03": {
+   "status": "review",
+   "at": "2026-09-25T18:37:53.974Z"
+  },
+  "M02-S02-T04": {
+   "status": "review",
+   "at": "2026-09-25T18:37:53.974Z"
+  },
+  "M02-S02-T02": {
+   "status": "blocked",
+   "at": "2026-09-25T18:37:53.748Z",
    "note": "waiting on Sahil"
   }
  },
@@ -39,6 +62,20 @@
    "status": "waiting",
    "attempt": 1,
    "note": "Seat plan written (ops/SEAT-PLAN.md); Sahil's renewal + test seat in BLOCKED.md; Jev run 0/0 (only manual cases; playwright missing)"
+  },
+  {
+   "at": "2026-09-25T18:37:24.743Z",
+   "story": "M02-S02",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-25T18:37:53.974Z",
+   "story": "M02-S02",
+   "status": "review",
+   "attempt": 1,
+   "note": "Zoho CRM getFields denied (no permission granted in this session); no Zoho sandbox/OAuth (AP4); Leads sheet of mapping workbook not in repo (json has 1 Leads row); nothing built"
   }
  ],
  "last_regression_round": 0
