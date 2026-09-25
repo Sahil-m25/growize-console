@@ -1,6 +1,34 @@
 {
- "stories": {},
- "subtasks": {},
- "rounds": [],
+ "stories": {
+  "M02-S01": {
+   "status": "in_progress",
+   "attempts": 1,
+   "at": "2026-09-25T18:36:14.458Z"
+  }
+ },
+ "subtasks": {
+  "M02-S01-T02": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:36:14.458Z"
+  },
+  "M02-S01-T03": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:36:14.458Z"
+  },
+  "M02-S01-T01": {
+   "status": "blocked",
+   "at": "2026-09-25T18:36:31.153Z",
+   "note": "waiting on Sahil"
+  }
+ },
+ "rounds": [
+  {
+   "at": "2026-09-25T18:36:14.458Z",
+   "story": "M02-S01",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
+  }
+ ],
  "last_regression_round": 0
 }
