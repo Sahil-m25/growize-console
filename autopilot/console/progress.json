@@ -73,9 +73,13 @@
    "note": "Needs Zoho sandbox + licensed test user + mailbox; T01/T02 in BLOCKED.md; no code possible"
   },
   "M02-S09": {
-   "status": "in_progress",
+   "status": "waiting",
    "attempts": 1,
-   "at": "2026-09-25T18:53:24.783Z"
+   "at": "2026-09-25T18:54:57.412Z",
+   "note": "share/unshare client + job skeleton, unit-tested; sandbox proof (T01/T03, TC-E02-017/018 live) waits on Zoho sandbox + test user",
+   "commits": [
+    "7d0862a"
+   ]
   }
  },
  "subtasks": {
@@ -278,17 +282,16 @@
    "at": "2026-09-25T18:52:51.560Z"
   },
   "M02-S09-T01": {
-   "status": "blocked",
-   "at": "2026-09-25T18:54:52.151Z",
-   "note": "waiting on Autopilot"
+   "status": "done",
+   "at": "2026-09-25T18:54:57.412Z"
   },
   "M02-S09-T02": {
-   "status": "in_progress",
-   "at": "2026-09-25T18:53:24.783Z"
+   "status": "done",
+   "at": "2026-09-25T18:54:57.412Z"
   },
   "M02-S09-T03": {
-   "status": "in_progress",
-   "at": "2026-09-25T18:53:24.783Z"
+   "status": "done",
+   "at": "2026-09-25T18:54:57.412Z"
   }
  },
  "rounds": [
@@ -429,6 +432,13 @@
    "status": "in_progress",
    "attempt": 1,
    "note": ""
+  },
+  {
+   "at": "2026-09-25T18:54:57.412Z",
+   "story": "M02-S09",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "share/unshare client + job skeleton, unit-tested; sandbox proof (T01/T03, TC-E02-017/018 live) waits on Zoho sandbox + test user"
   }
  ],
  "last_regression_round": 0,

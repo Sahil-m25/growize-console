@@ -271,3 +271,4 @@ One line per session: date · what changed · which decision or test case it ser
 2026-09-26 · M02-S05 parked as waiting: needs Zoho sandbox + licensed test user (AP4, M02-S01-T01); T01–T03 in BLOCKED.md · serves T11/T9, D23/D51
 2026-09-26 M02-S06 waiting: Convert-removal is Zoho Setup by Sahil (BLOCKED.md); tests need sandbox; serves D52/D54, TC-E02-012/013.
 2026-09-26 M02-S08 waiting: mailbox/templates/send_mail tests need Zoho sandbox + test user (BLOCKED.md); serves D17/D60/D72, TC-E02-015/016.
+2026-09-26 M02-S09 share/unshare on the Zoho client and cover-window-share job skeleton, unit-tested; live proof waits on sandbox — TC-E02-017/018, D44
