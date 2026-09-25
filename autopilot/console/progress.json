@@ -53,6 +53,12 @@
    "commits": [
     "400a678"
    ]
+  },
+  "M02-S05": {
+   "status": "waiting",
+   "attempts": 1,
+   "at": "2026-09-25T18:48:26.303Z",
+   "note": "No Zoho sandbox/test-user seat (AP4, M02-S01-T01); T01-T03 parked in BLOCKED.md; 412 classification already unit-tested"
   }
  },
  "subtasks": {
@@ -224,6 +230,18 @@
    "status": "blocked",
    "at": "2026-09-25T18:47:23.767Z",
    "note": "waiting on Sahil"
+  },
+  "M02-S05-T01": {
+   "status": "done",
+   "at": "2026-09-25T18:48:26.303Z"
+  },
+  "M02-S05-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:48:26.303Z"
+  },
+  "M02-S05-T03": {
+   "status": "done",
+   "at": "2026-09-25T18:48:26.303Z"
   }
  },
  "rounds": [
@@ -315,6 +333,20 @@
    "status": "review",
    "attempt": 1,
    "note": "identity.ts shaper/reveal/safeNote + field register + 5 tests pass; Jev 0/8: no Investors page or DEMO_PORTAL/DEMO_BOOK seed yet; T01-T04 Zoho setup with Sahil; T09 probes need sandbox users"
+  },
+  {
+   "at": "2026-09-25T18:48:04.987Z",
+   "story": "M02-S05",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-25T18:48:26.303Z",
+   "story": "M02-S05",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "No Zoho sandbox/test-user seat (AP4, M02-S01-T01); T01-T03 parked in BLOCKED.md; 412 classification already unit-tested"
   }
  ],
  "last_regression_round": 0,
