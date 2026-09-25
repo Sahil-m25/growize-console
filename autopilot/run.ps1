@@ -4,6 +4,7 @@
 # Stop at any time: create the file autopilot\STOP (or Ctrl+C). Run the same command again to resume.
 param([string]$Queue = "console", [int]$MaxRounds = 500)
 Set-Location (Split-Path -Parent $PSScriptRoot)
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8
 New-Item -ItemType Directory -Force autopilot\logs | Out-Null
 node autopilot/make-queue.mjs console | Out-Null
 node autopilot/notify.mjs ":rocket: *Autopilot started* on $env:COMPUTERNAME - queue $Queue. It runs round the clock until everything is built."
