@@ -1,0 +1,15 @@
+{
+  "_": "M02-S04-T05. One row per field both sides touch: one writer profile, everything else read-only or hidden. Checked by console/src/lib/zoho/identity.test.cjs.",
+  "fields": [
+    { "field": "Leads.supp_verified_at", "writer": "finance", "readers": ["ir", "ir_manager", "kam", "head_of_finance", "compliance", "digital_infrastructure"] },
+    { "field": "Leads.advance_confirmed_at", "writer": "finance", "readers": ["ir", "ir_manager", "kam", "head_of_finance", "compliance", "digital_infrastructure"] },
+    { "field": "Leads.balance_confirmed_at", "writer": "finance", "readers": ["ir", "ir_manager", "kam", "head_of_finance", "compliance", "digital_infrastructure"] },
+    { "field": "Leads.allotted_at", "writer": "finance", "readers": ["ir", "ir_manager", "kam", "head_of_finance", "compliance", "digital_infrastructure"] },
+    { "field": "Leads.account_opened_at", "writer": "finance", "readers": ["ir", "ir_manager", "kam", "head_of_finance", "compliance", "digital_infrastructure"] },
+    { "field": "Contacts.pan", "writer": "compliance", "readers": ["head_of_finance", "compliance"], "encrypted": true },
+    { "field": "Contacts.bank_account", "writer": "finance", "readers": ["head_of_finance", "finance"], "encrypted": true },
+    { "field": "Contacts.Aadhaar_Number", "writer": "compliance", "readers": [], "hiddenFromAll": true },
+    { "field": "Contacts.aadhaar_last4", "writer": "compliance", "readers": ["ir", "ir_manager", "kam", "head_of_finance", "finance", "compliance"] },
+    { "field": "Contacts.aadhaar_ref", "writer": "compliance", "readers": ["head_of_finance", "compliance"] }
+  ]
+}

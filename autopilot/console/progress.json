@@ -44,6 +44,11 @@
    "attempts": 0,
    "at": "2026-09-25T18:38:51.764785Z",
    "note": "Signed_Via / Sign_Req_Id / Verified_By / Verified_At fields on NDA, FEMA, supplementary agreement and allocation letter (D79). The Zoho Sign paid plan + webhooks is still owner item AP3 (M20-S08). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  "M02-S04": {
+   "status": "in_progress",
+   "attempts": 1,
+   "at": "2026-09-25T18:45:38.817Z"
   }
  },
  "subtasks": {
@@ -171,6 +176,50 @@
    "status": "done",
    "at": "2026-09-25T18:38:51.764785Z",
    "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S04-T05": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:45:38.817Z"
+  },
+  "M02-S04-T06": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:45:38.817Z"
+  },
+  "M02-S04-T07": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:45:38.817Z"
+  },
+  "M02-S04-T08": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:45:38.817Z"
+  },
+  "M02-S04-T09": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:45:38.817Z"
+  },
+  "M02-S04-T10": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:45:38.817Z"
+  },
+  "M02-S04-T01": {
+   "status": "blocked",
+   "at": "2026-09-25T18:47:23.291Z",
+   "note": "waiting on Sahil"
+  },
+  "M02-S04-T02": {
+   "status": "blocked",
+   "at": "2026-09-25T18:47:23.476Z",
+   "note": "waiting on Sahil"
+  },
+  "M02-S04-T03": {
+   "status": "blocked",
+   "at": "2026-09-25T18:47:23.632Z",
+   "note": "waiting on Sahil"
+  },
+  "M02-S04-T04": {
+   "status": "blocked",
+   "at": "2026-09-25T18:47:23.767Z",
+   "note": "waiting on Sahil"
   }
  },
  "rounds": [
@@ -248,6 +297,13 @@
    "at": "2026-09-25T18:44:52.446Z",
    "story": "REGRESSION",
    "status": "review"
+  },
+  {
+   "at": "2026-09-25T18:45:38.817Z",
+   "story": "M02-S04",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
   }
  ],
  "last_regression_round": 0,
