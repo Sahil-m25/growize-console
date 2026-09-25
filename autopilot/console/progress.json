@@ -243,7 +243,13 @@
    "status": "waiting",
    "attempt": 0,
    "note": "Signed_Via / Sign_Req_Id / Verified_By / Verified_At fields on NDA, FEMA, supplementary agreement and allocation letter (D79). The Zoho Sign paid plan + webhooks is still owner item AP3 (M20-S08). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  {
+   "at": "2026-09-25T18:44:52.446Z",
+   "story": "REGRESSION",
+   "status": "review"
   }
  ],
- "last_regression_round": 0
+ "last_regression_round": 0,
+ "last_regression_finished": 7
 }
