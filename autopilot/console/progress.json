@@ -73,7 +73,7 @@
    "note": "Needs Zoho sandbox + licensed test user + mailbox; T01/T02 in BLOCKED.md; no code possible"
   },
   "M02-S09": {
-   "status": "waiting",
+   "status": "done",
    "attempts": 1,
    "at": "2026-09-25T18:54:57.412Z",
    "note": "share/unshare client + job skeleton, unit-tested; sandbox proof (T01/T03, TC-E02-017/018 live) waits on Zoho sandbox + test user",
