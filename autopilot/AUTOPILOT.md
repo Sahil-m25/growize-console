@@ -8,7 +8,7 @@ this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; s
 
 1. **Stop checks.** If `autopilot/STOP` exists, write nothing and stop.
    Run `git -c core.filemode=false status --porcelain` (file-mode-only changes are noise from mounted drives; ignore them).
-   If content changes are left from a crashed round, and only in files the previous story would touch (`app`, `zoho/`, `contracts/`, tests), commit them as
+   If content changes are left from a crashed round, and only in files the previous story would touch (`console/`, `zoho/`, `contracts/`, tests) or the autopilot's own bookkeeping (`autopilot/status.json`, `autopilot/PEOPLE-CALENDAR.md`, `autopilot/console/*`), commit them as
    `WIP: recovered by autopilot`. If anything else is modified, leave it alone and do not stage it.
    Make sure you are on branch `autopilot/<QUEUE>`; create it from the current branch if it does not exist.
 

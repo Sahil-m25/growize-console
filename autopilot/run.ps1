@@ -24,8 +24,9 @@ while ($round -lt $MaxRounds) {
   $waited = $false
   $round++; $log = "autopilot\logs\$(Get-Date -Format yyyyMMdd).log"
   "=== $(Get-Date -Format s) round $round queue $Queue" | Tee-Object -FilePath $log -Append
+  # the prompt goes in on stdin: passed as an argument, PowerShell split it at the first quote
   $prompt = (Get-Content autopilot\PROMPT.md -Raw).Replace("{{QUEUE}}", $Queue)
-  claude -p $prompt --permission-mode acceptEdits --max-turns 300 --output-format text 2>&1 | Tee-Object -FilePath $log -Append
+  $prompt | claude -p --permission-mode acceptEdits --max-turns 300 --output-format text 2>&1 | Tee-Object -FilePath $log -Append
   if ($LASTEXITCODE -ne 0) { "claude exited $LASTEXITCODE (limit or error) - pausing 15 min" | Tee-Object -FilePath $log -Append; Start-Sleep 900 }
   node autopilot/status.mjs
   # (delivery workbook for the console queue is not configured in pm/plan_config.py yet)

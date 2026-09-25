@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from "next";
 import { ConsoleProvider } from "@/lib/store";
 import { Shell } from "@/components/shell/Shell";
 import "./console.css";
+import { ReticleDev } from "./reticle-dev";
 
 export const metadata: Metadata = {
   title: "Growize IR Console — Investor workspace",
@@ -35,6 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           console.css's redesigned rules are scoped under one or both of these; without the class
           here they are simply inert. */}
       <body className="ux-refined ux-redesign">
+        {/* Reticle: dev-only runtime checks for the agent (tools/PLUGINS.md) */}
+        {process.env.NODE_ENV === "development" ? <ReticleDev /> : null}
         <ConsoleProvider>
           <Shell>{children}</Shell>
         </ConsoleProvider>
