@@ -267,3 +267,4 @@ One line per session: date · what changed · which decision or test case it ser
 **26 Sep 2026 — M02-S01 (D51, D53, D54; TC-E02-001/002).** Seat plan in ops/SEAT-PLAN.md; renewal and test-user seat left to Sahil in BLOCKED.md. Jev run 0/0: the story has only manual cases and playwright is not installed in the repo.
 2026-09-26 M02-S02 not built: Zoho CRM connector permission denied and no sandbox; marked review, T02 to BLOCKED.md (TC-E02-003/004)
 2026-09-26 autopilot: regression run blocked — dev server not startable with FIXTURE_MODE=local/SEED_CMD (launch denied), unknown fixture DEMO_PORTAL (TC-M02-CAL1); recorded review. Serves D65.
+2026-09-26 · M02-S04 identity wall slice (identity.ts, field-register.json, tests); review: Investors page + fixtures missing · TC-IM02-015/016, TC-IM04-009..013
