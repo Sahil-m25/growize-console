@@ -1,6 +1,6 @@
 # People's calendar — in the order the autopilot will need it
 
-Projected from the loop's pace (4.5 stories/day, measured (last 48 h)); refreshed every round by `node autopilot/status.mjs`. Do anything early — nothing waits on a date.
+Projected from the loop's pace (5 stories/day, measured (last 48 h)); refreshed every round by `node autopilot/status.mjs`. Do anything early — nothing waits on a date.
 
 | Needed by (projected) | Queue | Story | Who | Item | Hours |
 |---|---|---|---|---|---|
@@ -10,61 +10,61 @@ Projected from the loop's pace (4.5 stories/day, measured (last 48 h)); refreshe
 | Sat, 26 Sept, 12:17 am | console | M02-S04 | Sahil | M02-S04-T02 Profiles per seat | 3 |
 | Sat, 26 Sept, 12:17 am | console | M02-S04 | Sahil | M02-S04-T03 Field-level security wall | 2 |
 | Sat, 26 Sept, 12:17 am | console | M02-S04 | Sahil | M02-S04-T04 Private sharing and B-12 rules | 1.5 |
-| Sat, 26 Sept, 10:57 am | console | M02-S06 | Sahil | M02-S06-T01 Remove Convert permission | 1 |
-| Sun, 27 Sept, 02:57 am | console | M02-S10 | Sahil | M02-S10-T02 Register OAuth clients | 1 |
-| Mon, 28 Sept, 12:17 am | console | M20-S08 | Sahil | M20-S08-T01 Plan choice and purchase request | 1 |
-| Mon, 28 Sept, 12:17 am | console | M20-S08 | Sahil | M20-S08-T02 OAuth client and secrets | 1 |
-| Mon, 28 Sept, 05:37 am | console | M02-S07 | Sahil | M02-S07-T01 Unhide activities and enable sync | 1.5 |
-| Thu, 1 Oct, 02:57 am | console | M03-S05 | Sahil | M03-S05-T01 Buy seats and invite users | 2 |
-| Thu, 1 Oct, 08:17 am | console | M03-S06 | Sahil | M03-S06-T01 Auditor profile read-only | 1 |
-| Thu, 1 Oct, 01:37 pm | console | M03-S07 | Sahil | M03-S07-T01 Sharing for KAM books | 3 |
-| Thu, 1 Oct, 06:57 pm | console | M03-S08 | Sahil | M03-S08-T01 FLS on kyc_status | 1 |
-| Fri, 2 Oct, 12:17 am | console | M03-S09 | Sahil | M03-S09-T01 Origin fields on Contacts | 1 |
-| Sun, 4 Oct, 05:37 am | console | M04-S03 | Sahil | M04-S03-T01 Consent fields | 1 |
-| Wed, 7 Oct, 06:57 pm | console | M09-S02 | Sahil | M09-S02-T01 Record sharing for the KAM book | 2 |
-| Thu, 8 Oct, 05:37 am | console | M09-S04 | Sahil | M09-S04-T01 Ownership fields and workflow | 1.5 |
-| Thu, 8 Oct, 04:17 pm | console | M09-S08 | Sahil | M09-S08-T01 Originating IR field and sharing rule | 2 |
-| Sat, 10 Oct, 12:17 am | console | M01-S10 | Sahil | M01-S10-T03 Approval process on forfeit/refund | 2 |
-| Sun, 11 Oct, 02:57 am | console | M08-S03 | Sahil | M08-S03-T03 Receipt validation rules that never block | 1 |
-| Sun, 11 Oct, 08:17 am | console | M08-S04 | Sahil | M08-S04-T01 Hold record and its approvals | 3 |
-| Sun, 11 Oct, 06:57 pm | console | M08-S07 | Sahil | M08-S07-T01 Contacts lifecycle blueprint starting at 'Said yes' | 3 |
-| Mon, 12 Oct, 12:17 am | console | M08-S08 | Sahil | M08-S08-T01 app_mark formula and permanent_at workflow | 2 |
-| Mon, 12 Oct, 05:37 am | console | M10-S01 | Sahil | M10-S01-T01 Receipts module | 3 |
-| Mon, 12 Oct, 10:57 am | console | M10-S02 | Sahil | M10-S02-T01 Maker-checker rule and record lock | 1.5 |
-| Mon, 12 Oct, 09:37 pm | console | M10-S05 | Sahil | M10-S05-T01 Statements module | 1 |
-| Tue, 13 Oct, 02:57 am | console | M10-S07 | Sahil | M10-S07-T01 Allotment lookup and Payment_Status workflow | 2 |
-| Tue, 13 Oct, 08:17 am | console | M11-S01 | Sahil | M11-S01-T01 Map blocks to LLPs | 1.5 |
-| Tue, 13 Oct, 01:37 pm | console | M11-S02 | Sahil | M11-S02-T01 Canonical allotment module | 2 |
-| Tue, 13 Oct, 06:57 pm | console | M11-S03 | Sahil | M11-S03-T01 Adopt the shelf | 2 |
-| Wed, 14 Oct, 05:37 am | console | M11-S05 | Sahil | M11-S05-T01 Allotment blueprint | 3 |
-| Wed, 14 Oct, 10:57 am | console | M11-S07 | Sahil | M11-S07-T02 Install the oversell guard | 1 |
-| Wed, 14 Oct, 04:17 pm | console | M12-S01 | Sahil | M12-S01-T02 Sharing and profile permissions for attachments | 3 |
-| Wed, 14 Oct, 09:37 pm | console | M12-S02 | Sahil | M12-S02-T01 Typed-slot file-upload fields | 2 |
-| Thu, 15 Oct, 02:57 am | console | M12-S03 | Sahil | M12-S03-T01 Sign status fields on the records | 2 |
-| Thu, 15 Oct, 08:17 am | console | M12-S04 | Sahil | M12-S04-T01 Zoho Sign plan and OAuth | 2 |
-| Thu, 15 Oct, 08:17 am | console | M12-S04 | Sahil | M12-S04-T02 Templates in Zoho Sign | 3 |
-| Thu, 15 Oct, 06:57 pm | console | M12-S06 | Sahil | M12-S06-T01 Gate field permission | 2 |
-| Fri, 16 Oct, 05:37 am | console | M12-S10 | Sahil | M12-S10-T02 Restricted test user | 1.5 |
-| Fri, 16 Oct, 10:57 am | console | M12-S11 | Sahil | M12-S11-T01 NDA round fields and sharing | 3 |
-| Sat, 17 Oct, 02:57 am | console | M14-S01 | Sahil | M14-S01-T01 Event fields on Leads | 1 |
-| Mon, 19 Oct, 08:17 am | console | M13-S02 | Sahil | M13-S02-T01 Cases layout and fields | 3 |
-| Mon, 19 Oct, 01:37 pm | console | M13-S03 | Sahil | M13-S03-T01 Assignment rules and fallback owner | 2 |
-| Mon, 19 Oct, 06:57 pm | console | M13-S04 | Sahil | M13-S04-T02 Bank proof out of the Case | 2 |
-| Tue, 20 Oct, 12:17 am | console | M13-S06 | Sahil | M13-S06-T01 Updates module and kind ownership | 3 |
-| Sat, 24 Oct, 12:17 am | console | M18-S01 | Sahil | M18-S01-T05 Review limits dashboard | 1 |
-| Sat, 24 Oct, 05:37 am | console | M18-S02 | Sahil | M18-S02-T04 Secrets, headers, cookies | 3 |
-| Sat, 24 Oct, 09:37 pm | console | M18-S05 | Sahil | M18-S05-T01 Schedule backups | 2 |
-| Sat, 24 Oct, 09:37 pm | console | M18-S05 | Sahil | M18-S05-T02 Restore drill | 3 |
-| Sun, 25 Oct, 02:57 am | console | M18-S06 | Sahil | M18-S06-T01 Legacy flag and mapping + dry run | 4 |
-| Sun, 25 Oct, 02:57 am | console | M18-S06 | Sahil | M18-S06-T02 Production migration | 2 |
-| Sun, 25 Oct, 01:37 pm | console | M18-S09 | Sahil | M18-S09-T03 Rollback rehearsal | 2 |
-| Sun, 25 Oct, 01:37 pm | console | M18-S09 | Sahil | M18-S09-T05 Cutover and smoke | 3 |
-| Sun, 25 Oct, 06:57 pm | console | M18-S12 | Sahil | M18-S12-T02 Dry run on the sandbox copy | 2 |
-| Mon, 26 Oct, 12:17 am | console | M20-S03 | Sahil | M20-S03-T02 Walkthrough session | 1 |
-| Mon, 26 Oct, 10:57 am | console | M18-S10 | Sahil | M18-S10-T02 Hypercare rota | 2 |
-| Mon, 26 Oct, 04:17 pm | console | M19-S07 | Sahil | M19-S07-T02 Hourly production check and alert | 1 |
+| Sat, 26 Sept, 05:06 am | console | M02-S06 | Sahil | M02-S06-T01 Remove Convert permission | 1 |
+| Sat, 26 Sept, 07:30 pm | console | M02-S10 | Sahil | M02-S10-T02 Register OAuth clients | 1 |
+| Sun, 27 Sept, 02:42 pm | console | M20-S08 | Sahil | M20-S08-T01 Plan choice and purchase request | 1 |
+| Sun, 27 Sept, 02:42 pm | console | M20-S08 | Sahil | M20-S08-T02 OAuth client and secrets | 1 |
+| Sun, 27 Sept, 07:30 pm | console | M02-S07 | Sahil | M02-S07-T01 Unhide activities and enable sync | 1.5 |
+| Wed, 30 Sept, 09:54 am | console | M03-S05 | Sahil | M03-S05-T01 Buy seats and invite users | 2 |
+| Wed, 30 Sept, 02:42 pm | console | M03-S06 | Sahil | M03-S06-T01 Auditor profile read-only | 1 |
+| Wed, 30 Sept, 07:30 pm | console | M03-S07 | Sahil | M03-S07-T01 Sharing for KAM books | 3 |
+| Thu, 1 Oct, 12:18 am | console | M03-S08 | Sahil | M03-S08-T01 FLS on kyc_status | 1 |
+| Thu, 1 Oct, 05:06 am | console | M03-S09 | Sahil | M03-S09-T01 Origin fields on Contacts | 1 |
+| Sat, 3 Oct, 05:06 am | console | M04-S03 | Sahil | M04-S03-T01 Consent fields | 1 |
+| Tue, 6 Oct, 09:54 am | console | M09-S02 | Sahil | M09-S02-T01 Record sharing for the KAM book | 2 |
+| Tue, 6 Oct, 07:30 pm | console | M09-S04 | Sahil | M09-S04-T01 Ownership fields and workflow | 1.5 |
+| Wed, 7 Oct, 05:06 am | console | M09-S08 | Sahil | M09-S08-T01 Originating IR field and sharing rule | 2 |
+| Thu, 8 Oct, 09:54 am | console | M01-S10 | Sahil | M01-S10-T03 Approval process on forfeit/refund | 2 |
+| Fri, 9 Oct, 09:54 am | console | M08-S03 | Sahil | M08-S03-T03 Receipt validation rules that never block | 1 |
+| Fri, 9 Oct, 02:42 pm | console | M08-S04 | Sahil | M08-S04-T01 Hold record and its approvals | 3 |
+| Sat, 10 Oct, 12:18 am | console | M08-S07 | Sahil | M08-S07-T01 Contacts lifecycle blueprint starting at 'Said yes' | 3 |
+| Sat, 10 Oct, 05:06 am | console | M08-S08 | Sahil | M08-S08-T01 app_mark formula and permanent_at workflow | 2 |
+| Sat, 10 Oct, 09:54 am | console | M10-S01 | Sahil | M10-S01-T01 Receipts module | 3 |
+| Sat, 10 Oct, 02:42 pm | console | M10-S02 | Sahil | M10-S02-T01 Maker-checker rule and record lock | 1.5 |
+| Sun, 11 Oct, 12:18 am | console | M10-S05 | Sahil | M10-S05-T01 Statements module | 1 |
+| Sun, 11 Oct, 05:06 am | console | M10-S07 | Sahil | M10-S07-T01 Allotment lookup and Payment_Status workflow | 2 |
+| Sun, 11 Oct, 09:54 am | console | M11-S01 | Sahil | M11-S01-T01 Map blocks to LLPs | 1.5 |
+| Sun, 11 Oct, 02:42 pm | console | M11-S02 | Sahil | M11-S02-T01 Canonical allotment module | 2 |
+| Sun, 11 Oct, 07:30 pm | console | M11-S03 | Sahil | M11-S03-T01 Adopt the shelf | 2 |
+| Mon, 12 Oct, 05:06 am | console | M11-S05 | Sahil | M11-S05-T01 Allotment blueprint | 3 |
+| Mon, 12 Oct, 09:54 am | console | M11-S07 | Sahil | M11-S07-T02 Install the oversell guard | 1 |
+| Mon, 12 Oct, 02:42 pm | console | M12-S01 | Sahil | M12-S01-T02 Sharing and profile permissions for attachments | 3 |
+| Mon, 12 Oct, 07:30 pm | console | M12-S02 | Sahil | M12-S02-T01 Typed-slot file-upload fields | 2 |
+| Tue, 13 Oct, 12:18 am | console | M12-S03 | Sahil | M12-S03-T01 Sign status fields on the records | 2 |
+| Tue, 13 Oct, 05:06 am | console | M12-S04 | Sahil | M12-S04-T01 Zoho Sign plan and OAuth | 2 |
+| Tue, 13 Oct, 05:06 am | console | M12-S04 | Sahil | M12-S04-T02 Templates in Zoho Sign | 3 |
+| Tue, 13 Oct, 02:42 pm | console | M12-S06 | Sahil | M12-S06-T01 Gate field permission | 2 |
+| Wed, 14 Oct, 12:18 am | console | M12-S10 | Sahil | M12-S10-T02 Restricted test user | 1.5 |
+| Wed, 14 Oct, 05:06 am | console | M12-S11 | Sahil | M12-S11-T01 NDA round fields and sharing | 3 |
+| Wed, 14 Oct, 07:30 pm | console | M14-S01 | Sahil | M14-S01-T01 Event fields on Leads | 1 |
+| Fri, 16 Oct, 07:30 pm | console | M13-S02 | Sahil | M13-S02-T01 Cases layout and fields | 3 |
+| Sat, 17 Oct, 12:18 am | console | M13-S03 | Sahil | M13-S03-T01 Assignment rules and fallback owner | 2 |
+| Sat, 17 Oct, 05:06 am | console | M13-S04 | Sahil | M13-S04-T02 Bank proof out of the Case | 2 |
+| Sat, 17 Oct, 09:54 am | console | M13-S06 | Sahil | M13-S06-T01 Updates module and kind ownership | 3 |
+| Wed, 21 Oct, 12:18 am | console | M18-S01 | Sahil | M18-S01-T05 Review limits dashboard | 1 |
+| Wed, 21 Oct, 05:06 am | console | M18-S02 | Sahil | M18-S02-T04 Secrets, headers, cookies | 3 |
+| Wed, 21 Oct, 07:30 pm | console | M18-S05 | Sahil | M18-S05-T01 Schedule backups | 2 |
+| Wed, 21 Oct, 07:30 pm | console | M18-S05 | Sahil | M18-S05-T02 Restore drill | 3 |
+| Thu, 22 Oct, 12:18 am | console | M18-S06 | Sahil | M18-S06-T01 Legacy flag and mapping + dry run | 4 |
+| Thu, 22 Oct, 12:18 am | console | M18-S06 | Sahil | M18-S06-T02 Production migration | 2 |
+| Thu, 22 Oct, 09:54 am | console | M18-S09 | Sahil | M18-S09-T03 Rollback rehearsal | 2 |
+| Thu, 22 Oct, 09:54 am | console | M18-S09 | Sahil | M18-S09-T05 Cutover and smoke | 3 |
+| Thu, 22 Oct, 02:42 pm | console | M18-S12 | Sahil | M18-S12-T02 Dry run on the sandbox copy | 2 |
+| Thu, 22 Oct, 07:30 pm | console | M20-S03 | Sahil | M20-S03-T02 Walkthrough session | 1 |
+| Fri, 23 Oct, 05:06 am | console | M18-S10 | Sahil | M18-S10-T02 Hypercare rota | 2 |
+| Fri, 23 Oct, 09:54 am | console | M19-S07 | Sahil | M19-S07-T02 Hourly production check and alert | 1 |
 
-## Testing phase (after the build, projected Mon, 26 Oct, 09:37 pm → Sun, 1 Nov, 09:37 pm)
+## Testing phase (after the build, projected Fri, 23 Oct, 02:42 pm → Thu, 29 Oct, 02:42 pm)
 
 | Queue | Story | Who | Item | Hours |
 |---|---|---|---|---|
