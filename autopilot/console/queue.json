@@ -4,8 +4,564 @@
  "url": "http://localhost:3001",
  "prototype": "console/prototype/growize-console-merged.html",
  "next_queue": null,
- "built": "2026-09-25T18:43:20.426Z",
+ "built": "2026-09-25T18:49:27.099Z",
  "stories": [
+  {
+   "id": "M03-S01",
+   "epic": "M03",
+   "title": "Only people with a seat or a granted page sign in",
+   "priority": "Must",
+   "stage": "S1",
+   "day": 0,
+   "depends_on": [
+    "M01-S02"
+   ],
+   "as_a": "Digital Infrastructure",
+   "i_want": "the sign-in check to admit only the seats of both sides (IRs, IR Manager, Finance, Head of Finance, KAMs, Farm ops, viewers, Sahil) plus anyone I have granted a page",
+   "so_that": "staff without a seat, such as Marketing, never land in the app by default (D60)",
+   "acceptance": [
+    "Given today's staff, when the staging sign-in list renders, then it lists exactly the people who hold a seat on either side",
+    "Given Finance (Harsha), when she signs in, then she is admitted and lands on Today (Investors side)",
+    "Given Marketing (Gokul, even if active in Zoho), when he tries to sign in, then he is refused",
+    "Given the Ops Lead, BU Owner or Corporate Ops with no granted page, when they try to sign in, then they are refused and not listed",
+    "Given a person marked inactive, when they try to sign in, then they are refused"
+   ],
+   "decisions": [
+    "D60",
+    "D68"
+   ],
+   "prototype": [
+    "Sign-in"
+   ],
+   "zoho": [
+    "Users API (role, status)"
+   ],
+   "subtasks": [
+    {
+     "id": "M03-S01-T01",
+     "type": "Backend",
+     "title": "Access policy module",
+     "detail": "Port consoleAccount, seatShape, capsFor, hasCap, may, reachCeil from the merged prototype into lib/access.ts with unit tests mirroring the prototype probes, covering every seat of both sides; seat read from the Zoho user's role, never a display field.",
+     "doer": "Autopilot",
+     "est_hours": 3,
+     "when": "Build"
+    },
+    {
+     "id": "M03-S01-T02",
+     "type": "Backend",
+     "title": "Admission on OAuth callback",
+     "detail": "Callback refuses users without console access with a named message; sign-in list for the demo/staging only.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M03-S01-T03",
+     "type": "Test",
+     "title": "Admission matrix",
+     "detail": "Tester tries each staff type on staging and runs the prototype cases.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 1.5,
+     "when": "Build"
+    }
+   ],
+   "tests": [
+    {
+     "id": "TC-E03-001",
+     "title": "Sign-in screen lists exactly the six console users",
+     "type": "Functional",
+     "seat": "rohit",
+     "priority": "P1",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_STAFF"
+     ],
+     "steps": [
+      "Press Rohit Deshpande on the sign-in screen",
+      "Press 'Your account' in the top bar",
+      "Press 'Sign out'"
+     ],
+     "expected": [
+      "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
+      "It does not offer Harsha Bhat.",
+      "It does not offer Gokul S.",
+      "It does not offer Jhalak Mehta.",
+      "It does not offer Arvind Menon or Pradeep Ram."
+     ]
+    },
+    {
+     "id": "TC-E03-002",
+     "title": "Finance cannot sign in",
+     "type": "Negative",
+     "seat": "none",
+     "priority": "P1",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_STAFF"
+     ],
+     "steps": [
+      "Look at the sign-in screen"
+     ],
+     "expected": [
+      "The sign-in screen does not offer Harsha Bhat.",
+      "No console page is showing."
+     ]
+    },
+    {
+     "id": "TC-E03-003",
+     "title": "Marketing cannot sign in even when active",
+     "type": "Negative",
+     "seat": "none",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_STAFF",
+      "GOKUL_ACTIVE"
+     ],
+     "steps": [
+      "Look at the sign-in screen"
+     ],
+     "expected": [
+      "The sign-in screen does not offer Gokul S.",
+      "No console page is showing."
+     ]
+    },
+    {
+     "id": "TC-E03-004",
+     "title": "Ops Lead, BU Owner and Corporate Ops without a grant are refused",
+     "type": "Permission",
+     "seat": "none",
+     "priority": "P1",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_STAFF"
+     ],
+     "steps": [
+      "Look at the sign-in screen"
+     ],
+     "expected": [
+      "The sign-in screen does not offer Jhalak Mehta.",
+      "It does not offer Arvind Menon.",
+      "It does not offer Pradeep Ram."
+     ]
+    },
+    {
+     "id": "TC-E03-005",
+     "title": "A deactivated IR is refused",
+     "type": "Negative",
+     "seat": "none",
+     "priority": "P1",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_STAFF",
+      "KAVYA_DEACTIVATED"
+     ],
+     "steps": [
+      "Look at the sign-in screen"
+     ],
+     "expected": [
+      "The sign-in screen does not offer Kavya Nair.",
+      "It offers Rohit Deshpande."
+     ]
+    },
+    {
+     "id": "TC-E03-023",
+     "title": "Deactivation while signed in ends the session",
+     "type": "Negative",
+     "seat": "kavya",
+     "priority": "P1",
+     "ui_mode": "ui-staging",
+     "fixtures": [
+      "STAGING_USERS"
+     ],
+     "steps": [
+      "Press 'Continue with Zoho' and sign in as Kavya",
+      "In Zoho Setup → Users, deactivate Kavya",
+      "Open Leads from the menu"
+     ],
+     "expected": [
+      "The sign-in screen is showing.",
+      "It says 'Your access has been turned off.'"
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-E03-001",
+    "TC-E03-002",
+    "TC-E03-003",
+    "TC-E03-004",
+    "TC-E03-005"
+   ],
+   "calibration": [
+    "TC-M03-CAL1"
+   ],
+   "open_decisions": [
+    "OD9: Grants storage under zero copy (Zoho vs app store); Payment_Status kept by Zoho workflow or console commit (Sahil)."
+   ],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+    "CX1: Which existing Contacts came from which IR (backfill); Block A–F vs the real LLPs (production has one: EKA LLP, 22 units, Open for Reservation)."
+   ]
+  },
+  {
+   "id": "M19-S01",
+   "epic": "M19",
+   "title": "UI test contract",
+   "priority": "Must",
+   "stage": "S1",
+   "day": 0,
+   "depends_on": [
+    "M01-S01"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "i_want": "every control in the app to be findable by its visible label",
+   "so_that": "Jev can run the same plain-language cases on the merged prototype and the built app, and screen readers work too",
+   "acceptance": [
+    "Given any page, when the a11y lint runs, then every input, select and textarea has a programmatic label (label for / aria-label) and every button has a name",
+    "Given a collapsible section, when inspected, then it is a details/summary or a button with aria-expanded",
+    "Given a closed section, when tabbing, then controls inside it are not focusable",
+    "Given a list row, when inspected, then its container holds the record's name, so a step can say 'on Ritu Anand's row'"
+   ],
+   "decisions": [
+    "D63"
+   ],
+   "prototype": [
+    "All pages"
+   ],
+   "zoho": [],
+   "subtasks": [
+    {
+     "id": "M19-S01-T01",
+     "type": "Frontend",
+     "title": "Lint rule for labelled controls",
+     "detail": "eslint-plugin-jsx-a11y (label-has-associated-control, control-has-associated-label) + a custom rule that fails on inputs named only by placeholder; wire into pre-commit and CI.",
+     "doer": "Autopilot",
+     "est_hours": 3,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S01-T02",
+     "type": "Docs",
+     "title": "Write the UI test contract",
+     "detail": "One page in docs/: labels, sections, rows, notices use role=status, disabled = disabled attribute; examples from the prototype findings (unlabelled filter selects, Add member boxes named by their value).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S01-T03",
+     "type": "Test",
+     "title": "Check the contract on the first built pages",
+     "detail": "Run the runner's control listing on Today and Leads on staging; every box must show its label, not its value.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    }
+   ],
+   "tests": [
+    {
+     "id": "TC-E16-001",
+     "title": "Lint fails on an unlabelled box",
+     "type": "Negative",
+     "seat": "sahil",
+     "priority": "P1",
+     "ui_mode": "api",
+     "fixtures": [],
+     "steps": [
+      "Push the branch"
+     ],
+     "expected": "CI fails on the a11y lint naming the file and line."
+    },
+    {
+     "id": "TC-E16-002",
+     "title": "Runner names boxes by their labels",
+     "type": "Functional",
+     "seat": "rohit",
+     "priority": "P2",
+     "ui_mode": "ui-staging",
+     "fixtures": [],
+     "steps": [
+      "Press Rohit Deshpande on the sign-in screen",
+      "Press 'Add lead'"
+     ],
+     "expected": "The runner's control list names each box by its label (Full name, Mobile, Source), never by a value or placeholder."
+    }
+   ],
+   "ui_cases": [],
+   "calibration": [],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
+   ]
+  },
+  {
+   "id": "M19-S02",
+   "epic": "M19",
+   "title": "Jev UI runner on staging",
+   "priority": "Must",
+   "stage": "S1",
+   "day": 0,
+   "depends_on": [
+    "M19-S03",
+    "M01-S02"
+   ],
+   "as_a": "Tester",
+   "i_want": "to run any case against the staging app with one command, as any seat",
+   "so_that": "the build is tested the way people use it, without code knowledge",
+   "acceptance": [
+    "Given a case file and the staging URL, when the runner starts, then it signs each case in as its seat with a stored test session (no Zoho password prompt)",
+    "Given a case lists fixtures, when it starts, then the staging adapter seeds them through the Zoho sandbox API before the steps",
+    "Given a fixture that has no seed, when a case asks for it, then the runner refuses to run the case",
+    "Given a run finishes, when results are written, then they are a CSV (verdict, p, failing facts, trace) the workbook's Test cases sheet imports"
+   ],
+   "decisions": [
+    "D62",
+    "D63"
+   ],
+   "prototype": [],
+   "zoho": [
+    "Zoho CRM sandbox",
+    "OAuth test users"
+   ],
+   "subtasks": [
+    {
+     "id": "M19-S02-T01",
+     "type": "Integration",
+     "title": "Test sign-in sessions",
+     "detail": "Create one Zoho sandbox user per seat (both sides, plus super user); script that signs each in once and saves Playwright storageState; runner uses storageState per case seat.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S02-T02",
+     "type": "Integration",
+     "title": "Fixture adapter for staging",
+     "detail": "fixtures.json gains 'seeded' (the seed id); adapter calls the seed/reset API for each fixture before a case; prototype fixtures stay for the prototype run.",
+     "doer": "Autopilot",
+     "est_hours": 3,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S02-T03",
+     "type": "Backend",
+     "title": "Results → workbook import",
+     "detail": "Runner writes results.csv (id, verdict, p, failing facts, run date); a small script fills the Test cases sheet's Jev columns by id.",
+     "doer": "Autopilot",
+     "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S02-T04",
+     "type": "Test",
+     "title": "Run the S1 suite on staging",
+     "detail": "Tester runs the S1 ui cases on staging, reviews REVIEW rows, raises defects.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S02-T05",
+     "type": "Test",
+     "title": "Testing phase review",
+     "detail": "After the build: review every REVIEW row from the Jev runs, run the manual and ui-staging cases on staging with the Zoho sandbox, confirm the calibration line, log defects.",
+     "doer": "Tester",
+     "est_hours": 16,
+     "when": "Testing phase"
+    }
+   ],
+   "tests": [
+    {
+     "id": "TC-E16-003",
+     "title": "Runner signs in by seat without a password",
+     "type": "Functional",
+     "seat": "rohit",
+     "priority": "P1",
+     "ui_mode": "ui-staging",
+     "fixtures": [],
+     "steps": [
+      "Run the runner on TC-E03-006 against staging"
+     ],
+     "expected": "The case starts on Rohit's Today page; no Zoho sign-in page appears; verdict is recorded."
+    },
+    {
+     "id": "TC-E16-004",
+     "title": "A fixture without a seed stops the case",
+     "type": "Negative",
+     "seat": "tasneem",
+     "priority": "P2",
+     "ui_mode": "api",
+     "fixtures": [],
+     "steps": [
+      "Run the case against staging"
+     ],
+     "expected": "The case ends as FAIL with 'fixture X has no staging seed yet' and no steps run."
+    }
+   ],
+   "ui_cases": [],
+   "calibration": [],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
+   ]
+  },
+  {
+   "id": "M19-S03",
+   "epic": "M19",
+   "title": "Zoho sandbox seed and reset",
+   "priority": "Must",
+   "stage": "S1",
+   "day": 0,
+   "depends_on": [
+    "M02-S09"
+   ],
+   "as_a": "Tester",
+   "i_want": "a known set of leads, investors, farm LLPs, allotments, receipts and paperwork in the sandbox before every run",
+   "so_that": "results are repeatable and never touch real investors",
+   "acceptance": [
+    "Given the seed manifest, when reset runs, then the sandbox holds exactly the manifest's records (same names as the merged prototype's demo data, dates relative to the run day)",
+    "Given the manifest, when read, then it covers Leads, Contacts, LLPs, allotments, Receipts, documents and tickets",
+    "Given production credentials, when reset is called, then it refuses (sandbox org id check)",
+    "Given a run, when the next reset runs, then every record the run created is removed",
+    "Given FIXTURE_MODE=local, when the app starts, then it signs people in from a list matching the merged prototype and applies named fixtures through a test-only endpoint",
+    "Given a production build, when the test-only fixture endpoint is called, then it does not exist",
+    "Given FIXTURE_MODE=local (npm run dev:local), when POST /api/test/fixture/<NAME> is called for any fixture named in pm/plan-merged/ui-cases.json, then the app serves that state through the same Zoho client interface; fixtures missing from pm/merge-audit/ui-sahil/fixtures-merged.json (DEMO_PORTAL and the Investors-side ones) are added there first"
+   ],
+   "decisions": [
+    "D45",
+    "D54"
+   ],
+   "prototype": [],
+   "zoho": [
+    "Zoho CRM sandbox API",
+    "Leads",
+    "Contacts",
+    "LLP_Creation_Module",
+    "LLP_UnitAllocation_Module",
+    "Calls/Meetings/Tasks"
+   ],
+   "subtasks": [
+    {
+     "id": "M19-S03-T01",
+     "type": "Integration",
+     "title": "Seed manifest and reset script",
+     "detail": "JSON manifest of the merged prototype's demo book (people, leads, investors, LLPs, allotments, receipts, notes, paperwork); reset = delete records tagged 'test-seed' then upsert the manifest; refuses unless org id = sandbox.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S03-T02",
+     "type": "Docs",
+     "title": "How to add a fixture",
+     "detail": "Short guide: name, business description, prototype JS, sandbox seed.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S03-T03",
+     "type": "Backend",
+     "title": "Local fixture mode for the autopilot",
+     "detail": "FIXTURE_MODE=local: the Zoho client adapter serves the merged prototype's demo data in memory; a dev-only sign-in list mirrors it; POST /api/test/fixture/<name> applies a named fixture; disabled unless FIXTURE_MODE=local and NODE_ENV!=production.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    }
+   ],
+   "tests": [
+    {
+     "id": "TC-E16-005",
+     "title": "Reset restores the manifest",
+     "type": "Functional",
+     "seat": "sahil",
+     "priority": "P1",
+     "ui_mode": "api",
+     "fixtures": [],
+     "steps": [
+      "Run reset",
+      "Count records by tag"
+     ],
+     "expected": "Record counts and names equal the manifest; no record from the previous run remains."
+    },
+    {
+     "id": "TC-E16-006",
+     "title": "Reset refuses production",
+     "type": "Negative",
+     "seat": "sahil",
+     "priority": "P1",
+     "ui_mode": "api",
+     "fixtures": [],
+     "steps": [
+      "Run reset"
+     ],
+     "expected": "Reset stops with 'not a sandbox org' and changes nothing."
+    }
+   ],
+   "ui_cases": [],
+   "calibration": [],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
+   ]
+  },
+  {
+   "id": "M19-S06",
+   "epic": "M19",
+   "title": "Unit tests for business rules",
+   "priority": "Must",
+   "stage": "S1",
+   "day": 0,
+   "depends_on": [
+    "M01-S01"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "i_want": "the rules the app enforces tested in code",
+   "so_that": "rules stay right as screens change",
+   "acceptance": [
+    "Given the rules module (seat permissions, visibility scope, next-step rules, NDA gating, document scopes, dates and SLA maths), when tests run, then each rule has unit tests",
+    "Given the Definition of Done, when a story adds or changes a rule, then it is not Built without its unit tests"
+   ],
+   "decisions": [
+    "D60",
+    "D61",
+    "D70"
+   ],
+   "prototype": [],
+   "zoho": [],
+   "subtasks": [
+    {
+     "id": "M19-S06-T01",
+     "type": "Backend",
+     "title": "Vitest set-up and first 20 rule tests",
+     "detail": "Tests for may/hasCap-equivalents, scope filter, super-user PII masking, NDA gate (no deck before signed), document scope (personal/allotment/project), first-touch SLA, overdue definition.",
+     "doer": "Autopilot",
+     "est_hours": 3,
+     "when": "Build"
+    }
+   ],
+   "tests": [
+    {
+     "id": "TC-E16-011",
+     "title": "Rule tests run on every push",
+     "type": "Regression",
+     "seat": "sahil",
+     "priority": "P2",
+     "ui_mode": "api",
+     "fixtures": [],
+     "steps": [
+      "Push any change"
+     ],
+     "expected": "The push job runs the rule tests and reports their count."
+    }
+   ],
+   "ui_cases": [],
+   "calibration": [],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
+   ]
+  },
   {
    "id": "M02-S01",
    "epic": "M02",
@@ -2804,7 +3360,6 @@
     }
    ],
    "ui_cases": [
-    "TC-E01-004",
     "TC-E01-005",
     "TC-E01-006",
     "TC-IM01-016"
@@ -3774,203 +4329,6 @@
    ],
    "known_gaps": [
     "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
-   ]
-  },
-  {
-   "id": "M03-S01",
-   "epic": "M03",
-   "title": "Only people with a seat or a granted page sign in",
-   "priority": "Must",
-   "stage": "S1",
-   "day": 2,
-   "depends_on": [
-    "M01-S02"
-   ],
-   "as_a": "Digital Infrastructure",
-   "i_want": "the sign-in check to admit only the seats of both sides (IRs, IR Manager, Finance, Head of Finance, KAMs, Farm ops, viewers, Sahil) plus anyone I have granted a page",
-   "so_that": "staff without a seat, such as Marketing, never land in the app by default (D60)",
-   "acceptance": [
-    "Given today's staff, when the staging sign-in list renders, then it lists exactly the people who hold a seat on either side",
-    "Given Finance (Harsha), when she signs in, then she is admitted and lands on Today (Investors side)",
-    "Given Marketing (Gokul, even if active in Zoho), when he tries to sign in, then he is refused",
-    "Given the Ops Lead, BU Owner or Corporate Ops with no granted page, when they try to sign in, then they are refused and not listed",
-    "Given a person marked inactive, when they try to sign in, then they are refused"
-   ],
-   "decisions": [
-    "D60",
-    "D68"
-   ],
-   "prototype": [
-    "Sign-in"
-   ],
-   "zoho": [
-    "Users API (role, status)"
-   ],
-   "subtasks": [
-    {
-     "id": "M03-S01-T01",
-     "type": "Backend",
-     "title": "Access policy module",
-     "detail": "Port consoleAccount, seatShape, capsFor, hasCap, may, reachCeil from the merged prototype into lib/access.ts with unit tests mirroring the prototype probes, covering every seat of both sides; seat read from the Zoho user's role, never a display field.",
-     "doer": "Autopilot",
-     "est_hours": 3,
-     "when": "Build"
-    },
-    {
-     "id": "M03-S01-T02",
-     "type": "Backend",
-     "title": "Admission on OAuth callback",
-     "detail": "Callback refuses users without console access with a named message; sign-in list for the demo/staging only.",
-     "doer": "Autopilot",
-     "est_hours": 1,
-     "when": "Build"
-    },
-    {
-     "id": "M03-S01-T03",
-     "type": "Test",
-     "title": "Admission matrix",
-     "detail": "Tester tries each staff type on staging and runs the prototype cases.",
-     "doer": "Autopilot (Jev)",
-     "est_hours": 1.5,
-     "when": "Build"
-    }
-   ],
-   "tests": [
-    {
-     "id": "TC-E03-001",
-     "title": "Sign-in screen lists exactly the six console users",
-     "type": "Functional",
-     "seat": "rohit",
-     "priority": "P1",
-     "ui_mode": "ui",
-     "fixtures": [
-      "DEMO_STAFF"
-     ],
-     "steps": [
-      "Press Rohit Deshpande on the sign-in screen",
-      "Press 'Your account' in the top bar",
-      "Press 'Sign out'"
-     ],
-     "expected": [
-      "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-      "It does not offer Harsha Bhat.",
-      "It does not offer Gokul S.",
-      "It does not offer Jhalak Mehta.",
-      "It does not offer Arvind Menon or Pradeep Ram."
-     ]
-    },
-    {
-     "id": "TC-E03-002",
-     "title": "Finance cannot sign in",
-     "type": "Negative",
-     "seat": "none",
-     "priority": "P1",
-     "ui_mode": "ui",
-     "fixtures": [
-      "DEMO_STAFF"
-     ],
-     "steps": [
-      "Look at the sign-in screen"
-     ],
-     "expected": [
-      "The sign-in screen does not offer Harsha Bhat.",
-      "No console page is showing."
-     ]
-    },
-    {
-     "id": "TC-E03-003",
-     "title": "Marketing cannot sign in even when active",
-     "type": "Negative",
-     "seat": "none",
-     "priority": "P2",
-     "ui_mode": "ui",
-     "fixtures": [
-      "DEMO_STAFF",
-      "GOKUL_ACTIVE"
-     ],
-     "steps": [
-      "Look at the sign-in screen"
-     ],
-     "expected": [
-      "The sign-in screen does not offer Gokul S.",
-      "No console page is showing."
-     ]
-    },
-    {
-     "id": "TC-E03-004",
-     "title": "Ops Lead, BU Owner and Corporate Ops without a grant are refused",
-     "type": "Permission",
-     "seat": "none",
-     "priority": "P1",
-     "ui_mode": "ui",
-     "fixtures": [
-      "DEMO_STAFF"
-     ],
-     "steps": [
-      "Look at the sign-in screen"
-     ],
-     "expected": [
-      "The sign-in screen does not offer Jhalak Mehta.",
-      "It does not offer Arvind Menon.",
-      "It does not offer Pradeep Ram."
-     ]
-    },
-    {
-     "id": "TC-E03-005",
-     "title": "A deactivated IR is refused",
-     "type": "Negative",
-     "seat": "none",
-     "priority": "P1",
-     "ui_mode": "ui",
-     "fixtures": [
-      "DEMO_STAFF",
-      "KAVYA_DEACTIVATED"
-     ],
-     "steps": [
-      "Look at the sign-in screen"
-     ],
-     "expected": [
-      "The sign-in screen does not offer Kavya Nair.",
-      "It offers Rohit Deshpande."
-     ]
-    },
-    {
-     "id": "TC-E03-023",
-     "title": "Deactivation while signed in ends the session",
-     "type": "Negative",
-     "seat": "kavya",
-     "priority": "P1",
-     "ui_mode": "ui-staging",
-     "fixtures": [
-      "STAGING_USERS"
-     ],
-     "steps": [
-      "Press 'Continue with Zoho' and sign in as Kavya",
-      "In Zoho Setup → Users, deactivate Kavya",
-      "Open Leads from the menu"
-     ],
-     "expected": [
-      "The sign-in screen is showing.",
-      "It says 'Your access has been turned off.'"
-     ]
-    }
-   ],
-   "ui_cases": [
-    "TC-E03-001",
-    "TC-E03-002",
-    "TC-E03-003",
-    "TC-E03-004",
-    "TC-E03-005"
-   ],
-   "calibration": [
-    "TC-M03-CAL1"
-   ],
-   "open_decisions": [
-    "OD9: Grants storage under zero copy (Zoho vs app store); Payment_Status kept by Zoho workflow or console commit (Sahil)."
-   ],
-   "known_gaps": [
-    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
-    "CX1: Which existing Contacts came from which IR (backfill); Block A–F vs the real LLPs (production has one: EKA LLP, 22 units, Open for Reservation)."
    ]
   },
   {
@@ -5265,307 +5623,6 @@
    ]
   },
   {
-   "id": "M19-S01",
-   "epic": "M19",
-   "title": "UI test contract",
-   "priority": "Must",
-   "stage": "S1",
-   "day": 2,
-   "depends_on": [
-    "M01-S01"
-   ],
-   "as_a": "Sahil (Digital Infrastructure, super user)",
-   "i_want": "every control in the app to be findable by its visible label",
-   "so_that": "Jev can run the same plain-language cases on the merged prototype and the built app, and screen readers work too",
-   "acceptance": [
-    "Given any page, when the a11y lint runs, then every input, select and textarea has a programmatic label (label for / aria-label) and every button has a name",
-    "Given a collapsible section, when inspected, then it is a details/summary or a button with aria-expanded",
-    "Given a closed section, when tabbing, then controls inside it are not focusable",
-    "Given a list row, when inspected, then its container holds the record's name, so a step can say 'on Ritu Anand's row'"
-   ],
-   "decisions": [
-    "D63"
-   ],
-   "prototype": [
-    "All pages"
-   ],
-   "zoho": [],
-   "subtasks": [
-    {
-     "id": "M19-S01-T01",
-     "type": "Frontend",
-     "title": "Lint rule for labelled controls",
-     "detail": "eslint-plugin-jsx-a11y (label-has-associated-control, control-has-associated-label) + a custom rule that fails on inputs named only by placeholder; wire into pre-commit and CI.",
-     "doer": "Autopilot",
-     "est_hours": 3,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S01-T02",
-     "type": "Docs",
-     "title": "Write the UI test contract",
-     "detail": "One page in docs/: labels, sections, rows, notices use role=status, disabled = disabled attribute; examples from the prototype findings (unlabelled filter selects, Add member boxes named by their value).",
-     "doer": "Autopilot",
-     "est_hours": 1,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S01-T03",
-     "type": "Test",
-     "title": "Check the contract on the first built pages",
-     "detail": "Run the runner's control listing on Today and Leads on staging; every box must show its label, not its value.",
-     "doer": "Autopilot (Jev)",
-     "est_hours": 1,
-     "when": "Build"
-    }
-   ],
-   "tests": [
-    {
-     "id": "TC-E16-001",
-     "title": "Lint fails on an unlabelled box",
-     "type": "Negative",
-     "seat": "sahil",
-     "priority": "P1",
-     "ui_mode": "api",
-     "fixtures": [],
-     "steps": [
-      "Push the branch"
-     ],
-     "expected": "CI fails on the a11y lint naming the file and line."
-    },
-    {
-     "id": "TC-E16-002",
-     "title": "Runner names boxes by their labels",
-     "type": "Functional",
-     "seat": "rohit",
-     "priority": "P2",
-     "ui_mode": "ui-staging",
-     "fixtures": [],
-     "steps": [
-      "Press Rohit Deshpande on the sign-in screen",
-      "Press 'Add lead'"
-     ],
-     "expected": "The runner's control list names each box by its label (Full name, Mobile, Source), never by a value or placeholder."
-    }
-   ],
-   "ui_cases": [],
-   "calibration": [],
-   "open_decisions": [],
-   "known_gaps": [
-    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
-   ]
-  },
-  {
-   "id": "M19-S02",
-   "epic": "M19",
-   "title": "Jev UI runner on staging",
-   "priority": "Must",
-   "stage": "S1",
-   "day": 2,
-   "depends_on": [
-    "M19-S03",
-    "M01-S02"
-   ],
-   "as_a": "Tester",
-   "i_want": "to run any case against the staging app with one command, as any seat",
-   "so_that": "the build is tested the way people use it, without code knowledge",
-   "acceptance": [
-    "Given a case file and the staging URL, when the runner starts, then it signs each case in as its seat with a stored test session (no Zoho password prompt)",
-    "Given a case lists fixtures, when it starts, then the staging adapter seeds them through the Zoho sandbox API before the steps",
-    "Given a fixture that has no seed, when a case asks for it, then the runner refuses to run the case",
-    "Given a run finishes, when results are written, then they are a CSV (verdict, p, failing facts, trace) the workbook's Test cases sheet imports"
-   ],
-   "decisions": [
-    "D62",
-    "D63"
-   ],
-   "prototype": [],
-   "zoho": [
-    "Zoho CRM sandbox",
-    "OAuth test users"
-   ],
-   "subtasks": [
-    {
-     "id": "M19-S02-T01",
-     "type": "Integration",
-     "title": "Test sign-in sessions",
-     "detail": "Create one Zoho sandbox user per seat (both sides, plus super user); script that signs each in once and saves Playwright storageState; runner uses storageState per case seat.",
-     "doer": "Autopilot",
-     "est_hours": 4,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S02-T02",
-     "type": "Integration",
-     "title": "Fixture adapter for staging",
-     "detail": "fixtures.json gains 'seeded' (the seed id); adapter calls the seed/reset API for each fixture before a case; prototype fixtures stay for the prototype run.",
-     "doer": "Autopilot",
-     "est_hours": 3,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S02-T03",
-     "type": "Backend",
-     "title": "Results → workbook import",
-     "detail": "Runner writes results.csv (id, verdict, p, failing facts, run date); a small script fills the Test cases sheet's Jev columns by id.",
-     "doer": "Autopilot",
-     "est_hours": 2,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S02-T04",
-     "type": "Test",
-     "title": "Run the S1 suite on staging",
-     "detail": "Tester runs the S1 ui cases on staging, reviews REVIEW rows, raises defects.",
-     "doer": "Autopilot (Jev)",
-     "est_hours": 2,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S02-T05",
-     "type": "Test",
-     "title": "Testing phase review",
-     "detail": "After the build: review every REVIEW row from the Jev runs, run the manual and ui-staging cases on staging with the Zoho sandbox, confirm the calibration line, log defects.",
-     "doer": "Tester",
-     "est_hours": 16,
-     "when": "Testing phase"
-    }
-   ],
-   "tests": [
-    {
-     "id": "TC-E16-003",
-     "title": "Runner signs in by seat without a password",
-     "type": "Functional",
-     "seat": "rohit",
-     "priority": "P1",
-     "ui_mode": "ui-staging",
-     "fixtures": [],
-     "steps": [
-      "Run the runner on TC-E03-006 against staging"
-     ],
-     "expected": "The case starts on Rohit's Today page; no Zoho sign-in page appears; verdict is recorded."
-    },
-    {
-     "id": "TC-E16-004",
-     "title": "A fixture without a seed stops the case",
-     "type": "Negative",
-     "seat": "tasneem",
-     "priority": "P2",
-     "ui_mode": "api",
-     "fixtures": [],
-     "steps": [
-      "Run the case against staging"
-     ],
-     "expected": "The case ends as FAIL with 'fixture X has no staging seed yet' and no steps run."
-    }
-   ],
-   "ui_cases": [],
-   "calibration": [],
-   "open_decisions": [],
-   "known_gaps": [
-    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
-   ]
-  },
-  {
-   "id": "M19-S03",
-   "epic": "M19",
-   "title": "Zoho sandbox seed and reset",
-   "priority": "Must",
-   "stage": "S1",
-   "day": 2,
-   "depends_on": [
-    "M02-S09"
-   ],
-   "as_a": "Tester",
-   "i_want": "a known set of leads, investors, farm LLPs, allotments, receipts and paperwork in the sandbox before every run",
-   "so_that": "results are repeatable and never touch real investors",
-   "acceptance": [
-    "Given the seed manifest, when reset runs, then the sandbox holds exactly the manifest's records (same names as the merged prototype's demo data, dates relative to the run day)",
-    "Given the manifest, when read, then it covers Leads, Contacts, LLPs, allotments, Receipts, documents and tickets",
-    "Given production credentials, when reset is called, then it refuses (sandbox org id check)",
-    "Given a run, when the next reset runs, then every record the run created is removed",
-    "Given FIXTURE_MODE=local, when the app starts, then it signs people in from a list matching the merged prototype and applies named fixtures through a test-only endpoint",
-    "Given a production build, when the test-only fixture endpoint is called, then it does not exist"
-   ],
-   "decisions": [
-    "D45",
-    "D54"
-   ],
-   "prototype": [],
-   "zoho": [
-    "Zoho CRM sandbox API",
-    "Leads",
-    "Contacts",
-    "LLP_Creation_Module",
-    "LLP_UnitAllocation_Module",
-    "Calls/Meetings/Tasks"
-   ],
-   "subtasks": [
-    {
-     "id": "M19-S03-T01",
-     "type": "Integration",
-     "title": "Seed manifest and reset script",
-     "detail": "JSON manifest of the merged prototype's demo book (people, leads, investors, LLPs, allotments, receipts, notes, paperwork); reset = delete records tagged 'test-seed' then upsert the manifest; refuses unless org id = sandbox.",
-     "doer": "Autopilot",
-     "est_hours": 4,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S03-T02",
-     "type": "Docs",
-     "title": "How to add a fixture",
-     "detail": "Short guide: name, business description, prototype JS, sandbox seed.",
-     "doer": "Autopilot",
-     "est_hours": 1,
-     "when": "Build"
-    },
-    {
-     "id": "M19-S03-T03",
-     "type": "Backend",
-     "title": "Local fixture mode for the autopilot",
-     "detail": "FIXTURE_MODE=local: the Zoho client adapter serves the merged prototype's demo data in memory; a dev-only sign-in list mirrors it; POST /api/test/fixture/<name> applies a named fixture; disabled unless FIXTURE_MODE=local and NODE_ENV!=production.",
-     "doer": "Autopilot",
-     "est_hours": 4,
-     "when": "Build"
-    }
-   ],
-   "tests": [
-    {
-     "id": "TC-E16-005",
-     "title": "Reset restores the manifest",
-     "type": "Functional",
-     "seat": "sahil",
-     "priority": "P1",
-     "ui_mode": "api",
-     "fixtures": [],
-     "steps": [
-      "Run reset",
-      "Count records by tag"
-     ],
-     "expected": "Record counts and names equal the manifest; no record from the previous run remains."
-    },
-    {
-     "id": "TC-E16-006",
-     "title": "Reset refuses production",
-     "type": "Negative",
-     "seat": "sahil",
-     "priority": "P1",
-     "ui_mode": "api",
-     "fixtures": [],
-     "steps": [
-      "Run reset"
-     ],
-     "expected": "Reset stops with 'not a sandbox org' and changes nothing."
-    }
-   ],
-   "ui_cases": [],
-   "calibration": [],
-   "open_decisions": [],
-   "known_gaps": [
-    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
-   ]
-  },
-  {
    "id": "M19-S04",
    "epic": "M19",
    "title": "Judge calibration gate",
@@ -5696,63 +5753,6 @@
       "Try to promote"
      ],
      "expected": "Promotion is refused and names TC-E05-004."
-    }
-   ],
-   "ui_cases": [],
-   "calibration": [],
-   "open_decisions": [],
-   "known_gaps": [
-    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
-   ]
-  },
-  {
-   "id": "M19-S06",
-   "epic": "M19",
-   "title": "Unit tests for business rules",
-   "priority": "Must",
-   "stage": "S1",
-   "day": 2,
-   "depends_on": [
-    "M01-S01"
-   ],
-   "as_a": "Sahil (Digital Infrastructure, super user)",
-   "i_want": "the rules the app enforces tested in code",
-   "so_that": "rules stay right as screens change",
-   "acceptance": [
-    "Given the rules module (seat permissions, visibility scope, next-step rules, NDA gating, document scopes, dates and SLA maths), when tests run, then each rule has unit tests",
-    "Given the Definition of Done, when a story adds or changes a rule, then it is not Built without its unit tests"
-   ],
-   "decisions": [
-    "D60",
-    "D61",
-    "D70"
-   ],
-   "prototype": [],
-   "zoho": [],
-   "subtasks": [
-    {
-     "id": "M19-S06-T01",
-     "type": "Backend",
-     "title": "Vitest set-up and first 20 rule tests",
-     "detail": "Tests for may/hasCap-equivalents, scope filter, super-user PII masking, NDA gate (no deck before signed), document scope (personal/allotment/project), first-touch SLA, overdue definition.",
-     "doer": "Autopilot",
-     "est_hours": 3,
-     "when": "Build"
-    }
-   ],
-   "tests": [
-    {
-     "id": "TC-E16-011",
-     "title": "Rule tests run on every push",
-     "type": "Regression",
-     "seat": "sahil",
-     "priority": "P2",
-     "ui_mode": "api",
-     "fixtures": [],
-     "steps": [
-      "Push any change"
-     ],
-     "expected": "The push job runs the rule tests and reports their count."
     }
    ],
    "ui_cases": [],
@@ -14227,8 +14227,6 @@
    ],
    "ui_cases": [
     "TC-IM07-004",
-    "TC-IM07-005",
-    "TC-IM07-006",
     "TC-IM07-007"
    ],
    "calibration": [
@@ -15410,9 +15408,6 @@
    ],
    "ui_cases": [
     "TC-E09-010",
-    "TC-E09-011",
-    "TC-E09-012",
-    "TC-E09-013",
     "TC-E09-014"
    ],
    "calibration": [

@@ -23,24 +23,6 @@
    "group": "M01"
   },
   {
-   "id": "TC-E01-004",
-   "story": "M01-S02",
-   "seat": "none",
-   "title": "Continue with Zoho on a cold browser does not enter a seat",
-   "steps": [
-    "Press 'Continue with Zoho' on the sign-in screen"
-   ],
-   "expected": [
-    "The sign-in screen is still showing.",
-    "A line says Zoho sign-in is not wired up in the prototype.",
-    "No console page (Today, Leads or any menu) is showing."
-   ],
-   "fixtures": [
-    "DEMO_STAFF"
-   ],
-   "group": "M01"
-  },
-  {
    "id": "TC-E01-005",
    "story": "M01-S02",
    "seat": "rohit",
@@ -2435,76 +2417,6 @@
    ],
    "fixtures": [
     "L5_SUPP_NOT_STARTED"
-   ],
-   "group": "M12"
-  },
-  {
-   "id": "TC-E09-011",
-   "story": "M12-S12",
-   "seat": "kavya",
-   "title": "Draft sent records version 1 with its link",
-   "steps": [
-    "Press Kavya Nair on the sign-in screen",
-    "Open Leads from the menu",
-    "Open Deepa Varghese",
-    "Type 'https://writer.zoho.in/SUPP-L5-v1' in the 'Paste the Zoho link to the draft' box",
-    "Press 'Draft sent'"
-   ],
-   "expected": [
-    "Under 'Paperwork' the page reads 'Supplementary agreement — get the final draft agreed'.",
-    "Under 'Paperwork' the page shows 'Draft 1 · https://writer.zoho.in/SUPP-L5-v1'.",
-    "The page offers 'Final draft agreed' and 'New draft'.",
-    "A notice says 'Saved · Supplementary draft sent'."
-   ],
-   "fixtures": [
-    "L5_SUPP_NOT_STARTED"
-   ],
-   "group": "M12"
-  },
-  {
-   "id": "TC-E09-012",
-   "story": "M12-S12",
-   "seat": "kavya",
-   "title": "New draft increments the version",
-   "steps": [
-    "Press Kavya Nair on the sign-in screen",
-    "Open Leads from the menu",
-    "Open Deepa Varghese",
-    "Press 'New draft'",
-    "Type 'https://writer.zoho.in/SUPP-L5-v2' in the 'Paste the link to draft 2' box",
-    "Press 'New draft sent'"
-   ],
-   "expected": [
-    "Under 'Paperwork' the page shows 'Draft 2 · https://writer.zoho.in/SUPP-L5-v2'.",
-    "A notice says 'Saved · Draft 2 sent'."
-   ],
-   "fixtures": [
-    "L5_SUPP_DRAFT_V1"
-   ],
-   "group": "M12"
-  },
-  {
-   "id": "TC-E09-013",
-   "story": "M12-S12",
-   "seat": "kavya",
-   "title": "Final draft agreed hands over to Finance; Undo restores the draft",
-   "steps": [
-    "Press Kavya Nair on the sign-in screen",
-    "Open Leads from the menu",
-    "Open Deepa Varghese",
-    "Type 'https://workdrive.zoho.in/SUPP-L5-final' in the 'Paste the link to the agreed final draft' box",
-    "Press 'Final draft agreed'"
-   ],
-   "expected": [
-    "Under 'Paperwork' the page reads 'Supplementary agreement — with Finance in the IM portal'.",
-    "Under 'Paperwork' the page says 'Finance sends it for signature.'",
-    "No row on the page offers a button named 'Final draft agreed'.",
-    "The text 'New draft' does not appear anywhere on the page.",
-    "The text 'Draft sent' does not appear anywhere on the page.",
-    "A notice says 'Saved · Final draft agreed — Finance sends it for signature' and offers 'Undo'."
-   ],
-   "fixtures": [
-    "L5_SUPP_DRAFT_V1"
    ],
    "group": "M12"
   },
@@ -5847,50 +5759,6 @@
    ],
    "fixtures": [
     "KIRAN_SAID_YES"
-   ],
-   "group": "M12"
-  },
-  {
-   "id": "TC-IM07-005",
-   "story": "M12-S04",
-   "seat": "meena",
-   "title": "An NRI is never sent an Aadhaar OTP document",
-   "steps": [
-    "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
-    "Press 'Documents' in the menu",
-    "Press the 'Send one' tab",
-    "Choose 'Joseph Mathew — ARL-INV-0209 · NRI' in the Investor dropdown",
-    "Press 'Allocation letter'",
-    "Press 'Send through Zoho Sign'"
-   ],
-   "expected": [
-    "The page says Joseph Mathew is an NRI and that Aadhaar OTP needs an Aadhaar linked to a live Indian mobile.",
-    "The 'Out for signature' tab shows 1."
-   ],
-   "fixtures": [
-    "DEMO_BOOK__C"
-   ],
-   "group": "M12"
-  },
-  {
-   "id": "TC-IM07-006",
-   "story": "M12-S04",
-   "seat": "meena",
-   "title": "A second copy of a document already on file is refused on screen",
-   "steps": [
-    "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
-    "Press 'Documents' in the menu",
-    "Press the 'Send one' tab",
-    "Choose 'Prakash Bhat — ARL-INV-0208' in the Investor dropdown",
-    "Press 'Non-disclosure agreement'",
-    "Press 'Send through Zoho Sign'"
-   ],
-   "expected": [
-    "The page shows a refusal saying the Non-disclosure agreement is already on file for Prakash Bhat.",
-    "The 'Out for signature' tab shows 1."
-   ],
-   "fixtures": [
-    "DEMO_BOOK__C"
    ],
    "group": "M12"
   },

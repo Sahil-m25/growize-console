@@ -24,7 +24,7 @@ const regDue = finished - (pr.last_regression_finished || 0) >= REG_EVERY;
 const remaining = Qd.stories.filter(s => !SATISFIED.has(st(s.id)));
 if (flag === "--check") process.exit(fix || ready || (regDue && finished) ? 0 : remaining.length ? 2 : 1);
 if (fix) console.log(JSON.stringify({ type: "fix", ...fix, why: pr.stories[fix.id].note }, null, 1));
-else if (regDue && finished) console.log(JSON.stringify({ type: "regression", stories: Qd.stories.filter(s => SATISFIED.has(st(s.id))).map(s => s.id),
+else if (regDue && finished && SATISFIED.has(st("M19-S03"))) console.log(JSON.stringify({ type: "regression", stories: Qd.stories.filter(s => SATISFIED.has(st(s.id))).map(s => s.id),
   then: "node autopilot/test-story.mjs " + q + " --regression ; then node autopilot/done.mjs " + q + " REGRESSION done" }, null, 1));
 else if (ready) console.log(JSON.stringify({ type: "story", queue: q, app: Qd.app, url: Qd.url, ...ready, prototype_file: Qd.prototype,
   attempts_so_far: pr.stories[ready.id]?.attempts || 0, previous_note: pr.stories[ready.id]?.note || null }, null, 1));

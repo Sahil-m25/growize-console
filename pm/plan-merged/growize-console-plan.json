@@ -1851,7 +1851,7 @@
    "plan": "In plan",
    "change": "kept",
    "open_items": [],
-   "day": 2
+   "day": 0
   },
   {
    "id": "M03-S02",
@@ -8030,7 +8030,7 @@
    "plan": "In plan",
    "change": "kept",
    "open_items": [],
-   "day": 2
+   "day": 0
   },
   {
    "id": "M19-S02",
@@ -8072,7 +8072,7 @@
      "who": "owner"
     }
    ],
-   "day": 2
+   "day": 0
   },
   {
    "id": "M19-S03",
@@ -8090,7 +8090,8 @@
     "Given production credentials, when reset is called, then it refuses (sandbox org id check)",
     "Given a run, when the next reset runs, then every record the run created is removed",
     "Given FIXTURE_MODE=local, when the app starts, then it signs people in from a list matching the merged prototype and applies named fixtures through a test-only endpoint",
-    "Given a production build, when the test-only fixture endpoint is called, then it does not exist"
+    "Given a production build, when the test-only fixture endpoint is called, then it does not exist",
+    "Given FIXTURE_MODE=local (npm run dev:local), when POST /api/test/fixture/<NAME> is called for any fixture named in pm/plan-merged/ui-cases.json, then the app serves that state through the same Zoho client interface; fixtures missing from pm/merge-audit/ui-sahil/fixtures-merged.json (DEMO_PORTAL and the Investors-side ones) are added there first"
    ],
    "priority": "Must",
    "stage": "S1",
@@ -8119,7 +8120,7 @@
      "who": "owner"
     }
    ],
-   "day": 2
+   "day": 0
   },
   {
    "id": "M19-S04",
@@ -8211,7 +8212,7 @@
    "plan": "In plan",
    "change": "kept",
    "open_items": [],
-   "day": 2
+   "day": 0
   },
   {
    "id": "M19-S07",

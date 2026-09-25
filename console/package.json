@@ -2,12 +2,13 @@
   "name": "@growize/console",
   "version": "0.1.0",
   "private": true,
-  "description": "Growize IR lead console — the twelve pages of stage 2, built to console/prototype/ir-console.html",
+  "description": "Growize IR lead console \u2014 the twelve pages of stage 2, built to console/prototype/ir-console.html",
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:local": "node -e \"process.env.FIXTURE_MODE='local';require('child_process').spawn('npx next dev -p 3001',{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\""
   },
   "dependencies": {
     "next": "15.5.4",

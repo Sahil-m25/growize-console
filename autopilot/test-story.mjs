@@ -21,7 +21,7 @@ const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const out = `${dir(q)}/results/${stamp}-${which.replace(/^--/, "")}.json`;
 fs.mkdirSync(P(dir(q), "results"), { recursive: true });
 const r = spawnSync(process.execPath, [P("pm", "jev-ui-runner.mjs"), P(cfg.cases), target, P(out)], {
-  stdio: "inherit", env: { ...process.env, ONLY: ids.join(","), FIXTURES: process.env.FIXTURES || P(cfg.fixtures) } });
+  stdio: "inherit", env: { ...process.env, SEED_CMD: process.env.SEED_CMD || "node autopilot/seed-local.mjs", ONLY: ids.join(","), FIXTURES: process.env.FIXTURES || P(cfg.fixtures) } });
 const res = read(out, { results: [] }).results;
 const cal = res.filter(x => x.expect_fail), real = res.filter(x => !x.expect_fail);
 const bad = real.filter(x => x.verdict !== "PASS");

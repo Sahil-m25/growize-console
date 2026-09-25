@@ -42,7 +42,7 @@ this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; s
    - **Unit tests:** add them for every rule you add or change, using `npm test` in the app folder (Vitest; E16-S06 sets it up).
    - **Checks:** `npm run typecheck` and `npm test` must pass.
 
-6. **Start the app.** In the app folder run `npm run dev` in the background, with these settings, and wait for the port to answer:
+6. **Start the app.** In `console/` run `npm run dev:local` in the background (it sets FIXTURE_MODE=local itself — never prefix env vars on the command line, the permission rules reject that) and wait for the port to answer. `test-story.mjs` sets SEED_CMD for you. Settings:
    - Until the Zoho sandbox seeding exists (E16-S03): `FIXTURE_MODE=local`. The app serves the prototype's demo data through the same Zoho client interface, and shows a dev sign-in list with the prototype's names. For the runner, set `SEED_CMD="node autopilot/seed-local.mjs"` so fixtures are applied through the app's test-only endpoint. Building this mode is E16-S03-T03, day 2.
    - Once the sandbox exists: point the app at the Zoho sandbox, set `SEED_CMD` to the sandbox seeder, and set `SESSIONS_DIR` to the saved test sessions (E16-S02). Saved sessions replace the sign-in steps.
 
