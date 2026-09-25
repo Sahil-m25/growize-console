@@ -1,0 +1,1730 @@
+[
+ {
+  "id": "orient|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "orient|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Orient: read the story packet, its decisions, and locate the files/functions to change."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "code|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Code: write or change TypeScript/React code for the story."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "unit|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Unit check: run typecheck and unit tests (Vitest) and fix failures."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "runtime|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Runtime check: with the dev app running, exercise the story's flow and catch failed requests or console errors."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "accept|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Acceptance: decide whether the story's UI cases pass (done) or not (review) from the running app."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "write|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Write-ups: decision notes, BLOCKED.md steps for people, SESSIONS.md line \u2014 text a person must act on."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "money|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Money evidence: reading receipts, bank-statement CSVs, payout ledgers or audit logs to verify amounts."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|jev|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|jev|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "Jev (TypeSafe System One): calibrated typed judgments. In this repo it judges a story's UI test cases against the running app (the done/review gate) and checks design/mapping decisions. Costs API calls; needs the key.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|reticle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|reticle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "reticle: an MCP server + in-app dev SDK that drives the running dev app and reports failed network requests, state mismatches and console errors with file locations. Needs the dev server running.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|graphify|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|graphify|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "graphify: a local AST knowledge graph of the codebase (functions, modules, dependencies) that the agent queries instead of re-reading files; a hook refreshes it after code edits.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|ponytail|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|ponytail|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "ponytail: a ruleset that makes the agent climb a ladder before writing code (does it need to exist, already in codebase, stdlib, platform, existing dependency, one-liner, then minimal code).",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|chisle|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|chisle|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "chisle: token saver that makes the agent's prose terse, pushes YAGNI-first code, and compresses tool output (lossy) before it reaches the model; can be switched off with /chisle off.",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|calc|r0",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ },
+ {
+  "id": "zoho|calc|r1",
+  "state": {
+   "context": "Growize Console build: a Next.js+TypeScript app over Zoho CRM (Zoho is the only store, money and investor data). An autopilot agent (Claude Code) builds one story per round: read the story and decisions, find the code, write the least code, typecheck + unit tests, start the dev app, check it at runtime, get Jev's UI verdict (done/review), commit, and write people's items to BLOCKED.md and decision notes in full sentences. Money, receipts, payouts and audit logs must never be read through lossy compression.",
+   "tool": "a pocket calculator app for adding numbers by hand (CONTROL: unrelated to software building).",
+   "phase": "Zoho setup: writing scripts that create or change Zoho fields/modules and exporting what changed."
+  },
+  "questions": {
+   "use": {
+    "type": "noul",
+    "instructions": "Should the agent actively use `tool` during `phase`, given `context`? Say yes only if it clearly helps that phase and does not create a risk named in `context`.",
+    "criteria": {
+     "true": "Yes, use it in this phase.",
+     "false": "No, it adds nothing here or is risky here."
+    }
+   }
+  }
+ }
+]

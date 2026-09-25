@@ -12,6 +12,25 @@ depends on a user-level install. Secrets never live in the repo.
 | **ponytail** | Write-less-code ladder (does it need to exist → already here → stdlib → platform → existing dep → one-liner → minimal code). Also stated in CLAUDE.md | Plugin `ponytail@ponytail` | github.com/DietrichGebert/ponytail |
 | **chisle** | Token saving: terse prose, YAGNI-first code, tool-output compression. `/chisle off` to pause | Plugin `chisle@chisle` | github.com/JayPokale/Chisle |
 
+
+## When each tool runs — decided by Jev (25 Sep 2026)
+Jev scored "should the agent use this tool in this phase" (noul, 2 runs each, 96 calls; control tool
+'pocket calculator' scored 0.03–0.07 everywhere, so the scale is sound). Used = ≥ 0.65; chisle sat at
+0.43–0.55 in the code phases, so it is on there by choice and off wherever the text or data matters.
+
+| Phase | Jev | reticle | graphify | ponytail | chisle | Rule |
+|---|---|---|---|---|---|---|
+| Orient (read story, find code) | .12 | .09 | **.89** | .35 | .43 | graphify; chisle on |
+| Code | .24 | .56 | **.87** | **.84** | .55 | graphify + ponytail; chisle on |
+| Unit (typecheck, tests) | .09 | .17 | **.73** | .24 | .50 | graphify; chisle on |
+| Runtime check (dev app) | .49 | **.91** | .28 | .11 | .29 | reticle |
+| Acceptance (done/review) | **.81** | **.81** | .27 | .10 | .28 | reticle evidence, **Jev decides** |
+| Write-ups (decisions, BLOCKED.md, SESSIONS) | .20 | .18 | .35 | .15 | .19 | none — chisle **off**, full sentences |
+| Money evidence (receipts, statements, payouts, audit) | .10 | .20 | .26 | .34 | .06 | none — chisle **off**, no compression |
+| Zoho setup scripts | .15 | .24 | **.68** | **.68** | .35 | graphify + ponytail |
+
+Raw: `pm/plan-merged/jobs-tools.json`, `out-tools.json`.
+
 ## How they fit in a build round
 1. graphify to find where to change code → ponytail/chisle keep the change minimal.
 2. Unit tests + typecheck.
