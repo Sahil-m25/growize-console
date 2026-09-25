@@ -59,6 +59,12 @@
    "attempts": 1,
    "at": "2026-09-25T18:48:26.303Z",
    "note": "No Zoho sandbox/test-user seat (AP4, M02-S01-T01); T01-T03 parked in BLOCKED.md; 412 classification already unit-tested"
+  },
+  "M02-S06": {
+   "status": "waiting",
+   "attempts": 1,
+   "at": "2026-09-25T18:49:09.350Z",
+   "note": "Zoho profile change (Sahil, T01) in BLOCKED.md; TC-E02-012 is ui-staging, TC-E02-013 needs the Zoho sandbox (AP4). No code to build."
   }
  },
  "subtasks": {
@@ -242,6 +248,15 @@
   "M02-S05-T03": {
    "status": "done",
    "at": "2026-09-25T18:48:26.303Z"
+  },
+  "M02-S06-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:49:09.350Z"
+  },
+  "M02-S06-T01": {
+   "status": "blocked",
+   "at": "2026-09-25T18:49:03.052Z",
+   "note": "waiting on Sahil"
   }
  },
  "rounds": [
@@ -347,6 +362,20 @@
    "status": "waiting",
    "attempt": 1,
    "note": "No Zoho sandbox/test-user seat (AP4, M02-S01-T01); T01-T03 parked in BLOCKED.md; 412 classification already unit-tested"
+  },
+  {
+   "at": "2026-09-25T18:49:02.969Z",
+   "story": "M02-S06",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-25T18:49:09.350Z",
+   "story": "M02-S06",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Zoho profile change (Sahil, T01) in BLOCKED.md; TC-E02-012 is ui-staging, TC-E02-013 needs the Zoho sandbox (AP4). No code to build."
   }
  ],
  "last_regression_round": 0,

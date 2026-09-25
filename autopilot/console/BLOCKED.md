@@ -11,3 +11,4 @@ The autopilot adds items here and never waits for them. Tick an item when it is 
 - [ ] M02-S05-T01 (M02-S05, Autopilot, Build) Create restricted test user — Invite test@ user on IR role/profile; not the super admin; not a service identity.
 - [ ] M02-S05-T02 (M02-S05, Autopilot, Build) Run T11, T6, T7, T9 — Sahil scripts the API calls (curl with the test user's token) and runs them with the tester; record status codes and bodies.
 - [ ] M02-S05-T03 (M02-S05, Autopilot (Jev), Build) Tester attacks UI/report/export doors — Tester signs in to Zoho as the test user and tries list views, global search, reports, export; records screenshots.
+- [ ] M02-S06-T01 (M02-S06, Sahil, Before its story (do early)) Remove Convert permission — Untick Convert Leads on every profile; confirm no workflow converts.
