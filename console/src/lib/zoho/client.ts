@@ -150,6 +150,10 @@ export interface ZohoApi<C extends Credential> {
   upsert(as: C, module: string, records: readonly ZohoFields[], duplicateCheckFields: readonly string[], options?: CallOptions): Promise<ZohoResult<readonly RecordOutcome[]>>;
   blueprintTransition(as: C, module: string, id: string, transitionId: string, data: ZohoFields, options?: CallOptions): Promise<ZohoResult<{ readonly transitioned: true }>>;
   wasDeleted(as: C, module: string, id: string, options?: CallOptions & { readonly maxPages?: number }): Promise<ZohoResult<DeletionCheck>>;
+  /** Share Records API: a record-level share for one user (D44 cover windows). Related records are never shared. */
+  share(as: C, module: string, id: string, userId: string, permission: "read" | "read_write", options?: CallOptions): Promise<ZohoResult<{ readonly shared: true }>>;
+  /** Revokes that user's share. */
+  unshare(as: C, module: string, id: string, userId: string, options?: CallOptions): Promise<ZohoResult<{ readonly revoked: true }>>;
 }
 export type ZohoClient = ZohoApi<UserCredential>;
 export type ZohoServiceClient = ZohoApi<ServiceCredential>;
@@ -549,6 +553,33 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         shape: { op: "write", records: 1 }, idempotent: false, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
       return out.ok ? done({ transitioned: true } as const, out) : out;
+    },
+
+    async share(as, module, id, userId, permission, opts = {}) {
+      checkModule(module);
+      checkId(id);
+      checkId(userId, "user id");
+      if (permission !== "read" && permission !== "read_write") throw new TypeError('permission is "read" or "read_write".');
+      const out = await execute(as, {
+        op: "share", method: "POST", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
+        body: { share: [{ share_related_records: false, user: { id: userId }, permission }] },
+        // Re-sharing the same user replaces the permission in place.
+        shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      return out.ok ? done({ shared: true } as const, out) : out;
+    },
+
+    // ponytail: the per-user revoke body is from the docs, unproven until M02-S09-T01 runs on the sandbox.
+    async unshare(as, module, id, userId, opts = {}) {
+      checkModule(module);
+      checkId(id);
+      checkId(userId, "user id");
+      const out = await execute(as, {
+        op: "unshare", method: "DELETE", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
+        body: { share: [{ user: { id: userId } }] },
+        shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      return out.ok ? done({ revoked: true } as const, out) : out;
     },
 
     async wasDeleted(as, module, id, opts = {}) {

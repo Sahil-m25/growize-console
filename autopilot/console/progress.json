@@ -71,6 +71,11 @@
    "attempts": 1,
    "at": "2026-09-25T18:52:51.560Z",
    "note": "Needs Zoho sandbox + licensed test user + mailbox; T01/T02 in BLOCKED.md; no code possible"
+  },
+  "M02-S09": {
+   "status": "in_progress",
+   "attempts": 1,
+   "at": "2026-09-25T18:53:24.783Z"
   }
  },
  "subtasks": {
@@ -271,6 +276,19 @@
   "M02-S08-T02": {
    "status": "done",
    "at": "2026-09-25T18:52:51.560Z"
+  },
+  "M02-S09-T01": {
+   "status": "blocked",
+   "at": "2026-09-25T18:54:52.151Z",
+   "note": "waiting on Autopilot"
+  },
+  "M02-S09-T02": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:53:24.783Z"
+  },
+  "M02-S09-T03": {
+   "status": "in_progress",
+   "at": "2026-09-25T18:53:24.783Z"
   }
  },
  "rounds": [
@@ -404,6 +422,13 @@
    "status": "waiting",
    "attempt": 1,
    "note": "Needs Zoho sandbox + licensed test user + mailbox; T01/T02 in BLOCKED.md; no code possible"
+  },
+  {
+   "at": "2026-09-25T18:53:24.783Z",
+   "story": "M02-S09",
+   "status": "in_progress",
+   "attempt": 1,
+   "note": ""
   }
  ],
  "last_regression_round": 0,

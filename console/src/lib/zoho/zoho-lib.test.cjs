@@ -21,7 +21,7 @@ const path = require('node:path');
 const consoleRoot = path.resolve(__dirname, '..', '..', '..');
 const ts = require(path.join(consoleRoot, 'node_modules', 'typescript'));
 const srcRoot = path.join(consoleRoot, 'src');
-const MODULES = ['cache', 'gate', 'errors', 'log', 'client', 'adapter'];
+const MODULES = ['cache', 'gate', 'errors', 'log', 'client', 'adapter', 'cover-window-share'];
 const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zoho-lib-'));
 process.on('exit', () => fs.rmSync(outDir, { recursive: true, force: true }));
 
@@ -583,6 +583,21 @@ test('client: wasDeleted() tells "deleted" apart from "not in the bin"', async (
   const deep = rig(() => zohoReply(200, { data: filler, info: { more_records: true } }));
   assert.deepEqual((await deep.client.wasDeleted(me, 'Leads', ID, { maxPages: 2 })).value, { deleted: false, exhaustive: false });
   assert.equal(deep.calls.length, 2);
+});
+
+test('client: share/unshare hit the Share Records path with a user-only body; the cover job logs ids, no values (TC-E02-017/018)', async () => {
+  const job = serviceCredential('cover-window-share', grantFor());
+  const { service: client, calls, sink } = rig(() => zohoReply(200, { share: [{ code: 'SUCCESS', status: 'success', details: { id: ID } }] }));
+  const res = await load('cover-window-share').runCoverWindowShare(client, job, [
+    { leadId: ID, coverUserId: '554023000000235011', state: 'open' },
+    { leadId: ID2, coverUserId: '554023000000235011', state: 'closed' },
+  ]);
+  assert.deepEqual(res.map((r) => r.ok), [true, true]);
+  assert.ok(calls[0].url.endsWith(`/Leads/${ID}/actions/share`) && calls[0].init.method === 'POST');
+  assert.deepEqual(calls[0].body, { share: [{ share_related_records: false, user: { id: '554023000000235011' }, permission: 'read_write' }] });
+  assert.ok(calls[1].url.endsWith(`/Leads/${ID2}/actions/share`) && calls[1].init.method === 'DELETE');
+  assert.ok(sink.records().every((x) => x.actor.job === 'cover-window-share' && !('body' in x)), 'job name and ids only');
+  await assert.rejects(client.share(job, 'Leads', ID, 'not-a-user', 'read'), TypeError);
 });
 
 test('client: an expired token is refused locally, without calling Zoho', async () => {
