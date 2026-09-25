@@ -10,10 +10,40 @@
    ]
   },
   "M02-S02": {
-   "status": "review",
+   "status": "waiting",
    "attempts": 1,
-   "at": "2026-09-25T18:37:53.974Z",
-   "note": "Zoho CRM getFields denied (no permission granted in this session); no Zoho sandbox/OAuth (AP4); Leads sheet of mapping workbook not in repo (json has 1 Leads row); nothing built"
+   "at": "2026-09-25T18:38:35.761Z",
+   "note": "Lead fields (27), Lead_Event lookup and the 10 ladder values in Lead_Status are live. 6 old default values remain only because the sample Blueprint 'Lead nurturing process' (inactive) references them - owner to delete it. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  "M02-S03": {
+   "status": "done",
+   "attempts": 0,
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "Touches, Investor_Updates, Mail_Templates, Sales_Plans, Lead_Events, Investor_Payouts modules created; LLP_Creation_Module and LLP_UnitAllocation_Module adopted. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  "M02-S11": {
+   "status": "done",
+   "attempts": 0,
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "Decided by the owner: LLP_UnitAllocation_Module is canonical (D75); the duplicate LLP_Unit_Allocation's extra fields were removed (D77)."
+  },
+  "M02-S12": {
+   "status": "done",
+   "attempts": 0,
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "Receipts (CustomModule7) with Allotment lookup, Kind, Amount, Mode, unique UTR, Received_On, Match_State incl. Claimed, Matched_By, Reversal_Of. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  "M02-S13": {
+   "status": "done",
+   "attempts": 0,
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "File-upload slots created: Contacts PAN_Proof/Bank_Proof/FEMA_Declaration; allotment Supplementary_Agreement/Allocation_Letter/Unit_Certificate; LLP LLP_Deed/Insurance_Policy_Document; Leads NDA (D74/D75/D79). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  "M02-S14": {
+   "status": "done",
+   "attempts": 0,
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "Signed_Via / Sign_Req_Id / Verified_By / Verified_At fields on NDA, FEMA, supplementary agreement and allocation letter (D79). The Zoho Sign paid plan + webhooks is still owner item AP3 (M20-S08). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
   }
  },
  "subtasks": {
@@ -31,21 +61,116 @@
    "note": "waiting on Sahil"
   },
   "M02-S02-T01": {
-   "status": "review",
-   "at": "2026-09-25T18:37:53.974Z"
+   "status": "done",
+   "at": "2026-09-25T18:38:35.761Z"
   },
   "M02-S02-T03": {
-   "status": "review",
-   "at": "2026-09-25T18:37:53.974Z"
+   "status": "done",
+   "at": "2026-09-25T18:38:35.761Z"
   },
   "M02-S02-T04": {
-   "status": "review",
-   "at": "2026-09-25T18:37:53.974Z"
+   "status": "done",
+   "at": "2026-09-25T18:38:35.761Z"
   },
   "M02-S02-T02": {
    "status": "blocked",
    "at": "2026-09-25T18:37:53.748Z",
    "note": "waiting on Sahil"
+  },
+  "M02-S03-T01": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S03-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S03-T03": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S11-T01": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S11-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S11-T04": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S12-T03": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S12-T04": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S13-T03": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S13-T04": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S14-T04": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S11-T03": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S12-T01": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S12-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S13-T01": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S13-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S14-T01": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S14-T02": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
+  },
+  "M02-S14-T03": {
+   "status": "done",
+   "at": "2026-09-25T18:38:51.764785Z",
+   "note": "done in the Cowork Zoho session (D74-D85)"
   }
  },
  "rounds": [
@@ -76,6 +201,48 @@
    "status": "review",
    "attempt": 1,
    "note": "Zoho CRM getFields denied (no permission granted in this session); no Zoho sandbox/OAuth (AP4); Leads sheet of mapping workbook not in repo (json has 1 Leads row); nothing built"
+  },
+  {
+   "at": "2026-09-25T18:38:35.761Z",
+   "story": "M02-S02",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Lead fields (27), Lead_Event lookup and the 10 ladder values in Lead_Status are live. 6 old default values remain only because the sample Blueprint 'Lead nurturing process' (inactive) references them - owner to delete it. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  {
+   "at": "2026-09-25T18:38:35.991Z",
+   "story": "M02-S03",
+   "status": "done",
+   "attempt": 0,
+   "note": "Touches, Investor_Updates, Mail_Templates, Sales_Plans, Lead_Events, Investor_Payouts modules created; LLP_Creation_Module and LLP_UnitAllocation_Module adopted. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  {
+   "at": "2026-09-25T18:38:36.177Z",
+   "story": "M02-S11",
+   "status": "waiting",
+   "attempt": 0,
+   "note": "Decided by the owner: LLP_UnitAllocation_Module is canonical (D75); the duplicate LLP_Unit_Allocation's extra fields were removed (D77)."
+  },
+  {
+   "at": "2026-09-25T18:38:36.389Z",
+   "story": "M02-S12",
+   "status": "waiting",
+   "attempt": 0,
+   "note": "Receipts (CustomModule7) with Allotment lookup, Kind, Amount, Mode, unique UTR, Received_On, Match_State incl. Claimed, Matched_By, Reversal_Of. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  {
+   "at": "2026-09-25T18:38:36.600Z",
+   "story": "M02-S13",
+   "status": "waiting",
+   "attempt": 0,
+   "note": "File-upload slots created: Contacts PAN_Proof/Bank_Proof/FEMA_Declaration; allotment Supplementary_Agreement/Allocation_Letter/Unit_Certificate; LLP LLP_Deed/Insurance_Policy_Document; Leads NDA (D74/D75/D79). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
+  },
+  {
+   "at": "2026-09-25T18:38:36.799Z",
+   "story": "M02-S14",
+   "status": "waiting",
+   "attempt": 0,
+   "note": "Signed_Via / Sign_Req_Id / Verified_By / Verified_At fields on NDA, FEMA, supplementary agreement and allocation letter (D79). The Zoho Sign paid plan + webhooks is still owner item AP3 (M20-S08). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md"
   }
  ],
  "last_regression_round": 0

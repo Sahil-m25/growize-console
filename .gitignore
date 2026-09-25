@@ -32,3 +32,4 @@ autopilot/.slack-webhook
 autopilot/logs/
 autopilot/*/results/
 tools/graphify/graphify-out/
+autopilot/*/logs/

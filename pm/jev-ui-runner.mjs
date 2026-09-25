@@ -16,7 +16,8 @@ import fs from "node:fs"; import path from "node:path"; import { fileURLToPath }
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
-let chromium; try { ({ chromium } = require("playwright")); } catch { ({ chromium } = require(path.resolve("node_modules/playwright"))); }
+let chromium; for (const m of ["playwright", path.resolve("node_modules/playwright"), path.resolve(here, "..", "console", "node_modules", "playwright")]) { try { ({ chromium } = require(m)); break; } catch {} }
+if (!chromium) { console.error("playwright not found: run scripts/setup (console/node_modules/playwright)"); process.exit(2); }
 const keyFile = [process.env.TS_KEY_FILE, path.join(here, "..", ".typesafe-key")].find(f => f && fs.existsSync(f));
 const KEY = process.env.TYPESAFE_API_KEY || (keyFile && fs.readFileSync(keyFile, "utf8").trim());
 if (!KEY) throw new Error("No TypeSafe key");
