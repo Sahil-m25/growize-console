@@ -274,3 +274,4 @@ One line per session: date · what changed · which decision or test case it ser
 2026-09-26 M02-S09 share/unshare on the Zoho client and cover-window-share job skeleton, unit-tested; live proof waits on sandbox — TC-E02-017/018, D44
 2026-09-26 M19-S03 sandbox seed manifest, reset (refuses non-sandbox), FIXTURE_MODE=local fixture endpoint + signins; serves TC-E16-005/006, D45/D54
 2026-09-26 REGRESSION not run: stale next dev holds :3001 (500 'missing required error components'), fixtures cannot seed; owner to kill it and clear console/.next — no story changed
+**26 Sep 2026 — D93.** Investor app access moved to the console (on hold by default, welcome by button, add already-paid investors, view as investor). Plan +3 stories (M09-S09, M10-S21, M10-S22), M08-S08 changed; console queue rebuilt to 150.

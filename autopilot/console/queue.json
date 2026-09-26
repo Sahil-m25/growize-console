@@ -4,7 +4,7 @@
  "url": "http://localhost:3001",
  "prototype": "console/prototype/growize-console-merged.html",
  "next_queue": null,
- "built": "2026-09-25T18:52:12.323Z",
+ "built": "2026-09-26T12:04:09.624Z",
  "stories": [
   {
    "id": "M03-S01",
@@ -11993,14 +11993,16 @@
     "Given a receipt is only recorded, then no app account is opened until it is matched by a second person or the bank statement (D21, D10)",
     "Given the match, then account_opened_at and advance_confirmed_at are written on the Lead in the same commit",
     "Given the match, then account.opened (state tentative) is pushed to the investor app per contracts/account.opened.json and a delivery result is logged",
-    "Given the balance is matched, then app_mark turns permanent by formula and permanent_at is stamped once"
+    "Given the balance is matched, then app_mark turns permanent by formula and permanent_at is stamped once",
+    "Given the match, then the app account opens On hold (Contacts.App_Access = Hold): data reaches the investor app but sign-in stays locked and no welcome is sent until Finance presses 'Send welcome and unlock' (M10-S21, D93)"
    ],
    "decisions": [
     "D10",
     "D19",
     "D21",
     "D52",
-    "D73"
+    "D73",
+    "D93"
    ],
    "prototype": [
     "Investor record",
@@ -22059,6 +22061,50 @@
    ]
   },
   {
+   "id": "M09-S09",
+   "epic": "M09",
+   "title": "Add an investor who has already paid, straight from the console",
+   "priority": "Must",
+   "stage": "S2",
+   "day": null,
+   "depends_on": [
+    "M09-S01"
+   ],
+   "as_a": "Finance (Sahil as super user)",
+   "i_want": "to add an investor who converted outside the lead flow — contact details, farm LLP, units, amount and investment date — from the Investors page",
+   "so_that": "existing investors reach Zoho and the investor app without anyone opening the Zoho UI, and without an email going out before we have checked them",
+   "acceptance": [
+    "Given the Investors page, when Finance opens Add investor, then the form asks for name, email, mobile, farm (LLP), units, amount paid and investment date, and nothing else is required",
+    "Given the form is saved, then one Contact (App_Access = Hold) and one allotment in LLP_UnitAllocation_Module are created in Zoho with the person's own token, in one commit with an honest 'Not saved yet' on failure",
+    "Given the Contact is created, then no email of any kind is sent to the investor and the investor record shows 'App: on hold — data synced, sign-in locked'",
+    "Given an email that already belongs to a Contact, then the form refuses with an in-page note that links to that investor instead of creating a duplicate",
+    "Given an IR or viewer seat, then Add investor is not offered"
+   ],
+   "decisions": [
+    "D45",
+    "D52",
+    "D93"
+   ],
+   "prototype": [
+    "Investors",
+    "Investor record"
+   ],
+   "zoho": [
+    "Contacts (First_Name, Last_Name, Email, Mobile, App_Access=Hold)",
+    "LLP_UnitAllocation_Module (Customer, LLP, Issued_Units, Capital_Invested, Investment_Date, Allocation_Status=Issued)"
+   ],
+   "subtasks": [],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [
+    "TC-M09-CAL1"
+   ],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up."
+   ]
+  },
+  {
    "id": "M10-S20",
    "epic": "M10",
    "title": "Monthly payouts: 60-month schedule per allotment, Finance due queue",
@@ -22088,6 +22134,141 @@
    "zoho": [
     "Investor_Payouts (Allotment, Payout_Kind, Instalment_No, Period_Month, Due_On, Gross_Amount, TDS_Amount, Net_Amount, Payout_State, Paid_On, Payout_Mode, Payout_UTR, Paid_By, Payout_Note)",
     "LLP_UnitAllocation_Module.Annual_Rental_Yield"
+   ],
+   "subtasks": [],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [
+    "TC-M10-CAL1"
+   ],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+    "MA1: Investor app codebase, its staging URL, the contract signing secret, and how a Supabase user maps to a Zoho Contact."
+   ]
+  },
+  {
+   "id": "M10-S21",
+   "epic": "M10",
+   "title": "Unlock the investor app and send the welcome from the console",
+   "priority": "Must",
+   "stage": "S3",
+   "day": null,
+   "depends_on": [
+    "M09-S01"
+   ],
+   "as_a": "Head of Finance (Finance; Sahil as super user)",
+   "i_want": "an App account card on the investor record that shows whether the investor's app is on hold or invited, with one button to send the welcome and unlock sign-in, and one to lock it again",
+   "so_that": "we check what the investor will see before they are told, and nobody needs the Zoho UI to do it",
+   "acceptance": [
+    "Given an investor with App_Access = Hold, then the card reads 'On hold — data synced, sign-in locked, no email sent' and offers 'Send welcome and unlock'",
+    "Given 'Send welcome and unlock' is confirmed in-page, then Contacts.App_Access is set to Invite with the person's own token; the card reads 'Welcome sending…' until App_Welcome_At arrives, then 'Welcome delivered <time> · Email'",
+    "Given an invited investor, when 'Lock app access' is confirmed in-page with a reason, then App_Access returns to Hold and the card reads 'Locked — sign-in blocked'",
+    "Given any change, then Zoho field history on App_Access records who and when, and the console Activity shows it",
+    "Given a viewer, IR or KAM seat, then the card is read-only and says Finance controls app access",
+    "Given the first matched advance (M08-S08), then the account opens On hold and waits for this button — the welcome never goes out by itself"
+   ],
+   "decisions": [
+    "D10",
+    "D73",
+    "D93"
+   ],
+   "prototype": [
+    "Investor record"
+   ],
+   "zoho": [
+    "Contacts.App_Access (Hold | Invite)",
+    "Contacts.App_Welcome_At, App_Welcome_Channel (written back by the app sync)",
+    "investor app: zoho-crm-webhook v36, request-auth-email v11, migration 072"
+   ],
+   "subtasks": [],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [
+    "TC-M10-CAL1"
+   ],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+    "MA1: Investor app codebase, its staging URL, the contract signing secret, and how a Supabase user maps to a Zoho Contact."
+   ]
+  },
+  {
+   "id": "M10-S22",
+   "epic": "M10",
+   "title": "Preview the investor's app screens (mock-up with their data)",
+   "priority": "Should",
+   "stage": "S4",
+   "day": null,
+   "depends_on": [
+    "M10-S21"
+   ],
+   "as_a": "Finance, KAM or IR answering an investor (Sahil as super user)",
+   "i_want": "a 'Preview app' button on the investor record that shows the Growize app screens as a phone-sized HTML mock-up filled with that investor's own data",
+   "so_that": "the team can see and explain what the investor sees without anyone signing in as them",
+   "acceptance": [
+    "Given the button is pressed, then a phone-sized preview opens beside the record using the app's design (Growize App Design v2 HTML), with the investor's name, units, projects, stage timeline, payouts, documents and activity filled in",
+    "Given the preview, then a tab strip switches between Home, Projects, a project, Financials, Documents, Activity and Profile",
+    "Given the preview, then it is labelled 'Preview — mock-up, not the live app' and nothing in it can be pressed to change data",
+    "Given the numbers shown, then they come from the same figures the app uses (the investor's portfolio summary, units and payouts), read with the viewer's own access",
+    "Given a seat without the investor in its scope (an IR who did not own that lead), then the button is not offered"
+   ],
+   "decisions": [
+    "D52",
+    "D73",
+    "D93"
+   ],
+   "prototype": [
+    "Investor record",
+    "Tickets",
+    "System"
+   ],
+   "zoho": [
+    "Contacts, LLP_UnitAllocation_Module, Investor Payouts (read)",
+    "design source: Growize App/Growize App Design v2 (proposed).html"
+   ],
+   "subtasks": [],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [
+    "TC-M10-CAL1"
+   ],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+    "MA1: Investor app codebase, its staging URL, the contract signing secret, and how a Supabase user maps to a Zoho Contact."
+   ]
+  },
+  {
+   "id": "M10-S23",
+   "epic": "M10",
+   "title": "Test sign-in link to check the real app on another device",
+   "priority": "Should",
+   "stage": "S4",
+   "day": null,
+   "depends_on": [
+    "M10-S21"
+   ],
+   "as_a": "Sahil (super user) testing the investor app",
+   "i_want": "to create a one-time sign-in link for an investor account and open it on a separate phone or browser",
+   "so_that": "when we need to prove the real app works for that account, we can check it end to end without changing their email or asking for their login",
+   "acceptance": [
+    "Given the super user seat and a reason, when 'Create test sign-in link' is pressed, then a one-time link and QR code are shown in the console; nothing is emailed to the investor",
+    "Given the link, then it expires after 10 minutes or first use, whichever is first",
+    "Given it is pressed on a real investor (not a test account), then an in-page warning says the session is the full app as that person and asks for confirmation",
+    "Given any link, then an audit row records who, whom, when, why and when it was used, visible on System and the investor's Activity",
+    "Given any other seat, then the button is not offered"
+   ],
+   "decisions": [
+    "D52",
+    "D93"
+   ],
+   "prototype": [
+    "Investor record",
+    "System"
+   ],
+   "zoho": [
+    "none — Supabase admin generate-link from a super-user-only server route; audit table"
    ],
    "subtasks": [],
    "tests": [],
