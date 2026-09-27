@@ -586,6 +586,23 @@
    "commits": [
     "2916a9e"
    ]
+  },
+  "M20-S07": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T17:12:32.839Z",
+   "notes": 1,
+   "note": "Contract validation, signing, stub receiver, signed push and request.raised to Case with 5 tests; waits on the app codebase, signing keys, the Plane B/C store and Cases proof.",
+   "commits": [
+    "9069a95"
+   ]
   }
  },
  "subtasks": {
@@ -994,6 +1011,26 @@
    "status": "blocked",
    "at": "2026-09-27T17:04:02.813Z",
    "note": "waiting on Autopilot (Jev)"
+  },
+  "M20-S07-T01": {
+   "status": "done",
+   "at": "2026-09-27T17:12:32.839Z",
+   "phase": "zoho"
+  },
+  "M20-S07-T02": {
+   "status": "done",
+   "at": "2026-09-27T17:12:32.839Z",
+   "phase": "zoho"
+  },
+  "M20-S07-T03": {
+   "status": "done",
+   "at": "2026-09-27T17:12:32.839Z",
+   "phase": "zoho"
+  },
+  "M20-S07-T04": {
+   "status": "done",
+   "at": "2026-09-27T17:12:32.839Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -1575,6 +1612,24 @@
    "attempt": 1,
    "hours": 1,
    "note": "Own-profile name/mobile update on the person's own Zoho user with email read-only, 3 tests; waits on staging proof that a restricted user may update self and the access store for initials."
+  },
+  {
+   "at": "2026-09-27T17:07:54.672Z",
+   "story": "M20-S07",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 12,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T17:12:32.839Z",
+   "story": "M20-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 12,
+   "note": "Contract validation, signing, stub receiver, signed push and request.raised to Case with 5 tests; waits on the app codebase, signing keys, the Plane B/C store and Cases proof."
   }
  ],
  "last_regression_round": 0,
