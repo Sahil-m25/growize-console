@@ -457,6 +457,7 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
       const blank = initialImUi();
       return { data: d, ui: { ...blank, DRAWERDRAFTS: u.DRAWERDRAFTS, VIEW: u.VIEW } };
     }
+    case "setSel": u.SEL = a.id; break;          /* the send panel's picker: SEL=this.value;draw() (imx.js 2006) */
     case "setDraft": setDraft(a.patch); break;
     case "setFilter": Object.assign(u, a.patch); break;
   }

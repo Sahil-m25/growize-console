@@ -8,7 +8,7 @@
                 reveal hideAll revCancel logField saveDetails setMark recordPay confirmClaim
                 rejectClaim matchReceipt sendDocNow verifyDoc blockDoc passKyc failKyc releaseBlock
                 holdBlock handToFinance moveTicket newTicket publish assignKam logContact setSeat
-                lapseHold · go setSec openDrawer closeDrawer setPerson setDraft setFilter ·
+                lapseHold · go setSec openDrawer closeDrawer setPerson setSel setDraft setFilter ·
                 confirmYes noteClose. A refusal lands in ui.NOTE {kind:"refuse"}; a question in
                 ui.NOTE {kind:"ask"} with the write parked in ui.PENDING until confirmYes.
    CONSOLE API  imHas(data,k) imReach(s,k) imCount(s,v,k) imTitle(data,k) imReadOnly(s,k)
