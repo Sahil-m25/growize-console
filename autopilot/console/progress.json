@@ -315,6 +315,23 @@
    "commits": [
     "9a18fed"
    ]
+  },
+  "M06-S01": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:01:35.684Z",
+   "notes": 1,
+   "note": "Leads book server read built with 5 recorded-fixture tests; waits on Leads sharing (unassigned queue, secondary owner) and the front-end wiring.",
+   "commits": [
+    "a817cd6"
+   ]
   }
  },
  "subtasks": {
@@ -618,6 +635,16 @@
    "status": "done",
    "at": "2026-09-27T15:57:43.556Z",
    "phase": "zoho"
+  },
+  "M04-S02-NOTE-2": {
+   "status": "done",
+   "by": "owner (BLOCKED.md)",
+   "at": "2026-09-27T15:57:46.628Z"
+  },
+  "M06-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:01:35.684Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -911,6 +938,24 @@
    "attempt": 1,
    "hours": 1,
    "note": "Own-token duplicate lookup + Zoho DUPLICATE_DATA refusal built and tested; waits on Leads.Mobile duplicate check in Zoho and the FACT CHANGE on service-read wording."
+  },
+  {
+   "at": "2026-09-27T15:58:05.556Z",
+   "story": "M06-S01",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:01:35.684Z",
+   "story": "M06-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": "Leads book server read built with 5 recorded-fixture tests; waits on Leads sharing (unassigned queue, secondary owner) and the front-end wiring."
   }
  ],
  "last_regression_round": 0,
