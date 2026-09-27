@@ -10,6 +10,9 @@
    ],
    "phases": {
     "test": "pending"
+   },
+   "phase_attempts": {
+    "test": 0
    }
   },
   "M02-S02": {
@@ -20,7 +23,12 @@
    "phases": {
     "zoho": "waiting",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S03": {
    "status": "pending",
@@ -30,7 +38,12 @@
    "phases": {
     "zoho": "done",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S11": {
    "status": "pending",
@@ -40,7 +53,12 @@
    "phases": {
     "zoho": "done",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S12": {
    "status": "pending",
@@ -50,7 +68,12 @@
    "phases": {
     "zoho": "done",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S13": {
    "status": "done",
@@ -59,7 +82,11 @@
    "note": "File-upload slots created: Contacts PAN_Proof/Bank_Proof/FEMA_Declaration; allotment Supplementary_Agreement/Allocation_Letter/Unit_Certificate; LLP LLP_Deed/Insurance_Policy_Document; Leads NDA (D74/D75/D79). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md",
    "phases": {
     "zoho": "done"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0
+   },
+   "commits": []
   },
   "M02-S14": {
    "status": "done",
@@ -68,7 +95,11 @@
    "note": "Signed_Via / Sign_Req_Id / Verified_By / Verified_At fields on NDA, FEMA, supplementary agreement and allocation letter (D79). The Zoho Sign paid plan + webhooks is still owner item AP3 (M20-S08). Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md",
    "phases": {
     "zoho": "done"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0
+   },
+   "commits": []
   },
   "M02-S04": {
    "status": "review",
@@ -82,6 +113,11 @@
     "fe": "review",
     "zoho": "review",
     "test": "pending"
+   },
+   "phase_attempts": {
+    "fe": 0,
+    "zoho": 0,
+    "test": 0
    }
   },
   "M02-S05": {
@@ -92,7 +128,12 @@
    "phases": {
     "zoho": "waiting",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S06": {
    "status": "pending",
@@ -101,7 +142,11 @@
    "note": "Zoho profile change (Sahil, T01) in BLOCKED.md; TC-E02-012 is ui-staging, TC-E02-013 needs the Zoho sandbox (AP4). No code to build.",
    "phases": {
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S08": {
    "status": "pending",
@@ -111,7 +156,12 @@
    "phases": {
     "zoho": "waiting",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
+   },
+   "commits": []
   },
   "M02-S09": {
    "status": "pending",
@@ -124,6 +174,10 @@
    "phases": {
     "zoho": "waiting",
     "test": "pending"
+   },
+   "phase_attempts": {
+    "zoho": 0,
+    "test": 0
    }
   },
   "M19-S03": {
@@ -138,7 +192,25 @@
     "fe": "pending",
     "zoho": "done",
     "test": "pending"
+   },
+   "phase_attempts": {
+    "fe": 0,
+    "zoho": 0,
+    "test": 0
    }
+  },
+  "M02-S10": {
+   "status": "in_progress",
+   "attempts": 1,
+   "phases": {
+    "zoho": "in_progress"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T12:20:10.046Z",
+   "notes": 2
   }
  },
  "subtasks": {
@@ -377,6 +449,16 @@
    "status": "pending",
    "at": "2026-09-27T11:30:00.000Z",
    "note": "D98: reopened — fixture endpoint records the name only"
+  },
+  "M02-S10-T01": {
+   "status": "in_progress",
+   "at": "2026-09-27T12:20:10.046Z",
+   "phase": "zoho"
+  },
+  "M02-S10-T02": {
+   "status": "blocked",
+   "at": "2026-09-27T12:21:30.836Z",
+   "note": "waiting on Sahil"
   }
  },
  "rounds": [
@@ -544,6 +626,15 @@
    "story": "D98",
    "status": "replan",
    "note": "Three phases: front end → Zoho → testing. Test units reset: no UI case had ever run."
+  },
+  {
+   "at": "2026-09-27T12:20:10.046Z",
+   "story": "M02-S10",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": ""
   }
  ],
  "last_regression_round": 0,
