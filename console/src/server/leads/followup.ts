@@ -38,6 +38,23 @@ const STAMPS = ["Next_Step", "Next_Step_At", "Next_Step_Channel", "Last_Reply_At
 const GUARD_FIELDS = [...STAMPS, "Modified_Time", "Created_Time", "Lost_At", "Onboarded_At", "Owner", "Secondary_Owner",
   "Cover_By", "Cover_Until", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit"];
 
+/** D58: which Zoho record a next step becomes, by the action picked (the prototype's NEXTS). */
+export function activityFor(next: { readonly text: string; readonly at: string }, leadId: string): { readonly module: "Calls" | "Events" | "Tasks"; readonly row: ZohoFields } {
+  const subject = next.text.trim();
+  const what = { What_Id: { id: leadId }, $se_module: LEADS_MODULE };
+  if (/^(call back|onboarding call)/i.test(subject)) {
+    // A scheduled call with the 15-minute reminder D58 asks for; Zoho's call reporting counts it.
+    return { module: "Calls", row: { Subject: subject, Call_Type: "Outbound", Call_Start_Time: next.at, Reminder: "15 mins", ...what } };
+  }
+  if (/^(office meeting|farm visit)/i.test(subject)) {
+    // Meetings are the only activity Zoho Calendar syncs (once the org admin turns the sync on).
+    return { module: "Events", row: { Event_Title: subject, Start_DateTime: next.at,
+      End_DateTime: zohoTime(Date.parse(next.at) + 3_600_000), Participants: [{ type: "lead", participant: leadId }], ...what } };
+  }
+  // Everything else saves on the day, with no time.
+  return { module: "Tasks", row: { Subject: subject, Due_Date: zohoTime(Date.parse(next.at)).slice(0, 10), Status: "Not Started", ...what } };
+}
+
 export interface FollowupAccess {
   readonly actor: SeatedZohoUser;
   readonly mayRecordFollowup: boolean;
@@ -296,14 +313,8 @@ export function createFollowups(deps: FollowupDependencies) {
       // ---- 4. the next step as the Zoho record D58 names
       let nextId: string | null = null;
       if (c.next) {
-        const subject = c.next.text.trim();
-        const what = { What_Id: { id: c.leadId }, $se_module: LEADS_MODULE };
-        const meeting = c.next.channel === "visit" || /meeting/i.test(subject);
-        nextId = c.next.channel === "call"
-          ? await insertOne("Calls", { Subject: subject, Call_Type: "Outbound", Call_Start_Time: c.next.at, ...what })
-          : meeting
-            ? await insertOne("Events", { Event_Title: subject, Start_DateTime: c.next.at, End_DateTime: zohoTime(Date.parse(c.next.at) + 3_600_000), ...what })
-            : await insertOne("Tasks", { Subject: subject, Due_Date: zohoTime(Date.parse(c.next.at)).slice(0, 10), Status: "Not Started", ...what });
+        const act = activityFor(c.next, c.leadId);
+        nextId = await insertOne(act.module, act.row);
         if (!nextId) return fail();
       }
       if (!leadModified || !DATETIME.test(leadModified)) leadModified = null;

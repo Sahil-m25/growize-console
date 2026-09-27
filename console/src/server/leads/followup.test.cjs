@@ -67,7 +67,7 @@ if (emitted.diagnostics.length) {
 const load = (file) => require(path.join(outDir, file));
 const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js'));
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
-const { createFollowups, UNDO_WINDOW_MS } = load(path.join('server', 'leads', 'followup.js'));
+const { activityFor, createFollowups, UNDO_WINDOW_MS } = load(path.join('server', 'leads', 'followup.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -141,7 +141,7 @@ test('one tap writes the lead (guarded) first, then exactly one touch, the compl
     Occurred_At: '2026-09-27T20:30:00+05:30', Is_Reply: false, Note: 'Spoke — Synthetic call note' });
   assert.deepEqual(task.body.data[0], { Status: 'Completed' });
   assert.deepEqual(call.body.data[0], { Subject: 'Call back after the deck', Call_Type: 'Outbound', Call_Start_Time: '2026-09-29T11:00:00+05:30',
-    What_Id: { id: LEAD }, $se_module: 'Leads' });
+    Reminder: '15 mins', What_Id: { id: LEAD }, $se_module: 'Leads' });
   assert.ok(!JSON.stringify(r.sink.records()).includes('Synthetic call note'), 'the note never reaches Plane B');
 });
 
@@ -251,4 +251,18 @@ test('if the touch cannot be written, the lead is put back and nothing else is c
   const res = await r.svc.save(principal(), CMD);
   assert.equal(res.kind, 'source-error');
   assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Leads/${LEAD}`]);
+});
+
+test('D58: call backs and onboarding calls are Calls, office meetings and farm visits Meetings, the rest Tasks on the day', () => {
+  const at = '2026-09-29T15:00:00+05:30';
+  assert.equal(activityFor({ text: 'Call back', at }, LEAD).module, 'Calls');
+  assert.equal(activityFor({ text: 'Onboarding call — app access', at }, LEAD).row.Reminder, '15 mins');
+  const visit = activityFor({ text: 'Farm visit', at }, LEAD);
+  assert.equal(visit.module, 'Events');
+  assert.deepEqual(visit.row.Participants, [{ type: 'lead', participant: LEAD }]);
+  assert.equal(visit.row.End_DateTime, '2026-09-29T16:00:00+05:30');
+  assert.equal(activityFor({ text: 'Office meeting', at }, LEAD).module, 'Events');
+  const task = activityFor({ text: 'Send the yield note', at: '2026-09-29T23:59:00+05:30' }, LEAD);
+  assert.deepEqual(task, { module: 'Tasks', row: { Subject: 'Send the yield note', Due_Date: '2026-09-29', Status: 'Not Started', What_Id: { id: LEAD }, $se_module: 'Leads' } });
+  assert.equal(activityFor({ text: 'Book a farm visit', at }, LEAD).module, 'Tasks', 'booking a visit is a task; the visit itself is the meeting');
 });
