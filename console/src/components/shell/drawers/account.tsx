@@ -4,9 +4,9 @@
    `who` button. The only place Profile, Team availability, Help and appearance are one click from
    every screen, and the one door out: Sign out. */
 
-import type { PersonKey } from "@/domain";
-import { SEAT } from "@/domain";
-import { avail, everyone, P, roleOf } from "@/lib/selectors";
+import type { NavKey } from "@/domain";
+import { avail, everyone, P } from "@/lib/selectors";
+import { titleOf } from "../SignIn";
 import { useConsole, useSession } from "@/lib/store";
 import { AppearanceControls, Icon, Pav } from "@/components/ui";
 import { useRouter } from "next/navigation";
@@ -20,9 +20,9 @@ function Body(_: DrawerProps) {
   const me = state.WHO;
   const p = P(state.PEOPLE, me);
   const s = availabilityStatus(state, me);
-  const titleOf = (k: PersonKey) => SEAT[roleOf(state.PEOPLE, k)!] ?? "";
   const goAndClose = (view: View) => {
     dispatch({ type: "closeDrawer" });
+    dispatch({ type: "go", v: view as NavKey });   /* the shell draws the page at once, before the route lands */
     router.push(pathOf(view));
   };
   const openAndClose = (k: "presence" | "help") => {
@@ -36,7 +36,7 @@ function Body(_: DrawerProps) {
         <Pav k={me} size="lg" />
         <div>
           <b>{p.n}</b>
-          <span>{titleOf(me)}</span>
+          <span>{titleOf(state, me)}</span>
           {p.em ? <span>{p.em}</span> : null}
         </div>
       </div>

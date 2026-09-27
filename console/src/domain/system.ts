@@ -70,7 +70,7 @@ export const CHECKS: readonly Check[] = [
   br:"No ageing, no speed measure, and no way to backfill either",
   fix:"Add a datetime field per stage and write it on transition. Nothing before the day it ships "
      +"can be recovered, which is why it is the first thing to build."},
- {k:"imlink", t:"Investor Management portal link", st:"warn", own:"sahil", every:"continuous",
+ {k:"imlink", t:"Investors pages link", st:"warn", own:"sahil", every:"continuous",
   since:"2026-06-01",
   w:"What Finance does in the IM portal — a document sent, a signature verified, a receipt banked — "
    +"is on the IR's lead within the minute, and what the IR raises here reaches Finance over there",

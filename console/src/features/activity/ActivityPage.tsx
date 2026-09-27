@@ -13,15 +13,14 @@
    `activityFilters` (./logic) is this feature's own layering of the toolbar's filters on top of
    `activityRows` (selectors/activity.ts), the actor- and record-access gate. */
 
-import { useRouter } from "next/navigation";
 import { KINDS } from "@/domain";
 import type { LogEntry, PersonKey } from "@/domain";
 import { MON } from "@/lib/format";
 import { P, isHumanTouch, logNote, openable } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { pathOf } from "@/components/shell";
 import { Ag, Chip } from "@/components/ui";
-import { actSummary, downloadActivityCSV } from "./csv";
+import { useGoLead } from "@/features/leads/nav";
+import { actSummary } from "./csv";
 import { activityFilters } from "./logic";
 import "./drawers";
 /* the declare-module block in ./state augments UiState with ACTKIND/ACTVIEW/ACTLIMIT; tsc picks
@@ -54,18 +53,14 @@ export function ActivityPage() {
       <div className="ph rd-page-heading">
         <div>
           <h1>Activity</h1>
-          <p className="sub">{solo ? "Your actions" : "Your actions and your team’s activity"}. Latest first.</p>
+          <p className="sub">{solo ? "Your actions" : "You and your team"}, latest first.</p>
         </div>
         <div className="sp" />
         <div className="ux-activity-exports">
-          <button type="button" className="btn" disabled={!rows.length}
-            title="Every matching action, in the selected view"
-            onClick={() => downloadActivityCSV(state, rows, ACTVIEW, f.exportName(false, ACTVIEW), dispatch)}>
-            <DownloadIcon /> Export this view
-          </button>
-          <button type="button" className="btn rd-history-button" aria-expanded={historyOpen}
+          <button type="button" className="btn" id="door-activity-allhistory" aria-haspopup="dialog"
+            aria-expanded={historyOpen ? "true" : "false"}
             onClick={() => dispatch({ type: "openDrawer", k: "p:activity.allhistory", id: null })}>
-            All history…
+            <DownloadIcon /> Export…
           </button>
         </div>
       </div>
@@ -82,7 +77,9 @@ export function ActivityPage() {
             }} />
           </label>
           <div className="ux-activity-views rd-segments" role="group" aria-label="Activity view">
-            {([["log", "Log"], ["person", "By person"], ["day", "By day"]] as const).map(([k, t]) => (
+            {(solo
+              ? [["log", "Log"], ["day", "By day"]] as const
+              : [["log", "Log"], ["person", "By person"], ["day", "By day"]] as const).map(([k, t]) => (
               <Chip key={k} on={ACTVIEW === k} onClick={() => set({ ACTVIEW: k, ACTLIMIT: 40 })}>{t}</Chip>
             ))}
           </div>
@@ -134,7 +131,7 @@ export function ActivityPage() {
 
         <div className="card ux-activity-results">
           {ACTVIEW === "log"
-            ? <ActLog state={state} rows={rows} limit={ACTLIMIT} onMore={() => set({ ACTLIMIT: ACTLIMIT + 40 })} />
+            ? <ActLog state={state} solo={solo} rows={rows} limit={ACTLIMIT} onMore={() => set({ ACTLIMIT: ACTLIMIT + 40 })} />
             : <ActTally state={state} rows={rows} view={ACTVIEW} />}
         </div>
       </section>
@@ -149,12 +146,12 @@ export function ActivityPage() {
   );
 }
 
-/* actLog() — 03-app.js(redesigned):11653. `const solo=false` there: the Log always has four
-   columns, whatever the toolbar's own solo (which only hides the Person *filter*, not this table). */
+/* actLog() — ir-merged.js:9160. D59 g3: a seat that only sees itself gets no Person column —
+   every row would read its own name. */
 function ActLog({
-  state, rows, limit, onMore,
-}: { state: ReturnType<typeof useConsole>["state"]; rows: LogEntry[]; limit: number; onMore: () => void }) {
-  const router = useRouter();
+  state, solo, rows, limit, onMore,
+}: { state: ReturnType<typeof useConsole>["state"]; solo: boolean; rows: LogEntry[]; limit: number; onMore: () => void }) {
+  const goLead = useGoLead("activity");
   const book = openable(state);
   const shown = rows.slice(0, limit);
   return (
@@ -164,14 +161,14 @@ function ActLog({
           <colgroup>
             <col className="rd-log-when" />
             <col className="rd-log-action" />
-            <col className="rd-log-person" />
+            {!solo && <col className="rd-log-person" />}
             <col className="rd-log-investor" />
           </colgroup>
           <thead>
             <tr>
               <th scope="col">When</th>
               <th scope="col">Action</th>
-              <th scope="col">Person</th>
+              {!solo && <th scope="col">Person</th>}
               <th scope="col">Investor</th>
             </tr>
           </thead>
@@ -191,17 +188,17 @@ function ActLog({
                     <b className="rd-log-description"><Ag k={e.kind} t={e.what} /> <span>{e.what}</span></b>
                     {note ? <div className="sm rd-log-note">{note}</div> : null}
                   </td>
-                  <td>{P(state.PEOPLE, e.who).n}</td>
+                  {!solo && <td>{P(state.PEOPLE, e.who).n}</td>}
                   <td>
                     {l ? (
-                      <button type="button" className="chip" onClick={() => router.push(pathOf("lead", l.id))}>{l.n}</button>
+                      <button type="button" className="chip" onClick={() => goLead(l.id)}>{l.n}</button>
                     ) : "—"}
                   </td>
                 </tr>
               );
             }) : (
               <tr>
-                <td colSpan={4} className="empty">
+                <td colSpan={solo ? 3 : 4} className="empty">
                   No activity matches these filters.<br />
                   <span className="sm">Choose another month or clear the day, person and action.</span>
                 </td>

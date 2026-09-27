@@ -13,7 +13,7 @@
    already lets every "p:" panel decide for itself (`src/lib/selectors/access.ts`), so this needs no
    cross-owner change at all — only the `ok` this file already writes for `person`. */
 
-import { CAPT, PAGECAPS, SEAT, SEATSCREENS, ST, TDUR } from "@/domain";
+import { BYGRANT, CAPT, NOSIGN, PAGECAPS, SEAT, SEATSCREENS, ST, TDUR } from "@/domain";
 import type { Cap, NavKey, PersonKey, SeatKey } from "@/domain";
 import { Pav, Pname } from "@/components/ui";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers";
@@ -26,6 +26,7 @@ import {
   capsBase,
   chainOf,
   clashOf,
+  consoleAccount,
   gone,
   isMgr,
   lost,
@@ -39,10 +40,12 @@ import {
   P,
   planFor,
   reachBase,
+  reachCeil,
   reachOf,
   roleOf,
   seatClash,
   seatReach,
+  seatShape,
   teamName,
   teamOfPerson,
   tempFor,
@@ -50,6 +53,7 @@ import {
   capsFor,
 } from "@/lib/selectors";
 import { useConsole, type ConsoleState } from "@/lib/store";
+import { titleOf as imAwareTitle } from "@/components/shell/SignIn";
 import {
   absOpen,
   availCover,
@@ -66,6 +70,7 @@ import {
   tPages,
 } from "./helpers";
 import { leaverDraft, newp, roleAllowsCap, tgt, type NewPerson } from "./reducer";
+import { UxDetails } from "./UxDetails";
 
 /* ---- LEND A PAGE ------------------------------------------------------------------------------
    Nobody hands over a password here. You lend one page, to one person, until a date — and never
@@ -99,7 +104,7 @@ function TempBody() {
         <option value="">Choose a person…</option>
         {who.map((k) => (
           <option value={k} key={k}>
-            {P(state.PEOPLE, k).n} — {titleOf(state.PEOPLE, k)}
+            {P(state.PEOPLE, k).n} — {imAwareTitle(state, k)}
             {avail(state, k) ? "" : " · out"}
           </option>
         ))}
@@ -117,7 +122,7 @@ function TempBody() {
         {pages.map((x) => (
           <option value={x} key={x}>
             {PAGECAPS[x as NavKey]!.t}
-            {T.to && reachBase(state.PEOPLE, T.to).includes(x) ? " — they already reach it" : ""}
+            {T.to && reachBase(state.PEOPLE, T.to, state.CAPS).includes(x) ? " — they already reach it" : ""}
           </option>
         ))}
       </select>
@@ -273,9 +278,16 @@ function NewpBody() {
         {seats.map((st) => (
           <option value={st} key={st}>
             {SEAT[st]}
+            {(BYGRANT as readonly string[]).includes(st) ? " — no access until granted" : " — console access"}
           </option>
         ))}
       </select>
+      {(BYGRANT as readonly string[]).includes(N.seat) ? (
+        <p className="sm" style={{ margin: "7px 0 0" }}>
+          This role has no console access by default. Add them, then grant pages in their Page permissions —
+          they reach only what you grant.
+        </p>
+      ) : null}
       <p className="lbl" style={{ marginTop: "14px" }}>
         Reports to
       </p>
@@ -541,6 +553,10 @@ function PersonBody({ id }: DrawerProps) {
   const cover = availCover(state, k);
   const lent = tempFor(state, k);
   const deviations = capDev(state, k);
+  const byg = (BYGRANT as readonly string[]).includes(roleOf(state.PEOPLE, k) || "");
+  const acct = consoleAccount(state.PEOPLE, k, state.CAPS);
+  const ceil = reachCeil(state.PEOPLE, k);
+  const held = state.CAPS[k] as Record<string, Cap[]> | undefined;
 
   return (
     <>
@@ -601,8 +617,9 @@ function PersonBody({ id }: DrawerProps) {
         ) : null}
         <dt>Reaches</dt>
         <dd>
+          {byg && !acct ? "No console access — nothing granted" : <>
           {screensOf(state, k).length} of {screenCount()} screens
-          {deviations.length ? (
+          {byg ? " · by grant" : deviations.length ? (
             <>
               {" "}
               <span className="tag br" title={devWhy(state, k)}>
@@ -610,6 +627,7 @@ function PersonBody({ id }: DrawerProps) {
               </span>
             </>
           ) : null}
+          </>}
         </dd>
       </dl>
 
@@ -638,7 +656,7 @@ function PersonBody({ id }: DrawerProps) {
             >
               <option value="">Nobody — they sit at the top</option>
               {opts.map((x) => {
-                const c = moveCost(state.PEOPLE, k, x);
+                const c = moveCost(state.PEOPLE, k, x, state.CAPS);
                 return (
                   <option value={x} key={x} disabled={!c.ok}>
                     {P(state.PEOPLE, x).n} — {teamName(state.PEOPLE, x)}
@@ -675,7 +693,7 @@ function PersonBody({ id }: DrawerProps) {
                 } as Parameters<typeof dispatchable>[0])
               }
             >
-              {(Object.keys(SEAT) as SeatKey[]).map((seat) => {
+              {(Object.keys(SEAT) as SeatKey[]).filter((seat) => !(NOSIGN as readonly string[]).includes(seat) || roleOf(state.PEOPLE, k) === seat).map((seat) => {
                 const bad = seatClash(state.PEOPLE, k, seat);
                 const can = canGrant(state, seat);
                 return (
@@ -689,7 +707,7 @@ function PersonBody({ id }: DrawerProps) {
                           bad
                             .map((x) => (PAGECAPS as Record<string, { t: string }>)[x]?.t ?? x)
                             .join(", ")
-                        : ""
+                        : (BYGRANT as readonly string[]).includes(seat) ? " — no access until granted" : ""
                       : " — above your own access"}
                   </option>
                 );
@@ -697,17 +715,18 @@ function PersonBody({ id }: DrawerProps) {
             </select>
             <p className="sm" style={{ margin: "7px 0 0" }}>
               Changing role resets its permission preset
-              {state.CAPS[k] ? " and removes individual overrides" : ""}.
+              {state.CAPS[k] ? " and removes individual grants" : ""}. Only IR, IR Manager and Digital Infrastructure have access by default.
             </p>
           </div>
         </details>
       ) : null}
 
-      <details className="ux-disclosure" data-ux-key={`person-access-${k}`}>
-        <summary>Page permissions · {screensOf(state, k).length} accessible</summary>
+      <UxDetails k={`person-access-${k}`} force={byg && edit && !acct}>
+        <summary>Page permissions · {byg && !acct ? "none granted" : screensOf(state, k).length + " accessible"}</summary>
         <div className="drwsec">
           <p className="lbl">
-            Individual access
+            {byg ? "Granted access" : "Individual access"}
+            {state.CAPS[k] && edit ? " " : null}
             {state.CAPS[k] && edit ? (
               <button
                 type="button"
@@ -715,26 +734,37 @@ function PersonBody({ id }: DrawerProps) {
                 style={{ padding: "1px 7px", fontSize: "var(--text-small)", marginLeft: "6px" }}
                 onClick={() => dispatchable({ type: "resetCaps", k })}
               >
-                Reset all to role
+                {byg ? "Remove all access" : "Reset all to role"}
               </button>
             ) : null}
           </p>
+          {byg ? (
+            <p className="sm" style={{ margin: "0 0 10px" }}>
+              {P(state.PEOPLE, k).n.split(" ")[0]} has no console access by default.{" "}
+              {acct
+                ? "They sign in and reach only the pages granted here; taking the last one away ends their access."
+                : "Grant a page and they can sign in, reaching only what is granted here."}
+            </p>
+          ) : null}
           {(Object.keys(PAGECAPS) as NavKey[])
-            .filter((pg) => pg !== "me")
+            .filter((pg) => pg !== "me" && (!byg || seatShape(state.PEOPLE, k, pg, PAGECAPS[pg]!.caps).length > 0))
             .map((pg) => {
               const mineCaps = myCaps(state, pg);
               const theirs = capsFor(state, k, pg);
-              const over = !!(state.CAPS[k] && (state.CAPS[k] as Record<string, unknown>)[pg]);
-              const blocked = reachOf(state, k).indexOf(pg) < 0;
+              const over = !!(held && held[pg]);
+              const blocked = ceil.indexOf(pg) < 0;
               const asks = seatReach(state.PEOPLE, k).indexOf(pg) >= 0;
+              /* a granted-only seat that has lost its sign-in still shows what was granted, so the grid is
+                 never a row of zeros hiding the one tick that would let them back in */
+              const shown = byg && !acct ? (held && held[pg]) || [] : theirs;
               return (
-                <details className="ux-disclosure" data-ux-key={`person-page-${k}-${pg}`} key={pg}>
+                <UxDetails k={`person-page-${k}-${pg}`} key={pg}>
                   <summary>
-                    {PAGECAPS[pg]!.t} · {theirs.length} allowed
-                    {over ? (
+                    {PAGECAPS[pg]!.t} · {shown.length} allowed
+                    {over && shown.length ? (
                       <>
                         {" "}
-                        <span className="tag br">changed</span>
+                        <span className="tag br">{byg ? "granted" : "changed"}</span>
                       </>
                     ) : null}
                     {blocked ? (
@@ -745,7 +775,7 @@ function PersonBody({ id }: DrawerProps) {
                           title={
                             asks
                               ? "Their seat asks for this page; their manager cannot reach it"
-                              : "Their seat does not ask for this page"
+                              : "Their seat cannot hold this page"
                           }
                         >
                           {asks ? "manager limit" : "not in role"}
@@ -753,7 +783,7 @@ function PersonBody({ id }: DrawerProps) {
                       </>
                     ) : null}
                   </summary>
-                  {over && edit ? (
+                  {over && edit && !byg ? (
                     <button
                       type="button"
                       className="chip"
@@ -778,8 +808,9 @@ function PersonBody({ id }: DrawerProps) {
                   <div className="chips">
                     {PAGECAPS[pg]!.caps.map((c) => {
                       const can = mineCaps.includes(c);
-                      const on = theirs.includes(c);
-                      const live = can && edit && !blocked;
+                      const on = shown.includes(c);
+                      const fits = seatShape(state.PEOPLE, k, pg, [c]).includes(c);
+                      const live = can && edit && !blocked && fits;
                       return (
                         <button
                           type="button"
@@ -800,6 +831,8 @@ function PersonBody({ id }: DrawerProps) {
                                 disabled: true,
                                 title: blocked
                                   ? "Their manager cannot reach this page, so neither can they"
+                                  : !fits
+                                    ? "Their role cannot hold this, whoever grants it"
                                   : !can && on
                                     ? "They hold this from their seat — you do not have it yourself, so you cannot take it away"
                                     : !can
@@ -807,19 +840,21 @@ function PersonBody({ id }: DrawerProps) {
                                       : "View only for you",
                               })}
                         >
-                          {on ? "✓" : can && !blocked ? "" : "🔒"} {CAPT[c]}
+                          {on ? "✓" : can && !blocked && fits ? "" : "🔒"} {CAPT[c]}
                         </button>
                       );
                     })}
                   </div>
-                </details>
+                </UxDetails>
               );
             })}
           <p className="sm" style={{ margin: "10px 0 0" }}>
-            Grant only access you hold within the manager&apos;s limits. Changes are logged.
+            {roleOf(state.PEOPLE, state.WHO) === "conv"
+              ? "You can adjust access for the IRs who report to you, and only within your own. Changes are logged."
+              : "Grant only access you hold. Changes are logged and shown in their Updates."}
           </p>
         </div>
-      </details>
+      </UxDetails>
 
       {edit ? (
         <details className="ux-disclosure" data-ux-key={`person-administration-${k}`}>
@@ -889,7 +924,7 @@ function PersonFoot({ id }: DrawerProps) {
       ) : !canAdmin ? (
         <span className="sm">Member details are read only.</span>
       ) : null}
-      {canAdmin && tCanLend(state) ? (
+      {canAdmin && tCanLend(state) && consoleAccount(state.PEOPLE, k, state.CAPS) ? (
         <button
           type="button"
           className="chip"
@@ -910,7 +945,7 @@ registerDrawer("person", {
     state.PEOPLE[k as PersonKey].on &&
     (k === state.WHO || canManage(state, k as PersonKey)),
   title: (state, a) => P(state.PEOPLE, a.id as PersonKey).n,
-  sub: (state, a) => titleOf(state.PEOPLE, a.id as PersonKey),
+  sub: (state, a) => imAwareTitle(state, a.id as PersonKey),
   Body: PersonBody,
   Foot: PersonFoot,
 });
@@ -1019,7 +1054,8 @@ registerDrawer("p:cap", {
       !!CAPT[c as Cap] &&
       canManage(state, k as PersonKey) &&
       own(state, "people", "seats") &&
-      reachBase(state.PEOPLE, k as PersonKey).indexOf(p) >= 0 &&
+      reachCeil(state.PEOPLE, k as PersonKey).indexOf(p) >= 0 &&
+      seatShape(state.PEOPLE, k as PersonKey, p, [c as Cap]).includes(c as Cap) &&
       capsBase(state, state.WHO, p).includes(c as Cap)
     );
   },

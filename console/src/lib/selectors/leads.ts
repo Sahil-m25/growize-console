@@ -202,12 +202,12 @@ export const secondaryMayWork = (ctx: Ctx, l: Lead): boolean => secondaryHolds(c
 /* a secondary is only cover if they are somebody else, still here, and at their desk */
 export const secOK = (ctx: Ctx, lead: Lead | null | undefined): boolean => {
   const l = lead && ctx.LEADS.find(x=>x.id === lead.id);
-  return !!l?.sec && l.sec !== l.own && consoleAccount(ctx.PEOPLE,l.sec) && roleOf(ctx.PEOPLE,l.sec) === "ir" && avail(ctx,l.sec);
+  return !!l?.sec && l.sec !== l.own && consoleAccount(ctx.PEOPLE,l.sec,ctx.CAPS) && roleOf(ctx.PEOPLE,l.sec) === "ir" && avail(ctx,l.sec);
 };
 
 export const inBookOf = (ctx: Ctx, lead: Lead): boolean => {
   const l = ctx.LEADS.find(x=>x.id === lead.id);
-  return !!l?.own && consoleAccount(ctx.PEOPLE,me(ctx)) && (l.own === me(ctx)
+  return !!l?.own && consoleAccount(ctx.PEOPLE,me(ctx),ctx.CAPS) && (l.own === me(ctx)
     || (roleOf(ctx.PEOPLE,me(ctx)) !== "cp" && (acting(ctx,l) === me(ctx) || secondaryMayWork(ctx,l))));
 };
 
@@ -379,9 +379,9 @@ export const openable = (ctx: Ctx): Lead[] => {
 
 /* who can be handed a lead today — never a hard-coded list, never someone who has left */
 export const assignees = (ctx: Ctx): PersonKey[] =>
-  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k) && ["ir", "cp"].includes(roleOf(ctx.PEOPLE, k) as string));
+  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k, ctx.CAPS) && ["ir", "cp"].includes(roleOf(ctx.PEOPLE, k) as string));
 export const channelPartners = (ctx: Ctx): PersonKey[] =>
-  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k) && roleOf(ctx.PEOPLE, k) === "cp");
+  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k, ctx.CAPS) && roleOf(ctx.PEOPLE, k) === "cp");
 export const sourceLabel = (ctx: Ctx, l: Lead): string => l.src === "Channel partner" && l.channelPartnerId
   ? l.src + " · " + P(ctx.PEOPLE, l.channelPartnerId).n : l.src;
 /* everyone() — ir-console-redesigned.html 4068: roleOf(me())==="cp"?[me()]:PEOPLE on && roleOf!=="mkt".

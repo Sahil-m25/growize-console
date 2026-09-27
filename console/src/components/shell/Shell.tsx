@@ -310,7 +310,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const clickedView = clicked && clicked.from === pathname ? viewOf(clicked.to).view : null;
   const wantView = clickedView && clickedView !== view ? clickedView
     : state.ui.NAVSEQ !== seqAtPath.current.seq ? state.VIEW : null;   /* a go() since this path landed */
-  const pendingView = !pendingLead && view && wantView && wantView !== parentOf(view) && PENDING[wantView] && mayReach(state, wantView)
+  const pendingView = !pendingLead && wantView && (!view || wantView !== parentOf(view)) && PENDING[wantView] && mayReach(state, wantView)
     ? wantView : null;
   const Pending = pendingView ? PENDING[pendingView]! : null;
   const shown = pendingLead ? "lead" : pendingView || view;

@@ -65,7 +65,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     setTimer: (callback, delay) => setTimeout(callback, delay),
     clearTimer: handle => clearTimeout(handle as ReturnType<typeof setTimeout>),
     isOnline: () => onlineRef.current,
-    currentSession: () => consoleAccount(stateRef.current.PEOPLE, stateRef.current.WHO)
+    currentSession: () => consoleAccount(stateRef.current.PEOPLE, stateRef.current.WHO, stateRef.current.CAPS)
       ? { actor: stateRef.current.WHO, session: sessionRef.current } : null,
     read: () => stateRef.current,
     write: next => {

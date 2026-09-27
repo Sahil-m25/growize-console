@@ -15,7 +15,7 @@ import { capsFor } from "@/lib/selectors";
 import { reviveClock } from "@/lib/data/clock";
 import { nowT, pinClock, clockPin, stamp as stampAt } from "@/lib/format";
 import { ST } from "@/domain";
-import type { Cap, DocRec, Lead, LeadId, LogEntry, MoveReq, PaperRow, PersonKey } from "@/domain";
+import type { Cap, DocRec, Lead, LeadId, LogEntry, MoveReq, NavKey, PaperRow, PersonKey } from "@/domain";
 import type { ImDoc, ImInbox, ImInvestor, ImTxn } from "@/lib/im";
 import { runAs } from "./run-as";
 
@@ -68,11 +68,11 @@ const prakashBalance = (rec: ImTxn["rec"]): ImTxn => ({
   on: "28 Aug 11:00", by: "meena", rec,
 });
 
+/* capSave('jhalak','leads','view') as Sahil — the real grant write, so the log lines ("Changed
+   access", then "Console access granted") are the reducer's own */
 const grantJhalakLeads = (ds: Dataset) => {
-  ds.GRANT.jhalak = { ...(ds.GRANT.jhalak || {}), leads: ["view"] };
-  const at = stamp(ds) as LogEntry["at"];
-  logLine(ds, { at, who: "sahil", what: "Changed access", lead: null, note: "Jhalak Mehta · Leads · added See it", kind: "admin", about: ["jhalak"] } as Omit<LogEntry, "d">);
-  logLine(ds, { at, who: "sahil", what: "Console access granted", lead: null, note: "Jhalak Mehta · first page granted: Leads", kind: "admin", about: ["jhalak"] } as Omit<LogEntry, "d">);
+  if ((ds.GRANT.jhalak?.leads || []).includes("view")) return;   /* a grant, not a toggle: applying it twice leaves it on */
+  runAs(ds, "sahil", [{ type: "toggleCap", k: "jhalak" as PersonKey, p: "leads" as NavKey, c: "view" as Cap }]);
 };
 
 /* the prototype's CLOCK fixtures replace Date with one whose hour is this, on the console's own day */

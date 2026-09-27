@@ -185,7 +185,11 @@ export function EventEditorFoot(props: DrawerProps) {
     if (gaps.length) return;
     const newId = event ? null : evNextId(state.EVKEY + 1);
     dispatch({ type: "saveEvent" });
-    if (newId) router.push(pathOf("event", newId));
+    if (newId) {
+      /* drawn at once, ahead of its route — EventsPage's pending press (EVPEND) */
+      dispatch({ type: "setUi", patch: { EVPEND: { id: newId, seq: state.ui.NAVSEQ ?? 0 } } });
+      router.push(pathOf("event", newId));
+    }
   };
   /* drop() no longer removes the event itself — that is the one write in this drawer with no way
      back, so it stops at `askFirst`'s door instead: ir-console-redesigned.html:3881's dropEvent()
@@ -264,7 +268,6 @@ export function EventDropBody(props: DrawerProps) {
 
 export function EventDropFoot(props: DrawerProps) {
   const { state, dispatch } = useConsole();
-  const router = useRouter();
   const event = props.id ? state.EVENTS.find((x) => x.id === props.id) ?? null : null;
   if (!event) return null;
   /* askGo() — ir-console-redesigned.html:4204 — clears ASK and closes before running the write;
@@ -272,7 +275,9 @@ export function EventDropFoot(props: DrawerProps) {
      because standing on the URL of a record that no longer exists is not a state this port keeps. */
   const run = () => {
     dispatch({ type: "dropEvent", id: event.id });
-    router.push(pathOf("events"));
+    /* the prototype's VIEW='events' is synchronous; Next 15 folds a native pushState into
+       usePathname at once, so the shell draws the list now rather than when a route fetch lands */
+    window.history.pushState(null, "", pathOf("events"));
   };
   return (
     <>

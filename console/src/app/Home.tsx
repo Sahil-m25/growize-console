@@ -11,6 +11,7 @@ import { landSafe } from "@/components/shell/nav";
 import { pathOf } from "@/components/shell/routes";
 import { TodayPage } from "@/features/today/TodayPage";
 import { Sided } from "@/features/im/host";
+import { LeadsPage } from "@/features/leads/LeadsPage";
 
 export function Home() {
   const { state } = useConsole();
@@ -23,5 +24,7 @@ export function Home() {
 
   /* the landing screen is drawn at once, not after the redirect's round trip: a person who has
      just signed in sees their day in the same frame (the prototype's go() is synchronous) */
-  return state.authed && land === "today" ? <Sided k="today" lead={<TodayPage />} /> : null;
+  /* a granted-only seat (D60) whose first page is Leads lands there, drawn in the same frame too */
+  if (!state.authed) return null;
+  return land === "today" ? <Sided k="today" lead={<TodayPage />} /> : land === "leads" ? <LeadsPage /> : null;
 }

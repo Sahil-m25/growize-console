@@ -9,12 +9,11 @@
    so it can never disagree with the number the page shows when you land on it.
 
    Each row's dot reads `gNew` (keyed `NSEEN["<who>|<group>"]`), the same per-person-per-group
-   selector `UpdatesPage` uses — a row click here only navigates (`closeDrawer();go('updates')`,
-   03-app.js:12061), it never marks the group read on its own; only opening a group on the page
-   itself does that. */
+   selector `UpdatesPage` uses. A row click opens that group on the page and reads it
+   (ir-merged.js:9582, `openGroup`). */
 
 import { useRouter } from "next/navigation";
-import { gNew, unread, updates } from "@/lib/selectors";
+import { feedRows, feedScope, gNew, unread, updates } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
@@ -24,7 +23,17 @@ function Body(_: DrawerProps) {
   const { state, dispatch } = useConsole();
   const router = useRouter();
   const g = updates(state);
-  const go = () => { dispatch({ type: "closeDrawer" }); router.push(pathOf("updates")); };
+  /* D59 g3: a row opens ITS group on the page (and reads it), rather than every row landing on the
+     same page top — ir-merged.js:9582. */
+  const go = (k: string) => {
+    dispatch({ type: "closeDrawer" });
+    dispatch({ type: "go", v: "updates" });
+    if ((state.ui.NOPEN ?? null) !== k) {
+      dispatch({ type: "setUi", patch: { NOPEN: k } });
+      dispatch({ type: "markRead", k });
+    }
+    router.push(pathOf("updates"));
+  };
 
   if (!g.length) {
     return (
@@ -40,8 +49,8 @@ function Body(_: DrawerProps) {
   return (
     <>
       {g.slice(0, 6).map((x) => (
-        <button type="button" className="mrow up" key={x.k} onClick={go}>
-          <span className={`upi ${x.tone}`}>{x.icon}</span>
+        <button type="button" className="mrow up" key={x.k} onClick={() => go(x.k)}>
+          <span className={`upi ${x.tone || ""}`}>{x.icon || "·"}</span>
           <span className="sit">
             <b>{x.title}</b>
             <span className="sm">{x.rows.length} {x.unit || "lead"}{x.rows.length === 1 ? "" : "s"}</span>
@@ -58,7 +67,7 @@ function Foot(_: DrawerProps) {
   const router = useRouter();
   return (
     <button type="button" className="act ghost"
-      onClick={() => { dispatch({ type: "closeDrawer" }); router.push(pathOf("updates")); }}>
+      onClick={() => { dispatch({ type: "closeDrawer" }); dispatch({ type: "go", v: "updates" }); router.push(pathOf("updates")); }}>
       See everything
     </button>
   );
@@ -81,6 +90,9 @@ function FeedBody(_: DrawerProps) {
 registerDrawer("p:updates.feed", {
   w: 620,
   title: () => "Update history",
-  sub: () => "everything on this book in the last seven days",
+  sub: (state) => {
+    const n = feedRows(state).length;
+    return (n ? n + " by others" : "nothing yet") + " · last 7 days on " + feedScope(state);
+  },
   Body: FeedBody,
 });

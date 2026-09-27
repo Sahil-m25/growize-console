@@ -17,7 +17,7 @@
    ========================================================================================= */
 
 import {
-  SEATSCREENS, SEATCAPS, PAGECAPS, NAV, IR, SEAT, TEAMNAME,
+  SEATSCREENS, SEATCAPS, SEATDEF, DEFSEATS, NOSIGN, BYGRANT, PAGECAPS, NAV, IR, SEAT, TEAMNAME,
 } from "@/domain";
 import type { Person, PersonKey, SeatKey, NavKey, Lead, TempGrant, TempStateRead } from "@/domain";
 import { accessDay, dayOf } from "@/lib/format";
@@ -31,6 +31,8 @@ import { custodian, inBook, inBookOf, lost, openable } from "./leads";
 export type NavItem = (typeof NAV)[number];
 
 type People = Record<PersonKey, Person>;
+/** the prototype's GRANT — person -> {page:[caps]}, the store's `CAPS` */
+export type Grants = Record<PersonKey, Partial<Record<string, readonly string[]>>>;
 
 /* ---- who somebody is ------------------------------------------------------------------------ */
 
@@ -62,58 +64,88 @@ export const teamName = (PEOPLE: People, k: PersonKey | null | undefined): strin
 const seatOf = (PEOPLE: People, k: PersonKey | null | undefined): SeatKey | undefined =>
   roleOf(PEOPLE, k);
 
-export const consoleAccount = (PEOPLE: People, k: PersonKey): boolean => {
-  const p = PEOPLE[k], seat = seatOf(PEOPLE, k);
-  return !!p?.on && !p.ext && !!seat && !["mkt", "fin", "am"].includes(seat)
-    && !!(SEATSCREENS as Record<string, unknown>)[seat];
-};
+/* ---- D60: who signs in, and what a seat can hold ---------------------------------------------
+   ir-merged.js:540-560, 627-660. */
 
-/** Lead operations belong to IR operators, even if another role receives an edit-capability loan. */
-export const canOperateLeads = (ctx: Ctx, k: PersonKey = me(ctx)): boolean =>
-  consoleAccount(ctx.PEOPLE, k) && ["ir", "conv", "cp"].includes(seatOf(ctx.PEOPLE, k) || "");
+/* the pages granted to somebody by name — a page counts only while "See it" is on it */
+export const grantedPages = (GRANT: Grants | undefined, k: PersonKey): string[] =>
+  Object.keys(GRANT?.[k] || {}).filter(p => (GRANT![k]![p] || []).includes("view"));
 
-/* ir-console-redesigned.html:2990-3001. `p==="me"` needs no special case: every seat's preset
-   already carries `me:["view"]` (SEATSCREENS/SEATCAPS push it onto everyone), so the generic
-   fall-through at the bottom answers it the same way the prototype's does. */
-function roleCaps(ctx: Ctx, k: PersonKey, p: string, caps: Cap[]): Cap[] {
-  if (!consoleAccount(ctx.PEOPLE, k)) return [];
-  const seat = seatOf(ctx.PEOPLE, k);
-  if (seat === "ops") return caps.slice();   /* D68: the super user — merged seatShape, ir-merged.js:638 */
+/* what a seat can HOLD on a page at all, whoever grants it — the shape of the role, read without
+   asking whether the person can sign in (a grant is what makes them able to) */
+export const seatShape = (PEOPLE: People, k: PersonKey, p: string, caps: readonly Cap[]): Cap[] => {
+  const seat = seatOf(PEOPLE, k), lop = ["ir", "cp", "conv"].includes(seat || "");
+  if (!seat || (NOSIGN as readonly string[]).includes(seat)) return [];
+  if (seat === "ops") return caps.slice();                /* D68: the super user */
   if (seat === "cp" && !["today", "leads", "updates", "add", "activity", "me"].includes(p)) return [];
-  if (p === "today" || p === "add") return canOperateLeads(ctx, k) ? caps.filter(c => c === "view" || c === "capture") : [];
-  if (p === "leads") return caps.filter(c => c === "view" || (c === "edit" && canOperateLeads(ctx, k)) || (c === "assign" && seat === "conv"));
-  if (p === "events") return caps.filter(c => c !== "load" || canOperateLeads(ctx, k));
-  // The Investor Management portal owns payments and document sends; console loans are read-only.
+  if (p === "today" || p === "add") return lop ? caps.filter(c => c === "view" || c === "capture") : [];
+  if (p === "leads") return caps.filter(c => c === "view" || (c === "edit" && lop) || (c === "assign" && seat === "conv"));
+  if (p === "events") return caps.filter(c => c !== "load" || lop);
   if (p === "pay" || p === "docs") return caps.filter(c => c === "view");
   if (seat === "cp" && p === "activity") return caps.filter(c => c === "view");
   return caps.slice();
-}
+};
 
 export const seatReach = (PEOPLE: People, k: PersonKey): string[] => {
   const s = seatOf(PEOPLE, k);
   return s ? ((SEATSCREENS as Record<string, readonly string[]>)[s] as string[] | undefined) ?? [] : [];
 };
 
-/* ---- what somebody reaches ------------------------------------------------------------------ */
-
-/* the pages somebody actually reaches: their seat's set, bounded by every manager above them */
-export function reachBase(PEOPLE: People, k: PersonKey): string[] {
+/* the most somebody could ever be granted: their seat's ceiling, bounded by every manager above */
+export function reachCeil(PEOPLE: People, k: PersonKey): string[] {
   let set = seatReach(PEOPLE, k).slice();
   chainOf(PEOPLE, k).forEach(m => { const up = new Set(seatReach(PEOPLE, m)); set = set.filter(p => up.has(p)); });
   return set;
 }
 
+/* does a granted-only seat hold at least one real screen? This is what lets them sign in at all,
+   so it reads nothing that asks consoleAccount in turn. */
+export const hasGrant = (PEOPLE: People, GRANT: Grants | undefined, k: PersonKey): boolean => {
+  const ceil = reachCeil(PEOPLE, k);
+  return grantedPages(GRANT, k).some(p => !!PAGECAPS[p as NavKey] && !PAGECAPS[p as NavKey]!.nopage && p !== "me"
+    && ceil.includes(p) && seatShape(PEOPLE, k, p, ["view"]).includes("view"));
+};
+
+/* D60: who signs in. The three console seats always; a granted-only seat while Digital
+   Infrastructure has granted it at least one screen; Finance and Marketing never. (The Investors
+   side's own door, imAccount, is asked beside this one in `@/lib/data/admission`.) */
+export const consoleAccount = (PEOPLE: People, k: PersonKey, GRANT?: Grants): boolean => {
+  const p = PEOPLE[k], seat = seatOf(PEOPLE, k);
+  return !!p?.on && !p.ext && !!seat
+    && ((DEFSEATS as readonly string[]).includes(seat)
+      || ((BYGRANT as readonly string[]).includes(seat) && hasGrant(PEOPLE, GRANT, k)));
+};
+
+/** Lead operations belong to IR operators, even if another role receives an edit-capability loan. */
+export const canOperateLeads = (ctx: Ctx, k: PersonKey = me(ctx)): boolean =>
+  consoleAccount(ctx.PEOPLE, k, ctx.CAPS) && ["ir", "conv", "cp"].includes(seatOf(ctx.PEOPLE, k) || "");
+
+const roleCaps = (ctx: Ctx, k: PersonKey, p: string, caps: readonly Cap[]): Cap[] =>
+  consoleAccount(ctx.PEOPLE, k, ctx.CAPS) ? seatShape(ctx.PEOPLE, k, p, caps) : [];
+
+/* ---- what somebody reaches ------------------------------------------------------------------ */
+
+/* the pages somebody actually reaches: what their seat holds by default plus whatever has been granted
+   to them by name, inside the ceiling. A granted-only seat reaches nothing until its first grant, and
+   its Profile — and, with Leads, the team's list — comes with it. */
+export function reachBase(PEOPLE: People, k: PersonKey, GRANT?: Grants): string[] {
+  const r = seatOf(PEOPLE, k) || "";
+  const on = new Set<string>(((SEATDEF as Record<string, readonly string[]>)[r] || []).concat(grantedPages(GRANT, k)));
+  if ((BYGRANT as readonly string[]).includes(r) && on.size) { on.add("me"); if (on.has("leads")) on.add("teamscope"); }
+  return reachCeil(PEOPLE, k).filter(p => on.has(p));
+}
+
 /* what they reach right now — the same set, plus whatever is lent to them and switched on. Only
    ever the signed-in person: borrowed access is not a property of a name, it is a thing in use. */
 export function reachOf(ctx: Ctx, k: PersonKey): string[] {
-  const set = reachBase(ctx.PEOPLE, k);
+  const set = reachBase(ctx.PEOPLE, k, ctx.CAPS);
   const g = k === ctx.WHO ? tempOn(ctx) : null;
   return g && set.indexOf(g.page as string) < 0 ? set.concat([g.page as string]) : set;
 }
 
 /* what their seat asks for and their chain refuses */
 export const clashOf = (PEOPLE: People, k: PersonKey): string[] => {
-  const has = new Set(reachBase(PEOPLE, k));
+  const has = new Set(reachCeil(PEOPLE, k));
   return seatReach(PEOPLE, k).filter(p => !has.has(p));
 };
 
@@ -141,8 +173,8 @@ export function tState(ctx: Ctx, g: TempGrant | null | undefined): TempStateRead
   if (!to || !to.on || to.ext || !by || !by.on || by.ext
     || !(PAGECAPS as Record<string, unknown>)[g.page] || !Array.isArray(g.caps) || !g.caps.includes("view")
     || !capsBase(ctx, g.by, g.page).includes("view")) return "unavailable";
-  if (!consoleAccount(ctx.PEOPLE, g.to) || !consoleAccount(ctx.PEOPLE, g.by)
-    || !roleCaps(ctx, g.to, g.page, g.caps).includes("view")
+  if (!consoleAccount(ctx.PEOPLE, g.to, ctx.CAPS) || !consoleAccount(ctx.PEOPLE, g.by, ctx.CAPS)
+    || !roleCaps(ctx, g.to, g.page, g.caps as Cap[]).includes("view")
     || chainOf(ctx.PEOPLE, g.to).some(k => !seatReach(ctx.PEOPLE, k).includes(g.page))) return "unavailable";
   return "live";
 }
@@ -154,7 +186,7 @@ export const tempFor = (ctx: Ctx, k: PersonKey): TempGrant[] =>
 export const tempOn = (ctx: Ctx): TempGrant | null => {
   const g = ctx.TEMP.find(x => x.id === ctx.TEMPON);
   if (!g || g.to !== ctx.WHO || !tLive(ctx, g)
-    || !consoleAccount(ctx.PEOPLE, g.to) || !consoleAccount(ctx.PEOPLE, g.by)
+    || !consoleAccount(ctx.PEOPLE, g.to, ctx.CAPS) || !consoleAccount(ctx.PEOPLE, g.by, ctx.CAPS)
     || !chainOf(ctx.PEOPLE, g.to).every(k => seatReach(ctx.PEOPLE, k).includes(g.page))
     || (seatOf(ctx.PEOPLE, g.to) === "cp" && !["today", "leads", "updates", "add", "activity"].includes(g.page))) return null;
   const from = accessDay(g.from, ctx.NOW);
@@ -169,25 +201,24 @@ export const tempOn = (ctx: Ctx): TempGrant | null => {
 
 /* what the seat and the chain give, with nothing borrowed — this is what may be lent onward */
 export const capsBase = (ctx: Ctx, k: PersonKey, p: string): Cap[] => {
-  if (p === "me") return roleCaps(ctx, k, p, ["view"]);
-  const grant = ctx.CAPS[k];
+  if (reachBase(ctx.PEOPLE, k, ctx.CAPS).indexOf(p) < 0) return [];
+  const grant = ctx.CAPS[k] as Record<string, Cap[]> | undefined;
   const s = seatOf(ctx.PEOPLE, k);
   const preset = s ? (SEATCAPS as Record<string, Record<string, Cap[]>>)[s] || {} : {};
-  const defaultHistory = ["ir","conv"].includes(s || "") && ["pay","docs"].includes(p);
-  if (!defaultHistory && reachBase(ctx.PEOPLE, k).indexOf(p) < 0) return [];
-  return roleCaps(ctx, k, p, (grant && (grant as Record<string, Cap[]>)[p]) || preset[p] || []);
+  return roleCaps(ctx, k, p, (grant && grant[p]) || preset[p] || []);
 };
 
 export const capsFor = (ctx: Ctx, k: PersonKey, p: string): Cap[] => {
   const base = capsBase(ctx, k, p);
   const g = k === ctx.WHO ? tempOn(ctx) : null;
-  return roleCaps(ctx, k, p, g && (g.page as string) === p ? [...new Set(base.concat(g.caps as Cap[]))] : base);
+  const lent = g && (g.page as string) === p ? (g.caps as Cap[]).filter(c => capsBase(ctx, g.by, p).includes(c)) : [];
+  return roleCaps(ctx, k, p, [...new Set(base.concat(lent))]);
 };
 
 export const hasCap = (ctx: Ctx, k: PersonKey, p: string, c: Cap): boolean =>
-  !!ctx.PEOPLE[k]?.on && !ctx.PEOPLE[k].ext && capsFor(ctx, k, p).includes(c);
+  consoleAccount(ctx.PEOPLE, k, ctx.CAPS) && capsFor(ctx, k, p).includes(c);
 
-export const accountAllowed = (ctx: Ctx): boolean => consoleAccount(ctx.PEOPLE, me(ctx));
+export const accountAllowed = (ctx: Ctx): boolean => consoleAccount(ctx.PEOPLE, me(ctx), ctx.CAPS);
 
 /* what the signed-in person may do — this is the gate every screen and handler asks */
 export const may = (ctx: Ctx, p: string, c: Cap): boolean => hasCap(ctx, me(ctx), p, c);
@@ -203,26 +234,32 @@ export const own = (ctx: Ctx, p: string, c: Cap): boolean => accountAllowed(ctx)
 
 export const myCaps = (ctx: Ctx, p: string): Cap[] => capsFor(ctx, me(ctx), p);
 
-/* subset test, not a rank ladder */
+/* D60 — WHO MAY GRANT. Digital Infrastructure may grant any page and capability to anyone. The IR
+   Manager may adjust access only for the IRs who report to them (canManage adds the reporting line),
+   and never beyond their own (toggleCap asks capsBase). Nobody else grants anything — not an IR, and
+   not a granted seat even if it has been given Teams. Finance and Marketing are never a seat anybody
+   can hand out here. (ir-merged.js:715-727) */
 export const canGrant = (ctx: Ctx, seat: SeatKey): boolean => {
-  if (!SEAT[seat]) return false;
+  if (!SEAT[seat] || (NOSIGN as readonly string[]).includes(seat)) return false;
   if (!own(ctx, "people", "seats")) return false;    /* a seat that cannot change seats grants nothing */
-  const mine = new Set(reachBase(ctx.PEOPLE, me(ctx)));   /* your own ceiling, and never a borrowed page */
-  return (((SEATSCREENS as Record<string, readonly string[]>)[seat]) || []).every(x => mine.has(x));
+  const mine = roleOf(ctx.PEOPLE, me(ctx));
+  if (mine === "ops") return true;
+  if (mine === "conv") return seat === "ir";
+  return false;
 };
 
 /* ---- teams ---------------------------------------------------------------------------------- */
 
 export const isMgr = (PEOPLE: People, k: PersonKey): boolean =>
-  Object.keys(PEOPLE).some(x => consoleAccount(PEOPLE, x) && PEOPLE[x].mgr === k);
+  Object.keys(PEOPLE).some(x => PEOPLE[x].on && PEOPLE[x].mgr === k);
 
 export const membersOf = (PEOPLE: People, k: PersonKey): PersonKey[] =>
-  Object.keys(PEOPLE).filter(x => consoleAccount(PEOPLE, x) && PEOPLE[x].mgr === k);
+  Object.keys(PEOPLE).filter(x => PEOPLE[x].on && PEOPLE[x].mgr === k);
 
 export type TeamRow = { mgr: PersonKey; members: PersonKey[]; clash: number };
 
 export const teamsList = (PEOPLE: People): TeamRow[] =>
-  Object.keys(PEOPLE).filter(k => consoleAccount(PEOPLE, k) && isMgr(PEOPLE, k))
+  Object.keys(PEOPLE).filter(k => PEOPLE[k].on && isMgr(PEOPLE, k))
     .map(k => ({
       mgr: k, members: membersOf(PEOPLE, k),
       clash: membersOf(PEOPLE, k).filter(x => clashOf(PEOPLE, x).length).length,
@@ -237,7 +274,7 @@ export const teamOfPerson = (PEOPLE: People, k: PersonKey): PersonKey | null =>
 /* who reports to me — a manager's team is everyone whose mgr is them, plus anyone they manage
    transitively */
 export function teamOf(PEOPLE: People, k: PersonKey): PersonKey[] {
-  const direct = Object.keys(PEOPLE).filter(x => PEOPLE[x].mgr === k && consoleAccount(PEOPLE, x));
+  const direct = Object.keys(PEOPLE).filter(x => PEOPLE[x].mgr === k && PEOPLE[x].on);
   return [...new Set(direct.concat(...direct.map(d => teamOf(PEOPLE, d))))];
 }
 
@@ -252,7 +289,7 @@ const ORGWIDE: readonly string[] = ["ops", "corp", "bu", "exec"];
 
 export const myTeam = (ctx: Ctx): PersonKey[] =>
   ORGWIDE.includes(roleOf(ctx.PEOPLE, me(ctx))!)
-    ? Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k) && k !== me(ctx))
+    ? Object.keys(ctx.PEOPLE).filter(k => ctx.PEOPLE[k].on && k !== me(ctx))
     : teamOf(ctx.PEOPLE, me(ctx));
 
 export const manageable = (ctx: Ctx): PersonKey[] =>
@@ -269,7 +306,7 @@ export const canManage = (ctx: Ctx, k: PersonKey): boolean => {
 /* would appointing k under m cost them anything, or double back on itself? */
 export type MoveCost = { ok: boolean; lose: string[]; cycle?: boolean };
 
-export function moveCost(PEOPLE: People, k: PersonKey, m: PersonKey | null): MoveCost {
+export function moveCost(PEOPLE: People, k: PersonKey, m: PersonKey | null, GRANT?: Grants): MoveCost {
   if (!m) return { ok: true, lose: [] };
   if (m === k || chainOf(PEOPLE, m).concat([m]).indexOf(k) >= 0) return { ok: false, cycle: true, lose: [] };
   const up = new Set(seatReach(PEOPLE, m)), upc = chainOf(PEOPLE, m);
@@ -277,7 +314,7 @@ export function moveCost(PEOPLE: People, k: PersonKey, m: PersonKey | null): Mov
   upc.forEach(x => { const u = new Set(seatReach(PEOPLE, x)); allow = allow.filter(p => u.has(p)); });
   /* against what they REACH today, not what the seat asks for — otherwise a person who already has
      a clash can never be moved to a manager who would fix half of it. */
-  const lose = reachBase(PEOPLE, k).filter(p => allow.indexOf(p) < 0);
+  const lose = reachBase(PEOPLE, k, GRANT).filter(p => allow.indexOf(p) < 0);
   return { ok: !lose.length, lose };
 }
 
@@ -353,7 +390,7 @@ export const canAssign = (ctx: Ctx): boolean =>
    builder task asked this be aligned rather than left as a local decision. */
 export const canRoster = (ctx: Ctx): boolean => may(ctx, "people", "roster");
 export const canRosterFor = (ctx: Ctx, k: PersonKey): boolean =>
-  consoleAccount(ctx.PEOPLE, me(ctx)) && (k === me(ctx) || canRoster(ctx));
+  consoleAccount(ctx.PEOPLE, me(ctx), ctx.CAPS) && (k === me(ctx) || canRoster(ctx));
 
 export function canEdit(ctx: Ctx, lead: Lead | null | undefined): boolean {
   const l = lead && ctx.LEADS.find(x=>x.id === lead.id);
@@ -386,9 +423,10 @@ export const canInv = (ROLE: SeatKey): boolean =>
    the gate on every route, not merely on every link: a page the seat cannot reach is refused in
    the layout as well as hidden in the rail (PORT-GUIDE, "Routing"). */
 export const navForIR = (ctx: Ctx): NavItem[] => {
-  const g = tempOn(ctx);
+  const g = tempOn(ctx), mine = grantedPages(ctx.CAPS, me(ctx));
+  /* NAV.roles is the default; a page granted by name is reached by name (D60) */
   return (NAV as readonly NavItem[]).filter(n =>
-    n.k !== "me" && ((n.roles as readonly string[]).includes(roleOf(ctx.PEOPLE, me(ctx))!) || (!!g && (g.page as string) === n.k))
+    n.k !== "me" && ((n.roles as readonly string[]).includes(roleOf(ctx.PEOPLE, me(ctx))!) || mine.includes(n.k) || (!!g && (g.page as string) === n.k))
     && may(ctx, n.k, "view")) as NavItem[];
 };
 
@@ -456,7 +494,7 @@ export function canOpenDrawer(ctx: Ctx, kind: string, id: string | null): boolea
 
 /* the pages that can be lent — never your own profile, and never a page with no capabilities */
 export const lendablePages = (ctx: Ctx): string[] =>
-  reachBase(ctx.PEOPLE, me(ctx))
+  reachBase(ctx.PEOPLE, me(ctx), ctx.CAPS)
     .filter(x => x !== "me" && !!(PAGECAPS as Record<string, unknown>)[x]);
 
 /* ===== STAFF LEAVING =========================================================================
@@ -524,7 +562,7 @@ export function leaverPlan(ctx: Ctx, k: PersonKey, to: PersonKey | null): Leaver
     error = "Some affected records are outside your team or need their ownership corrected. The whole handover must be resolved together.";
   else if (up && (!PEOPLE[up] || PEOPLE[up].on === false || up === k))
     error = "Choose an active reporting manager before removing this member.";
-  else if (kids.some(x => !moveCost(PEOPLE, x, up).ok))
+  else if (kids.some(x => !moveCost(PEOPLE, x, up, ctx.CAPS).ok))
     error = "Moving the reports up would remove access they need. Resolve their reporting manager first.";
   else if (needsSuccessor && !to) error = "Choose the teammate who will receive this work.";
   else if (to && !leaverSuccessors(ctx, k).includes(to))

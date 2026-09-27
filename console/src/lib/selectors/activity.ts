@@ -12,7 +12,7 @@ import type { Ctx } from "./ctx";
 import { me, P } from "./ctx";
 import { canAssign, canReadFinance, chainOf, isFin, may, own, roleOf, seeMoney, seesTeam } from "./access";
 import {
-  coverLive, custodian, lateOf, movesWaiting, myBook, nextUp, openable, rag, teamBook, unassigned, visible,
+  coverLive, custodian, lateOf, movesWaiting, myBook, nextUp, openable, rag, scopeOf, teamBook, unassigned, visible,
 } from "./leads";
 
 /* ===== WHO IS WORKING TODAY =================================================================
@@ -252,10 +252,16 @@ export function readMarks(ctx: Ctx, k?: string): Record<string, string> {
    the two halves of one screen cannot describe two different weeks. No cap: the export and the "all
    history" panel both read this list whole (ir-console-redesigned.html:8371-8420 takes none either;
    a `.slice(0,80)` here was this port's own addition and cut a real week short on a busy book). */
+/* D59 g3 (ir-merged.js:6186): whose leads the feed is about, in one word-set, so the subtitle, the
+   feed and its empty state all say the same thing — "your leads" only when it is only your leads.
+   A manager on team scope has no book of her own, so feedRows reads the book the wording names. */
+export const feedTeam = (ctx: Ctx): boolean => !isFin(ctx.ROLE) && seesTeam(ctx) && scopeOf(ctx, "today") === "team";
+export const feedScope = (ctx: Ctx): string =>
+  isFin(ctx.ROLE) ? "these leads" : feedTeam(ctx) ? "your team's leads" : "your leads";
 export function feedRows(ctx: Ctx): LogEntry[] {
   if (!may(ctx, "updates", "view")) return [];
   const allowed = new Set(openable(ctx).map(l => l.id));
-  const book = (isFin(ctx.ROLE) ? visible(ctx) : myBook(ctx)).filter(l => allowed.has(l.id));
+  const book = (isFin(ctx.ROLE) ? visible(ctx) : feedTeam(ctx) ? teamBook(ctx) : myBook(ctx)).filter(l => allowed.has(l.id));
   const ids = new Set(book.map(l => l.id));
   const since = iso(dAdd(ctx.TODAY, -6));
   return ctx.LOG.filter(e => logReadable(ctx, e) && e.d >= since && !!e.lead && ids.has(e.lead) && e.who !== me(ctx));

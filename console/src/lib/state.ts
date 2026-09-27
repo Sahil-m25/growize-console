@@ -741,7 +741,7 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
     const opened: ConsoleState = {
       ...endSession(state), authed: true, SIGNOUT: null, WHO: a.k, ROLE: seatOf(state.PEOPLE, a.k), LEAD: state.LEAD,
     };
-    const signed = consoleAccount(state.PEOPLE, a.k) ? reducer(opened, { type: "setPerson", k: a.k }) : opened;
+    const signed = consoleAccount(state.PEOPLE, a.k, state.CAPS) ? reducer(opened, { type: "setPerson", k: a.k }) : opened;
     return state.FXFAIL ? { ...signed, FAILNEXT: true } : signed;
   }
   if (a.type === "fixture") return a.k === "failNextOnSignIn" && state.FIXTURES ? { ...state, FXFAIL: true } : state;
@@ -795,7 +795,7 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
        is where the router can actually act on them. */
     case "setPerson": {
       const p = state.PEOPLE[a.k];
-      if (!p || !consoleAccount(state.PEOPLE, a.k)) return state;
+      if (!p || !consoleAccount(state.PEOPLE, a.k, state.CAPS)) return state;
 
       /* The person changes first, because every rule below is read AS the new person — the
          prototype reassigns the WHO/ROLE globals and then calls seesTeam()/myBook()/visible(),

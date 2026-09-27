@@ -4,54 +4,73 @@
  */
 
 import type { Cap, ImNavKey, LeadNavKey, NavItem, NavKey, PageCaps, ScreenKey, SeatKey } from "./types";
-import { ALL } from "./people";
 
+/* ===== D60 — WHO USES THIS CONSOLE (owner's decision) =========================================
+   Three seats sign in by default: the IR, the IR Manager and Digital Infrastructure — and Digital
+   Infrastructure is the only seat that reaches everything. Everybody else (the Operations Lead,
+   the BU Owner, Corporate Operations, channel partners) has no console at all until Digital
+   Infrastructure grants them a page, and then reaches exactly what was granted. Finance and
+   Marketing never sign in here: Finance works in the Investors pages. Their records
+   stay — they are names on receipts, signatures and plans — they are just never a login.
+   ============================================================================================= */
+export const DEFSEATS = ["ir","conv","ops"] as const satisfies readonly SeatKey[];   /* console access by default */
+export const NOSIGN   = ["fin","mkt","am"] as const satisfies readonly SeatKey[];    /* never sign in to this console */
+const BYGRANT_ = ["exec","bu","corp","cp"] as const satisfies readonly SeatKey[];    /* = BYGRANT (./signin) */
+const ALL_ = ["ops"] as const;                  /* reaches everything: Digital Infrastructure, alone */
+
+/* `roles` is who holds the entry BY DEFAULT. Anybody else reaches an entry only when it has been
+   granted to them by name (navFor asks the grant), and never more than the granter holds. */
 export const NAV: readonly NavItem[] = [
-  {k:"today",  t:"Today",    roles:["ir","conv","cp","exec","fin",...ALL], scoped:true},
-  {k:"leads",  t:"Leads",     roles:["ir","conv","cp","exec","fin",...ALL], scoped:true},
+  {k:"today",  t:"Today",     roles:["ir","conv",...ALL_], scoped:true},
+  {k:"leads",  t:"Leads",     roles:["ir","conv",...ALL_], scoped:true},
   /* Updates is reachable and counted, but it is not a row in the sidebar: the bell in the top bar
-     is its entry. */
-  {k:"updates",t:"Updates",   roles:["ir","conv","cp","exec","fin",...ALL], bell:true},
-  /* Capture came off the rail — it is a top-bar door and a door on every lead now, not a page
-     whose only job was to hold the form. `add`'s capability stays on the grid (PAGECAPS.add,
-     nopage:true); it is no longer a NAV row. */
-  {k:"activity",t:"Activity",  roles:["ir","conv","cp","exec","fin",...ALL]},
-  {k:"people", t:"Teams",      roles:["conv","exec",...ALL]},
-  {k:"goals",  t:"Plan",      roles:["exec","conv","mkt","fin",...ALL]},
-  {k:"events", t:"Events",    roles:["ir","conv","exec","mkt",...ALL]},
-  {k:"pay",    t:"Payments",  roles:["ir","conv","exec","fin",...ALL]},
-  {k:"docs",   t:"Documents", roles:["ir","conv","exec","fin",...ALL]},
-  {k:"xfer",   t:"Investor copies", roles:["fin","exec",...ALL]},
-  {k:"numbers",t:"Numbers",   roles:["conv","exec","fin","mkt",...ALL]},
-  /* Digital Infrastructure runs the machine; Corporate Operations reads it. Both matter: Sahil is
-     appointed under Pradeep, and a manager who cannot reach a page cannot be the ceiling for it. */
-  {k:"system", t:"System",    roles:["ops","corp"]},
-  /* everybody has one, and it is the only screen whose contents are the person reading it */
-  {k:"me",     t:"Profile",   roles:["ir","cp","conv","exec","fin","ops","bu","corp"], menu:true}
+     is its entry, and the page is what "See everything" opens. One destination, not two. */
+  {k:"updates",t:"Updates",   roles:["ir","conv",...ALL_], bell:true},
+  {k:"activity",t:"Activity", roles:["ir","conv",...ALL_]},
+  {k:"people", t:"Teams",     roles:["conv",...ALL_]},
+  {k:"goals",  t:"Plan",      roles:["conv",...ALL_]},
+  {k:"events", t:"Events",    roles:["ir","conv",...ALL_]},
+  {k:"pay",    t:"Payments",  roles:["ir","conv",...ALL_]},
+  {k:"docs",   t:"Documents", roles:["ir","conv",...ALL_]},
+  {k:"xfer",   t:"Transfers", roles:["conv",...ALL_]},
+  {k:"numbers",t:"Numbers",   roles:["conv",...ALL_]},
+  /* Digital Infrastructure runs the machine; anybody else reads it only by a grant. */
+  {k:"system", t:"System",    roles:[...ALL_]},
+  /* everybody who can sign in has one, and it is the only screen whose contents are the person
+     reading it — so a granted seat gets it with its first page, never as a grant of its own */
+  {k:"me",     t:"Profile",   roles:[...DEFSEATS,...BYGRANT_], menu:true}
 ];
 
-/**
- * What each seat can reach — a grant may never exceed the granter's own set.
- *
- * The prototype pushes `"me"` onto every seat at import time (03-app.js:176-177), because "your own
- * profile is not something a manager grants or withholds — it is you". That push is baked into the
- * literal here rather than run as a side effect.
- */
+/* D60: two lists per seat, never one. SEATSCREENS is the CEILING — every page the seat could ever
+   be granted, and the set the manager chain is checked against. SEATDEF is what the seat holds BY
+   DEFAULT, before anybody grants anything. The ceiling is Digital Infrastructure's own reach for
+   every console seat (it may grant any page to anyone), except a channel partner, who only ever
+   works leads; Finance and Marketing have no ceiling because they never sign in here.
+   (ir-merged.js:319-352; the `me` push is baked into the literals.) */
+export const FULLREACH: readonly ScreenKey[] = ["today","leads","updates","add","activity","teamscope","people","goals","events",
+                   "pay","docs","xfer","numbers","system"];
+const FULL_: ScreenKey[] = [...FULLREACH, "me"];
 export const SEATSCREENS: Record<SeatKey, ScreenKey[]> = {
-  /* the merged seat carries the union of what the three used to have. Everybody starts here; a
-     manager adds or removes per person from the grid on People. */
-  ir  :["today","leads","updates","add","activity","events","pay","docs","me"],
+  ir  :FULL_.slice(),
   cp  :["today","leads","updates","add","activity","me"],
-  fin :["today","leads","updates","activity","pay","docs","xfer","numbers","goals","me"],
-  conv:["today","leads","updates","add","activity","teamscope","people","goals","events","numbers","pay","docs","me"],
-  exec:["today","leads","updates","add","activity","teamscope","people","goals","events","xfer","numbers","pay","docs","me"],
-  ops :["today","leads","updates","add","activity","teamscope","people","goals","events","pay","docs","xfer","numbers","system","me"],
-  corp:["today","leads","updates","add","activity","teamscope","people","goals","events","pay","docs","xfer","numbers","system","me"],
-  bu  :["today","leads","updates","add","activity","teamscope","people","goals","events","pay","docs","xfer","numbers","me"],
-  mkt :["updates","add","events","goals","numbers","me"],
-  /* Account Management works on the Investors pages only (merged prototype: `am:[]`, plus `me`) */
-  am  :["me"]
+  conv:FULL_.slice(),
+  exec:FULL_.slice(),
+  ops :FULL_.slice(),
+  corp:FULL_.slice(),
+  bu  :FULL_.slice(),
+  fin :["me"],
+  am  :["me"],
+  mkt :["me"]
 };
+/* the default reach, derived from NAV so the rail and the preset can never drift; `add` (capture)
+   and `teamscope` are not rail entries, so they are named per seat */
+const SEATEXTRA: Partial<Record<SeatKey, ScreenKey[]>> = {ir:["add"], conv:["add","teamscope"], ops:["add","teamscope"]};
+export const SEATDEF: Record<SeatKey, ScreenKey[]> = Object.fromEntries(
+  (Object.keys(SEATSCREENS) as SeatKey[]).map(st => [st,
+    !(DEFSEATS as readonly string[]).includes(st) ? []
+      : FULL_.filter(p => NAV.some(n => n.k === p && (n.roles as readonly string[]).includes(st))
+                          || (SEATEXTRA[st] || []).includes(p))]),
+) as Record<SeatKey, ScreenKey[]>;
 
 /** What each screen can be allowed to do. A seat is a preset over this grid, not a separate concept. */
 export const PAGECAPS: Record<LeadNavKey, PageCaps> & Partial<Record<ImNavKey, PageCaps>> = {
@@ -72,7 +91,7 @@ export const PAGECAPS: Record<LeadNavKey, PageCaps> & Partial<Record<ImNavKey, P
   /* `perform` was the administrator's approval of a transfer. Nothing performs a transfer any
      more — the confirmed receipt does it — so the toggle came off rather than being left as a
      switch that writes an audit line and changes nothing. */
-  xfer    :{t:"Investor copies", caps:["view"]},
+  xfer    :{t:"Transfers", caps:["view"]},
   numbers :{t:"Numbers",  caps:["view"]},
   system  :{t:"System",   caps:["view","edit"]},
   me      :{t:"Profile",  caps:["view"]}
@@ -90,54 +109,26 @@ export const CAPT: Record<Cap, string> = {view:"See it", edit:"Change things", a
   };
 
 /**
- * The seat preset: which capabilities a seat gets on each page it reaches.
- *
- * The prototype declares five seats by hand and then derives the rest at import time
- * (03-app.js:206-244): `ops`, `corp` and `bu` are filled from {@link PAGECAPS}; every page a seat
- * reaches gets at least `view`, derived from {@link NAV} so the two can never drift; and any cap
- * the page does not have is dropped. The finished grid is baked in below, so nothing mutates at
- * import time — the derivation and the comments that explain it are kept as documentation.
- *
- * Derivation, verbatim from the prototype:
- * - `SEATCAPS.ops[p] = PAGECAPS[p].caps` for every page, then `ops.pay` and `ops.docs` are cut back
- *   to `["view"]`: Digital Infrastructure runs the machine and does not hold the money or the paper.
- *   The handlers have always said so; the grid used to disagree with them, which made the grid the
- *   thing that lied.
- * - `SEATCAPS.corp[p] = p==="goals" ? ["view","edit"] : ["view"]` — Corporate Operations reads the
- *   machine and sets no commercial terms (manual §7.2).
- * - `SEATCAPS.bu[p] = p==="goals" ? ["view","edit","target"] : ["view"]`, and never `system` — the
- *   BU Owner reads everything and owns the target, the extension and the refund.
- * - `today`, `updates` and `activity` are added to `ir`, `fin`, `conv` and `exec`: My day, Updates
- *   and Activity are everybody's — the seat decides scope, not admission.
+ * The seat preset: which capabilities a seat gets on each page it reaches BY DEFAULT. Only the three
+ * console seats have one. The rest start empty and are granted page by page by Digital
+ * Infrastructure; their Profile comes with the first grant, because it is them rather than a page.
+ * ir-merged.js:398-431 — the import-time derivation (ops from the whole of PAGECAPS with pay/docs cut
+ * to "view"; today/updates/activity for ir and conv; "view" on every default NAV page; caps the page
+ * lacks dropped; ir/conv pay/docs read-only) is baked into the literal below.
  */
 export const SEATCAPS: Record<SeatKey, Partial<Record<ScreenKey, Cap[]>>> = {
-  cp  :{leads:["view","edit"], add:["view","capture"], today:["view"], updates:["view"], activity:["view"], me:["view"]},
   ir  :{leads:["view","edit"], add:["view","capture"], events:["view","load"],
         today:["view"], updates:["view"], activity:["view"], pay:["view"], docs:["view"], me:["view"]},
-  /* Finance has no seat here at all. It writes in the Investor Management portal and its
-   confirmations arrive as gates on this ladder — see THE GATE, NOT A HANDOVER. */
-  fin :{leads:["view","edit"], pay:["view","record"], docs:["view","send"], xfer:["view"],
-        numbers:["view"], goals:["view"],
-        today:["view"], updates:["view"], activity:["view"], me:["view"]},
   conv:{leads:["view","edit","assign"], add:["view","capture"], activity:["view","others"],
-        people:["view","seats","roster"], goals:["view"], events:["view","edit","load"], numbers:["view"],
-        today:["view"], updates:["view"], pay:["view"], docs:["view"], me:["view"]},
-  exec:{leads:["view","assign"], add:["view"], activity:["view","others"],
-        people:["view","seats","roster"], goals:["view","edit"], events:["view","edit","load"],
-        xfer:["view"], numbers:["view"], pay:[], docs:[],
-        today:["view"], updates:["view"], me:["view"]},
-  mkt :{updates:["view"], add:["view"], events:["view","edit","load"],
-        goals:["view"], numbers:["view"]},
+        people:["view","seats","roster"], goals:["view"], events:["view","edit","load"],
+        numbers:["view"], xfer:["view"], today:["view"], updates:["view"], pay:["view"], docs:["view"], me:["view"]},
   ops :{today:["view"], leads:["view","edit","assign"], updates:["view"], add:["view","capture"],
         activity:["view","others"], people:["view","seats","roster"],
         goals:["view","edit","target"], events:["view","edit","load"],
         pay:["view"], docs:["view"], xfer:["view"], numbers:["view"],
         system:["view","edit"], me:["view"]},
-  corp:{today:["view"], leads:["view"], updates:["view"], add:["view"], activity:["view"],
-        people:["view"], goals:["view","edit"], events:["view"], pay:[], docs:[],
-        xfer:["view"], numbers:["view"], system:["view"], me:["view"]},
-  bu  :{today:["view"], leads:["view"], updates:["view"], add:["view"], activity:["view"],
-        people:["view"], goals:["view","edit","target"], events:["view"], pay:[],
-        docs:[], xfer:["view"], numbers:["view"], me:["view"]},
-  am  :{me:["view"]}
+  exec:{me:["view"]}, bu:{me:["view"]}, corp:{me:["view"]}, cp:{me:["view"]},
+  /* Finance and Marketing never sign in here. Finance writes in the Investors pages and
+     its confirmations arrive as gates on this ladder — see THE GATE, NOT A HANDOVER. */
+  fin :{}, am :{}, mkt :{}
 };

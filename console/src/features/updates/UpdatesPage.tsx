@@ -18,38 +18,39 @@
    history" groups (owner/move/team) stay open and unhideable, labelled "Needs attention" instead of
    toggling like the rest.
 
-   The redesign also moves the chronological feed behind a door (`doorRow`, 8487) instead of a
-   second card sitting under the groups — see `./Feed`, used here only for the door's count and
-   by `./drawer` as the panel's body.
+   The merged prototype (ir-merged.js:6190 `vUpdates`) puts the chronological feed behind a
+   "History · n" chip in the heading — see `./Feed`, the `updates.feed` panel's body.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { gNew, P, feedRows, navFor, unread, updateCount, updates } from "@/lib/selectors";
+import { gNew, P, feedRows, feedScope, unread, updateCount, updates } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { Chip } from "@/components/ui";
+import { useGoLead } from "@/features/leads/nav";
 import "./drawer";
 
-/* groups the prototype now keeps open and unhideable — they are true right now, not history, and
-   only shown to the people who act on them, so there is nothing to collapse */
+/* groups that are true right now, not history — "Needs attention" rather than "View updates" */
 const ACTIONABLE = new Set(["owner", "move", "team", "access"]);
 
 export function UpdatesPage() {
   const { state, dispatch } = useConsole();
   const router = useRouter();
+  const goLead = useGoLead("updates");
   const set = (patch: Partial<UiState>) => dispatch({ type: "setUi", patch });
 
   const g = updates(state), n = updateCount(state), u = unread(state);
+  const fn = feedRows(state).length;
   const NOPEN = state.ui.NOPEN ?? null;
-  const canToday = navFor(state).some((x) => x.k === "today");
+  const feedOpen = state.DRW?.k === "p:updates.feed";
+  /* D59 g3 (ir-merged.js:6194): a state group stays open only while it has something unread (or you
+     opened it); once read — one group or "Mark all as read" — it folds like every other group. */
+  const isOpen = (x: (typeof g)[number]) => NOPEN === x.k || (ACTIONABLE.has(x.k) && gNew(state, x) > 0);
+  const anyRows = g.some((x) => isOpen(x) && x.rows.some((r) => r.lead));
 
-  /* say(msg) — 03-app.js:13258 writes only into the visually hidden `#live` (`class="vh"`,
-     `aria-live="polite"`) — nothing appears on screen. The shell's own global one is still a
-     crossOwnerRequest (see the note on `ui.NOTICE` in store.tsx); until it lands, this reads the
-     string the same way — shown to a screen reader only, then cleared — rather than as a visible
-     banner nobody asked for. */
+  /* say(msg) writes only into the visually hidden live region — nothing appears on screen. */
   useEffect(() => {
     if (!state.ui.NOTICE) return;
     const t = setTimeout(() => set({ NOTICE: null }), 4000);
@@ -62,35 +63,30 @@ export function UpdatesPage() {
       <div className="ph">
         <h1>Updates</h1>
         <span className="sub">
-          {n ? "the last 7 days on your leads" + (u ? " · " + u + " new" : "") : "nothing new"}
+          {n ? "last 7 days on " + feedScope(state) + (u ? " · " + u + " new" : "") : "nothing new"}
         </span>
         <div className="sp" />
         {!!u && <Chip onClick={() => dispatch({ type: "markRead" })}>Mark all as read</Chip>}
+        {!!fn && (
+          <button type="button" className="chip" id="door-updates-feed" aria-haspopup="dialog"
+            aria-expanded={feedOpen ? "true" : "false"}
+            onClick={() => dispatch({ type: "openDrawer", k: "p:updates.feed" })}>
+            History · {fn}
+          </button>
+        )}
       </div>
 
       {state.ui.NOTICE && (
         <p className="vh" role="status" aria-live="polite" aria-atomic="true">{state.ui.NOTICE}</p>
       )}
 
-      {/* the redesign drops the two-column layout for a single `<section>` — no more `colst`
-         split (`vUpdatesSide` stays dead code, see the file note above) — and the door row below
-         renders whether or not there are any groups, so it sits inside this section rather than
-         inside the ternary. ir-console-redesigned.html:8449, 8487–8489. */}
       <section className="ux-updates ux-section">
       {!g.length
         ? (
           <div className="card">
             <div className="empty">
-              No new changes from the team. Finance confirmations, cover and ownership changes
-              appear here.
-              {canToday && (
-                <>
-                  <br />
-                  <Chip style={{ marginTop: "10px" }} onClick={() => router.push(pathOf("today"))}>
-                    Open my day
-                  </Chip>
-                </>
-              )}
+              No new changes from the team. Finance confirmations,
+              cover and ownership changes appear here.
             </div>
           </div>
         )
@@ -99,17 +95,18 @@ export function UpdatesPage() {
             <div className="card"><div className="cb" style={{ padding: 0 }}>
               {g.map((x) => {
                 const actionable = ACTIONABLE.has(x.k);
-                const expanded = actionable || NOPEN === x.k;
-                /* openGroup(k) — 03-app.js:8435. Closing reads nothing; opening is reading it —
-                   the only way a bell that counts news comes down without a blanket sweep. */
+                const expanded = isOpen(x);
+                /* openGroup(k) — ir-merged.js:6187. Closing reads nothing; opening is reading it. A
+                   state group held open only by its unread rows is read in place, not toggled. */
                 const toggle = () => {
+                  if (expanded && NOPEN !== x.k) { dispatch({ type: "markRead", k: x.k }); return; }
                   if (NOPEN === x.k) { set({ NOPEN: null }); return; }
                   set({ NOPEN: x.k });
                   dispatch({ type: "markRead", k: x.k });
                 };
                 return (
-                  <div className={`upg ${expanded ? "open" : ""}`} key={x.k}>
-                    <div className="uph" role="button" tabIndex={0} onClick={toggle}
+                  <div className={`upg ${expanded ? "open" : ""}`} id={`upg-${x.k}`} key={x.k}>
+                    <div className="uph" role="button" tabIndex={0} aria-expanded={expanded} onClick={toggle}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
                       }}>
@@ -123,9 +120,21 @@ export function UpdatesPage() {
                       <span className="sm">
                         {actionable ? "Needs attention" : expanded ? "Collapse" : "View updates"}
                       </span>
-                      {!actionable && <span className="chev">{expanded ? "▴" : "▾"}</span>}
+                      <span className="chev">{expanded ? "▴" : "▾"}</span>
                     </div>
-                    {expanded && (
+                    {expanded && (x.k === "owner" || x.k === "team") ? (
+                      <div className="cb upl">
+                        <span className="sm">{x.k === "owner"
+                          ? "They are listed once, on Leads under 'Needs an owner'."
+                          : "They are listed once, on Today in the team's queue."}</span>{" "}
+                        <Chip onClick={() => {
+                          if (x.k === "owner") { dispatch({ type: "go", v: "leads" }); router.push(pathOf("leads")); return; }
+                          dispatch({ type: "setScope", view: "today", to: "team" });
+                          dispatch({ type: "go", v: "today" });
+                          router.push(pathOf("today"));
+                        }}>{x.k === "owner" ? "Open Leads" : "Open Today"}</Chip>
+                      </div>
+                    ) : expanded ? (
                       <div className="tw"><table><tbody>
                         {x.rows.map((r, i) => {
                           const l = r.lead ? state.LEADS.find((y) => y.id === r.lead) : undefined;
@@ -134,7 +143,7 @@ export function UpdatesPage() {
                               {...(l
                                 ? {
                                   className: "k", tabIndex: 0,
-                                  onClick: () => router.push(pathOf("lead", r.lead ?? undefined)),
+                                  onClick: () => goLead(l.id),
                                 }
                                 : {})}>
                               <td style={{ width: "190px" }}><b>{l ? l.n : r.n || "—"}</b></td>
@@ -147,43 +156,20 @@ export function UpdatesPage() {
                           );
                         })}
                       </tbody></table></div>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
             </div></div>
 
-            <p className="sm" style={{ marginTop: "10px" }}>
-              Open an investor to review the change or resolve the request.
-            </p>
+            {anyRows && (
+              <p className="sm" style={{ marginTop: "10px" }}>
+                Open an investor to review the change or resolve the request.
+              </p>
+            )}
           </>
         )}
-      <FeedDoor />
       </section>
     </>
-  );
-}
-
-/* the door onto the feed panel — rendered whether or not there are any groups above it.
-   ir-console-redesigned.html:8487-8488 (`doorRow`), 2522 (`doorRow`'s own markup). */
-function FeedDoor() {
-  const { state, dispatch } = useConsole();
-  const n = feedRows(state).length;
-  const open = state.DRW?.k === "p:updates.feed";
-  return (
-    <div className="doors">
-      <button type="button" className={`door ${open ? "on" : ""}`} id="door-updates-feed"
-        aria-haspopup="dialog" aria-expanded={open ? "true" : "false"} title="Opens below"
-        onClick={() => dispatch({ type: "openDrawer", k: "p:updates.feed" })}>
-        <span className="dt">
-          <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
-            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-          Update history
-        </span>
-        <span className={`dv ${n ? "" : "q"}`}>{n ? `${n} in seven days` : "nothing yet"}</span>
-      </button>
-    </div>
   );
 }

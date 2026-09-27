@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { admitted } from "@/lib/data/admission";
 import { decodeSession, encodeSession, SESSION_COOKIE, SESSION_MAX_AGE_S } from "@/lib/data/session";
 import { fixtureSource } from "@/lib/data/source";
-import { fixtureModeOn } from "@/lib/fixture-mode";
+import { currentLane, fixtureModeOn } from "@/lib/fixture-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const body: unknown = await req.json().catch(() => null);
   const who = body && typeof body === "object" ? (body as { who?: unknown }).who : null;
   if (typeof who !== "string") return Response.json({ error: "who is required" }, { status: 400 });
-  const ds = await fixtureSource.load();
+  const ds = (await fixtureSource.loadApplied(await currentLane())).ds;
   if (!admitted(ds).includes(who)) return Response.json({ error: "No console access" }, { status: 403 });
   const session = { who, seat: ds.PEOPLE[who]!.seat };
   const jar = await cookies();
