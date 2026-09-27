@@ -37,6 +37,12 @@ const PATHS: Record<string, string> = {
   wa: "M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z",
   /* a panel with its near edge ruled off — the rail itself, so the control that moves it is a
      picture of the thing it moves rather than an arrow whose direction has to be read */
+  /* the Investors band — merge-glue.js:66-71 */
+  inv: "M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6",
+  farms: "M12 22V12M12 12C12 7 8 4 3 4c0 5 4 8 9 8zM12 12c0-4 3-7 8-7 0 4-3 7-8 7z",
+  tkt: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4zM13 5v2M13 17v2M13 11v2",
+  invupd: "M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6",
+  ins: "M3 3v18h18M7 14l4-4 4 4 5-6",
   rail: "M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM9 3v18",
 };
 

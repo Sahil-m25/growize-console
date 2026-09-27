@@ -47,7 +47,7 @@ function Body(_: DrawerProps) {
       <ul className="ux-access-list">
         {reach.map((pg) => (
           <li className="ux-access-row" key={pg}>
-            <b>{PAGECAPS[pg].t}</b>
+            <b>{PAGECAPS[pg]!.t}</b>
             <span>{capsFor(state, k, pg).map((c) => CAPT[c] || c).join(" · ")}</span>
           </li>
         ))}

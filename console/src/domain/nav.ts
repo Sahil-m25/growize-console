@@ -3,7 +3,7 @@
  * Ports `ref/03-app.js` lines 63-86 and 164-244.
  */
 
-import type { Cap, NavItem, NavKey, PageCaps, ScreenKey, SeatKey } from "./types";
+import type { Cap, ImNavKey, LeadNavKey, NavItem, NavKey, PageCaps, ScreenKey, SeatKey } from "./types";
 import { ALL } from "./people";
 
 export const NAV: readonly NavItem[] = [
@@ -54,7 +54,7 @@ export const SEATSCREENS: Record<SeatKey, ScreenKey[]> = {
 };
 
 /** What each screen can be allowed to do. A seat is a preset over this grid, not a separate concept. */
-export const PAGECAPS: Record<NavKey, PageCaps> = {
+export const PAGECAPS: Record<LeadNavKey, PageCaps> & Partial<Record<ImNavKey, PageCaps>> = {
   today   :{t:"My day",   caps:["view"]},
   leads   :{t:"Leads",    caps:["view","edit","assign"]},
   updates :{t:"Updates",  caps:["view"]},

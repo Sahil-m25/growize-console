@@ -22,9 +22,29 @@ import { TopBar } from "./TopBar";
 import { findInvestor, landSafe, mayReach, navFor } from "./nav";
 import { parentOf, pathOf, viewOf, type View } from "./routes";
 import { useThemeSync } from "./ThemeButton";
+import { curSide, MNote, useIm } from "@/features/im/host";
+import { ImDrawer, DRAWERS as IMDRAWERS } from "@/features/im/drawers";
+import { useDocked } from "./useDocked";
+
+/* the Investors drawer in the console's drawer slot — merge-glue.js vDrawer override */
+function ImDrawerSlot() {
+  const p = useIm();
+  const docked = useDocked();
+  useEffect(() => {
+    if (!p.s.ui.DRW) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") p.dispatch({ type: "closeDrawer" }); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [p]);
+  return <ImDrawer {...p} docked={docked} />;
+}
 
 /* 03-app.js:7005 — which screens get the wide pane, and which get the narrow reading column */
 const WIDE: readonly string[] = [
+  "inv",
+  "farms",
+  "tkt",
+  "invupd",
   "numbers",
   "system",
   "pay",
@@ -238,9 +258,11 @@ export function Shell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("resize", run);
   });
 
+  const side = view ? curSide(state, parentOf(view)) : "ir";
   const paneCls =
-    "pane" + (view && SOLO.includes(view) ? " solo" : view && WIDE.includes(view) ? " wide" : "");
-  const dw = state.DRW ? (drawerDef(state.DRW.k)?.w ?? DRW_DEFAULT_W) : null;
+    "pane" + (side !== "ir" ? " wide" : view && SOLO.includes(view) ? " solo" : view && WIDE.includes(view) ? " wide" : "");
+  const imW = !state.DRW && state.IMUI.DRW ? (IMDRAWERS[state.IMUI.DRW.k]?.w ?? 440) : null;
+  const dw = state.DRW ? (drawerDef(state.DRW.k)?.w ?? DRW_DEFAULT_W) : imW;
 
   return (
     <>
@@ -250,17 +272,18 @@ export function Shell({ children }: { children: ReactNode }) {
         Skip to main content
       </a>
       <div
-        className={`app${state.DRW ? " dk" : ""}${state.ui.RAILMIN ? " rc" : ""}`}
+        className={`app${state.DRW || imW != null ? " dk" : ""}${state.ui.RAILMIN ? " rc" : ""}`}
         style={dw != null ? ({ ["--dw" as string]: `${dw}px` } as CSSProperties) : undefined}
       >
         <Rail view={view} />
         <div className="main">
           <TopBar />
-          <main className={paneCls} id="pane" tabIndex={-1} key={state.WHO}>
+          <main className={paneCls} id="pane" tabIndex={-1} key={state.WHO} data-side={side === "im" ? "im" : undefined}>
+            <MNote />
             {nav.length === 0 && view !== "me" ? <NoScreens /> : blocked ? null : children}
           </main>
         </div>
-        <Drawer />
+        {state.DRW ? <Drawer /> : <ImDrawerSlot />}
       </div>
     </>
   );

@@ -89,7 +89,7 @@ export function screensOf(s: ConsoleState, k: PersonKey): NavKey[] {
   ) as NavKey[];
 }
 export const screenCount = (): number =>
-  (Object.keys(PAGECAPS) as NavKey[]).filter((p) => !PAGECAPS[p].nopage).length;
+  (Object.keys(PAGECAPS) as NavKey[]).filter((p) => !PAGECAPS[p]!.nopage).length;
 
 /** the part of somebody's access that nobody's seat gave them. 03-app.js (redesigned):2944 */
 export type CapDeviation = { p: NavKey; off: Cap[]; on: Cap[]; gone: boolean };

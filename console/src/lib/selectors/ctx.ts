@@ -55,6 +55,8 @@ export type Ctx = {
   /* ---- optional: see the note above ---- */
   AVAIL?: Record<PersonKey, Absence>;       /* who is out. Absent from the map means available. */
   PAY?: Record<LeadId, PayRec>;             /* Finance's receipts, arriving over the link */
+  /* the Investors side's records — the merged rail reads its reach (merge-glue.js) */
+  IM?: import("@/lib/im").ImData;
   CLAIM?: Record<LeadId, Claim>;            /* "the investor says they have paid" */
   REQ?: Record<LeadId, MoveReq>;            /* reassignment asks waiting on a decision */
   XFER?: XferRow[];                         /* legacy demo projections */

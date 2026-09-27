@@ -461,7 +461,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
         if (Object.keys(grid).length) CAPS[k] = grid; else delete CAPS[k];
         const d = draftOf(state);
         log(state, d, "Put access back to the seat", null,
-          P(state.PEOPLE, k).n + " · " + PAGECAPS[p].t, "admin", k);
+          P(state.PEOPLE, k).n + " · " + PAGECAPS[p]!.t, "admin", k);
         return { ...state, CAPS, LOG: d.LOG, TEMP: d.TEMP };
       }
 
@@ -479,7 +479,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const CAPS = { ...state.CAPS, [k]: { ...(state.CAPS[k] as CapGrid), [p]: cur } };
       const d = draftOf(state);
       log(state, d, "Changed access", null,
-        P(state.PEOPLE, k).n + " · " + PAGECAPS[p].t + " · " + (i >= 0 ? "removed " : "added ") + CAPT[c],
+        P(state.PEOPLE, k).n + " · " + PAGECAPS[p]!.t + " · " + (i >= 0 ? "removed " : "added ") + CAPT[c],
         "admin", k);
       return { ...state, CAPS, LOG: d.LOG, TEMP: d.TEMP, DRW: { k: "person", id: k } };
     }
@@ -690,7 +690,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       };
       const d: Draft = { LOG: state.LOG, TEMP: [g, ...state.TEMP] };
       log(state, d, "Granted temporary access", null,
-        P(state.PEOPLE, to).n + " · " + PAGECAPS[page as NavKey].t + " (" +
+        P(state.PEOPLE, to).n + " · " + PAGECAPS[page as NavKey]!.t + " (" +
           caps.map((c) => CAPT[c]).join(", ") + ") · " + TDUR[dur].t + " · " + why.trim(),
         "admin");
       return {
@@ -712,7 +712,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const TEMPON = state.TEMPON === action.id ? null : state.TEMPON;
       const d: Draft = { LOG: state.LOG, TEMP };
       log({ ...state, TEMPON }, d, "Revoked temporary access", null,
-        P(state.PEOPLE, g.to).n + " · " + PAGECAPS[g.page as NavKey].t + " · " + (g.acts || 0) +
+        P(state.PEOPLE, g.to).n + " · " + PAGECAPS[g.page as NavKey]!.t + " · " + (g.acts || 0) +
           " action" + ((g.acts || 0) === 1 ? "" : "s") +
           " recorded while it was on, and they stay recorded",
         "admin");

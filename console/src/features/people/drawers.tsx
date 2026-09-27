@@ -116,7 +116,7 @@ function TempBody() {
         <option value="">Choose a page…</option>
         {pages.map((x) => (
           <option value={x} key={x}>
-            {PAGECAPS[x as NavKey].t}
+            {PAGECAPS[x as NavKey]!.t}
             {T.to && reachBase(state.PEOPLE, T.to).includes(x) ? " — they already reach it" : ""}
           </option>
         ))}
@@ -174,7 +174,7 @@ function TempBody() {
       <p className="sm" style={{ margin: "10px 0 0" }}>
         {ok && T.to && T.page ? (
           <>
-            {P(state.PEOPLE, T.to).n} gets {PAGECAPS[T.page as NavKey].t} until{" "}
+            {P(state.PEOPLE, T.to).n} gets {PAGECAPS[T.page as NavKey]!.t} until{" "}
             {plusDays(TDUR[T.dur].days as number, state.NOW)}.
           </>
         ) : (
@@ -592,7 +592,7 @@ function PersonBody({ id }: DrawerProps) {
               {lent.map((g, i) => (
                 <span key={g.id}>
                   {i ? <br /> : null}
-                  {PAGECAPS[g.page as NavKey].t} until {g.until}
+                  {PAGECAPS[g.page as NavKey]!.t} until {g.until}
                   {g.by === state.WHO ? "" : " · by " + P(state.PEOPLE, g.by).n.split(" ")[0]}
                 </span>
               ))}
@@ -730,7 +730,7 @@ function PersonBody({ id }: DrawerProps) {
               return (
                 <details className="ux-disclosure" data-ux-key={`person-page-${k}-${pg}`} key={pg}>
                   <summary>
-                    {PAGECAPS[pg].t} · {theirs.length} allowed
+                    {PAGECAPS[pg]!.t} · {theirs.length} allowed
                     {over ? (
                       <>
                         {" "}
@@ -776,7 +776,7 @@ function PersonBody({ id }: DrawerProps) {
                     </button>
                   ) : null}
                   <div className="chips">
-                    {PAGECAPS[pg].caps.map((c) => {
+                    {PAGECAPS[pg]!.caps.map((c) => {
                       const can = mineCaps.includes(c);
                       const on = theirs.includes(c);
                       const live = can && edit && !blocked;
@@ -834,7 +834,7 @@ function PersonBody({ id }: DrawerProps) {
                   className="chip"
                   onClick={() => dispatchable({ type: "revokeTemp", id: g.id })}
                 >
-                  End {PAGECAPS[g.page as NavKey].t} access
+                  End {PAGECAPS[g.page as NavKey]!.t} access
                 </button>
               ))}
             {leaverMayManage(state, k) ? (
@@ -928,7 +928,7 @@ function CapBody({ id }: DrawerProps) {
   const { state } = useConsole();
   const [k, p, c] = String(id).split("|") as [PersonKey, NavKey, Cap];
   const has = capsFor(state, k, p).includes(c);
-  const page = PAGECAPS[p].t;
+  const page = PAGECAPS[p]!.t;
   const first = P(state.PEOPLE, k).n.split(" ")[0];
   const rest = capsFor(state, k, p)
     .filter((x) => x !== c)
@@ -991,8 +991,8 @@ function CapFoot({ id }: DrawerProps) {
   const label =
     c === "view"
       ? has
-        ? `Take ${PAGECAPS[p].t} off ${first}`
-        : `Give ${first} ${PAGECAPS[p].t}`
+        ? `Take ${PAGECAPS[p]!.t} off ${first}`
+        : `Give ${first} ${PAGECAPS[p]!.t}`
       : has
         ? `Take “${CAPT[c]}” off ${first}`
         : `Give ${first} “${CAPT[c]}”`;

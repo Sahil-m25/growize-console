@@ -31,7 +31,9 @@ import { clockDay, kolkataNow, reviveClock } from "@/lib/data/clock";
 import { emptyDataset } from "@/lib/data/empty";
 import { signInAdmits } from "@/lib/data/admission";
 import { SIGNOUTMSG, type SignOutWhy } from "@/domain";
-import type { ImData } from "@/lib/im";
+import type { ImAction, ImData, ImUi } from "@/lib/im";
+import { imReducer, initialImUi } from "@/lib/im";
+import { IM2M } from "@/domain";
 import type { DataPayload } from "@/lib/data/types";
 import type { Session } from "@/lib/data/session";
 
@@ -298,6 +300,10 @@ export type ConsoleState = {
   FINMIRROR: Dataset["FINMIRROR"];
   /* the Investors side's records — read by imHas/imReach/imTitle; its screens are a later story */
   IM: ImData;
+  /* the Investors side's own screen state (imx.js section 8 globals) and, per two-sided page, the
+     side the person chose (merge-glue.js MSIDE) */
+  IMUI: ImUi;
+  MSIDE: Record<string, "ir" | "im">;
   ui: UiState;
 };
 
@@ -316,6 +322,10 @@ export type Action =
   /* signIn(k)/signOut(why) — ir-merged.js 11072-11075 */
   | { type: "signIn"; k: PersonKey }
   | { type: "signOut"; why?: SignOutWhy }
+  /* the Investors side: every write goes through imReducer as the signed-in person */
+  | { type: "im"; a: ImAction }
+  /* setSide(k,s) — merge-glue.js:111 */
+  | { type: "setSide"; k: string; s: "ir" | "im" }
   | { type: "setPerson"; k: PersonKey }
   | { type: "setRole"; seat: SeatKey }
   | { type: "setScope"; view: "today" | "leads" | "activity"; to: Scope }
@@ -582,6 +592,8 @@ export function initialState(ds: Dataset = emptyDataset(clockDay(kolkataNow())))
   return projectInvestorCopies({
     authed: false,
     SIGNOUT: null,
+    IMUI: initialImUi(),
+    MSIDE: {},
     loaded: false,
     FIXTURES: false,
     DATAVER: 0,
@@ -638,8 +650,17 @@ function endSession(state: ConsoleState): ConsoleState {
     REFSEEN: {},
     FAILNEXT: false,
     VIEW: "today" as NavKey,
+    IMUI: initialImUi(),
+    MSIDE: {},
     ui: freshUi(state.ui.THEME, false),
   };
+}
+
+/* IMX.close() — merge-glue.js: leaving a page or opening a lead-side drawer puts the Investors
+   drawer away (its draft is stashed by the Investors reducer's own closeDrawer). */
+function imClose(state: ConsoleState): ConsoleState {
+  if (!state.IMUI.DRW) return state;
+  return { ...state, IMUI: imReducer({ data: state.IM, ui: state.IMUI }, state.WHO, { type: "closeDrawer" }).ui };
 }
 
 /* signOut(why) — ir-merged.js:11074. A typo must not produce a silent sign-out: an unknown reason
@@ -735,6 +756,24 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
     return consoleAccount(state.PEOPLE, a.k) ? reducer(opened, { type: "setPerson", k: a.k }) : opened;
   }
   if (!state.authed && a.type !== "setTheme") return state;
+  /* the Investors side (merge-glue.js IMHOOK): its writes run as the signed-in person; opening one of
+     its drawers closes the lead side's (IMHOOK.closeIR); its go(v) lands on the console page that
+     carries v, on the Investors side of it (IMHOOK.go) */
+  if (a.type === "im") {
+    const r = imReducer({ data: state.IM, ui: state.IMUI }, state.WHO, a.a);
+    let next: ConsoleState = { ...state, IM: r.data, IMUI: r.ui };
+    if (a.a.type === "openDrawer" && r.ui.DRW) next = { ...next, DRW: null };
+    if (a.a.type === "go") {
+      const k = IM2M[a.a.v] as NavKey | undefined;
+      if (k) next = { ...next, VIEW: k, DRW: null, MSIDE: { ...next.MSIDE, [k]: "im" } };
+    }
+    return next;
+  }
+  if (a.type === "setSide") {
+    return { ...imClose(state), DRW: null, MSIDE: { ...state.MSIDE, [a.k]: a.s } };
+  }
+  if (a.type === "go") state = { ...imClose(state), IMUI: { ...imClose(state).IMUI, NOTE: null } };
+  if (a.type === "openDrawer") state = imClose(state);
   if (!accountAllowed(state) && !["setPerson", "setRole", "setTheme"].includes(a.type)) return state;
   if (LEAD_WRITES.has(a.type) && !canOperateLeads(state)) return state;
   if (a.type.startsWith("pr")) return state; // Paper's source mirror is written only in Investor Management.

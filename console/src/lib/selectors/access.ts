@@ -21,6 +21,8 @@ import {
 } from "@/domain";
 import type { Person, PersonKey, SeatKey, NavKey, Lead, TempGrant, TempStateRead } from "@/domain";
 import { accessDay, dayOf } from "@/lib/format";
+import { MERGE } from "@/domain/signin";
+import { imReach } from "@/lib/im";
 import type { Cap, Ctx } from "./ctx";
 import { me, P } from "./ctx";
 import { custodian, inBook, inBookOf, lost, openable } from "./leads";
@@ -382,11 +384,36 @@ export const canInv = (ROLE: SeatKey): boolean =>
 /* ---- the nav ---------------------------------------------------------------------------------
    the gate on every route, not merely on every link: a page the seat cannot reach is refused in
    the layout as well as hidden in the rail (PORT-GUIDE, "Routing"). */
-export const navFor = (ctx: Ctx): NavItem[] => {
+export const navForIR = (ctx: Ctx): NavItem[] => {
   const g = tempOn(ctx);
   return (NAV as readonly NavItem[]).filter(n =>
     n.k !== "me" && ((n.roles as readonly string[]).includes(roleOf(ctx.PEOPLE, me(ctx))!) || (!!g && (g.page as string) === n.k))
     && may(ctx, n.k, "view")) as NavItem[];
+};
+
+/* ---- ONE CONSOLE (merge-glue.js 7-49) ----------------------------------------------------------
+   The Investors side's pages join the rail: a page on both sides is one entry, a person holding only
+   the Investors half gets it as an Investors page, and the four Investors-only pages form their own
+   band. `sidesOf` answers which halves a person holds of an entry. */
+export const MT: Record<string, string> = {today:"Today", pay:"Payments", docs:"Documents", activity:"Activity", people:"Teams", system:"System",
+  inv:"Investors", farms:"Farms", tkt:"Tickets", invupd:"Investor updates", numbers:"Numbers"};
+export const MORDER = ["today","leads","activity","events","inv","farms","tkt","invupd","pay","docs","xfer",
+  "goals","numbers","people","system","me","updates"];
+/** fuller — only the Investors half shows; section — the Investors half is a section of the lead page */
+export const MBOTH: Record<string, "fuller" | "section"> = {pay:"fuller", docs:"fuller", people:"section"};
+export const imReachOf = (ctx: Ctx): string[] =>
+  ctx.IM && ctx.WHO ? imReach({ data: ctx.IM }, ctx.WHO) : [];
+export const sidesOf = (ctx: Ctx, k: string): { ir: boolean; im: boolean } => ({
+  ir: navForIR(ctx).some(n => n.k === k),
+  im: !!MERGE[k] && imReachOf(ctx).includes(MERGE[k]),
+});
+export const navFor = (ctx: Ctx): NavItem[] => {
+  const base = navForIR(ctx), im = imReachOf(ctx);
+  if (!im.length) return base;
+  const have = new Set<string>(base.map(n => n.k)), add: NavItem[] = [];
+  Object.keys(MERGE).forEach(k => { if (im.includes(MERGE[k]!) && !have.has(k)) add.push({ k: k as NavKey, t: MT[k]!, roles: [], im: true }); });
+  if (!add.length) return base;
+  return base.concat(add).sort((a, b) => MORDER.indexOf(a.k) - MORDER.indexOf(b.k));
 };
 
 export const canReach = (ctx: Ctx, k: NavKey): boolean => k === "me" ? may(ctx, "me", "view") : navFor(ctx).some(n => n.k === k);

@@ -26,6 +26,10 @@ export const PATHS: Record<NavKey, string> = {
   numbers: "/numbers",
   system: "/system",
   me: "/me",
+  inv: "/inv",
+  farms: "/farms",
+  tkt: "/tkt",
+  invupd: "/invupd",
 } as Record<NavKey, string>;
 
 /* a record screen is reachable when its list is — the rule landSafe and go both use */

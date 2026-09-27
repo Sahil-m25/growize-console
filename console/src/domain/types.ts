@@ -49,7 +49,14 @@ export type SeatKey = "ir" | "conv" | "cp" | "mkt" | "exec" | "fin" | "am" | "op
 /** The fourteen pages in {@link NAV}, which is also every routable screen with a nav entry. */
 export type NavKey =
   | "today" | "leads" | "updates" | "add" | "activity" | "people" | "goals"
-  | "events" | "pay" | "docs" | "xfer" | "numbers" | "system" | "me";
+  | "events" | "pay" | "docs" | "xfer" | "numbers" | "system" | "me"
+  /** the Investors band (merge-glue.js MERGE): reached only through the Investors side */
+  | "inv" | "farms" | "tkt" | "invupd";
+
+/** The Investors band keys — pages drawn by the Investors side only. */
+export type ImNavKey = "inv" | "farms" | "tkt" | "invupd";
+/** Every lead-side page. */
+export type LeadNavKey = Exclude<NavKey, ImNavKey>;
 
 /** What a seat may *reach*. `teamscope` is not a page — it is the right to see other people's
  *  book — but the prototype keeps it in {@link SEATSCREENS} alongside the pages, and `seesTeam()`
@@ -81,6 +88,8 @@ export interface NavItem {
   k: NavKey;
   t: string;
   roles: readonly SeatKey[];
+  /** added by the merge: a page this person holds only on the Investors side */
+  im?: boolean;
   scoped?: boolean;
   /** Updates has no row of its own — the top bar's bell is its entry (ir-console-redesigned.html
    *  2568-2593). */

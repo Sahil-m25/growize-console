@@ -17,7 +17,7 @@ const DEFSEATS = ["ir", "conv", "ops"];
 /* hasGrant(k) — ir-merged.js:551: somebody has granted this person at least one real screen. */
 const hasGrant = (GRANT: Record<PersonKey, CapGrid>, k: PersonKey): boolean =>
   Object.entries(GRANT[k] || {}).some(([p, caps]) =>
-    p !== "me" && !!PAGECAPS[p as NavKey] && !PAGECAPS[p as NavKey].nopage && (caps || []).includes("view"));
+    p !== "me" && !!PAGECAPS[p as NavKey] && !PAGECAPS[p as NavKey]!.nopage && (caps || []).includes("view"));
 
 /** The lead side's door (D60, ir-merged.js:629): the three console seats always; a granted-only seat
  *  (exec, bu, corp, cp) while Digital Infrastructure has granted it a screen; Finance, Marketing and
