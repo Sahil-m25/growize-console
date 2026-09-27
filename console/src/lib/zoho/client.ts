@@ -142,6 +142,10 @@ export interface TimelinePage {
   readonly moreRecords: boolean;
 }
 
+/** One row of a COQL aggregate (COUNT/SUM … GROUP BY): the group keys as text or a lookup id, and
+ *  the aggregates as numbers. No other value survives the parse — it is counts, not records (D52). */
+export type AggregateRow = Readonly<Record<string, string | number | null>>;
+
 export type ZohoResult<T> =
   | { readonly ok: true; readonly value: T; readonly status: number; readonly creditsRemaining: number | null }
   | { readonly ok: false; readonly error: ZohoFailure; readonly creditsRemaining: number | null };
@@ -180,6 +184,8 @@ export interface ZohoApi<C extends Credential> {
   /** Deletes one record the person may delete (moves it to Zoho's recycle bin). Never retried: a
    *  lost reply is checked with `wasDeleted()`. Used to take back a write inside its Undo window. */
   deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
+  /** A COQL aggregate query (must use COUNT/SUM/MIN/MAX/AVG). Rows carry only group keys and numbers. */
+  aggregate(as: C, selectQuery: string, options?: CallOptions): Promise<ZohoResult<readonly AggregateRow[]>>;
   /** GET /{module}/{id}/__timeline — who changed which fields when, newest first; values dropped. */
   timeline(as: C, module: string, id: string, options?: CallOptions & { readonly perPage?: number }): Promise<ZohoResult<TimelinePage>>;
 }
@@ -940,6 +946,35 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         recordIds: [], logReturnedIds: true, signal: opts.signal,
       });
       return out.ok ? done(pageOf(out.result), out) : out;
+    },
+
+    async aggregate(as, selectQuery, opts = {}) {
+      if (typeof selectQuery !== "string" || !/^\s*select\s/i.test(selectQuery) || !/\b(count|sum|min|max|avg)\s*\(/i.test(selectQuery) || selectQuery.length > 20_000) {
+        throw new TypeError("aggregate() takes one SELECT with COUNT/SUM/MIN/MAX/AVG.");
+      }
+      const out = await execute(as, {
+        op: "coql-aggregate", method: "POST", path: "/coql", endpoint: "/coql", body: { select_query: selectQuery },
+        shape: { op: "coql" }, idempotent: true, perRecord: false, maxRows: 2_000,
+        recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done([], out);
+      const data = obj(out.result.body)?.data;
+      if (!Array.isArray(data)) return done([], out);
+      const rows: AggregateRow[] = [];
+      for (const raw of data) {
+        const r = obj(raw);
+        if (!r) continue;
+        const row: Record<string, string | number | null> = {};
+        for (const [k, v] of Object.entries(r)) {
+          if (typeof v === "number" && Number.isFinite(v)) row[k] = v;
+          else if (typeof v === "string") row[k] = /^\d+(\.\d+)?$/.test(v) && /\(/.test(k) ? Number(v) : v.slice(0, 120);
+          else if (v === null) row[k] = null;
+          else { const id = obj(v)?.id; row[k] = typeof id === "string" && RECORD.test(id) ? id : null; }
+        }
+        rows.push(Object.freeze(row));
+      }
+      return done(Object.freeze(rows), out);
     },
 
     async insert(as, module, records, opts = {}) {

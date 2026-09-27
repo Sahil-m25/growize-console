@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Forecast": "Commit",
+        "COUNT(id)": 2,
+        "SUM(Units_Interested)": 5
+      },
+      {
+        "Forecast": "Pipeline",
+        "COUNT(id)": 3,
+        "SUM(Units_Interested)": 4
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

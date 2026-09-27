@@ -1,6 +1,6 @@
-/* M16-S01 ASSIGNMENTS BY IR
+/* NUMBERS REGRESSION (M16-S01 assignments, M16-S03 sections)
  *
- * Run from console/: node src/server/numbers/assignments.test.cjs
+ * Run from console/: node src/server/numbers/numbers.test.cjs
  *
  * Type-checks the capture boundary with the project's TypeScript, then drives it through the real
  * Zoho client with sanitized recorded responses only. No request reaches Zoho; every fixture is
@@ -43,6 +43,8 @@ const sources = [
   'lib/zoho/cache.ts',
   'server/oauth/seat.ts',
   'server/numbers/assignments.ts',
+  'domain/plan.ts',
+  'server/numbers/sections.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -68,6 +70,7 @@ const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
 const { createScopedCache } = load(path.join('lib', 'zoho', 'cache.js'));
 const { computeAssignments, createAssignmentsReport, periodBounds } = load(path.join('server', 'numbers', 'assignments.js'));
+const { createNumbersSections } = load(path.join('server', 'numbers', 'sections.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -142,4 +145,64 @@ test('a second read inside five minutes is served from the scope-keyed cache', a
   const again = await r.svc.report(principal(MANAGER));
   assert.equal(r.calls.length, n);
   assert.equal(again.value.stale, false);
+});
+
+// ---------------- M16-S03 Numbers sections ----------------
+
+function sectionsRig(overrides = {}) {
+  const queries = [];
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(createMemorySink()), maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => { const q = JSON.parse(init.body).select_query; queries.push(q);
+      const name = /group by Lead_Source/.test(q) ? 'agg.sources' : /group by Owner/.test(q) ? 'agg.owners' : /group by Forecast/.test(q) ? 'agg.forecast' : 'agg.count';
+      return toResponse(recorded(name)); } });
+  const base = (c) => c.userId === MANAGER
+    ? { actor: { userId: MANAGER, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'ir-manager' }, seesNumbers: true, seesMoney: false,
+        ownerIds: [IR, IR2], orgWide: false, unassignedQueueUserId: null, scope: { kind: 'subtree', managerId: MANAGER } }
+    : { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, seesNumbers: true, seesMoney: true,
+        ownerIds: [IR, IR2], orgWide: false, unassignedQueueUserId: null, scope: { kind: 'subtree', managerId: MANAGER } };
+  const access = { async recheck(c) { return overrides.recheck ? overrides.recheck(base(c)) : base(c); } };
+  const cache = overrides.cache ?? createScopedCache({ clock: () => NOW });
+  return { svc: createNumbersSections({ crm, access, cache, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW }), queries, cache };
+}
+
+test('Funnel is worked out from the stage stamps, one COUNT per rung, in the person\'s scope', async () => {
+  const r = sectionsRig();
+  const res = await r.svc.read(principal(MANAGER), 'funnel');
+  assert.equal(res.ok, true);
+  assert.equal(Object.keys(res.value.counts).length, 9);
+  assert.equal(r.queries.length, 9);
+  assert.match(r.queries[0], new RegExp(`^select COUNT\\(id\\) from Leads where \\(Owner in \\('${IR}', '${IR2}'\\)\\)$`));
+  assert.match(r.queries[2], /Qualified_At is not null/);
+});
+
+test('Sources, Owners and Why we lose are grouped counts; no name leaves', async () => {
+  const r = sectionsRig();
+  const s = await r.svc.read(principal(MANAGER), 'sources');
+  assert.deepEqual({ ...s.value.counts }, { Events: 4, Website: 2, none: 1 });
+  const o = await r.svc.read(principal(MANAGER), 'owners');
+  assert.deepEqual({ ...o.value.counts }, { [IR]: 5, [IR2]: 2 });
+  assert.ok(!JSON.stringify(o).includes('Synthetic IR'));
+});
+
+test('no rupee value for a seat that may not see money; units only', async () => {
+  let r = sectionsRig();
+  let res = await r.svc.read(principal(MANAGER), 'forecast');
+  assert.equal(res.value.money, null);
+  assert.deepEqual({ ...res.value.counts }, { 'leads:Commit': 2, 'units:Commit': 5, 'leads:Pipeline': 3, 'units:Pipeline': 4 });
+  r = sectionsRig({ recheck: (b) => ({ ...b, seesMoney: true, actor: { ...b.actor, seat: 'digital-infrastructure' } }) });
+  res = await r.svc.read(principal(MANAGER), 'forecast');
+  assert.deepEqual({ ...res.value.money }, { 'value:Commit': 12500000, 'value:Pipeline': 10000000 });
+});
+
+test('two seats with different visibility never share cached figures (D53)', async () => {
+  const cache = createScopedCache({ clock: () => NOW });
+  const m = sectionsRig({ cache });
+  await m.svc.read(principal(MANAGER), 'sources');
+  const i = sectionsRig({ cache });
+  await i.svc.read(principal(IR), 'sources');
+  assert.equal(i.queries.length, 1, 'the IR\'s scope is its own key: a fresh load, not the manager\'s figures');
+  assert.match(i.queries[0], new RegExp(`Owner in \\('${IR}'\\)`), 'an IR counts only their own book');
+  const again = sectionsRig({ cache });
+  await again.svc.read(principal(MANAGER), 'sources');
+  assert.equal(again.queries.length, 0, 'the manager\'s own key is served from cache');
 });

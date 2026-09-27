@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Lead_Source": "Events",
+        "COUNT(id)": 4
+      },
+      {
+        "Lead_Source": "Website",
+        "COUNT(id)": 2
+      },
+      {
+        "Lead_Source": null,
+        "COUNT(id)": 1
+      }
+    ],
+    "info": {
+      "count": 3,
+      "more_records": false
+    }
+  }
+}

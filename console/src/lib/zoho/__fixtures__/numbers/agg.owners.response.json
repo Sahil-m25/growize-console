@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "Synthetic IR"
+        },
+        "COUNT(id)": 5
+      },
+      {
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "COUNT(id)": 2
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}
