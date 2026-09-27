@@ -364,6 +364,27 @@ export function LeadPage({ id }: { id: string }) {
   }, [fileDrw, state.ui.FILEON, dispatch]);
 
   const lpl = useLp(l0 || ({ id } as Lead));
+  /* g1LeadFlow(id,what,channel) — ir-merged.js:4215: a Today contact button lands here and the
+     page opens its own logging flow on that channel (lpOpen), once. */
+  const hand = state.ui.LPFLOW as { id: string; what: "log" | "email"; channel?: string | null } | null | undefined;
+  const handFor = hand && hand.id === id && l0 ? hand : null;
+  useEffect(() => {
+    if (!handFor) return;
+    dispatch({ type: "setUi", patch: { LPFLOW: null } });
+    lpl.open(handFor.what, handFor.channel || undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handFor]);
+  /* goPaper(id) — ir-merged.js:3292: open with the Paperwork row in view, flashed once. */
+  const focus = state.ui.LPFOCUS === id && !!l0;
+  useEffect(() => {
+    if (!focus) return;
+    const h = requestAnimationFrame(() => {
+      const n = document.querySelector(".d60d-paper");
+      if (n) { n.scrollIntoView({ block: "center" }); n.classList.add("d61-flash"); }
+      dispatch({ type: "setUi", patch: { LPFOCUS: null } });
+    });
+    return () => cancelAnimationFrame(h);
+  }, [focus, dispatch]);
   if (!l0)
     return (
       <>

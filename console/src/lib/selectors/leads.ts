@@ -26,7 +26,7 @@ import {
 import type { Ctx } from "./ctx";
 import { me, P } from "./ctx";
 import {
-  canAssign, canDecideMove, canEdit, canOperateLeads, canReadFinance, canViewInvestorCopy, chainOf, consoleAccount, isFin, isIR, may, roleOf, seeMoney, seesTeam,
+  canAssign, canDecideMove, canWork, canEdit, canOperateLeads, canReadFinance, canViewInvestorCopy, chainOf, consoleAccount, isFin, isIR, may, roleOf, seeMoney, seesTeam,
 } from "./access";
 import { avail, absRec, absFrom, absTo, outFor, outTo, logReadable, supervisedActors } from "./activity";
 import { prDone, prMine, prNext, prAt, ndaOK, suppOK } from "./paper";
@@ -513,6 +513,18 @@ export function paperNow(ctx: Ctx, l: Lead): PaperNow {
     R: null, n: { k: all ? "done" : "wait" } as ReturnType<typeof prNext>, mine: false, label: lab,
     short: all ? "both signed" : lab, cls: all || ndaOK(ctx, l) ? "" : "q",
   };
+}
+
+/* PRSTEP / irPaperStep(l) — ir-merged.js:3290. The IR's one paperwork step on this lead right now,
+   or null — the "Your move · …" chip on Today and Documents (D61). */
+export const PRSTEP: Record<string, string> = {
+  told: "Tell them it's sent", said: "Chase the signature", draft: "Send the draft", agreed: "Get the final draft agreed",
+};
+export function irPaperStep(ctx: Ctx, l: Lead | null | undefined): { R: NonNullable<PaperNow["R"]>; k: string; t: string } | null {
+  const pn = l ? paperNow(ctx, l) : null;
+  const k = pn && pn.n && "k" in pn.n ? String(pn.n.k) : "";
+  const who = pn && pn.n && "who" in pn.n ? (pn.n as { who?: string | null }).who : undefined;
+  return pn && pn.R && who === "IR" && canWork(ctx, l) && PRSTEP[k] ? { R: pn.R, k, t: PRSTEP[k]! } : null;
 }
 
 /* ===== WHAT THIS LEAD NEEDS NEXT, in the person's own words ================================= */

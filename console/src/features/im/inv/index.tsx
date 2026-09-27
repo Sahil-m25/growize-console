@@ -43,11 +43,12 @@ function VInv({ s, me, dispatch }: ImPageProps) {
   return (
     <>
       <div className="ph"><h1>{am ? (who(s, me).r === "kam" ? "My accounts" : "Accounts") : "Investors"}</h1>
-        <span className="sub">{base.length + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (allocated(s) + reserved(s)) + " units")}</span>
+        <span className="sub" id="inv-sub">{base.length + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (allocated(s) + reserved(s)) + " units")}</span>
         <div className="sp" />
         <AddInvestorButton s={s} me={me} dispatch={dispatch} />
         <input className="inp" style={{ width: 210 }} placeholder="Name, ARL ID, city…" value={s.ui.IQ}
-          aria-label="Search investors — name, ARL ID, city, phone or farm"
+          /* named by the heading row's own subtitle, as the prototype's unlabeled box is read */
+          aria-labelledby="inv-sub"
           id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
       <div className="secbar">
         <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{base.length}</i></button>
