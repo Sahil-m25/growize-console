@@ -116,10 +116,12 @@ const failed = (recording) => {
 const credential = serviceCredential('provider-callback', {
   access_token: ACCESS_TOKEN,
   api_domain: 'https://www.zohoapis.in',
+  expires_in: 3600,
 });
 const refreshedCredential = serviceCredential('provider-callback', {
   access_token: 'synthetic-refreshed-access-token-never-live',
   api_domain: 'https://www.zohoapis.in',
+  expires_in: 3600,
 });
 
 function replyFrom(recording) {
@@ -329,6 +331,7 @@ test('Sign origin and service credentials enforce allowlist, India DC, provenanc
   const wrongDc = serviceCredential('provider-callback', {
     access_token: 'synthetic-wrong-dc-token',
     api_domain: 'https://www.zohoapis.com',
+    expires_in: 3600,
   });
   await assert.rejects(sign.getRequest(wrongDc, REQUEST_ID), /same data centre/);
 

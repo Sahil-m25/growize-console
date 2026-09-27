@@ -64,7 +64,12 @@ export function zohoSignWebhookDeps(): ZohoSignWebhookDeps {
     log,
     // A webhook must answer promptly.  Redelivery is the retry mechanism; this
     // request path never sleeps through client backoff.
-    crm: createZohoServiceClient({ gate, log, maxAttempts: 1 }),
+    crm: createZohoServiceClient({
+      gate,
+      log,
+      recordIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"),
+      maxAttempts: 1,
+    }),
     sign: createZohoSignClient({ origin, gate, log, maxAttempts: 1 }),
   };
 }

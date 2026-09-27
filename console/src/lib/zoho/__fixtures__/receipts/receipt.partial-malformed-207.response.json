@@ -1,0 +1,27 @@
+{
+  "status": 207,
+  "headers": {
+    "content-type": "application/json",
+    "x-api-credits-remaining": "41989"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740993005"
+        },
+        "message": "synthetic first outcome",
+        "status": "success"
+      },
+      {
+        "code": "INVALID_DATA",
+        "details": {
+          "api_name": "Amount"
+        },
+        "message": "synthetic impossible second outcome",
+        "status": "error"
+      }
+    ]
+  }
+}

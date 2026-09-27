@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740993001",
+        "Customer": {
+          "id": "9007199254740993002",
+          "name": "Synthetic Fixture Investor"
+        },
+        "LLP": {
+          "id": "9007199254740993003",
+          "name": "Synthetic Fixture Farm LLP"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 1,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Supplementary_Agreement": [
+          {
+            "file_Id": "ZFS_encrypted_fixture_9xQ2Lm7N",
+            "file_Name": "Synthetic supplementary agreement.pdf"
+          }
+        ],
+        "Supplementary_Signed_Via": "Zoho Sign – Aadhaar",
+        "Supplementary_Sign_Req_Id": "9007199254740993007",
+        "Supplementary_Verified_At": "2026-09-01T10:15:00+05:30",
+        "Hold_Until": "2026-10-07",
+        "Hold_Extension_State": "Approved",
+        "Hold_Extension_Decided_At": "2026-09-02T12:30:00+05:30",
+        "Modified_Time": "2026-09-02T12:31:00+05:30"
+      }
+    ]
+  }
+}

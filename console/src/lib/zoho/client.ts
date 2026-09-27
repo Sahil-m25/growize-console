@@ -12,8 +12,9 @@
  * are exactly two kinds and no third: a `UserCredential` — the signed-in human's own access token —
  * and a `ServiceCredential` for one of the four background jobs D53 names. `ZohoClient` accepts only
  * the first and `ZohoServiceClient` only the second. They are branded so neither can be passed where
- * the other is expected, minted only by `userCredential()` / `serviceCredential()`, and checked again
- * at runtime. There is no admin credential type to reach for.
+ * the other is expected. A user credential is minted only after that token itself answers Zoho's
+ * CurrentUser endpoint, so callers cannot choose the actor written to Plane B or receipt HMACs.
+ * There is no admin credential type to reach for.
  *
  * The API domain is whatever the token response said in `api_domain` — `.in`, `.com`, `.eu`, or a
  * data centre that does not exist yet — never a constant here. It is checked to be an https Zoho API
@@ -43,10 +44,11 @@ import {
   type RecordOutcome,
   type ZohoClassified,
   type ZohoFailure,
+  type ZohoFailureKind,
   type ZohoSuccess,
 } from "./errors";
 import { classOf, GateQueueFullError, type CallClass, type CallShape, type Gate, type GateLease } from "./gate";
-import { ACTOR_ID, type HttpMethod, type LogActor, type OpsLog } from "./log";
+import { RECORD_ID, type HttpMethod, type LogActor, type OpsLog } from "./log";
 
 export const API_VERSION = "v8";
 export const MAX_UPSERT_RECORDS = 100;
@@ -54,6 +56,9 @@ export const MAX_ATTEMPTS = 5;
 export const MAX_FIELDS = 50;
 export const DELETED_PAGE_SIZE = 200;
 export const DEFAULT_DELETED_PAGES = 5;
+export const USER_IDENTITY_TIMEOUT_MS = 10_000;
+export const MAX_TOKEN_LIFETIME_SECONDS = 24 * 60 * 60;
+export const MAX_ZOHO_RESPONSE_BYTES = 5 * 1024 * 1024;
 /**
  * Fields a blueprint owns, per module: `update()`/`upsert()` refuse to write them (D45: a stage
  * change is a transition, never a field write). The Leads rung field's real API name belongs to
@@ -148,6 +153,9 @@ export interface ZohoApi<C extends Credential> {
   getRelated(as: C, module: string, id: string, relatedList: string, options: PageOptions & { readonly fields: readonly string[] }): Promise<ZohoResult<ZohoPage>>;
   search(as: C, module: string, query: SearchQuery, options?: PageOptions): Promise<ZohoResult<ZohoPage>>;
   coql(as: C, selectQuery: string, options?: CallOptions): Promise<ZohoResult<ZohoPage>>;
+  /** Create records without update-on-duplicate semantics. The caller owns any natural-key
+   *  idempotency check before retrying an ambiguous response. */
+  insert(as: C, module: string, records: readonly ZohoFields[], options?: CallOptions): Promise<ZohoResult<readonly RecordOutcome[]>>;
   update(as: C, module: string, id: string, fields: ZohoFields, options: UpdateOptions): Promise<ZohoResult<WriteAck>>;
   upsert(as: C, module: string, records: readonly ZohoFields[], duplicateCheckFields: readonly string[], options?: CallOptions): Promise<ZohoResult<readonly RecordOutcome[]>>;
   blueprintTransition(as: C, module: string, id: string, transitionId: string, data: ZohoFields, options?: CallOptions): Promise<ZohoResult<{ readonly transitioned: true }>>;
@@ -163,6 +171,14 @@ export type ZohoServiceClient = ZohoApi<ServiceCredential>;
 export interface FetchResponseLike {
   readonly status: number;
   readonly headers: { get(name: string): string | null };
+  /** A bounded reader is mandatory; non-streaming injected transports are refused fail-closed. */
+  readonly body: {
+    getReader(): {
+      read(): Promise<{ readonly done: boolean; readonly value?: Uint8Array }>;
+      cancel(reason?: unknown): Promise<void>;
+      releaseLock?(): void;
+    };
+  } | null;
   text(): Promise<string>;
 }
 export type FetchLike = (
@@ -173,6 +189,8 @@ export type FetchLike = (
 export interface ZohoClientOptions {
   readonly gate: Gate;
   readonly log: OpsLog;
+  /** Stable numeric prefix shared by this CRM org's record, attachment and user ids; Plane B drops every other id. */
+  readonly recordIdPrefix: string;
   readonly fetch?: FetchLike;
   readonly clock?: () => number;
   readonly random?: () => number;
@@ -217,15 +235,45 @@ export function apiDomainOf(raw: unknown): ApiDomain {
 
 type Grant = { readonly accessToken: string; readonly apiDomain: ApiDomain; readonly expiresInMs: number | null };
 
-function grantOf(tokenResponse: unknown): Grant {
+export type UserIdentityFetchLike = (
+  url: string,
+  init: {
+    readonly method: "GET";
+    readonly headers: Readonly<Record<string, string>>;
+    readonly redirect: "error";
+    readonly signal?: AbortSignal;
+  },
+) => Promise<FetchResponseLike>;
+
+export interface UserCredentialOptions {
+  /** Stable numeric prefix for this CRM org; the token-authenticated user id must belong to it. */
+  readonly recordIdPrefix: string;
+  readonly gate: Gate;
+  readonly log: OpsLog;
+  readonly fetch?: UserIdentityFetchLike;
+  /** Sampled before the identity request, so network latency never extends token expiry. */
+  readonly clock?: () => number;
+  readonly signal?: AbortSignal;
+}
+
+function grantOf(tokenResponse: unknown, requireExpiry = false): Grant {
   const g = typeof tokenResponse === "object" && tokenResponse !== null ? (tokenResponse as Record<string, unknown>) : null;
   if (!g || typeof g.access_token !== "string" || g.access_token === "") throw new TypeError("A Zoho token response must carry access_token.");
-  const expiresIn = typeof g.expires_in === "number" && Number.isFinite(g.expires_in) && g.expires_in > 0 ? g.expires_in * 1000 : null;
+  const expirySeconds = typeof g.expires_in === "number" && Number.isSafeInteger(g.expires_in)
+    && g.expires_in > 0 && g.expires_in <= MAX_TOKEN_LIFETIME_SECONDS
+    ? g.expires_in
+    : null;
+  if (requireExpiry && expirySeconds === null) {
+    throw new TypeError("A Zoho token response must carry a bounded expires_in value.");
+  }
+  const expiresIn = expirySeconds === null ? null : expirySeconds * 1000;
   return { accessToken: g.access_token, apiDomain: apiDomainOf(g.api_domain), expiresInMs: expiresIn };
 }
 
 function mint(fields: { kind: "user"; userId: string } | { kind: "service"; job: ServiceJob }, grant: Grant, now: number): object {
+  if (!Number.isSafeInteger(now) || now < 0) throw new TypeError("Credential issue time must be a non-negative safe integer.");
   const expiresAt = grant.expiresInMs === null ? null : now + grant.expiresInMs;
+  if (expiresAt !== null && !Number.isSafeInteger(expiresAt)) throw new TypeError("Credential expiry is outside the supported time range.");
   const visible = { ...fields, apiDomain: grant.apiDomain, expiresAt };
   const credential = { ...visible };
   Object.defineProperty(credential, "accessToken", { value: grant.accessToken, enumerable: false });
@@ -235,16 +283,167 @@ function mint(fields: { kind: "user"; userId: string } | { kind: "service"; job:
   return credential;
 }
 
-/** The acting human's credential, from their own OAuth token response (D53). */
-export function userCredential(userId: string, tokenResponse: unknown, now: number = Date.now()): UserCredential {
-  if (typeof userId !== "string" || !ACTOR_ID.test(userId)) throw new TypeError("userId is the acting person's id (letters, digits, . _ -), never an email.");
-  return mint({ kind: "user", userId }, grantOf(tokenResponse), now) as UserCredential;
+/**
+ * Mint the acting human's credential only after their token identifies itself to Zoho (D53).
+ * The response body is never logged or returned; failure messages contain no token or identity.
+ */
+export async function userCredential(
+  tokenResponse: unknown,
+  options: UserCredentialOptions,
+): Promise<UserCredential> {
+  if (!options || typeof options !== "object"
+    || typeof options.recordIdPrefix !== "string"
+    || !/^\d{6,16}$/.test(options.recordIdPrefix)
+    || !options.gate || typeof options.gate.acquire !== "function"
+    || !options.log || typeof options.log.call !== "function") {
+    throw new TypeError("User credential recordIdPrefix must be 6–16 digits from this CRM org.");
+  }
+  const recordIdPrefix = options.recordIdPrefix;
+  const gate = options.gate;
+  const log = options.log;
+  const credentialClock = options.clock ?? Date.now;
+  const callerSignal = options.signal;
+  const grant = grantOf(tokenResponse, true);
+  let issuedAt: number;
+  try {
+    issuedAt = credentialClock();
+  } catch {
+    throw new TypeError("User credential clock is unavailable.");
+  }
+  if (!Number.isSafeInteger(issuedAt) || issuedAt < 0) {
+    throw new TypeError("User credential clock must return a non-negative safe integer.");
+  }
+  const fetchIdentity: UserIdentityFetchLike = options.fetch
+    ?? ((url, init) => fetch(url, init));
+  const deadline = new AbortController();
+  const abortFromCaller = () => deadline.abort();
+  if (callerSignal?.aborted) deadline.abort();
+  else callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  const timer = setTimeout(() => deadline.abort(), USER_IDENTITY_TIMEOUT_MS);
+  timer.unref?.();
+  const finish = () => {
+    clearTimeout(timer);
+    callerSignal?.removeEventListener("abort", abortFromCaller);
+  };
+  const sampledClock = (): number => {
+    try {
+      const value = credentialClock();
+      return Number.isSafeInteger(value) && value >= 0 ? value : issuedAt;
+    } catch {
+      return issuedAt;
+    }
+  };
+  let lease: GateLease;
+  try {
+    lease = await gate.acquire("simple", deadline.signal);
+  } catch (error) {
+    const errorClass: ZohoFailureKind = error instanceof GateQueueFullError ? "busy" : "aborted";
+    log.call({
+      at: issuedAt,
+      actor: { kind: "user", userId: "unrecognised" },
+      op: "currentUser",
+      method: "GET",
+      endpoint: "/users",
+      callClass: "simple",
+      status: null,
+      durationMs: 0,
+      gateWaitMs: Math.max(0, sampledClock() - issuedAt),
+      attempt: 1,
+      creditsRemaining: null,
+      errorClass,
+      recordIds: [],
+    });
+    finish();
+    throw new TypeError("Zoho CurrentUser verification failed.");
+  }
+  const startedAt = sampledClock();
+  let status: number | null = null;
+  let creditsRemaining: number | null = null;
+  let errorClass: ZohoFailureKind | null = null;
+  let userId: string | null = null;
+  try {
+    let response: FetchResponseLike;
+    try {
+      response = await fetchIdentity(`${grant.apiDomain}/crm/${API_VERSION}/users?type=CurrentUser`, {
+        method: "GET",
+        headers: { Accept: "application/json", Authorization: `Zoho-oauthtoken ${grant.accessToken}` },
+        redirect: "error",
+        signal: deadline.signal,
+      });
+      status = response.status;
+      creditsRemaining = parseCreditsRemaining(response.headers.get(CREDITS_HEADER));
+    } catch {
+      errorClass = deadline.signal.aborted ? "aborted" : "network";
+      throw new TypeError("Zoho CurrentUser verification failed.");
+    }
+    const read = await readBoundedResponse(response, 65_536, deadline.signal);
+    if (!read.ok) {
+      errorClass = read.reason === "aborted" ? "aborted"
+        : read.reason === "read-failed" ? "network"
+          : "unexpected";
+      throw new TypeError("Zoho CurrentUser verification failed.");
+    }
+    const text = read.text;
+    if (status !== 200) {
+      const classified = classifyResponse({ status, body: null });
+      errorClass = isFailure(classified) ? classified.kind : "unexpected";
+      throw new TypeError("Zoho CurrentUser verification failed.");
+    }
+    if (text.length === 0) {
+      errorClass = "unexpected";
+      throw new TypeError("Zoho CurrentUser verification failed.");
+    }
+    let body: unknown;
+    try {
+      body = JSON.parse(text) as unknown;
+    } catch {
+      errorClass = "unexpected";
+      throw new TypeError("Zoho CurrentUser verification failed.");
+    }
+    const root = typeof body === "object" && body !== null && !Array.isArray(body)
+      ? body as Readonly<Record<string, unknown>>
+      : null;
+    const users = root?.users;
+    const current = Array.isArray(users) && users.length === 1
+      && typeof users[0] === "object" && users[0] !== null && !Array.isArray(users[0])
+      ? users[0] as Readonly<Record<string, unknown>>
+      : null;
+    const candidate = current?.id;
+    if (typeof candidate !== "string" || !RECORD_ID.test(candidate) || !candidate.startsWith(recordIdPrefix)
+      || current?.status !== "active") {
+      errorClass = "unexpected";
+      throw new TypeError("Zoho CurrentUser verification failed.");
+    }
+    userId = candidate;
+  } catch {
+    throw new TypeError("Zoho CurrentUser verification failed.");
+  } finally {
+    lease.release();
+    log.call({
+      at: startedAt,
+      actor: { kind: "user", userId: userId ?? "unrecognised" },
+      op: "currentUser",
+      method: "GET",
+      endpoint: "/users",
+      callClass: "simple",
+      status,
+      durationMs: Math.max(0, sampledClock() - startedAt),
+      gateWaitMs: lease.waitedMs,
+      attempt: 1,
+      creditsRemaining,
+      errorClass,
+      recordIds: [],
+    });
+    finish();
+  }
+  if (userId === null) throw new TypeError("Zoho CurrentUser verification failed.");
+  return mint({ kind: "user", userId }, grant, issuedAt) as UserCredential;
 }
 
 /** A background job's credential (D53's list). There is no job called "admin". */
 export function serviceCredential(job: ServiceJob, tokenResponse: unknown, now: number = Date.now()): ServiceCredential {
   if (!SERVICE_JOBS.has(job)) throw new TypeError(`"${String(job)}" is not a background job D53 allows a service token for.`);
-  return mint({ kind: "service", job }, grantOf(tokenResponse), now) as ServiceCredential;
+  return mint({ kind: "service", job }, grantOf(tokenResponse, true), now) as ServiceCredential;
 }
 
 function assertCredential(credential: unknown, kind: Credential["kind"]): asserts credential is Credential {
@@ -254,6 +453,14 @@ function assertCredential(credential: unknown, kind: Credential["kind"]): assert
   if ((credential as Credential).kind !== kind) {
     throw new TypeError(kind === "user" ? "A service credential never serves a screen (D53)." : "A person's token is not a background job's (D53).");
   }
+}
+
+/** Runtime provenance check for a signed-in person's credential at server-domain boundaries. */
+export function isUserCredential(credential: unknown): credential is UserCredential {
+  return typeof credential === "object"
+    && credential !== null
+    && mintedCredentials.has(credential)
+    && (credential as Credential).kind === "user";
 }
 
 /** Runtime provenance check for server integrations that operate outside the CRM executor. */
@@ -358,6 +565,105 @@ function parseJson(text: string): unknown {
   }
 }
 
+type BoundedResponseText =
+  | { readonly ok: true; readonly text: string }
+  | { readonly ok: false; readonly reason: "aborted" | "too-large" | "invalid-utf8" | "malformed" | "read-failed" };
+
+function declaredContentLength(response: FetchResponseLike): number | null {
+  const raw = response.headers.get("Content-Length");
+  if (raw === null || !/^(?:0|[1-9]\d*)$/.test(raw)) return null;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) ? value : null;
+}
+
+/** Read while the gate lease is held, refusing before more than maxBytes enters application memory. */
+async function readBoundedResponse(
+  response: FetchResponseLike,
+  maxBytes: number,
+  signal?: AbortSignal,
+): Promise<BoundedResponseText> {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) return { ok: false, reason: "malformed" };
+  const declared = declaredContentLength(response);
+  if (declared !== null && declared > maxBytes) {
+    if (response.body) {
+      try {
+        const reader = response.body.getReader();
+        await reader.cancel("response-too-large");
+        reader.releaseLock?.();
+      } catch {
+        // The refusal is already determined; cancellation is best-effort.
+      }
+    }
+    return { ok: false, reason: "too-large" };
+  }
+
+  if (response.body) {
+    let reader: ReturnType<NonNullable<FetchResponseLike["body"]>["getReader"]>;
+    try {
+      reader = response.body.getReader();
+    } catch {
+      return { ok: false, reason: "malformed" };
+    }
+    let aborted = signal?.aborted === true;
+    const cancel = (reason: unknown): Promise<void> => reader.cancel(reason).catch(() => undefined);
+    const abort = () => {
+      aborted = true;
+      void cancel(signal?.reason);
+    };
+    if (!aborted) signal?.addEventListener("abort", abort, { once: true });
+    try {
+      if (aborted) {
+        await cancel(signal?.reason);
+        return { ok: false, reason: "aborted" };
+      }
+      const decoder = new TextDecoder("utf-8", { fatal: true });
+      let bytes = 0;
+      let text = "";
+      for (;;) {
+        let chunk: Awaited<ReturnType<typeof reader.read>>;
+        try {
+          chunk = await reader.read();
+        } catch {
+          await cancel(aborted ? signal?.reason : "response-read-failed");
+          return { ok: false, reason: aborted ? "aborted" : "read-failed" };
+        }
+        if (aborted) {
+          await cancel(signal?.reason);
+          return { ok: false, reason: "aborted" };
+        }
+        if (chunk.done) break;
+        if (!(chunk.value instanceof Uint8Array)) {
+          await cancel("malformed-response");
+          return { ok: false, reason: "malformed" };
+        }
+        bytes += chunk.value.byteLength;
+        if (bytes > maxBytes) {
+          await cancel("response-too-large");
+          return { ok: false, reason: "too-large" };
+        }
+        try {
+          text += decoder.decode(chunk.value, { stream: true });
+        } catch {
+          await cancel("malformed-response");
+          return { ok: false, reason: "invalid-utf8" };
+        }
+      }
+      try {
+        text += decoder.decode();
+      } catch {
+        await cancel("malformed-response");
+        return { ok: false, reason: "invalid-utf8" };
+      }
+      return { ok: true, text };
+    } finally {
+      signal?.removeEventListener("abort", abort);
+      reader.releaseLock?.();
+    }
+  }
+
+  return { ok: false, reason: signal?.aborted ? "aborted" : "malformed" };
+}
+
 const defaultSleep = (ms: number, signal?: AbortSignal): Promise<void> =>
   new Promise((resolve, reject) => {
     if (signal?.aborted) {
@@ -385,6 +691,10 @@ type Spec = {
   readonly shape: CallShape;
   readonly idempotent: boolean;
   readonly perRecord: boolean;
+  /** Successful CRM responses must prove their envelope; missing page metadata is not "empty". */
+  readonly responseShape?: "data" | "page";
+  /** Refuse a response before any per-record classification or returned-id logging can enumerate it. */
+  readonly maxRows?: number;
   readonly recordIds: readonly string[];
   /** List reads log the ids they returned: who read what is Plane B's to know (D47). */
   readonly logReturnedIds: boolean;
@@ -396,6 +706,12 @@ type Outcome =
 
 function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
   const { gate, log } = options;
+  if (typeof options.recordIdPrefix !== "string" || !/^\d{6,16}$/.test(options.recordIdPrefix)) {
+    throw new TypeError("Zoho client recordIdPrefix must be 6–16 digits from this CRM org.");
+  }
+  const recordIdPrefix = options.recordIdPrefix;
+  const visibleRecordId = (value: unknown): value is string =>
+    typeof value === "string" && RECORD_ID.test(value) && value.startsWith(recordIdPrefix);
   const fetchImpl: FetchLike = options.fetch ?? ((url, init) => fetch(url, init));
   const clock = options.clock ?? Date.now;
   const random = options.random ?? Math.random;
@@ -404,10 +720,16 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
   if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > MAX_ATTEMPTS) throw new RangeError(`maxAttempts is 1–${MAX_ATTEMPTS}.`);
 
   const actorOf = (c: Credential): LogActor => (c.kind === "user" ? { kind: "user", userId: c.userId } : { kind: "service", job: c.job });
+  const assertConfiguredActor = (credential: Credential): void => {
+    assertCredential(credential, kind);
+    if (credential.kind === "user" && !visibleRecordId(credential.userId)) {
+      throw new TypeError("The user credential does not belong to this configured CRM org.");
+    }
+  };
 
   const refuse = (as: Credential, action: string, reason: string, recordIds: readonly string[]): Outcome => {
-    assertCredential(as, kind);
-    log.refusal({ at: clock(), actor: actorOf(as), action, reason, recordIds });
+    assertConfiguredActor(as);
+    log.refusal({ at: clock(), actor: actorOf(as), action, reason, recordIds: recordIds.filter(visibleRecordId) });
     return { ok: false, error: { kind: "refused", status: null, reason }, creditsRemaining: null };
   };
 
@@ -416,14 +738,16 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
     const records = outcome.kind === "ok" || outcome.kind === "partial" || outcome.kind === "invalid-data" ? outcome.records : null;
     for (const r of records ?? []) if (r.id) ids.push(r.id);
     if (spec.logReturnedIds && outcome.kind === "ok") for (const r of recordsIn(outcome.body)) ids.push(r.id);
-    return ids;
+    return ids.filter(visibleRecordId);
   };
 
   const execute = async (as: Credential, spec: Spec): Promise<Outcome> => {
-    assertCredential(as, kind);
+    assertConfiguredActor(as);
     const actor = actorOf(as);
     if (as.expiresAt !== null && clock() >= as.expiresAt) {
-      log.refusal({ at: clock(), actor, action: spec.op, reason: "token-expired", recordIds: spec.recordIds });
+      log.refusal({
+        at: clock(), actor, action: spec.op, reason: "token-expired", recordIds: spec.recordIds.filter(visibleRecordId),
+      });
       return { ok: false, error: { kind: "auth-expired", status: null, code: "TOKEN_EXPIRED" }, creditsRemaining: null };
     }
     const callClass: CallClass = classOf(spec.shape);
@@ -441,6 +765,12 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
     let lastCredits: number | null = null;
     for (let attempt = 1; ; attempt++) {
       const queuedAt = clock();
+      if (as.expiresAt !== null && queuedAt >= as.expiresAt) {
+        log.refusal({
+          at: queuedAt, actor, action: spec.op, reason: "token-expired", recordIds: spec.recordIds.filter(visibleRecordId),
+        });
+        return { ok: false, error: { kind: "auth-expired", status: null, code: "TOKEN_EXPIRED" }, creditsRemaining: lastCredits };
+      }
       let lease: GateLease;
       try {
         lease = await gate.acquire(callClass, spec.signal);
@@ -450,27 +780,64 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
         return { ok: false, error: failure, creditsRemaining: lastCredits };
       }
       const startedAt = clock();
+      if (as.expiresAt !== null && startedAt >= as.expiresAt) {
+        lease.release();
+        log.refusal({
+          at: startedAt, actor, action: spec.op, reason: "token-expired", recordIds: spec.recordIds.filter(visibleRecordId),
+        });
+        return { ok: false, error: { kind: "auth-expired", status: null, code: "TOKEN_EXPIRED" }, creditsRemaining: lastCredits };
+      }
       let status: number | null = null;
       let credits: number | null = null;
-      let outcome: ZohoClassified;
+      let outcome: ZohoClassified = { kind: "unexpected", status: 0, code: "INTERNAL_RESPONSE_STATE" };
       try {
         const response = await fetchImpl(url, { method: spec.method, headers, body, signal: spec.signal });
         status = response.status;
         credits = parseCreditsRemaining(response.headers.get(CREDITS_HEADER));
-        const parsed = status === 204 || status === 304 ? null : parseJson(await response.text());
-        outcome = classifyResponse({ status, body: parsed, retryAfter: response.headers.get("Retry-After"), perRecord: spec.perRecord });
+        let parsed: unknown = null;
+        let malformedRead = false;
+        if (status !== 204 && status !== 304) {
+          const read = await readBoundedResponse(response, MAX_ZOHO_RESPONSE_BYTES, spec.signal);
+          if (!read.ok) {
+            outcome = read.reason === "aborted"
+              ? { kind: "aborted", status: null }
+              : read.reason === "read-failed"
+                ? { kind: "network", status: null }
+                : { kind: "unexpected", status, code: "MALFORMED_RESPONSE" };
+            malformedRead = true;
+          } else {
+            parsed = parseJson(read.text);
+          }
+        }
+        if (!malformedRead) {
+          const root = obj(parsed);
+          const data = root?.data;
+          if (spec.maxRows !== undefined && Array.isArray(data) && data.length > spec.maxRows) {
+            outcome = { kind: "unexpected", status, code: "MALFORMED_RESPONSE" };
+          } else {
+            outcome = classifyResponse({ status, body: parsed, retryAfter: response.headers.get("Retry-After"), perRecord: spec.perRecord });
+            if (outcome.kind === "ok" && spec.responseShape) {
+              const info = obj(root?.info);
+              const malformed = !root
+                || !Array.isArray(data)
+                || (spec.responseShape === "page" && typeof info?.more_records !== "boolean");
+              if (malformed) outcome = { kind: "unexpected", status, code: "MALFORMED_RESPONSE" };
+            }
+          }
+        }
       } catch (error) {
         outcome = classifyThrown(error, spec.signal);
       } finally {
         lease.release(); // held until the body is read: Zoho counts the call active until then
       }
       if (credits !== null) lastCredits = credits;
-      line(startedAt, status, clock() - startedAt, startedAt - queuedAt, attempt, credits, outcome);
-      if (!isFailure(outcome)) return { ok: true, result: outcome, creditsRemaining: lastCredits };
-      const policy = retryPolicy(outcome, { idempotent: spec.idempotent });
-      if (!policy.retry || attempt >= Math.min(policy.maxAttempts, maxAttempts)) return { ok: false, error: outcome, creditsRemaining: lastCredits };
+      const completed = outcome;
+      line(startedAt, status, clock() - startedAt, startedAt - queuedAt, attempt, credits, completed);
+      if (!isFailure(completed)) return { ok: true, result: completed, creditsRemaining: lastCredits };
+      const policy = retryPolicy(completed, { idempotent: spec.idempotent });
+      if (!policy.retry || attempt >= Math.min(policy.maxAttempts, maxAttempts)) return { ok: false, error: completed, creditsRemaining: lastCredits };
       try {
-        await sleep(backoffDelay(attempt, policy, retryAfterOf(outcome), random), spec.signal);
+        await sleep(backoffDelay(attempt, policy, retryAfterOf(completed), random), spec.signal);
       } catch {
         return { ok: false, error: { kind: "aborted", status: null }, creditsRemaining: lastCredits };
       }
@@ -490,7 +857,15 @@ const done = <T>(value: T, out: { readonly result: ZohoSuccess; readonly credits
 /* ===== THE API ============================================================================ */
 
 function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOptions): ZohoApi<C> {
+  const recordIdPrefix = options.recordIdPrefix;
   const { execute, refuse } = createExecutor(kind, options);
+  const checkScopedId = (id: string, what = "record id"): string => {
+    checkId(id, what);
+    if (!RECORD_ID.test(id) || !id.startsWith(recordIdPrefix)) {
+      throw new TypeError(`Invalid ${what}: it does not belong to this configured CRM org.`);
+    }
+    return id;
+  };
   const owned = options.blueprintOwnedFields ?? DEFAULT_BLUEPRINT_OWNED_FIELDS;
   const ownedIn = (module: string, fields: ZohoFields): string[] =>
     (owned[module] ?? []).filter((f) => Object.prototype.hasOwnProperty.call(fields, f));
@@ -498,12 +873,12 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
   return {
     async getRecord(as, module, id, opts = {}) {
       checkModule(module);
-      checkId(id);
+      checkScopedId(id);
       const fields = fieldsParam(opts.fields);
       const out = await execute(as, {
         op: "getRecord", method: "GET", path: `/${module}/${id}`, endpoint: `/${module}/{id}`,
         query: fields ? [["fields", fields]] : undefined, shape: { op: "read" }, idempotent: true, perRecord: false,
-        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+        responseShape: "data", maxRows: 1, recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
       if (!out.ok) return out;
       return done(out.result.kind === "empty" ? null : recordsIn(out.result.body)[0] ?? null, out);
@@ -511,13 +886,13 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
 
     async getRelated(as, module, id, relatedList, opts) {
       checkModule(module);
-      checkId(id);
+      checkScopedId(id);
       checkModule(relatedList, "related list");
       if (!opts || opts.fields === undefined) throw new TypeError("v8 related reads need an explicit fields list — which is also the projection (D46).");
       const out = await execute(as, {
         op: "getRelated", method: "GET", path: `/${module}/${id}/${relatedList}`, endpoint: `/${module}/{id}/${relatedList}`,
         query: pageQuery(opts), shape: { op: "read" }, idempotent: true, perRecord: false,
-        recordIds: [id], logReturnedIds: true, signal: opts.signal,
+        responseShape: "page", maxRows: opts.perPage ?? 200, recordIds: [id], logReturnedIds: true, signal: opts.signal,
       });
       return out.ok ? done(pageOf(out.result), out) : out;
     },
@@ -532,7 +907,7 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       const out = await execute(as, {
         op: "search", method: "GET", path: `/${module}/search`, endpoint: `/${module}/search`,
         query: [[param, value], ...pageQuery(opts)], shape: { op: "read" }, idempotent: true, perRecord: false,
-        recordIds: [], logReturnedIds: true, signal: opts.signal,
+        responseShape: "page", maxRows: opts.perPage ?? 200, recordIds: [], logReturnedIds: true, signal: opts.signal,
       });
       return out.ok ? done(pageOf(out.result), out) : out;
     },
@@ -543,14 +918,33 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       }
       const out = await execute(as, {
         op: "coql", method: "POST", path: "/coql", endpoint: "/coql", body: { select_query: selectQuery },
-        shape: { op: "coql" }, idempotent: true, perRecord: false, recordIds: [], logReturnedIds: true, signal: opts.signal,
+        shape: { op: "coql" }, idempotent: true, perRecord: false, responseShape: "page", maxRows: 2_000,
+        recordIds: [], logReturnedIds: true, signal: opts.signal,
       });
       return out.ok ? done(pageOf(out.result), out) : out;
     },
 
+    async insert(as, module, records, opts = {}) {
+      checkModule(module);
+      if (!Array.isArray(records) || records.length < 1 || records.length > MAX_UPSERT_RECORDS) {
+        throw new RangeError(`insert() takes 1–${MAX_UPSERT_RECORDS} records.`);
+      }
+      for (const r of records) checkFields(r, false);
+      if (records.some((r) => ownedIn(module, r).length)) return refuse(as, "insert", "stage-field-write", []) as ZohoResult<readonly RecordOutcome[]>;
+      const out = await execute(as, {
+        op: "insert", method: "POST", path: `/${module}`, endpoint: `/${module}`, body: { data: records },
+        // A lost response is ambiguous: unlike upsert, a generic insert has no duplicate key.
+        // Callers with a natural unique key re-read it before deciding whether to retry.
+        shape: { op: "write", records: records.length }, idempotent: false, perRecord: true,
+        responseShape: "data", maxRows: records.length, recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      return done(out.result.kind === "ok" ? out.result.records ?? [] : [], out);
+    },
+
     async update(as, module, id, fields, opts) {
       checkModule(module);
-      checkId(id);
+      checkScopedId(id);
       checkFields(fields, false);
       if (!opts || (opts.ifUnmodifiedSince !== null && (typeof opts.ifUnmodifiedSince !== "string" || !ZOHO_DATETIME.test(opts.ifUnmodifiedSince)))) {
         throw new TypeError("update() needs ifUnmodifiedSince: the record's Modified_Time (e.g. 2026-09-23T10:00:00+05:30), or an explicit null.");
@@ -559,7 +953,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       const out = await execute(as, {
         op: "update", method: "PUT", path: `/${module}/${id}`, endpoint: `/${module}/{id}`, body: { data: [{ ...fields }] },
         headers: opts.ifUnmodifiedSince === null ? undefined : { "If-Unmodified-Since": opts.ifUnmodifiedSince },
-        shape: { op: "write", records: 1 }, idempotent: false, perRecord: true, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+        shape: { op: "write", records: 1 }, idempotent: false, perRecord: true, responseShape: "data", maxRows: 1,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
       if (!out.ok) return out;
       const first = out.result.kind === "ok" ? out.result.records?.[0] : undefined;
@@ -571,7 +966,10 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       if (!Array.isArray(records) || records.length < 1 || records.length > MAX_UPSERT_RECORDS) {
         throw new RangeError(`upsert() takes 1–${MAX_UPSERT_RECORDS} records.`);
       }
-      for (const r of records) checkFields(r, true);
+      for (const r of records) {
+        checkFields(r, true);
+        if (Object.prototype.hasOwnProperty.call(r, "id")) checkScopedId(r.id as string);
+      }
       if (!Array.isArray(duplicateCheckFields)) throw new TypeError("duplicateCheckFields is a list of field API names.");
       for (const f of duplicateCheckFields) if (typeof f !== "string" || !FIELD.test(f)) throw new TypeError(`Invalid duplicate-check field ${JSON.stringify(f)}.`);
       if (records.some((r) => ownedIn(module, r).length)) return refuse(as, "upsert", "stage-field-write", []) as ZohoResult<readonly RecordOutcome[]>;
@@ -579,7 +977,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         op: "upsert", method: "POST", path: `/${module}/upsert`, endpoint: `/${module}/upsert`,
         body: duplicateCheckFields.length ? { data: records, duplicate_check_fields: duplicateCheckFields } : { data: records },
         // Idempotent by construction: a resend matches the duplicate-check fields and updates in place.
-        shape: { op: "write", records: records.length }, idempotent: true, perRecord: true, recordIds: [], logReturnedIds: false, signal: opts.signal,
+        shape: { op: "write", records: records.length }, idempotent: true, perRecord: true, responseShape: "data", maxRows: records.length,
+        recordIds: [], logReturnedIds: false, signal: opts.signal,
       });
       if (!out.ok) return out;
       return done(out.result.kind === "ok" ? out.result.records ?? [] : [], out);
@@ -587,8 +986,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
 
     async blueprintTransition(as, module, id, transitionId, data, opts = {}) {
       checkModule(module);
-      checkId(id);
-      checkId(transitionId, "transition id");
+      checkScopedId(id);
+      checkScopedId(transitionId, "transition id");
       checkFields(data, false);
       const out = await execute(as, {
         op: "blueprintTransition", method: "PUT", path: `/${module}/${id}/actions/blueprint`, endpoint: `/${module}/{id}/actions/blueprint`,
@@ -600,8 +999,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
 
     async share(as, module, id, userId, permission, opts = {}) {
       checkModule(module);
-      checkId(id);
-      checkId(userId, "user id");
+      checkScopedId(id);
+      checkScopedId(userId, "user id");
       if (permission !== "read" && permission !== "read_write") throw new TypeError('permission is "read" or "read_write".');
       const out = await execute(as, {
         op: "share", method: "POST", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
@@ -615,8 +1014,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
     // ponytail: the per-user revoke body is from the docs, unproven until M02-S09-T01 runs on the sandbox.
     async unshare(as, module, id, userId, opts = {}) {
       checkModule(module);
-      checkId(id);
-      checkId(userId, "user id");
+      checkScopedId(id);
+      checkScopedId(userId, "user id");
       const out = await execute(as, {
         op: "unshare", method: "DELETE", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
         body: { share: [{ user: { id: userId } }] },
@@ -627,7 +1026,7 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
 
     async wasDeleted(as, module, id, opts = {}) {
       checkModule(module);
-      checkId(id);
+      checkScopedId(id);
       const maxPages = opts.maxPages ?? DEFAULT_DELETED_PAGES;
       if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 50) throw new RangeError("maxPages is 1–50.");
       let last: Outcome | null = null;
@@ -635,7 +1034,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         const out = await execute(as, {
           op: "wasDeleted", method: "GET", path: `/${module}/deleted`, endpoint: `/${module}/deleted`,
           query: [["type", "recycle"], ["page", String(page)], ["per_page", String(DELETED_PAGE_SIZE)]],
-          shape: { op: "read" }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+          shape: { op: "read" }, idempotent: true, perRecord: false, responseShape: "page", maxRows: DELETED_PAGE_SIZE,
+          recordIds: [id], logReturnedIds: false, signal: opts.signal,
         });
         if (!out.ok) return out;
         last = out;

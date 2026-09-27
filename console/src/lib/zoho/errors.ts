@@ -108,8 +108,10 @@ export type RetryPolicy =
 type Obj = Readonly<Record<string, unknown>>;
 const obj = (x: unknown): Obj | null => (typeof x === "object" && x !== null && !Array.isArray(x) ? (x as Obj) : null);
 const str = (x: unknown): string | null => (typeof x === "string" ? x : null);
+// Zoho identifiers are JSON strings. Coercing a number would preserve neither provenance nor
+// 18/19-digit precision and could make a malformed write acknowledgement look successful.
 const idText = (x: unknown): string | null =>
-  typeof x === "string" && /^\d{1,25}$/.test(x) ? x : typeof x === "number" && Number.isSafeInteger(x) ? String(x) : null;
+  typeof x === "string" && /^\d{15,22}$/.test(x) ? x : null;
 const firstDatum = (b: Obj | null): Obj | null => (b && Array.isArray(b.data) ? obj(b.data[0]) : null);
 
 const AUTH_EXPIRED = new Set(["INVALID_TOKEN", "INVALID_OAUTHTOKEN", "AUTHENTICATION_FAILURE"]);

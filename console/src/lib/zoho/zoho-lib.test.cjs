@@ -46,7 +46,16 @@ const { cacheKey, createScopedCache, createMemoryStore, MAX_AGE_MS, DEFAULT_TTL_
 const { createGate, classOf, GateQueueFullError } = load('gate');
 const { classifyResponse, retryPolicy, backoffDelay, parseCreditsRemaining, isFailure } = load('errors');
 const { createOpsLog, createMemorySink } = load('log');
-const { createZohoClient, createZohoServiceClient, userCredential, serviceCredential, apiDomainOf } = load('client');
+const {
+  createZohoClient,
+  createZohoServiceClient,
+  userCredential,
+  serviceCredential,
+  apiDomainOf,
+  isUserCredential,
+  MAX_TOKEN_LIFETIME_SECONDS,
+  MAX_ZOHO_RESPONSE_BYTES,
+} = load('client');
 const { createFixtureAdapter, createLiveAdapter } = load('adapter');
 
 const clockAt = (t0 = 0) => { let t = t0; const c = () => t; c.set = (v) => { t = v; }; c.advance = (ms) => { t += ms; }; return c; };
@@ -55,8 +64,10 @@ const tick = () => new Promise((r) => setImmediate(r));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const USER = { kind: 'user', userId: 'kavya' };
 const TEAM = { kind: 'subtree', managerId: 'tasneem' };
+const RECORD_ID_PREFIX = '554023';
 const ID = '554023000000527003';
 const ID2 = '554023000000527011';
+const FOREIGN_ID = '999999000000527003';
 
 /* ===== TYPE TESTS: what must not compile ================================================= */
 
@@ -72,11 +83,12 @@ test('types: forbidden uses do not compile, each on its marked line; the control
     `const cache = createScopedCache();`,
     `const load = async () => 1;`,
     `const gate = createGate(); const log = createOpsLog(createMemorySink());`,
-    `const client = createZohoClient({ gate, log }); const service = createZohoServiceClient({ gate, log });`,
+    `const client = createZohoClient({ gate, log, recordIdPrefix: "554023" }); const service = createZohoServiceClient({ gate, log, recordIdPrefix: "554023" });`,
     `const grant = { access_token: "t", api_domain: "https://www.zohoapis.in" };`,
-    `const me = userCredential("kavya", grant); const job = serviceCredential("audit-archive", grant);`,
+    `const mePromise = userCredential(grant, { recordIdPrefix: "554023", gate, log, fetch: async () => new Response(JSON.stringify({ users: [{ id: "${ID}", status: "active" }] }), { status: 200 }) });`,
+    `const me = {} as Awaited<typeof mePromise>; const job = serviceCredential("audit-archive", grant);`,
     `const mine = cacheKey({ kind: "user", userId: "kavya" }, "numbers.funnel");`,
-    `void cache; void load; void client; void service; void me; void job; void mine;`,
+    `void cache; void load; void client; void service; void mePromise; void me; void job; void mine;`,
   ].join('\n');
   const LOG_LINE = `at: 0, actor: { kind: "user", userId: "kavya" }, op: "getRecord", method: "GET", endpoint: "/Leads/{id}", callClass: "simple", status: 200, durationMs: 1, gateWaitMs: 0, attempt: 1, creditsRemaining: null, errorClass: null, recordIds: []`;
   const forbidden = {
@@ -92,6 +104,7 @@ test('types: forbidden uses do not compile, each on its marked line; the control
     'bucket-with-extra-field': `void cache.read(mine, async () => [{ key: "L1", count: 1, phone: "+91 99001 44821" }]);`,
     'service-token-on-screen-client': `void client.getRecord(job, "Leads", "${ID}");`,
     'user-token-on-service-client': `void service.getRecord(me, "Leads", "${ID}");`,
+    'caller-chosen-user-id': `void userCredential("kavya", grant);`,
     'bare-string-token': `void client.getRecord("1000.token", "Leads", "${ID}");`,
     'update-without-conflict-choice': `void client.update(me, "Leads", "${ID}", { City: "Kochi" });`,
     'body-in-a-log-line': `log.call({ ${LOG_LINE}, body: "{\\"Last_Name\\":\\"Pillai\\"}" });`,
@@ -418,6 +431,54 @@ test('errors: 400, 401, 403, 404, 204 and 5xx classify, with retries only where 
 
 const grantFor = (domain = 'https://www.zohoapis.eu', token = '1000.secret-token') => ({ access_token: token, api_domain: domain, expires_in: 3600, token_type: 'Bearer' });
 const zohoReply = (status, body = null, headers = {}) => ({ status, body, headers });
+const zohoRawReply = (status, rawText, headers = {}) => ({ status, rawText, headers });
+const CURRENT_USER_RESPONSE = Object.freeze({ users: [Object.freeze({ id: ID, status: 'active' })] });
+const identityResponse = (body = CURRENT_USER_RESPONSE, status = 200) =>
+  new Response(typeof body === 'string' ? body : JSON.stringify(body), { status });
+const recordedCurrentUserFetch = (body = CURRENT_USER_RESPONSE, status = 200, calls = null) => async (url, init) => {
+  if (calls) calls.push({ url, init });
+  return identityResponse(body, status);
+};
+const streamedResponse = (chunks, { status = 200, onCancel = () => {} } = {}) => {
+  const encoder = new TextEncoder();
+  const bytes = chunks.map((chunk) => typeof chunk === 'string' ? encoder.encode(chunk) : chunk);
+  let index = 0;
+  return new Response(new ReadableStream({
+    pull(controller) {
+      if (index < bytes.length) controller.enqueue(bytes[index++]);
+      else controller.close();
+    },
+    cancel(reason) { onCancel(reason); },
+  }), { status });
+};
+const midBodyReadFailureResponse = (onCancel) => {
+  const firstChunk = new TextEncoder().encode('{"data":');
+  let reads = 0;
+  return {
+    status: 200,
+    headers: { get: () => null },
+    body: {
+      getReader: () => ({
+        read: async () => {
+          reads++;
+          if (reads === 1) return { done: false, value: firstChunk };
+          throw new Error('synthetic connection reset');
+        },
+        cancel: async (reason) => { onCancel(reason); },
+        releaseLock() {},
+      }),
+    },
+    text: async () => { throw new Error('the streamed reader is authoritative'); },
+  };
+};
+const userCredentialOptions = (options = {}) => ({
+  recordIdPrefix: RECORD_ID_PREFIX,
+  gate: createGate(),
+  log: createOpsLog(createMemorySink()),
+  fetch: recordedCurrentUserFetch(),
+  ...options,
+});
+const mintUser = (tokenResponse = grantFor(), options = {}) => userCredential(tokenResponse, userCredentialOptions(options));
 function rig(replies, extra = {}) {
   const sink = createMemorySink();
   const log = createOpsLog(sink);
@@ -427,16 +488,18 @@ function rig(replies, extra = {}) {
     calls.push({ url, init, body: init.body === undefined ? undefined : JSON.parse(init.body) });
     const next = typeof replies === 'function' ? replies(url, init, calls.length) : replies.shift();
     assert.ok(next, `an unexpected call to ${url}`);
-    return new Response(next.status === 204 ? null : JSON.stringify(next.body), { status: next.status, headers: next.headers });
+    if (next.response) return next.response;
+    const responseBody = next.status === 204 ? null : Object.prototype.hasOwnProperty.call(next, 'rawText') ? next.rawText : JSON.stringify(next.body);
+    return new Response(responseBody, { status: next.status, headers: next.headers });
   };
-  const options = { gate, log, fetch, sleep: async () => {}, random: () => 0.5, ...extra };
+  const options = { gate, log, recordIdPrefix: RECORD_ID_PREFIX, fetch, sleep: async () => {}, random: () => 0.5, ...extra };
   return { sink, gate, calls, client: createZohoClient(options), service: createZohoServiceClient(options) };
 }
 const record = (id, fields = {}) => ({ id, ...fields });
 
 test('client: the API domain comes from the token response, and a token is only sent to a Zoho API host', async () => {
-  const eu = userCredential('kavya', grantFor('https://www.zohoapis.eu'));
-  const inn = userCredential('kavya', grantFor('https://www.zohoapis.in'));
+  const eu = await mintUser(grantFor('https://www.zohoapis.eu'));
+  const inn = await mintUser(grantFor('https://www.zohoapis.in'));
   const { client, calls } = rig(() => zohoReply(200, { data: [record(ID)] }));
   await client.getRecord(eu, 'Leads', ID);
   await client.getRecord(inn, 'Leads', ID);
@@ -444,16 +507,179 @@ test('client: the API domain comes from the token response, and a token is only 
   assert.equal(calls[1].url, `https://www.zohoapis.in/crm/v8/Leads/${ID}`);
   assert.equal(calls[0].init.headers.Authorization, 'Zoho-oauthtoken 1000.secret-token');
   for (const bad of ['http://www.zohoapis.in', 'https://www.zohoapis.com.evil.net', 'https://tenant.zohoapis.in', 'https://www.zohoapis.xyz', 'https://evilzohoapis.com', 'https://evil.example', 'https://www.zohoapis.in/steal', 'https://www.zohoapis.in:8443', '', undefined]) {
-    assert.throws(() => userCredential('kavya', { ...grantFor(), api_domain: bad }), TypeError, `api_domain ${bad} is refused`);
+    await assert.rejects(mintUser({ ...grantFor(), api_domain: bad }), TypeError, `api_domain ${bad} is refused`);
   }
   assert.equal(apiDomainOf('https://www.zohoapis.com.au/'), 'https://www.zohoapis.com.au');
-  assert.throws(() => userCredential('kavya@agresearchlabs.com', grantFor()), TypeError, 'a user id is never an email');
   assert.ok(!JSON.stringify(eu).includes('secret-token') && !Object.keys(eu).includes('accessToken'), 'the token is redacted and non-enumerable');
+});
+
+test('client: user and service credentials require a bounded integral token lifetime', async () => {
+  assert.equal(MAX_TOKEN_LIFETIME_SECONDS, 86_400);
+  const invalidExpiries = [
+    ['missing', undefined, true],
+    ['invalid', '3600', false],
+    ['zero', 0, false],
+    ['negative', -1, false],
+    ['huge', MAX_TOKEN_LIFETIME_SECONDS + 1, false],
+    ['fractional', 1.5, false],
+  ];
+  let identityFetches = 0;
+  for (const [name, expiresIn, omit] of invalidExpiries) {
+    const grant = { ...grantFor(), expires_in: expiresIn };
+    if (omit) delete grant.expires_in;
+    await assert.rejects(
+      userCredential(grant, userCredentialOptions({ fetch: async () => { identityFetches++; return identityResponse(); } })),
+      /bounded expires_in/,
+      `${name}: a user credential is not minted`,
+    );
+    assert.throws(
+      () => serviceCredential('audit-archive', grant),
+      /bounded expires_in/,
+      `${name}: a service credential is not minted`,
+    );
+  }
+  assert.equal(identityFetches, 0, 'invalid token metadata is rejected before CurrentUser');
+});
+
+test('client: user identity comes only from CurrentUser with an exact authenticated request', async () => {
+  const calls = [];
+  const tokenResponse = { ...grantFor('https://www.zohoapis.in'), user_id: FOREIGN_ID };
+  const options = userCredentialOptions({
+    userId: FOREIGN_ID,
+    fetch: recordedCurrentUserFetch(CURRENT_USER_RESPONSE, 200, calls),
+  });
+  const me = await userCredential(tokenResponse, options);
+  assert.equal(me.userId, ID, 'caller-supplied identity fields cannot choose the actor');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, 'https://www.zohoapis.in/crm/v8/users?type=CurrentUser');
+  assert.equal(calls[0].init.method, 'GET');
+  assert.deepEqual(calls[0].init.headers, { Accept: 'application/json', Authorization: 'Zoho-oauthtoken 1000.secret-token' });
+  assert.equal(calls[0].init.redirect, 'error');
+  assert.ok(calls[0].init.signal instanceof AbortSignal, 'the bounded identity request carries an abort signal');
+});
+
+test('client: malformed or untrusted CurrentUser responses mint no credential and reveal no detail', async () => {
+  const failures = [
+    ['foreign user', recordedCurrentUserFetch({ users: [{ id: FOREIGN_ID, status: 'active' }] })],
+    ['multiple users', recordedCurrentUserFetch({ users: [{ id: ID, status: 'active' }, { id: ID2, status: 'active' }] })],
+    ['inactive user', recordedCurrentUserFetch({ users: [{ id: ID, status: 'inactive' }] })],
+    ['numeric id', recordedCurrentUserFetch({ users: [{ id: Number(ID), status: 'active' }] })],
+    ['malformed json', recordedCurrentUserFetch('{"users":')],
+    ['non-200 response', recordedCurrentUserFetch({ code: 'INVALID_TOKEN', token: '1000.secret-token' }, 401)],
+    ['network failure', async () => { throw new Error('1000.secret-token failed for ' + FOREIGN_ID); }],
+  ];
+  for (const [name, fetch] of failures) {
+    const sink = createMemorySink();
+    await assert.rejects(
+      userCredential(grantFor(), userCredentialOptions({ fetch, log: createOpsLog(sink) })),
+      (error) => {
+        assert.equal(error.constructor, TypeError, `${name}: typed failure`);
+        assert.equal(error.message, 'Zoho CurrentUser verification failed.', `${name}: one generic message`);
+        assert.ok(!error.message.includes('secret-token') && !error.message.includes(FOREIGN_ID), `${name}: no secret or identity in the error`);
+        return true;
+      },
+    );
+    const planeB = JSON.stringify(sink.records());
+    assert.ok(!planeB.includes('secret-token') && !planeB.includes(FOREIGN_ID), `${name}: Plane B has no token or unverified identity`);
+  }
+});
+
+test('client: identity latency cannot extend token expiry', async () => {
+  const release = deferred();
+  let clockCalls = 0;
+  const pending = userCredential({ ...grantFor(), expires_in: 1 }, userCredentialOptions({
+    clock: () => { clockCalls++; return clockCalls === 1 ? 1_000 : 900_000; },
+    fetch: async () => { await release.promise; return identityResponse(); },
+  }));
+  await tick();
+  release.resolve();
+  const me = await pending;
+  assert.equal(me.expiresAt, 2_000, 'expiry is based on issuance time before the identity request');
+  assert.ok(clockCalls >= 1);
+});
+
+test('client: identity scope is captured before an in-flight options mutation', async () => {
+  const entered = deferred();
+  const release = deferred();
+  const options = userCredentialOptions({
+    fetch: async () => {
+      entered.resolve();
+      await release.promise;
+      return identityResponse();
+    },
+  });
+  const pending = userCredential(grantFor(), options);
+  await entered.promise;
+  options.recordIdPrefix = '999999';
+  release.resolve();
+  assert.equal((await pending).userId, ID, 'post-start mutation cannot change the accepted org');
+});
+
+test('client: a direct record id from another CRM org is rejected before fetch or Plane B', async () => {
+  const me = await mintUser();
+  const { client, calls, sink } = rig([]);
+  await assert.rejects(client.getRecord(me, 'Leads', FOREIGN_ID), /does not belong to this configured CRM org/);
+  assert.equal(calls.length, 0, 'a foreign-org id never reaches fetch');
+  assert.deepEqual(sink.records(), [], 'a rejected foreign-org id never enters Plane B');
+});
+
+test('client: same-prefix direct ids outside Zoho record-id length bounds are rejected locally', async () => {
+  const me = await mintUser();
+  const { client, calls, sink } = rig([]);
+  const shortId = RECORD_ID_PREFIX + '12345678';
+  const overlongId = RECORD_ID_PREFIX + '12345678901234567';
+  assert.equal(shortId.length, 14); assert.equal(overlongId.length, 23);
+  await assert.rejects(client.getRecord(me, 'Leads', shortId), /Invalid record id/);
+  await assert.rejects(client.getRecord(me, 'Leads', overlongId), /Invalid record id/);
+  assert.equal(calls.length, 0, 'invalid lengths never reach fetch');
+  assert.deepEqual(sink.records(), [], 'invalid lengths never enter Plane B');
+});
+
+test('client: record-id scope is captured at construction and cannot be changed through the options object', async () => {
+  const sink = createMemorySink();
+  const gate = createGate();
+  const calls = [];
+  const options = {
+    gate,
+    log: createOpsLog(sink),
+    recordIdPrefix: RECORD_ID_PREFIX,
+    fetch: async (url, init) => {
+      calls.push({ url, init });
+      return new Response(JSON.stringify({ data: [record(ID)] }), { status: 200 });
+    },
+    sleep: async () => {},
+    random: () => 0.5,
+  };
+  const client = createZohoClient(options);
+  options.recordIdPrefix = '999999';
+  const me = await mintUser();
+
+  assert.equal((await client.getRecord(me, 'Leads', ID)).ok, true, 'the configured local prefix remains authoritative');
+  assert.deepEqual(sink.records()[0].recordIds, [ID], 'the local id remains visible in Plane B');
+  await assert.rejects(client.getRecord(me, 'Leads', FOREIGN_ID), /does not belong to this configured CRM org/);
+  assert.equal(calls.length, 1, 'the foreign id is rejected before a second fetch');
+  assert.equal(sink.records().length, 1, 'the foreign id emits no Plane B line');
+});
+
+test('client: COQL and search log only returned record ids from the configured CRM org', async () => {
+  const me = await mintUser();
+  const { client, sink } = rig([
+    zohoReply(200, { data: [record(ID), record(FOREIGN_ID)], info: { more_records: false } }),
+    zohoReply(200, { data: [record(FOREIGN_ID), record(ID2)], info: { more_records: false } }),
+  ]);
+  assert.equal((await client.coql(me, 'select id from Leads limit 200')).ok, true);
+  assert.equal((await client.search(me, 'Leads', { word: 'synthetic' })).ok, true);
+  const calls = sink.records().filter((line) => line.kind === 'zoho-call');
+  assert.deepEqual(calls.map((line) => [line.op, line.recordIds]), [
+    ['coql', [ID]],
+    ['search', [ID2]],
+  ]);
+  assert.ok(!JSON.stringify(calls).includes(FOREIGN_ID), 'the foreign-org id never enters Plane B');
 });
 
 test('client: user and service tokens cannot be swapped, and nothing unminted is accepted (runtime half)', async () => {
   const { client, service, calls } = rig(() => zohoReply(200, { data: [record(ID)] }));
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const job = serviceCredential('audit-archive', grantFor());
   await assert.rejects(client.getRecord(job, 'Leads', ID), /never serves a screen/);
   await assert.rejects(service.getRecord(me, 'Leads', ID), TypeError);
@@ -465,7 +691,7 @@ test('client: user and service tokens cannot be swapped, and nothing unminted is
 
 test('client: update() sends If-Unmodified-Since, and a 412 comes back as a typed conflict, not retried', async () => {
   const { client, calls, sink } = rig([zohoReply(412, { code: 'ALREADY_MODIFIED', details: {}, message: 'Record updated time has already passed if-unmodified-since time', status: 'error' })]);
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const r = await client.update(me, 'Leads', ID, { City: 'Kochi' }, { ifUnmodifiedSince: '2026-09-23T10:00:00+05:30' });
   assert.equal(calls.length, 1, 'a conflict is never retried');
   assert.equal(calls[0].init.method, 'PUT'); assert.ok(calls[0].url.endsWith(`/crm/v8/Leads/${ID}`));
@@ -482,7 +708,7 @@ test('client: update() sends If-Unmodified-Since, and a 412 comes back as a type
 
 test('client: a stage is never written as a field; blueprintTransition() is the route', async () => {
   const { client, calls, sink } = rig([zohoReply(200, { code: 'SUCCESS', details: {}, message: 'transition updated successfully', status: 'success' })]);
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const refused = await client.update(me, 'Leads', ID, { Lead_Status: 'Qualified' }, { ifUnmodifiedSince: null });
   assert.equal(refused.ok, false); assert.equal(refused.error.kind, 'refused'); assert.equal(refused.error.reason, 'stage-field-write');
   assert.equal(calls.length, 0, 'Zoho is never asked');
@@ -499,7 +725,7 @@ test('client: upsert() posts duplicate_check_fields, a 207 is a failure, and bul
   const landed = { code: 'SUCCESS', details: { id: ID }, message: 'record added', status: 'success', action: 'insert' };
   const refused = { code: 'DUPLICATE_DATA', details: { api_name: 'Mobile' }, message: 'duplicate data', status: 'error' };
   const { client, calls, sink } = rig([zohoReply(207, { data: [landed, refused] }), zohoReply(200, { data: Array(11).fill(landed) }), zohoReply(200, { data: Array(10).fill(landed) })]);
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const r = await client.upsert(me, 'Contacts', [{ Last_Name: 'A', Mobile: '1' }, { Last_Name: 'B', Mobile: '1' }], ['Mobile']);
   assert.equal(r.ok, false); assert.equal(r.error.kind, 'partial');
   assert.deepEqual(r.error.records.map((x) => x.ok), [true, false]);
@@ -513,8 +739,52 @@ test('client: upsert() posts duplicate_check_fields, a 207 is a failure, and bul
   await assert.rejects(client.upsert(me, 'Contacts', Array(101).fill({ Last_Name: 'x' }), []), RangeError);
 });
 
+test('client: insert() is create-only and never retries an ambiguous server failure', async () => {
+  const landed = { code: 'SUCCESS', details: { id: ID }, message: 'record added', status: 'success' };
+  const { client, calls } = rig([
+    zohoReply(201, { data: [landed] }),
+    zohoReply(503, { code: 'INTERNAL_ERROR', message: 'synthetic unavailable' }),
+  ]);
+  const me = await mintUser();
+  const fields = { Allotment: { id: ID2 }, Kind: 'Full', Amount: 2250000, UTR: 'SYNTHETIC001' };
+  const created = await client.insert(me, 'Receipts', [fields]);
+  assert.equal(created.ok, true);
+  assert.equal(created.value[0].id, ID);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.ok(calls[0].url.endsWith('/crm/v8/Receipts'));
+  assert.deepEqual(calls[0].body, { data: [fields] });
+
+  const ambiguous = await client.insert(me, 'Receipts', [fields]);
+  assert.equal(ambiguous.ok, false);
+  assert.equal(ambiguous.error.kind, 'server');
+  assert.equal(calls.length, 2, 'a create that may have landed is never resent');
+  await assert.rejects(client.insert(me, 'Receipts', []), RangeError);
+  await assert.rejects(client.insert(me, 'Receipts', Array(101).fill(fields)), RangeError);
+  await assert.rejects(client.insert(me, 'Receipts', [{ id: ID, ...fields }]), /record id goes in the path/);
+  assert.equal(calls.length, 2, 'an invalid create body never reaches Zoho');
+});
+
+test('client: numeric per-record details.id is neither accepted nor logged as an identifier', async () => {
+  const numericId = Number(ID);
+  const landed = { code: 'SUCCESS', details: { id: numericId }, message: 'record added', status: 'success' };
+  const { client, sink } = rig([zohoReply(201, { data: [landed] })]);
+  const me = await mintUser();
+  const created = await client.insert(me, 'Receipts', [{ Allotment: { id: ID2 }, Amount: 1 }]);
+  assert.equal(created.ok, true);
+  assert.equal(created.value[0].id, null, 'a JSON number is never coerced into a Zoho id');
+  assert.deepEqual(sink.records()[0].recordIds, [], 'a numeric acknowledgement id never enters Plane B');
+});
+
+test('client: only a runtime-minted user credential passes the server-boundary provenance check', async () => {
+  const me = await mintUser();
+  assert.equal(isUserCredential(me), true);
+  assert.equal(isUserCredential({ kind: 'user', userId: 'kavya' }), false);
+  assert.equal(isUserCredential(serviceCredential('audit-archive', grantFor())), false);
+  assert.equal(isUserCredential(null), false);
+});
+
 test('client: retries follow the class — concurrency yes, credits no, 5xx only when idempotent', async () => {
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const conc = { code: 'TOO_MANY_REQUESTS', details: {}, message: 'The concurrency limit of the user for the app is exceeded', status: 'error' };
   const a = rig([zohoReply(429, conc), zohoReply(200, { data: [record(ID)] })]);
   const r = await a.client.getRecord(me, 'Leads', ID);
@@ -533,7 +803,7 @@ test('client: retries follow the class — concurrency yes, credits no, 5xx only
 });
 
 test('client: X-API-CREDITS-REMAINING is read when present and handed to the log', async () => {
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const { client, sink } = rig([zohoReply(200, { data: [record(ID)] }), zohoReply(200, { data: [record(ID)] }, { 'X-API-CREDITS-REMAINING': '21000' })]);
   const quiet = await client.getRecord(me, 'Leads', ID);
   const warned = await client.getRecord(me, 'Leads', ID);
@@ -544,7 +814,7 @@ test('client: X-API-CREDITS-REMAINING is read when present and handed to the log
 });
 
 test('client: coql is a complex call; getRelated, search and getRecord read', async () => {
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const { client, calls, sink } = rig([
     zohoReply(200, { data: [record(ID), record(ID2)], info: { more_records: true } }),
     zohoReply(204),
@@ -567,8 +837,186 @@ test('client: coql is a complex call; getRelated, search and getRecord read', as
   await assert.rejects(client.getRecord(me, 'Leads', 'L1'), TypeError);
 });
 
+test('client: malformed successful response envelopes fail closed and are logged as unexpected', async () => {
+  const me = await mintUser();
+  const { client, calls, sink } = rig([
+    zohoRawReply(200, '{"data":'),
+    zohoReply(200, null),
+    zohoReply(200, {}),
+    zohoReply(200, { data: null }),
+    zohoReply(200, { data: [] }),
+    zohoReply(200, { data: [], info: { more_records: 'false' } }),
+  ]);
+  const outcomes = [
+    await client.getRecord(me, 'Leads', ID),
+    await client.getRecord(me, 'Leads', ID),
+    await client.getRecord(me, 'Leads', ID),
+    await client.getRecord(me, 'Leads', ID),
+    await client.search(me, 'Leads', { word: 'synthetic' }),
+    await client.coql(me, 'select id from Leads limit 200'),
+  ];
+  assert.deepEqual(outcomes.map((outcome) => [outcome.ok, outcome.error.kind]), Array(6).fill([false, 'unexpected']));
+  assert.equal(calls.length, 6);
+  assert.deepEqual(sink.records().map((line) => line.errorClass), Array(6).fill('unexpected'));
+});
+
+test('client: streamed CRM responses enforce the byte cap, cancel overflow, and accept the exact cap', async () => {
+  assert.equal(MAX_ZOHO_RESPONSE_BYTES, 5 * 1024 * 1024);
+  let cancellations = 0;
+  const oversized = streamedResponse([
+    new Uint8Array(MAX_ZOHO_RESPONSE_BYTES),
+    Uint8Array.of(0),
+    Uint8Array.of(0),
+  ], { onCancel: () => { cancellations++; } });
+  const valid = JSON.stringify({ data: [record(ID)] });
+  const exact = streamedResponse([valid + ' '.repeat(MAX_ZOHO_RESPONSE_BYTES - Buffer.byteLength(valid))]);
+  const { client, sink } = rig([{ response: oversized }, { response: exact }]);
+  const me = await mintUser();
+
+  const refused = await client.getRecord(me, 'Leads', ID);
+  assert.equal(refused.ok, false); assert.equal(refused.error.kind, 'unexpected');
+  assert.equal(cancellations, 1, 'the response stream is cancelled as soon as it exceeds the cap');
+  const accepted = await client.getRecord(me, 'Leads', ID);
+  assert.equal(accepted.ok, true); assert.equal(accepted.value.id, ID, 'an exact-cap response is accepted');
+  assert.deepEqual(sink.records().map((line) => line.errorClass), ['unexpected', null]);
+});
+
+test('client: invalid UTF-8 and invalid streamed chunks cancel the reader before failure returns', async () => {
+  let utf8Cancellations = 0;
+  const invalidUtf8 = streamedResponse([
+    Uint8Array.from([0xc3, 0x28]),
+    Uint8Array.of(0),
+    Uint8Array.of(0),
+  ], { onCancel: () => { utf8Cancellations++; } });
+
+  let chunkCancellations = 0;
+  const invalidChunks = [{ not: 'bytes' }, Uint8Array.of(0), Uint8Array.of(0)];
+  let chunkIndex = 0;
+  const invalidChunk = new Response(new ReadableStream({
+    pull(controller) {
+      if (chunkIndex < invalidChunks.length) controller.enqueue(invalidChunks[chunkIndex++]);
+      else controller.close();
+    },
+    cancel() { chunkCancellations++; },
+  }), { status: 200 });
+
+  const { client, calls, sink } = rig([{ response: invalidUtf8 }, { response: invalidChunk }]);
+  const me = await mintUser();
+  const utf8 = await client.getRecord(me, 'Leads', ID);
+  const chunk = await client.getRecord(me, 'Leads', ID);
+  assert.equal(utf8.ok, false); assert.equal(utf8.error.kind, 'unexpected');
+  assert.equal(chunk.ok, false); assert.equal(chunk.error.kind, 'unexpected');
+  assert.deepEqual(
+    [utf8Cancellations, chunkCancellations],
+    [1, 1],
+    'fatal UTF-8 and non-byte chunks both cancel their still-open streams',
+  );
+  assert.equal(calls.length, 2, 'malformed streamed bodies are unexpected and never retried');
+  assert.deepEqual(sink.records().map((line) => line.errorClass), ['unexpected', 'unexpected']);
+});
+
+test('client: a mid-body read rejection is network, cancels, and retries idempotent GET and COQL', async () => {
+  const me = await mintUser();
+
+  let getCancellations = 0;
+  const get = rig([
+    { response: midBodyReadFailureResponse(() => { getCancellations++; }) },
+    zohoReply(200, { data: [record(ID)] }),
+  ]);
+  const loaded = await get.client.getRecord(me, 'Leads', ID);
+  assert.equal(loaded.ok, true); assert.equal(loaded.value.id, ID);
+  assert.equal(getCancellations, 1, 'GET cancels the failed response reader');
+  assert.equal(get.calls.length, 2, 'GET retries once after the mid-body transport failure');
+  assert.deepEqual(get.sink.records().map((line) => line.errorClass), ['network', null]);
+
+  let coqlCancellations = 0;
+  const coql = rig([
+    { response: midBodyReadFailureResponse(() => { coqlCancellations++; }) },
+    zohoReply(200, { data: [record(ID2)], info: { more_records: false } }),
+  ]);
+  const page = await coql.client.coql(me, 'select id from Leads limit 200');
+  assert.equal(page.ok, true); assert.deepEqual(page.value.records.map((row) => row.id), [ID2]);
+  assert.equal(coqlCancellations, 1, 'COQL cancels the failed response reader');
+  assert.equal(coql.calls.length, 2, 'COQL retries once after the mid-body transport failure');
+  assert.deepEqual(coql.sink.records().map((line) => line.errorClass), ['network', null]);
+});
+
+test('client: a bodyless injected response is refused without calling its unbounded text fallback', async () => {
+  let textCalls = 0;
+  const bodyless = {
+    status: 200,
+    headers: { get: () => null },
+    text: async () => {
+      textCalls++;
+      return JSON.stringify({ data: [record(ID)] });
+    },
+  };
+  const { client, sink } = rig([], { fetch: async () => bodyless });
+  const me = await mintUser();
+  const result = await client.getRecord(me, 'Leads', ID);
+  assert.equal(result.ok, false); assert.equal(result.error.kind, 'unexpected');
+  assert.equal(textCalls, 0, 'a hard byte cap never delegates to an unbounded text() implementation');
+  assert.equal(sink.records()[0].errorClass, 'unexpected');
+});
+
+test('client: CurrentUser enforces its 64 KiB streamed body cap', async () => {
+  const maxBytes = 64 * 1024;
+  const valid = JSON.stringify(CURRENT_USER_RESPONSE);
+  const exact = streamedResponse([valid + ' '.repeat(maxBytes - Buffer.byteLength(valid))]);
+  const accepted = await userCredential(grantFor(), userCredentialOptions({ fetch: async () => exact }));
+  assert.equal(accepted.userId, ID, 'an exact-cap CurrentUser response is accepted');
+
+  let cancellations = 0;
+  const oversized = streamedResponse([
+    new Uint8Array(maxBytes),
+    Uint8Array.of(0),
+    Uint8Array.of(0),
+  ], { onCancel: () => { cancellations++; } });
+  await assert.rejects(
+    userCredential(grantFor(), userCredentialOptions({ fetch: async () => oversized })),
+    /CurrentUser verification failed/,
+  );
+  assert.equal(cancellations, 1, 'the oversized CurrentUser stream is cancelled');
+});
+
+test('client: each endpoint rejects successful envelopes above its own row cap', async () => {
+  const rows = (count) => Array.from({ length: count }, (_, index) => record(String(554023000010000000n + BigInt(index))));
+  const landed = (count) => Array.from({ length: count }, (_, index) => ({
+    code: 'SUCCESS',
+    details: { id: String(554023000020000000n + BigInt(index)) },
+    message: 'record added',
+    status: 'success',
+  }));
+  const { client, calls, sink } = rig([
+    zohoReply(200, { data: rows(2) }),
+    zohoReply(200, { data: rows(201), info: { more_records: false } }),
+    zohoReply(200, { data: rows(201), info: { more_records: false } }),
+    zohoReply(200, { data: rows(2_001), info: { more_records: false } }),
+    zohoReply(201, { data: landed(101) }),
+    zohoReply(200, { data: landed(2) }),
+    zohoReply(200, { data: landed(101) }),
+  ]);
+  const me = await mintUser();
+  const outcomes = [
+    await client.getRecord(me, 'Leads', ID),
+    await client.search(me, 'Leads', { word: 'synthetic' }),
+    await client.getRelated(me, 'Leads', ID, 'Notes', { fields: ['Note_Title'], perPage: 200 }),
+    await client.coql(me, 'select id from Leads limit 2000'),
+    await client.insert(me, 'Receipts', [{ Allotment: { id: ID2 }, Amount: 1 }]),
+    await client.update(me, 'Leads', ID, { City: 'Kochi' }, { ifUnmodifiedSince: null }),
+    await client.upsert(me, 'Contacts', [{ Last_Name: 'Synthetic' }], ['Mobile']),
+  ];
+  const endpoints = ['getRecord', 'search', 'getRelated', 'coql', 'insert', 'update', 'upsert'];
+  for (let index = 0; index < outcomes.length; index++) {
+    assert.equal(outcomes[index].ok, false, `${endpoints[index]} rejects an over-cap row set`);
+    assert.equal(outcomes[index].error.kind, 'unexpected', `${endpoints[index]} fails closed`);
+  }
+  assert.equal(calls.length, 7, 'malformed successes are never retried');
+  assert.deepEqual(sink.records().map((line) => line.errorClass), Array(7).fill('unexpected'));
+});
+
 test('client: wasDeleted() tells "deleted" apart from "not in the bin"', async () => {
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const filler = Array.from({ length: 200 }, (_, i) => ({ id: String(554023000001000000n + BigInt(i)), deleted_by: { id: '1', name: 'x' }, deleted_time: 't', type: 'recycle' }));
   const hit = { id: ID, display_name: 'Anand Pillai', type: 'recycle', deleted_by: { name: 'Rohit Deshpande', id: '554023000000235011' }, created_by: { name: 'x', id: '1' }, deleted_time: '2026-09-20T11:00:00+05:30' };
   const found = rig([zohoReply(200, { data: filler, info: { more_records: true, page: 1 } }), zohoReply(200, { data: [hit], info: { more_records: false, page: 2 } })]);
@@ -601,21 +1049,59 @@ test('client: share/unshare hit the Share Records path with a user-only body; th
 });
 
 test('client: an expired token is refused locally, without calling Zoho', async () => {
-  const me = userCredential('kavya', { ...grantFor(), expires_in: 1 }, 0);
+  const me = await mintUser({ ...grantFor(), expires_in: 1 }, { clock: () => 0 });
   const { client, calls, sink } = rig([], { clock: () => 5_000 });
   const r = await client.getRecord(me, 'Leads', ID);
   assert.equal(r.error.kind, 'auth-expired'); assert.equal(calls.length, 0);
   assert.equal(sink.records()[0].reason, 'token-expired');
 });
 
+test('client: a token expiring while queued is refused after gate acquisition and before fetch', async () => {
+  let now = 0;
+  let releases = 0;
+  const entered = deferred();
+  const allow = deferred();
+  const queuedGate = {
+    acquire: async () => {
+      entered.resolve();
+      await allow.promise;
+      return { waitedMs: 1_000, release() { releases++; } };
+    },
+  };
+  const me = await mintUser({ ...grantFor(), expires_in: 1 }, { clock: () => 0 });
+  const { client, calls } = rig([], { gate: queuedGate, clock: () => now });
+  const pending = client.getRecord(me, 'Leads', ID);
+  await entered.promise;
+  now = 1_000;
+  allow.resolve();
+  const result = await pending;
+  assert.equal(result.ok, false); assert.equal(result.error.kind, 'auth-expired');
+  assert.equal(calls.length, 0, 'an expired queued call never fetches');
+  assert.equal(releases, 1, 'the acquired lease is released on local expiry refusal');
+});
+
+test('client: a token expiring during retry backoff is not used for another fetch', async () => {
+  let now = 0;
+  let sleeps = 0;
+  const me = await mintUser({ ...grantFor(), expires_in: 1 }, { clock: () => 0 });
+  const { client, calls } = rig(() => zohoReply(503, null), {
+    clock: () => now,
+    sleep: async () => { sleeps++; now = 1_000; },
+  });
+  const result = await client.getRecord(me, 'Leads', ID);
+  assert.equal(result.ok, false); assert.equal(result.error.kind, 'auth-expired');
+  assert.equal(sleeps, 1, 'one retry backoff completes before expiry is observed');
+  assert.equal(calls.length, 1, 'there is no post-expiry retry fetch');
+});
+
 /* ===== LOG =============================================================================== */
 
 test('log: Plane B never contains a request or response body', async () => {
   const PII = ['Anand Pillai', '+91 99001 44821', '9900144821', 'anand.pillai@gmail.com', 'ABCDE1234F', '1000.secret-token', 'Wants the block walked'];
-  const me = userCredential('kavya', grantFor());
+  const me = await mintUser();
   const echo = (url, init) => {
-    if (url.includes('/search')) return zohoReply(200, { data: [record(ID, { Last_Name: 'Anand Pillai', Mobile: '+91 99001 44821', Email: 'anand.pillai@gmail.com' })] });
-    if (url.endsWith('/coql')) return zohoReply(200, { data: [record(ID2, { PAN: 'ABCDE1234F', Note: 'Wants the block walked' })] });
+    if (url.includes('/search')) return zohoReply(200, { data: [record(ID, { Last_Name: 'Anand Pillai', Mobile: '+91 99001 44821', Email: 'anand.pillai@gmail.com' })], info: { more_records: false } });
+    if (url.endsWith('/coql')) return zohoReply(200, { data: [record(ID2, { PAN: 'ABCDE1234F', Note: 'Wants the block walked' })], info: { more_records: false } });
     if (url.includes('/upsert')) return zohoReply(400, { data: [{ code: 'INVALID_DATA', details: { api_name: 'PAN', value: 'ABCDE1234F' }, message: 'invalid data ABCDE1234F', status: 'error' }] });
     return zohoReply(200, { data: [{ code: 'SUCCESS', details: { id: ID, Modified_Time: '2026-09-23T10:05:00+05:30', Last_Name: 'Anand Pillai' }, message: 'record updated', status: 'success' }] });
   };
@@ -718,7 +1204,7 @@ test('adapter (fixture): funnels are cached per scope and invalidated by a write
 
 test('adapter (live): a typed stub that fails loudly, never falls back to the fixture', async () => {
   const { client, calls } = rig([]);
-  const live = createLiveAdapter({ who: 'kavya', credential: userCredential('kavya', grantFor()), client, cache: createScopedCache() });
+  const live = createLiveAdapter({ who: 'kavya', credential: await mintUser(), client, cache: createScopedCache() });
   assert.equal(live.source, 'live');
   for (const r of [await live.readMyBook(), await live.readLead('L1'), await live.moveRung('L1', { from: 1, to: 2 }, null)]) {
     assert.equal(r.ok, false); assert.equal(r.error.kind, 'not-implemented');

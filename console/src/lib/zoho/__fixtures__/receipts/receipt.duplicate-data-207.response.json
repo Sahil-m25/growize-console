@@ -1,0 +1,19 @@
+{
+  "status": 207,
+  "headers": {
+    "content-type": "application/json",
+    "x-api-credits-remaining": "41990"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Idempotency_Key"
+        },
+        "message": "synthetic unique field collision",
+        "status": "error"
+      }
+    ]
+  }
+}

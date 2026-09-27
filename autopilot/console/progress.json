@@ -232,6 +232,18 @@
    "commits": [
     "e7a7a46"
    ]
+  },
+  "M01-S08": {
+   "status": "in_progress",
+   "attempts": 1,
+   "phases": {
+    "zoho": "in_progress"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T12:56:33.975Z"
   }
  },
  "subtasks": {
@@ -495,6 +507,11 @@
    "status": "blocked",
    "at": "2026-09-27T12:28:22.795Z",
    "note": "waiting on Sahil"
+  },
+  "M01-S08-T03": {
+   "status": "in_progress",
+   "at": "2026-09-27T12:56:33.975Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -698,6 +715,15 @@
    "attempt": 1,
    "hours": 2,
    "note": "Local HMAC, India-DC OAuth refresh, source re-read, request-id binding, callback limits and failure logs pass 74 recorded-response tests plus 3 sandbox-reset tests. Waiting on paid plan, owner OAuth/HMAC secrets, sandbox Aadhaar/email-OTP proof, M12-S05 durable worker/dead-letter, and persistent Plane B; npm test is not defined in the frontend-owned package."
+  },
+  {
+   "at": "2026-09-27T12:56:33.975Z",
+   "story": "M01-S08",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 5,
+   "note": ""
   }
  ],
  "last_regression_round": 0,

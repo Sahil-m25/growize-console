@@ -1,0 +1,29 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740993010",
+        "Allotment": {
+          "id": "9007199254740993011",
+          "name": "Different synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 125000,
+        "Mode": "NEFT",
+        "UTR": "HDFC2609001",
+        "Received_On": "2026-09-01T12:00:00+05:30",
+        "Idempotency_Key": "receipt-v1_YmI8Tid7kqYU5-w5Lw5RUsDS8TVfk-xX82BHc9h1JwQ",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Fixture_Note": "Conflicting synthetic receipt note"
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}

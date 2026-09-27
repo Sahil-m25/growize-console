@@ -1,0 +1,16 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INTERNAL_ERROR",
+    "message": "Synthetic Fixture Investor fixture.investor@example.invalid +91 90000 00000",
+    "details": {
+      "pan": "ABCDE1234F",
+      "bank_account": "000012341208",
+      "note": "Synthetic investor note must never enter Plane B"
+    },
+    "status": "error"
+  }
+}

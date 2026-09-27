@@ -1,0 +1,43 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740993004",
+        "Allotment": {
+          "id": "9007199254740993001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "Mode": "NEFT",
+        "UTR": "SYNTHADV001",
+        "Received_On": "2026-08-22T10:00:00+05:30",
+        "Idempotency_Key": null,
+        "Match_State": "Pending",
+        "Reversal_Of": null
+      },
+      {
+        "id": "9007199254740993008",
+        "Allotment": {
+          "id": "9007199254740993001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Full",
+        "Amount": 2250000,
+        "Mode": "RTGS",
+        "UTR": "HDFC2609002",
+        "Received_On": "2026-09-02T08:30:00+05:30",
+        "Idempotency_Key": "receipt-v1_YmI8Tid7kqYU5-w5Lw5RUsDS8TVfk-xX82BHc9h1JwQ",
+        "Match_State": "Pending",
+        "Reversal_Of": null
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}
