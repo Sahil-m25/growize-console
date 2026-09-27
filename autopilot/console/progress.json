@@ -552,6 +552,23 @@
    "commits": [
     "cacd7f7"
    ]
+  },
+  "M16-S06": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T17:03:48.034Z",
+   "notes": 1,
+   "note": "Transfers per yes-month with units/value from allotments and median days, 2 tests; waits on manager read access to Contacts/allotments and the Legacy_Record field.",
+   "commits": [
+    "063bd68"
+   ]
   }
  },
  "subtasks": {
@@ -945,6 +962,11 @@
    "status": "blocked",
    "at": "2026-09-27T16:56:50.322Z",
    "note": "waiting on Autopilot (Jev)"
+  },
+  "M16-S06-T01": {
+   "status": "done",
+   "at": "2026-09-27T17:03:48.034Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -1490,6 +1512,24 @@
    "attempt": 1,
    "hours": 2,
    "note": "Plan read from Sales_Plans with paid units and banked money from matched Receipts, 2 tests; waits on plan records, Receipts read for managers and a source for decisions/rates."
+  },
+  {
+   "at": "2026-09-27T17:00:42.455Z",
+   "story": "M16-S06",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T17:03:48.034Z",
+   "story": "M16-S06",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Transfers per yes-month with units/value from allotments and median days, 2 tests; waits on manager read access to Contacts/allotments and the Legacy_Record field."
   }
  ],
  "last_regression_round": 0,
