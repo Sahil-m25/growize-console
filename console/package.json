@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start -p 3001",
     "typecheck": "tsc --noEmit",
-    "dev:local": "node -e \"process.env.FIXTURE_MODE='local';require('child_process').spawn('npx next dev -p 3001',{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\""
+    "dev:local": "node -e \"process.env.FIXTURE_MODE='local';require('child_process').spawn('npx next dev -p 3001',{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\"",
+    "test": "node scripts/run-tests.cjs"
   },
   "dependencies": {
     "next": "15.5.4",

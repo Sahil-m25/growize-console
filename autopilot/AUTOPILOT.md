@@ -4,6 +4,20 @@ You are the autopilot for the Growize build (D65). You work **one round**: one s
 The driver (`autopilot/run.ps1` / `run.sh`) starts the next round with a fresh context. Read `CLAUDE.md` first as always;
 this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; since D69–D73 (25 Sep) there is one queue, `console`, built from `pm/plan-merged/growize-console-plan.json` (the old `ir`/`im` queues are retired).
 
+## Jev first (D101) — small judgments go to Jev, not to you
+
+Tokens are for writing code. Hand these judgments to Jev (`autopilot/jev.mjs`, a few seconds each) and act on the answer:
+
+| When | Run | Then |
+|---|---|---|
+| Right after the packet | `node autopilot/jev.mjs context <STORY>` | Read **only** the prototype line ranges, code files and Zoho fields it lists (Read with offset/limit). Never read or grep the whole 17,500-line prototype; open more only if a named gap remains. |
+| A UI test run failed | `node autopilot/jev.mjs triage <result.json>` | Fix by group: `harness` first, then `control_missing`, `label_differs`, `behaviour_wrong`. `case_outdated` → FACT CHANGE PROPOSED. Open raw result entries only for `unsure_look_yourself`. |
+| Any either/or choice: an open owner decision, a default, which status to record, which of two prototype behaviours to copy | `node autopilot/jev.mjs decide "<question>" "a=<meaning>" "b=<meaning>" --state "<the facts>"` | Take the choice. If it prints LOW CONFIDENCE, build it anyway and record `PROVISIONAL: <question> → <choice>` with `done.mjs --human`. Do not deliberate at length. |
+
+Jev never writes code and never overrides a rule in CLAUDE.md or a failing test. Calls are logged in `autopilot/logs/jev.log`.
+
+`npm test` (in `console/`) runs every `*.test.cjs` in its own process; cancelled tests count as failures.
+
 ## Phases (D98, 27 Sep 2026) — read this before every round
 
 The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` picks the phase; a round works **one story in one phase**.
