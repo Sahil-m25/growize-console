@@ -97,7 +97,7 @@ export interface FollowupCommand {
 export type FollowupRefusal = "invalid-request" | "session-changed" | "capability-missing" | "not-visible" | "not-in-book"
   | "lead-changed" | "no-consent" | "contact-in-future" | "contact-before-capture" | "choose-complete-or-keep"
   | "nothing-to-keep" | "scheduled-changed" | "next-step-needed" | "next-step-in-past" | "undo-expired" | "undo-invalid"
-  | "source-invalid" | "followup-partial" | "lead-lost" | "money-in" | "loss-not-offered" | "not-lost";
+  | "source-invalid" | "followup-partial" | "lead-lost" | "money-in" | "loss-not-offered" | "not-lost" | "nothing-to-reschedule";
 export type FollowupResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: FollowupRefusal; readonly reason: string }
@@ -126,6 +126,7 @@ const REASON: Readonly<Record<FollowupRefusal, string>> = Object.freeze({
   "money-in": "money has come in on this lead, so it is not a loss but a refund or forfeit with Finance",
   "loss-not-offered": "closing as lost follows only 'Not interested' or 'Wrong number', with one of the eight reasons",
   "not-lost": "this lead is not closed as lost",
+  "nothing-to-reschedule": "this lead has no dated next step to move",
 });
 
 export interface FollowupDependencies {
@@ -144,6 +145,8 @@ interface UndoClaims {
   readonly leadModified: string; readonly snapshot: Snapshot;
   readonly created: readonly { readonly module: string; readonly id: string }[];
   readonly reopened: string | null;
+  /** Activity fields a reschedule moved, put back by Undo. */
+  readonly restore?: readonly { readonly module: string; readonly id: string; readonly fields: Readonly<Record<string, string>> }[];
 }
 
 const zohoTime = (ms: number): string => `${new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 19)}+05:30`;
@@ -381,6 +384,75 @@ export function createFollowups(deps: FollowupDependencies) {
       return { ok: true, value: { modifiedTime: put.value.modifiedTime } };
     },
 
+    /** Move the dated next step by whole days, keeping its time, on the Lead and on the Zoho record
+     *  D58 made for it (a Call's start moves with its reminder; a Meeting's start and end; a Task's
+     *  due date). Undo puts both back for ten seconds. */
+    async reschedule(principal: { credential: UserCredential; sessionId: string }, leadId: string, expectedModifiedTime: string,
+      activity: { readonly module: "Tasks" | "Calls" | "Events"; readonly id: string } | null, days: number, signal?: AbortSignal)
+      : Promise<FollowupResult<{ readonly nextStepAt: string; readonly undoToken: string; readonly undoUntil: number }>> {
+      if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
+      const cred = principal.credential, me = cred.userId;
+      if (!validId(leadId) || typeof expectedModifiedTime !== "string" || !DATETIME.test(expectedModifiedTime)
+        || !Number.isSafeInteger(days) || days < 1 || days > 366
+        || (activity !== null && (!activity || !ACTIVITY_MODULES.has(activity.module) || !validId(activity.id)))) {
+        return refuse(me, "invalid-request", validId(leadId) ? [leadId] : []);
+      }
+      const a = await recheck(principal, signal);
+      if (!("actor" in a)) return a;
+      let got: Awaited<ReturnType<typeof crm.getRecord>>;
+      try { got = await crm.getRecord(cred, LEADS_MODULE, leadId, { fields: GUARD_FIELDS, signal }); } catch { return zoho("unexpected"); }
+      if (!got.ok) return got.error.kind === "not-found" || got.error.kind === "forbidden" ? refuse(me, "not-visible", [leadId]) : zoho(got.error.kind);
+      if (!got.value || got.value.id !== leadId) return refuse(me, "not-visible", [leadId]);
+      const L = got.value as ZohoRecord;
+      if (L.Modified_Time !== expectedModifiedTime) return refuse(me, "lead-changed", [leadId]);
+      if (L.Lost_At) return refuse(me, "lead-lost", [leadId]);
+      const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
+      const inBook = owner === me || idOf(L.Secondary_Owner) === me
+        || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
+        || (owner !== null && a.teamOwnerIds.includes(owner));
+      if (!inBook) return refuse(me, "not-in-book", [leadId]);
+      if (typeof L.Next_Step_At !== "string" || !DATETIME.test(L.Next_Step_At)) return refuse(me, "nothing-to-reschedule", [leadId]);
+      const shift = (t: string) => zohoTime(Date.parse(t) + days * 86_400_000);
+      const moved = shift(L.Next_Step_At);
+
+      // The activity, as it is now, and the fields that move.
+      let restore: { module: string; id: string; fields: Record<string, string> }[] = [];
+      let change: Record<string, string> | null = null;
+      if (activity) {
+        const fields = activity.module === "Calls" ? ["Call_Start_Time", "What_Id"] : activity.module === "Events" ? ["Start_DateTime", "End_DateTime", "What_Id"] : ["Due_Date", "What_Id"];
+        let act: Awaited<ReturnType<typeof crm.getRecord>>;
+        try { act = await crm.getRecord(cred, activity.module, activity.id, { fields, signal }); } catch { return zoho("unexpected"); }
+        if (!act.ok || !act.value || idOf(act.value.What_Id) !== leadId) return refuse(me, "scheduled-changed", [leadId, activity.id]);
+        const v = act.value;
+        const was: Record<string, string> = {};
+        change = {};
+        for (const f of fields.filter((f) => f !== "What_Id")) {
+          const cur = v[f];
+          if (typeof cur !== "string") return refuse(me, "source-invalid", [activity.id]);
+          was[f] = cur;
+          change[f] = f === "Due_Date" ? zohoTime(Date.parse(`${cur}T12:00:00+05:30`) + days * 86_400_000).slice(0, 10) : shift(cur);
+        }
+        restore = [{ module: activity.module, id: activity.id, fields: was }];
+      }
+      const snapshot = Object.fromEntries(STAMPS.map((k) => [k, typeof L[k] === "string" ? L[k] as string : null])) as Snapshot;
+      let put: Awaited<ReturnType<typeof crm.update>>;
+      try { put = await crm.update(cred, LEADS_MODULE, leadId, { Next_Step_At: moved }, { ifUnmodifiedSince: expectedModifiedTime, signal }); } catch { return zoho("unexpected"); }
+      if (!put.ok) return put.error.kind === "conflict" ? refuse(me, "lead-changed", [leadId]) : zoho(put.error.kind);
+      if (activity && change) {
+        let ok = false;
+        try { ok = (await crm.update(cred, activity.module, activity.id, change, { ifUnmodifiedSince: null, signal })).ok; } catch { ok = false; }
+        if (!ok) {
+          const left = await takeBack(cred, leadId, put.value.modifiedTime, snapshot, [], null, signal);
+          if (left.length) return refuse(me, "followup-partial", [leadId, ...left]);
+          return zoho("unexpected");
+        }
+      }
+      const undoUntil = clock() + UNDO_WINDOW_MS;
+      const undoToken = sign({ v: 1, actor: me, session: principal.sessionId, lead: leadId, exp: undoUntil,
+        leadModified: put.value.modifiedTime ?? "", snapshot, created: [], reopened: null, restore });
+      return { ok: true, value: { nextStepAt: moved, undoToken, undoUntil } };
+    },
+
     async undo(principal: { credential: UserCredential; sessionId: string }, token: string, signal?: AbortSignal): Promise<FollowupResult<{ readonly undone: true }>> {
       if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
       const me = principal.credential.userId;
@@ -399,6 +471,13 @@ export function createFollowups(deps: FollowupDependencies) {
       } catch { return zoho("unexpected"); }
       if (!put.ok) return put.error.kind === "conflict" ? refuse(me, "lead-changed", [claims.lead]) : zoho(put.error.kind);
       const left = await takeBack(principal.credential, claims.lead, null, null, claims.created, claims.reopened, signal);
+      for (const r of claims.restore ?? []) {
+        if (!ACTIVITY_MODULES.has(r.module) || !validId(r.id)) { left.push(String(r.id)); continue; }
+        try {
+          const back = await crm.update(principal.credential, r.module, r.id, { ...r.fields }, { ifUnmodifiedSince: null, signal });
+          if (!back.ok) left.push(r.id);
+        } catch { left.push(r.id); }
+      }
       if (left.length) return refuse(me, "followup-partial", [claims.lead, ...left]);
       return { ok: true, value: { undone: true } };
     },

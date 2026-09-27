@@ -311,3 +311,37 @@ test('a lost lead takes no contact; Re-open clears the loss with a guarded write
   assert.equal((await r.svc.reopen(principal(), LEAD, LOADED, { text: 'Call back', at: '2026-09-20T10:00:00+05:30', channel: 'call' })).reasonCode, 'next-step-in-past');
   assert.equal(r.writes().length, 0);
 });
+
+// ---------------- M05-S04 reschedule ----------------
+
+test('Reschedule → Tomorrow moves the lead\'s step and the Call keeping the time; Undo puts both back', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z');
+  const routes = { ...ROUTES(), [`GET /Calls/${CALL}`]: 'call.scheduled', [`PUT /Calls/${CALL}`]: 'call.updated' };
+  const r = rig(routes);
+  const res = await r.svc.reschedule(principal(), LEAD, LOADED, { module: 'Calls', id: CALL }, 1);
+  assert.equal(res.ok, true);
+  assert.equal(res.value.nextStepAt, '2026-09-28T18:00:00+05:30');
+  assert.deepEqual(r.writes().map((c) => [c.key, c.body.data[0]]), [
+    [`PUT /Leads/${LEAD}`, { Next_Step_At: '2026-09-28T18:00:00+05:30' }],
+    [`PUT /Calls/${CALL}`, { Call_Start_Time: '2026-09-28T16:30:00+05:30' }],
+  ]);
+  assert.equal(r.writes()[0].headers['If-Unmodified-Since'], LOADED);
+  const u = rig(routes);
+  assert.equal((await u.svc.undo(principal(), res.value.undoToken)).ok, true);
+  assert.deepEqual(u.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Calls/${CALL}`]);
+  assert.equal(u.writes()[0].body.data[0].Next_Step_At, '2026-09-27T18:00:00+05:30');
+  assert.deepEqual(u.writes()[1].body.data[0], { Call_Start_Time: '2026-09-27T16:30:00+05:30' });
+});
+
+test('a task\'s due date moves by whole days; nothing dated means nothing to move', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z');
+  const task = { ...ROUTES(), [`GET /Tasks/${TASK}`]: 'task.scheduled' };
+  let r = rig({ ...task, [`GET /Tasks/${TASK}`]: 'task.due' });
+  let res = await r.svc.reschedule(principal(), LEAD, LOADED, { module: 'Tasks', id: TASK }, 2);
+  assert.equal(res.ok, true);
+  assert.deepEqual(r.writes()[1].body.data[0], { Due_Date: '2026-09-29' });
+  r = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-no-next' });
+  res = await r.svc.reschedule(principal(), LEAD, LOADED, null, 1);
+  assert.equal(res.reasonCode, 'nothing-to-reschedule');
+  assert.equal(r.writes().length, 0);
+});
