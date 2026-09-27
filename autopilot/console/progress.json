@@ -128,17 +128,39 @@
   },
   "M19-S03": {
    "status": "pending",
-   "attempts": 1,
-   "at": "2026-09-25T19:00:02.267Z",
-   "note": "manifest+reset+local fixture endpoint built and tested; live sandbox run needs Test_Seed/Seed_Key fields and creds",
+   "attempts": 2,
+   "at": "2026-09-27T13:42:46.892Z",
+   "note": "all 90 catalogue fixtures registered (data edits, reducer-run as a person, clock, client actions; staging ones explicit no-ops); fresh / resets",
    "commits": [
-    "0f325a3"
+    "0f325a3",
+    "936d1cd"
    ],
    "phases": {
-    "fe": "pending",
+    "fe": "done",
     "zoho": "done",
     "test": "pending"
-   }
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "current_phase": "fe"
+  },
+  "M03-S01": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "current_phase": "fe",
+   "at": "2026-09-27T13:42:40.896Z",
+   "notes": 3,
+   "note": "sign-in screen (Continue with Zoho stub + fixture people), session, data interface, empty by default; app = prototype on M03-S01 (1/5 each; 3 fact changes proposed)",
+   "commits": [
+    "62b38ea"
+   ]
   }
  },
  "subtasks": {
@@ -374,9 +396,14 @@
    "note": "D98: reset — the Jev run never executed (fixture errors)"
   },
   "M19-S03-T03": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reopened — fixture endpoint records the name only"
+   "status": "done",
+   "at": "2026-09-27T13:42:46.892Z",
+   "phase": "fe"
+  },
+  "M03-S01-T04": {
+   "status": "done",
+   "at": "2026-09-27T13:42:40.896Z",
+   "phase": "fe"
   }
  },
  "rounds": [
@@ -544,6 +571,42 @@
    "story": "D98",
    "status": "replan",
    "note": "Three phases: front end → Zoho → testing. Test units reset: no UI case had ever run."
+  },
+  {
+   "at": "2026-09-27T13:42:33.058Z",
+   "story": "M03-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T13:42:40.896Z",
+   "story": "M03-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "sign-in screen (Continue with Zoho stub + fixture people), session, data interface, empty by default; app = prototype on M03-S01 (1/5 each; 3 fact changes proposed)"
+  },
+  {
+   "at": "2026-09-27T13:42:46.831Z",
+   "story": "M19-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": "manifest+reset+local fixture endpoint built and tested; live sandbox run needs Test_Seed/Seed_Key fields and creds"
+  },
+  {
+   "at": "2026-09-27T13:42:46.892Z",
+   "story": "M19-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "all 90 catalogue fixtures registered (data edits, reducer-run as a person, clock, client actions; staging ones explicit no-ops); fresh / resets"
   }
  ],
  "last_regression_round": 0,
