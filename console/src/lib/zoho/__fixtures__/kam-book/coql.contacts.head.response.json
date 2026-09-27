@@ -1,0 +1,331 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994101",
+        "ARL_ID": "ARL-FX-4101",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 1",
+        "Mobile": "+91 90000 00001",
+        "Email": "fixture.investor1@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994001",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995101",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994102",
+        "ARL_ID": "ARL-FX-4102",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 2",
+        "Mobile": "+91 90000 00002",
+        "Email": "fixture.investor2@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994001",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995102",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994103",
+        "ARL_ID": "ARL-FX-4103",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 3",
+        "Mobile": "+91 90000 00003",
+        "Email": "fixture.investor3@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994001",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995103",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994104",
+        "ARL_ID": "ARL-FX-4104",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 4",
+        "Mobile": "+91 90000 00004",
+        "Email": "fixture.investor4@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994001",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995104",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994201",
+        "ARL_ID": "ARL-FX-4201",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 11",
+        "Mobile": "+91 90000 00001",
+        "Email": "fixture.investor11@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994002",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995201",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994202",
+        "ARL_ID": "ARL-FX-4202",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 12",
+        "Mobile": "+91 90000 00002",
+        "Email": "fixture.investor12@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994002",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995202",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994203",
+        "ARL_ID": "ARL-FX-4203",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 13",
+        "Mobile": "+91 90000 00003",
+        "Email": "fixture.investor13@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994002",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995203",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994204",
+        "ARL_ID": "ARL-FX-4204",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 14",
+        "Mobile": "+91 90000 00004",
+        "Email": "fixture.investor14@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994002",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995204",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994301",
+        "ARL_ID": "ARL-FX-4301",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 21",
+        "Mobile": "+91 90000 00001",
+        "Email": "fixture.investor21@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": null,
+        "KAM_Since": null,
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995301",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      },
+      {
+        "id": "9007199254740994302",
+        "ARL_ID": "ARL-FX-4302",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 22",
+        "Mobile": "+91 90000 00002",
+        "Email": "fixture.investor22@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994004",
+          "name": "Synthetic KAM"
+        },
+        "KAM_Since": "2026-08-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740995302",
+          "name": "Synthetic Lead"
+        },
+        "Said_Yes_At": "2026-07-20T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN1234F",
+        "Bank_Account_Number": "FXBANK000999",
+        "Aadhaar_Number": "FXAADHAAR0001"
+      }
+    ],
+    "info": {
+      "count": 10,
+      "more_records": false
+    }
+  }
+}

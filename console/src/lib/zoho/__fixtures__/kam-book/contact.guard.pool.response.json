@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994301",
+        "KAM": null,
+        "Origin_Lead": {
+          "id": "9007199254740995301",
+          "name": "Synthetic Lead"
+        },
+        "Modified_Time": "2026-09-20T10:00:00+05:30"
+      }
+    ]
+  }
+}

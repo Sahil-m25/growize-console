@@ -1,0 +1,14 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INTERNAL_ERROR",
+    "message": "Synthetic Investor 1 fixture.investor1@example.invalid",
+    "details": {
+      "pan": "FXPAN1234F"
+    },
+    "status": "error"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "users": [
+      {
+        "id": "9007199254740994002",
+        "status": "active",
+        "first_name": "Synthetic",
+        "last_name": "KAM Two"
+      }
+    ]
+  }
+}

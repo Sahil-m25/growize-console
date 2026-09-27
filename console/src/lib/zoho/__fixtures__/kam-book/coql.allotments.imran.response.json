@@ -1,0 +1,50 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Customer": {
+          "id": "9007199254740994101",
+          "name": "Synthetic Investor"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2
+      },
+      {
+        "id": "9007199254740996102",
+        "Customer": {
+          "id": "9007199254740994102",
+          "name": "Synthetic Investor"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2
+      },
+      {
+        "id": "9007199254740996103",
+        "Customer": {
+          "id": "9007199254740994103",
+          "name": "Synthetic Investor"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2
+      },
+      {
+        "id": "9007199254740996104",
+        "Customer": {
+          "id": "9007199254740994104",
+          "name": "Synthetic Investor"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}
