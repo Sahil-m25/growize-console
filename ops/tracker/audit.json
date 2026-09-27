@@ -1,0 +1,1611 @@
+{
+ "at": "2026-09-27T10:42",
+ "method": "screen pages in the plan vs routes in console/src/app; Jev noul per story as a second opinion; Zoho wiring: lib/zoho/adapter.ts is a stub nothing imports; a story counts as built only when both the page check and Jev (>=0.35) agree",
+ "stories": {
+  "M01-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.18,
+   "pages": [
+    "Documents",
+    "Investors",
+    "Leads",
+    "Payments",
+    "Sign-in",
+    "System",
+    "Today"
+   ],
+   "as_a": "any person with a seat (IR, IR Manager, Finance, KAM, Farm ops, Head of Finance, viewer, Sahil)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S02": {
+   "front_end": "partly",
+   "jev_fe": 0.33,
+   "pages": [
+    "Profile",
+    "Sign-in"
+   ],
+   "as_a": "any person with a seat",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S03": {
+   "front_end": "partly",
+   "jev_fe": 0.22,
+   "pages": [
+    "Investors",
+    "Leads",
+    "Today"
+   ],
+   "as_a": "any person with a seat",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S04": {
+   "front_end": "n/a",
+   "jev_fe": 0.25,
+   "pages": [
+    "Activity",
+    "System"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S05": {
+   "front_end": "n/a",
+   "jev_fe": 0.19,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S06": {
+   "front_end": "built",
+   "jev_fe": 0.63,
+   "pages": [
+    "Leads",
+    "Payments",
+    "Today"
+   ],
+   "as_a": "any person with a seat",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.11,
+   "pages": [
+    "Documents",
+    "Farms",
+    "Investors",
+    "Payments",
+    "Tickets"
+   ],
+   "as_a": "any person with a seat",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S08": {
+   "front_end": "partly",
+   "jev_fe": 0.1,
+   "pages": [
+    "Documents",
+    "Farms",
+    "Investors",
+    "Payments"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S09": {
+   "front_end": "partly",
+   "jev_fe": 0.31,
+   "pages": [
+    "Payments",
+    "Today"
+   ],
+   "as_a": "any person with a seat",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M01-S10": {
+   "front_end": "partly",
+   "jev_fe": 0.08,
+   "pages": [
+    "Investors",
+    "Payments"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S01": {
+   "front_end": "n/a",
+   "jev_fe": 0.13,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S02": {
+   "front_end": "n/a",
+   "jev_fe": 0.4,
+   "pages": [
+    "Leads",
+    "Today"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S03": {
+   "front_end": "n/a",
+   "jev_fe": 0.19,
+   "pages": [
+    "Events",
+    "Farms",
+    "Leads"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S04": {
+   "front_end": "n/a",
+   "jev_fe": 0.11,
+   "pages": [
+    "Investors",
+    "Leads",
+    "System"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S05": {
+   "front_end": "n/a",
+   "jev_fe": 0.15,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Tester",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S06": {
+   "front_end": "n/a",
+   "jev_fe": 0.15,
+   "pages": [],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S07": {
+   "front_end": "n/a",
+   "jev_fe": 0.52,
+   "pages": [
+    "Leads",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S08": {
+   "front_end": "n/a",
+   "jev_fe": 0.18,
+   "pages": [
+    "Investors",
+    "Leads"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S09": {
+   "front_end": "n/a",
+   "jev_fe": 0.18,
+   "pages": [
+    "Leads",
+    "Teams"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S10": {
+   "front_end": "n/a",
+   "jev_fe": 0.13,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S11": {
+   "front_end": "n/a",
+   "jev_fe": 0.07,
+   "pages": [
+    "Farms",
+    "Investors"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S12": {
+   "front_end": "n/a",
+   "jev_fe": 0.07,
+   "pages": [
+    "Farms",
+    "Investors",
+    "Payments"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S13": {
+   "front_end": "n/a",
+   "jev_fe": 0.06,
+   "pages": [
+    "Documents",
+    "Farms",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M02-S14": {
+   "front_end": "n/a",
+   "jev_fe": 0.07,
+   "pages": [
+    "Documents",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S01": {
+   "front_end": "built",
+   "jev_fe": 0.62,
+   "pages": [
+    "Sign-in"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S02": {
+   "front_end": "built",
+   "jev_fe": 0.47,
+   "pages": [
+    "Profile",
+    "Teams"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S03": {
+   "front_end": "built",
+   "jev_fe": 0.54,
+   "pages": [
+    "Teams"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S04": {
+   "front_end": "partly",
+   "jev_fe": 0.2,
+   "pages": [
+    "Activity",
+    "Sign-in",
+    "Teams"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S05": {
+   "front_end": "n/a",
+   "jev_fe": 0.49,
+   "pages": [
+    "Sign-in",
+    "Teams"
+   ],
+   "as_a": "Digital Infrastructure",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S06": {
+   "front_end": "partly",
+   "jev_fe": 0.08,
+   "pages": [
+    "Farms",
+    "Investors",
+    "Payments",
+    "Tickets"
+   ],
+   "as_a": "Auditor (Latha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investors",
+    "Today"
+   ],
+   "as_a": "Key Account Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S08": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investors",
+    "Today"
+   ],
+   "as_a": "Compliance & KYC (Fahad)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M03-S09": {
+   "front_end": "partly",
+   "jev_fe": 0.09,
+   "pages": [
+    "Investors",
+    "Leads",
+    "Today"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M04-S01": {
+   "front_end": "built",
+   "jev_fe": 0.67,
+   "pages": [
+    "Leads",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M04-S02": {
+   "front_end": "built",
+   "jev_fe": 0.48,
+   "pages": [
+    "Leads"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M04-S03": {
+   "front_end": "built",
+   "jev_fe": 0.41,
+   "pages": [
+    "Leads"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M04-S04": {
+   "front_end": "built",
+   "jev_fe": 0.7,
+   "pages": [
+    "Events",
+    "Leads"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S01": {
+   "front_end": "built",
+   "jev_fe": 0.43,
+   "pages": [
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S02": {
+   "front_end": "built",
+   "jev_fe": 0.49,
+   "pages": [
+    "Leads",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S03": {
+   "front_end": "built",
+   "jev_fe": 0.55,
+   "pages": [
+    "Leads",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S04": {
+   "front_end": "partly",
+   "jev_fe": 0.32,
+   "pages": [
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S06": {
+   "front_end": "partly",
+   "jev_fe": 0.12,
+   "pages": [
+    "Today"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.09,
+   "pages": [
+    "Today"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M05-S08": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investors",
+    "Today"
+   ],
+   "as_a": "Key Account Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M06-S01": {
+   "front_end": "built",
+   "jev_fe": 0.83,
+   "pages": [
+    "Leads"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M06-S02": {
+   "front_end": "built",
+   "jev_fe": 0.59,
+   "pages": [
+    "Leads"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M06-S03": {
+   "front_end": "partly",
+   "jev_fe": 0.18,
+   "pages": [
+    "Lead page",
+    "Leads",
+    "top bar"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M06-S05": {
+   "front_end": "built",
+   "jev_fe": 0.57,
+   "pages": [
+    "top bar"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S01": {
+   "front_end": "built",
+   "jev_fe": 0.83,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S02": {
+   "front_end": "partly",
+   "jev_fe": 0.26,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S03": {
+   "front_end": "built",
+   "jev_fe": 0.45,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S04": {
+   "front_end": "partly",
+   "jev_fe": 0.18,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S05": {
+   "front_end": "partly",
+   "jev_fe": 0.19,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S06": {
+   "front_end": "partly",
+   "jev_fe": 0.28,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M07-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.14,
+   "pages": [
+    "Investor record",
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.27,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S02": {
+   "front_end": "built",
+   "jev_fe": 0.5,
+   "pages": [
+    "Lead page",
+    "Payments"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S03": {
+   "front_end": "partly",
+   "jev_fe": 0.13,
+   "pages": [
+    "Investor record",
+    "Lead page",
+    "Payments"
+   ],
+   "as_a": "IR and Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S04": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investor record",
+    "Lead page",
+    "Today (Investors side)"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S05": {
+   "front_end": "partly",
+   "jev_fe": 0.19,
+   "pages": [
+    "Lead page",
+    "Teams"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investor record",
+    "Investors",
+    "Lead page",
+    "Today (Investors side)"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M08-S08": {
+   "front_end": "partly",
+   "jev_fe": 0.09,
+   "pages": [
+    "Investor record",
+    "Payments"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S01": {
+   "front_end": "not started",
+   "jev_fe": 0.05,
+   "pages": [
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S02": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investors"
+   ],
+   "as_a": "Key Account Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S03": {
+   "front_end": "not started",
+   "jev_fe": 0.05,
+   "pages": [
+    "Investor record"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S04": {
+   "front_end": "not started",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investor record"
+   ],
+   "as_a": "Head of Account Management",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S07": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S08": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investor record",
+    "Investors"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.21,
+   "pages": [
+    "Payments"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S02": {
+   "front_end": "partly",
+   "jev_fe": 0.08,
+   "pages": [
+    "Investor record",
+    "Payments"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S03": {
+   "front_end": "partly",
+   "jev_fe": 0.08,
+   "pages": [
+    "Lead page",
+    "Payments",
+    "Today (Investors side)"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S05": {
+   "front_end": "partly",
+   "jev_fe": 0.1,
+   "pages": [
+    "Payments"
+   ],
+   "as_a": "Finance Operations",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.06,
+   "pages": [
+    "Farms",
+    "Investor record",
+    "Payments"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S08": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investor record"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S09": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investor record"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M11-S01": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Farms"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M11-S02": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Farms",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M11-S03": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Farms"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M11-S04": {
+   "front_end": "not started",
+   "jev_fe": 0.07,
+   "pages": [
+    "Farms"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M11-S05": {
+   "front_end": "partly",
+   "jev_fe": 0.06,
+   "pages": [
+    "Documents",
+    "Farms",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M11-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Farms",
+    "Payments"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Documents",
+    "Farms",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S02": {
+   "front_end": "partly",
+   "jev_fe": 0.08,
+   "pages": [
+    "Documents",
+    "Farms",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S03": {
+   "front_end": "partly",
+   "jev_fe": 0.4,
+   "pages": [
+    "Documents"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S04": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Documents",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S05": {
+   "front_end": "partly",
+   "jev_fe": 0.1,
+   "pages": [
+    "Documents",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S06": {
+   "front_end": "partly",
+   "jev_fe": 0.07,
+   "pages": [
+    "Documents",
+    "Investors"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.1,
+   "pages": [
+    "Documents",
+    "Investors",
+    "Lead page"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S08": {
+   "front_end": "partly",
+   "jev_fe": 0.13,
+   "pages": [
+    "Documents"
+   ],
+   "as_a": "Investor",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S09": {
+   "front_end": "partly",
+   "jev_fe": 0.13,
+   "pages": [
+    "Documents",
+    "Investors",
+    "Lead page"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S10": {
+   "front_end": "partly",
+   "jev_fe": 0.16,
+   "pages": [
+    "Documents",
+    "Investors",
+    "Lead page",
+    "Leads",
+    "Payments",
+    "Tickets"
+   ],
+   "as_a": "Digital Infrastructure (Sahil)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S11": {
+   "front_end": "partly",
+   "jev_fe": 0.2,
+   "pages": [
+    "Documents",
+    "Lead page",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S12": {
+   "front_end": "partly",
+   "jev_fe": 0.17,
+   "pages": [
+    "Documents",
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S13": {
+   "front_end": "partly",
+   "jev_fe": 0.21,
+   "pages": [
+    "Lead page"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M12-S14": {
+   "front_end": "built",
+   "jev_fe": 0.37,
+   "pages": [
+    "Documents",
+    "Lead page",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M13-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.08,
+   "pages": [
+    "Investor updates",
+    "System",
+    "Tickets"
+   ],
+   "as_a": "Digital Infrastructure (Sahil)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M13-S02": {
+   "front_end": "not started",
+   "jev_fe": 0.08,
+   "pages": [
+    "Tickets"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M13-S03": {
+   "front_end": "not started",
+   "jev_fe": 0.08,
+   "pages": [
+    "Tickets"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M13-S04": {
+   "front_end": "not started",
+   "jev_fe": 0.07,
+   "pages": [
+    "Tickets"
+   ],
+   "as_a": "Account Management (KAM)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M13-S05": {
+   "front_end": "not started",
+   "jev_fe": 0.09,
+   "pages": [
+    "Tickets"
+   ],
+   "as_a": "Account Management (KAM)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M13-S06": {
+   "front_end": "not started",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investor updates"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M14-S01": {
+   "front_end": "built",
+   "jev_fe": 0.74,
+   "pages": [
+    "Events"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M14-S02": {
+   "front_end": "built",
+   "jev_fe": 0.61,
+   "pages": [
+    "Events"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M14-S03": {
+   "front_end": "built",
+   "jev_fe": 0.39,
+   "pages": [
+    "Events",
+    "Leads"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M15-S01": {
+   "front_end": "built",
+   "jev_fe": 0.5,
+   "pages": [
+    "Updates"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M15-S03": {
+   "front_end": "partly",
+   "jev_fe": 0.17,
+   "pages": [
+    "Activity"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M15-S05": {
+   "front_end": "partly",
+   "jev_fe": 0.21,
+   "pages": [
+    "Activity",
+    "System"
+   ],
+   "as_a": "Digital Infrastructure (Sahil)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.23,
+   "pages": [
+    "Numbers"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S02": {
+   "front_end": "partly",
+   "jev_fe": 0.23,
+   "pages": [
+    "Lead page",
+    "Numbers"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S03": {
+   "front_end": "built",
+   "jev_fe": 0.56,
+   "pages": [
+    "Leads",
+    "Numbers"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S04": {
+   "front_end": "partly",
+   "jev_fe": 0.3,
+   "pages": [
+    "Plan"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S06": {
+   "front_end": "partly",
+   "jev_fe": 0.16,
+   "pages": [
+    "Transfers"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.13,
+   "pages": [
+    "Lead page",
+    "Transfers"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S08": {
+   "front_end": "partly",
+   "jev_fe": 0.06,
+   "pages": [
+    "Numbers"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M16-S09": {
+   "front_end": "partly",
+   "jev_fe": 0.13,
+   "pages": [
+    "Numbers"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M17-S01": {
+   "front_end": "partly",
+   "jev_fe": 0.21,
+   "pages": [
+    "Teams"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M17-S02": {
+   "front_end": "built",
+   "jev_fe": 0.5,
+   "pages": [
+    "Teams"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M17-S05": {
+   "front_end": "built",
+   "jev_fe": 0.49,
+   "pages": [
+    "Profile"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M17-S06": {
+   "front_end": "partly",
+   "jev_fe": 0.25,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S01": {
+   "front_end": "n/a",
+   "jev_fe": 0.13,
+   "pages": [
+    "Documents",
+    "Investors",
+    "Leads",
+    "Numbers",
+    "Tickets",
+    "Today"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S02": {
+   "front_end": "n/a",
+   "jev_fe": 0.18,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S03": {
+   "front_end": "n/a",
+   "jev_fe": 0.16,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S04": {
+   "front_end": "n/a",
+   "jev_fe": 0.33,
+   "pages": [
+    "All pages",
+    "System"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S05": {
+   "front_end": "n/a",
+   "jev_fe": 0.13,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S06": {
+   "front_end": "n/a",
+   "jev_fe": 0.41,
+   "pages": [
+    "Lead page",
+    "Transfers"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S08": {
+   "front_end": "n/a",
+   "jev_fe": 0.19,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S09": {
+   "front_end": "n/a",
+   "jev_fe": 0.1,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S10": {
+   "front_end": "n/a",
+   "jev_fe": 0.14,
+   "pages": [
+    "System"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M18-S12": {
+   "front_end": "partly",
+   "jev_fe": 0.12,
+   "pages": [
+    "Payments"
+   ],
+   "as_a": "Head of Finance",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S01": {
+   "front_end": "n/a",
+   "jev_fe": 0.85,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S02": {
+   "front_end": "n/a",
+   "jev_fe": 0.09,
+   "pages": [],
+   "as_a": "Tester",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S03": {
+   "front_end": "n/a",
+   "jev_fe": 0.11,
+   "pages": [],
+   "as_a": "Tester",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S04": {
+   "front_end": "n/a",
+   "jev_fe": 0.1,
+   "pages": [],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S05": {
+   "front_end": "n/a",
+   "jev_fe": 0.1,
+   "pages": [],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S06": {
+   "front_end": "n/a",
+   "jev_fe": 0.11,
+   "pages": [],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S07": {
+   "front_end": "n/a",
+   "jev_fe": 0.9,
+   "pages": [
+    "Lead page",
+    "Leads",
+    "Today"
+   ],
+   "as_a": "IR Manager",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S08": {
+   "front_end": "n/a",
+   "jev_fe": 0.11,
+   "pages": [],
+   "as_a": "Tester",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S10": {
+   "front_end": "n/a",
+   "jev_fe": 0.23,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "Tester",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M19-S11": {
+   "front_end": "n/a",
+   "jev_fe": 0.17,
+   "pages": [
+    "All pages"
+   ],
+   "as_a": "Tester",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S01": {
+   "front_end": "n/a",
+   "jev_fe": 0.1,
+   "pages": [],
+   "as_a": "Business owner",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S03": {
+   "front_end": "n/a",
+   "jev_fe": 0.09,
+   "pages": [],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S04": {
+   "front_end": "n/a",
+   "jev_fe": 0.08,
+   "pages": [],
+   "as_a": "IR",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S05": {
+   "front_end": "n/a",
+   "jev_fe": 0.09,
+   "pages": [],
+   "as_a": "Business owner",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S06": {
+   "front_end": "n/a",
+   "jev_fe": 0.09,
+   "pages": [],
+   "as_a": "Business owner",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S07": {
+   "front_end": "partly",
+   "jev_fe": 0.1,
+   "pages": [
+    "Investor updates",
+    "System",
+    "Tickets"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M20-S08": {
+   "front_end": "n/a",
+   "jev_fe": 0.13,
+   "pages": [
+    "Documents",
+    "System"
+   ],
+   "as_a": "Sahil (Digital Infrastructure, super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S20": {
+   "front_end": "partly",
+   "jev_fe": 0.05,
+   "pages": [
+    "Investors",
+    "Payments"
+   ],
+   "as_a": "Finance (Harsha)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M09-S09": {
+   "front_end": "not started",
+   "jev_fe": 0.06,
+   "pages": [
+    "Investor record",
+    "Investors"
+   ],
+   "as_a": "Finance (Sahil as super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S21": {
+   "front_end": "not started",
+   "jev_fe": 0.07,
+   "pages": [
+    "Investor record"
+   ],
+   "as_a": "Head of Finance (Finance; Sahil as super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S22": {
+   "front_end": "partly",
+   "jev_fe": 0.05,
+   "pages": [
+    "Investor record",
+    "System",
+    "Tickets"
+   ],
+   "as_a": "Finance, KAM or IR answering an investor (Sahil as super user)",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  },
+  "M10-S23": {
+   "front_end": "partly",
+   "jev_fe": 0.09,
+   "pages": [
+    "Investor record",
+    "System"
+   ],
+   "as_a": "Sahil (super user) testing the investor app",
+   "on_zoho": "no",
+   "ui_tested": "no"
+  }
+ }
+}

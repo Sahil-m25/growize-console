@@ -5,9 +5,11 @@ P = json.load(open('pm/plan-merged/growize-console-plan.json', encoding='utf-8')
 PR = json.load(open('autopilot/console/progress.json', encoding='utf-8'))
 blocked = open('autopilot/console/BLOCKED.md', encoding='utf-8').read()
 st = {k: v.get('status') for k, v in PR['stories'].items()}
-IC = {'done': ':white_check_mark: Done', 'review': ':eyes: Review', 'waiting': ':hourglass_flowing_sand: Waiting on people',
-      'in_progress': ':hammer: Building', 'regressed': ':warning: Regressed', None: ':white_circle: To do'}
+IC = {'done': 'Done', 'review': 'Review', 'waiting': 'Waiting on people', 'in_progress': 'Building', 'regressed': 'Regressed', None: 'To do'}
 stories = [s for s in P['stories'] if s.get('plan') == 'In plan']
+try: AU = json.load(open('ops/tracker/audit.json', encoding='utf-8'))['stories']
+except Exception: AU = {}
+FE = {'built': 'Built (demo data)', 'partly': 'Partly built', 'not started': 'Not started', 'n/a': 'Not a screen'}
 sub = collections.defaultdict(list)
 for t in P['subtasks']: sub[t['story']].append(t)
 subdone = {k for k, v in PR.get('subtasks', {}).items() if v.get('status') == 'done'}
@@ -78,6 +80,16 @@ time.append(f"\n**Stuck: review or waiting on people ({len(stuck)}):**\n")
 time += [f"- **{k}** {title[k][:90]} ({st.get(k)})" for k in sorted(stuck)] or ["- none"]
 time.append("")
 out += time
+fec = collections.Counter(AU.get(s['id'], {}).get('front_end') for s in stories)
+out.append("# :mag: Where the build really is (audit 27 Sep)\n")
+out.append("|Layer|State|\n|---|---|")
+out.append(f"|Front end (screens)|{fec['built']} stories built, {fec['partly']} partly, {fec['not started']} not started, {fec['n/a']} have no screen|")
+out.append("|Lead side screens|Ported from the IR console prototype: Today, Leads, Lead page, Add/CSV, Events, Plan, Numbers, Activity, Teams, System, Profile, Updates, Payments (IR claims), Documents (paperwork), Transfers|")
+out.append("|Investors side screens|Not started: Investors list and record, Farms and allotments, Tickets, Investor updates, Finance receipts and matching, payouts, app access|")
+out.append("|Connected to Zoho|No screen reads or writes Zoho yet; every page runs on demo data (the Zoho adapter is a stub)|")
+out.append("|Zoho org|Modules and fields in place (M02 done items); still open: profiles per seat, field-level security (PAN not encrypted, only Administrator and Standard profiles exist), sharing rules, test user, sandbox and OAuth client|")
+out.append("|Tested by Jev|No story has passed Jev's screen tests yet|")
+out.append("")
 out.append("# :dart: Epics\n")
 out.append("|Epic|Stage|Stories|Done|Progress|Goal|\n|---|---|---|---|---|---|")
 for e in P.get('epics', []):
@@ -97,10 +109,11 @@ for e in P.get('epics', []):
     es = sorted([s for s in stories if s['epic'] == e['id']], key=lambda s: (order.get(st.get(s['id']), 3), s['id']))
     if not es: continue
     out.append(f"## {e['id']} · {e['name']}\n")
-    out.append("|Story|Status|Stage|Priority|Subtasks done|People steps|\n|---|---|---|---|---|---|")
+    out.append("|Story|Build status|Front end|On live Zoho|Stage|Priority|Subtasks done|\n|---|---|---|---|---|---|---|")
     for s in es:
         ts = sub[s['id']]; hd = [t for t in ts if not str(t.get('doer') or t.get('owner') or '').startswith('Autopilot')]
         title = s['title'].replace('|', '/')[:110]
-        out.append(f"|**{s['id']}** {title}|{IC.get(st.get(s['id']), IC[None])}|{s.get('stage','')}|{s.get('priority','')}|{sum(t['id'] in subdone for t in ts)}/{len(ts)}|{len(hd)}|")
+        au = AU.get(s['id'], {}); zo = 'Yes' if st.get(s['id']) == 'done' and s['epic'] == 'M02' else 'No'
+        out.append(f"|**{s['id']}** {title}|{IC.get(st.get(s['id']), IC[None])}|{FE.get(au.get('front_end'), '—')}|{zo}|{s.get('stage','')}|{s.get('priority','')}|{sum(t['id'] in subdone for t in ts)}/{len(ts)}|")
     out.append("")
 print("\n".join(out))
