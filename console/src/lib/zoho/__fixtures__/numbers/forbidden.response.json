@@ -1,0 +1,12 @@
+{
+  "status": 403,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "NO_PERMISSION",
+    "details": {},
+    "message": "permission denied",
+    "status": "error"
+  }
+}

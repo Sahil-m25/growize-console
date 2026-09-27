@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998101",
+        "Name": "Synthetic Aug",
+        "Period_From": "2026-08-01",
+        "Period_To": "2026-08-31",
+        "Target_Units": 10,
+        "Collection_Target": 25000000
+      },
+      {
+        "id": "9007199254740998102",
+        "Name": "Synthetic Sep",
+        "Period_From": "2026-09-01",
+        "Period_To": "2026-09-30",
+        "Target_Units": 12,
+        "Collection_Target": 30000000
+      },
+      {
+        "id": "9007199254740998103",
+        "Name": "Synthetic Oct",
+        "Period_From": "2026-10-01",
+        "Period_To": "2026-10-31",
+        "Target_Units": 14,
+        "Collection_Target": 35000000
+      }
+    ],
+    "info": {
+      "count": 3,
+      "more_records": false
+    }
+  }
+}

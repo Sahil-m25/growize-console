@@ -45,6 +45,7 @@ const sources = [
   'server/numbers/assignments.ts',
   'domain/plan.ts',
   'server/numbers/sections.ts',
+  'server/numbers/plan.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -71,6 +72,7 @@ const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'clie
 const { createScopedCache } = load(path.join('lib', 'zoho', 'cache.js'));
 const { computeAssignments, createAssignmentsReport, periodBounds } = load(path.join('server', 'numbers', 'assignments.js'));
 const { createNumbersSections } = load(path.join('server', 'numbers', 'sections.js'));
+const { createPlanRead } = load(path.join('server', 'numbers', 'plan.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -205,4 +207,38 @@ test('two seats with different visibility never share cached figures (D53)', asy
   const again = sectionsRig({ cache });
   await again.svc.read(principal(MANAGER), 'sources');
   assert.equal(again.queries.length, 0, 'the manager\'s own key is served from cache');
+});
+
+// ---------------- M16-S04 plan read ----------------
+
+function planRig(money, receipts = 'coql.plan-receipts') {
+  const queries = [];
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(createMemorySink()), maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => { const q = JSON.parse(init.body).select_query; queries.push(q);
+      return toResponse(recorded(/from Sales_Plans/.test(q) ? 'coql.plans' : /from Receipts/.test(q) ? receipts : 'coql.plan-allotments')); } });
+  const access = { async recheck(c) { return { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'ir-manager' }, seesPlan: true, seesMoney: money }; } };
+  return { svc: createPlanRead({ crm, access, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW }), queries };
+}
+
+test('each period shows its window, target, paid from matched Full receipts, remaining and status', async () => {
+  const r = planRig(true);
+  const res = await r.svc.read(principal(MANAGER));
+  const [aug, sep, oct] = res.value.periods;
+  assert.deepEqual([aug.status, sep.status, oct.status], ['done', 'current', 'next']);
+  assert.equal(res.value.focus, sep.id);
+  assert.equal(sep.paidUnits, 2, 'Full receipt on 10 Sep, allotment of 2 units; the advance is not paid in full');
+  assert.equal(sep.remainingUnits, 10);
+  assert.equal(aug.paidUnits, 1, 'Reserved units when none issued yet');
+  assert.equal(sep.banked, 4750000);
+  assert.deepEqual(res.value.total, { targetUnits: 36, paidUnits: 3 });
+  assert.match(r.queries[1], /Match_State = 'Matched'/);
+});
+
+test('a seat without money sees units only; a token that cannot read Receipts gets "paid" unknown, not zero', async () => {
+  let res = await planRig(false).svc.read(principal(MANAGER));
+  assert.ok(res.value.periods.every((p) => p.banked === null && p.collectionTarget === null));
+  assert.equal(res.value.periods[1].paidUnits, 2);
+  res = await planRig(true, 'forbidden').svc.read(principal(MANAGER));
+  assert.equal(res.value.paidKnown, false);
+  assert.ok(res.value.periods.every((p) => p.paidUnits === null && p.banked === null));
 });
