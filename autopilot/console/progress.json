@@ -603,6 +603,23 @@
    "commits": [
     "9069a95"
    ]
+  },
+  "M17-S06": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T17:16:33.621Z",
+   "notes": 1,
+   "note": "System checks computed from Plane B and held facts with owners and fixes, DI only, 3 tests; waits on a licence-expiry source and the Plane B/C store.",
+   "commits": [
+    "5995b1c"
+   ]
   }
  },
  "subtasks": {
@@ -1031,6 +1048,16 @@
    "status": "done",
    "at": "2026-09-27T17:12:32.839Z",
    "phase": "zoho"
+  },
+  "M17-S06-T01": {
+   "status": "done",
+   "at": "2026-09-27T17:16:33.621Z",
+   "phase": "zoho"
+  },
+  "M17-S06-T02": {
+   "status": "blocked",
+   "at": "2026-09-27T17:13:09.158Z",
+   "note": "waiting on Autopilot (Jev)"
   }
  },
  "rounds": [
@@ -1630,6 +1657,24 @@
    "attempt": 1,
    "hours": 12,
    "note": "Contract validation, signing, stub receiver, signed push and request.raised to Case with 5 tests; waits on the app codebase, signing keys, the Plane B/C store and Cases proof."
+  },
+  {
+   "at": "2026-09-27T17:13:09.028Z",
+   "story": "M17-S06",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T17:16:33.621Z",
+   "story": "M17-S06",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 1,
+   "note": "System checks computed from Plane B and held facts with owners and fixes, DI only, 3 tests; waits on a licence-expiry source and the Plane B/C store."
   }
  ],
  "last_regression_round": 0,
