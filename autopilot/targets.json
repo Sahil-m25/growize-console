@@ -2,5 +2,14 @@
  "build_start": "2026-09-24T21:00:00+05:30",
  "build_target": "2026-10-03T23:59:00+05:30",
  "test_days": 6,
- "note": "D66: no fixed days. Build everything (IR console, then IM portal) by Saturday 3 Oct; then test and harden (tester, UAT, staging on the Zoho sandbox); go live when each product's gates pass. Change the target here; every forecast follows."
+ "loop_hours_per_day": 14,
+ "minutes_per_unit": {
+  "fe:built": 25,
+  "fe:partly": 45,
+  "fe:not started": 75,
+  "fe:n/a": 20,
+  "zoho": 40,
+  "test": 15
+ },
+ "note": "D98: three phases (front end \u2192 Zoho \u2192 test). The forecast is loop time: units left \u00d7 minutes per unit \u00f7 loop hours per day. minutes_per_unit are assumptions until a phase has 5 measured rounds; then the measured average replaces them. loop_hours_per_day is how long the laptop runs /build each day. test_days is the people's testing after the loop (tester, UAT). build_target is the owner's goal date; the forecast is compared with it. Minutes per unit set on 27 Sep from the D98 test run: even stories marked 'built' pass only about a quarter of their cases, so they are not treated as free."
 }

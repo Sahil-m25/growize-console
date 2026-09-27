@@ -33,3 +33,4 @@ autopilot/logs/
 autopilot/*/results/
 tools/graphify/graphify-out/
 autopilot/*/logs/
+ops/tracker/.slack-token

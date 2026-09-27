@@ -1,0 +1,39 @@
+{
+ "note": "D98 (27 Sep 2026): the build runs in three phases, in this order. A story is worked once per phase that has autopilot subtasks for it. Change the order here only with the owner.",
+ "order": [
+  "fe",
+  "zoho",
+  "test"
+ ],
+ "names": {
+  "fe": "1. Front end on demo data",
+  "zoho": "2. Plug into Zoho",
+  "test": "3. Test and harden"
+ },
+ "types": {
+  "fe": [
+   "Frontend"
+  ],
+  "zoho": [
+   "Backend",
+   "Integration",
+   "Zoho config",
+   "Ops"
+  ],
+  "test": [
+   "Test",
+   "Docs"
+  ]
+ },
+ "gate": {
+  "fe": "The story's screens exist in console/ and its Jev UI cases pass on demo data (FIXTURE_MODE=local). No Zoho calls.",
+  "zoho": "The same screens read and write Zoho through src/lib/zoho (as the signed-in person), unit and API tests pass, and the UI cases still pass on demo data.",
+  "test": "API cases, staging cases on the Zoho sandbox, the full regression, tester review and UAT."
+ },
+ "first": {
+  "fe": [
+   "M03-S01",
+   "M19-S03"
+  ]
+ }
+}

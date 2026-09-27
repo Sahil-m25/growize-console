@@ -1,0 +1,180 @@
+{
+ "at": "2026-09-27",
+ "by": "D98 run (copy of the laptop repo, npm run dev:local, Jev runner)",
+ "full_suite": {
+  "cases": 241,
+  "pass": 1,
+  "why": "every case starts by signing in; the app has no sign-in screen (it opens as Rohit), so each stops at step 1"
+ },
+ "lead_side_as_rohit": {
+  "cases": 67,
+  "pass": 15,
+  "review": 5,
+  "fail": 47,
+  "stories": 36,
+  "stories_all_pass": [
+   "M01-S01",
+   "M03-S03",
+   "M04-S01",
+   "M07-S01",
+   "M14-S02",
+   "M16-S01",
+   "M16-S06"
+  ]
+ },
+ "calibration": {
+  "caught": 18,
+  "of": 18
+ },
+ "not_run": {
+  "special_fixtures": 78,
+  "why": "the fixture endpoint records the name but no screen changes (M19-S03-T03 reopened)"
+ },
+ "per_story": {
+  "M01-S02": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M04-S01": {
+   "cases": 3,
+   "pass": 3
+  },
+  "M04-S03": {
+   "cases": 2,
+   "pass": 1
+  },
+  "M05-S03": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M06-S01": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M06-S03": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M07-S02": {
+   "cases": 5,
+   "pass": 0
+  },
+  "M07-S03": {
+   "cases": 4,
+   "pass": 0
+  },
+  "M07-S06": {
+   "cases": 3,
+   "pass": 0
+  },
+  "M12-S11": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M14-S01": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M15-S01": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M17-S05": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M18-S04": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M01-S01": {
+   "cases": 2,
+   "pass": 2
+  },
+  "M04-S02": {
+   "cases": 2,
+   "pass": 1
+  },
+  "M05-S01": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M05-S04": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M06-S02": {
+   "cases": 3,
+   "pass": 0
+  },
+  "M07-S04": {
+   "cases": 3,
+   "pass": 0
+  },
+  "M07-S07": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M12-S14": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M14-S03": {
+   "cases": 2,
+   "pass": 0
+  },
+  "M16-S01": {
+   "cases": 1,
+   "pass": 1
+  },
+  "M18-S02": {
+   "cases": 3,
+   "pass": 2
+  },
+  "M03-S01": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M07-S01": {
+   "cases": 1,
+   "pass": 1
+  },
+  "M12-S12": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M14-S02": {
+   "cases": 1,
+   "pass": 1
+  },
+  "M15-S03": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M03-S03": {
+   "cases": 1,
+   "pass": 1
+  },
+  "M05-S02": {
+   "cases": 2,
+   "pass": 1
+  },
+  "M08-S01": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M16-S06": {
+   "cases": 1,
+   "pass": 1
+  },
+  "M08-S05": {
+   "cases": 1,
+   "pass": 0
+  },
+  "M18-S03": {
+   "cases": 1,
+   "pass": 0
+  }
+ },
+ "summary": "Full suite as written: 1 of 241 pass (no sign-in screen yet, so every case stops at step 1). Lead side as Rohit with sign-in skipped: 15 of 67 pass (22%), 5 review; 7 of 36 stories fully pass. 78 cases can't run until fixtures load. Calibration 18/18 caught, so the judge is trusted."
+}

@@ -10125,6 +10125,17 @@
    "orig_id": "E03-S01-T03"
   },
   {
+   "id": "M03-S01-T04",
+   "story": "M03-S01",
+   "type": "Frontend",
+   "title": "Sign-in screen and seat switch (demo mode)",
+   "detail": "D98: the Next.js port has no sign-in screen — it opens signed in as Rohit, so every Jev UI case failed at its first step on 27 Sep (241 of 241). Port the merged prototype's sign-in screen (the 14 people, one button each, 'Continue with Zoho' above them) for FIXTURE_MODE=local, show it at / until someone signs in, and keep the account drawer's switch. People without a seat are not offered (TC-E03-002). In phase 2 the same screen's Zoho button becomes the OAuth sign-in.",
+   "est_hours": 3,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
    "id": "M03-S02-T01",
    "story": "M03-S02",
    "type": "Backend",
@@ -15467,9 +15478,9 @@
   {
    "id": "M19-S03-T03",
    "story": "M19-S03",
-   "type": "Backend",
+   "type": "Frontend",
    "title": "Local fixture mode for the autopilot",
-   "detail": "FIXTURE_MODE=local: the Zoho client adapter serves the merged prototype's demo data in memory; a dev-only sign-in list mirrors it; POST /api/test/fixture/<name> applies a named fixture; disabled unless FIXTURE_MODE=local and NODE_ENV!=production.",
+   "detail": "FIXTURE_MODE=local: the Zoho client adapter serves the merged prototype's demo data in memory; a dev-only sign-in list mirrors it; POST /api/test/fixture/<name> applies a named fixture; disabled unless FIXTURE_MODE=local and NODE_ENV!=production. D98: reopened and moved to the front-end phase — on 27 Sep the endpoint only recorded the fixture's name; no screen changed. Done means every fixture cited by ui-cases.json changes what the screens show (build each from its 'prototype' JS in fixtures-merged.json), and the 78 cases with special fixtures can run.",
    "est_hours": 4,
    "owner": "Sahil",
    "doer": "Autopilot",
@@ -15883,6 +15894,171 @@
    "doer": "Autopilot (Jev)",
    "when": "Build",
    "orig_id": null
+  },
+  {
+   "id": "M10-S20-T01",
+   "story": "M10-S20",
+   "type": "Frontend",
+   "title": "Screens for: Monthly payouts: 60-month schedule per allotment, Finance due queue",
+   "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S20-T02",
+   "story": "M10-S20",
+   "type": "Backend",
+   "title": "Zoho reads and writes for: Monthly payouts: 60-month schedule per allotment, Finance due queue",
+   "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S20-T03",
+   "story": "M10-S20",
+   "type": "Test",
+   "title": "Cases for: Monthly payouts: 60-month schedule per allotment, Finance due queue",
+   "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot (Jev)",
+   "when": "Build"
+  },
+  {
+   "id": "M09-S09-T01",
+   "story": "M09-S09",
+   "type": "Frontend",
+   "title": "Screens for: Add an investor who has already paid, straight from the console",
+   "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M09-S09-T02",
+   "story": "M09-S09",
+   "type": "Backend",
+   "title": "Zoho reads and writes for: Add an investor who has already paid, straight from the console",
+   "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M09-S09-T03",
+   "story": "M09-S09",
+   "type": "Test",
+   "title": "Cases for: Add an investor who has already paid, straight from the console",
+   "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot (Jev)",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S21-T01",
+   "story": "M10-S21",
+   "type": "Frontend",
+   "title": "Screens for: Unlock the investor app and send the welcome from the console",
+   "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S21-T02",
+   "story": "M10-S21",
+   "type": "Backend",
+   "title": "Zoho reads and writes for: Unlock the investor app and send the welcome from the console",
+   "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S21-T03",
+   "story": "M10-S21",
+   "type": "Test",
+   "title": "Cases for: Unlock the investor app and send the welcome from the console",
+   "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot (Jev)",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S22-T01",
+   "story": "M10-S22",
+   "type": "Frontend",
+   "title": "Screens for: Preview the investor's app screens (mock-up with their data)",
+   "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S22-T02",
+   "story": "M10-S22",
+   "type": "Backend",
+   "title": "Zoho reads and writes for: Preview the investor's app screens (mock-up with their data)",
+   "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S22-T03",
+   "story": "M10-S22",
+   "type": "Test",
+   "title": "Cases for: Preview the investor's app screens (mock-up with their data)",
+   "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot (Jev)",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S23-T01",
+   "story": "M10-S23",
+   "type": "Frontend",
+   "title": "Screens for: Test sign-in link to check the real app on another device",
+   "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S23-T02",
+   "story": "M10-S23",
+   "type": "Backend",
+   "title": "Zoho reads and writes for: Test sign-in link to check the real app on another device",
+   "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+   "est_hours": 4,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M10-S23-T03",
+   "story": "M10-S23",
+   "type": "Test",
+   "title": "Cases for: Test sign-in link to check the real app on another device",
+   "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot (Jev)",
+   "when": "Build"
   }
  ],
  "tests": [

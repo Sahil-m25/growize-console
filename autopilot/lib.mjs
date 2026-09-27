@@ -30,3 +30,16 @@ export function blockedDone(q) {   // items the owner ticked in BLOCKED.md: line
   return ids;
 }
 export const today = () => new Date().toISOString().slice(0, 10);
+
+// D98 phases: front end → Zoho → testing. A "unit" is one story in one phase.
+export const PHASES = (() => { try { return JSON.parse(fs.readFileSync(P("autopilot", "phases.json"), "utf8")); } catch { return { order: ["all"], names: { all: "Build" }, types: { all: null }, gate: {}, first: {} }; } })();
+export const phaseOf = t => PHASES.order.find(ph => !PHASES.types[ph] || PHASES.types[ph].includes(t.type)) || PHASES.order.at(-1);
+export const autoTasks = (s, ph) => s.subtasks.filter(t => /^Autopilot/.test(t.doer) && phaseOf(t) === ph);
+export const phasesFor = s => PHASES.order.filter(ph => autoTasks(s, ph).length);
+export const phaseStatus = (pr, id, ph) => pr.stories[id]?.phases?.[ph] || "pending";
+export const PHASE_OK = new Set(["done", "waiting"]);        // a phase unit counts as built; review still needs a look
+/** The phase being worked: the first phase with a unit not yet built (review counts as not built). */
+export function currentPhase(Qd, pr) {
+  for (const ph of PHASES.order) if (Qd.stories.some(s => phasesFor(s).includes(ph) && !PHASE_OK.has(phaseStatus(pr, s.id, ph)))) return ph;
+  return null;
+}

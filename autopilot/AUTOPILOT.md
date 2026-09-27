@@ -4,6 +4,21 @@ You are the autopilot for the Growize build (D65). You work **one round**: one s
 The driver (`autopilot/run.ps1` / `run.sh`) starts the next round with a fresh context. Read `CLAUDE.md` first as always;
 this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; since D69–D73 (25 Sep) there is one queue, `console`, built from `pm/plan-merged/growize-console-plan.json` (the old `ir`/`im` queues are retired).
 
+## Phases (D98, 27 Sep 2026) — read this before every round
+
+The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` picks the phase; a round works **one story in one phase**.
+
+| Phase | Build now | Gate for the unit to be done |
+|---|---|---|
+| 1. Front end on demo data | the packet's `Frontend` subtasks only | screens exist in `console/` and the story's Jev UI cases pass on demo data (`npm run dev:local`). No Zoho calls. |
+| 2. Plug into Zoho | `Backend`, `Integration`, `Zoho config`, `Ops` subtasks | the same screens read and write Zoho through `src/lib/zoho` as the signed-in person; unit/API tests pass; the UI cases still pass on demo data. |
+| 3. Test and harden | `Test`, `Docs` subtasks | API cases, staging cases on the Zoho sandbox, regression; tester and UAT items go to BLOCKED.md. |
+
+- The packet has `phase`, `phase_gate`, and `later_phases_do_not_build_now`. Do not build anything on that list, even if it looks quick.
+- Phase 1 builds the Investors side from `console/prototype/growize-console-merged.html` the same way the lead side was ported.
+- The first phase-1 unit is **M19-S03**: make every fixture cited by `pm/plan-merged/ui-cases.json` change what the screens show (use each fixture's `prototype` JS in `fixtures-merged.json`). Until then 78 UI cases cannot run.
+- `done.mjs` records the result against the current phase and refreshes the Slack tracker (`ops/tracker/canvas.py --push`) by itself.
+
 ## The round
 
 1. **Stop checks.** If `autopilot/STOP` exists, write nothing and stop.

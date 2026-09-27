@@ -29,6 +29,8 @@ const STEP_MIN = 0.6;
 // and 14/14 seeded-wrong cases caught, while 92% of true cases pass (80% at 0.90). Re-measure after big UI changes.
 const PASS_AT = +(process.env.PASS_AT || 0.8);
 const FIX = process.env.FIXTURES && fs.existsSync(process.env.FIXTURES) ? JSON.parse(fs.readFileSync(process.env.FIXTURES, "utf8")) : {};
+// Investors-side fixtures are filed as "IM:<NAME>" while ui-cases.json cites them bare (same rule as the app's resolveFixture).
+for (const k of Object.keys(FIX)) if (k.startsWith("IM:") && !FIX[k.slice(3)]) FIX[k.slice(3)] = FIX[k];
 const wrap = code => `(async()=>{ ${code && /\breturn\b/.test(code) ? code : (code || "")} })()`;
 
 async function jev(state, questions) {
@@ -149,6 +151,8 @@ for (let c of cases.filter(c => !only || only.includes(c.id))) {
   const ctx = await browser.newContext({ viewport: { width: c.width || 1440, height: 900 }, ...(useSess ? { storageState: sess } : {}) });
   const page = await ctx.newPage();
   if (useSess) c = { ...c, steps: c.steps.filter(st => !/sign-in screen|'Signed in as'/i.test(st)) };
+  // D98: the merged console has one sign-in screen; the old Investors-portal cases pick the person from a 'Signed in as' dropdown.
+  c = { ...c, steps: c.steps.map(st => st.replace(/^Choose '([^'—]+?)\s*—[^']*' in the 'Signed in as' dropdown$/, "Press $1 on the sign-in screen")) };
   await page.addInitScript(() => document.addEventListener("click", e => {
     const a = e.target.closest && e.target.closest("a[href]");
     if (a && /^(tel|mailto|sms|whatsapp|intent):|wa\.me/i.test(a.getAttribute("href"))) e.preventDefault();   // no dialer / mail app in a test

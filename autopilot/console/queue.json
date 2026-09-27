@@ -4,7 +4,7 @@
  "url": "http://localhost:3001",
  "prototype": "console/prototype/growize-console-merged.html",
  "next_queue": null,
- "built": "2026-09-26T12:04:09.624Z",
+ "built": "2026-09-27T11:21:10.806Z",
  "stories": [
   {
    "id": "M03-S01",
@@ -62,6 +62,15 @@
      "detail": "Tester tries each staff type on staging and runs the prototype cases.",
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M03-S01-T04",
+     "type": "Frontend",
+     "title": "Sign-in screen and seat switch (demo mode)",
+     "detail": "D98: the Next.js port has no sign-in screen — it opens signed in as Rohit, so every Jev UI case failed at its first step on 27 Sep (241 of 241). Port the merged prototype's sign-in screen (the 14 people, one button each, 'Continue with Zoho' above them) for FIXTURE_MODE=local, show it at / until someone signs in, and keep the account drawer's switch. People without a seat are not offered (TC-E03-002). In phase 2 the same screen's Zoho button becomes the OAuth sign-in.",
+     "doer": "Autopilot",
+     "est_hours": 3,
      "when": "Build"
     }
    ],
@@ -461,9 +470,9 @@
     },
     {
      "id": "M19-S03-T03",
-     "type": "Backend",
+     "type": "Frontend",
      "title": "Local fixture mode for the autopilot",
-     "detail": "FIXTURE_MODE=local: the Zoho client adapter serves the merged prototype's demo data in memory; a dev-only sign-in list mirrors it; POST /api/test/fixture/<name> applies a named fixture; disabled unless FIXTURE_MODE=local and NODE_ENV!=production.",
+     "detail": "FIXTURE_MODE=local: the Zoho client adapter serves the merged prototype's demo data in memory; a dev-only sign-in list mirrors it; POST /api/test/fixture/<name> applies a named fixture; disabled unless FIXTURE_MODE=local and NODE_ENV!=production. D98: reopened and moved to the front-end phase — on 27 Sep the endpoint only recorded the fixture's name; no screen changed. Done means every fixture cited by ui-cases.json changes what the screens show (build each from its 'prototype' JS in fixtures-merged.json), and the 78 cases with special fixtures can run.",
      "doer": "Autopilot",
      "est_hours": 4,
      "when": "Build"
@@ -22093,7 +22102,35 @@
     "Contacts (First_Name, Last_Name, Email, Mobile, App_Access=Hold)",
     "LLP_UnitAllocation_Module (Customer, LLP, Issued_Units, Capital_Invested, Investment_Date, Allocation_Status=Issued)"
    ],
-   "subtasks": [],
+   "subtasks": [
+    {
+     "id": "M09-S09-T01",
+     "type": "Frontend",
+     "title": "Screens for: Add an investor who has already paid, straight from the console",
+     "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M09-S09-T02",
+     "type": "Backend",
+     "title": "Zoho reads and writes for: Add an investor who has already paid, straight from the console",
+     "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M09-S09-T03",
+     "type": "Test",
+     "title": "Cases for: Add an investor who has already paid, straight from the console",
+     "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 2,
+     "when": "Build"
+    }
+   ],
    "tests": [],
    "ui_cases": [],
    "calibration": [
@@ -22135,7 +22172,35 @@
     "Investor_Payouts (Allotment, Payout_Kind, Instalment_No, Period_Month, Due_On, Gross_Amount, TDS_Amount, Net_Amount, Payout_State, Paid_On, Payout_Mode, Payout_UTR, Paid_By, Payout_Note)",
     "LLP_UnitAllocation_Module.Annual_Rental_Yield"
    ],
-   "subtasks": [],
+   "subtasks": [
+    {
+     "id": "M10-S20-T01",
+     "type": "Frontend",
+     "title": "Screens for: Monthly payouts: 60-month schedule per allotment, Finance due queue",
+     "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S20-T02",
+     "type": "Backend",
+     "title": "Zoho reads and writes for: Monthly payouts: 60-month schedule per allotment, Finance due queue",
+     "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S20-T03",
+     "type": "Test",
+     "title": "Cases for: Monthly payouts: 60-month schedule per allotment, Finance due queue",
+     "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 2,
+     "when": "Build"
+    }
+   ],
    "tests": [],
    "ui_cases": [],
    "calibration": [
@@ -22181,7 +22246,35 @@
     "Contacts.App_Welcome_At, App_Welcome_Channel (written back by the app sync)",
     "investor app: zoho-crm-webhook v36, request-auth-email v11, migration 072"
    ],
-   "subtasks": [],
+   "subtasks": [
+    {
+     "id": "M10-S21-T01",
+     "type": "Frontend",
+     "title": "Screens for: Unlock the investor app and send the welcome from the console",
+     "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S21-T02",
+     "type": "Backend",
+     "title": "Zoho reads and writes for: Unlock the investor app and send the welcome from the console",
+     "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S21-T03",
+     "type": "Test",
+     "title": "Cases for: Unlock the investor app and send the welcome from the console",
+     "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 2,
+     "when": "Build"
+    }
+   ],
    "tests": [],
    "ui_cases": [],
    "calibration": [
@@ -22227,7 +22320,35 @@
     "Contacts, LLP_UnitAllocation_Module, Investor Payouts (read)",
     "design source: Growize App/Growize App Design v2 (proposed).html"
    ],
-   "subtasks": [],
+   "subtasks": [
+    {
+     "id": "M10-S22-T01",
+     "type": "Frontend",
+     "title": "Screens for: Preview the investor's app screens (mock-up with their data)",
+     "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S22-T02",
+     "type": "Backend",
+     "title": "Zoho reads and writes for: Preview the investor's app screens (mock-up with their data)",
+     "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S22-T03",
+     "type": "Test",
+     "title": "Cases for: Preview the investor's app screens (mock-up with their data)",
+     "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 2,
+     "when": "Build"
+    }
+   ],
    "tests": [],
    "ui_cases": [],
    "calibration": [
@@ -22270,7 +22391,35 @@
    "zoho": [
     "none — Supabase admin generate-link from a super-user-only server route; audit table"
    ],
-   "subtasks": [],
+   "subtasks": [
+    {
+     "id": "M10-S23-T01",
+     "type": "Frontend",
+     "title": "Screens for: Test sign-in link to check the real app on another device",
+     "detail": "D98: story had no subtasks, so no phase could pick it up. Build its screens from the merged prototype and its acceptance criteria on demo data.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S23-T02",
+     "type": "Backend",
+     "title": "Zoho reads and writes for: Test sign-in link to check the real app on another device",
+     "detail": "D98: wire the screens to Zoho through src/lib/zoho per zoho-field-mapping.json.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S23-T03",
+     "type": "Test",
+     "title": "Cases for: Test sign-in link to check the real app on another device",
+     "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
+     "doer": "Autopilot (Jev)",
+     "est_hours": 2,
+     "when": "Build"
+    }
+   ],
    "tests": [],
    "ui_cases": [],
    "calibration": [

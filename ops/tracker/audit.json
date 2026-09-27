@@ -276,14 +276,15 @@
    "ui_tested": "no"
   },
   "M03-S01": {
-   "front_end": "built",
+   "front_end": "partly",
    "jev_fe": 0.62,
    "pages": [
     "Sign-in"
    ],
    "as_a": "Digital Infrastructure",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "no",
+   "note": "D98: no sign-in screen in the port"
   },
   "M03-S02": {
    "front_end": "built",

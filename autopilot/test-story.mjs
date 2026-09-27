@@ -3,14 +3,14 @@
 // node autopilot/test-story.mjs <q> --regression       every ui case of stories already done/review/waiting
 // options: --target <url|html>  (default APP_URL or the queue's url) · --prototype (run against the prototype, as a reference check)
 import fs from "node:fs"; import { spawnSync } from "node:child_process";
-import { P, Q, queue, progress, write, read, dir, SATISFIED } from "./lib.mjs";
+import { P, Q, queue, progress, write, read, dir, PHASE_OK } from "./lib.mjs";
 const a = process.argv.slice(2); const [q, which] = a;
 const Qd = queue(q), pr = progress(q), cfg = Q[q];
 const all = read(cfg.cases, { cases: [] }).cases;
 let target = a.includes("--target") ? a[a.indexOf("--target") + 1] : a.includes("--prototype") ? P(cfg.prototype) : (process.env.APP_URL || cfg.url);
 let ids;
 if (which === "--regression") {
-  const done = new Set(Qd.stories.filter(s => SATISFIED.has(pr.stories[s.id]?.status)).map(s => s.id));
+  const done = new Set(Qd.stories.filter(s => ["fe", "test"].some(p => PHASE_OK.has(pr.stories[s.id]?.phases?.[p]))).map(s => s.id));   // D98: UI cases guard built front ends
   ids = all.filter(c => done.has(c.story) || c.expect_fail).map(c => c.id);
 } else {
   const s = Qd.stories.find(x => x.id === which); if (!s) { console.error("unknown story " + which); process.exit(64); }
@@ -31,7 +31,8 @@ for (const x of bad) console.log(`  ${x.verdict} ${x.id} ${x.runError || ""}\n` 
 if (cal.some(x => x.verdict === "PASS")) { console.log("!! a calibration case PASSED — the judge is not trustworthy for this run"); process.exit(3); }
 if (which === "--regression") {   // stories whose cases broke go back to the front of the queue
   const broke = new Set(bad.map(x => x.story).filter(Boolean));
-  for (const sid of broke) if (pr.stories[sid] && pr.stories[sid].status === "done") pr.stories[sid] = { ...pr.stories[sid], status: "regressed", note: "regression: " + bad.filter(x => x.story === sid).map(x => x.id).join(", ") };
+  for (const sid of broke) { const S = pr.stories[sid]; if (!S) continue;
+    for (const p of ["test", "fe"]) if (PHASE_OK.has(S.phases?.[p])) { S.phases[p] = "regressed"; S.status = "regressed"; S.note = "regression: " + bad.filter(x => x.story === sid).map(x => x.id).join(", "); break; } }
   write(`${dir(q)}/progress.json`, pr);
 }
 process.exit(bad.length ? 1 : 0);
