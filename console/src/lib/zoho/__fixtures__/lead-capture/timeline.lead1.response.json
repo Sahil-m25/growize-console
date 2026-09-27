@@ -1,0 +1,84 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "__timeline": [
+      {
+        "audited_time": "2026-09-27T12:00:00+05:30",
+        "action": "updated",
+        "done_by": {
+          "id": "9007199254740995009",
+          "name": "Synthetic Other"
+        },
+        "field_history": [
+          {
+            "api_name": "Owner",
+            "field_label": "Owner",
+            "_value": {
+              "old_value": "A",
+              "new_value": "B"
+            }
+          },
+          {
+            "api_name": "PAN",
+            "field_label": "PAN",
+            "_value": {
+              "old_value": "FXPAN0000A",
+              "new_value": "FXPAN1234F"
+            }
+          }
+        ]
+      },
+      {
+        "audited_time": "2026-09-26T12:00:00+05:30",
+        "action": "updated",
+        "done_by": {
+          "id": "9007199254740995001",
+          "name": "Me"
+        },
+        "field_history": [
+          {
+            "api_name": "City",
+            "field_label": "City",
+            "_value": {
+              "old_value": "x",
+              "new_value": "y"
+            }
+          }
+        ]
+      },
+      {
+        "audited_time": "2026-09-10T12:00:00+05:30",
+        "action": "updated",
+        "done_by": {
+          "id": "9007199254740995009",
+          "name": "Old"
+        },
+        "field_history": [
+          {
+            "api_name": "City",
+            "field_label": "City",
+            "_value": {
+              "old_value": "x",
+              "new_value": "y"
+            }
+          }
+        ]
+      },
+      {
+        "audited_time": "2026-09-25T09:00:00+05:30",
+        "action": "added",
+        "done_by": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "field_history": null
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}

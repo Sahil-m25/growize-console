@@ -50,6 +50,7 @@ const sources = [
   'server/leads/focus.ts',
   'server/leads/search.ts',
   'server/leads/import.ts',
+  'server/leads/updates.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -80,6 +81,7 @@ const { createLeadAssign } = load(path.join('server', 'leads', 'assign.js'));
 const { createFocusRead } = load(path.join('server', 'leads', 'focus.js'));
 const { createLeadSearch, searchQueryFor } = load(path.join('server', 'leads', 'search.js'));
 const { createLeadImport, checkRows } = load(path.join('server', 'leads', 'import.js'));
+const { createUpdates, kindOf } = load(path.join('server', 'leads', 'updates.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -728,4 +730,47 @@ test('owner rules: leave unassigned uses the queue; one person must be assignabl
   r = importRig('import.partial', VIEWER);
   assert.equal((await r.svc.load(principal(VIEWER), EVENT_ID, { kind: 'me' }, FILE)).reasonCode, 'capability-missing');
   assert.equal(r.calls.length, 0);
+});
+
+// ---------------- M15-S01 Updates ----------------
+
+function updatesRig(seenAt = {}) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const u = new URL(url); calls.push(u.pathname + (init.body ? ' ' + init.body : ''));
+      if (u.pathname.endsWith('/coql')) return toResponse(recorded('coql.updates-leads'));
+      return toResponse(recorded(u.pathname.includes('740996101') ? 'timeline.lead1' : 'timeline.lead2'));
+    } });
+  const marks = [];
+  const seen = { async lastSeen(u, k) { return seenAt[k] ?? null; }, async markSeen(u, k, at) { marks.push([u, k, at]); } };
+  return { svc: createUpdates({ crm, access: leadsAccess(IR), seen, log, recordIdPrefix: P, clock: () => NOW }), calls, sink, marks };
+}
+
+test('Updates groups other people\'s changes on my book in the last 7 days, never mine, never a value', async () => {
+  const r = updatesRig({ owner: '2026-09-27T11:00:00+05:30', stage: '2026-09-27T11:00:00+05:30' });
+  const res = await r.svc.read(principal(IR));
+  assert.equal(res.ok, true);
+  const g = Object.fromEntries(res.value.groups.map((x) => [x.kind, x]));
+  assert.deepEqual(Object.keys(g).sort(), ['added', 'owner', 'stage']);
+  assert.equal(g.owner.unread, 1);
+  assert.equal(g.stage.unread, 0, 'seen at 11:00, changed at 10:00');
+  assert.equal(g.added.leadCount, 1);
+  assert.ok(!JSON.stringify(res).includes('FXPAN'), 'no old or new value leaves');
+  assert.ok(!JSON.stringify(r.sink.records()).includes('FXPAN'));
+  assert.match(r.calls[0], /Modified_Time >= '2026-09-20T21:00:00\+05:30' and Modified_By != '9007199254740995001'/);
+  assert.equal(r.calls.filter((c) => c.includes('__timeline')).length, 2);
+});
+
+test('kinds, and marking read', async () => {
+  assert.equal(kindOf('updated', ['Lost_Reason']), 'lost');
+  assert.equal(kindOf('updated', ['Next_Step_At']), 'next-step');
+  assert.equal(kindOf('updated', ['Consent_Call']), 'consent');
+  assert.equal(kindOf('updated', ['City']), 'details');
+  const r = updatesRig();
+  assert.deepEqual(await r.svc.markRead(principal(IR), ['owner', 'stage']), { ok: true });
+  assert.deepEqual(r.marks.map((m) => m[1]), ['owner', 'stage']);
+  assert.deepEqual(await r.svc.markRead(principal(IR), ['everything']), { ok: false });
 });

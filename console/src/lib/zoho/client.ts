@@ -129,6 +129,19 @@ export type SearchQuery =
   | { readonly phone: string }
   | { readonly word: string };
 
+/** One line of a record's Zoho timeline (Plane A, D47). Only WHICH fields changed is kept: the
+ *  old and new values are dropped at the parse, so no value (an identity field included) can leave. */
+export interface TimelineEntry {
+  readonly at: string;
+  readonly action: string;
+  readonly byId: string | null;
+  readonly fields: readonly string[];
+}
+export interface TimelinePage {
+  readonly entries: readonly TimelineEntry[];
+  readonly moreRecords: boolean;
+}
+
 export type ZohoResult<T> =
   | { readonly ok: true; readonly value: T; readonly status: number; readonly creditsRemaining: number | null }
   | { readonly ok: false; readonly error: ZohoFailure; readonly creditsRemaining: number | null };
@@ -167,6 +180,8 @@ export interface ZohoApi<C extends Credential> {
   /** Deletes one record the person may delete (moves it to Zoho's recycle bin). Never retried: a
    *  lost reply is checked with `wasDeleted()`. Used to take back a write inside its Undo window. */
   deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
+  /** GET /{module}/{id}/__timeline — who changed which fields when, newest first; values dropped. */
+  timeline(as: C, module: string, id: string, options?: CallOptions & { readonly perPage?: number }): Promise<ZohoResult<TimelinePage>>;
 }
 export type ZohoClient = ZohoApi<UserCredential>;
 export type ZohoServiceClient = ZohoApi<ServiceCredential>;
@@ -1025,6 +1040,37 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
       return out.ok ? done({ revoked: true } as const, out) : out;
+    },
+
+    async timeline(as, module, id, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      const perPage = opts.perPage ?? 100;
+      if (!Number.isSafeInteger(perPage) || perPage < 1 || perPage > 100) throw new RangeError("timeline perPage is 1–100.");
+      const out = await execute(as, {
+        op: "timeline", method: "GET", path: `/${module}/${id}/__timeline`, endpoint: `/${module}/{id}/__timeline`,
+        query: [["per_page", String(perPage)]], shape: { op: "read" }, idempotent: true, perRecord: false,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done({ entries: [], moreRecords: false }, out);
+      const root = obj(out.result.body);
+      const raw = root?.__timeline;
+      if (!Array.isArray(raw)) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<TimelinePage>;
+      const entries: TimelineEntry[] = [];
+      for (const e of raw) {
+        const r = obj(e);
+        const at = r && typeof r.audited_time === "string" ? r.audited_time : null;
+        const action = r && typeof r.action === "string" ? r.action.slice(0, 40) : null;
+        if (!at || !action) continue;
+        const by = obj(r!.done_by);
+        const byId = by && typeof by.id === "string" && RECORD.test(by.id) ? by.id : null;
+        const fields = Array.isArray(r!.field_history)
+          ? (r!.field_history as unknown[]).map((f) => obj(f)?.api_name).filter((n): n is string => typeof n === "string" && FIELD.test(n))
+          : [];
+        entries.push(Object.freeze({ at, action, byId, fields: Object.freeze(fields) }));
+      }
+      return done({ entries: Object.freeze(entries), moreRecords: obj(root?.info)?.more_records === true }, out);
     },
 
     async deleteRecord(as, module, id, opts = {}) {

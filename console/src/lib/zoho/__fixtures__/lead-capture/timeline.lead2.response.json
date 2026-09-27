@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "__timeline": [
+      {
+        "audited_time": "2026-09-27T10:00:00+05:30",
+        "action": "updated",
+        "done_by": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "field_history": [
+          {
+            "api_name": "Qualified_At",
+            "field_label": "Qualified_At",
+            "_value": {
+              "old_value": null,
+              "new_value": "2026-09-27T10:00:00+05:30"
+            }
+          }
+        ]
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}
