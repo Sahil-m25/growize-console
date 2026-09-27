@@ -97,6 +97,14 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
     .join(", ") + (conOK(d) && d.ADDHOW ? " · " + CONHOW[d.ADDHOW]!.toLowerCase() : "");
 
   const flagDupe = (id: LeadId) => dispatch({ type: "flagDupe", id });
+  /* go('lead', id) — closes the drawer, remembers where it was opened from, opens the lead page */
+  const openLead = (id: LeadId) => {
+    const onLead = typeof window !== "undefined" && window.location.pathname.startsWith("/leads/");
+    const from = onLead ? state.ui.FROM || "leads" : state.VIEW;
+    dispatch({ type: "go", v: "leads", id });
+    dispatch({ type: "setUi", patch: { FROM: from } });
+    router.push(pathOf("lead", id));
+  };
   const toggleCon = (k: keyof AddCon) => dispatch({ type: "setCon", k });
 
   /* addGo(f,id) — 03-app.js:7880 (redesigned). Opening the fold is half of taking somebody to the
@@ -113,7 +121,6 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
       {!bare && (
         <div className="ph">
           <h1>Add lead</h1>
-          <span className="sub">entered once, here — nowhere else</span>
           <div className="sp" />
           {done && !d.ADDN.trim() && !d.ADDPH.trim()
             ? <span className="tag go"><span className="dot" />{done.n.split(" ")[0]} added</span>
@@ -127,17 +134,11 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
         {done && (
           <div className="note" style={{ margin: "0 0 12px" }}>
             <b>{done.n}</b> was added{done.own ? <> — {P(state.PEOPLE, done.own).n} carries it</> : " and joined the unassigned queue"}.
-            The form below is empty and waiting for the next name.
             <div className="chips" style={{ marginTop: 9 }}>
               <Chip on onClick={() => set({ ADDDONE: null })}>Add another name</Chip>
               {toLeads && openable(state).some((x) => x.id === done.id)
-                ? <Chip onClick={() => router.push(pathOf("lead", done.id))}>Open {done.n.split(" ")[0]}</Chip>
-                : (
-                  <span className="sm">
-                    {done.own ? P(state.PEOPLE, done.own).n : "The unassigned queue"} carries it now, which
-                    is not a record you open from here.
-                  </span>
-                )}
+                ? <Chip onClick={() => openLead(done.id)}>Open {done.n.split(" ")[0]}</Chip>
+                : null}
             </div>
           </div>
         )}
@@ -175,48 +176,30 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
               ? (
                 <div className="note bad" style={{ margin: "8px 0 0" }}>
                   {dupeOpen
-                    ? <><b>{dupe.n}</b> is already on the book with this number{dupe.own ? <>, carried by <b>{P(state.PEOPLE, dupe.own).n}</b></> : ", waiting for an owner"}.</>
-                    : "This mobile number is already registered. Ask your manager to review the duplicate."}
+                    ? <><b>{dupe.n}</b> already has this number{dupe.own ? " — " + P(state.PEOPLE, dupe.own).n + " carries it" : " and is waiting for an owner"}. Duplicates are refused, never merged.</>
+                    : "This number is already on the book, in a record you cannot open. Duplicates are refused, never merged."}
                   {dupeOpen
                     ? (
                       <div className="chips" style={{ marginTop: 7 }}>
-                        <Chip onClick={() => router.push(pathOf("lead", dupe.id))}>Open {dupe.n.split(" ")[0]}</Chip>
+                        <Chip onClick={() => openLead(dupe.id)}>Open {dupe.n.split(" ")[0]}</Chip>
                       </div>
                     )
                     : flag
                       ? (
                         <div className="sm" style={{ marginTop: 6 }}>
-                          Flagged to <b>{P(state.PEOPLE, flag.to).n}</b> <span className="mono">{flag.at}</span> — it
-                          is in the log and on their Activity, and {P(state.PEOPLE, flag.to).n.split(" ")[0]} decides
-                          what happens to the two records. Carry on with the next name.
+                          Flagged to <b>{P(state.PEOPLE, flag.to).n}</b> <span className="mono">{flag.at}</span>. Carry on with the next name.
                         </div>
                       )
-                      : (
-                        <>
-                          <div className="sm" style={{ marginTop: 6 }}>
-                            It is not in your book, so you cannot open it. Say so rather than starting a second
-                            record — the name is not lost and the queue keeps moving.
+                      : mgr
+                        ? (
+                          <div className="chips" style={{ marginTop: 7 }}>
+                            <Chip onClick={() => flagDupe(dupe.id)}>Flag the duplicate to {P(state.PEOPLE, mgr).n.split(" ")[0]}</Chip>
                           </div>
-                          {mgr
-                            ? (
-                              <div className="chips" style={{ marginTop: 7 }}>
-                                <Chip onClick={() => flagDupe(dupe.id)}>Flag the duplicate to {P(state.PEOPLE, mgr).n.split(" ")[0]}</Chip>
-                              </div>
-                            )
-                            : (
-                              <div className="sm" style={{ marginTop: 6 }}>
-                                Nobody sits above you to flag it to — tell whoever carries the book.
-                              </div>
-                            )}
-                        </>
-                      )}
-                  <div className="sm" style={{ marginTop: 6 }}>
-                    A duplicate is refused, never merged — two records of one person is how a lead gets worked
-                    twice and answered twice.
-                  </div>
+                        )
+                        : <div className="sm" style={{ marginTop: 6 }}>Tell whoever carries the book.</div>}
                 </div>
               )
-              : <p className="sm" style={{ margin: "8px 0 0" }}>We check the mobile number for an existing record.</p>}
+              : phOK(d) ? <p className="sm g2-ok" style={{ margin: "8px 0 0" }}>No existing record with this number.</p> : null}
           {!emOK(d) && bad("em", "aem") && (
             <p className="sm" style={{ margin: "4px 0 0", color: "var(--late)" }}>That address will not send.</p>
           )}
@@ -268,17 +251,10 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                   )
                   : null}
           </div>
-          <p className="sm" style={{ margin: "8px 0 0" }}>
-            {!d.ADDSRC
-              ? "Choose where you met or received this lead."
-              : d.ADDSRC === "Events" ? "Choose the event to keep its investor records together."
-                : d.ADDSRC && SRCNEEDS[d.ADDSRC] === "person" ? "Name the introducer if known."
-                  : "Source recorded."}
-          </p>
         </Sec>
 
         {ir
-          ? <p className="ux-secondary">Owner: {P(state.PEOPLE, state.WHO).n} · assigned to you automatically</p>
+          ? null
           : (
             <Sec k="owner" t="Who carries it">
               <Field label="Owner" style={{ maxWidth: "340px" }}>
@@ -292,10 +268,7 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                   ))}
                 </select>
               </Field>
-              <p className="sm" style={{ margin: "9px 0 0" }}>
-                You are not an IR, so this does not become yours. Assign it now, or leave it and it joins the
-                unassigned queue on Leads — where the clock is already running and somebody has to pick it up.
-              </p>
+              {d.ADDOWN ? null : <p className="sm" style={{ margin: "8px 0 0" }}>Left unassigned, it waits on Leads for an owner.</p>}
             </Sec>
           )}
 
@@ -329,11 +302,7 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
               placeholder="Wants the block walked before he commits." value={d.ADDNOTE}
               onChange={(e) => set({ ADDNOTE: e.target.value })} />
           </label>
-          <p className="sm" style={{ margin: "8px 0 0" }}>
-            ₹25 L per unit. Leave this unknown until the investor tells you; unknown intent contributes no
-            investment value to the forecast.
-            {d.ADDU === "custom" && !customOK(d) && <> <b style={{ color: "var(--late)" }}>Whole units, eleven or more.</b></>}
-          </p>
+          {d.ADDU === "custom" && !customOK(d) ? <p className="sm" style={{ margin: "8px 0 0", color: "var(--late)" }}>Whole units, eleven or more.</p> : null}
         </Fld>
 
         <Fld
@@ -341,10 +310,6 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
           val={conVal || "Not recorded · contact blocked"}
           open={d.ADDF === "consent"} onToggle={() => dispatch({ type: "setAddF", k: "consent" })}
         >
-          <p className="sm" style={{ margin: "0 0 9px" }}>
-            Choose only channels the investor agreed to. You can capture the lead before permission is known;
-            outbound stays blocked until it is recorded.
-          </p>
           <div className="chips">
             {CONCH.map(([k, t]) => (
               <button
@@ -355,20 +320,16 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
               </button>
             ))}
           </div>
-          <label className="fi" style={{ marginTop: 11, maxWidth: 340 }}>
-            <span>How it was given</span>
-            <select className="selw" id="ahow" value={d.ADDHOW ?? ""}
-              onChange={(e) => set({ ADDHOW: e.target.value || null })}>
-              <option value="">Not said</option>
-              {Object.keys(CONHOW).map((k) => <option key={k} value={k}>{CONHOW[k]}</option>)}
-            </select>
-          </label>
-          <p className="sm" style={{ margin: "9px 0 0" }}>
-            {conOK(d)
-              ? "Choose how it was given before saving. Unticked channels stay blocked."
-              : "No permission recorded. Capture is allowed; contact stays blocked."} Permission keeps its
-            method, capture time and your name.
-          </p>
+          {conOK(d) ? (
+            <label className="fi" style={{ marginTop: 11, maxWidth: 340 }}>
+              <span>How it was given</span>
+              <select className="selw" id="ahow" value={d.ADDHOW ?? ""}
+                onChange={(e) => set({ ADDHOW: e.target.value || null })}>
+                <option value="">Not said</option>
+                {Object.keys(CONHOW).map((k) => <option key={k} value={k}>{CONHOW[k]}</option>)}
+              </select>
+            </label>
+          ) : null}
         </Fld>
 
         <AddBulk open={d.ADDF === "bulk"} onToggle={() => dispatch({ type: "setAddF", k: "bulk" })} />
@@ -377,14 +338,11 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
           {!cap
             ? (
               <p className="sm" style={{ margin: "0 0 10px" }}>
-                Your seat reads this form and does not write to the book, so the button below is off however
-                the form is filled in. A name you are holding belongs with whoever carries the book, and{" "}
-                {P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO) ?? "tasneem").n} is the only person who can
-                change what your seat may do.
+                Your seat cannot add leads. Pass the name to {P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO) ?? "tasneem").n}.
               </p>
             )
             : ok
-              ? <p className="sm" style={{ margin: "0 0 10px" }}>Saving creates the record. Contact is recorded separately.</p>
+              ? <p className="sm" style={{ margin: "0 0 10px" }}>Ready — saving creates the record.</p>
               : (
                 <p className="sm" style={{ margin: "0 0 10px" }}>
                   Still to answer:{" "}

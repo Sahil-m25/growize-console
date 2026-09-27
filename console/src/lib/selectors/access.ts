@@ -78,6 +78,7 @@ export const canOperateLeads = (ctx: Ctx, k: PersonKey = me(ctx)): boolean =>
 function roleCaps(ctx: Ctx, k: PersonKey, p: string, caps: Cap[]): Cap[] {
   if (!consoleAccount(ctx.PEOPLE, k)) return [];
   const seat = seatOf(ctx.PEOPLE, k);
+  if (seat === "ops") return caps.slice();   /* D68: the super user — merged seatShape, ir-merged.js:638 */
   if (seat === "cp" && !["today", "leads", "updates", "add", "activity", "me"].includes(p)) return [];
   if (p === "today" || p === "add") return canOperateLeads(ctx, k) ? caps.filter(c => c === "view" || c === "capture") : [];
   if (p === "leads") return caps.filter(c => c === "view" || (c === "edit" && canOperateLeads(ctx, k)) || (c === "assign" && seat === "conv"));
@@ -340,7 +341,7 @@ export const seesTeam = (ctx: Ctx): boolean =>
 /* Reassigning is its own right, not a flavour of editing — the manual treats them separately and
    so does the grid, so a manager can take one away without taking the other. */
 export const canAssign = (ctx: Ctx): boolean =>
-  may(ctx, "leads", "assign") && roleOf(ctx.PEOPLE, me(ctx)) === "conv";
+  may(ctx, "leads", "assign") && ["conv", "ops"].includes(roleOf(ctx.PEOPLE, me(ctx)) as string); /* merged ir-merged.js:1657 */
 
 /* the roster is an execution control, so the Ops Lead, IR lead, Digital and the BU Owner hold it —
    and everybody may always say where they themselves are, which is not a permission worth having.

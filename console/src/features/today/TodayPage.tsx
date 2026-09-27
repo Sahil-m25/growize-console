@@ -1,55 +1,34 @@
 "use client";
 
-/* ── TODAY — vTodayWork, ir-console-redesigned.html 6830–6871; Finance's day, vFinanceToday,
-   6821–6829. The daily list stopped being a card feed and became two panes: a queue sorted into
-   Due now / All open (plus Upcoming/Waiting behind Filters), and beside it the investor picked out
-   of that queue — their next action, how to reach them, and what happened last. Working a batch of
-   calls no longer means leaving the page once per name.
+/* ── TODAY — vTodayWork, ir-merged.js:4290 (the merged prototype, D59 "g1"); Finance's day,
+   vFinanceToday, ir-merged.js:4281. The queue is the page: one row per investor in the seat's own
+   work (todayList — owned leads only), the investor in focus beside it (investorWorkPanel — the
+   lead page's next-step card), and ONE fold ("Filters · your week" / "Filters · this week") that
+   holds the list/channel choice and the week (vGap/vMyWeeklyWork + vDayside).
 
-   Finance's day is a different shape again (vFinanceToday, 6821): every open, unlost, un-onboarded
-   lead sorts into exactly one bucket — a reported payment, paperwork Finance owes, a reservation
-   clock, or everything else — because Finance's part of the ladder is four things, not a queue.
-
-   `vGap`/`vMyWeeklyWork`/`vDayside`/`vBookMini` are unchanged in substance from D39 and live on in
-   `./Gap` and `./DaySide`; here they are folded into one collapsed "Your week" /
-   "Weekly progress & planning" disclosure under the queue, exactly where vTodayWork's own
-   `weekly()` puts them (6844).
-
-   Round 2: `nextUp()` now carries "claim"/"followup" record kinds, `workAction()` below reads the
-   claim branch straight off `u.rec.kind==="claim"`, and every "Record follow-up"/"Record visit"
-   opens the registered `"p:followup"` drawer (`@/features/leads/followupDrawer`) seeded with a
-   `FollowupDraft`, in place of the old "touch" stand-in. "Interest" now reads `knownUnitIntent(l)`
-   ("Not discussed" when unset) and Finance's claim rows/hold balances read `refTxt()`/
-   `knownUnitIntent()` for the masked reference and the D42 gate.
-
-   Known gaps still forced by what other owners' files export — see the hand-back's
-   crossOwnerRequests:
-     — "Record permission" and "Details & permission" both open the plain `details` drawer
-       (`src/features/lead/drawers/call.tsx`, not this feature's); the prototype's
-       `openDetails(id,'consent')` seeds a specific tab that drawer does not expose yet.
-     — `confirmClaim` in `@/features/pay/reducer.ts` still runs the ordinary receipt path (records
-       money) instead of only matching an existing receipt — see crossOwnerRequests.
-
-   Round 3: `XferRow.ack` and `CHECKS`'s `"transfer"` owner now exist, so Finance's own
-   "Investor entry status" disclosure (6829) is no longer blocked — `xferRows()`/`xOwner()` live in
-   `./work.ts`, next to `financeTodayWork`, since `@/features/xfer/XferPage.tsx`'s own `xferRows()`
-   is private to that module.
+   Contact buttons (Call / WhatsApp / Email / Log a contact) hand over to the lead page's own
+   logging flow (g1LeadFlow): they route to the lead and set `ui.LPFLOW = {id, what, channel}` for
+   the lead page to open its flow on that channel, as the prototype's lpOpen() does. A paperwork
+   chip (irPaperStep/goPaper) routes to the lead and sets `ui.LPFOCUS = id` so the lead page can
+   bring its paperwork row into view.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Icon } from "@/components/ui";
-import { CHAN, LADDER, ST, TOUCHCHANNELS, TOUCHDONE, UNIT } from "@/domain";
+import { CHAN, LADDER, ST, UNIT } from "@/domain";
 import type { Channel, Lead, LogEntry } from "@/domain";
-import { dAdd, dISO, dISOtoDisp, money } from "@/lib/format";
+import { dAdd, dISO, dISOtoDisp, money, whenT } from "@/lib/format";
+import type { NextUp } from "@/lib/selectors";
 import {
+  active,
+  lost,
+  nxDue,
+  paperNow,
   canAssign,
   canClaim,
   canOperateLeads,
   canPlan,
-  canReach,
-  canSee,
   canWork,
-  chanOf,
   claimBlock,
   claimOf,
   conFor,
@@ -58,11 +37,9 @@ import {
   gateMet,
   gateWait,
   hasNext,
-  inReservation,
   isFin,
   isIR,
   knownUnitIntent,
-  logReadable,
   movesWaiting,
   myWork,
   nextUp,
@@ -83,10 +60,9 @@ import {
 import type { DrawerKind } from "@/lib/store";
 import { useConsole } from "@/lib/store";
 import type { ConsoleState } from "@/lib/store";
-import { useLogTouch, type Refusal } from "@/features/leads/actions";
 import { useGoLead, useGoView } from "@/features/leads/nav";
 import { uiHorizon, uiTchan } from "@/features/leads/ui";
-import { buildFollowupDraft } from "@/features/leads/followupDrawer";
+import { fuPreference } from "@/features/lead/followupContext";
 import { DaySide } from "./DaySide";
 import { Gap } from "./Gap";
 import { Horizon } from "./Horizon";
@@ -94,10 +70,8 @@ import {
   claimReceiptMatch,
   claimReportLabel,
   financeTodayWork,
-  fuHeard,
   fuLatest,
   FUCHANNELS,
-  latestNote,
   partnerLabel,
   primaryWorkChannel,
   WORK_GROUPS,
@@ -108,32 +82,65 @@ import {
   xOwner,
 } from "./work";
 import type { WorkGroupKey } from "./work";
-import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
-import "@/features/leads/followupDrawer"; /* registers p:followup before a follow-up button can open it */
 
 export function TodayPage() {
   const { state } = useConsole();
+  /* register the lead drawers (next, owner, details, claim, paper, history, …) after the first
+     paint rather than before it: they are a large chunk and nothing opens one on arrival */
+  useEffect(() => {
+    void import("@/features/lead/drawers");
+  }, []);
   if (isFin(state.ROLE)) return <FinanceToday />;
   return <WorkToday />;
 }
 
-/* ===== the IR/manager day — the queue and the investor beside it ============================ */
+/* ===== the IR/manager day — vTodayWork, ir-merged.js:4290 =================================== */
 
-/* WORKNOTICE — workNotice()/setWorkNotice()/undoWorkNotice(), 6716-6724. A short-lived confirmation
-   left where the click happened, offered back with an Undo. Kept local to the page (not the store):
-   the prototype's own `commit()`/save-queue plumbing behind `rescheduleWork()` is cross-owner
-   (`@/features/leads/reducer.ts`), so the undo here replays the old next step through the already-
-   exported `saveNext` action rather than a bespoke reducer case — see the file header. */
-type WorkNotice = { message: string; undo?: () => void };
+/* WORKNOTICE — workNotice()/setWorkNotice()/undoWorkNotice(). A short-lived confirmation left where
+   the click happened, offered back with an Undo. Kept local to the page (not the store). */
+type WorkNoticeData = { message: string; undo?: { id: string; nx: NonNullable<Lead["nx"]> } };
+type Dispatch = ReturnType<typeof useConsole>["dispatch"];
+
+/* g1LeadFlow(id,what,channel) — ir-merged.js:4215 (D59). Contact happens on the lead page's own
+   flow (D57), so a Today button hands over to it rather than opening a second recording form.
+   The lead page reads `ui.LPFLOW` ({id, what, channel}) the way the prototype's `lpOpen()` sets
+   LPFLOW/LPFROM on arrival. */
+function useLeadFlow() {
+  const { dispatch } = useConsole();
+  const goLead = useGoLead("today");
+  return (id: string, what: "log" | "email", channel?: Channel) => {
+    goLead(id);
+    dispatch({ type: "setUi", patch: { LPFLOW: { id, what, channel: channel ?? null } } });
+  };
+}
+
+/* goPaper(id) — ir-merged.js:3292. Open the lead with its paperwork row in view. */
+function useGoPaper() {
+  const { dispatch } = useConsole();
+  const goLead = useGoLead("today");
+  return (id: string) => {
+    goLead(id);
+    dispatch({ type: "setUi", patch: { LPFOCUS: id } });
+  };
+}
 
 function WorkToday() {
   const { state, dispatch } = useConsole();
   const goView = useGoView();
-  const logTouch = useLogTouch();
-  const [refusal, setRefusal] = useState<Refusal>(null);
-  const [workSelect, setWorkSelect] = useState<string | null>(null);
-  const [group, setGroup] = useState<WorkGroupKey>("today");
-  const [notice, setNotice] = useState<WorkNotice | null>(null);
+  /* WORKSELECT / TODAYGROUP / WORKRESCHEDULE / WORKNOTICE are the prototype's page globals; they
+     live in `ui` so they survive the landing redirect ("/" draws Today, then becomes /today) */
+  const ui = state.ui as Record<string, unknown>;
+  const workSelect = (ui.WORKSELECT as string | null | undefined) ?? null;
+  const group = ((ui.TODAYGROUP as WorkGroupKey | undefined) ?? "today") as WorkGroupKey;
+  const reschedule = (ui.WORKRESCHEDULE as string | null | undefined) ?? null;
+  const noticeRaw = ui.TODAYNOTICE as (WorkNoticeData & { who: string }) | null | undefined;
+  const notice: WorkNoticeData | null = noticeRaw && noticeRaw.who === state.WHO ? noticeRaw : null;
+  const setWorkSelect = (id: string | null) => dispatch({ type: "setUi", patch: { WORKSELECT: id } });
+  const setGroup = (k: WorkGroupKey) => dispatch({ type: "setUi", patch: { TODAYGROUP: k } });
+  const setReschedule = (f: string | null | ((r: string | null) => string | null)) =>
+    dispatch({ type: "setUi", patch: { WORKRESCHEDULE: typeof f === "function" ? f(reschedule) : f } });
+  const setNotice = (n: WorkNoticeData | null) =>
+    dispatch({ type: "setUi", patch: { TODAYNOTICE: n ? { ...n, who: state.WHO } : null } });
 
   const team = !["ir", "cp"].includes(state.ROLE) && scopeOf(state, "today") === "team";
   const HORIZON = uiHorizon(state.ui);
@@ -146,18 +153,22 @@ function WorkToday() {
   const counts = Object.fromEntries(
     WORK_GROUPS.map((g) => [g.k, all.filter((l) => g.accepts.includes(workGroup(state, l))).length]),
   ) as Record<WorkGroupKey, number>;
-  const advanced = !!TCHAN || group === "upcoming" || group === "waiting";
+  const advanced = !!TCHAN || group !== "today";
   const teamCount = !team && seesTeam(state) ? todayList(state, "team").length : 0;
+  const ir = isIR(state.ROLE);
   const setChannel = (c: string | null) => dispatch({ type: "setUi", patch: { TCHAN: c } });
+  const setWorkGroup = (k: WorkGroupKey) => {
+    setGroup(k);
+    setReschedule(null);
+  };
   const back = () => dispatch({ type: "setUi", patch: { HORIZON: "today", CALDAY: null } });
 
-  /* selectWork(id) — 6708. Ignores an id the queue would never show (a stale click after the
-     record left `openable()`), then, below the layout's 1180px breakpoint where the panel is no
-     longer beside the queue, scrolls the investor panel into view and focuses it. */
+  /* selectWork(id) — ir-merged.js:4144 */
   const selectWork = (id: string) => {
     if (!openable(state).some((l) => l.id === id)) return;
     setWorkSelect(id);
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches) {
+    setReschedule(null);
+    if (typeof window !== "undefined" && window.matchMedia("(max-width:1180px)").matches) {
       const n = document.getElementById("work-context");
       if (n) {
         n.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -166,16 +177,11 @@ function WorkToday() {
     }
   };
 
-  /* WORKNOTICE/WORKADVANCE — the followup drawer's save (`@/features/leads/followupDrawer.tsx`) has
-     no reach into this component's local `notice`/`workSelect` state, so it hands off through a
-     pair of generic `ui` fields: a message for the usual `.work-notice`, and — for "Save and next
-     investor" — the id just saved, so the panel moves to whoever follows it in the list instead of
-     falling back to the list's first row. selectNextInvestorAfterFollowup, 6734. */
+  /* WORKNOTICE/WORKADVANCE — hand-offs from drawers that cannot reach this component's state. */
   useEffect(() => {
     const msg = state.ui.WORKNOTICE as string | null | undefined;
     if (!msg) return;
-    setNotice({ message: msg });
-    dispatch({ type: "setUi", patch: { WORKNOTICE: null } });
+    dispatch({ type: "setUi", patch: { WORKNOTICE: null, TODAYNOTICE: { message: msg, who: state.WHO } } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ui.WORKNOTICE]);
 
@@ -190,6 +196,16 @@ function WorkToday() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ui.WORKADVANCE]);
 
+  /* rescheduleWork(id,days) — ir-merged.js:4187. Keeps the hour, moves the day, offers Undo. */
+  const rescheduleWork = (l: Lead, days: number) => {
+    if (!canPlan(state, l) || !hasNext(l)) return;
+    const was = l.nx!;
+    const by = dISOtoDisp(dISO(dAdd(state.NOW, days)), state.NOW);
+    dispatch({ type: "moveNextTo", id: l.id, days });
+    setReschedule(null);
+    setNotice({ message: `${l.n} rescheduled to ${by}${nxTime(l) ? " · " + nxTime(l) : ""}`, undo: { id: l.id, nx: was } });
+  };
+
   const workNotice = notice ? (
     <div className="work-notice" role="status">
       <span>{notice.message}</span>
@@ -198,7 +214,9 @@ function WorkToday() {
           type="button"
           className="chip"
           onClick={() => {
-            notice.undo!();
+            const u = notice.undo!;
+            dispatch({ type: "setUi", patch: { NXD: { t: u.nx.t, d: u.nx.d || "", tm: u.nx.tm || "", ch: u.nx.ch || "other" } } });
+            dispatch({ type: "saveNext", id: u.id });
             setNotice(null);
           }}
         >
@@ -211,19 +229,59 @@ function WorkToday() {
     </div>
   ) : null;
 
-  const heading = (
-    <div className="ph work-page-head">
+  /* D59 (g1): ONE fold holds everything rare — the list/channel choice and the week. */
+  const more = (withFilters: boolean) => (
+    <details className="ux-disclosure ux-inline-filter g1-more" data-ux-key="today-more">
+      <summary>
+        {withFilters ? "Filters · " : ""}
+        {withFilters ? (ir ? "your week" : "this week") : ir ? "Your week" : "This week"}
+      </summary>
+      <div className="cb">
+        {withFilters ? (
+          <div className="ux-filter-fields g1-fields">
+            <label className="fi">
+              <span>Show follow-ups</span>
+              <select
+                className="selw"
+                id="work-view"
+                value={group}
+                onChange={(e) => setWorkGroup(e.target.value as WorkGroupKey)}
+              >
+                {WORK_GROUPS.map((g) => (
+                  <option value={g.k} key={g.k}>
+                    {g.t} · {counts[g.k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="fi">
+              <span>Contact channel</span>
+              <select className="selw" id="work-channel" value={TCHAN ?? ""} onChange={(e) => setChannel(e.target.value || null)}>
+                <option value="">All channels</option>
+                {Object.entries(CHAN).map(([c, t]) => (
+                  <option value={c} key={c}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
+        <div className="g1-week">
+          <Gap team={team} onRefuse={() => undefined} />
+          {ir ? null : <DaySide team={team} />}
+        </div>
+      </div>
+    </details>
+  );
+
+  const heading = (fold: React.ReactNode) => (
+    <div className="ph work-page-head g1-head">
       <div>
-        <h1>
-          {HORIZON === "today"
-            ? team
-              ? "Team follow-ups"
-              : "Your follow-ups"
-            : "Follow-up calendar"}
-        </h1>
+        <h1>{HORIZON === "today" ? (team ? "Team follow-ups" : "Your follow-ups") : "Follow-up calendar"}</h1>
         <p className="sub">
           {all.length
-            ? now + " due now · " + all.length + " active investors"
+            ? now + " due now · " + all.length + " open"
             : team
               ? "Follow-ups and next steps for your team's investors."
               : "Follow-ups and next steps for your investors."}
@@ -246,36 +304,41 @@ function WorkToday() {
             <option value="month">Next 31 days</option>
           </select>
         </div>
-      ) : all.length ? (
-        <button
-          type="button"
-          className="btn"
-          onClick={() => dispatch({ type: "setUi", patch: { HORIZON: "week", CALDAY: null } })}
-        >
-          <Icon name="events" />
-          Calendar
-        </button>
-      ) : null}
+      ) : (
+        <>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => dispatch({ type: "setUi", patch: { HORIZON: "week", CALDAY: null } })}
+          >
+            <Icon name="events" />
+            Calendar
+          </button>
+          {fold}
+        </>
+      )}
     </div>
   );
 
-  /* weekly() — 6839. `<div class="cb">${vGap(team)}${isIR()?"":vDayside(team)}</div>` — no
-     `.colst` two-column wrapper: the cards stack, full width, exactly as `.cb`'s own plain padding
-     leaves them. */
-  const weekly = (
-    <details className="ux-disclosure rd-weekly" data-ux-key="today-weekly">
-      <summary>{isIR(state.ROLE) ? "Your week" : "Weekly progress & planning"}</summary>
-      <div className="cb">
-        <Gap team={team} onRefuse={setRefusal} />
-        {isIR(state.ROLE) ? null : <DaySide team={team} />}
-      </div>
-    </details>
+  const page = (content: React.ReactNode) => (
+    <section className="rd-today" aria-label="Daily investor work">
+      {content}
+    </section>
   );
 
+  if (HORIZON !== "today")
+    return page(
+      <>
+        {heading(null)}
+        {workNotice}
+        <Horizon book={book} team={team} />
+      </>,
+    );
+
   if (!all.length)
-    return (
-      <section className="rd-today" aria-label="Daily investor work">
-        {heading}
+    return page(
+      <>
+        {heading(more(false))}
         {workNotice}
         <section className="card ux-empty">
           <span className="rd-empty-icon" aria-hidden="true">
@@ -310,24 +373,17 @@ function WorkToday() {
             ) : null}
           </div>
         </section>
-        {weekly}
-      </section>
+      </>,
     );
 
-  if (HORIZON !== "today")
-    return (
-      <section className="rd-today" aria-label="Daily investor work">
-        {heading}
-        {workNotice}
-        <Horizon book={book} team={team} />
-      </section>
-    );
+  const showing = [group !== "today" ? WORK_GROUPS.find((g) => g.k === group)!.t : null, TCHAN ? CHAN[TCHAN as keyof typeof CHAN] : null]
+    .filter(Boolean)
+    .join(" · ");
 
-  return (
-    <section className="rd-today" aria-label="Daily investor work">
-      {heading}
+  return page(
+    <>
+      {heading(more(true))}
       {workNotice}
-
       {team && movesWaiting(state).length ? (
         <div className="work-notice">
           <span>{movesWaiting(state).length} ownership requests need a decision.</span>
@@ -336,128 +392,36 @@ function WorkToday() {
           </button>
         </div>
       ) : null}
-
-      {refusal ? (
-        <div className="note bad" style={{ marginBottom: "10px" }} role="alert">
-          {refusal}
-        </div>
-      ) : null}
-
-      <div className="ux-toolbar rd-work-toolbar">
-        <div className="ux-primary rd-work-tabs" role="group" aria-label="Daily work list">
-          {(
-            [
-              ["today", "Due now"],
-              ["all", "All open"],
-            ] as const
-          ).map(([k, t]) => {
-            const sel = k === "today" ? group === "today" : group !== "today";
-            return (
-              <button
-                type="button"
-                key={k}
-                className={`chip ${sel ? "on" : ""}`}
-                aria-pressed={sel}
-                onClick={() => setGroup(k)}
-              >
-                {t} <b>{counts[k]}</b>
-              </button>
-            );
-          })}
-        </div>
-        <details className="ux-disclosure ux-inline-filter" data-ux-key="today-filters">
-          <summary>Filters{advanced ? " · active" : ""}</summary>
-          <div className="cb ux-filter-fields">
-            <label className="fi">
-              <span>Show follow-ups</span>
-              <select
-                className="selw"
-                id="work-view"
-                value={group}
-                onChange={(e) => setGroup(e.target.value as WorkGroupKey)}
-              >
-                {WORK_GROUPS.map((g) => (
-                  <option value={g.k} key={g.k}>
-                    {g.t} · {counts[g.k]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="fi">
-              <span>Contact channel</span>
-              <select className="selw" id="work-channel" value={TCHAN ?? ""} onChange={(e) => setChannel(e.target.value || null)}>
-                <option value="">All channels</option>
-                {Object.entries(CHAN).map(([c, t]) => (
-                  <option value={c} key={c}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="ux-secondary">Choose a channel when working through a batch of calls or messages.</p>
-          </div>
-        </details>
-      </div>
-
       {advanced ? (
-        <div className="ux-active-filters">
-          <span className="ux-secondary">
-            Showing{" "}
-            {[
-              group === "upcoming" || group === "waiting"
-                ? WORK_GROUPS.find((g) => g.k === group)!.t
-                : null,
-              TCHAN ? CHAN[TCHAN as keyof typeof CHAN] : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
+        <div className="ux-active-filters g1-active">
+          <span className="ux-secondary">Showing {showing}</span>
           <button
             type="button"
             className="chip"
             onClick={() => {
               setChannel(null);
-              setGroup(group === "today" ? "today" : "all");
+              setWorkGroup("today");
             }}
           >
             Clear filters
           </button>
         </div>
       ) : null}
-
       {list.length ? (
         <div className="work-layout">
           <section className="work-queue" id="work-queue" tabIndex={-1} aria-label="Investor follow-up queue">
-            <div className="rd-queue-heading">
-              <h2>
-                {group === "today"
-                  ? "Ready for your attention"
-                  : group === "upcoming"
-                    ? "Scheduled follow-ups"
-                    : group === "waiting"
-                      ? "Waiting on the next step"
-                      : "Open relationships"}
-              </h2>
-              <span>
-                {list.length} investor{list.length === 1 ? "" : "s"}
-              </span>
-            </div>
             <ul className="work-rows">
               {list.map((l) => (
-                <WorkRow
-                  key={l.id}
-                  l={l}
-                  team={team}
-                  selected={selected?.id === l.id}
-                  onSelect={() => selectWork(l.id)}
-                  logTouch={logTouch}
-                  onRefuse={setRefusal}
-                  onNotice={setNotice}
-                />
+                <WorkRow key={l.id} l={l} team={team} selected={selected?.id === l.id} onSelect={() => selectWork(l.id)} />
               ))}
             </ul>
           </section>
-          <InvestorPanel l={selected} logTouch={logTouch} onRefuse={setRefusal} onBack={() => setWorkSelect(null)} />
+          <InvestorPanel
+            l={selected}
+            rescheduling={!!selected && reschedule === selected.id}
+            onToggleReschedule={(id) => setReschedule((r) => (r === id ? null : id))}
+            onReschedule={rescheduleWork}
+          />
         </div>
       ) : (
         <section className="card ux-empty">
@@ -475,7 +439,7 @@ function WorkToday() {
           </h2>
           <p>
             {TCHAN
-              ? "Clear the channel filter to see the selected work list."
+              ? "Clear filters to see the rest of the list."
               : group === "today"
                 ? counts.upcoming
                   ? "Your next appointments are ready in All open."
@@ -485,76 +449,93 @@ function WorkToday() {
                 : "Use another work list, or set a next appointment from an investor's record."}
           </p>
           <div className="ux-primary">
-            {TCHAN ? (
-              <button type="button" className="act" onClick={() => setChannel(null)}>
-                Clear channel filter
-              </button>
-            ) : group === "today" && counts.upcoming ? (
-              <button type="button" className="act" onClick={() => setGroup("all")}>
+            {TCHAN ? null : group === "today" && counts.upcoming ? (
+              <button type="button" className="act" onClick={() => setWorkGroup("all")}>
                 View all open investors
               </button>
             ) : group === "today" && counts.waiting ? (
-              <button type="button" className="btn" onClick={() => setGroup("waiting")}>
+              <button type="button" className="btn" onClick={() => setWorkGroup("waiting")}>
                 View waiting work
               </button>
             ) : group !== "all" ? (
-              <button type="button" className="btn" onClick={() => setGroup("all")}>
+              <button type="button" className="btn" onClick={() => setWorkGroup("all")}>
                 View active investors
               </button>
             ) : null}
           </div>
         </section>
       )}
-
-      {weekly}
-    </section>
+    </>,
   );
 }
 
-/* workAction(l,u) — 6765. What this lead needs next, said as one action — shared by the row and
-   the panel. See the file header for the record kinds `nextUp()` cannot surface (claim/followup)
-   and the "Record permission"/"Details & permission" simplification. */
+/* PRSTEP / irPaperStep(l) — ir-merged.js:3286. The IR's one paperwork step on this lead right now. */
+const PRSTEP: Record<string, string> = {
+  told: "Tell them it's sent",
+  said: "Chase the signature",
+  draft: "Send the draft",
+  agreed: "Get the final draft agreed",
+};
+function irPaperStep(state: ConsoleState, l: Lead): { R: NonNullable<ReturnType<typeof paperNow>["R"]>; k: string; t: string } | null {
+  const pn = paperNow(state, l);
+  const k = pn.n && "k" in pn.n ? (pn.n.k as string) : "";
+  const who = pn.n && "who" in pn.n ? (pn.n as { who?: string }).who : undefined;
+  return pn.R && who === "IR" && canWork(state, l) && PRSTEP[k] ? { R: pn.R, k, t: PRSTEP[k]! } : null;
+}
+
+/* workAction(l,u) — ir-merged.js:4200. What this lead needs next, said as one action. Returns null
+   for the plain follow-up / open-the-record cases, which each caller words for itself. */
+type WorkAct = { node: React.ReactNode; kind: "special" | "followup" | "open" };
 function workAction(
   state: ConsoleState,
-  dispatch: ReturnType<typeof useConsole>["dispatch"],
+  dispatch: Dispatch,
   goLead: (id: string, drawer?: DrawerKind) => void,
+  goPaper: (id: string) => void,
   l: Lead,
-  onSelect?: () => void,
-) {
-  const u = nextUp(state, l);
+  u: NextUp,
+): WorkAct {
   const rec = u.rec;
+  const sp = (node: React.ReactNode): WorkAct => ({ node, kind: "special" });
   if (!l.own && rec?.kind === "assign")
-    return (
+    return sp(
       <button type="button" className="act" onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}>
         Assign to me
-      </button>
+      </button>,
     );
   if (!l.own && canAssign(state))
-    return (
+    return sp(
       <button type="button" className="act" onClick={() => goLead(l.id, "owner")}>
         Assign owner
-      </button>
+      </button>,
     );
   if (rec?.kind === "consent" && canWork(state, l))
-    return (
+    return sp(
       <button type="button" className="act" onClick={() => dispatch({ type: "openDrawer", k: "details", id: l.id, seed: { DTAB: "permission" } })}>
         Record permission
-      </button>
+      </button>,
     );
-  if (rec?.kind === "paper")
-    return (
-      <button type="button" className="act" onClick={() => dispatch({ type: "openDrawer", k: "paper", id: l.id })}>
-        {isFin(state.ROLE) ? u.act : "Review paperwork"}
-      </button>
+  if (rec?.kind === "paper") {
+    const st = irPaperStep(state, l);
+    return sp(
+      st ? (
+        <button type="button" className="act" onClick={() => goPaper(l.id)}>
+          {st.t}
+        </button>
+      ) : (
+        <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "paper", id: l.id })}>
+          With Finance
+        </button>
+      ),
     );
+  }
   if (rec?.kind === "claim")
-    return (
+    return sp(
       <button type="button" className="act" onClick={() => dispatch({ type: "openDrawer", k: "claim", id: l.id })}>
         View payment status
-      </button>
+      </button>,
     );
   if (noNext(l) && canPlan(state, l))
-    return (
+    return sp(
       <button
         type="button"
         className="act"
@@ -564,196 +545,104 @@ function workAction(
         }}
       >
         Set next step
-      </button>
+      </button>,
     );
   if (u.kind === "stage" && canWork(state, l) && stepOwner(state, l.done, l) && gateMet(state, l))
-    return (
+    return sp(
       <button type="button" className="act" onClick={() => dispatch({ type: "tick", id: l.id })}>
         Confirm {LADDER[l.done]?.t || "stage"}
-      </button>
+      </button>,
     );
-  if (canWork(state, l))
-    return (
-      <button
-        type="button"
-        className="act"
-        onClick={() => {
-          onSelect?.();
-          dispatch({
-            type: "openDrawer",
-            k: "p:followup" as DrawerKind,
-            id: l.id,
-            seed: { FU: buildFollowupDraft(state, l, chanOf(state, l)) },
-          });
-        }}
-      >
-        Record follow-up
+  if (canWork(state, l)) return { node: null, kind: "followup" };
+  return {
+    node: (
+      <button type="button" className="btn" onClick={() => goLead(l.id)}>
+        Open the record
       </button>
-    );
-  return (
-    <button type="button" className="btn" onClick={() => goLead(l.id)}>
-      View investor
-    </button>
-  );
-}
-
-/* afterContact(id,chan) — 3357. The dialer/WhatsApp links send nothing and record nothing; what
-   they do instead is arm a one-shot "the tab got focus back" listener that offers the follow-up
-   drawer, seeded to the channel just tapped. One listener at a time, exactly as the prototype's own
-   single `CBACK` — a second tap replaces the first rather than stacking two.
-   ponytail: reads `state`/`l` from the moment the link was tapped rather than re-fetching the
-   freshest record the way the prototype's `back()` does (`LEADS.find(...)` at focus-return time);
-   good enough for a return that, per the prototype's own 500ms guard, happens seconds later, not
-   minutes. Revisit if a stale `canWork`/consent check on return turns out to matter. */
-let CBACK: (() => void) | null = null;
-function afterContact(
-  dispatch: ReturnType<typeof useConsole>["dispatch"],
-  state: ConsoleState,
-  l: Lead,
-  chan: Channel,
-) {
-  if (!canWork(state, l)) return;
-  if (CBACK) {
-    window.removeEventListener("focus", CBACK);
-    CBACK = null;
-  }
-  const armed = Date.now();
-  const back = () => {
-    if (Date.now() - armed < 500) return;
-    window.removeEventListener("focus", back);
-    if (CBACK === back) CBACK = null;
-    dispatch({
-      type: "openDrawer",
-      k: "p:followup" as DrawerKind,
-      id: l.id,
-      seed: { FU: buildFollowupDraft(state, l, chan) },
-    });
+    ),
+    kind: "open",
   };
-  CBACK = back;
-  window.addEventListener("focus", back);
 }
 
-/* contactActions(l,compact,onlyChannel,excludeChannel) — 6735. tel:/wa.me/mailto links, gated
-   exactly as leadReach() gates the number itself, plus the visit button — a record action, not a
-   link — which opens the "p:followup" drawer the same way every other follow-up here does. Every
-   link also selects the row (`WORKSELECT='<id>'`) and arms `afterContact` before it opens the
-   dialer/WhatsApp/mailto. */
-function ContactLinks({
-  l,
-  onlyChannel,
-  excludeChannel,
-  compact,
-  onSelect,
-}: {
-  l: Lead;
-  onlyChannel?: string | null;
-  excludeChannel?: string | null;
-  compact?: boolean;
-  onSelect?: () => void;
-}) {
-  const { state, dispatch } = useConsole();
-  if (!canWork(state, l)) return null;
+/* g1Contact(l,cls,only) — ir-merged.js:4216. Call / WhatsApp / Email (and Record visit when asked
+   for by name) — each hands over to the lead page's flow on that channel. */
+function G1Contact({ l, cls, only }: { l: Lead; cls: string; only: Channel | null }) {
+  const flow = useLeadFlow();
   const num = waNum(l.ph);
-  const cls = onlyChannel ? "act" : compact ? "chip" : "btn";
-  const show = (k: string) => (!onlyChannel || onlyChannel === k) && excludeChannel !== k;
-  const tap = (chan: Channel) => {
-    onSelect?.();
-    afterContact(dispatch, state, l, chan);
-  };
   return (
-    <div className="work-contact">
-      {num && conFor(l, "call") && show("call") ? (
-        <a className={cls} href={`tel:+${num}`} onClick={() => tap("call")} aria-label={`Call ${l.n}`}>
+    <>
+      {num && conFor(l, "call") && (!only || only === "call") ? (
+        <a className={cls} href={`tel:+${num}`} onClick={() => flow(l.id, "log", "call")} aria-label={`Call ${l.n}`}>
           <Icon name="call" />
           Call
         </a>
       ) : null}
-      {num && conFor(l, "msg") && show("msg") ? (
+      {num && conFor(l, "msg") && (!only || only === "msg") ? (
         <a
           className={cls}
           href={`https://wa.me/${num}`}
           target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => tap("msg")}
+          rel="noopener"
+          onClick={() => flow(l.id, "log", "msg")}
           aria-label={`WhatsApp ${l.n}`}
         >
           <Icon name="wa" />
           WhatsApp
         </a>
       ) : null}
-      {l.em && conFor(l, "email") && show("email") ? (
-        <a className={cls} href={`mailto:${l.em}`} onClick={() => tap("email")} aria-label={`Email ${l.n}`}>
+      {l.em && conFor(l, "email") && (!only || only === "email") ? (
+        <button type="button" className={cls} onClick={() => flow(l.id, "email")} aria-label={`Email ${l.n}`}>
+          <Icon name="email" />
           Email
-        </a>
+        </button>
       ) : null}
-      {conFor(l, "visit") && show("visit") ? (
-        <button
-          type="button"
-          className={cls}
-          onClick={() => {
-            onSelect?.();
-            dispatch({
-              type: "openDrawer",
-              k: "p:followup" as DrawerKind,
-              id: l.id,
-              seed: { FU: buildFollowupDraft(state, l, "visit") },
-            });
-          }}
-          aria-label={`Record a visit with ${l.n}`}
-        >
+      {only === "visit" && conFor(l, "visit") ? (
+        <button type="button" className={cls} onClick={() => flow(l.id, "log", "visit")} aria-label={`Record a visit with ${l.n}`}>
           <Icon name="events" />
           Record visit
         </button>
       ) : null}
-    </div>
+    </>
   );
 }
 
-function WorkRow({
-  l,
-  team,
-  selected,
-  onSelect,
-  logTouch,
-  onRefuse,
-  onNotice,
-}: {
-  l: Lead;
-  team: boolean;
-  selected: boolean;
-  onSelect: () => void;
-  logTouch: (l: Lead, k: string) => Refusal;
-  onRefuse: (r: Refusal) => void;
-  onNotice: (n: WorkNotice) => void;
-}) {
+function hasContact(l: Lead, only: Channel | null): boolean {
+  const num = waNum(l.ph);
+  return (
+    (!!num && conFor(l, "call") && (!only || only === "call")) ||
+    (!!num && conFor(l, "msg") && (!only || only === "msg")) ||
+    (!!l.em && conFor(l, "email") && (!only || only === "email")) ||
+    (only === "visit" && conFor(l, "visit"))
+  );
+}
+
+/* workRow(l) — ir-merged.js:4231. The selected investor's action lives in the panel beside the
+   queue — shown once, not twice. */
+function WorkRow({ l, team, selected, onSelect }: { l: Lead; team: boolean; selected: boolean; onSelect: () => void }) {
   const { state, dispatch } = useConsole();
   const goLead = useGoLead("today");
+  const goPaper = useGoPaper();
+  const flow = useLeadFlow();
   const u = nextUp(state, l);
   const g = workGroup(state, l);
-  const channel = primaryWorkChannel(state, l, u);
   const partner = partnerLabel(state, l);
-  const touchRec = u.rec && u.rec.kind === "touch" ? u.rec : null;
-  const [reschedule, setReschedule] = useState(false);
-  /* rescheduleWork(id,days) — 6752. Pulls the dated step forward by `days`, keeping its hour, then
-     offers it back with Undo — see WORKNOTICE at the top of this file for what the undo replays. */
-  const rescheduleTo = (days: number) => {
-    const was = l.nx;
-    const at = dISOtoDisp(dISO(dAdd(state.NOW, days)), state.NOW);
-    dispatch({ type: "moveNextTo", id: l.id, days });
-    onNotice({
-      message: `${l.n} rescheduled to ${at}${nxTime(l) ? " · " + nxTime(l) : ""}`,
-      undo: was
-        ? () => {
-            dispatch({ type: "setUi", patch: { NXD: { t: was.t, d: was.d || "", tm: was.tm || "" } } });
-            dispatch({ type: "saveNext", id: l.id });
-          }
-        : undefined,
-    });
-    setReschedule(false);
-  };
+  const st = irPaperStep(state, l);
+  /* g1Action(l,u) — ir-merged.js:4225 */
+  const action = (() => {
+    const ch = primaryWorkChannel(state, l, u);
+    if (ch && hasContact(l, ch)) return <G1Contact l={l} cls="act" only={ch} />;
+    const w = workAction(state, dispatch, goLead, goPaper, l, u);
+    if (w.kind === "followup")
+      return (
+        <button type="button" className="act" onClick={() => flow(l.id, "log")}>
+          Log a contact
+        </button>
+      );
+    return w.node;
+  })();
   return (
     <li className={`work-row rd-work-row ${selected ? "is-selected" : ""}`} data-work-group={g}>
-      <div className="ux-work-row-main">
+      <div className={`ux-work-row-main ${selected ? "g1-noact" : ""}`}>
         <div>
           <div className="work-row-head">
             <button type="button" className="work-name" id={`work-${l.id}`} aria-pressed={selected} onClick={onSelect}>
@@ -764,6 +653,18 @@ function WorkRow({
             </span>
           </div>
           <p className="work-reason">{u.t}</p>
+          {st && u.kind !== "paper" ? (
+            <button
+              type="button"
+              className="chip d61-move"
+              onClick={(e) => {
+                e.stopPropagation();
+                goPaper(l.id);
+              }}
+            >
+              {st.R.k === "nda" ? "NDA" : "Agreement"} · your move: {st.t}
+            </button>
+          ) : null}
           <div className="work-row-meta">
             <span>{LADDER[Math.max(0, l.done - 1)]!.t}</span>
             {partner ? <span>Partner: {partner}</span> : null}
@@ -772,182 +673,144 @@ function WorkRow({
             {covOf(state, l) && acting(state, l) === state.WHO ? <span className="tag cov">Covering</span> : null}
           </div>
         </div>
-        <div className="work-row-actions">
-          {channel ? (
-            <ContactLinks l={l} onlyChannel={channel} compact onSelect={onSelect} />
-          ) : (
-            workAction(state, dispatch, goLead, l, onSelect)
-          )}
-        </div>
+        {selected ? null : <div className="work-row-actions">{action}</div>}
       </div>
-      {canWork(state, l) ? (
-        <details className="ux-work-more" data-ux-key={`work-actions-${l.id}`}>
-          <summary>Follow-up options</summary>
-          <div className="work-row-actions">
-            <button
-              type="button"
-              className="btn"
-              onClick={() =>
-                dispatch({
-                  type: "openDrawer",
-                  k: "p:followup" as DrawerKind,
-                  id: l.id,
-                  seed: { FU: buildFollowupDraft(state, l, chanOf(state, l)) },
-                })
-              }
-            >
-              Record follow-up
-            </button>
-            {hasNext(l) && canPlan(state, l) ? (
-              <button type="button" className="btn" aria-expanded={reschedule} onClick={() => setReschedule((v) => !v)}>
-                Reschedule
-              </button>
-            ) : null}
-            {touchRec && conFor(l, touchRec.k as Channel) ? (
-              <button
-                type="button"
-                className="btn"
-                aria-label={`Record already completed contact for ${l.n}`}
-                onClick={() => onRefuse(logTouch(l, touchRec.k))}
-              >
-                Log {TOUCHDONE[touchRec.k as Channel].toLowerCase()}
-              </button>
-            ) : null}
-          </div>
-        </details>
-      ) : null}
-      {reschedule ? (
-        <div className="work-reschedule">
-          <span>Keep {nxTime(l) || "the current time"}, move to:</span>
-          <button type="button" className="chip" onClick={() => rescheduleTo(1)}>
-            Tomorrow
-          </button>
-          <button type="button" className="chip" onClick={() => rescheduleTo(3)}>
-            In 3 days
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              dispatch({ type: "seedNext", id: l.id });
-              dispatch({ type: "openDrawer", k: "next", id: l.id });
-              setReschedule(false);
-            }}
-          >
-            Choose date
-          </button>
-        </div>
-      ) : null}
     </li>
   );
 }
 
-/* followupContext(l) — 6057. See the file header for what this approximates without a ported
-   `INTERACTIONS`/`contactPreference`. */
-function FollowupContext({ l }: { l: Lead }) {
-  const { state } = useConsole();
-  const last = fuLatest(state, l);
-  const heard = fuHeard(state, l);
-  const note = latestNote(state, l);
-  return (
-    <div className="fucontext">
-      <div className="sm">
-        <b>Last interaction</b>{" "}
-        {last ? `${FUCHANNELS[last.channel] || last.channel} · ${last.outcome || "Recorded"} · ${last.at || ""}` : "No contact recorded"}
-      </div>
-      {heard ? (
-        <div className="sm" style={{ marginTop: "7px" }}>
-          <b>Previously raised</b> {heard.obj!.join(", ")} · {heard.at || ""}
-        </div>
-      ) : null}
-      <div className="sm" style={{ marginTop: "7px" }}>
-        <b>Latest note</b> {note || "No conversation note yet"}
-      </div>
-      <div className="sm" style={{ marginTop: "7px" }}>
-        <b>Contact preference</b> No preferred contact time recorded
-      </div>
-    </div>
-  );
-}
-
+/* investorWorkPanel(l) — ir-merged.js:4247 (D59). The lead page's next-step card for the selected
+   row — next step, what was last heard, and the same Call / WhatsApp / Email / Log a contact
+   buttons, which open the lead page's flow. */
 function InvestorPanel({
   l,
-  logTouch,
-  onRefuse,
-  onBack,
+  rescheduling,
+  onToggleReschedule,
+  onReschedule,
 }: {
   l: Lead | null;
-  logTouch: (l: Lead, k: string) => Refusal;
-  onRefuse: (r: Refusal) => void;
-  onBack: () => void;
+  rescheduling: boolean;
+  onToggleReschedule: (id: string) => void;
+  onReschedule: (l: Lead, days: number) => void;
 }) {
   const { state, dispatch } = useConsole();
   const goLead = useGoLead("today");
+  const goPaper = useGoPaper();
+  const flow = useLeadFlow();
   if (!l) return null;
   const u = nextUp(state, l);
   const blocked = gateWait(state, l);
-  const channel = primaryWorkChannel(state, l, u);
-  const otherChannels = canWork(state, l) && TOUCHCHANNELS.some((k) => k !== channel && conFor(l, k));
+  const work = canWork(state, l);
+  const act = active(l) && !lost(l) && l.done < ST.ONBOARDED;
+  const due = nxDue(l, state.NOW);
+  const last = fuLatest(state, l);
+  const note = (state.NOTES || {})[l.id]?.[0] ?? null;
+  const heard =
+    ((state.INTERACTIONS || {})[l.id] || [])
+      .filter((x) => x.obj && x.obj.length)
+      .sort((a, b) => (whenT(b.at, state.NOW)?.getTime() || 0) - (whenT(a.at, state.NOW)?.getTime() || 0))[0] || null;
+  const pref = l.contactPreference;
+  const hasPref = typeof pref === "string" ? !!pref.trim() : !!(pref && typeof pref === "object");
+  const w = workAction(state, dispatch, goLead, goPaper, l, u);
+  const special = w.kind === "special" ? w.node : null;
+  const sub = [LADDER[Math.max(0, l.done - 1)]!.t, l.unitsKnown === false ? "" : money(l.units * UNIT)].filter(Boolean).join(" · ");
+  const planned = act && hasNext(l);
   return (
-    <section className="work-context card" id="work-context" tabIndex={-1} aria-label={`${l.n} — investor context`}>
+    <section className="work-context card g1-focus" id="work-context" tabIndex={-1} aria-label={`${l.n} — investor in focus`}>
       <header className="ch">
         <div>
-          <span className="work-eyebrow">Investor in focus</span>
           <h2>{l.n}</h2>
+          <span className="ux-secondary">{sub}</span>
         </div>
         <div className="ux-primary">
-          <button type="button" className="btn ux-mobile-only" onClick={onBack}>
+          <button
+            type="button"
+            className="btn ux-mobile-only"
+            onClick={() => {
+              const n = document.getElementById("work-" + l.id) || document.getElementById("work-queue");
+              if (n) {
+                n.scrollIntoView({ block: "center", behavior: "smooth" });
+                n.focus();
+              }
+            }}
+          >
             Back to list
           </button>
           <button type="button" className="btn" onClick={() => goLead(l.id)}>
-            Full record <Icon name="next" />
+            Open the record <Icon name="next" />
           </button>
         </div>
       </header>
       <div className="cb">
-        <div className="rd-work-facts">
+        <div className="lp-nexthead">
           <div>
-            <span>Current stage</span>
-            <b>{LADDER[Math.max(0, l.done - 1)]!.t}</b>
+            <span className="work-eyebrow">Next step</span>
+            <h3>{planned ? l.nx!.t : u.t}</h3>
           </div>
-          <div>
-            <span>Interest</span>
-            <b>{knownUnitIntent(l) ? money(l.units * UNIT) : "Not discussed"}</b>
-          </div>
+          {planned ? (
+            <span className={`tag ${due === "overdue" ? "late" : due === "today" ? "due" : "go"}`}>
+              {due === "overdue" ? "Overdue · " : ""}
+              {nxWhen(l)}
+            </span>
+          ) : null}
         </div>
-        <div className="work-next">
-          <span className="work-eyebrow">Next action</span>
-          <b>{u.t}</b>
-          {hasNext(l) ? <span>{nxWhen(l)}</span> : null}
-          <div className="rd-work-next-actions">
-            {channel ? <ContactLinks l={l} onlyChannel={channel} /> : workAction(state, dispatch, goLead, l)}
-            {channel && channel !== "visit" ? (
-              <button
-                type="button"
-                className="btn"
-                onClick={() =>
-                  dispatch({
-                    type: "openDrawer",
-                    k: "p:followup" as DrawerKind,
-                    id: l.id,
-                    seed: { FU: buildFollowupDraft(state, l, channel) },
-                  })
-                }
-              >
-                Record follow-up
-              </button>
-            ) : null}
+        {planned && canPlan(state, l) ? (
+          <button type="button" className="lp-link g1-resched" aria-expanded={rescheduling} onClick={() => onToggleReschedule(l.id)}>
+            Reschedule
+          </button>
+        ) : null}
+        {rescheduling ? (
+          <div className="work-reschedule">
+            <span>Keep {nxTime(l) || "the current time"}, move to:</span>
+            <button type="button" className="chip" onClick={() => onReschedule(l, 1)}>
+              Tomorrow
+            </button>
+            <button type="button" className="chip" onClick={() => onReschedule(l, 3)}>
+              In 3 days
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                dispatch({ type: "seedNext", id: l.id });
+                dispatch({ type: "openDrawer", k: "next", id: l.id });
+              }}
+            >
+              Choose date
+            </button>
           </div>
-        </div>
+        ) : null}
+        {last ? (
+          <p className="lp-meta">
+            Last contact: {FUCHANNELS[last.channel] || last.channel} · {last.outcome || ""} · {last.at || ""}
+          </p>
+        ) : null}
+        {heard ? <p className="lp-meta">Raised before: {heard.obj!.join(", ")}</p> : null}
+        {hasPref ? <p className="lp-meta">Prefers: {fuPreference(l)}</p> : null}
+        {note ? (
+          <p className="lp-meta lp-lastnote">
+            Latest note: “{note.t.length > 140 ? note.t.slice(0, 140) + "…" : note.t}” — {P(state.PEOPLE, note.who).n.split(" ")[0]} · {note.at}
+          </p>
+        ) : null}
         {blocked ? (
           <div className="work-blocker">
             <b>{blocked.who === "fin" ? "Finance is checking" : "Action needed"}</b>
             <p>{blocked.d}</p>
           </div>
         ) : null}
-        <section className="rd-work-history" aria-label="Conversation context">
-          <FollowupContext l={l} />
-        </section>
+        {special || (work && act) ? (
+          <div className="lp-actions">
+            {special}
+            {work && act ? (
+              <>
+                <G1Contact l={l} cls="btn" only={null} />
+                <button type="button" className={special ? "btn" : "act"} onClick={() => flow(l.id, "log")}>
+                  Log a contact
+                </button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
         {canClaim(state, l) ? (
           <div className="work-panel-actions">
             <button
@@ -966,25 +829,15 @@ function InvestorPanel({
             </button>
           </div>
         ) : null}
-        {otherChannels ? (
-          <details className="ux-contact-options" data-ux-key={`work-contact-${l.id}`}>
-            <summary>Other contact channels</summary>
-            <ContactLinks l={l} excludeChannel={channel} />
-          </details>
-        ) : null}
-        <div className="work-details-links">
-          <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "history", id: l.id })}>
-            Timeline
+        <div className="g1-foot">
+          <button
+            type="button"
+            className="lp-link"
+            onClick={() => goLead(l.id, "history")}
+          >
+            Investor file
           </button>
-          <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "notes", id: l.id })}>
-            Notes
-          </button>
-          <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "paper", id: l.id })}>
-            Documents
-          </button>
-          <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "details", id: l.id })}>
-            Details & permission
-          </button>
+          <span className="ux-secondary">history, notes, documents, details</span>
         </div>
       </div>
     </section>

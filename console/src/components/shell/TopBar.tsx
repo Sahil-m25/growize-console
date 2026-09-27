@@ -45,7 +45,7 @@ import type { Action, ConsoleState } from "@/lib/store";
 import { useConsole } from "@/lib/store";
 import { agoStr } from "@/lib/format";
 import { Icon } from "@/components/ui";
-import { findInvestor } from "./nav";
+import { FindBox } from "@/features/leads/FindBox";
 import { pathOf, type View } from "./routes";
 
 const PAGES = PAGECAPS as unknown as Record<string, { t: string } | undefined>;
@@ -96,31 +96,8 @@ export function TopBar() {
 
   return (
     <header className="top rd-top">
-      {navFor(state).some((n) => n.k === "leads") ? (
-        <button
-          type="button"
-          className="btn"
-          id="findb"
-          onClick={() => findInvestor(state, dispatch, (href) => router.push(href))}
-          title="Find an investor (Ctrl/Cmd + K)"
-          aria-label="Find an investor"
-        >
-          <svg
-            className="i"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <circle cx="10.5" cy="10.5" r="7.5" />
-            <path d="m16 16 5 5" />
-          </svg>
-          <span>Find investor</span>
-          <kbd aria-hidden="true">Ctrl K</kbd>
-        </button>
-      ) : null}
+      {/* D60 b · the top-bar Find investor is a real search box — FindBox (features/leads) */}
+      {navFor(state).some((n) => n.k === "leads") ? <FindBox /> : null}
 
       <div className="sp" />
 

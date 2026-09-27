@@ -33,7 +33,7 @@ export const ROUNDS: readonly PaperRoundDef[] = [
  * signing account live. If Finance also had to come back here and record that they had done it,
  * that is two entries for one fact — the exact thing this product exists to stop.
  */
-export const IMP = "Investor Management portal";
+export const IMP = "Investors pages";
 
 /** "told them by …" */
 export const PCH: Record<SlaChannel, string>  = {msg:"WhatsApp", call:"a call",  email:"email"};

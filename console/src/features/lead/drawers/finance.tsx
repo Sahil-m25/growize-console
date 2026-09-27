@@ -1,4 +1,5 @@
 "use client";
+import { useLpHere } from "./here";
 
 /* ── DRAWERS.money / .paper / .acct / .claim — the read-only finance mirror, and the one form
    this file adds on top of it: the payment-report draft. ir-console-redesigned.html 8830-8985
@@ -27,14 +28,9 @@ import { useGo } from "@/features/pay/common";
 import { ClaimBlock } from "@/features/pay/ClaimBlock";
 import { acctUnits, CAMOUNT, CKIND, CMODE, CNOTE, CREF, CSAIDON } from "@/features/pay/reducer";
 
-/* imBanner() — ir-console-redesigned.html:8837, word for word. */
+/* imBanner() — ir-merged.js 6563, word for word. */
 function ImBanner() {
-  return (
-    <div className="note">
-      <b>Finance history · read only.</b> Payments and documents are maintained in the {IMP} and mirrored here for eligible investors.{" "}
-      <span className="sm">Local demo records; live portal sync is not connected.</span>
-    </div>
-  );
+  return <p className="sm g5-ro">Read only · kept by Finance in the {IMP}</p>;
 }
 
 
@@ -49,7 +45,7 @@ function FinanceDocState({ state: s }: { state: string }) {
 
 /* financeDocumentHistoryBlock(l) — ir-console-redesigned.html:8966-8971. Shared by the acct and
    paper drawers, which read the same Finance document list. */
-function DocumentHistoryBlock({ l }: { l: Lead }) {
+export function DocumentHistoryBlock({ l }: { l: Lead }) {
   const { state } = useConsole();
   const docs = financeDocuments(state, l);
   if (!docs.length) return <p className="sm">No Finance document history has been supplied. Missing source dates are not inferred from lead stages.</p>;
@@ -281,7 +277,8 @@ export function ClaimBody({ lead }: DrawerProps) {
 function FinanceFoot({ lead }: DrawerProps) {
   const { state } = useConsole();
   const go = useGo();
-  if (!lead || !(canReadFinance(state, lead, "pay") || canReadFinance(state, lead, "docs"))) return null;
+  const here = useLpHere(lead?.id);
+  if (!lead || here || !(canReadFinance(state, lead, "pay") || canReadFinance(state, lead, "docs"))) return null;
   return <button type="button" className="act" onClick={() => go("lead", lead.id)}>Open lead</button>;
 }
 

@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import { useConsole } from "@/lib/store";
 import { landSafe } from "@/components/shell/nav";
 import { pathOf } from "@/components/shell/routes";
+import { TodayPage } from "@/features/today/TodayPage";
+import { Sided } from "@/features/im/host";
 
 export function Home() {
   const { state } = useConsole();
@@ -19,5 +21,7 @@ export function Home() {
     router.replace(pathOf(land));
   }, [land, router]);
 
-  return null;
+  /* the landing screen is drawn at once, not after the redirect's round trip: a person who has
+     just signed in sees their day in the same frame (the prototype's go() is synchronous) */
+  return state.authed && land === "today" ? <Sided k="today" lead={<TodayPage />} /> : null;
 }

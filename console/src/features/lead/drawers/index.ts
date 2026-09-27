@@ -27,4 +27,5 @@ import "./owner";
 import "./hold";
 import "./finance";
 import "./investor-copy";
+import "./lpdrawers";   /* last: wraps history/owner/material/money as the Investor file's tabs */
 

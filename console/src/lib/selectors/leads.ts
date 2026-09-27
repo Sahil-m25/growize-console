@@ -688,8 +688,8 @@ export function todayList(ctx: Ctx, sc?: "mine" | "team"): Lead[] {
           const w = paperNow(ctx, l);                      /* paper has its own card */
           return !(w.mine && w.n.who === "Finance");
         })
-      : myWork(ctx).concat(isIR(roleOf(ctx.PEOPLE, me(ctx))!) ? unassigned(ctx) : [])
-  ).filter(l => !lost(l) && l.done < ST.ONBOARDED);   /* closed is closed: it leaves the queue, not the record */
+      : myWork(ctx)
+  ).filter(l => !lost(l) && l.done < ST.ONBOARDED && !!l.own);   /* closed is closed; unowned leads are the Leads page's (merged todayList) */
 
   const ids = new Set(openable(ctx).map(l => l.id));
   const unique = [...new Map(base.filter(l => ids.has(l.id)).map(l => [l.id, l] as const)).values()];
@@ -904,7 +904,9 @@ export const dormant = (ctx: Ctx, l: Lead | null | undefined): boolean => {
 export type ExcKey = "nonext" | "overdue" | "cold" | "fcgap" | "consent" | "due" | "hold7" | "lost" | "dormant";
 export const EXC: Record<ExcKey, [string, (ctx: Ctx, l: Lead) => boolean]> = {
   nonext:  ["No next action",          (_c, l) => noNext(l)],
-  overdue: ["Overdue",                 (c, l) => active(l) && nxDue(l, c.NOW) === "overdue"],
+  /* merged ir-merged.js:4809 — Today's rule: a dated next step decides; without one, a missed first touch */
+  overdue: ["Overdue",                 (c, l) => { if (!active(l)) return false; const d = hasNext(l) && nxDue(l, c.NOW);
+              return d ? d === "overdue" : missingTouch(c, l)?.state === "overdue"; }],
   cold:    ["Going cold",              (c, l) => cold(c, l, c.NOW)],
   fcgap:   ["Forecast with no date",   (c, l) => fcBad(l, c.NOW)],
   consent: ["Permission missing",      (_c, l) => active(l) && !anyConsent(l)],

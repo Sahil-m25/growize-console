@@ -145,20 +145,16 @@ export function mayReach(state: ConsoleState, view: View): boolean {
   return canReach(state, parentOf(view));
 }
 
-/* findInvestor() — the redesigned prototype, ~13298. The header's search button and the Ctrl/Cmd+K
-   / "/" hotkey (Shell.tsx's global key handler) are the same act, so both call this rather than
-   keeping two slightly different copies of it: a seat that cannot reach Leads gets nothing, an
-   active filter never survives into a fresh search, and the query field is what ends up focused
-   and selected either way. */
+/* findInvestor() — merged prototype D60 b (ir-merged.js:10989). The header's box and the Ctrl/Cmd+K
+   hotkey (Shell.tsx) are the same act: a seat that cannot reach Leads gets nothing; otherwise the
+   top-bar box (#fq, features/leads/FindBox) is focused and selected. It never moves you. */
 export function findInvestor(
   state: ConsoleState,
-  dispatch: (a: Action) => unknown,
-  navigate: (href: string) => void,
+  _dispatch: (a: Action) => unknown,
+  _navigate: (href: string) => void,
 ): void {
   if (!navFor(state).some((n) => n.k === "leads")) return;
-  dispatch({ type: "clearLeadFilters" });
-  if (state.VIEW !== "leads") navigate(pathOf("leads" as View));
-  const n = document.getElementById("lq") as HTMLInputElement | null;
+  const n = document.getElementById("fq") as HTMLInputElement | null;
   if (n) {
     n.focus();
     n.select();

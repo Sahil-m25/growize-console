@@ -49,6 +49,7 @@ import type {
    so the root reducer below delegates rather than growing a case per page. They import only types
    from this file, so the cycle is erased at compile time and there is no runtime edge. */
 import { pagesAReducer } from "@/features/leads/reducer";
+import { leadPageReducer, LEADPAGE_WRITES, type LeadPageAction } from "@/features/lead/reducer";
 import { pagesBReducer } from "@/features/add/reducer";
 import type { AddCon } from "@/features/add/state";
 import { pagesCReducer } from "@/features/people/reducer";
@@ -293,6 +294,8 @@ export type ConsoleState = {
    that owns it can fill it in without inventing an action name or touching this union. An
    unimplemented case returns state unchanged — it never throws and never half-writes. */
 export type Action =
+  /* ---- the lead page's own composite writes (features/lead/reducer.ts) ---- */
+  | LeadPageAction
   /* ---- shell: implemented here ---- */
   | { type: "go"; v: NavKey; id?: LeadId; ev?: string }
   /* the data half arrives (GET /api/data) or changes under an open page (a fixture): replace
@@ -674,6 +677,7 @@ export const LEAD_WRITES = new Set<string>([
   "prSend", "prTold", "prChase", "prSaid", "prVerify", "prBounce", "prGate", "addLead", "loadSheet",
   "record", "claimPaid", "confirmClaim", "rejectClaim", "reopenClaim", "startPaymentReport", "askExt", "decideExt", "lapse",
   "sendDoc", "recordDoc", "acctAuto", "acctLapsed", "xferAuto",
+  ...LEADPAGE_WRITES,
 ]);
 
 /* log(what, lead, note, kind) — 03-app.js:1228, the shell's own copy (pages-d's is
@@ -762,6 +766,7 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
   if (a.type === "openDrawer") state = imClose(state);
   if (!accountAllowed(state) && !["setPerson", "setRole", "setTheme"].includes(a.type)) return state;
   if (LEAD_WRITES.has(a.type) && !canOperateLeads(state)) return state;
+  if ((LEADPAGE_WRITES as readonly string[]).includes(a.type)) return leadPageReducer(state, a as LeadPageAction, reducer);
   if (a.type.startsWith("pr")) return state; // Paper's source mirror is written only in Investor Management.
   if (["acctAuto", "acctLapsed", "xferAuto"].includes(a.type)) return state;
   if (LEAD_WRITES.has(a.type) && "id" in a && state.LEADS.some(l => l.id === a.id)
@@ -780,7 +785,8 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
         EVID: a.ev ?? state.EVID,
         DRW: null,
         TJUST: null,
-        ui: { ...state.ui, NXASK: null, ASKW: null, ASKD: null, NDRAFT: "" },
+        /* NAVSEQ/NAVLEAD: which go() this is, so the shell can draw its page before the route lands */
+        ui: { ...state.ui, NXASK: null, ASKW: null, ASKD: null, NDRAFT: "", NAVSEQ: Number(state.ui.NAVSEQ || 0) + 1, NAVLEAD: a.id ?? null },
       };
     }
 

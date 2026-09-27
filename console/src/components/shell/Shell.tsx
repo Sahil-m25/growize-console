@@ -9,7 +9,7 @@
    from the path into the store because a dozen reads in the prototype ask for it by name.
    ============================================================================================== */
 
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { NavKey, PersonKey } from "@/domain";
 import { RAGT } from "@/domain";
@@ -25,6 +25,32 @@ import { useThemeSync } from "./ThemeButton";
 import { curSide, MNote, useIm } from "@/features/im/host";
 import { ImDrawer, DRAWERS as IMDRAWERS } from "@/features/im/drawers";
 import { useDocked } from "./useDocked";
+import { LeadPage } from "@/features/lead/LeadPage";
+import TodayRoute from "@/app/today/page";
+import LeadsRoute from "@/app/leads/page";
+import ActivityRoute from "@/app/activity/page";
+import DocsRoute from "@/app/docs/page";
+import PayRoute from "@/app/pay/page";
+import NumbersRoute from "@/app/numbers/page";
+import PeopleRoute from "@/app/people/page";
+import SystemRoute from "@/app/system/page";
+import XferRoute from "@/app/xfer/page";
+import InvRoute from "@/app/inv/page";
+import FarmsRoute from "@/app/farms/page";
+import TktRoute from "@/app/tkt/page";
+import InvupdRoute from "@/app/invupd/page";
+import EventsRoute from "@/app/events/page";
+import GoalsRoute from "@/app/goals/page";
+import UpdatesRoute from "@/app/updates/page";
+import MeRoute from "@/app/me/page";
+
+/* the client routes the shell can draw ahead of their navigation (see pendingView below) */
+const PENDING: Partial<Record<string, () => ReactNode>> = {
+  today: TodayRoute, leads: LeadsRoute, activity: ActivityRoute, docs: DocsRoute, pay: PayRoute,
+  numbers: NumbersRoute, people: PeopleRoute, system: SystemRoute, xfer: XferRoute,
+  inv: InvRoute, farms: FarmsRoute, tkt: TktRoute, invupd: InvupdRoute, events: EventsRoute,
+  goals: GoalsRoute, updates: UpdatesRoute, me: MeRoute,
+};
 
 /* the Investors drawer in the console's drawer slot — merge-glue.js vDrawer override */
 function ImDrawerSlot() {
@@ -258,9 +284,39 @@ export function Shell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("resize", run);
   });
 
-  const side = view ? curSide(state, parentOf(view)) : "ir";
+  /* A lead opened by go() is drawn at once, ahead of its route: the prototype's go() was synchronous,
+     while a dev-server navigation to /leads/[id] takes one to two seconds (lead page lane). Pending
+     = a go() with a lead id happened since this path was reached, and the path is not a lead yet. */
+  const seqAtPath = useRef<{ p: string | null; seq: unknown }>({ p: null, seq: null });
+  if (seqAtPath.current.p !== pathname) seqAtPath.current = { p: pathname, seq: state.ui.NAVSEQ };
+  const navLead = state.ui.NAVLEAD as string | null | undefined;
+  const pendingLead = view !== "lead" && !blocked && navLead && state.ui.NAVSEQ !== seqAtPath.current.seq ? navLead : null;
+  /* the same for a rail entry: Rail's onClick dispatches go(k) before its <Link> lands, so VIEW
+     already names the page the person asked for — draw it rather than the one being left. The
+     shell draws these pages itself before AND after the route lands, so the arrival does not
+     remount the page under the person's pointer. */
+  /* a seat whose go() the store refuses (an Investors-only seat) still clicked a rail <Link>: the
+     link's own path names the page, until the route lands */
+  const [clicked, setClicked] = useState<{ from: string | null; to: string } | null>(null);
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("nav a[href^='/']") as HTMLAnchorElement | null;
+      if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+      setClicked({ from: window.location.pathname, to: a.getAttribute("href") || "" });
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+  const clickedView = clicked && clicked.from === pathname ? viewOf(clicked.to).view : null;
+  const wantView = clickedView && clickedView !== view ? clickedView
+    : state.ui.NAVSEQ !== seqAtPath.current.seq ? state.VIEW : null;   /* a go() since this path landed */
+  const pendingView = !pendingLead && view && wantView && wantView !== parentOf(view) && PENDING[wantView] && mayReach(state, wantView)
+    ? wantView : null;
+  const Pending = pendingView ? PENDING[pendingView]! : null;
+  const shown = pendingLead ? "lead" : pendingView || view;
+  const side = shown ? curSide(state, parentOf(shown)) : "ir";
   const paneCls =
-    "pane" + (side !== "ir" ? " wide" : view && SOLO.includes(view) ? " solo" : view && WIDE.includes(view) ? " wide" : "");
+    "pane" + (side !== "ir" ? " wide" : shown && SOLO.includes(shown) ? " solo" : shown && WIDE.includes(shown) ? " wide" : "");
   const imW = !state.DRW && state.IMUI.DRW ? (IMDRAWERS[state.IMUI.DRW.k]?.w ?? 440) : null;
   const dw = state.DRW ? (drawerDef(state.DRW.k)?.w ?? DRW_DEFAULT_W) : imW;
 
@@ -280,7 +336,8 @@ export function Shell({ children }: { children: ReactNode }) {
           <TopBar />
           <main className={paneCls} id="pane" tabIndex={-1} key={state.WHO} data-side={side === "im" ? "im" : undefined}>
             <MNote />
-            {nav.length === 0 && view !== "me" ? <NoScreens /> : blocked ? null : children}
+            {nav.length === 0 && view !== "me" ? <NoScreens /> : blocked && !Pending ? null : pendingLead || (shown === "lead" && id) ? <LeadPage id={(pendingLead || id)!} />
+              : shown && PENDING[shown] ? (() => { const C = PENDING[shown]!; return <C />; })() : children}
           </main>
         </div>
         {state.DRW ? <Drawer /> : <ImDrawerSlot />}

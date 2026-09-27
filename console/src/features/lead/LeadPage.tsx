@@ -1,979 +1,520 @@
 "use client";
 
-/* ── 3. LEAD — investor context, the appointment, the journey, and the rest behind a fold.
-   vLead, ir-console-redesigned.html 7671-7791 ────────────────────────────────────────────────
-   The redesigned prototype replaced the old "two cards and a bare door row" layout with: the
-   header lines, an "Investor context" card (next action, contact actions, the details links),
-   an "Appointment" disclosure holding the Next step and Forecast blocks, a "Journey" disclosure
-   holding the ladder, and a "More investor tools" disclosure holding the doors.
+/* ── 3. ONE INVESTOR — D56–D58, the lead page. ir-merged.js 4988–5410 (vLead, lpLogger,
+   lpComposer, lpPaperRow, lpStepper) ────────────────────────────────────────────────────────
+   D56 shows about six things: who this is, the next step, and the ways to act on it. Everything
+   else is shown only while it applies (the alerts and the rows), opened by the act that needs it
+   (the logging flow, the composer), or kept in one Investor file drawer (four tabs).
 
-   THE REFUSALS. The prototype's `tick()` and `untick()` popped an `alert()`. This screen already
-   has the treatment for a sentence that stops you — the `.hd1` band the gate uses — so a refused
-   tick or un-tick renders there, in the prototype's own words, and nothing else on the page moves.
-
-   "Record follow-up" and "Record visit" open the canonical `"p:followup"` drawer
-   (`@/features/leads/followupDrawer`) instead of the old `touch` drawer — the store's
-   `saveFollowup`/`discardFollowup` (store.tsx) implement the prototype's combined outcome-and-
-   next-step save (INTERACTIONS, the touch/reply/CALLS mirrors, the next step), and that drawer
-   collects `ui.FU` for it. This page used to open its own near-identical `"followup"` drawer
-   (`./drawers/followup`) — a real cross-agent duplication from the same round `@/features/leads/
-   followupDrawer.tsx` was built in. Consolidated onto `"p:followup"`, the key Today/WorkAction/
-   LeadsPage already use, so there is exactly one follow-up drawer in the running app; `./drawers/
-   followup.tsx` (and `./drawers/touch.tsx`, the drawer it superseded in turn) are left on disk but
-   no longer imported by `./drawers/index.ts`, rather than deleted, since deleting either file broke
-   Turbopack's live cache mid-round — dropping the import already makes both truly unreachable. */
+   The flow's state (LPFLOW/LPFROM/LPOBJ/LPEARLY/LPLOSE/LPDAY and the draft) lives in `ui.LP`; the
+   composer's (EMDRAFT/LPEM) in `ui.EM`; the stepper toggle in `ui.LPSTEPS`; the Saved notice with
+   its 10-second Undo in `ui.LPNOTICE` (set by `./reducer.ts`). The writes are `./reducer.ts`'s
+   composite actions plus the existing tick/skipStage/addNote/assign/decideMove/reopenLost. */
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { CLAIMKINDS, FCAT, LADDER, ST, TOUCHCHANNELS, TOUCHDONE, TOUCHSLA, UNIT } from "@/domain";
-import type { Lead, NavKey, PersonKey } from "@/domain";
+import { FCAT, LADDER, LOSTWHY, NAV, OBJS, ST, TOUCHCHANNELS, UNIT } from "@/domain";
+import type { Channel, Lead, NavKey } from "@/domain";
 import type { DrawerKind } from "@/lib/store";
-import { money } from "@/lib/format";
+import { DAY, dISOtoDisp, hhmm, iso, money, nowT, plusD, when, whenT } from "@/lib/format";
 import {
-  active,
-  canAssign,
-  canDecideMove,
-  canEdit,
-  canPlan,
-  canReach,
-  canReopen,
-  canWork,
-  canClaim,
-  canOperateLeads,
-  chanOf,
-  claimBlock,
-  claimOpen,
-  cold,
-  conFor,
-  covOf,
-  fcInFY,
-  fcOf,
-  fcOK,
-  gateWait,
-  hasNext,
-  isFin,
-  isIR,
-  lost,
-  missingTouch,
-  named,
-  needsNext,
-  nextUp,
-  noNext,
-  nxDue,
-  nxWhen,
-  openable,
-  P,
-  ph,
-  ragOf,
-  refTxt,
-  reopenHandoff,
-  sinceReply,
-  stepOwner,
-  tCount,
-  tFirst,
-  tLast,
-  undoStage,
-  watching,
-  whyLocked,
-  seeMoney,
+  active, canAssign, canClaim, canDecideMove, canLose, canNote, canOperateLeads, canPlan, canReach,
+  canReadFinance, canReopen, canWork, channelForAction, claimOf, conFor, covOf, fcOf, gateWait, hasNext,
+  inReservation, isIR, lost, ndaOK, nextUp, nxDue, nxWhen, openable, P, paperNow, ph, pr, prChases,
+  ragOf, seeMoney, stepOwner, undoStage, watching, whyLocked,
 } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { useTick, useUntick, type Refusal } from "@/features/leads/actions";
-import { uiFrom, uiNxask } from "@/features/leads/ui";
-import { WorkAction } from "@/features/leads/WorkAction";
-import { waNum } from "@/features/today/work";
+import { uiFrom } from "@/features/leads/ui";
+import { FUCHANNELS, FUOUTCOMES, fuLatest, waNum } from "@/features/today/work";
 import { Icon } from "@/components/ui/Icon";
-import { Doors } from "./Doors";
-import { buildFollowupDraft } from "@/features/leads/followupDrawer";
-import { FollowupContext } from "./followupContext";
+import { fuPreference } from "./followupContext";
+import {
+  DEAD, EMMAT, EMTPL, emTplFor, emTplOK, emTpls, emUse, HESITANT, LP_SHORT, LP_SLOTS, LP_WHEN, lpNextChoices,
+  lpPaperName, LPPCH, lpPickStep, lpPrefSlot, needOf, RUNGASK, zKind,
+  type EmDraft, type LpDraft, type LpFlow,
+} from "./lp";
+import type { LpNotice } from "./reducer";
+import { Live, say } from "./Live";
 import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
-import "@/features/leads/followupDrawer";   /* registers "p:followup" before this page's own buttons can open it */
+import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
 
-/* ---- Investor context: contact links, and the primary channel the current work is asking for.
-   ir-console-redesigned.html 6735-6765 (contactActions/primaryWorkChannel). `nextUp`'s `rec.kind`
-   now carries "followup" for a dated step (selectors/leads.ts), so a channel is offered for that
-   case too, not only a missed-touch SLA. */
-function primaryWorkChannel(state: ReturnType<typeof useConsole>["state"], l: Lead): string | null {
-  const u = nextUp(state, l);
-  if (!canWork(state, l) || !u.rec || !["touch", "followup"].includes(u.rec.kind)) return null;
-  const ch = u.rec.kind === "touch" ? u.rec.k : chanOf(state, l);
-  if (!conFor(l, ch as (typeof TOUCHCHANNELS)[number])) return null;
-  if (ch === "visit") return ch;
-  if (ch === "email") return l.em ? ch : null;
-  if (ch === "call" || ch === "msg") return waNum(l.ph) ? ch : null;
+type Ctx = ReturnType<typeof useConsole>;
+
+/* ---- the flow's state: one flow open at a time, per person ---- */
+const flowOf = (state: Ctx["state"], id: string): LpFlow | null => {
+  const f = state.ui.LP as LpFlow | null | undefined;
+  return f && f.who === state.WHO && f.id === id ? f : null;
+};
+
+/* fuDraft(l), fresh — ir-merged.js 3612 */
+function freshDraft(state: Ctx["state"], l: Lead): LpDraft {
+  const n = nowT(state.NOW), k = (["call", "msg", "email", "visit"] as const).find((c) => conFor(l, c)) || "reply";
+  const next = hasNext(l) && l.nx ? { t: l.nx.t, by: l.nx.by, tm: l.nx.tm || "" } : null;
+  return {
+    channel: k, outcome: "", obj: [], note: "", d: iso(n), tm: hhmm(n), task: next, keep: false, complete: !!next,
+    t: "", nd: iso(plusD(n, 1)), ntm: "10:00", nch: (k === "reply" ? "other" : k) as LpDraft["nch"], noNext: false, error: "",
+  };
+}
+
+function useLp(l: Lead) {
+  const { state, dispatch } = useConsole();
+  const f = flowOf(state, l.id);
+  const setFlow = (next: LpFlow | null) => dispatch({ type: "setUi", patch: { LP: next } });
+  const allowed = (k: string) => conFor(l, k as Channel);
+  const pick = (d: LpDraft, t: string) => lpPickStep(d, t, (x) => channelForAction(x), allowed);
+  return {
+    f,
+    /* lpOpen(id,what,channel) */
+    open: (what: "log" | "email", channel?: string) => {
+      if (!canWork(state, l)) return;
+      const d = freshDraft(state, l);
+      if (what === "log") { d.channel = (channel || "") as LpDraft["channel"]; d.outcome = ""; d.obj = []; d.t = ""; }
+      setFlow({ who: state.WHO, id: l.id, flow: what, from: what === "log" && channel ? channel : null, d });
+    },
+    close: () => setFlow(null),
+    /* lpChange(id) — step back to the outcome question; the channel stays if it came from the button pressed */
+    change: () => {
+      if (!f) return;
+      setFlow({ ...f, day: false, lose: false, obj: false, d: { ...f.d, outcome: "", obj: [], t: "", error: "", channel: f.from ? f.d.channel : ("" as LpDraft["channel"]) } });
+    },
+    /* lpSet(id,k,v) */
+    set: (k: string, v: string | boolean) => {
+      if (!f || !canWork(state, l)) return;
+      let d: LpDraft = { ...f.d, error: "" }, n: LpFlow = { ...f };
+      if (k === "channel") d = { ...d, channel: v as LpDraft["channel"], outcome: "", obj: [] };
+      else if (k === "outcome") {
+        d = { ...d, outcome: String(v), obj: [], t: "" }; n = { ...n, lose: false, obj: false };
+        if (v === "No answer" || v === "Call back") d = pick(d, "Call back");
+      } else if (k === "obj") { d = { ...d, obj: v ? [String(v)] : [] }; n = { ...n, obj: true }; }
+      else if (k === "t") d = pick(d, String(v));
+      else if (k === "untask") d = { ...d, t: "" };
+      else if (k === "keep") d = { ...d, keep: !!v, complete: !v };
+      else if (k === "earlier") n = { ...n, early: !n.early };
+      else if (k === "lose") n = { ...n, lose: "keep" };
+      else if (k === "unday") n = { ...n, day: false };
+      setFlow({ ...n, d });
+    },
+    /* lpWhen(id,v) */
+    when: (v: string) => {
+      if (!f || !v) return;
+      const [dd, tt] = v.split("T");
+      setFlow({ ...f, early: false, d: { ...f.d, d: dd, tm: (tt || "").slice(0, 5), error: "" } });
+    },
+    finish: (d: LpDraft) => {
+      let x = d;
+      if (!x.t) x = pick(x, "Call back");
+      if (!x.keep && !x.nd) x = { ...x, nd: iso(nowT(state.NOW)) };
+      dispatch({ type: "lpFinish", id: l.id, d: x });
+    },
+    /* lpDate(id,days,dateISO) */
+    date: (days: number | null, dateISO?: string) => {
+      if (!f) return;
+      let d = f.d;
+      if (!d.t) d = pick(d, "Call back");
+      d = { ...d, nd: dateISO || iso(plusD(nowT(state.NOW), days || 0)) };
+      if (zKind(d.t) === "task") { d = { ...d, ntm: "" }; setFlow({ ...f, d }); dispatch({ type: "lpFinish", id: l.id, d }); return; }
+      setFlow({ ...f, day: true, d });
+    },
+    /* lpTime(id,tm) */
+    time: (tm: string) => {
+      if (!f) return;
+      const d = { ...f.d, ntm: tm || "" };
+      dispatch({ type: "lpFinish", id: l.id, d: d.t ? d : pick(d, "Call back") });
+    },
+    lose: (why: string) => { if (f) dispatch({ type: "lpLose", id: l.id, d: f.d, why }); },
+  };
+}
+
+function Chip({ on, cls, onClick, children }: { on?: boolean; cls?: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" className={`chip ${on ? "on" : ""} ${cls || ""}`} aria-pressed={!!on} onClick={onClick}>{children}</button>
+  );
+}
+const Ask = ({ label, children }: { label: ReactNode; children: ReactNode }) => (
+  <div className="lp-ask"><p className="lp-ql">{label}</p>{children}</div>
+);
+
+/* ---- the logging flow, D57: one question at a time ---- */
+function LpLogger({ l }: { l: Lead }) {
+  const { state } = useConsole();
+  const lp = useLp(l);
+  const f = lp.f!;
+  const d = f.d;
+  const now = nowT(state.NOW);
+  const bits: ReactNode[] = [];
+  if (d.channel) bits.push(d.channel === "reply" ? "They contacted us" : FUCHANNELS[d.channel]);
+  if (d.outcome) bits.push(d.outcome);
+  if (d.obj && d.obj.length) bits.push(d.obj[0]);
+  if (d.channel && d.outcome) {
+    const w = whenT(dISOtoDisp(d.d, state.NOW) + " " + d.tm, state.NOW) || state.NOW;
+    const isNow = d.d === iso(now) && Math.abs(w.getTime() - now.getTime()) < 30 * 60000;
+    bits.push(<button key="w" type="button" className="lp-link lp-mini" onClick={() => lp.set("earlier", true)} title="Change when it happened">{isNow ? "just now" : dISOtoDisp(d.d, state.NOW) + " " + d.tm}</button>);
+  }
+  if (d.task && d.outcome && !DEAD.includes(d.outcome))
+    bits.push(<button key="k" type="button" className="lp-link lp-mini" onClick={() => lp.set("keep", !d.keep)} title={d.keep ? "Mark it done instead" : "Keep it scheduled instead"}>{d.keep ? "keeps" : "completes"} “{d.task.t}”</button>);
+  if (d.t && (d.outcome === "No answer" || d.outcome === "Call back") && !d.keep) bits.push("next: " + d.t);
+  const joined: ReactNode[] = [];
+  bits.forEach((b, i) => { if (i) joined.push(" · "); joined.push(<span key={i}>{b}</span>); });
+
+  const chans = (["call", "msg", "email", "visit"] as const).filter((k) => conFor(l, k) && (k !== "email" || !!l.em) && (!["call", "msg"].includes(k) || !!waNum(l.ph)));
+  let q: ReactNode = null;
+  if (!d.channel)
+    q = <Ask label="How did you reach them?"><div className="chips">{[...chans, "reply" as const].map((k) => (
+      <Chip key={k} onClick={() => lp.set("channel", k)}>{k === "reply" ? "They contacted us" : FUCHANNELS[k]}</Chip>))}</div></Ask>;
+  else if (!d.outcome)
+    q = <Ask label="What happened?"><div className="chips">{(FUOUTCOMES[d.channel] || []).map((o) => (
+      <Chip key={o} cls={DEAD.includes(o) ? "lp-neg" : ""} onClick={() => lp.set("outcome", o)}>{o}</Chip>))}</div></Ask>;
+  else if (DEAD.includes(d.outcome) && canLose(state, l) && f.lose !== "keep")
+    q = <Ask label="Why are they out?"><div className="chips">{LOSTWHY.map((w) => <Chip key={w} onClick={() => lp.lose(w)}>{w}</Chip>)}
+      <Chip cls="lp-quiet" onClick={() => lp.set("lose", true)}>Keep it open instead</Chip></div>
+      <p className="lp-hint">Picking a reason saves this contact and closes the lead. You can undo for 10 seconds.</p></Ask>;
+  else if ((HESITANT.includes(d.outcome) || DEAD.includes(d.outcome)) && !f.obj)
+    q = <Ask label="What held them back?"><div className="chips">{OBJS.map((o) => <Chip key={o} onClick={() => lp.set("obj", o)}>{o}</Chip>)}
+      <Chip cls="lp-quiet" onClick={() => lp.set("obj", "")}>Skip</Chip></div></Ask>;
+  else if (d.keep) q = <div className="lp-ask"><button type="button" className="act" onClick={() => lp.finish(d)}>Save</button></div>;
+  else if (!d.t)
+    q = <Ask label="What's next?"><div className="chips">{lpNextChoices(l, ndaOK(state, l)).map((t) => <Chip key={t} onClick={() => lp.set("t", t)}>{t}</Chip>)}</div></Ask>;
+  else if (!f.day) {
+    const tk = zKind(d.t) === "task";
+    q = <Ask label={d.outcome === "No answer" || d.outcome === "Call back" ? "Which day will you try again?"
+      : <>Which day? <span className="lp-qsub">{d.t} · <button type="button" className="lp-link" onClick={() => lp.set("untask", true)}>change</button></span></>}>
+      <div className="chips">{LP_WHEN.map(([t, n]) => <Chip key={t} onClick={() => lp.date(n)}>{t}</Chip>)}
+        <label className="chip lp-date">Pick a date<input type="date" min={iso(now)} onChange={(e) => { if (e.target.value) lp.date(null, e.target.value); }} aria-label="Pick a date" /></label></div>
+      <p className="lp-hint">{tk ? "Saved as a task with this due date. Picking a date saves; you can undo for 10 seconds." : "Next you pick the time."}</p></Ask>;
+  } else {
+    const today = d.nd === iso(now), nowHM = hhmm(now), pref = lpPrefSlot(l, (state.NOTES[l.id] || [])[0]?.t);
+    const slots = LP_SLOTS.filter(([, tm]) => !today || tm > nowHM);
+    const k = zKind(d.t);
+    q = <Ask label={<>What time? <span className="lp-qsub">{d.t} · {dISOtoDisp(d.nd || "", state.NOW)} · <button type="button" className="lp-link" onClick={() => lp.set("unday", true)}>change day</button></span></>}>
+      <div className="chips">{slots.map(([t, tm]) => {
+        const p = !!pref && pref.slot === tm;
+        return <Chip key={tm} on={p} cls={p ? "lp-pref" : ""} onClick={() => lp.time(tm)}>{t + " " + tm + (p ? " · their " + pref!.src : "")}</Chip>;
+      })}
+        <label className="chip lp-date">Pick a time<input type="time" min={today ? nowHM : undefined} onChange={(e) => { if (e.target.value) lp.time(e.target.value); }} aria-label="Pick a time" /></label>
+        <Chip cls="lp-quiet" onClick={() => lp.time("")}>Any time that day</Chip></div>
+      <p className="lp-hint">Saved in Zoho as {k === "call" ? "a scheduled call with a reminder 15 minutes before" : "a meeting, which also appears in Zoho Calendar"}. Picking a time saves; you can undo for 10 seconds.</p></Ask>;
+  }
+  return (
+    <div className="lp-flow" id="lp-flow">
+      <div className="lp-sum"><span>{joined.length ? joined : "Recording a contact"}</span>
+        <span className="sp" />
+        {d.outcome || (!f.from && d.channel) ? <button type="button" className="lp-link" onClick={lp.change}>Change</button> : null}
+        <button type="button" className="lp-x" onClick={lp.close} aria-label="Cancel"><Icon name="x" /></button></div>
+      {f.early ? <div className="lp-ask"><input type="datetime-local" className="lp-dt" max={`${iso(now)}T${hhmm(now)}`} defaultValue={`${d.d}T${d.tm}`} onChange={(e) => lp.when(e.target.value)} aria-label="When it happened" /></div> : null}
+      {q}
+      {d.error ? <p className="lp-err" role="alert">{d.error}</p> : null}
+    </div>
+  );
+}
+
+/* ---- the email composer, D57b: a summary line, a preview, Send ---- */
+function emDraftOf(state: Ctx["state"], l: Lead): EmDraft {
+  const EM = (state.ui.EM as Record<string, EmDraft> | undefined) || {};
+  const nda = ndaOK(state, l), meName = P(state.PEOPLE, state.WHO).n;
+  const cur = EM[l.id];
+  if (cur) return emTplOK(cur.tpl, nda) ? cur : emUse(l, emTplFor(l, nda, state.SENT[l.id] as Record<string, string> | undefined), meName, cur);
+  return emUse(l, emTplFor(l, nda, state.SENT[l.id] as Record<string, string> | undefined), meName);
+}
+function LpComposer({ l }: { l: Lead }) {
+  const { state, dispatch } = useConsole();
+  const lp = useLp(l);
+  const d = emDraftOf(state, l);
+  const setD = (patch: Partial<EmDraft>) => {
+    const EM = { ...((state.ui.EM as Record<string, EmDraft> | undefined) || {}) };
+    EM[l.id] = { ...d, ...patch };
+    dispatch({ type: "setUi", patch: { EM } });
+  };
+  const T = EMTPL[d.tpl] || { t: "Custom" }, M = EMMAT[d.tpl];
+  const nda = ndaOK(state, l), meName = P(state.PEOPLE, state.WHO).n;
+  return (
+    <div className="lp-flow" id="lp-flow">
+      <div className="lp-sum"><span>{T.t}{M ? " · with " + M.say + " attached" : ""} · to {l.em} · from you via Zoho · <b>{d.s}</b></span><span className="sp" />
+        <button type="button" className="lp-link" onClick={() => setD({ head: !d.head })}>{d.head ? "Done" : "Edit"}</button>
+        <button type="button" className="lp-x" onClick={() => {
+          const EM = { ...((state.ui.EM as Record<string, EmDraft> | undefined) || {}) }; delete EM[l.id];
+          dispatch({ type: "setUi", patch: { EM, LP: null } });
+        }} aria-label="Cancel"><Icon name="x" /></button></div>
+      {d.head ? (
+        <div className="lp-ask"><div className="chips">{emTpls(nda).map(([k, t]) => (
+          <button type="button" key={k} className={`chip ${d.tpl === k ? "on" : ""}`} onClick={() => setD(emUse(l, k, meName, d))}>{t.t}</button>))}</div>
+          <input className="lp-noteline" value={d.s} aria-label="Subject" onChange={(e) => setD({ s: e.target.value })} /></div>
+      ) : null}
+      {d.body
+        ? <textarea className="lp-mail" rows={8} aria-label="Message" value={d.b} onChange={(e) => setD({ b: e.target.value })} />
+        : <div className="lp-preview">{d.b.split("\n").filter(Boolean).slice(0, 4).join("\n")}…<button type="button" className="lp-link" onClick={() => setD({ body: true })}>Edit message</button></div>}
+      {d.err ? <p className="lp-err" role="alert">{d.err}</p> : null}
+      <div className="lp-ask"><button type="button" className="act" onClick={() => { if (lp.f) dispatch({ type: "emSend", id: l.id, tpl: d.tpl, s: d.s, b: d.b }); }}>Send email</button></div>
+    </div>
+  );
+}
+
+/* ---- D60: the paperwork row. Only the IR's one next beat, as tap-to-save controls ---- */
+function LpPaperRow({ l }: { l: Lead }) {
+  const { state, dispatch } = useConsole();
+  if (!l || lost(l) || !(canReadFinance(state, l, "docs") || canWork(state, l))) return null;
+  const pn = paperNow(state, l);
+  if (!pn.R) return null;
+  const R = pn.R, n = pn.n as { k: string; t: string; who: string | null };
+  const p = (pr(state, l.id, R.k) || {}) as { draft?: { v?: number; link?: string }; back?: { why: string } };
+  const nm = lpPaperName(R.k), mine = n.who === "IR" && canWork(state, l);
+  const paper = (beat: string, a?: string, link?: string) => dispatch({ type: "lpPaper", id: l.id, beat, rk: R.k, a, link });
+  const chip = (label: string, onClick: () => void, cls = "") => <button type="button" key={label} className={`chip ${cls}`} onClick={onClick}>{label}</button>;
+  const sub = (t: ReactNode) => <span className="d60d-sub">{t}</span>;
+  const deck = R.k === "nda" && !ndaOK(state, l) ? <span className="d60d-sub d60d-deck">Deck goes after the NDA is signed</span> : null;
+  const CH = (["call", "msg", "email"] as const).filter((ch) => conFor(l, ch));
+  const noCh = sub("Record contact permission first.");
+  const link = String(state.ui.PLINK ?? "");
+  const linkField = (phd: string, btn: string, beat: string) => (
+    <div className="d60d-link"><input className="inp" aria-label={phd} placeholder={phd} value={link}
+      onChange={(e) => dispatch({ type: "setUi", patch: { PLINK: e.target.value } })} />
+      <button type="button" className="btn" id="d60d-go" disabled={!link.trim()} onClick={() => paper(beat, undefined, link)}>{btn}</button></div>
+  );
+  let head: string, body: ReactNode = null, tag: ReactNode = null;
+  if (n.who === "Finance") {
+    head = nm + " — with Finance in the IM portal";
+    body = sub(n.k === "sent" ? "Finance sends it for signature." : "They say it is signed; Finance is checking the signed copy.");
+  } else if (!mine) {
+    head = nm + " — " + n.t.toLowerCase();
+    tag = <span className="tag">{l.own ? "With " + P(state.PEOPLE, l.own).n.split(" ")[0] : "No owner"}</span>;
+  } else if (n.k === "told") {
+    head = nm + " is in their inbox — how did you tell them?";
+    body = CH.length ? <div className="chips">{CH.map((ch) => chip(LPPCH[ch][0].toUpperCase() + LPPCH[ch].slice(1), () => paper("told", ch)))}</div> : noCh;
+  } else if (n.k === "said") {
+    const c = prChases(state, l.id, R.k, "sign").length;
+    head = nm + " — waiting for their signature · " + (c ? c + " reminder" + (c === 1 ? "" : "s") : "no reminders yet");
+    body = <>{p.back ? sub("Finance: not signed after all — " + p.back.why + ".") : null}
+      <div className="chips">{CH.map((ch) => chip("Reminded by " + LPPCH[ch], () => paper("chase", ch)))}
+        {chip("They say it's signed", () => paper("said"), "on")}</div></>;
+  } else if (n.k === "draft") {
+    head = nm + " — send the draft";
+    body = linkField("Paste the Zoho link to the draft", "Draft sent", "draft");
+  } else if (n.k === "agreed") {
+    const redo = state.ui.PREDRAFT === l.id + R.k;
+    head = nm + " — get the final draft agreed";
+    body = <>{sub("Draft " + (p.draft?.v || 1) + (p.draft?.link ? " · " + p.draft.link : ""))}
+      {redo ? linkField("Paste the link to draft " + ((p.draft?.v || 1) + 1), "New draft sent", "redraft")
+        : linkField("Paste the link to the agreed final draft", "Final draft agreed", "agreed")}
+      <button type="button" className="lp-link lp-mini" onClick={() => dispatch({ type: "setUi", patch: { PREDRAFT: redo ? null : l.id + R.k, PLINK: "" } })}>{redo ? "Back to the final draft" : "New draft"}</button></>;
+  } else head = nm + " — " + n.t.toLowerCase();
+  return (
+    <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody"><b>{head}</b>{body}{deck}</div>{tag}</div>
+  );
+}
+
+/* lpStepper(l) */
+function LpStepper({ l }: { l: Lead }) {
+  const at = Math.max(0, l.done - 1);
+  return (
+    <ol className="lp-steps" aria-label="Journey stages">{LADDER.map((s, i) => {
+      const st = lost(l) && i === at ? "lost" : i < l.done ? "done" : i === l.done && !lost(l) ? "here" : "";
+      return <li key={s.t} className={st} title={s.t + (i < l.done && l.at[i] ? " · " + l.at[i] : "")}><span className="lp-dot">{i < l.done ? "✓" : i + 1}</span><span className="lp-lbl">{LP_SHORT[i]}</span></li>;
+    })}</ol>
+  );
+}
+
+/* workNotice() — the page's Saved notice, with its 10-second Undo */
+function LpNoticeBar() {
+  const { state, dispatch } = useConsole();
+  const n = state.ui.LPNOTICE as LpNotice | null | undefined;
+  const [, tickNow] = useState(0);
+  useEffect(() => {
+    if (!n || !n.snap) return;
+    const left = n.t + 10000 - Date.now();
+    const h = setTimeout(() => { dispatch({ type: "setUi", patch: { LPNOTICE: { ...n, snap: null } } }); tickNow((x) => x + 1); }, Math.max(0, left));
+    return () => clearTimeout(h);
+  }, [n, dispatch]);
+  const legacy = state.ui.WORKNOTICE as string | null | undefined;
+  if (n && n.who === state.WHO)
+    return (
+      <div className="work-notice" role="status"><span>{n.msg}</span>
+        {n.snap ? <button type="button" className="chip" onClick={() => dispatch({ type: "lpRestore", id: n.id as Lead["id"], snap: n.snap!, label: n.label })}>Undo</button> : null}
+        <button type="button" className="btn" onClick={() => dispatch({ type: "setUi", patch: { LPNOTICE: null } })} aria-label="Dismiss notification"><Icon name="x" /></button></div>
+    );
+  if (legacy)
+    return (
+      <div className="work-notice" role="status"><span>{legacy}</span>
+        <button type="button" className="btn" onClick={() => dispatch({ type: "setUi", patch: { WORKNOTICE: null } })} aria-label="Dismiss notification"><Icon name="x" /></button></div>
+    );
   return null;
 }
 
-/* followupSeed(state,l,channel) — ir-console-redesigned.html:6011-6019 (openFollowup). A fresh
-   draft is seeded from `channel` only when there is no draft already open; re-opening (another
-   contact button, "＋ Record contact", "Record follow-up") on top of one in progress must never
-   throw a part-filled form away, so every caller below asks this instead of building the draft
-   directly. ponytail: keyed off `ui.FU` alone rather than `ui.FU`'s own lead, since this port
-   holds one followup draft at a time (not per lead, as `FUDRAFTS` does) — good enough as long as
-   only one lead's follow-up drawer is ever open, which is all the shell allows today. */
-function followupSeed(state: ReturnType<typeof useConsole>["state"], l: Lead, channel: string) {
-  return state.ui.FU ? {} : { FU: buildFollowupDraft(state, l, channel) };
-}
-
-/* afterContact(id,chan) — ir-console-redesigned.html:3357-3370. The dialer/WhatsApp/mail client
-   send nothing and record nothing (rule 6: a system touch is never a human touch) — what tapping
-   one of these links does instead is arm a one-shot "the tab came back" listener that offers the
-   follow-up drawer, seeded to the channel just tapped, so logging what happened is one tap away
-   rather than a hunt back through Doors. One listener at a time, module-scope like the prototype's
-   own `CBACK`, since only one contact link can be the most recently tapped. */
-let contactBack: (() => void) | null = null;
-function afterContact(dispatch: ReturnType<typeof useConsole>["dispatch"], state: ReturnType<typeof useConsole>["state"], l: Lead, chan: string) {
-  if (typeof window === "undefined" || !canWork(state, l)) return;
-  if (contactBack) { window.removeEventListener("focus", contactBack); contactBack = null; }
-  const armed = Date.now();
-  const back = () => {
-    if (Date.now() - armed < 500) return;   /* the tap itself can hand focus back before a dialer opens */
-    window.removeEventListener("focus", back);
-    if (contactBack === back) contactBack = null;
-    dispatch({ type: "openDrawer", k: "p:followup" as DrawerKind, id: l.id, seed: followupSeed(state, l, chan) });
-  };
-  contactBack = back;
-  window.addEventListener("focus", back);
-}
-
-function ContactActions({
-  l,
-  compact,
-  onlyChannel,
-  excludeChannel,
-}: {
-  l: Lead;
-  compact?: boolean;
-  onlyChannel?: string | null;
-  excludeChannel?: string | null;
-}) {
+export const FILEKINDS: readonly string[] = ["history", "owner", "material", "money"];
+/* openFile(id) — the Investor file toggles */
+export function useOpenFile() {
   const { state, dispatch } = useConsole();
-  if (!canWork(state, l)) return null;
-  const num = waNum(l.ph);
-  const cls = onlyChannel ? "act" : compact ? "chip" : "btn";
-  const show = (k: string) => (!onlyChannel || onlyChannel === k) && excludeChannel !== k;
-  const arm = (chan: string) => afterContact(dispatch, state, l, chan);
-  return (
-    <div className="work-contact">
-      {num && conFor(l, "call") && show("call") ? (
-        <a className={cls} href={`tel:+${num}`} aria-label={`Call ${l.n}`} onClick={() => arm("call")}>
-          <Icon name="call" />
-          Call
-        </a>
-      ) : null}
-      {num && conFor(l, "msg") && show("msg") ? (
-        <a className={cls} href={`https://wa.me/${num}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${l.n}`} onClick={() => arm("msg")}>
-          <Icon name="wa" />
-          WhatsApp
-        </a>
-      ) : null}
-      {l.em && conFor(l, "email") && show("email") ? (
-        <a className={cls} href={`mailto:${l.em}`} aria-label={`Email ${l.n}`} onClick={() => arm("email")}>
-          Email
-        </a>
-      ) : null}
-      {conFor(l, "visit") && show("visit") ? (
-        <button
-          type="button"
-          className={cls}
-          onClick={() =>
-            dispatch({
-              type: "openDrawer",
-              k: "p:followup" as DrawerKind,
-              id: l.id,
-              seed: followupSeed(state, l, "visit"),
-            })
-          }
-          aria-label={`Record a visit with ${l.n}`}
-        >
-          <Icon name="events" />
-          Record visit
-        </button>
-      ) : null}
-    </div>
-  );
+  return (id: string) => {
+    const on = state.DRW && FILEKINDS.includes(state.DRW.k) && state.DRW.id === id;
+    if (on) { dispatch({ type: "closeDrawer" }); dispatch({ type: "setUi", patch: { FILEON: false } }); return; }
+    dispatch({ type: "openDrawer", k: "history", id, seed: { FILEON: true } });
+  };
 }
 
 export function LeadPage({ id }: { id: string }) {
   const { state, dispatch } = useConsole();
   const router = useRouter();
-  const tick = useTick();
-  const untick = useUntick();
-  const [refusal, setRefusal] = useState<Refusal>(null);
-  /* workNotice() — ir-console-redesigned.html:6721-6724. The "p:followup" drawer's save
-     (`@/features/leads/followupDrawer.tsx`) hands off through the same generic `ui.WORKNOTICE`
-     field the Today page's own copy of this pattern already consumes (`TodayPage.tsx:166-177`) —
-     one message, read once and cleared, so a lead page left open behind a closed drawer never
-     replays a stale confirmation. ponytail: no Undo affordance, since `ui.WORKNOTICE` carries a
-     plain string, not a callback; add one if a save on this page ever needs it. */
-  const [notice, setNotice] = useState<string | null>(null);
-  useEffect(() => {
-    const msg = state.ui.WORKNOTICE as string | null | undefined;
-    if (!msg) return;
-    setNotice(msg);
-    dispatch({ type: "setUi", patch: { WORKNOTICE: null } });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ui.WORKNOTICE]);
+  const openFile = useOpenFile();
 
-  const l = openable(state).find((x) => x.id === id);
-  if (!l)
+  const l0 = openable(state).find((x) => x.id === id);
+  /* FILEON clears whenever the drawer is not one of the file's tabs */
+  const fileDrw = !!(state.DRW && FILEKINDS.includes(state.DRW.k));
+  useEffect(() => {
+    if (!fileDrw && state.ui.FILEON) dispatch({ type: "setUi", patch: { FILEON: false } });
+  }, [fileDrw, state.ui.FILEON, dispatch]);
+
+  const lpl = useLp(l0 || ({ id } as Lead));
+  if (!l0)
     return (
       <>
-        <div className="ph">
-          <h1>Nothing to open</h1>
-        </div>
-        <div className="card">
-          <div className="empty">
-            There is no lead here. Either the one you came from has moved to somebody else&apos;s
-            book, or you carry none yet — a lead opens from the book, and only while it is yours to
-            read.
-            <br />
-            <button
-              type="button"
-              className="chip"
-              style={{ marginTop: "10px" }}
-              onClick={() => {
-                dispatch({ type: "go", v: "leads" });
-                router.push("/leads");
-              }}
-            >
-              Open the leads book
-            </button>{" "}
-            {canOperateLeads(state) ? (
-              <button
-                type="button"
-                className="chip"
-                style={{ marginTop: "10px" }}
-                onClick={() => dispatch({ type: "openDrawer", k: "p:add.quick" })}
-              >
-                Add a lead
-              </button>
-            ) : null}
-          </div>
-        </div>
+        <div className="ph"><h1>Nothing to open</h1></div>
+        <div className="card"><div className="empty">
+          There is no lead here. Either the one you came from has moved to somebody else&apos;s
+          book, or you carry none yet — a lead opens from the book, and only while it is yours to
+          read.
+          <br />
+          <button type="button" className="chip" style={{ marginTop: "10px" }} onClick={() => { dispatch({ type: "go", v: "leads" }); router.push("/leads"); }}>Open the leads book</button>{" "}
+          {canOperateLeads(state) ? (
+            <button type="button" className="chip" style={{ marginTop: "10px" }} onClick={() => dispatch({ type: "openDrawer", k: "p:add.quick" })}>Add a lead</button>
+          ) : null}
+        </div></div>
       </>
     );
-
-  const c = covOf(state, l);
-  const plan = canPlan(state, l);
-  const r = state.REQ[l.id];
-  const claim = seeMoney(state, l) ? state.CLAIM[l.id] : null;
+  const l = l0;
   const FROM = uiFrom(state.ui);
-  const back: NavKey | "event" =
-    FROM === "event" && canReach(state, "events")
-      ? "event"
-      : canReach(state, FROM as NavKey)
-        ? (FROM as NavKey)
-        : "leads";
-  const backT = back === "event" ? "the event" : back === "leads" ? "leads" : back;
-  const due = nxDue(l, state.NOW);
-  const und = undoStage(state, l);
-  const g = gateWait(state, l);
-  const NXASK = uiNxask(state.ui);
-  const currentWork = nextUp(state, l);
-  const currentChannel = primaryWorkChannel(state, l);
-
+  const back: NavKey | "event" = FROM === "event" && canReach(state, "events") ? "event" : canReach(state, FROM as NavKey) ? (FROM as NavKey) : "leads";
+  const backT = back === "event" ? "the event" : (NAV.find((n) => n.k === back) || { t: "Leads" }).t.toLowerCase();
   const goBack = () => {
-    if (back === "event") {
-      dispatch({ type: "go", v: "events" });
-      router.push(`/events/${encodeURIComponent(state.EVID)}`);
+    if (back === "event") { dispatch({ type: "go", v: "events" }); router.push(`/events/${encodeURIComponent(state.EVID)}`); return; }
+    dispatch({ type: "go", v: back }); router.push(`/${back}`);
+  };
+  const u = nextUp(state, l), due = nxDue(l, state.NOW), work = canWork(state, l), act = active(l) && !lost(l) && l.done < ST.ONBOARDED;
+  const sig = ragOf(state, l), last = fuLatest(state, l), here = LADDER[l.done], und = undoStage(state, l);
+  const flow = lpl.f?.flow || null;
+  const open = (k: DrawerKind, seed?: Record<string, unknown>) => dispatch({ type: "openDrawer", k, id: l.id, ...(seed ? { seed } : {}) });
+
+  const A: ReactNode[] = [];
+  const al = (key: string, cls: string, msg: ReactNode, btn?: ReactNode) => A.push(<div key={key} className={`lp-alert ${cls}`}><span>{msg}</span>{btn || null}</div>);
+  const r = state.REQ[l.id], cm = claimOf(state, l.id);
+  if (lost(l)) al("lost", "", <><b>Closed as lost</b> — {l.lost!.why}{l.lost!.note ? ". " + l.lost!.note : ""} · {P(state.PEOPLE, l.lost!.by).n} {l.lost!.at}</>,
+    canReopen(state, l) ? <button type="button" className="chip" onClick={() => dispatch({ type: "reopenLost", id: l.id })}>Re-open</button> : null);
+  if (!l.own) al("own", "bad", <b>No owner yet.</b>, canAssign(state) ? <button type="button" className="act" onClick={() => open("owner")}>Assign owner</button>
+    : isIR(state.ROLE) ? <button type="button" className="act" onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}>Assign to me</button> : null);
+  if (watching(state, l)) al("watch", "", <><b>{whyLocked(state, l)}</b> You can see everything; changes are not yours to make.</>);
+  const cv = covOf(state, l);
+  if (cv) al("cov", "due", <><b>{P(state.PEOPLE, cv.by).n} is covering</b> for {P(state.PEOPLE, l.own).n} until {cv.to}.</>);
+  if (r && r.state === "waiting") al("req", "due", <><b>{P(state.PEOPLE, r.by).n} asked to move this to {P(state.PEOPLE, r.to).n}</b> — {r.why}</>,
+    canDecideMove(state, l) ? <><button type="button" className="chip on" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: true })}>Approve</button><button type="button" className="chip" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: false })}>Decline</button></> : null);
+  if (seeMoney(state, l) && cm && cm.state === "waiting") al("cw", "due", <><b>Payment reported</b> — waiting for Finance to find it in the bank.</>, <button type="button" className="chip" onClick={() => open("claim")}>Status</button>);
+  else if (seeMoney(state, l) && cm && cm.state === "notfound") al("cn", "bad", <><b>Finance could not find that payment.</b> {cm.why}</>, <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
+  if (inReservation(state, l)) {
+    const hold = state.PAY[l.id]!.hold as string;
+    const dl = Math.round(((when(hold, state.NOW)?.getTime() || 0) - state.NOW.getTime()) / DAY);
+    al("hold", dl <= 3 ? "bad" : "due", <><b>Reservation {dl < 0 ? "lapsed " + -dl + " days ago" : dl + " days left"}</b> — the balance is due by {hold}.</>, <button type="button" className="chip" onClick={() => open("hold")}>Details</button>);
+  }
+  if (!TOUCHCHANNELS.some((k) => conFor(l, k))) al("perm", "bad", <><b>No contact permission yet.</b> Record it before reaching out.</>,
+    work ? <button type="button" className="act" onClick={() => open("details", { DTAB: "permission" })}>Record permission</button> : null);
+
+  /* the Next milestone button — tick(id), ir-merged.js 2614 */
+  const tick = () => {
+    if (l.done < ST.TOUCH) {
+      const first = TOUCHCHANNELS.find((k) => conFor(l, k));
+      dispatch({ type: "openDrawer", k: "p:followup" as DrawerKind, id: l.id, seed: state.ui.FU ? {} : { FU: buildFollowupDraft(state, l, first || "reply") } });
       return;
     }
-    dispatch({ type: "go", v: back });
-    router.push(`/${back}`);
+    if (gateWait(state, l)) return;
+    if (needOf(l)) { open("p:lead.rung" as DrawerKind, { RUNGSAID: false }); return; }
+    if (RUNGASK[LADDER[l.done].t]) { open("p:lead.commit" as DrawerKind); return; }
+    dispatch({ type: "tick", id: l.id });
+  };
+  const untick = () => {
+    if (l.done <= 1) return;
+    open("p:lead.undo" as DrawerKind, { UNDOWHY: "", UNDON: "" });
   };
 
-  const lines: React.ReactNode[] = [];
-
-  if (lost(l))
-    lines.push(
-      <div className="hd1" key="lost">
-        <b>Closed as lost — {l.lost!.why}.</b> {l.lost!.note ? l.lost!.note + " " : ""}Recorded by{" "}
-        {P(state.PEOPLE, l.lost!.by).n} <span className="mono">{l.lost!.at}</span>, at “
-        {LADDER[Math.max(0, (l.lost!.stage || 1) - 1)].t}”.
-        {canReopen(state, l) ? (
-          <>
-            <div className="sp" />
-            <button
-              type="button"
-              className="chip"
-              onClick={() => dispatch({ type: "reopenLost", id: l.id })}
-            >
-              Re-open it
-            </button>
-          </>
-        ) : reopenHandoff(state, l) ? (
-          <span className="sm"> {reopenHandoff(state, l)}</span>
-        ) : null}
-      </div>,
-    );
-
-  if (!l.own)
-    lines.push(
-      <div className="hd1 bad" key="noowner">
-        <b>No owner.</b> Added by {P(state.PEOPLE, l.by).n} ·{" "}
-        <span className="mono">{l.at[0]}</span>
-        <div className="sp" />
-        {canAssign(state) ? (
-          <button
-            type="button"
-            className="act"
-            onClick={() => dispatch({ type: "openDrawer", k: "owner", id: l.id })}
-          >
-            Assign owner
-          </button>
-        ) : isIR(state.ROLE) ? (
-          <button
-            type="button"
-            className="chip"
-            onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}
-          >
-            Assign to me
-          </button>
-        ) : (
-          <span>A manager or an IR has to pick this up.</span>
-        )}
-      </div>,
-    );
-
-  if (watching(state, l))
-    lines.push(
-      <div className="hd1" key="watch">
-        <b>{whyLocked(state, l)}</b>
-        <span>
-          You stay{" "}
-          {l.own === state.WHO
-            ? "the owner of record"
-            : l.sec === state.WHO
-              ? "the secondary owner"
-              : "on it"}{" "}
-          and see everything that happens.
-        </span>
-      </div>,
-    );
-
-  /* the gate, said on the record itself — ir-console-redesigned.html 7622-7627. One sentence, not
-     two: the old second sentence explaining who is waiting on what is dropped, matching the
-     redesign's own trim. */
-  if (g && !lost(l) && !claimOpen(state, l.id)) {
-    const ck = l.done >= ST.RESERVED ? "full" : "advance";
-    lines.push(
-      <div className={`hd1 ${g.who === "fin" ? "due" : ""}`} key="gate">
-        <span>
-          <b>
-            “{LADDER[l.done].t}” needs {g.t}
-            {g.who === "fin" ? ", and Finance has it" : ""}.
-          </b>{" "}
-          {g.d}
-        </span>
-        {canClaim(state, l) && !claimOpen(state, l.id) ? (
-          <>
-            <div className="sp" />
-            <button
-              type="button"
-              className="chip"
-              id="door-claim-gate"
-              onClick={() =>
-                dispatch({
-                  type: "openDrawer",
-                  k: "claim",
-                  id: l.id,
-                  seed: { CKIND: ck, CREF: "", CNOTE: "" },
-                })
-              }
-            >
-              Record what the investor told you
-            </button>
-          </>
-        ) : null}
-      </div>,
-    );
+  /* rows that exist only while they apply */
+  const owned = !!here && stepOwner(state, l.done, l), gw = gateWait(state, l), rows: ReactNode[] = [];
+  if (act && here && owned && !gw && work)
+    rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b>
+      <button type="button" className="btn" onClick={tick}>{here.t === "First touch made" ? "Mark first contact made" : "Mark done"}</button>
+      {here.skip ? <button type="button" className="lp-link" onClick={() => dispatch({ type: "skipStage", id: l.id })}>Not needed</button> : null}</div>);
+  else if (act && here && owned && gw && gw.who === "fin")
+    rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b><span className="tag due">Waiting on Finance</span></div>);
+  if (act && gw && canClaim(state, l) && !claimOf(state, l.id))
+    rows.push(<div key="pay" className="lp-stage"><span className="sm">Payment</span><b>Has the investor paid?</b>
+      <button type="button" className="btn" onClick={() => open("claim", { CKIND: l.done >= ST.RESERVED ? "full" : "advance", CREF: "", CNOTE: "" })}>Investor says they paid</button></div>);
+  rows.push(<LpPaperRow key="paper" l={l} />);
+  if (act && l.done >= ST.QUALIFIED && canPlan(state, l)) {
+    const fc = fcOf(l);
+    rows.push(<div key="fc" className="lp-stage"><span className="sm">Forecast</span><b>{fc ? FCAT[fc as keyof typeof FCAT].t : "Not set"}</b>
+      <button type="button" className="lp-link" onClick={() => open("forecast")}>{fc ? "Change" : "Set forecast"}</button></div>);
   }
 
-  if (c)
-    lines.push(
-      <div className="hd1 due" key="cover">
-        <b>{P(state.PEOPLE, c.by).n} is covering</b> for {P(state.PEOPLE, l.own).n} until {c.to} —
-        the owner does not change.
-        <div className="sp" />
-        <button
-          type="button"
-          className="chip"
-          id="door-owner2"
-          onClick={() => dispatch({ type: "openDrawer", k: "owner", id: l.id })}
-        >
-          Owners and cover
-        </button>
-      </div>,
-    );
-
-  if (r && r.state === "waiting")
-    lines.push(
-      <div className="hd1 due" key="req">
-        <b>
-          {P(state.PEOPLE, r.by).n} asked to move this to {P(state.PEOPLE, r.to).n}
-        </b>{" "}
-        — {r.why}
-        <div className="sp" />
-        {canDecideMove(state, l) ? (
-          <div className="chips">
-            <button
-              type="button"
-              className="chip on"
-              onClick={() => dispatch({ type: "decideMove", id: l.id, ok: true })}
-            >
-              Approve the move
-            </button>
-            <button
-              type="button"
-              className="chip"
-              onClick={() => dispatch({ type: "decideMove", id: l.id, ok: false })}
-            >
-              Decline it
-            </button>
-          </div>
-        ) : (
-          <span className="sm">
-            {P(state.PEOPLE, P(state.PEOPLE, l.own).mgr || ("tasneem" as PersonKey)).n} or anyone
-            above decides.
-          </span>
-        )}
-      </div>,
-    );
-  else if (r && r.state === "declined")
-    lines.push(
-      <div className="hd1" key="reqd">
-        <b>A move was asked for and declined</b> by {P(state.PEOPLE, r.did).n}{" "}
-        <span className="mono">{r.on}</span>. It stays with {P(state.PEOPLE, l.own).n}.
-      </div>,
-    );
-
-  /* D42 — the mirror never prints a bank reference in the clear. `refTxt` masks it to its last
-     four digits until the reader explicitly asks (`showRef`/`hideRef`), and the ask itself is
-     logged — same as the money drawer's own reveal. */
-  if (claim && claim.state === "waiting") {
-    const cb = claimBlock(state, l);
-    const label = cb ? cb.label : CLAIMKINDS[claim.kind] || "Payment";
-    lines.push(
-      <div className="hd1 due" key="claim">
-        <span>
-          <b>{P(state.PEOPLE, claim.by).n} says the investor has paid</b> — {label},{" "}
-          {claim.mode} <span className="mono">{refTxt(state, `claim:${l.id}`)}</span>,
-          told to Finance <span className="mono">{claim.at}</span>. Nothing moves until Finance
-          finds it in the bank.
-        </span>
-        <div className="sp" />
-        <button
-          type="button"
-          className="chip"
-          id="door-claim2"
-          onClick={() => dispatch({ type: "openDrawer", k: "claim", id: l.id })}
-        >
-          {isFin(state.ROLE) ? "Confirm it" : "What happens next"}
-        </button>
-      </div>,
-    );
-  } else if (claim && claim.state === "notfound")
-    lines.push(
-      <div className="hd1 bad" key="claimnf">
-        <span>
-          <b>Finance could not find that payment.</b> {claim.why} —{" "}
-          {P(state.PEOPLE, claim.did).n} <span className="mono">{claim.on}</span>. Go back to the
-          investor for the reference before asking again.
-        </span>
-        {named(state, l) || canAssign(state) || isFin(state.ROLE) ? (
-          <>
-            <div className="sp" />
-            <button
-              type="button"
-              className="chip"
-              onClick={() => dispatch({ type: "reopenClaim", id: l.id })}
-            >
-              Ask Finance to look again
-            </button>
-          </>
-        ) : null}
-      </div>,
-    );
-
-  if (!TOUCHCHANNELS.some((k) => conFor(l, k)))
-    lines.push(
-      <div className="hd1 bad" key="consent">
-        <b>Contact permission missing.</b> Record the investor's permission before contacting them.
-        {canWork(state, l) ? (
-          <button
-            type="button"
-            className="chip"
-            onClick={() => dispatch({ type: "openDrawer", k: "details", id: l.id, seed: { DTAB: "permission" } })}
-          >
-            Record permission
-          </button>
-        ) : null}
-      </div>,
-    );
-
-  if (cold(state, l, state.NOW))
-    lines.push(
-      <div className="hd1 bad" key="cold">
-        <b>
-          {sinceReply(state, l, state.NOW)} touches since they last came back
-          {l.reply ? "" : " — and they never have"}.
-        </b>{" "}
-        The next attempt should change channel or change the offer, not repeat itself.
-      </div>,
-    );
-
-  if (refusal)
-    lines.push(
-      <div className="hd1 bad" key="refusal" role="alert">
-        <span>{refusal}</span>
-      </div>,
-    );
-
-  const sig = ragOf(state, l);
-  const pre = !needsNext(l);
-  const sla = missingTouch(state, l);
-  const cat = fcOf(l);
-  const otherChannelsOpen = canWork(state, l) && TOUCHCHANNELS.some((k) => k !== currentChannel && conFor(l, k));
-  /* ir-console-redesigned.html 7688-7689: shown whenever the channel is not visit (visit's own
-     "Record visit" button already opens this same drawer) AND either a channel is on offer, or
-     `nextUp` is not already the dated-step case `workAction` itself renders as "Record follow-up". */
-  const showRecordFollowup =
-    canWork(state, l) && currentChannel !== "visit" && !!(currentChannel || !currentWork.rec || currentWork.rec.kind !== "followup");
-
+  const pref = (l as Lead & { contactPreference?: unknown }).contactPreference;
+  const hasPref = typeof pref === "string" ? !!pref.trim() : !!(pref && typeof pref === "object");
+  const showOwner = !!l.own && (l.own !== state.WHO || !!cv);
+  const num = waNum(l.ph);
+  const note0 = (state.NOTES[l.id] || [])[0];
+  const buttons = work && act && !flow ? (
+    <div className="lp-actions">
+      {num && conFor(l, "call") ? <a className="btn" href={`tel:+${num}`} onClick={() => lpl.open("log", "call")}><Icon name="call" />Call</a> : null}
+      {num && conFor(l, "msg") ? <a className="btn" href={`https://wa.me/${num}`} target="_blank" rel="noopener" onClick={() => lpl.open("log", "msg")}><Icon name="wa" />WhatsApp</a> : null}
+      {l.em && conFor(l, "email") ? <button type="button" className="btn" onClick={() => lpl.open("email")}>Email</button> : null}
+      <button type="button" className="act" onClick={() => lpl.open("log")}>Log a contact</button>
+    </div>
+  ) : null;
+  const card = (
+    <section className="card lp-next" aria-label="Next step"><div className="cb">
+      <div className="lp-nexthead"><div><span className="work-eyebrow">Next step</span><h2>{act && hasNext(l) ? l.nx!.t : u.t}</h2></div>
+        {act && hasNext(l) ? <span className={`tag ${due === "overdue" ? "late" : due === "today" ? "due" : "go"}`}>{due === "overdue" ? "Overdue · " : ""}{nxWhen(l)}</span> : null}</div>
+      {last ? <p className="lp-meta">Last contact: {FUCHANNELS[last.channel] || last.channel} · {last.outcome || ""} · {last.at || ""}</p> : null}
+      {hasPref ? <p className="lp-meta">Prefers: {fuPreference(l)}</p> : null}
+      {note0 ? <p className="lp-meta lp-lastnote">Latest note: “{note0.t.length > 140 ? note0.t.slice(0, 140) + "…" : note0.t}” — {P(state.PEOPLE, note0.who).n.split(" ")[0]} · {note0.at} · <button type="button" className="lp-link" onClick={() => openFile(l.id)}>All notes</button></p> : null}
+      {showOwner ? <p className="lp-meta">Owner: {P(state.PEOPLE, l.own).n}{l.sec ? " · backup " + P(state.PEOPLE, l.sec).n : ""}</p> : null}
+      {buttons}
+      {work && act && flow === "log" && canPlan(state, l) ? <LpLogger l={l} /> : null}
+      {work && act && flow === "email" ? <LpComposer l={l} /> : null}
+    </div></section>
+  );
+  const sub = [l.city, ph(state, l), l.unitsKnown === false ? "" : money(l.units * UNIT) + " · " + l.units + " unit" + (l.units === 1 ? "" : "s"), l.nri ? "NRI" : ""].filter(Boolean).join(" · ");
+  const fileOpen = !!(state.DRW && state.ui.FILEON && state.DRW.id === l.id && fileDrw);
+  const steps = !!((state.ui.LPSTEPS as Record<string, boolean> | undefined) || {})[l.id];
+  const ndOn = state.ui.NDRAFTID === l.id ? String(state.ui.NDRAFT ?? "") : "";
+  /* commit()'s two sentences for a write that did not land (ir-merged.js 2373, 2413) */
+  const addNote = () => {
+    const r = dispatch({ type: "addNote", id: l.id });
+    const label = "Added a note";
+    if (r && r.status === "failed") say(label + " was not recorded. The local demo did not confirm this change. Nothing on the record changed.");
+    else if (r && r.status === "pending") say(label + " is waiting for a connection. Nothing on the record changed. It will fail after five minutes if it cannot save.");
+  };
   return (
-    <>
-      <div className="ph">
-        <button type="button" className="btn" onClick={goBack} aria-label={`Back to ${backT}`} title={`Back to ${backT}`}>
-          <Icon name="back" />
-        </button>
-        <h1>{l.n}</h1>
-        <span className="tag">
-          {money(l.units * UNIT)} · {l.units} units
-        </span>
-        <span
-          className={`tag ${
-            sig.c === "red" ? "late" : sig.c === "amber" ? "due" : "go"
-          }`}
-        >
-          <span className={`rag ${sig.c}`} />
-          {sig.t}
-        </span>
-        {l.nri ? <span className="tag due">NRI</span> : null}
-        <div className="sp" />
-        <span className="ux-secondary">
-          {l.city ? l.city + " · " : ""}
-          <span className="mono">{ph(state, l)}</span>
-        </span>
+    <div className="lp lp2">
+      <div className="ph lp-head">
+        <button type="button" className="btn" onClick={goBack} aria-label={`Back to ${backT}`} title={`Back to ${backT}`}><Icon name="back" /></button>
+        <div className="lp-title"><h1>{l.n}</h1><span className="ux-secondary">{flow ? ph(state, l) : sub}</span></div>
+        {sig.c !== "green" && !flow ? <span className={`tag ${sig.c === "red" ? "late" : "due"}`}><span className={`rag ${sig.c}`} />{sig.t}</span> : null}
+        <div className="sp" /><button type="button" className={`btn ${fileOpen ? "on" : ""}`} aria-expanded={fileOpen} onClick={() => openFile(l.id)}>Investor file</button>
       </div>
-      {lines}
-      {notice ? (
-        <div className="work-notice" role="status">
-          <span>{notice}</span>
-          <button type="button" className="btn" aria-label="Dismiss notification" onClick={() => setNotice(null)}>
-            <Icon name="x" />
-          </button>
+      {flow ? null : (
+        <div className="lp-journey">
+          <button type="button" className="lp-link lp-jl" aria-expanded={steps} onClick={() => dispatch({ type: "setUi", patch: { LPSTEPS: { ...((state.ui.LPSTEPS as Record<string, boolean>) || {}), [l.id]: !steps } } })}>
+            {LADDER[Math.max(0, l.done - 1)].t} · step {Math.max(1, l.done)} of {LADDER.length}</button>
+          {l.done > 1 && und.ok ? <button type="button" className="lp-link lp-undo" title={und.why || ""} onClick={untick}>Undo</button> : null}
+        </div>
+      )}
+      {steps && !flow ? <LpStepper l={l} /> : null}
+      {A}
+      <LpNoticeBar />
+      {card}
+      {flow ? null : rows}
+      {canNote(state, l) && !flow ? (
+        <div className="lp-notebar">
+          <textarea rows={1} placeholder="Add a note…" aria-label="Add a note" value={ndOn}
+            onChange={(e) => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; dispatch({ type: "setUi", patch: { NDRAFT: e.target.value, NDRAFTID: l.id } }); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addNote(); } }} />
+          <button type="button" className="btn" id="lp-note-save" hidden={!ndOn.trim()} onClick={addNote}>Add note</button>
         </div>
       ) : null}
-
-      <section className="card work-before-contact">
-        <div className="ch">
-          <h3>Investor context</h3>
-        </div>
-        <div className="cb">
-          {active(l) ? (
-            <div className="work-next">
-              <span className="work-eyebrow">Next action</span>
-              <b>{currentWork.t}</b>
-            </div>
-          ) : null}
-          <FollowupContext l={l} />
-          <div className="work-panel-actions">
-            {currentChannel ? (
-              <ContactActions l={l} onlyChannel={currentChannel} />
-            ) : canWork(state, l) ? (
-              <WorkAction l={l} u={currentWork} />
-            ) : null}
-            {showRecordFollowup ? (
-              <button
-                type="button"
-                className="btn"
-                onClick={() =>
-                  dispatch({
-                    type: "openDrawer",
-                    k: "p:followup" as DrawerKind,
-                    id: l.id,
-                    seed: followupSeed(state, l, chanOf(state, l)),
-                  })
-                }
-              >
-                Record follow-up
-              </button>
-            ) : null}
-          </div>
-          {otherChannelsOpen ? (
-            <details className="ux-contact-options">
-              <summary>Other contact channels</summary>
-              <ContactActions l={l} excludeChannel={currentChannel} />
-            </details>
-          ) : null}
-          <div className="work-details-links">
-            <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "history", id: l.id })}>
-              Timeline
-            </button>
-            <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "notes", id: l.id })}>
-              Notes
-            </button>
-            <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "paper", id: l.id })}>
-              Documents
-            </button>
-            <button type="button" className="btn" onClick={() => dispatch({ type: "openDrawer", k: "details", id: l.id })}>
-              {canWork(state, l) ? "Edit" : "View"} details &amp; permission
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {active(l) ? (
-        <details className="ux-disclosure" open={NXASK === l.id || undefined}>
-          <summary>
-            Appointment · {hasNext(l) ? `${l.nx!.t} · ${nxWhen(l)}` : pre ? "First contact pending" : "Next step missing"}
-          </summary>
-          <div className="cb">
-            <div className="ch" style={noNext(l) ? { borderColor: "var(--late)" } : undefined}>
-              <h3>Next step</h3>
-              <div className="sp" />
-              {hasNext(l) ? (
-                <span
-                  className={`tag ${due === "overdue" ? "late" : due === "today" ? "due" : "go"}`}
-                >
-                  {due === "overdue" ? "was due" : "due"} {nxWhen(l)}
-                </span>
-              ) : pre ? (
-                <span className="tag br">first touch</span>
-              ) : (
-                <span className="tag late">
-                  <span className="dot" />
-                  missing
-                </span>
-              )}
-            </div>
-            <div className="cb">
-              {NXASK === l.id && hasNext(l) ? (
-                <div className="hd1 due" style={{ marginBottom: "10px" }}>
-                  <b>Still {nxWhen(l)}?</b> You just recorded something and the step is dated later.
-                  {plan ? (
-                    <>
-                      <div className="sp" />
-                      <div className="chips">
-                        <button
-                          type="button"
-                          className="chip on"
-                          onClick={() => dispatch({ type: "keepNext", id: l.id })}
-                        >
-                          Keep it
-                        </button>
-                        {(
-                          [
-                            ["Tomorrow", 1],
-                            ["In 3 days", 3],
-                          ] as const
-                        ).map(([t, d]) => (
-                          <button
-                            type="button"
-                            className="chip"
-                            key={t}
-                            onClick={() => dispatch({ type: "moveNextTo", id: l.id, days: d })}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          className="chip"
-                          onClick={() => {
-                            dispatch({ type: "askReschedule", id: null });
-                            dispatch({ type: "seedNext", id: l.id });
-                            dispatch({ type: "openDrawer", k: "next", id: l.id });
-                          }}
-                        >
-                          Change it
-                        </button>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
-              <div className="nxc">
-                {hasNext(l) ? (
-                  <>
-                    <b style={{ fontSize: "15px" }}>{l.nx!.t}</b>
-                    <span className="sm">
-                      set by {P(state.PEOPLE, l.nx!.who).n.split(" ")[0]} ·{" "}
-                      <span className="mono">{l.nx!.at}</span>
-                    </span>
-                  </>
-                ) : pre ? (
-                  <span>
-                    The first-touch service level is the next action until the touch lands
-                    {sla ? (
-                      <>
-                        {" "}
-                        — <b>{sla.t}</b>, {sla.due}
-                      </>
-                    ) : null}
-                    .
-                  </span>
-                ) : (
-                  <>
-                    <b style={{ color: "var(--late)" }}>No next action and no date.</b>
-                    <span className="sm">The weekly review reads this as an exception.</span>
-                  </>
-                )}
-                <div className="sp" />
-                {plan ? (
-                  <button
-                    type="button"
-                    className="chip"
-                    id="door-next"
-                    onClick={() => {
-                      dispatch({ type: "seedNext", id: l.id });
-                      dispatch({ type: "openDrawer", k: "next", id: l.id });
-                    }}
-                  >
-                    {hasNext(l) ? "Change the step" : "Set the next step"}
-                  </button>
-                ) : !hasNext(l) && !pre ? (
-                  <span className="sm">{P(state.PEOPLE, l.own).n} has to set it.</span>
-                ) : null}
-              </div>
-              {l.done >= ST.QUALIFIED ? (
-                <div
-                  className="nxc"
-                  style={{
-                    borderTop: "1px solid var(--line-2)",
-                    marginTop: "11px",
-                    paddingTop: "10px",
-                  }}
-                >
-                  <span className="lbl" style={{ margin: 0 }}>
-                    Forecast
-                  </span>
-                  {cat ? (
-                    <>
-                      <span className={`tag ${FCAT[cat as keyof typeof FCAT].c}`}>
-                        {FCAT[cat as keyof typeof FCAT].t}
-                      </span>
-                      <span className="sm">
-                        {l.fc!.by ? (
-                          <>
-                            {l.done >= ST.PAID ? "paid in full " : "full payment by "}
-                            <span className="mono">{l.fc!.by}</span>
-                          </>
-                        ) : (
-                          "no date set"
-                        )}
-                      </span>
-                      {!fcOK(l, state.NOW) ? (
-                        <span className="tag late">
-                          <span className="dot" />
-                          needs evidence and a date
-                        </span>
-                      ) : cat !== "pipeline" && l.done >= ST.PAID ? (
-                        <span className="tag go">realised</span>
-                      ) : cat !== "pipeline" && !fcInFY(l, state.NOW) ? (
-                        <span className="tag due">outside FY26–27</span>
-                      ) : null}
-                    </>
-                  ) : (
-                    <span className="sm">
-                      Not categorised — it counts for nothing in the weekly forecast.
-                    </span>
-                  )}
-                  <div className="sp" />
-                  {plan ? (
-                    <button
-                      type="button"
-                      className="chip"
-                      id="door-forecast"
-                      onClick={() => dispatch({ type: "openDrawer", k: "forecast", id: l.id })}
-                    >
-                      {cat ? "Change the forecast" : "Set the forecast"}
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </details>
-      ) : null}
-
-      <details className="card work-journey">
-        <summary>
-          <b>Journey · {LADDER[Math.max(0, l.done - 1)].t}</b>
-          <span className="sm">Stage {LADDER[Math.max(0, l.done - 1)].stage} of 8 · View milestones</span>
-        </summary>
-        <div className="cb">
-          <div className="lc">
-            {LADDER.map((st, i) => {
-              const done = i < l.done;
-              const here = i === l.done;
-              const owned = stepOwner(state, i, l);
-              const last = done && i === l.done - 1;
-              return (
-                <div key={st.t}>
-                  <div className={`lcr ${done ? "done" : here ? "here" : "locked"}`}>
-                    <span className="bul">{done ? "✓" : st.stage}</span>
-                    <div className="bd">
-                      <div className="tl1">
-                        <b>{st.t}</b>
-                        {st.skip ? <span className="tag">optional</span> : null}
-                        {done ? (
-                          <time>{l.at[i] || "—"}</time>
-                        ) : here ? (
-                          <span className="sm">
-                            {st.sla ? st.sla : st.ev}
-                            {st.needs ? " · needs the " + st.needs : ""}
-                          </span>
-                        ) : null}
-                      </div>
-                      {i === ST.TOUCH - 1 && l.done >= ST.TOUCH - 1 ? (
-                        <div className="tps">
-                          {/* the three SLA'd channels, plus a visit only once one has actually been
-                             logged — a visit carries no service-level deadline of its own */}
-                          {(
-                            [...TOUCHSLA, ...(tCount(l, "visit") ? [{ k: "visit", due: "when agreed" }] : [])] as readonly {
-                              k: (typeof TOUCHCHANNELS)[number];
-                              due: string;
-                            }[]
-                          ).map((x) => {
-                            const n = tCount(l, x.k);
-                            const allowed = conFor(l, x.k);
-                            return (
-                              <span
-                                key={x.k}
-                                className={`tp ${n ? "on" : allowed && l.done >= ST.TOUCH ? "miss" : ""}`}
-                                title={
-                                  n
-                                    ? TOUCHDONE[x.k] +
-                                      " ×" +
-                                      n +
-                                      " — first " +
-                                      tFirst(l, x.k) +
-                                      ", last " +
-                                      tLast(l, x.k)
-                                    : TOUCHDONE[x.k] +
-                                      (allowed ? " · due " + x.due + ", nothing logged" : " · contact not permitted")
-                                }
-                              >
-                                {TOUCHDONE[x.k]} <b>×{n}</b>
-                                {n ? (
-                                  <i>
-                                    {(tFirst(l, x.k) as string).slice(0, 6)}
-                                    {n > 1 ? " → " + (tLast(l, x.k) as string).slice(0, 6) : ""}
-                                  </i>
-                                ) : (
-                                  <i>{allowed ? x.due : "Not permitted"}</i>
-                                )}
-                              </span>
-                            );
-                          })}
-                          <span className={`tp ${l.reply ? "rep" : ""}`}>
-                            {l.reply ? (
-                              <>
-                                Replied <i>{l.reply.slice(0, 6)}</i>
-                              </>
-                            ) : (
-                              "No reply yet"
-                            )}
-                          </span>
-                          {canWork(state, l) ? (
-                            <button
-                              type="button"
-                              className="tadd"
-                              id="door-touch"
-                              onClick={() =>
-                                dispatch({
-                                  type: "openDrawer",
-                                  k: "p:followup" as DrawerKind,
-                                  id: l.id,
-                                  seed: followupSeed(state, l, chanOf(state, l)),
-                                })
-                              }
-                            >
-                              ＋ Record contact
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="rt">
-                      {here && owned && g ? (
-                        <span className={`tag ${g.who === "fin" ? "due" : ""}`}>
-                          <span className="dot" />
-                          {g.who === "fin" ? "waiting on Finance" : "not yet true"}
-                        </span>
-                      ) : here && owned ? (
-                        <button
-                          type="button"
-                          className="act"
-                          onClick={() => setRefusal(tick(l))}
-                        >
-                          {st.t === "First touch made" ? "Record first contact" : "Confirm " + st.t.toLowerCase()}
-                        </button>
-                      ) : here ? (
-                        <span className="tag">{st.who}</span>
-                      ) : last && und.ok ? (
-                        <button
-                          type="button"
-                          className="btn"
-                          title={und.why ?? undefined}
-                          onClick={() => setRefusal(untick(l))}
-                        >
-                          Un-tick “{st.t}”
-                        </button>
-                      ) : last &&
-                        (canEdit(state, l) || l.own === state.WHO || l.sec === state.WHO) ? (
-                        <span className="lock" title={und.why ?? undefined}>
-                          🔒 locked
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  {here && st.skip && owned ? (
-                    <div className="lcr" style={{ border: 0, paddingTop: 0 }}>
-                      <span className="bul" style={{ visibility: "hidden" }}>
-                        ·
-                      </span>
-                      <div className="bd">
-                        <span className="sm">
-                          A webinar or visit moves an investor forward but is not a mandatory gate.
-                        </span>
-                      </div>
-                      <div className="rt">
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => dispatch({ type: "skipStage", id: l.id })}
-                        >
-                          Not needed
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </details>
-
-      <details className="ux-disclosure">
-        <summary>More investor tools</summary>
-        <div className="cb">
-          <Doors l={l} />
-        </div>
-      </details>
-    </>
+      <Live />
+    </div>
   );
 }

@@ -32,6 +32,7 @@ export const BUSINESS_WRITES = new Set([
   "setBaseline", "setRecov", "clearRecov", "record", "claimPaid", "confirmClaim", "rejectClaim",
   "reopenClaim", "startPaymentReport", "askExt", "decideExt", "lapse", "sendDoc", "recordDoc", "setReleased", "acctAuto",
   "acctLapsed", "xferAuto", "copyInvestor", "flagDupe", "csvImport", "log",
+  "lpFinish", "lpLose", "lpRestore", "lpPaper", "emSend", "undoRung", "recordRung", "tickCommit",
 ]);
 
 const DRAFTS: Record<string, readonly string[]> = {
@@ -145,7 +146,8 @@ export function createConsoleWriter(options: SaveQueueOptions & {
       const current = options.read();
       return accountAllowed(current) && current.WHO === session.actor
         && (!options.leadWrites.has(captured.type) || canOperateLeads(current))
-        && (!id || !state.LEADS.some(l => l.id === id) || openable(current).some(l => l.id === id))
+        /* flagDupe names a record the flagger cannot open, by definition (ir-merged.js:5608) */
+        && (captured.type === "flagDupe" || !id || !state.LEADS.some(l => l.id === id) || openable(current).some(l => l.id === id))
         && json({ record: target(current, captured), recipients: recipients(current, captured) }) === oldTarget && json(draft(current, captured)) === oldDraft;
     };
     return queue.enqueue({ ...session, key, id, label: captured.type === "copyInvestor" ? "Investor copy (demo)" : "Local change", validate, execute: () => {
