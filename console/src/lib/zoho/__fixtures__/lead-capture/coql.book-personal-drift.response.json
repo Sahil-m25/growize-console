@@ -1,0 +1,57 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "First_Name": "Synthetic",
+        "Last_Name": "Lead 1",
+        "Mobile": "+919000000001",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "Synthetic Owner"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": null,
+        "Cover_Until": null,
+        "Lead_Source": "Events",
+        "Lead_Status": "Lead captured",
+        "Created_Time": "2026-09-20T10:00:00+05:30",
+        "Lost_At": null,
+        "Units_Interested": null,
+        "Next_Step_At": null,
+        "Last_Reply_At": null
+      },
+      {
+        "id": "9007199254740996106",
+        "First_Name": "Synthetic",
+        "Last_Name": "Lead 6",
+        "Mobile": "+919000000006",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "Synthetic Owner"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Cover_Until": "2026-09-01",
+        "Lead_Source": "Events",
+        "Lead_Status": "Lead captured",
+        "Created_Time": "2026-09-20T10:00:00+05:30",
+        "Lost_At": null,
+        "Units_Interested": null,
+        "Next_Step_At": null,
+        "Last_Reply_At": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

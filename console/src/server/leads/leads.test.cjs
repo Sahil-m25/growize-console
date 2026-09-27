@@ -1,6 +1,6 @@
-/* M04-S01 LEAD CAPTURE REGRESSION
+/* LEADS REGRESSION (M04-S01 capture, M04-S02 duplicates, M06-S01 book)
  *
- * Run from console/: node src/server/leads/capture.test.cjs
+ * Run from console/: node src/server/leads/leads.test.cjs
  *
  * Type-checks the capture boundary with the project's TypeScript, then drives it through the real
  * Zoho client with sanitized recorded responses only. No request reaches Zoho; every fixture is
@@ -44,6 +44,7 @@ const sources = [
   'domain/plan.ts',
   'server/leads/capture.ts',
   'server/leads/duplicate.ts',
+  'server/leads/book.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -68,6 +69,7 @@ const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
 const { createLeadCapture, mobileToE164, splitName } = load(path.join('server', 'leads', 'capture.js'));
 const { createDuplicateCheck, mobileClause } = load(path.join('server', 'leads', 'duplicate.js'));
+const { createLeadsBook } = load(path.join('server', 'leads', 'book.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -351,4 +353,86 @@ test('a number held outside the book is stopped by Zoho\'s duplicate check, with
   assert.ok(!JSON.stringify(res).includes('740996444'), 'the other record\'s id is not passed on');
   assert.deepEqual(r.invalidated, []);
   assert.deepEqual(r.refusals().map((x) => x.reason), ['duplicate-mobile']);
+});
+
+// ---------------- M06-S01 Leads list ----------------
+
+const leadsAccess = (id, overrides = {}) => {
+  let n = 0;
+  return { calls: () => n, async recheck(credential) {
+    n += 1;
+    const base = id === MANAGER
+      ? { actor: { userId: MANAGER, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'ir-manager' }, mayViewLeads: true,
+          teamOwnerIds: [IR, OTHER_IR], teamOrgWide: false, unassignedQueueUserId: QUEUE, seesUnassignedInPersonal: false }
+      : { actor: { userId: credential.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, mayViewLeads: true,
+          teamOwnerIds: null, teamOrgWide: false, unassignedQueueUserId: QUEUE, seesUnassignedInPersonal: true };
+    return overrides.recheck ? overrides.recheck(base, n) : base;
+  } };
+};
+function bookRig(reply, id, overrides) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => { calls.push(JSON.parse(init.body).select_query); return toResponse(recorded(reply)); } });
+  const access = leadsAccess(id, overrides);
+  return { book: createLeadsBook({ crm, access, log, recordIdPrefix: P, clock: () => NOW }), calls, sink, access };
+}
+
+test('an IR\'s book is owner, secondary, live cover and the unassigned queue — lost leads come back marked', async () => {
+  const r = bookRig('coql.book-personal', IR);
+  const res = await r.book.list(principal(IR), 'personal');
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.value.rows.map((x) => [x.id.slice(-2), x.why, x.ownerId]),
+    [['01', 'owner', IR], ['02', 'secondary', OTHER_IR], ['03', 'cover', OTHER_IR], ['04', 'unassigned', null], ['05', 'owner', IR]]);
+  assert.equal(res.value.rows[4].lostAt, '2026-09-25T10:00:00+05:30');
+  assert.equal(res.value.rows[0].unitsInterested, 2);
+  assert.equal(res.value.nextOffset, null);
+  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where (Owner = '${IR}' or Secondary_Owner = '${IR}' or (Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or Owner = '${QUEUE}') order by id asc limit 0, 200`);
+  assert.equal(r.access.calls(), 2);
+});
+
+test('a row outside the book (expired cover, stale share) refuses the page', async () => {
+  const r = bookRig('coql.book-personal-drift', IR);
+  const res = await r.book.list(principal(IR), 'personal');
+  assert.equal(res.reasonCode, 'scope-drift');
+  assert.ok(!('value' in res));
+});
+
+test('the IR Manager\'s team scope filters by the owners they manage and pages by 200', async () => {
+  const r = bookRig('coql.book-team', MANAGER);
+  const res = await r.book.list(principal(MANAGER), 'team');
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.value.rows.map((x) => x.why), ['team', 'team', 'team']);
+  assert.equal(res.value.rows[2].ownerId, null, 'the queue user reads as unassigned');
+  assert.equal(res.value.nextOffset, 200);
+  assert.match(r.calls[0], new RegExp(`where \\(Owner in \\('${IR}', '${OTHER_IR}', '${QUEUE}'\\)\\) order by id asc limit 0, 200$`));
+  const next = await bookRig('coql.book-team', MANAGER).book.list(principal(MANAGER), 'team', 200);
+  assert.equal(next.ok, true);
+  const bad = await bookRig('coql.book-team', MANAGER).book.list(principal(MANAGER), 'team', 150);
+  assert.equal(bad.reasonCode, 'invalid-request');
+});
+
+test('team scope: a foreign owner is drift; an IR has no team scope; org-wide seats read without an owner filter', async () => {
+  let res = await bookRig('coql.book-team-foreign', MANAGER).book.list(principal(MANAGER), 'team');
+  assert.equal(res.reasonCode, 'scope-drift');
+  let r = bookRig('coql.book-team', IR);
+  res = await r.book.list(principal(IR), 'team');
+  assert.equal(res.reasonCode, 'no-team-scope');
+  assert.equal(r.calls.length, 0);
+  r = bookRig('coql.book-team-foreign', MANAGER, { recheck: (b) => ({ ...b, teamOrgWide: true, teamOwnerIds: null }) });
+  res = await r.book.list(principal(MANAGER), 'team');
+  assert.equal(res.ok, true);
+  assert.match(r.calls[0], /where \(id is not null\)/);
+});
+
+test('no leads view, or a scope changed during the read, returns nothing', async () => {
+  let r = bookRig('coql.book-personal', IR, { recheck: (b) => ({ ...b, mayViewLeads: false }) });
+  let res = await r.book.list(principal(IR), 'personal');
+  assert.equal(res.reasonCode, 'capability-missing');
+  assert.equal(r.calls.length, 0);
+  r = bookRig('coql.book-team', MANAGER, { recheck: (b, n) => ({ ...b, teamOwnerIds: n === 1 ? [IR, OTHER_IR] : [IR] }) });
+  res = await r.book.list(principal(MANAGER), 'team');
+  assert.equal(res.reasonCode, 'session-changed');
+  assert.ok(!('value' in res));
 });
