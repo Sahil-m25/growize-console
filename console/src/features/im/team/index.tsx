@@ -46,7 +46,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
                   {w.r === "kam" && (k === me || (!isSys(s, me) && may(s, me, "assign")))
                     ? <div className="sm">{nb} account{nb === 1 ? "" : "s"}</div> : null}</td>
                 <td>{roles.some(r => maySeat(s, me, k, r))
-                  ? <select className="selw" style={{ maxWidth: "100%", minWidth: "200px" }} value={w.r}
+                  ? <select className="selw" aria-label={"Seat — " + w.n} style={{ maxWidth: "100%", minWidth: "200px" }} value={w.r}
                     onChange={e => dispatch({ type: "setSeat", k, r: e.target.value as ImRoleKey })}>
                     {roles.filter(r => r === w.r || maySeat(s, me, k, r)).map(r => <option key={r} value={r}>{ROLE[r].t}</option>)}</select>
                   : <><b>{role(s, k).t}</b>{may(s, me, "team") && k !== me ? <div className="sm">another team&apos;s seat</div> : null}</>}</td>

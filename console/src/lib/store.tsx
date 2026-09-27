@@ -45,6 +45,10 @@ type ConsoleCtx = {
   browserOnline: boolean | null;
   lastLocalUpdate: number | null;
   retrySave: (key: string) => void;
+  /** M01-S03: when the last GET /api/data succeeded (epoch ms, null before the first), and whether
+   *  the most recent one failed; reloadData() reads it again */
+  dataRead: { at: number | null; failed: boolean };
+  reloadData: () => void;
 };
 
 const Ctx = createContext<ConsoleCtx | null>(null);
@@ -60,6 +64,14 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
   const [saves, setSaves] = useState<SaveEntry[]>([]);
   const [browserOnline, setBrowserOnline] = useState<boolean | null>(null);
   const [lastLocalUpdate, setLastLocalUpdate] = useState<number | null>(null);
+  const [dataRead, setDataRead] = useState<{ at: number | null; failed: boolean }>({ at: null, failed: false });
+  const loadRef = useRef<() => Promise<unknown>>(() => Promise.resolve(null));
+  /* the first paint's records came with the page (the same payload GET /api/data serves): that read
+     succeeded when the page arrived, so it counts as the last good read until the next one */
+  const hadInitial = useRef(!!initial);
+  useEffect(() => {
+    if (hadInitial.current) setDataRead(d => (d.at == null ? { ...d, at: Date.now() } : d));
+  }, []);
   const [writer] = useState(() => createConsoleWriter({
     clock: Date.now,
     setTimer: (callback, delay) => setTimeout(callback, delay),
@@ -93,9 +105,11 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     const ran = new Set<string>();
     const load = async (): Promise<DataPayload | null> => {
       const r = await fetch("/api/data", { cache: "no-store" }).catch(() => null);
-      if (!r || !r.ok || dead) return null;
-      const p = (await r.json()) as DataPayload;
       if (dead) return null;
+      const p = r && r.ok ? ((await r.json().catch(() => null)) as DataPayload | null) : null;
+      if (dead) return null;
+      if (!p) { setDataRead(d => ({ ...d, failed: true })); return null; }
+      setDataRead({ at: Date.now(), failed: false });
       pinClock(p.ds.CLOCKPIN);
       writer.apply({ type: "hydrate", ds: p.ds, version: p.version, fixtures: p.fixtures });
       for (const x of p.actions as { fx: string; a: Action }[]) {
@@ -109,6 +123,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
       }
       return p;
     };
+    loadRef.current = load;
     void (async () => {
       const [p, sess] = await Promise.all([
         load(),
@@ -154,7 +169,8 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
   }, [writer]);
   const value = useMemo(() => ({ state, dispatch: writer.apply, saves, browserOnline, lastLocalUpdate,
     retrySave: (key: string) => { writer.retry(key); },
-  }), [state, writer, saves, browserOnline, lastLocalUpdate]);
+    dataRead, reloadData: () => { void loadRef.current(); },
+  }), [state, writer, saves, browserOnline, lastLocalUpdate, dataRead]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

@@ -5,6 +5,7 @@
 
 import { allocated, blockUse, day6, freeUnits, may, pageReadable, released, reserved, safeNote } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
+import { FarmLlps } from "../money/pages";
 
 export function ImFarms({ s, me, dispatch }: ImPageProps) {
   if (!pageReadable(s, me, "farms")) return null;
@@ -84,6 +85,7 @@ export function ImFarms({ s, me, dispatch }: ImPageProps) {
             usually the person who took investors round them. An investor asking “how is Block A” is
             answered from here, and the answer is the same one everybody else gets.</p>
         </div></div>
+        <FarmLlps s={s} me={me} dispatch={dispatch} />
       </div>
     </>
   );

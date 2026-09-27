@@ -278,6 +278,7 @@ export type ConsoleState = {
   SHEETNOTES: string[];
   /* the Finance projection the lead side reads (Investors pages → lead) */
   FINMIRROR: Dataset["FINMIRROR"];
+  LEADMAIL?: Dataset["LEADMAIL"];
   /* the Investors side's records — read by imHas/imReach/imTitle; its screens are a later story */
   IM: ImData;
   /* the Investors side's own screen state (imx.js section 8 globals) and, per two-sided page, the
@@ -568,6 +569,7 @@ export function dataSlices(ds: Dataset) {
     SHEETNOTES: d.SHEETNOTES,
     INTERACTIONS: d.INTERACTIONS,
     FINMIRROR: d.FINMIRROR,
+    LEADMAIL: d.LEADMAIL || [],
     IM: d.im,
   };
 }

@@ -18,6 +18,7 @@ import { ST } from "@/domain";
 import type { Cap, DocRec, Lead, LeadId, LogEntry, MoveReq, NavKey, PaperRow, PersonKey } from "@/domain";
 import type { ImDoc, ImInbox, ImInvestor, ImTxn } from "@/lib/im";
 import { runAs } from "./run-as";
+import { MONEY_FIXTURES } from "./im/money-fixtures";
 
 export type FixtureFn = (ds: Dataset) => void | { actions: Action[] };
 /** What `GET /api/data` carries per client action: `fx` names the applied fixture it came from, so the
@@ -281,6 +282,7 @@ export const FIXTURES: Record<string, FixtureFn> = {
     ds.im.DOCS.unshift({ id: "D-048", inv: "ARL-INV-0208", t: "Allocation letter", cls: "Commercial", state: "awaiting",
       sent: "01 Sep 10:00", by: "harsha", sig: "Aadhaar OTP", ref: null, exp: "15 Sep" });
   },
+  ...MONEY_FIXTURES,                   // later decisions' demo states (fixtures/im/money-fixtures.ts)
   "IM:TK0114_HANDED": (ds) => {
     const t = ds.im.TKT.find((x) => x.id === "TK-0114");
     if (!t) throw new Error("fixture: no TK-0114");

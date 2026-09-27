@@ -8,6 +8,7 @@ import { imDemoData } from "../im/demo";
 import { TEMP } from "./access";
 import { LOG } from "./activity";
 import { DEMO_NOW } from "./clock";
+import { LEADMAIL } from "./emails";
 import { EVENTS, SHEET, SHEETNAMES, SHEETNOTES } from "./events";
 import FINMIRROR from "./finance-mirror.json";
 import { INV } from "./inventory";
@@ -29,6 +30,7 @@ export function demoBook(): Dataset {
     SENT, NOTES, CALLS, PACK, PACKAT, RECOV, SHEET, INTERACTIONS,
     SHEETNAMES: [...SHEETNAMES], SHEETNOTES: [...SHEETNOTES],
     FINMIRROR,
+    LEADMAIL,   /* a lead's emails (M12-S09) — ./emails.ts */
     LEAD: "L3", EVID: "E-04", // 03-app.js:936
     /* IMX.align(PEOPLE) — merge-glue.js: name the lead side's people so a raw key never reaches a sentence */
     im: imAlign(imDemoData(), PEOPLE),

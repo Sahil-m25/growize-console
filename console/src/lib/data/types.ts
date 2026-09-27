@@ -13,7 +13,7 @@ import type {
   LeadId, LogEntry, MoveReq, Note, PaperRow, PayRec, Person, PersonKey, Plan, RecovRec,
   Sendable, SheetRec, Stamp, TempGrant, XferRow,
 } from "@/domain";
-import type { ImData } from "@/lib/im";
+import type { ImData, RecEmail } from "@/lib/im";
 
 /* ---- the Finance projection the lead side reads (Investors pages → lead) ------------------- */
 export type FinancePaymentRow = {
@@ -74,6 +74,8 @@ export type Dataset = {
   SHEETNAMES: string[];
   SHEETNOTES: string[];
   FINMIRROR: FinanceMirror;
+  /** a lead's emails, as the Zoho CRM Emails API returns them (M12-S09); absent = none */
+  LEADMAIL?: RecEmail[];
   /** the lead and event a fresh session opens on, when the book has them */
   LEAD: LeadId;
   EVID: string;

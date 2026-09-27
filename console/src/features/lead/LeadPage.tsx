@@ -38,6 +38,7 @@ import type { LpNotice } from "./reducer";
 import { say } from "./Live";
 import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
 import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
+import { LeadEmails } from "@/features/im/paper2/Emails";   /* M12-S09 */
 
 type Ctx = ReturnType<typeof useConsole>;
 
@@ -506,6 +507,7 @@ export function LeadPage({ id }: { id: string }) {
       <LpNoticeBar />
       {card}
       {flow ? null : rows}
+      {flow ? null : <LeadEmails leadId={l.id} />}
       {canNote(state, l) && !flow ? (
         <div className="lp-notebar">
           <textarea rows={1} placeholder="Add a note…" aria-label="Add a note" value={ndOn}

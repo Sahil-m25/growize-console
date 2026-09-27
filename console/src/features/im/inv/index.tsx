@@ -9,12 +9,17 @@ import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   invRows, isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT,
+  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView,
 } from "@/lib/im";
 import type { ImInvestor } from "@/lib/im";
 import { DocTag, ImPname, ImSecBar, KycTag, Pii, ProvIR, StTag } from "../common";
 import type { ImPageProps, ImSec } from "../common";
 import { TkRow } from "./TkRow";
+import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks, MoneyStatusTag, allotCount } from "../money/record";
+import { AddInvestorButton } from "../money/pages";
+import { InvEmails } from "../paper2/Emails";
+import { SignCell } from "../paper2/SignCell";
+import { InvUploads } from "../paper2/Upload";
 
 const blocksText = (x: ImInvestor) => Object.entries(x.blocks).map(([k, n]) => "Block " + k + " ×" + n).join(", ");
 
@@ -40,7 +45,9 @@ function VInv({ s, me, dispatch }: ImPageProps) {
       <div className="ph"><h1>{am ? (who(s, me).r === "kam" ? "My accounts" : "Accounts") : "Investors"}</h1>
         <span className="sub">{base.length + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (allocated(s) + reserved(s)) + " units")}</span>
         <div className="sp" />
+        <AddInvestorButton s={s} me={me} dispatch={dispatch} />
         <input className="inp" style={{ width: 210 }} placeholder="Name, ARL ID, city…" value={s.ui.IQ}
+          aria-label="Search investors — name, ARL ID, city, phone or farm"
           id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
       <div className="secbar">
         <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{base.length}</i></button>
@@ -81,7 +88,9 @@ function VInv({ s, me, dispatch }: ImPageProps) {
               </>}
             </tr>
           );
-        }) : <tr><td colSpan={am ? 8 : 9}><div className="empty">Nobody matches that.</div></td></tr>}
+        }) : <tr><td colSpan={am ? 8 : 9}><div className="empty">Nobody matches that.{s.ui.IQ.trim()
+          ? <div className="sm">{"No investor you can open matches “" + s.ui.IQ.trim() + "”"
+            + (IFILT ? " under " + EXC[IFILT][0] : "") + "."}</div> : null}</div></td></tr>}
         </tbody></table></div></div></div>
     </>
   );
@@ -128,12 +137,15 @@ function VOne(p: ImPageProps & { x: ImInvestor }) {
       <ImSecBar s={s} dispatch={dispatch} v={v} list={SECS} />
       <div className="secw">
         {S === "who" ? <SecWho {...p} /> : null}
+        {/* M12-S09 — the record's emails sit under "Who they are" rather than as a section of their own,
+            so the record keeps exactly the prototype's sections */}
+        {S === "who" ? <InvEmails s={s} me={me} id={x.id} /> : null}
         {S === "hold" ? <SecHold {...p} /> : null}
         {S === "care" ? <SecCare {...p} /> : null}
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
-            <span className="sm">{money(got) + " of " + money(x.units * UNIT) + (due ? " · " + money(due) + " due" : "")}</span></div><div className="cb">
-            {txOf(s, me, x.id).length ? txOf(s, me, x.id).map(t => (
+            <span className="sm">{money(got) + " of " + money(x.units * UNIT) + (due ? " · " + money(due) + " due" : "")}</span><MoneyStatusTag {...p} /></div><div className="cb">
+            {allotCount(p) > 1 ? <MoneyBlocks {...p} /> : txOf(s, me, x.id).length ? txOf(s, me, x.id).map(t => (
               <div className="led" key={t.id}>
                 <span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold" : "go"}`}>{t.kind}</span>
                 <span style={{ minWidth: 0 }}><b className="mono">{t.id}</b>
@@ -230,7 +242,8 @@ function SecWho(p: ImPageProps & { x: ImInvestor }) {
 }
 
 /* vOne → "hold", and the app account — imx.js 1619–1681 */
-function SecHold({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
+function SecHold(p: ImPageProps & { x: ImInvestor }) {
+  const { s, me, dispatch, x } = p;
   const hd = holdDays(s, x), due = dueBy(s, me, x.id);
   const a = appOf(s, me, x.id);
   return (
@@ -260,6 +273,7 @@ function SecHold({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
           <p className="sm" style={{ margin: "8px 0 0" }}>{"The hold ran out " + (-hd) + " day" + (hd === -1 ? "" : "s") + " ago."}</p>
         </div> : null}
       </div></div>
+      <AllotCard {...p} />
       {!a ? (
         <div className="card fill"><div className="ch">
           <h3>The app account</h3></div><div className="cb"><p className="sm" style={{ margin: 0 }}>{"Nothing has been received from " + x.n
@@ -272,8 +286,10 @@ function SecHold({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
             <dl className="kv" style={{ marginTop: 0 }}>
               <dt>Created</dt><dd><span className="mono">{a.at}</span>{" "}
                 <span className="sm">automatically, on the first confirmed receipt</span></dd>
-              <dt>Welcome</dt><dd><span className="tag go"><span className="dot" />sent</span>{" "}
-                <span className="mono">{a.welcome.at}</span> <span className="sm">by email, with the login</span></dd>
+              <dt>Welcome</dt><dd>{(() => { const acc = accessOf(s, me, x.id); return acc && (acc.App_Access === "Hold" || !acc.App_Welcome_At)
+                ? <span className="sm">{accessView(acc).t}</span> /* D93: the welcome waits for Finance */
+                : <><span className="tag go"><span className="dot" />sent</span>{" "}
+                <span className="mono">{a.welcome.at}</span> <span className="sm">by email, with the login</span></>; })()}</dd>
               <dt>How sure</dt><dd><b>{perm ? "Permanent" : "Tentative"}</b>{" "}
                 <span className="sm">since <span className="mono">{a.markAt}</span>{a.markBy ? " · " + who(s, a.markBy).n : ""}</span>
                 <div className="sm">{perm
@@ -300,6 +316,8 @@ function SecHold({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
           </div></div>
         );
       })()}
+      <AppAccessCard {...p} />
+      <ArlHoldings {...p} />
     </>
   );
 }
@@ -396,10 +414,12 @@ function SecPaper({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
               <td><DocTag d={d} />{d.state === "awaiting" && d.exp ? <div className="sm">{"link expires " + d.exp}</div> : null}</td>
               <td className="sm mono">{d.ref || "—"}</td>
               <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state === "awaiting"
-                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } })}>Verify</button> : null}</td>
+                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } })}>Verify</button> : null}
+                <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td>
             </tr>
           )) : <tr><td colSpan={6}><div className="empty">Nothing on file.</div></td></tr>}
           </tbody></table></div></div>
+      <InvUploads s={s} me={me} dispatch={dispatch} inv={x.id} />
     </>
   );
 }

@@ -10,6 +10,8 @@ import {
   type ImContact, type ImData, type ImDoc, type ImFarm, type ImField, type ImInbox, type ImInvestor,
   type ImIrName, type ImLogEntry, type ImPerson, type ImTicket, type ImTxn, type ImUpdate,
 } from "@/lib/im";
+import { withMoney } from "./money";
+import { PAPER2 } from "./paper2";
 
 /* imx.js lines 82–93 */
 const P: Record<string, ImPerson> = {
@@ -452,12 +454,13 @@ const LOG: ImLogEntry[] = [
 
 /** The Investors side on 2 Sep 2026: every demo record, with the app accounts seeded from the receipts. */
 export function imDemoData(): ImData {
-  return seedApp(structuredClone({
+  return withMoney(seedApp(structuredClone({
     NOW: "2026-09-02T00:00",
     P, SIGNINS, IRN, FARMS, INV, CONTACT, TXN, DOCS, INBOX, TKT, FIELD, UPD, LOG,
     ANS: {}, OUTBOX: [], APP: {},
+    ...PAPER2,   /* uploads, Zoho Sign status, emails (M12-S02/S05/S09) — ./paper2.ts */
     /* the prototype's sequence counters: TSEQ 48 (l.487), DSEQ 44 (l.595), KSEQ 117 (l.675),
        FSEQ 6 (l.701), USEQ 9 (l.767) */
     TSEQ: 48, DSEQ: 44, KSEQ: 117, FSEQ: 6, USEQ: 9,
-  }));
+  })));
 }

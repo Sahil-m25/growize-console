@@ -250,6 +250,7 @@ function NewpBody() {
       <input
         className="inp"
         id="npn"
+        aria-label="Full name"
         style={{ width: "100%", marginBottom: "14px" }}
         placeholder="Priya Raghavan"
         value={N.n}
@@ -259,6 +260,7 @@ function NewpBody() {
       <input
         className="inp mono"
         id="npe"
+        aria-label="Work email"
         style={{ width: "100%", marginBottom: "4px" }}
         placeholder="priya@agresearchlabs.com"
         value={N.em}

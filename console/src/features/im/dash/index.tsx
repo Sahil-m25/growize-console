@@ -136,6 +136,7 @@ export function QRow({ s, me, dispatch, x }: ImPageProps & { x: ImQ }) {
             : x.kind === "verify" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "verify", id: x.r.d ? x.r.d.id : null, seed: { DREF: "" } }))}>Verify it</button>
               : x.kind === "send" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "send", id, seed: { DTPL: x.r.R ? x.r.R.tpl : null } }))}>Send it</button>
                 : x.kind === "kyc" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "kyc", id }))}>Check it</button>
+                  : x.kind === "declined" ? <button className="act" onClick={stop(() => { dispatch({ type: "go", v: "inv", id }); dispatch({ type: "setSec", v: "inv:" + id, k: "paper" }); })}>Open the paper</button>
                   : <button className="act ghost" onClick={stop(() => dispatch({ type: "go", v: "inv", id }))}>Open the record</button>;
   /* the prototype's `x.kind==="tkt"` branch ("Open tickets") is unreachable: no queue emits it */
   const open = () => dispatch({ type: "go", v: "inv", id });

@@ -39,6 +39,9 @@ export * from "./constants";
 export * from "./dates";
 export * from "./selectors";
 export * from "./rules";
+export * from "./money";
+export * from "./paper2";   /* uploads, Zoho Sign status, record emails, the IR wall (M12-S02/S05/S09, M09-S08) */
+export * from "./search";   /* investor search (M09-S07) */
 export { imReducer, initialImUi, emptyImData, seedApp, imAlign } from "./reducer";
 
 /** IMX.has — k signs in here and may open the Investors pages */

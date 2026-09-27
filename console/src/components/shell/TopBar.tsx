@@ -49,6 +49,7 @@ import { pathOf, type View } from "./routes";
 import { titleOf as mergedTitleOf } from "./SignIn";
 import { sidesOf } from "@/lib/selectors/access";
 import { imReadOnly } from "@/lib/im";
+import { DataFresh } from "./DataStatus";   /* M01-S03 */
 
 const PAGES = PAGECAPS as unknown as Record<string, { t: string } | undefined>;
 const pageTitle = (p: string) => PAGES[p]?.t ?? p;
@@ -115,6 +116,7 @@ export function TopBar({ side = "ir", view }: { side?: "ir" | "im" | "mix"; view
         <span>
           <b>{`Browser ${browserOnline ? "online" : "offline"} · Local demo`}</b>
           <small>{saveSummary || (state.FIXTURES ? "Demo fixtures · no live source connected" : "No live source connected")}</small>
+          <DataFresh />
         </span>
         {failedSaves.length > 0 ? (
           <button type="button" className="chip" onClick={() => failedSaves.forEach((s) => retrySave?.(s.key))}>

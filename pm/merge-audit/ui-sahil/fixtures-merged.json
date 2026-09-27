@@ -478,5 +478,11 @@
   "description": "Shared pages open on their Investors half (the Investors-side cases were written for the Investors pages).",
   "prototype": "Object.assign(MSIDE,{today:'im',activity:'im',numbers:'im',system:'im'}); go(VIEW);",
   "after_signin": true
+ },
+ "IM:MONEY_DEMO": {
+  "description": "Later-decision demo states (M10-S07/S08/S21, M11-S02): Joseph Mathew holds two allotments (2 units on Block B with his advance, 2 on Block A); his app account is On hold; Abhijit Sen's is locked.",
+  "prototype": "",
+  "staging": "In the sandbox: a second LLP_UnitAllocation_Module record for the test Contact, App_Access = Hold on it.",
+  "after_signin": false
  }
 }

@@ -72,6 +72,7 @@ function Body({ id }: DrawerProps) {
         <input
           className="inp"
           id="hq"
+          aria-label="Find an answer"
           style={{ width: "100%", marginBottom: "8px" }}
           placeholder="Search the answers…"
           value={HQ}

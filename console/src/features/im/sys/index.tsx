@@ -11,6 +11,7 @@ import {
 } from "@/lib/im";
 import type { ImState } from "@/lib/im";
 import { ImPname, ImSecBar, type ImPageProps } from "../common";
+import { TestLinkAudit } from "../money/pages";
 
 const Stat = ({ v, t, bad }: { v: number; t: string; bad?: boolean }) =>
   <div className={`stat ${bad ? "bad" : ""}`}><b>{v}</b><span>{t}</span></div>;
@@ -43,6 +44,7 @@ export function ImSys({ s, me, dispatch }: ImPageProps) {
         {S === "link" ? <Link s={s} /> : null}
         {S === "agree" ? <Agree s={s} /> : null}
         {S === "who" ? <WhoDid s={s} me={me} reveals={reveals} seats={seats} /> : null}
+        {S === "who" ? <TestLinkAudit s={s} me={me} dispatch={dispatch} /> : null}
         {S === "gaps" ? <Gaps /> : null}
       </div>
     </>

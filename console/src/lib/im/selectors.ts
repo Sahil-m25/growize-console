@@ -9,10 +9,12 @@ import {
   type ImNavItem, type ImTier,
 } from "./constants";
 import { aged, gap, mid, nowDay, when } from "./dates";
+import { invMatch } from "./search";
 import type {
   ImApp, ImCan, ImContact, ImCtx, ImDoc, ImDrawerKey, ImInbox, ImInvestor, ImLogEntry, ImQ, ImRole,
   ImRoleKey, ImRound, ImState, ImTicket, ImTxn, ImView, ImWho, ImField, ImAns, ImData,
 } from "./types";
+import { MONEY_DRAWERS, moneyDrawerReadable } from "./money";
 
 /* ============================ 1. the people ============================ */
 export function who(s: ImCtx, k: string | null | undefined): ImWho {
@@ -208,7 +210,11 @@ export function finQueue(s: ImCtx, WHO: string): ImQ[] {
     if (!x || x.st === "lapsed") return;
     out.push({ inv: x, kind: "claim", n: c, t: "An IR says the money has arrived — confirm it", urg: "now" });
   });
-  return out.sort((a, b) => URG[a.urg] - URG[b.urg]);
+  /* M12-S05: a request the investor declined heads Finance's queue — it needs a fresh copy or a word */
+  const declined: ImQ[] = s.data.DOCS.filter(d => d.state !== "signed" && ((s.data.SIGN || {})[d.id] || { st: "" }).st === "declined")
+    .flatMap(d => { const x = I(s, WHO, d.inv); return x && x.st !== "lapsed" ? [{ inv: x, kind: "declined" as const, d,
+      t: d.t + " declined — " + ((s.data.SIGN || {})[d.id].why || "no reason given"), urg: "now" as const }] : []; });
+  return declined.concat(out.sort((a, b) => URG[a.urg] - URG[b.urg]));
 }
 /** what Account Management owes, in the same shape */
 export function careQueue(s: ImCtx, WHO: string): ImQ[] {
@@ -233,7 +239,7 @@ export const mineQueue = (s: ImCtx, WHO: string): ImQ[] =>
     ? careQueue(s, WHO)
     : finQueue(s, WHO).filter(q =>
       q.kind === "claim" || q.kind === "hold" ? may(s, WHO, "pay")
-        : q.kind === "send" || q.kind === "verify" ? may(s, WHO, "doc")
+        : q.kind === "send" || q.kind === "verify" || q.kind === "declined" ? may(s, WHO, "doc")
           : q.kind === "kyc" || q.kind === "fema" ? may(s, WHO, "kyc") : false);
 
 /* ============================ 7. the app account ============================ */
@@ -297,6 +303,7 @@ export const readOnlySeat = (s: ImCtx, WHO: string): boolean =>
 /* ---- the drawer gate ---- */
 export function drawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string | null | undefined): boolean {
   if (!s.data.P[WHO] || !may(s, WHO, "view")) return false;
+  if (MONEY_DRAWERS.includes(k)) return moneyDrawerReadable(s, WHO, k, id);   /* M10/M11 later decisions: money.ts */
   if (["kam", "talk", "pay", "send", "kyc", "details"].includes(k)) {
     const x = I(s, WHO, id); if (!x) return false;
     return k === "kam" ? may(s, WHO, "assign") : k === "talk" ? mayCare(s, WHO, x) : k === "details" ? mayDetails(s, WHO, x)
@@ -366,7 +373,7 @@ export function invRows(s: ImState, WHO: string): ImInvestor[] {
   const base = isAM(s, WHO) ? myBook(s, WHO).filter(cared) : s.data.INV;
   const EXC = invExceptions(s, WHO), f = s.ui.IFILT && EXC[s.ui.IFILT] ? EXC[s.ui.IFILT][1] : null;
   const q = s.ui.IQ.trim().toLowerCase();
-  return base.filter(x => (!f || f(x)) && (!q || (x.n + " " + x.id + " " + x.city + " " + x.em).toLowerCase().includes(q)));
+  return base.filter(x => (!f || f(x)) && (!q || invMatch(s, x, q)));   /* M09-S07: + phone digits and farm */
 }
 /** Payments' cuts (vTxn F) */
 export const TXNF: Record<string, [string, (t: ImTxn) => boolean]> = {

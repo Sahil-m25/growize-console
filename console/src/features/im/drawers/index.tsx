@@ -19,6 +19,7 @@ import {
 import type { ImDrafts, ImDrawerKey, ImInvestor } from "@/lib/im";
 import { Icon } from "@/components/ui/Icon";
 import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
+import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -57,7 +58,7 @@ function kamBody(c: Ctx): ReactNode {
         somebody is a promise about how often this investor hears from us, so it is worth checking the
         load before making it.</p>
       <p className="lbl">The manager</p>
-      <select className="selw" value={KSEL || ""} onChange={e => set(c, { KSEL: e.target.value || null })}>
+      <select className="selw" aria-label="The manager" value={KSEL || ""} onChange={e => set(c, { KSEL: e.target.value || null })}>
         <option value="">The shared pool — no named manager</option>
         {KAMS(s).map(k => {
           const n = bookOf(s, me, k).length, q = bookOf(s, me, k).filter(y => quiet(s, me, y)).length;
@@ -206,6 +207,7 @@ function payBody(c: Ctx): ReactNode {
       <label className="fi"><span>Reference</span>
         <input className="inp mono" id="p-utr" placeholder="UTR or cheque number" value={PUTR}
           onChange={e => set(c, { PUTR: e.target.value })} /></label>
+      <AllotPick s={s} me={me} dispatch={c.dispatch} id={id} />
       <div className="drwsec"><dl className="kv" style={{ marginTop: 0 }}>
         <dt>Agreement</dt><dd>{supp.state === "done"
           ? <TagDot c="go">signed and verified</TagDot>
@@ -224,7 +226,7 @@ function payBody(c: Ctx): ReactNode {
 function payFoot(c: Ctx): ReactNode {
   const { s, me, id, dispatch } = c; const { PKIND, PMODE, PUTR } = draft(c);
   return may(s, me, "pay") && id ? (
-    <button className="act" onClick={() => dispatch({ type: "recordPay", id, kind: PKIND, mode: PMODE, utr: PUTR })}>
+    <button className="act" onClick={() => dispatch({ type: "recordPay", id, kind: PKIND, mode: PMODE, utr: PUTR, allot: pickedAllot(s, me, id) || undefined })}>
       Record it</button>
   ) : null;
 }
@@ -506,6 +508,7 @@ export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
   upd: { w: 440, t: "Publish an update", sub: () => "it appears in the investor's app", body: updBody, foot: updFoot },
   field: { w: 450, t: "Record farm progress", sub: () => "what the investors will be told", body: fieldBody, foot: fieldFoot },
   details: { w: 450, t: "Change their details", sub: nameOf, body: detailsBody, foot: detailsFoot },
+  ...MONEY_DRAWER_DEFS,                /* later decisions: Mark paid, LLP, Add investor, app access (../money) */
 };
 
 /* superNote(k) — imx.js 79 */

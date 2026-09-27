@@ -19,6 +19,7 @@ import { Drawer, DRW_DEFAULT_W } from "./Drawer";
 import { drawerDef } from "./drawers";
 import { Rail } from "./Rail";
 import { TopBar } from "./TopBar";
+import { DataErrorBlock } from "./DataStatus";   /* M01-S03 */
 import { findInvestor, landSafe, mayReach, navFor } from "./nav";
 import { NAV_EVT, parentOf, pathOf, viewOf, type View } from "./routes";
 import { useThemeSync } from "./ThemeButton";
@@ -356,6 +357,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <TopBar side={side} view={shown ? parentOf(shown) : state.VIEW} />
           <main className={paneCls} id="pane" tabIndex={-1} key={state.WHO} data-side={side === "im" ? "im" : undefined}>
             <MNote />
+            <DataErrorBlock />
             {nav.length === 0 && view !== "me" ? <NoScreens /> : blocked && !Pending ? null : pendingLead || (shown === "lead" && id) ? <LeadPage id={(pendingLead || id)!} />
               : shown && PENDING[shown] ? (() => { const C = PENDING[shown]!; return <C />; })() : children}
           </main>

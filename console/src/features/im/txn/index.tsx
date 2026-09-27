@@ -5,6 +5,7 @@
 
 import { day6, dueBy, I, money, pageReadable, safeNote, TXNF } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
+import { MatchCell, PayoutsDue } from "../money/pages";
 
 export function ImTxn({ s, me, dispatch }: ImPageProps) {
   if (!pageReadable(s, me, "txn")) return null;
@@ -48,10 +49,12 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
               <td className="sm"><ImPname s={s} k={t.by} first /> <span className="mono">{day6(t.on)}</span></td>
               <td>{t.rec === "matched" ? <span className="tag go"><span className="dot"></span>matched</span>
                 : <span className="tag due"><span className="dot"></span>pending</span>}
-                {t.note ? <div className="sm">{safeNote(s, me, t.note)}</div> : null}</td></tr>
+                {t.note ? <div className="sm">{safeNote(s, me, t.note)}</div> : null}
+                <MatchCell s={s} me={me} dispatch={dispatch} t={t} /></td></tr>
           );
         }) : <tr><td colSpan={7}><div className="empty">Nothing in this cut.</div></td></tr>}
-        </tbody></table></div></div></div>
+        </tbody></table></div></div>
+        <PayoutsDue s={s} me={me} dispatch={dispatch} /></div>
     </>
   );
 }

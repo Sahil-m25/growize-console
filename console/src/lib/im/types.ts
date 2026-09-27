@@ -7,6 +7,13 @@
    the prototype kept as globals: SEL, SEC, the filters, the drawer, the drafts, SHOWN, REVASK).
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import type {
+  ImAccess, ImAllot, ImArlTxn, ImHolding, ImLlp, ImMoneyAction, ImMoneyDrawerKey, ImPayout, ImTestLink,
+} from "./money-types";
+export type * from "./money-types";
+import type { ImUpload, ImSign, RecEmail, Paper2Action } from "./paper2-types";
+export type * from "./paper2-types";
+
 /* ---- people ---- */
 export type ImRoleKey = "head" | "ops" | "comp" | "audit" | "amlead" | "kam" | "di" | "admin" | "root";
 export type ImTeamKey = "fin" | "am" | "di" | "sys";
@@ -49,6 +56,9 @@ export type ImTxn = {
   on: string; by: string; rec: "matched" | "pending"; note?: string;
   /** who matched a pending receipt (matchReceipt — not in IMX, see reducer) */
   mby?: string; mat?: string;
+  /** Receipts.Allotment — the allotment (investor × farm LLP) this receipt belongs to (D70, M10-S07).
+   *  Absent on the prototype's receipts: they belong to the investor's only allotment. */
+  Allotment?: string;
 };
 export type ImDocState = "signed" | "awaiting" | "issued" | "blocked";
 export type ImDoc = {
@@ -110,12 +120,25 @@ export type ImData = {
   UPD: ImUpdate[];
   LOG: ImLogEntry[];
   APP: Record<string, ImApp>;
+  /* ---- later owner decisions (D70, D82, D93 — M10-S07…S23, M11-S01/S02, M09-S09): see ./money-types ---- */
+  LLP?: ImLlp[];
+  ALLOT?: ImAllot[];
+  PAYOUT?: ImPayout[];
+  HOLDING?: ImHolding[];
+  ARLTXN?: ImArlTxn[];
+  ACCESS?: Record<string, ImAccess>;
+  TESTLINK?: ImTestLink[];
+  /* ---- D70–D72 (M12-S02, M12-S05, M12-S09): see ./paper2-types ---- */
+  UPLOADS?: ImUpload[];
+  SIGN?: Record<string, ImSign>;
+  EMAILS?: RecEmail[];
   TSEQ: number; DSEQ: number; KSEQ: number; FSEQ: number; USEQ: number;
 };
 
 /* ---- UI ---- */
 export type ImView = "dash" | "inv" | "farms" | "txn" | "docs" | "tkt" | "upd" | "ins" | "sys" | "act" | "team";
-export type ImDrawerKey = "kam" | "talk" | "claim" | "pay" | "send" | "verify" | "kyc" | "tkt" | "upd" | "field" | "details";
+export type ImDrawerKey = "kam" | "talk" | "claim" | "pay" | "send" | "verify" | "kyc" | "tkt" | "upd" | "field" | "details"
+  | ImMoneyDrawerKey;
 export type ImDrafts = {
   PUTR: string; DREF: string; DTPL: string | null; DSIG: string; PKIND: "advance" | "balance";
   PMODE: string; DET: Partial<Record<"n" | "ph" | "em" | "city" | "addr" | "nominee", string>>;
@@ -143,6 +166,8 @@ export type ImUi = {
   NOTE: ImNote | null;
   /** the write a NOTE of kind "ask" is waiting on; replayed by {type:"confirmYes"} */
   PENDING: ImAction | null;
+  /** the money screens' small form and tab state (M10-S20…S23, M09-S09), key → value */
+  MX?: Record<string, string>;
 };
 export type ImState = { data: ImData; ui: ImUi };
 /** What a selector reads. `ImState` satisfies it. */
@@ -158,7 +183,9 @@ export type ImQ =
   | { inv: ImInvestor; kind: "send" | "verify"; r: ImRound; t: string; urg: ImUrg }
   | { inv: ImInvestor; kind: "kyc" | "fema" | "nokam" | "intro"; t: string; urg: ImUrg }
   | { inv: ImInvestor; kind: "hold" | "due"; days: number; t: string; urg: ImUrg }
-  | { inv: ImInvestor; kind: "claim"; n: ImInbox; t: string; urg: ImUrg };
+  | { inv: ImInvestor; kind: "claim"; n: ImInbox; t: string; urg: ImUrg }
+  /* M12-S05: the investor declined a Zoho Sign request */
+  | { inv: ImInvestor; kind: "declined"; d: ImDoc; t: string; urg: ImUrg };
 
 /* ---- actions: named after the prototype's mutators ---- */
 export type ImAction =
@@ -169,7 +196,7 @@ export type ImAction =
   | { type: "logField"; blk: string; st: string; head: string; d: string }
   | { type: "saveDetails"; id: string }
   | { type: "setMark"; id: string; to: ImMark }
-  | { type: "recordPay"; id: string; kind: "advance" | "balance"; mode?: string; utr?: string; claimId?: string }
+  | { type: "recordPay"; id: string; kind: "advance" | "balance"; mode?: string; utr?: string; claimId?: string; allot?: string }
   | { type: "confirmClaim"; nid: string }
   | { type: "rejectClaim"; nid: string; why?: string }
   | { type: "matchReceipt"; tid: string }
@@ -197,6 +224,10 @@ export type ImAction =
   | { type: "setSel"; id: string | null }
   | { type: "setDraft"; patch: Partial<ImDrafts> }
   | { type: "setFilter"; patch: Partial<Pick<ImUi, "IQ" | "IFILT" | "TFILT" | "KFILT" | "LOGWHO" | "LOGKIND">> }
+  /* later owner decisions (money-types.ts) */
+  | ImMoneyAction
   /* the page note (the prototype's alert/confirm) */
   | { type: "confirmYes" }
-  | { type: "noteClose" };
+  | { type: "noteClose" }
+  /* uploads, signature reminders and recalls (M12-S02, M12-S05) — paper2-types.ts */
+  | Paper2Action;

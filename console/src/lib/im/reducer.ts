@@ -18,6 +18,9 @@ import {
   allotGate, holdBlockGate, lapseGate, logContactGate, matchGate, recordPayGate, sendDocGate, setMarkGate,
 } from "./rules";
 import type { ImAction, ImApp, ImData, ImDrafts, ImInvestor, ImKind, ImState, ImUi } from "./types";
+import { allotPickGate, allotReceiptAmt, openHeld } from "./money";
+import { isMoneyAction, moneyRun } from "./money-reducer";
+import { isPaper2, paper2Run } from "./paper2-reducer";
 
 /* ---- the blank UI (the prototype's `let` initialisers) ---- */
 export function initialImUi(): ImUi {
@@ -109,19 +112,22 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
   const setDraft = (p: Partial<ImDrafts>) => { u.drafts = { ...u.drafts, ...structuredClone(p) }; };
 
   /* ---- writes that other writes call ---- */
-  function recordPay(id: string, kind: "advance" | "balance", mode?: string, utr?: string, claimId?: string) {
+  function recordPay(id: string, kind: "advance" | "balance", mode?: string, utr?: string, claimId?: string, allot?: string) {
     const g = recordPayGate(W, WHO, id, kind);
     if (refuse(g) || !g.ok) return;
-    const x = Ix(id)!, amt = g.amt!;
+    if (refuse(allotPickGate(W, WHO, id, allot, kind))) return;     /* M10-S07: one allotment per receipt */
+    const x = Ix(id)!, amt = allotReceiptAmt(W, WHO, id, allot, kind) ?? g.amt!;   /* several farms: this farm's share */
     const ref = (utr || "").trim().toUpperCase() || "—";
     d.TXN.unshift({ id: "T-" + String(++d.TSEQ).padStart(4, "0"), inv: id, kind, amt, mode: mode || "RTGS",
-      utr: ref, on: T(), by: WHO, rec: "matched" });
+      utr: ref, on: T(), by: WHO, rec: "matched", ...(allot ? { Allotment: allot } : {}) });
     if (kind === "advance") { x.st = "reserved"; x.hold = plusDays(d.NOW, 30); }
+    else if (dueBy(W, WHO, id) > 0) { /* another farm still owes — stays reserved (M10-S08) */ }
     else { x.st = "paid"; delete x.hold; }
     const fresh = !d.APP[id];
     const ap = appOpen(d, id, T());
-    if (fresh) log("Growize account created", id, "automatic on the confirmed receipt · welcome sent "
-      + "by email · tentative until the balance lands", "money");
+    if (fresh) openHeld(d, id);                                    /* D93: it opens On hold, no email */
+    if (fresh) log("Growize account created", id, "automatic on the confirmed receipt · on hold — data synced, "
+      + "sign-in locked, no email sent · tentative until the balance lands", "money");
     if (dueBy(W, WHO, id) <= 0 && ap.mark !== "permanent") {
       ap.hist.unshift({ to: ap.mark, from: ap.markAt, until: T(), by: ap.markBy });
       ap.mark = "permanent"; ap.markAt = T(); ap.markBy = WHO;
@@ -143,6 +149,9 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
     const Tr = tierOf(x)!;
     log("Under account management", x.id, Tr.t + " — " + Tr.t2, "care");
   }
+
+  if (isPaper2(a)) return paper2Run(W, WHO, a, { T, log, alert, confirm });   /* M12-S02, M12-S05 */
+  if (isMoneyAction(a)) { moneyRun(W, WHO, a, { T, alert, confirm, log }); return W; }
 
   switch (a.type) {
     /* ---------------- identity ---------------- */
@@ -236,7 +245,7 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
         a.to === "permanent" ? "the holding is settled" : "outstanding again — " + inr(dueBy(W, WHO, a.id)), "money");
       break;
     }
-    case "recordPay": recordPay(a.id, a.kind, a.mode, a.utr, a.claimId); break;
+    case "recordPay": recordPay(a.id, a.kind, a.mode, a.utr, a.claimId, a.allot); break;
     case "confirmClaim": {
       if (!may(W, WHO, "pay")) break;
       const n = d.INBOX.find(x => x.id === a.nid); if (!n || !nOpen(W, n)) break;
@@ -262,6 +271,10 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
       if (refuse(matchGate(W, WHO, t)) || !t) break;
       t.rec = "matched"; t.mby = WHO; t.mat = T();
       log("Matched a receipt", t.inv, t.id + " · " + t.kind + " · " + inr(t.amt), "money");
+      if (!d.APP[t.inv] && t.kind !== "refund" && t.kind !== "forfeit") {   /* the first confirmed money opens the account, On hold (D10, D93) */
+        appOpen(d, t.inv, T()); openHeld(d, t.inv);
+        log("Growize account created", t.inv, "on the first matched receipt · on hold — data synced, sign-in locked, no email sent", "money");
+      }
       break;
     }
     case "lapseHold": {

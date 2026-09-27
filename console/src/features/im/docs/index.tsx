@@ -4,13 +4,16 @@
 
 import { ago, day6, I, may, pageReadable, readBook, safeNote, secOf, SIGS, TPL } from "@/lib/im";
 import { DocTag, ImPname, ImSecBar, type ImPageProps, type ImSec } from "../common";
+import { SignCell } from "../paper2/SignCell";
+import { UploadList, UploadPanel } from "../paper2/Upload";
 
 export function ImDocs({ s, me, dispatch }: ImPageProps) {
   if (!pageReadable(s, me, "docs")) return null;
   const book = s.data.DOCS.filter(d => I(s, me, d.inv));
   const SECS: ImSec[] = [{ k: "out", t: "Out for signature", n: book.filter(d => d.state === "awaiting").length, warn: true },
     { k: "all", t: "Everything on file", n: book.length },
-    { k: "send", t: "Send one" }];
+    { k: "send", t: "Send one" },
+    { k: "up", t: "Upload one" }];   /* M12-S02 */
   const S = secOf(s.ui.SEC, "docs", SECS);
   const rows = S === "out" ? book.filter(d => d.state === "awaiting") : book;
   return (
@@ -23,7 +26,9 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
         from the moment it exists.</div>
       <ImSecBar s={s} dispatch={dispatch} v="docs" list={SECS} />
       <div className="secw">
-        {S === "send" ? <SendPanel s={s} me={me} dispatch={dispatch} /> : <div className="card fill"><div className="tw"><table>
+        {S === "send" ? <SendPanel s={s} me={me} dispatch={dispatch} />
+          : S === "up" ? <><UploadPanel s={s} me={me} dispatch={dispatch} /><div style={{ marginTop: 12 }}><UploadList s={s} me={me} /></div></>
+          : <div className="card fill"><div className="tw"><table>
           <thead><tr><th>Document</th><th>Investor</th><th>Sent</th><th>Signing</th><th>State</th>
             <th>Reference</th><th></th></tr></thead>
           <tbody>{rows.length ? rows.map(d => {
@@ -41,7 +46,8 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
                 <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state === "awaiting"
                   ? <button className="chip" onClick={e => { e.stopPropagation();
                     dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } }); }}>Verify</button>
-                  : d.state === "blocked" ? <span className="sm">{safeNote(s, me, d.why)}</span> : null}</td></tr>
+                  : d.state === "blocked" ? <span className="sm">{safeNote(s, me, d.why)}</span> : null}
+                  <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td></tr>
             );
           }) : <tr><td colSpan={7}><div className="empty">Nothing out for signature.</div></td></tr>}
           </tbody></table></div></div>}
