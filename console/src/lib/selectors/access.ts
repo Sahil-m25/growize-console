@@ -17,7 +17,7 @@
    ========================================================================================= */
 
 import {
-  PEOPLE as _PEOPLE_UNUSED, SEATSCREENS, SEATCAPS, PAGECAPS, NAV, IR, SEAT, TEAMNAME,
+  SEATSCREENS, SEATCAPS, PAGECAPS, NAV, IR, SEAT, TEAMNAME,
 } from "@/domain";
 import type { Person, PersonKey, SeatKey, NavKey, Lead, TempGrant, TempStateRead } from "@/domain";
 import { accessDay, dayOf } from "@/lib/format";
@@ -29,10 +29,6 @@ import { custodian, inBook, inBookOf, lost, openable } from "./leads";
 export type NavItem = (typeof NAV)[number];
 
 type People = Record<PersonKey, Person>;
-
-/* `_PEOPLE_UNUSED` is imported only so a mis-spelled @/domain export fails here loudly rather
-   than silently in a page. It is never read. */
-void _PEOPLE_UNUSED;
 
 /* ---- who somebody is ------------------------------------------------------------------------ */
 
@@ -66,7 +62,7 @@ const seatOf = (PEOPLE: People, k: PersonKey | null | undefined): SeatKey | unde
 
 export const consoleAccount = (PEOPLE: People, k: PersonKey): boolean => {
   const p = PEOPLE[k], seat = seatOf(PEOPLE, k);
-  return !!p?.on && !p.ext && !!seat && !["mkt", "fin"].includes(seat)
+  return !!p?.on && !p.ext && !!seat && !["mkt", "fin", "am"].includes(seat)
     && !!(SEATSCREENS as Record<string, unknown>)[seat];
 };
 

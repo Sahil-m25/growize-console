@@ -49,12 +49,12 @@ export function EventsPage() {
   const router = useRouter();
   const view = uiEventsView(state.ui);
   const setView = (v: "upcoming" | "completed") => dispatch({ type: "setUi", patch: { EVENTVIEW: v } });
-  const openAdd = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: null, seed: { EVD: evDraft(null) } });
+  const openAdd = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: null, seed: { EVD: evDraft(null, state.NOW.getFullYear()) } });
 
   const need = perEventNeed(state.PLAN);
   const ran = state.EVENTS.filter((e) => e.state === "done");
   const planned = [...state.EVENTS.filter((e) => e.state === "planned")]
-    .sort((a, b) => (evDateRange(a.date).from || "9999").localeCompare(evDateRange(b.date).from || "9999"));
+    .sort((a, b) => (evDateRange(a.date, state.NOW.getFullYear()).from || "9999").localeCompare(evDateRange(b.date, state.NOW.getFullYear()).from || "9999"));
   /* short — the shortfall the plan's budget carries and the diary does not. eventCount() is the
      same divisor the Plan uses, so moving the event share moves this without re-typing it. */
   const short = Math.max(0, eventCount(state.PLAN) - state.EVENTS.length);
@@ -164,7 +164,7 @@ export function EventsPage() {
               </div>
               <div className="rd-agenda-list">
                 {planned.length ? planned.map((e) => {
-                  const date = evISODate(evDateRange(e.date).from);
+                  const date = evISODate(evDateRange(e.date, state.NOW.getFullYear()).from);
                   return (
                     <button key={e.id} type="button" className="rd-agenda-row" onClick={() => go(e.id)}
                       aria-label={`Open ${e.n}`}>

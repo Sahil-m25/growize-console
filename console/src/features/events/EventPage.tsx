@@ -66,7 +66,7 @@ export function EventPage({ id }: { id: string }) {
   const max = Math.max(1, st.captured);
   const canEdit = may(state, "events", "edit");
   const canCapture = may(state, "add", "capture");
-  const openEditor = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: e.id, seed: { EVD: evDraft(e) } });
+  const openEditor = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: e.id, seed: { EVD: evDraft(e, state.NOW.getFullYear()) } });
   /* evIRs(e) — the staff on this event who still carry a book. 03-app.js ~3789. */
   const evIRs = e.staff.filter((k) => assignees(state).includes(k));
 

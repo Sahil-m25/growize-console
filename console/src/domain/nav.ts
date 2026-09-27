@@ -48,7 +48,9 @@ export const SEATSCREENS: Record<SeatKey, ScreenKey[]> = {
   ops :["today","leads","updates","add","activity","teamscope","people","goals","events","pay","docs","xfer","numbers","system","me"],
   corp:["today","leads","updates","add","activity","teamscope","people","goals","events","pay","docs","xfer","numbers","system","me"],
   bu  :["today","leads","updates","add","activity","teamscope","people","goals","events","pay","docs","xfer","numbers","me"],
-  mkt :["updates","add","events","goals","numbers","me"]
+  mkt :["updates","add","events","goals","numbers","me"],
+  /* Account Management works on the Investors pages only (merged prototype: `am:[]`, plus `me`) */
+  am  :["me"]
 };
 
 /** What each screen can be allowed to do. A seat is a preset over this grid, not a separate concept. */
@@ -136,5 +138,6 @@ export const SEATCAPS: Record<SeatKey, Partial<Record<ScreenKey, Cap[]>>> = {
         xfer:["view"], numbers:["view"], system:["view"], me:["view"]},
   bu  :{today:["view"], leads:["view"], updates:["view"], add:["view"], activity:["view"],
         people:["view"], goals:["view","edit","target"], events:["view"], pay:[],
-        docs:[], xfer:["view"], numbers:["view"], me:["view"]}
+        docs:[], xfer:["view"], numbers:["view"], me:["view"]},
+  am  :{me:["view"]}
 };

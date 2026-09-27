@@ -4,15 +4,15 @@
    THE STORE — the prototype's global mutable object graph, plus draw(), expressed as one React
    context and one reducer.
 
-   The prototype is `let WHO = "rohit"` and eighty free functions that mutate a global and call
+   The prototype is a set of global records and eighty free functions that mutate them and call
    draw(). Here: one immutable state object, one reducer whose cases are named after those very
-   mutators, and a provider mounted once in app/layout.tsx. Nothing is persisted — this renders
-   inside a preview that does not keep localStorage reliably, and a demo that remembers half of a
-   previous session is worse than one that does not remember at all.
+   mutators, and a provider mounted once in app/layout.tsx. Nothing is persisted in the browser.
 
-   The clock is frozen. NOW and TODAY come from the prototype's own constants (28 Aug 2026) and
-   never from new Date() at render time: the wall clock would differ between the server render and
-   the client hydration, and every dated assertion in the fixtures is written against 28 Aug 2026.
+   The records are not in this file. They arrive through the one data interface (@/lib/data):
+   the provider hydrates from GET /api/data — the empty book by default, the demo book only in
+   FIXTURE_MODE=local — and nobody is signed in until the session says so (GET /api/session) or a
+   person is pressed on the sign-in screen. The clock comes with the data, as Kolkata wall time,
+   and is never read from new Date() at render time.
    ============================================================================================== */
 
 import {
@@ -25,40 +25,15 @@ import {
   type ReactNode,
 } from "react";
 
-import {
-  ACCT as ACCT0,
-  AVAIL as AVAIL0,
-  CALLS as CALLS0,
-  CLAIM as CLAIM0,
-  CLAIMARCHIVE as CLAIMARCHIVE0,
-  COVER as COVER0,
-  DOCS as DOCS0,
-  EVENTS as EVENTS0,
-  EXT as EXT0,
-  GOALS as GOALS0,
-  GRANT as GRANT0,
-  INTERACTIONS as INTERACTIONS0,
-  INV as INV0,
-  LEADS as LEADS0,
-  LOG as LOG0,
-  NOTES as NOTES0,
-  NOW as NOW0,
-  PACK as PACK0,
-  PACKAT as PACKAT0,
-  PAPER as PAPER0,
-  PAY as PAY0,
-  PEOPLE as PEOPLE0,
-  PLAN as PLAN0,
-  RECOV as RECOV0,
-  REQ as REQ0,
-  SENT as SENT0,
-  SHEET as SHEET0,
-  SIGNINS,
-  seedBook,
-  TEMP as TEMP0,
-  TODAY as TODAY0,
-  XFER as XFER0,
-} from "@/domain";
+import { GOALS as GOALS0 } from "@/domain";
+import type { Dataset } from "@/lib/data/types";
+import { clockDay, kolkataNow, reviveClock } from "@/lib/data/clock";
+import { emptyDataset } from "@/lib/data/empty";
+import { signInAdmits } from "@/lib/data/admission";
+import { SIGNOUTMSG, type SignOutWhy } from "@/domain";
+import type { ImData } from "@/lib/im";
+import type { DataPayload } from "@/lib/data/types";
+import type { Session } from "@/lib/data/session";
 
 /* The selectors are the prototype's pure functions under their prototype names, taking the read
    context as their first argument. That context is this state — the one adapter is useCtx() below,
@@ -67,7 +42,7 @@ import { accountAllowed, active, assignees, canAssign, canClaim, canOpenDrawer a
 import type { Ctx as SelectorCtx } from "@/lib/selectors";
 import { accessDay, agoStr, dISOtoDisp, dOf, iso, MON, maskRef, nowT, pinAccessDate, stamp, whenT } from "@/lib/format";
 import { LADDER, ST, TOUCHCHANNELS } from "@/domain";
-import { evDateText, evDraft, evGaps, evNextId, uiEVD } from "@/features/events/eventDraft";
+import { evDateText, evGaps, evNextId, uiEVD } from "@/features/events/eventDraft";
 
 import type {
   CallRec,
@@ -234,6 +209,17 @@ export interface UiState {
 /* ---- the state ------------------------------------------------------------------------------ */
 
 export type ConsoleState = {
+  /* THE SESSION (M03-S01-T04). `authed` false = the sign-in screen is what renders, at every
+     route. WHO is "" while nobody is signed in — the only default person there is. */
+  authed: boolean;
+  /* why they are looking at the sign-in screen, if not by choice — a key of SIGNOUTMSG */
+  SIGNOUT: SignOutWhy | null;
+  /* the data half has arrived from GET /api/data at least once */
+  loaded: boolean;
+  /* fixture mode (FIXTURE_MODE=local) — the demo sign-in list and the fixture poll */
+  FIXTURES: boolean;
+  /* the applied-fixture version this state was hydrated from */
+  DATAVER: number;
   WHO: PersonKey; // the signed-in person
   ROLE: SeatKey; // roleOf(WHO), derived, kept for the prototype's reads
   VIEW: NavKey; // current page key — the router is the source of truth, mirrored here
@@ -257,30 +243,30 @@ export type ConsoleState = {
   INV: Inventory;
   TEMP: TempGrant[];
   TEMPON: string | null;
-  CAPS: typeof GRANT0; // the prototype's GRANT — per-person capability overrides
+  CAPS: Dataset["GRANT"]; // the prototype's GRANT — per-person capability overrides
   COVER: Record<PersonKey, Cover>;
   /* the rest of the prototype's record globals, so a feature slice has a typed home for the map
      it writes rather than a corner of `ui`. Each is seeded from @/domain and copied, never shared
      with the constant it came from. */
-  AVAIL: typeof AVAIL0;
-  PAY: typeof PAY0;
-  ACCT: typeof ACCT0;
-  CLAIM: typeof CLAIM0;
+  AVAIL: Dataset["AVAIL"];
+  PAY: Dataset["PAY"];
+  ACCT: Dataset["ACCT"];
+  CLAIM: Dataset["CLAIM"];
   /* CLAIMARCHIVE — 03-app.js:5406. startPaymentReport() archives a confirmed claim here before
      clearing CLAIM[id] for a fresh draft; claimArchiveBlock() (selectors: claimArchiveOf) reads it
      back. */
-  CLAIMARCHIVE: typeof CLAIMARCHIVE0;
-  REQ: typeof REQ0;
-  EXT: typeof EXT0;
-  XFER: typeof XFER0;
+  CLAIMARCHIVE: Dataset["CLAIMARCHIVE"];
+  REQ: Dataset["REQ"];
+  EXT: Dataset["EXT"];
+  XFER: Dataset["XFER"];
   INVESTORCOPY: Record<LeadId, import("@/domain").InvestorCopy>;
-  SENT: typeof SENT0;
-  NOTES: typeof NOTES0;
-  CALLS: typeof CALLS0;
-  PACK: typeof PACK0;
-  PACKAT: typeof PACKAT0;
-  RECOV: typeof RECOV0;
-  SHEET: typeof SHEET0;
+  SENT: Dataset["SENT"];
+  NOTES: Dataset["NOTES"];
+  CALLS: Dataset["CALLS"];
+  PACK: Dataset["PACK"];
+  PACKAT: Dataset["PACKAT"];
+  RECOV: Dataset["RECOV"];
+  SHEET: Dataset["SHEET"];
   /* manual contact history kept off-ladder: failed call/visit attempts, the CALLS fixture folded
      in at load, and every follow-up-drawer recording since (03-app.js:5985). */
   INTERACTIONS: Record<LeadId, InteractionRec[]>;
@@ -301,6 +287,17 @@ export type ConsoleState = {
   DRW: DrawerState | null;
   /* the top bar's Undo offer — null when there is nothing freshly one-click-written to take back */
   TJUST: TJust | null;
+  /* who the sign-in screen may offer, in the record's order */
+  SIGNINS: PersonKey[];
+  /* the last ARL ID minted — 03-app.js:1938 */
+  ARLSEQ: number;
+  /* the event sheet's sample rows */
+  SHEETNAMES: string[];
+  SHEETNOTES: string[];
+  /* the Finance projection the lead side reads (Investors pages → lead) */
+  FINMIRROR: Dataset["FINMIRROR"];
+  /* the Investors side's records — read by imHas/imReach/imTitle; its screens are a later story */
+  IM: ImData;
   ui: UiState;
 };
 
@@ -313,6 +310,12 @@ export type ConsoleState = {
 export type Action =
   /* ---- shell: implemented here ---- */
   | { type: "go"; v: NavKey; id?: LeadId; ev?: string }
+  /* the data half arrives (GET /api/data) or changes under an open page (a fixture): replace
+     every record slice, keep who is signed in, the route, the open drawer and the drafts */
+  | { type: "hydrate"; ds: Dataset; version: number; fixtures: boolean }
+  /* signIn(k)/signOut(why) — ir-merged.js 11072-11075 */
+  | { type: "signIn"; k: PersonKey }
+  | { type: "signOut"; why?: SignOutWhy }
   | { type: "setPerson"; k: PersonKey }
   | { type: "setRole"; seat: SeatKey }
   | { type: "setScope"; view: "today" | "leads" | "activity"; to: Scope }
@@ -498,65 +501,100 @@ export type Action =
 
 /* ---- initial state --------------------------------------------------------------------------- */
 
-const WHO0: PersonKey = "rohit" as PersonKey; // 03-app.js:935 — `let WHO="rohit"`
-
 /* the prototype's `ROLE=roleOf(k)`: the seat is read off the person, never set beside them */
 const seatOf = (people: Record<PersonKey, Person>, k: PersonKey): SeatKey =>
-  people[k].seat as SeatKey;
+  people[k]?.seat as SeatKey;
 
-/* The paper, the accounts and the transfers the fixture implies — derived once, at module
-   load, from the leads' own ladders (03-app.js:2009). Deriving beats typing them: a fixture
-   that stated the paper separately could disagree with the rung it sits on. */
-const BOOK = seedBook();
+/* the ui bag a fresh session starts with — every draft belongs to its author */
+const freshUi = (THEME: Theme | null, RAILMIN: boolean): UiState => ({
+  THEME,
+  RAILMIN,
+  HQ: "",
+  AVQ: "",
+  ABWHY: null,
+  ABFROM: null,
+  ABTO: null,
+  LQ: "",
+  LFILT: null,
+  LSRC: null,
+  LSTAGE: null,
+  LSTAGEMODE: "at",
+  LOWN: null,
+  LQUIET: null,
+  NOTICE: null,
+});
 
-export function initialState(): ConsoleState {
-  const PEOPLE = { ...PEOPLE0 } as Record<PersonKey, Person>;
+/* THE RECORD SLICES OF A DATASET — every collection copied, the clock revived, and the dates the
+   fixture wrote as "29 Aug" pinned to the book's own year (the cover and grant windows). Nothing
+   else in the state comes from the dataset. */
+export function dataSlices(ds: Dataset) {
+  const NOW = reviveClock(ds.NOW), TODAY = reviveClock(ds.TODAY);
   const pinCover = (c: Cover): Cover => {
-    const from = c.from ? pinAccessDate(c.from, NOW0) : undefined;
-    return { ...c, ...(from ? { from } : {}), to: pinAccessDate(c.to, accessDay(from, NOW0) || NOW0) };
+    const from = c.from ? pinAccessDate(c.from, NOW) : undefined;
+    return { ...c, ...(from ? { from } : {}), to: pinAccessDate(c.to, accessDay(from, NOW) || NOW) };
   };
-  return projectInvestorCopies({
-    WHO: WHO0,
-    ROLE: seatOf(PEOPLE, WHO0),
-    VIEW: "today" as NavKey,
-    LEAD: "L3" as LeadId, // 03-app.js:936
-    EVID: "E-04",
-    EVKEY: EVENTS0.length,
-    NOW: NOW0,
-    TODAY: TODAY0,
-    LEADS: LEADS0.map(l => l.cov ? { ...l, cov: pinCover(l.cov) } : l) as Lead[],
-    PEOPLE,
-    PLAN: PLAN0 as Plan,
-    GOALS: GOALS0,
-    EVENTS: [...EVENTS0] as EventRec[],
-    LOG: [...LOG0] as LogEntry[],
-    PAPER: BOOK.PAPER, // 03-app.js:2009 seedPaper() — derived from the ladder, not typed twice
-    DOCS: BOOK.DOCS as DocRec[],
-    INV: { ...INV0 } as Inventory,
-    TEMP: TEMP0.map(g => {
-      const from = pinAccessDate(g.from, NOW0);
-      return { ...g, from, until: pinAccessDate(g.until, accessDay(from, NOW0) || NOW0) };
+  const d = structuredClone(ds);
+  return {
+    NOW,
+    TODAY,
+    LEADS: d.LEADS.map(l => l.cov ? { ...l, cov: pinCover(l.cov) } : l) as Lead[],
+    PEOPLE: d.PEOPLE,
+    SIGNINS: d.SIGNINS,
+    PLAN: d.PLAN as Plan,
+    EVENTS: d.EVENTS as EventRec[],
+    LOG: d.LOG as LogEntry[],
+    PAPER: d.PAPER as Record<LeadId, PaperRow>,
+    DOCS: d.DOCS as DocRec[],
+    INV: d.INV as Inventory,
+    TEMP: d.TEMP.map(g => {
+      const from = pinAccessDate(g.from, NOW);
+      return { ...g, from, until: pinAccessDate(g.until, accessDay(from, NOW) || NOW) };
     }) as TempGrant[],
+    CAPS: d.GRANT,
+    COVER: Object.fromEntries(Object.entries(d.COVER).map(([k, c]) => [k, pinCover(c)])) as Record<PersonKey, Cover>,
+    AVAIL: d.AVAIL,
+    PAY: d.PAY,
+    ACCT: d.ACCT,
+    CLAIM: d.CLAIM,
+    CLAIMARCHIVE: d.CLAIMARCHIVE,
+    REQ: d.REQ,
+    EXT: d.EXT,
+    XFER: d.XFER,
+    ARLSEQ: d.ARLSEQ,
+    SENT: d.SENT,
+    NOTES: d.NOTES,
+    CALLS: d.CALLS,
+    PACK: d.PACK,
+    PACKAT: d.PACKAT,
+    RECOV: d.RECOV,
+    SHEET: d.SHEET,
+    SHEETNAMES: d.SHEETNAMES,
+    SHEETNOTES: d.SHEETNOTES,
+    INTERACTIONS: d.INTERACTIONS,
+    FINMIRROR: d.FINMIRROR,
+    IM: d.im,
+  };
+}
+
+/* Nobody is signed in and nothing is loaded: the empty book on today's Kolkata date. The records
+   arrive from GET /api/data (ConsoleProvider); the person arrives from the session. */
+export function initialState(ds: Dataset = emptyDataset(clockDay(kolkataNow()))): ConsoleState {
+  return projectInvestorCopies({
+    authed: false,
+    SIGNOUT: null,
+    loaded: false,
+    FIXTURES: false,
+    DATAVER: 0,
+    WHO: "" as PersonKey,
+    ROLE: "" as SeatKey,
+    VIEW: "today" as NavKey,
+    LEAD: ds.LEAD as LeadId, // 03-app.js:936
+    EVID: ds.EVID,
+    EVKEY: ds.EVENTS.length,
+    ...dataSlices(ds),
+    GOALS: GOALS0,
     TEMPON: null,
-    CAPS: { ...GRANT0 }, // 03-app.js:334 — GRANT, starts empty
-    COVER: Object.fromEntries(Object.entries(COVER0).map(([k, c]) => [k, pinCover(c)])) as Record<PersonKey, Cover>,
-    AVAIL: { ...AVAIL0 },
-    PAY: { ...PAY0 },
-    ACCT: BOOK.ACCT, // 03-app.js:2046 — every confirmed receipt has its account and its welcome
-    CLAIM: { ...CLAIM0 },
-    CLAIMARCHIVE: { ...CLAIMARCHIVE0 },
-    REQ: { ...REQ0 },
-    EXT: { ...EXT0 },
-    XFER: BOOK.XFER,
     INVESTORCOPY: {},
-    SENT: { ...SENT0 },
-    NOTES: { ...NOTES0 },
-    CALLS: { ...CALLS0 },
-    PACK: { ...PACK0 },
-    PACKAT: { ...PACKAT0 },
-    RECOV: { ...RECOV0 },
-    SHEET: { ...SHEET0 },
-    INTERACTIONS: Object.fromEntries(Object.entries(INTERACTIONS0).map(([k, v]) => [k, v.map(x => ({ ...x }))])),
     NSEEN: {},
     REFSEEN: {},
     FAILNEXT: false,
@@ -564,24 +602,59 @@ export function initialState(): ConsoleState {
     SEC: {},
     DRW: null,
     TJUST: null,
-    ui: {
-      THEME: null,
-      RAILMIN: false,
-      HQ: "",
-      AVQ: "",
-      ABWHY: null,
-      ABFROM: null,
-      ABTO: null,
-      LQ: "",
-      LFILT: null,
-      LSRC: null,
-      LSTAGE: null,
-      LSTAGEMODE: "at",
-      LOWN: null,
-      LQUIET: null,
-      NOTICE: null,
-    },
+    ui: freshUi(null, false),
   });
+}
+
+/* hydrate(ds) — the records change, the session does not. A person the new book no longer admits
+   is signed out the way the prototype's revoked door does ("Your access has been turned off."). */
+function hydrate(state: ConsoleState, a: { ds: Dataset; version: number; fixtures: boolean }): ConsoleState {
+  const first = !state.loaded;
+  const next = projectInvestorCopies({
+    ...state,
+    ...dataSlices(a.ds),
+    loaded: true,
+    FIXTURES: a.fixtures,
+    DATAVER: a.version,
+    LEAD: first ? (a.ds.LEAD as LeadId) : state.LEAD,
+    EVID: first ? a.ds.EVID : state.EVID,
+    EVKEY: Math.max(state.EVKEY, a.ds.EVENTS.length),
+    INVESTORCOPY: {},
+  });
+  if (next.authed && !signInAdmits({ PEOPLE: next.PEOPLE, GRANT: next.CAPS, im: next.IM }, next.WHO)) return signOut(next, "revoked");
+  return next.authed ? { ...next, ROLE: seatOf(next.PEOPLE, next.WHO) } : next;
+}
+
+/* endSession() — ir-merged.js:11016. Everything a seat could see or was part-way through writing
+   is theirs and dies with them; the rail comes back open; nothing names a lead to whoever is next. */
+function endSession(state: ConsoleState): ConsoleState {
+  return {
+    ...state,
+    TEMPON: null,
+    DRW: null,
+    TJUST: null,
+    SEC: {},
+    NSEEN: {},
+    REFSEEN: {},
+    FAILNEXT: false,
+    VIEW: "today" as NavKey,
+    ui: freshUi(state.ui.THEME, false),
+  };
+}
+
+/* signOut(why) — ir-merged.js:11074. A typo must not produce a silent sign-out: an unknown reason
+   reads as the person's own choice. */
+function signOut(state: ConsoleState, why?: SignOutWhy): ConsoleState {
+  return {
+    ...endSession(state),
+    authed: false,
+    WHO: "" as PersonKey,
+    ROLE: "" as SeatKey,
+    SIGNOUT: why && SIGNOUTMSG[why] ? why : "chose",
+    LEAD: "" as LeadId,
+    EVID: "",
+    SC: { today: "mine", leads: "mine", activity: "mine" },
+  };
 }
 
 /* ---- the reducer ------------------------------------------------------------------------------
@@ -650,6 +723,18 @@ function withTJust(prev: ConsoleState, next: ConsoleState, a: Action): ConsoleSt
 }
 
 export function reducer(state: ConsoleState, a: Action): ConsoleState {
+  if (a.type === "hydrate") return hydrate(state, a);
+  if (a.type === "signOut") return signOut(state, a.why);
+  /* signIn(k) — ir-merged.js:11072. Either side's admission lets them in; the lead side's own
+     landing rules (setPerson) then run as them. An Investors-only seat has no lead book to land on. */
+  if (a.type === "signIn") {
+    if (!signInAdmits({ PEOPLE: state.PEOPLE, GRANT: state.CAPS, im: state.IM }, a.k)) return state;
+    const opened: ConsoleState = {
+      ...endSession(state), authed: true, SIGNOUT: null, WHO: a.k, ROLE: seatOf(state.PEOPLE, a.k), LEAD: state.LEAD,
+    };
+    return consoleAccount(state.PEOPLE, a.k) ? reducer(opened, { type: "setPerson", k: a.k }) : opened;
+  }
+  if (!state.authed && a.type !== "setTheme") return state;
   if (!accountAllowed(state) && !["setPerson", "setRole", "setTheme"].includes(a.type)) return state;
   if (LEAD_WRITES.has(a.type) && !canOperateLeads(state)) return state;
   if (a.type.startsWith("pr")) return state; // Paper's source mirror is written only in Investor Management.
@@ -698,24 +783,8 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
         NSEEN: {},
         REFSEEN: {},
         FAILNEXT: false,
-        ui: {
-          /* Every draft belongs to its author. Optional feature fields fall back to their defaults. */
-          THEME: state.ui.THEME,
-          RAILMIN: state.ui.RAILMIN,
-          HQ: "",
-          AVQ: "",
-          ABWHY: null,
-          ABFROM: null,
-          ABTO: null,
-          LQ: "",
-          LFILT: null,
-          LSRC: null,
-          LSTAGE: null,
-          LSTAGEMODE: "at",
-          LOWN: null,
-          LQUIET: null,
-          NOTICE: null,
-        },
+        /* Every draft belongs to its author. Optional feature fields fall back to their defaults. */
+        ui: freshUi(state.ui.THEME, state.ui.RAILMIN),
       };
 
       /* A seat with no book of its own opens on the queue it actually works — decided per seat,
@@ -1266,6 +1335,51 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       if (change.kind === "completed") setLastLocalUpdate(Date.now());
     },
   }));
+  /* THE DATA HALF AND THE SESSION. Records arrive from GET /api/data (one interface, @/lib/data);
+     the person from the session cookie (GET /api/session). In fixture mode the page also polls the
+     applied-fixture version every 250 ms and re-hydrates when it moves, so a fixture the UI-case
+     runner applies after page load changes the screens under it (who is signed in, the route, the
+     open drawer and every draft are kept). */
+  useEffect(() => {
+    let dead = false, busy = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const load = async (): Promise<DataPayload | null> => {
+      const r = await fetch("/api/data", { cache: "no-store" }).catch(() => null);
+      if (!r || !r.ok || dead) return null;
+      const p = (await r.json()) as DataPayload;
+      if (dead) return null;
+      writer.apply({ type: "hydrate", ds: p.ds, version: p.version, fixtures: p.fixtures });
+      for (const x of p.actions) writer.apply(x as Action);
+      return p;
+    };
+    void (async () => {
+      const [p, sess] = await Promise.all([
+        load(),
+        fetch("/api/session", { cache: "no-store" }).then((r) => r.json() as Promise<{ session: Session | null }>).catch(() => ({ session: null })),
+      ]);
+      if (dead) return;
+      if (sess.session && !stateRef.current.authed) {
+        writer.apply({ type: "signIn", k: sess.session.who });
+        /* a session this book no longer admits is not a session */
+        if (!stateRef.current.authed) void fetch("/api/session", { method: "DELETE" }).catch(() => {});
+      }
+      if (p?.fixtures) {
+        timer = setInterval(() => {
+          if (busy) return;
+          busy = true;
+          void fetch("/api/data/version", { cache: "no-store" })
+            .then((r) => (r.ok ? (r.json() as Promise<{ version: number }>) : null))
+            .then((v) => (v && v.version !== stateRef.current.DATAVER ? load() : null))
+            .catch(() => null)
+            .finally(() => { busy = false; });
+        }, 250);
+      }
+    })();
+    return () => {
+      dead = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [writer]);
   useEffect(() => {
     const connection = () => {
       onlineRef.current = navigator.onLine;
@@ -1326,4 +1440,21 @@ export function secOf(state: ConsoleState, v: string, list: readonly { k: string
   const ok = list.map((x) => x.k);
   const cur = state.SEC[v];
   return cur !== undefined && ok.indexOf(cur) >= 0 ? cur : (ok[0] ?? "");
+}
+
+/* ---- the doors — signIn(k) / signOut(why), ir-merged.js 11072-11075 ----------------------------
+   The client keeps WHO in state the moment the person is pressed (the UI-case runner waits only a
+   few hundred milliseconds); the session cookie follows in the background. */
+export function useSession(): { signIn: (k: PersonKey) => void; signOut: (why?: SignOutWhy) => void } {
+  const { dispatch } = useConsole();
+  return useMemo(() => ({
+    signIn: (k: PersonKey) => {
+      dispatch({ type: "signIn", k });
+      void fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ who: k }) }).catch(() => {});
+    },
+    signOut: (why?: SignOutWhy) => {
+      dispatch({ type: "signOut", why });
+      void fetch("/api/session", { method: "DELETE" }).catch(() => {});
+    },
+  }), [dispatch]);
 }

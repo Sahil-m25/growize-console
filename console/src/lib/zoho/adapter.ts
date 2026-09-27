@@ -32,11 +32,12 @@
 
 import { cacheKey, createScopedCache, type AggregateValue, type CacheError, type CacheRead, type CountBucket, type ScopedCache } from "./cache";
 import type { UserCredential, ZohoClient } from "./client";
-import { NOW } from "../../domain/clock";
+/* the fixture adapter wraps the demo book, which lives outside src/ (it is never bundled for a page) */
+import { NOW } from "../../../fixtures/book/clock";
 import { LADDER, LOSTWHY, ST } from "../../domain/ladder";
-import { LEADS } from "../../domain/leads";
-import { COVER, PEOPLE } from "../../domain/people";
-import { seedBook } from "../../domain/seed";
+import { LEADS } from "../../../fixtures/book/leads";
+import { COVER, PEOPLE } from "../../../fixtures/book/people";
+import { seedBook } from "../../../fixtures/book/seed";
 import type { Channel, FcCat, Lead, LeadId, LostWhy, NextStep, PaperRow, PersonKey } from "../../domain/types";
 
 /** Opaque. Fixture: a revision counter. Live: the record's Modified_Time (sent as If-Unmodified-Since). */

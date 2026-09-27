@@ -17,6 +17,7 @@ import type {
   MoveReq, NavKey, Note, PaperRow, PayRec, Person, PersonKey, Plan, Scope, SeatKey, Sendable,
   TempGrant, XferRow, InvestorCopy,
 } from "@/domain";
+import type { FinanceMirror } from "@/lib/data/types";
 
 /* ---- the context every non-trivial selector takes ------------------------------------------
    The REQUIRED half is exactly `ConsoleState` as PORT-GUIDE declares it, so a component can write
@@ -58,6 +59,7 @@ export type Ctx = {
   REQ?: Record<LeadId, MoveReq>;            /* reassignment asks waiting on a decision */
   XFER?: XferRow[];                         /* legacy demo projections */
   INVESTORCOPY?: Record<LeadId, InvestorCopy>;
+  FINMIRROR?: FinanceMirror;             /* the Finance projection the lead side reads (Dataset.FINMIRROR) */
   SENT?: Record<LeadId, Partial<Record<Sendable, string>>>;   /* which material went out, and when */
   NOTES?: Record<LeadId, Note[]>;
   CALLS?: Record<LeadId, CallRec>;

@@ -18,7 +18,7 @@
  * of documents), so the store seeds itself from `seedBook()` and every call is independent.
  */
 
-import { ST } from "./ladder";
+import { ST } from "../../src/domain/ladder";
 import { LEADS } from "./leads";
 import { DOCS } from "./documents";
 import { ACCT, ARLSEQ, CLAIM, PAY, XFER } from "./payments";
@@ -31,7 +31,7 @@ import type {
   PersonKey,
   Stamp,
   XferRow,
-} from "./types";
+} from "../../src/domain/types";
 
 /** Finance is a name on every receipt and every signature, and never a login. See `people.ts`. */
 const FIN: PersonKey = "harsha";

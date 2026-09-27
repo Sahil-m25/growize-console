@@ -1,5 +1,4 @@
-import demo from "@/domain/finance-mirror-demo.json";
-import { XFER as XFER0 } from "@/domain";
+import type { FinanceAccount } from "@/lib/data/types";
 import type { Lead, PayRec } from "@/domain";
 import { maskRef } from "@/lib/format";
 import type { Ctx } from "./ctx";
@@ -8,7 +7,7 @@ import { canReadFinance, financeBankReference, financeReference, roleOf, scopedF
 import { claimOf } from "./claims";
 import { payOf } from "./leads";
 
-type SourceAccount = (typeof demo.accounts)[number];
+type SourceAccount = FinanceAccount;
 export type FinancePayment = Omit<SourceAccount["payments"][number], "id" | "on" | "recordedBy" | "recordedByName" | "reconciliation"> & {
   id: string | null; on: string | null; confirmedOn: string | null; recordedBy: string | null; recordedByName: string | null; reconciliation: string | null;
 };
@@ -18,7 +17,8 @@ export type FinanceDocument = {
   signatureMethod: string | null; signatureReference: string | null; completedOn: string | null;
   verifiedBy: string | null; verifiedByName: string | null; expiresOn: string | null; reason: string | null;
 };
-const source = (l: Lead) => demo.accounts.find(a => a.leadId === l.id);
+/* the Finance projection comes with the data (Dataset.FINMIRROR), never from a bundled file */
+const accountOf = (ctx: Ctx, l: Lead) => (ctx.FINMIRROR?.accounts || []).find(a => a.leadId === l.id);
 
 /* financeNote(l,note) — ir-console-redesigned.html:4279-4285. Every reference this account could
    quote — the legacy PAY total, the claim, every receipt's own reference — is masked wherever it
@@ -36,7 +36,7 @@ function financeNote(rawRefs: (string | null | undefined)[], note: string): stri
 /** The bundled source projection is authoritative only for its explicit lead/account links. */
 export function financePaymentHistory(ctx: Ctx, l: Lead): FinancePayment[] {
   if (!canReadFinance(ctx,l,"pay")) return [];
-  const linked = source(l), legacy = ctx.PAY?.[l.id];
+  const linked = accountOf(ctx, l), legacy = ctx.PAY?.[l.id];
   const rawRows: FinancePayment[] = linked ? linked.payments.map(p=>({...p,confirmedOn:null})) :
     (legacy?.receipts || []).map(r=>({id:r.id,kind:r.kind,amount:r.amount,mode:r.mode,reference:r.ref,on:r.paidOn,
       confirmedOn:r.confirmedAt,recordedBy:r.confirmedBy,recordedByName:ctx.PEOPLE[r.confirmedBy]?.n || r.confirmedBy,
@@ -56,7 +56,7 @@ export function financePaymentHistory(ctx: Ctx, l: Lead): FinancePayment[] {
 
 export function financeDocuments(ctx: Ctx, l: Lead): FinanceDocument[] {
   if (!canReadFinance(ctx,l,"docs")) return [];
-  const linked = source(l);
+  const linked = accountOf(ctx, l);
   const rows: FinanceDocument[] = linked ? linked.documents : ctx.DOCS.filter(d => d.lead === l.id).map(d => ({
     id:d.id || null,title:d.t,class:d.cls,state:d.state,sentOn:d.sent || (d.state === "signed" ? null : d.on),sentBy:d.by || null,
     sentByName:d.by ? ctx.PEOPLE[d.by]?.n || d.by : null,signatureMethod:d.how,signatureReference:d.ref,
@@ -72,7 +72,7 @@ export function financeDocuments(ctx: Ctx, l: Lead): FinanceDocument[] {
 
 export function financePaySummary(ctx: Ctx, l: Lead): PayRec | null {
   if (!canReadFinance(ctx,l,"pay")) return null;
-  const linked = source(l);
+  const linked = accountOf(ctx, l);
   if (!linked) {
     const old = ctx.PAY?.[l.id];
     if (!old) return null;
@@ -86,10 +86,10 @@ export function financePaySummary(ctx: Ctx, l: Lead): PayRec | null {
 }
 
 export const financeAccountId = (ctx: Ctx, l: Lead): string | null =>
-  (canReadFinance(ctx,l,"pay") || canReadFinance(ctx,l,"docs")) ? source(l)?.accountId || ctx.ACCT?.[l.id]?.code || null : null;
+  (canReadFinance(ctx,l,"pay") || canReadFinance(ctx,l,"docs")) ? accountOf(ctx, l)?.accountId || ctx.ACCT?.[l.id]?.code || null : null;
 
 export const hasFinanceSource = (ctx: Ctx, l: Lead): boolean =>
-  (canReadFinance(ctx,l,"pay") || canReadFinance(ctx,l,"docs")) && !!source(l);
+  (canReadFinance(ctx,l,"pay") || canReadFinance(ctx,l,"docs")) && !!accountOf(ctx, l);
 
 /* ===== A REFERENCE, COVERED BY DEFAULT ========================================================
    Rule 7: identity is not readable by opening a record. A bank reference prints its last four
@@ -105,12 +105,12 @@ export function refAllowed(ctx: Ctx, k: string): boolean {
   const i = k.indexOf(":");
   if (i < 0) return false;
   const src = k.slice(0, i), id = k.slice(i + 1);
-  if (src === "xfer") return (ctx.XFER || XFER0).some(x => x.lead === id);
+  if (src === "xfer") return (ctx.XFER || []).some(x => x.lead === id);
   if (src !== "pay" && src !== "claim") return false;
   const lead = ctx.LEADS.find(l => l.id === id);
   /* an explicit Finance source link is itself a receipt to ask about, same as `financePaySummary`
      preferring it over whatever a stale `ctx.PAY` entry says (Explicit Finance source links win). */
-  return canReadFinance(ctx, lead, "pay") && !!(src === "claim" ? claimOf(ctx, id) : (ctx.PAY?.[id] || (lead && source(lead))));
+  return canReadFinance(ctx, lead, "pay") && !!(src === "claim" ? claimOf(ctx, id) : (ctx.PAY?.[id] || (lead && accountOf(ctx, lead))));
 }
 
 /** Whether THIS session has already asked and it is still this seat's own reading — `REFSEEN` is
@@ -124,9 +124,9 @@ export function refOf(ctx: Ctx, k: string): string | undefined {
   if (!refAllowed(ctx, k)) return undefined;
   const i = k.indexOf(":"), src = k.slice(0, i), id = k.slice(i + 1);
   const lead = src === "pay" ? ctx.LEADS.find(l => l.id === id) : undefined;
-  const linked = lead && source(lead);
+  const linked = lead && accountOf(ctx, lead);
   const value = src === "claim" ? claimOf(ctx, id)?.ref
-    : src === "xfer" ? (ctx.XFER || XFER0).find(x => x.lead === id)?.utr
+    : src === "xfer" ? (ctx.XFER || []).find(x => x.lead === id)?.utr
     /* the explicit Finance source link, when there is one, wins over a stale `ctx.PAY` entry —
        the raw reference off the mirror's own last payment, unmasked here same as the legacy read,
        so the one `maskRef`/reveal step below is the only place either is ever covered. */

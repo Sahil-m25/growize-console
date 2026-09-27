@@ -6,7 +6,7 @@
 
 import type { Metadata, Viewport } from "next";
 import { ConsoleProvider } from "@/lib/store";
-import { Shell } from "@/components/shell/Shell";
+import { Door } from "@/components/shell/SignIn";
 import "./console.css";
 import { ReticleDev } from "./reticle-dev";
 
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Reticle: dev-only runtime checks for the agent (tools/PLUGINS.md) */}
         {process.env.NODE_ENV === "development" ? <ReticleDev /> : null}
         <ConsoleProvider>
-          <Shell>{children}</Shell>
+          <Door>{children}</Door>
         </ConsoleProvider>
       </body>
     </html>

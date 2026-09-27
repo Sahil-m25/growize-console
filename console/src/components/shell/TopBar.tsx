@@ -133,7 +133,7 @@ export function TopBar() {
         <span className={`save-dot ${saveTone}`} aria-hidden="true" />
         <span>
           <b>{`Browser ${browserOnline ? "online" : "offline"} · Local demo`}</b>
-          <small>{saveSummary || "Demo fixtures · no live source connected"}</small>
+          <small>{saveSummary || (state.FIXTURES ? "Demo fixtures · no live source connected" : "No live source connected")}</small>
         </span>
         {failedSaves.length > 0 ? (
           <button type="button" className="chip" onClick={() => failedSaves.forEach((s) => retrySave?.(s.key))}>

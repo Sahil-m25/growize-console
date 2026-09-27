@@ -6,7 +6,6 @@
    `markRead` — are the store's.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { AVAIL as AVAIL0, REQ as REQ0 } from "@/domain";
 import type { Absence, Cover, Lead, LeadId, LogEntry, PersonKey } from "@/domain";
 import { dAdd, dayOf, dISOtoDisp, dOf, iso } from "@/lib/format";
 import type { Ctx } from "./ctx";
@@ -28,7 +27,7 @@ export const gone = (ctx: Ctx, k: PersonKey): boolean => (ctx.PEOPLE[k] || {}).o
 
 /* the record as written, whether or not today falls inside it */
 export const absRec = (ctx: Ctx, k: PersonKey): Absence | null =>
-  (ctx.AVAIL || AVAIL0)[k] || (gone(ctx, k)
+  (ctx.AVAIL || {})[k] || (gone(ctx, k)
     ? { why: "Left the company", from: "—", to: "—", by: "—", at: "—", perm: true }
     : null);
 
@@ -200,7 +199,7 @@ export function updates(ctx: Ctx): UpdateGroup[] {
     })), "late");
   add("move", "⇄", "Waiting for you to approve a move —",
     movesWaiting(ctx).filter(l => allowed.has(l.id)).map(l => {
-      const r = (ctx.REQ || REQ0)[l.id];
+      const r = (ctx.REQ || {})[l.id];
       return {
         lead: l.id, what: "To " + P(ctx.PEOPLE, r.to).n + " · " + r.why,
         at: r.at, who: r.by, d: iso(ctx.TODAY),

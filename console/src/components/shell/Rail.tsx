@@ -167,7 +167,8 @@ export function Rail({ view }: { view: View | null }) {
          port's own "leads-db not built" note was never in the redesign; dropped rather than kept
          beside a string the prototype does show. */}
       <div className="foot" id="foot">
-        <span>{`Sample data · ${dLabel(state.NOW)}`}</span>
+        {/* the demo book is "Sample data" only in fixture mode; the product's own book is not */}
+        <span>{state.FIXTURES ? `Sample data · ${dLabel(state.NOW)}` : dLabel(state.NOW)}</span>
       </div>
     </aside>
   );

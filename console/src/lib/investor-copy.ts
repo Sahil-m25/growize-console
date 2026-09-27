@@ -1,21 +1,24 @@
-import source from "@/domain/finance-mirror-demo.json";
-import { NOW as SOURCE_DAY, UNIT } from "@/domain";
+import { UNIT } from "@/domain";
+import type { FinanceAccount } from "@/lib/data/types";
 import type { InvestorCopy, Lead } from "@/domain";
 import { accessMoment, nowT, pinAccessDate, stamp } from "./format";
 import type { ConsoleState } from "./store";
 import { canReadFinance, canViewInvestorCopy, own, roleOf } from "./selectors/access";
 import { lost, openable } from "./selectors/leads";
 
-type SourceAccount = (typeof source.accounts)[number];
+type SourceAccount = FinanceAccount;
 type SourcePayment = SourceAccount["payments"][number] & {reversed?: boolean};
-const financeActors = new Set(source.accounts.flatMap(a=>a.payments.map(p=>p.recordedBy)));
+/* the Finance projection arrives with the data (Dataset.FINMIRROR); its dates are pinned to the book's own clock */
+const sourceOf = (state: Pick<ConsoleState,"FINMIRROR">): readonly SourceAccount[] => state.FINMIRROR?.accounts || [];
+const actorsOf = (accounts: readonly SourceAccount[]) => new Set(accounts.flatMap(a=>(a?.payments || []).map(p=>p.recordedBy)));
 const required = ["Non-disclosure agreement", "Supplementary agreement"];
 export type CopyEligibility = { eligible: boolean; accountId: string | null; reason: string; receiptIds: string[]; documentIds: string[]; confirmed: number; requiredAdvance: number };
 const waiting = (reason: string, accountId: string | null = null): CopyEligibility =>
   ({eligible:false,accountId,reason,receiptIds:[],documentIds:[],confirmed:0,requiredAdvance:0});
 
 /** Reads only the trusted bundled source. UI claims, aggregates and ladder-derived paper are never evidence. */
-function copyEvidence(state: Pick<ConsoleState,"LEADS"|"NOW">, lead: Lead, accounts: readonly SourceAccount[] = source.accounts): CopyEligibility {
+function copyEvidence(state: Pick<ConsoleState,"LEADS"|"NOW"|"FINMIRROR">, lead: Lead, accounts: readonly SourceAccount[] = sourceOf(state)): CopyEligibility {
+  const financeActors = actorsOf(accounts);
   const l = state.LEADS.find(x=>x.id === lead.id);
   if (!l) return waiting("Lead unavailable");
   if (!l.own || lost(l)) return waiting("Lead must be assigned and active");
@@ -28,7 +31,7 @@ function copyEvidence(state: Pick<ConsoleState,"LEADS"|"NOW">, lead: Lead, accou
   const total = Math.round(a.units * a.unitPrice * 100), advance = Math.round(total * 0.1);
   if (!Number.isSafeInteger(total) || !Number.isSafeInteger(advance) || advance <= 0) return waiting("Investment amount needs review",a.accountId);
   const at = (value: string | null) => {
-    const date = typeof value === "string" && value && accessMoment(pinAccessDate(value,SOURCE_DAY),state.NOW);
+    const date = typeof value === "string" && value && accessMoment(pinAccessDate(value,state.NOW),state.NOW);
     const end = new Date(state.NOW); end.setHours(23,59,59,999);
     return date && date <= end ? date : null;
   };
@@ -55,7 +58,7 @@ function copyEvidence(state: Pick<ConsoleState,"LEADS"|"NOW">, lead: Lead, accou
   return {eligible:true,accountId:a.accountId,reason:"Ready to record local copy",receiptIds:receipts.map(p=>p.id),documentIds:signed.map(d=>d.id),confirmed:confirmed/100,requiredAdvance:advance/100};
 }
 
-export function investorCopyEligibility(state: ConsoleState, lead: Lead, accounts: readonly SourceAccount[] = source.accounts): CopyEligibility {
+export function investorCopyEligibility(state: ConsoleState, lead: Lead, accounts: readonly SourceAccount[] = sourceOf(state)): CopyEligibility {
   return canReadFinance(state,lead,"pay") && canReadFinance(state,lead,"docs")
     ? copyEvidence(state,lead,accounts) : waiting("Finance source history is unavailable for this lead");
 }
@@ -82,7 +85,7 @@ export const canRecordInvestorCopy = (state: ConsoleState, l: Lead): boolean => 
 /** Internal writer snapshot. Raw Finance fields never reach an ordinary IR or a copy-status view. */
 export function investorCopyReplayTarget(state: ConsoleState, l: Lead) {
   if (!canRecordInvestorCopy(state,l)) return null;
-  const accounts = source.accounts.filter(a=>a.leadId === l.id), account = accounts.length === 1 ? accounts[0] : null;
+  const accounts = sourceOf(state).filter(a=>a.leadId === l.id), account = accounts.length === 1 ? accounts[0] : null;
   return {account,eligibility:investorCopyEligibility(state,l),
     accountConflict:!!account && Object.entries(state.INVESTORCOPY).some(([id,c])=>id !== l.id && c?.accountId === account.accountId)};
 }
@@ -97,13 +100,13 @@ export function recordInvestorCopy(state: ConsoleState, id: string): ConsoleStat
 }
 
 export const investorCopyBook = (state: ConsoleState): Lead[] => openable(state).filter(l=>canViewInvestorCopy(state,l)
-  && (source.accounts.some(a=>a.leadId === l.id) || !!state.INVESTORCOPY[l.id]));
+  && (sourceOf(state).some(a=>a.leadId === l.id) || !!state.INVESTORCOPY[l.id]));
 
 export const investorCopyOf = (state: ConsoleState, lead: Lead): InvestorCopy | null => {
   if (!canViewInvestorCopy(state,lead)) return null;
-  const l = state.LEADS.find(x=>x.id === lead.id)!, c = state.INVESTORCOPY[l.id], a = source.accounts.find(x=>x.leadId === l.id);
+  const l = state.LEADS.find(x=>x.id === lead.id)!, c = state.INVESTORCOPY[l.id], a = sourceOf(state).find(x=>x.leadId === l.id);
   if (!c || !a || c.leadId !== l.id || c.snapshot?.id !== l.id || c.accountId !== a.accountId || c.status !== "copied"
-    || !["automatic","manual"].includes(c.mode) || typeof c.copiedAt !== "string" || !accessMoment(pinAccessDate(c.copiedAt,SOURCE_DAY),state.NOW)
+    || !["automatic","manual"].includes(c.mode) || typeof c.copiedAt !== "string" || !accessMoment(pinAccessDate(c.copiedAt,state.NOW),state.NOW)
     || typeof c.copiedBy !== "string" || c.copiedBy !== "system" && !state.PEOPLE[c.copiedBy]) return null;
   const ids = (values: string[], known: string[]) => Array.isArray(values) ? [...new Set(values.filter(v=>typeof v === "string" && known.includes(v)))] : [];
   return {leadId:l.id,accountId:a.accountId,status:"copied",mode:c.mode,copiedAt:c.copiedAt,copiedBy:c.copiedBy,

@@ -1,7 +1,8 @@
-/** FIXTURE_MODE=local (D65): test-only fixtures. Off unless FIXTURE_MODE=local and not a production build. */
+/** FIXTURE_MODE=local (D65): test-only fixtures. Off unless FIXTURE_MODE=local and not a production build.
+ *  The server keeps the applied fixture list and a version (globalThis, fixture mode only); the
+ *  client polls `GET /api/data/version` and re-hydrates when it moves. */
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { PEOPLE, SIGNINS } from "../domain/people";
 
 export const fixtureModeOn = (env: NodeJS.ProcessEnv = process.env): boolean => env.FIXTURE_MODE === "local" && env.NODE_ENV !== "production";
 
@@ -12,13 +13,26 @@ const catalogue = (): Record<string, unknown> => JSON.parse(readFileSync(FILE, "
 export const resolveFixture = (name: string, all: Record<string, unknown> = catalogue()): string | null =>
   Object.hasOwn(all, name) ? name : Object.hasOwn(all, "IM:" + name) ? "IM:" + name : null;
 
-const g = globalThis as { __fixture?: string | null };
-export const activeFixture = (): string | null => g.__fixture ?? null;
+type FixtureState = { applied: string[]; version: number };
+const g = globalThis as { __gzFixtures?: FixtureState };
+const fx = (): FixtureState => (g.__gzFixtures ??= { applied: [], version: 0 });
+
+export const appliedFixtures = (): string[] => [...fx().applied];
+export const fixtureVersion = (): number => fx().version;
+
+/** Apply a named fixture (catalogue-checked). Re-applying one already applied still bumps the version. */
 export const applyFixture = (name: string): string | null => {
   const key = resolveFixture(name);
-  if (key) g.__fixture = key;
+  if (!key) return null;
+  const s = fx();
+  if (!s.applied.includes(key)) s.applied.push(key);
+  s.version++;
   return key;
 };
 
-/** The dev sign-in list, same people and order as the merged prototype. */
-export const signinList = () => SIGNINS.map((k) => ({ key: k, name: PEOPLE[k].n }));
+/** Clear every applied fixture — back to the plain demo book. */
+export const resetFixtures = (): void => {
+  const s = fx();
+  s.applied = [];
+  s.version++;
+};

@@ -13,7 +13,6 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { ST, UNIT } from "@/domain";
-import { XFER as XFER0 } from "@/domain";
 import type { Plan, PlanPeriod } from "@/domain";
 import type { Ctx } from "./ctx";
 
@@ -71,7 +70,7 @@ export const perEventNeed = (PLAN: Plan): number => {
    live lead behind it — otherwise every transfer burned its units twice */
 export const invAlloc = (ctx: Ctx): number =>
   ctx.LEADS.filter(l => l.done >= ST.ALLOCATED).reduce((a, l) => a + l.units, 0)
-  + (ctx.XFER || XFER0).filter(x => x.state === "done" && !ctx.LEADS.some(l => l.id === x.lead))
+  + (ctx.XFER || []).filter(x => x.state === "done" && !ctx.LEADS.some(l => l.id === x.lead))
     .reduce((a, x) => a + (x.units || 0), 0);
 
 export const invRes = (ctx: Ctx): number =>

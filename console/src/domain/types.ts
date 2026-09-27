@@ -44,7 +44,7 @@ export type TempId = string;
 /* ===== SEATS, PAGES AND CAPABILITIES ====================================================== */
 
 /** The eight seats. Role names are fixed; people may change (03-app.js:4). */
-export type SeatKey = "ir" | "conv" | "cp" | "mkt" | "exec" | "fin" | "ops" | "bu" | "corp";
+export type SeatKey = "ir" | "conv" | "cp" | "mkt" | "exec" | "fin" | "am" | "ops" | "bu" | "corp";
 
 /** The fourteen pages in {@link NAV}, which is also every routable screen with a nav entry. */
 export type NavKey =

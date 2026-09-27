@@ -8,8 +8,7 @@
    own contact answer them without asking anybody. Finance's answer comes back to the lead.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { CLAIMARCHIVE as CLAIMARCHIVE0, CLAIMKINDS, CLAIMMODES, ST, UNIT } from "@/domain";
-import { CLAIM as CLAIM0 } from "@/domain";
+import { CLAIMKINDS, CLAIMMODES, ST, UNIT } from "@/domain";
 import type { Claim, Lead, LeadId, PayReceipt } from "@/domain";
 import { dISO, dISOtoDisp, money } from "@/lib/format";
 import type { Ctx } from "./ctx";
@@ -17,8 +16,8 @@ import { canAssign, canOperateLeads, isFin, may, roleOf, seeMoney } from "./acce
 import { lost, named, openable, payOf } from "./leads";
 import { suppOK } from "./paper";
 
-export const claimOf = (ctx: Ctx, id: LeadId): Claim | null => (ctx.CLAIM || CLAIM0)[id] || null;
-export const claimArchiveOf = (ctx: Ctx, id: LeadId): Claim[] => (ctx.CLAIMARCHIVE || CLAIMARCHIVE0)[id] || [];
+export const claimOf = (ctx: Ctx, id: LeadId): Claim | null => (ctx.CLAIM || {})[id] || null;
+export const claimArchiveOf = (ctx: Ctx, id: LeadId): Claim[] => (ctx.CLAIMARCHIVE || {})[id] || [];
 
 export const claimOpen = (ctx: Ctx, id: LeadId): boolean => {
   const c = claimOf(ctx, id);

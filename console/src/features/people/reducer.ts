@@ -311,7 +311,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const i = n.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
       const PEOPLE: Record<PersonKey, Person> = {
         ...state.PEOPLE,
-        [id]: { n, em, i, seat: NEWP.seat, mgr: NEWP.mgr, on: true, ...freeStyle() } as Person,
+        [id]: { n, em, i, seat: NEWP.seat, mgr: NEWP.mgr, on: true, ...freeStyle(state.PEOPLE) } as Person,
       };
       const d = draftOf(state);
       log({ ...state, PEOPLE }, d, "Added member", null,
