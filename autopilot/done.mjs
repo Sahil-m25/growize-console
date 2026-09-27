@@ -6,7 +6,7 @@
 // node autopilot/done.mjs <q> REGRESSION done                           a full regression finished
 // node autopilot/done.mjs <q> STOP "reason"                             stop the loop (creates autopilot/STOP)
 import fs from "node:fs"; import { spawnSync } from "node:child_process";
-import { P, queue, progress, write, dir, SATISFIED, PHASES, phasesFor, phaseOf, PHASE_OK, currentPhase } from "./lib.mjs";
+import { P, queue, progress, write, dir, SATISFIED, PHASES, phasesFor, phaseOf, PHASE_OK, currentPhase, pinnedPhase } from "./lib.mjs";
 const say = t => spawnSync(process.execPath, [P("autopilot", "notify.mjs"), t], { stdio: "ignore" });   // Slack, best effort
 const a = process.argv.slice(2); const [q, id] = a;
 const opt = k => { const i = a.indexOf(k); return i > -1 ? a[i + 1] : null; };
@@ -52,5 +52,5 @@ const icon = { done: ":white_check_mark:", waiting: ":hourglass_flowing_sand:", 
 if (status !== "in_progress") say(`${icon} *${id}* [${PHASES.names[ph]}] ${story.title} → *${S.phases[ph]}*${S.note ? " — " + S.note : ""}${S.commits?.length ? " · `" + S.commits.at(-1).slice(0, 7) + "`" : ""}  _(${PHASES.names[ph]}: ${done}/${units.length})_`);
 if (done === units.length && status !== "in_progress") say(`:tada: *${PHASES.names[ph]} finished* — all ${done} units. Next: ${PHASES.names[PHASES.order[PHASES.order.indexOf(ph) + 1]] || "go-live gates"}.`);
 // refresh the Slack tracker canvas after every recorded round (no-op without a token)
-if (status !== "in_progress") for (const py of ["python3", "python", "py"]) { const r = spawnSync(py, [P("ops", "tracker", "canvas.py"), "--push"], { stdio: "ignore", timeout: 90000 }); if (!r.error && r.status !== 9009) break; }
+if (status !== "in_progress" && !pinnedPhase()) for (const py of ["python3", "python", "py"]) { const r = spawnSync(py, [P("ops", "tracker", "canvas.py"), "--push"], { stdio: "ignore", timeout: 90000 }); if (!r.error && r.status !== 9009) break; }
 console.log(`${id} [${ph}] → ${S.phases[ph]} (story: ${S.status})`);

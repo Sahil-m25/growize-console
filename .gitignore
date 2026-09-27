@@ -35,3 +35,6 @@ autopilot/*/results/
 tools/graphify/graphify-out/
 autopilot/*/logs/
 ops/tracker/.slack-token
+autopilot/.phase
+autopilot/console/progress.view.json
+autopilot/console/context/

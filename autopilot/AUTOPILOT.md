@@ -4,6 +4,20 @@ You are the autopilot for the Growize build (D65). You work **one round**: one s
 The driver (`autopilot/run.ps1` / `run.sh`) starts the next round with a fresh context. Read `CLAUDE.md` first as always;
 this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; since D69–D73 (25 Sep) there is one queue, `console`, built from `pm/plan-merged/growize-console-plan.json` (the old `ir`/`im` queues are retired).
 
+## Jev first (D101) — small judgments go to Jev, not to you
+
+Tokens are for writing code. Hand these judgments to Jev (`autopilot/jev.mjs`, a few seconds each) and act on the answer:
+
+| When | Run | Then |
+|---|---|---|
+| Right after the packet | `node autopilot/jev.mjs context <STORY>` | Read **only** the prototype line ranges, code files and Zoho fields it lists (Read with offset/limit). Never read or grep the whole 17,500-line prototype; open more only if a named gap remains. |
+| A UI test run failed | `node autopilot/jev.mjs triage <result.json>` | Fix by group: `harness` first, then `control_missing`, `label_differs`, `behaviour_wrong`. `case_outdated` → FACT CHANGE PROPOSED. Open raw result entries only for `unsure_look_yourself`. |
+| Any either/or choice: an open owner decision, a default, which status to record, which of two prototype behaviours to copy | `node autopilot/jev.mjs decide "<question>" "a=<meaning>" "b=<meaning>" --state "<the facts>"` | Take the choice. If it prints LOW CONFIDENCE, build it anyway and record `PROVISIONAL: <question> → <choice>` with `done.mjs --human`. Do not deliberate at length. |
+
+Jev never writes code and never overrides a rule in CLAUDE.md or a failing test. Calls are logged in `autopilot/logs/jev.log`.
+
+`npm test` (in `console/`) runs every `*.test.cjs` in its own process; cancelled tests count as failures.
+
 ## Phases (D98, 27 Sep 2026) — read this before every round
 
 The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` picks the phase; a round works **one story in one phase**.
@@ -19,6 +33,19 @@ The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` p
 - `pm/plan-merged/fe-gaps.json` lists, per story, the Jev cases that pass on the prototype but fail in the app (27 Sep). Match the prototype's behaviour and labels until they pass; that is the phase-1 gate.
 - The first phase-1 unit is **M19-S03**: make every fixture cited by `pm/plan-merged/ui-cases.json` change what the screens show (use each fixture's `prototype` JS in `fixtures-merged.json`). Until then 78 UI cases cannot run.
 - `done.mjs` records the result against the current phase and refreshes the Slack tracker (`ops/tracker/canvas.py --push`) by itself.
+
+## Two loops at once (D100)
+
+The backend may be built beside the front end, in a second git worktree `growize-console-backend` on branch `autopilot/backend`, whose `autopilot/.phase` file holds `zoho` (git-ignored). There `next.mjs` hands out only phase-2 units.
+
+Rules for the backend worktree:
+- Work only in `console/src/server/**`, `console/src/lib/zoho/**`, `console/src/app/api/**` (except `api/test/**`), `zoho/`, `contracts/` and their tests. Never edit pages, components, `src/lib/data/**` types or the store; that is the front-end loop's.
+- Implement the Zoho source of the data interface in `console/src/lib/data/` **only after** the front-end loop has committed that interface; until then build the server layer beneath it (OAuth, session, Zoho reads and writes per module, cache, gate, logs, Zoho Sign webhooks, contract push, the payouts schedule job).
+- Unit and API tests run against recorded Zoho responses (fixtures under `console/src/lib/zoho/__fixtures__`), never live Zoho. Live proof waits for the sandbox (M02-S10).
+- A unit whose code is written but needs a screen or the sandbox to prove is recorded as `waiting` with the reason.
+- Never run the app on port 3001 (the front-end loop's). Use `npx next dev -p 3002` if a route needs a server.
+- Every day, and before each merge: `git merge autopilot/console`, then `node autopilot/merge-progress.mjs autopilot/console`, run the tests, commit.
+- The Slack tracker is pushed only by the main worktree; it reads this branch's progress by itself.
 
 ## The round
 

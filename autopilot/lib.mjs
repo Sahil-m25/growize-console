@@ -16,7 +16,7 @@ export const P = (...p) => path.join(ROOT, ...p);
 export const read = (f, dflt) => { try { return JSON.parse(fs.readFileSync(P(f), "utf8")); } catch { return dflt; } };
 export const write = (f, o) => { fs.mkdirSync(path.dirname(P(f)), { recursive: true }); const tmp = P(f) + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(o, null, 1)); fs.renameSync(tmp, P(f)); };
 export const dir = q => `autopilot/${q}`;
-export const progress = q => read(`${dir(q)}/progress.json`, { stories: {}, subtasks: {}, rounds: [], last_regression_round: 0 });
+export const progress = q => read(process.env.PROGRESS_VIEW || `${dir(q)}/progress.json`, { stories: {}, subtasks: {}, rounds: [], last_regression_round: 0 });   // PROGRESS_VIEW: read-only merged view for the tracker (D100)
 export const queue = q => read(`${dir(q)}/queue.json`, null);
 export const HUMAN = d => !/^Autopilot/.test(d || "");
 export const SATISFIED = new Set(["done", "review", "waiting"]);   // a dependency that is built (a person may still owe their part)
@@ -39,7 +39,12 @@ export const phasesFor = s => PHASES.order.filter(ph => autoTasks(s, ph).length)
 export const phaseStatus = (pr, id, ph) => pr.stories[id]?.phases?.[ph] || "pending";
 export const PHASE_OK = new Set(["done", "waiting"]);        // a phase unit counts as built; review still needs a look
 /** The phase being worked: the first phase with a unit not yet built (review counts as not built). */
+// D100: a second worktree can pin its phase with a one-word file autopilot/.phase (git-ignored), e.g. "zoho",
+// so the backend loop runs beside the front-end loop without both picking the same units.
+export const pinnedPhase = () => { try { const v = fs.readFileSync(P("autopilot", ".phase"), "utf8").trim(); return PHASES.order.includes(v) ? v : null; } catch { return null; } };
 export function currentPhase(Qd, pr) {
+  const pin = pinnedPhase();
+  if (pin) return Qd.stories.some(s => phasesFor(s).includes(pin) && !PHASE_OK.has(phaseStatus(pr, s.id, pin))) ? pin : null;
   for (const ph of PHASES.order) if (Qd.stories.some(s => phasesFor(s).includes(ph) && !PHASE_OK.has(phaseStatus(pr, s.id, ph)))) return ph;
   return null;
 }
