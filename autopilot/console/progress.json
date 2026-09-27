@@ -400,6 +400,23 @@
    "commits": [
     "86a3697"
    ]
+  },
+  "M07-S04": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:23:42.525Z",
+   "notes": 1,
+   "note": "D58 next-step to Calls/Meetings/Tasks mapping with reminder and participants, 1 test; waits on activity-module access and staging proof of the reminder and participant fields.",
+   "commits": [
+    "c5fcc0a"
+   ]
   }
  },
  "subtasks": {
@@ -737,6 +754,11 @@
   "M07-S03-T02": {
    "status": "done",
    "at": "2026-09-27T16:20:43.183Z",
+   "phase": "zoho"
+  },
+  "M07-S04-T02": {
+   "status": "done",
+   "at": "2026-09-27T16:23:42.525Z",
    "phase": "zoho"
   }
  },
@@ -1121,6 +1143,24 @@
    "attempt": 1,
    "hours": 9,
    "note": "Follow-up save/undo server functions with guarded lead-first write, take-back and signed 10 s Undo, 9 tests; waits on delete/activity permissions, Undo secret and the session layer for route handlers."
+  },
+  {
+   "at": "2026-09-27T16:20:57.480Z",
+   "story": "M07-S04",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:23:42.525Z",
+   "story": "M07-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3,
+   "note": "D58 next-step to Calls/Meetings/Tasks mapping with reminder and participants, 1 test; waits on activity-module access and staging proof of the reminder and participant fields."
   }
  ],
  "last_regression_round": 0,
