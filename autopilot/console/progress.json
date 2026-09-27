@@ -349,6 +349,23 @@
    "commits": [
     "d069836"
    ]
+  },
+  "M05-S02": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:09:02.973Z",
+   "notes": 1,
+   "note": "Assign-to-me guarded write and focus-panel read built with 7 tests; waits on IR read/write sharing on unassigned-queue leads and the front-end wiring.",
+   "commits": [
+    "48628f4"
+   ]
   }
  },
  "subtasks": {
@@ -666,6 +683,11 @@
   "M05-S01-T01": {
    "status": "done",
    "at": "2026-09-27T16:05:05.827Z",
+   "phase": "zoho"
+  },
+  "M05-S02-T02": {
+   "status": "done",
+   "at": "2026-09-27T16:09:02.973Z",
    "phase": "zoho"
   }
  },
@@ -996,6 +1018,24 @@
    "attempt": 1,
    "hours": 3,
    "note": "Today server read built (open book + open activities) with 3 tests; waits on activity-module access (M02-S07) and staging proof of activity field names; nextUp/workGroup PROVISIONAL (b)."
+  },
+  {
+   "at": "2026-09-27T16:05:17.334Z",
+   "story": "M05-S02",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:09:02.973Z",
+   "story": "M05-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Assign-to-me guarded write and focus-panel read built with 7 tests; waits on IR read/write sharing on unassigned-queue leads and the front-end wiring."
   }
  ],
  "last_regression_round": 0,
