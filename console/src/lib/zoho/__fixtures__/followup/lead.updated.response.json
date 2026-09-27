@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740996101",
+          "Modified_Time": "2026-09-27T21:00:00+05:30"
+        },
+        "message": "record updated",
+        "status": "success"
+      }
+    ]
+  }
+}

@@ -164,6 +164,9 @@ export interface ZohoApi<C extends Credential> {
   share(as: C, module: string, id: string, userId: string, permission: "read" | "read_write", options?: CallOptions): Promise<ZohoResult<{ readonly shared: true }>>;
   /** Revokes that user's share. */
   unshare(as: C, module: string, id: string, userId: string, options?: CallOptions): Promise<ZohoResult<{ readonly revoked: true }>>;
+  /** Deletes one record the person may delete (moves it to Zoho's recycle bin). Never retried: a
+   *  lost reply is checked with `wasDeleted()`. Used to take back a write inside its Undo window. */
+  deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
 }
 export type ZohoClient = ZohoApi<UserCredential>;
 export type ZohoServiceClient = ZohoApi<ServiceCredential>;
@@ -1022,6 +1025,17 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
       return out.ok ? done({ revoked: true } as const, out) : out;
+    },
+
+    async deleteRecord(as, module, id, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      const out = await execute(as, {
+        op: "delete", method: "DELETE", path: `/${module}/${id}`, endpoint: `/${module}/{id}`,
+        shape: { op: "write", records: 1 }, idempotent: false, perRecord: true, responseShape: "data", maxRows: 1,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      return out.ok ? done({ deleted: true } as const, out) : out;
     },
 
     async wasDeleted(as, module, id, opts = {}) {
