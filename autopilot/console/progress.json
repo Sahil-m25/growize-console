@@ -234,16 +234,20 @@
    ]
   },
   "M01-S08": {
-   "status": "in_progress",
+   "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "in_progress"
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "zoho": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T12:56:33.975Z"
+   "at": "2026-09-27T14:39:52.519Z",
+   "note": "Built and offline-verified validate-before-replay receipt backend with 222 passing recorded-fixture tests and clean typecheck. Waiting on sandbox Idempotency_Key/atomicity proofs, authoritative OAuth session-seat wiring, refund/UTR decisions, and frontend queue integration. npm test is unavailable because console/package.json has no test script; explicit suites passed.",
+   "commits": [
+    "e31dc2d"
+   ]
   }
  },
  "subtasks": {
@@ -509,8 +513,8 @@
    "note": "waiting on Sahil"
   },
   "M01-S08-T03": {
-   "status": "in_progress",
-   "at": "2026-09-27T12:56:33.975Z",
+   "status": "done",
+   "at": "2026-09-27T14:39:52.519Z",
    "phase": "zoho"
   }
  },
@@ -724,6 +728,15 @@
    "attempt": 1,
    "hours": 5,
    "note": ""
+  },
+  {
+   "at": "2026-09-27T14:39:52.519Z",
+   "story": "M01-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 5,
+   "note": "Built and offline-verified validate-before-replay receipt backend with 222 passing recorded-fixture tests and clean typecheck. Waiting on sandbox Idempotency_Key/atomicity proofs, authoritative OAuth session-seat wiring, refund/UTR decisions, and frontend queue integration. npm test is unavailable because console/package.json has no test script; explicit suites passed."
   }
  ],
  "last_regression_round": 0,
