@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 27 Sep 2026 16:51 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 27 Sep 2026 20:58 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -8,20 +8,16 @@
 
 **Now working on:** 1. Front end on demo data — The story's screens exist in console/ and its Jev UI cases pass on demo data (FIXTURE_MODE=local). No Zoho calls.
 
-::: {.callout}
-:warning: The build loop has not run for 40 hours. Nothing moves until /build runs on the laptop again.
-:::
-
 |Phase|Done|Review|Left|Loop hours left|Forecast finish|Pace|
 |---|---|---|---|---|---|---|
-|**1. Front end on demo data** :arrow_left:|0 of 92 (0%)|1|92|70.5|![](slack_date:2026-10-02)|assumed until 5 rounds|
-|**2. Plug into Zoho**|10 of 119 (8%)|1|109|72.7|![](slack_date:2026-10-07)|assumed until 5 rounds|
-|**3. Test and harden**|0 of 145 (0%)|0|145|36.3|![](slack_date:2026-10-10)|assumed until 5 rounds|
+|**1. Front end on demo data** :arrow_left:|0 of 92 (0%)|1|92|70.8|![](slack_date:2026-10-02)|assumed until 5 rounds|
+|**2. Plug into Zoho**|15 of 119 (13%)|1|104|61.8|![](slack_date:2026-10-07)|35.7 min/unit measured|
+|**3. Test and harden**|0 of 145 (0%)|0|145|36.3|![](slack_date:2026-10-09)|assumed until 5 rounds|
 
 |Forecast|Date|
 |---|---|
-|All three phases through the loop|![](slack_date:2026-10-10)|
-|People's testing and UAT finished (earliest go-live)|![](slack_date:2026-10-16)|
+|All three phases through the loop|![](slack_date:2026-10-09)|
+|People's testing and UAT finished (earliest go-live)|![](slack_date:2026-10-15)|
 |Status|:red_circle: Behind the target|
 
 ::: {.callout}
@@ -34,12 +30,12 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-10-08)|
-|S1|Foundations, access, test suite|23|0|![](slack_date:2026-10-08)|
-|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-10)|
-|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-10)|
-|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-10)|
-|S5|Hardening, UAT, migration, release|13|0|![](slack_date:2026-10-10)|
+|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-10-07)|
+|S1|Foundations, access, test suite|23|0|![](slack_date:2026-10-07)|
+|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-09)|
+|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-09)|
+|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-09)|
+|S5|Hardening, UAT, migration, release|13|0|![](slack_date:2026-10-09)|
 
 # :calendar: Month by month
 
@@ -70,8 +66,8 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Layer|State|
 |---|---|
-|Front end (screens)|25 stories built, 65 partly, 19 not started, 42 have no screen|
-|Lead side screens|Ported from the IR console prototype, but the port lost behaviour: Jev passes 22% of the lead-side cases (the same kind of cases passed 77% on the prototype on 25 Sep). No sign-in screen yet. Pages: Today, Leads, Lead page, Add/CSV, Events, Plan, Numbers, Activity, Teams, System, Profile, Updates, Payments (IR claims), Documents (paperwork), Transfers|
+|Front end (screens)|24 stories built, 66 partly, 19 not started, 42 have no screen|
+|Lead side screens|Ported from the IR console prototype, but the port lost behaviour: with all 9 lead-side seats Jev passes 13% of their cases in the app against 72% on the prototype (27 Sep). No sign-in screen yet. Pages: Today, Leads, Lead page, Add/CSV, Events, Plan, Numbers, Activity, Teams, System, Profile, Updates, Payments (IR claims), Documents (paperwork), Transfers|
 |Investors side screens|Not started: Investors list and record, Farms and allotments, Tickets, Investor updates, Finance receipts and matching, payouts, app access|
 |Connected to Zoho|No screen reads or writes Zoho yet; every page runs on demo data (the Zoho adapter is a stub)|
 |Zoho org|Modules and fields in place (M02 done items); still open: profiles per seat, field-level security (PAN not encrypted, only Administrator and Standard profiles exist), sharing rules, test user, sandbox and OAuth client|
@@ -109,6 +105,29 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 - [ ] M02-S04-T03 (M02-S04, Sahil, Before its story (do early)) Field-level security wall — Encrypt pan and bank_account on Contacts; pan readable by Head of Finance and Compliance, bank by Head of Finance and Finance; hide pan, bank, Aadhaar_Number, UTR_n, DOB everywhere else; aadhaar_last4/aadhaar_ref o
 - [ ] M02-S04-T04 (M02-S04, Sahil, Before its story (do early)) Private sharing and B-12 rules — Default sharing Private on Leads, Contacts and custom modules; IR Manager read on IR subtree via hierarchy; Finance → Leads sharing rule for gate columns (B-12); document the answer.
 - [ ] M02-S06-T01 (M02-S06, Sahil, Before its story (do early)) Remove Convert permission — Untick Convert Leads on every profile; confirm no workflow converts.
+- [ ] M02-S10-T02 (M02-S10, Sahil, Before its story (do early)) Register OAuth clients — In Zoho API Console, register separate server-based clients for staging/sandbox and production. Add only each deployment's exact HTTPS OAuth callback URI. Grant only CRM module access, settings read, COQL read, ZohoCR
+- [ ] M02-S10-NOTE-1 (M02-S10) M02-S10-T01 OWNER ACTION: In Zoho CRM Setup > Data Administration > Sandbox, create the Enterprise developer sandbox only after the S0 module/profile/FLS work is complete. Copy metadata, not real investor data. In the sandbox, compare module API names, Leads field API names,
+- [ ] M02-S10-NOTE-2 (M02-S10) FACT CHANGE PROPOSED: TC-E02-020 currently says both GET /crm/v8/settings/profiles and a Zoho Books call must return OAUTH_SCOPE_MISMATCH, but this story explicitly grants CRM settings read. Expected behaviour should distinguish the allowed in-scope CRM call from the refused
+- [ ] M20-S08-T01 (M20-S08, Sahil, Before its story (do early)) Plan choice and purchase request — In sign.zoho.in, compare the Enterprise and API plans using ARL's expected annual envelope volume. Require API access, HMAC-secured webhooks, Aadhaar eSign, email OTP and enough signing credits. Send the own
+- [ ] M20-S08-T02 (M20-S08, Sahil, Before its story (do early)) OAuth client and secrets — After the paid Sign plan is active, update the India-DC OAuth clients with only ZohoSign.documents.CREATE, ZohoSign.documents.READ, ZohoSign.documents.UPDATE and ZohoSign.templates.READ. Re-consent the restricted pr
+- [ ] M20-S08-NOTE-1 (M20-S08) M20-S08-T03 OWNER ACTION, AFTER NOTE-3 IS CLEARED: Deploy the durable worker and persistent Plane B sink to staging and production first. In Zoho Sign > Settings > Developer Settings > Webhooks, create exactly two callbacks, one for each host's /api/webhooks/zoho-sign route;
+- [ ] M20-S08-NOTE-2 (M20-S08) FACT CHANGE PROPOSED: M20-S08-T03 says to store Sign status on the Zoho record, but D77 requires status to be read live from Zoho Sign and D79 created request-id/verification fields without a status field. The local webhook therefore verifies and re-fetches the request, reso
+- [ ] M20-S08-NOTE-3 (M20-S08) PRODUCTION ACTIVATION BLOCK: Do not register either callback yet. Zoho Sign requires HTTP 200 within 5 seconds and advises against heavy inline work; this local boundary still performs source re-fetch plus CRM resolution before acknowledging, and an unlinked event has no dur
+- [ ] M01-S08-NOTE-1 (M01-S08) RECEIPT IDEMPOTENCY FIELD AND KEYS: In the Enterprise sandbox, add a single-line Receipts field with API name `Idempotency_Key`, at least 64 characters, globally unique and writable/readable by Finance through its own user tokens. Keep it off ordinary layouts and deny Receip
+- [ ] M01-S08-NOTE-2 (M01-S08) ZOHO-SIDE ATOMICITY BLOCK: Before enabling receipt replay, export one process-singleton service from the server composition root, then design and sandbox-prove a Zoho-resident atomic guard that covers both the allotment snapshot and its receipt ledger. The mutex, dedupe join
+- [ ] M01-S08-NOTE-3 (M01-S08) SANDBOX ACCESS AND FAILURE PROOF: With two restricted Finance seats and one restricted IR seat, prove `UTR` and `Idempotency_Key` uniqueness, cross-Finance visibility of an exact retry, Finance-only create, IR direct-API refusal, and no identity/amount/UTR/HMAC/session value
+- [ ] M01-S08-NOTE-4 (M01-S08) UTR FACT CONFLICT: D76 and the current field mapping say `Receipts.UTR` is unique, but STAGE-3 section 9.1 says a second distinct receipt with the same UTR must still be recorded and flagged for statement review; blocking it also conflicts with D21's "recording money is alwa
+- [ ] M01-S08-NOTE-5 (M01-S08) REFUND AND REVERSAL LEDGER CONVENTION: M10 has not yet defined which Receipt row/state proves an approved refund or reversal and how `Refund`, `Reversed` and `Reversal_Of` interact without double-subtracting. This guard therefore refuses an allotment ledger containing any of
+- [ ] M01-S08-NOTE-6 (M01-S08) SESSION REVOCATION AND IDENTITY WIRING: The Zoho OAuth/session story must supply this guard's authoritative `session.recheck` dependency and call `discardSession(actorId, sessionId)` on the process-singleton service instance before destroying a signed-out session. Recheck mu
+- [ ] M01-S08-NOTE-7 (M01-S08) PLAN AND FIELD-MAP DRIFT: The merged field map and M02-S12-T03 still say a Receipt duplicates Contact/Investor and LLP lookups, but the later as-applied D76 decision deliberately omitted both and reads those parents through the canonical `Allotment`; `Created_By` remains the
+- [ ] M01-S08-NOTE-8 (M01-S08) OFFLINE CONTEXT INTEGRATION: When the frontend data source is available, renew a receipt preparation while online at least every four minutes and disable offline submission once it is five minutes old. At the actual press, derive `queuedAt` as the server's `preparedAt` plus 
+- [ ] M03-S05-T01 (M03-S05, Sahil, Before its story (do early)) Buy seats and invite users — First complete the Enterprise renewal and single restricted-test-user licence in M02-S01-T01; that test seat must exist before T11. Only after M02-S04's profiles/FLS/sharing wall exists and the restricted user has
+- [ ] M03-S05-NOTE-1 (M03-S05) SANITIZED SEAT EXPORTS AND STAGING PROOF: After the role/profile wall is final in both the Enterprise sandbox and production, call `GET /crm/v8/settings/roles`, `GET /crm/v8/settings/profiles` and `GET /crm/v8/users?type=CurrentUser` with the restricted user's own scoped OAu
+- [ ] M03-S05-NOTE-2 (M03-S05) FARM OPERATIONS DECISION REQUIRED: M03-S05 acceptance requires a Farm ops seat, but D80's applied role tree has no Farm Operations role, `docs/ACCESS-PLAN.md` defines no Farm-ops role/profile, and `ops/SEAT-PLAN.md` ambiguously combines Farm ops with Channel Partner. The bac
+- [ ] M03-S05-NOTE-3 (M03-S05) ADMINISTRATOR TOKEN CONFLICT: D78 keeps Sahil on the Administrator profile and the existing CEO/root seat is also Administrator, while `CLAUDE.md` rule 2 says no administrator token is used by the application at all. The resolver records both exact role-to-seat mappings but 
+- [ ] M03-S05-NOTE-4 (M03-S05) ENTERPRISE ENTITLEMENT PROOF: CurrentUser proves the authenticated user, active/confirmed state, user type and role/profile, but not that the org's paid Enterprise entitlement is current. Before enabling sign-in, capture sanitized Organization API evidence for the configured
+- [ ] M03-S07-T01 (M03-S07, Sahil, Before its story (do early)) Sharing for KAM books — Private default on Contacts; KAM access by owner/kam lookup sharing rule; Head of AM above KAMs in the hierarchy.
+- [ ] M03-S07-NOTE-1 (M03-S07) ZOHO SHARING PROOF (human, sandbox then production): the backend refuses foreign rows, but only Zoho sharing proves a KAM token cannot read them. With synthetic Contacts + Issued allotments: (1) signed in as a KAM (Imran), COQL 'select id from Contacts where id is not null' 
 
 # :clipboard: Stories
 
@@ -123,7 +142,7 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 |**M01-S05** Staging and production environments|—|To do|To do|Not a screen|S1|Must|0/2|
 |**M01-S06** Pending saves while offline|To do|—|To do|Built (demo data)|S2|Must|0/2|
 |**M01-S07** Refusals and confirmations said in the page, never in alert() or confirm()|To do|—|To do|Partly built|S1|Must|0/6|
-|**M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land|To do|To do|To do|Partly built|S1|Must|0/6|
+|**M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land|To do|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S1|Must|1/6|
 |**M01-S09** Honest connection and freshness line in the top bar|To do|To do|To do|Partly built|S1|Must|0/3|
 |**M01-S10** Step-up before a reveal, an export or money leaving, with a second hand on refunds|To do|To do|To do|Partly built|S3|Must|0/9|
 
@@ -140,7 +159,7 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 |**M02-S07** Calls, Meetings and Tasks visible to the seats that schedule, with meetings in Zoho Calendar|—|—|To do|Not a screen|S0|Should|0/2|
 |**M02-S08** Email sent from the person's own mailbox|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S0|Must|1/2|
 |**M02-S09** Cover windows as record-level sharing|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S0|Must|2/3|
-|**M02-S10** Sandbox and the console's OAuth client|—|To do|To do|Not a screen|S0|Must|0/3|
+|**M02-S10** Sandbox and the console's OAuth client|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S0|Must|1/3|
 |**M02-S11** Decide the canonical allotment module: LLP_UnitAllocation_Module or LLP_Unit_Allocation|—|:white_check_mark: Done|To do|Not a screen|S0|Must|3/4|
 |**M02-S12** Receipts module linked to the allotment, the Contact and the LLP|—|:white_check_mark: Done|To do|Not a screen|S0|Must|3/4|
 |**M02-S13** Document-slot file-upload fields on the Contact, the allotment and the LLP|—|:white_check_mark: Done|—|Not a screen|S0|Must|4/4|
@@ -150,13 +169,13 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M03-S01** Only people with a seat or a granted page sign in|To do|To do|To do|Built (demo data)|S1|Must|0/4|
+|**M03-S01** Only people with a seat or a granted page sign in|To do|To do|To do|Partly built|S1|Must|0/4|
 |**M03-S02** Sahil grants pages to other people, read-only by default|To do|To do|To do|Built (demo data)|S1|Must|0/3|
 |**M03-S03** Extra pages for IRs, and the IR Manager's limits|—|To do|To do|Built (demo data)|S1|Must|0/2|
 |**M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged|To do|To do|To do|Partly built|S1|Must|0/5|
-|**M03-S05** Zoho users provisioned seat by seat, both sides|—|To do|To do|Not a screen|S1|Must|0/4|
+|**M03-S05** Zoho users provisioned seat by seat, both sides|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S1|Must|1/4|
 |**M03-S06** The Auditor (viewer) reads and never writes|To do|—|To do|Partly built|S1|Must|0/4|
-|**M03-S07** Key account managers see and work only their own accounts|—|To do|To do|Partly built|S1|Must|0/4|
+|**M03-S07** Key account managers see and work only their own accounts|—|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S1|Must|1/4|
 |**M03-S08** Compliance owns KYC|To do|—|To do|Partly built|S1|Must|0/3|
 |**M03-S09** An IR sees investor data only for investors from their own leads, enforced at the data layer|—|To do|To do|Partly built|S1|Must|0/4|
 
@@ -361,4 +380,4 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 |**M20-S05** Stage reviews, status and retrospectives|—|—|To do|Not a screen|S0|Must|0/6|
 |**M20-S06** Change control|—|—|To do|Not a screen|S0|Must|0/1|
 |**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|To do|To do|Partly built|S4|Must|0/5|
-|**M20-S08** Buy the Zoho Sign plan and set up its webhooks|—|To do|To do|Not a screen|S0|Must|0/4|
+|**M20-S08** Buy the Zoho Sign plan and set up its webhooks|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S0|Must|1/4|
