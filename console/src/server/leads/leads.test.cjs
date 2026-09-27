@@ -46,6 +46,8 @@ const sources = [
   'server/leads/duplicate.ts',
   'server/leads/book.ts',
   'server/leads/today.ts',
+  'server/leads/assign.ts',
+  'server/leads/focus.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -72,6 +74,8 @@ const { createLeadCapture, mobileToE164, splitName } = load(path.join('server', 
 const { createDuplicateCheck, mobileClause } = load(path.join('server', 'leads', 'duplicate.js'));
 const { createLeadsBook } = load(path.join('server', 'leads', 'book.js'));
 const { createTodayRead } = load(path.join('server', 'leads', 'today.js'));
+const { createLeadAssign } = load(path.join('server', 'leads', 'assign.js'));
+const { createFocusRead } = load(path.join('server', 'leads', 'focus.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -479,4 +483,112 @@ test('a Leads refusal passes straight through Today', async () => {
   const res = await r.today.read(principal(IR), 'personal');
   assert.equal(res.reasonCode, 'scope-drift');
   assert.equal(r.queries.length, 1);
+});
+
+// ---------------- M05-S02 Assign to me ----------------
+
+const UNOWNED = `${P}740996104`;
+function assignRig(get, put, id = IR, overrides = {}) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const u = new URL(url);
+      calls.push({ method: init.method, path: u.pathname, search: u.search, headers: init.headers, body: init.body ? JSON.parse(init.body) : null });
+      return toResponse(recorded(init.method === 'GET' ? get : put));
+    } });
+  let n = 0;
+  const access = { async recheck(credential) {
+    n += 1;
+    const base = id === MANAGER
+      ? { actor: { userId: MANAGER, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'ir-manager' }, mayTakeUnowned: false, mayAssignOthers: true, assignableOwnerIds: [IR, OTHER_IR], unassignedQueueUserId: QUEUE }
+      : { actor: { userId: credential.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, mayTakeUnowned: true, mayAssignOthers: false, assignableOwnerIds: [], unassignedQueueUserId: QUEUE };
+    return overrides.recheck ? overrides.recheck(base, n) : base;
+  } };
+  return { svc: createLeadAssign({ crm, access, log, recordIdPrefix: P, clock: () => NOW }), calls, sink };
+}
+
+test('Assign to me: an IR takes an unowned lead with a guarded write of Owner and its time', async () => {
+  const r = assignRig('lead.get-unowned', 'lead.updated');
+  const res = await r.svc.assign(principal(IR), UNOWNED, IR);
+  assert.deepEqual(res, { ok: true, value: { leadId: UNOWNED, ownerId: IR, modifiedTime: '2026-09-27T21:00:00+05:30' } });
+  assert.equal(r.calls[0].method, 'GET');
+  assert.equal(r.calls[1].method, 'PUT');
+  assert.equal(r.calls[1].headers['If-Unmodified-Since'], '2026-09-26T10:00:00+05:30');
+  assert.deepEqual(r.calls[1].body, { data: [{ Owner: { id: IR }, Owner_Assigned_At: AT }] });
+});
+
+test('a lead that already has an owner is not taken, and an IR cannot give a lead to somebody else', async () => {
+  let r = assignRig('lead.get-owned', 'lead.updated');
+  let res = await r.svc.assign(principal(IR), UNOWNED, IR);
+  assert.equal(res.reasonCode, 'already-owned');
+  assert.equal(r.calls.filter((c) => c.method === 'PUT').length, 0);
+  r = assignRig('lead.get-unowned', 'lead.updated');
+  res = await r.svc.assign(principal(IR), UNOWNED, OTHER_IR);
+  assert.equal(res.reasonCode, 'capability-missing');
+  assert.equal(r.calls.length, 0);
+});
+
+test('two IRs pressing at once: the second write loses to If-Unmodified-Since', async () => {
+  const r = assignRig('lead.get-unowned', 'lead.conflict');
+  const res = await r.svc.assign(principal(IR), UNOWNED, IR);
+  assert.equal(res.reasonCode, 'lead-changed');
+  assert.equal(r.calls.filter((c) => c.method === 'PUT').length, 1, 'never retried');
+});
+
+test('a manager assigns an unowned lead to one of their IRs, never outside the list', async () => {
+  let r = assignRig('lead.get-unowned', 'lead.updated', MANAGER);
+  let res = await r.svc.assign(principal(MANAGER), UNOWNED, OTHER_IR);
+  assert.equal(res.value.ownerId, OTHER_IR);
+  r = assignRig('lead.get-unowned', 'lead.updated', MANAGER);
+  res = await r.svc.assign(principal(MANAGER), UNOWNED, `${P}740995555`);
+  assert.equal(res.reasonCode, 'owner-not-assignable');
+  assert.equal(r.calls.length, 0);
+});
+
+test('the right withdrawn between the read and the write stops the write', async () => {
+  const r = assignRig('lead.get-unowned', 'lead.updated', IR, { recheck: (b, n) => ({ ...b, mayTakeUnowned: n === 1 }) });
+  const res = await r.svc.assign(principal(IR), UNOWNED, IR);
+  assert.equal(res.reasonCode, 'capability-missing');
+  assert.equal(r.calls.filter((c) => c.method === 'PUT').length, 0);
+});
+
+// ---------------- M05-S02 focus panel ----------------
+
+function focusRig(routes) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const u = new URL(url); calls.push(u.pathname + u.search + (init.body ? ' ' + init.body : ''));
+      const key = u.pathname.endsWith('/Notes') ? 'notes' : u.pathname.endsWith('/coql') ? 'touch' : 'lead';
+      return toResponse(recorded(routes[key]));
+    } });
+  return { svc: createFocusRead({ crm, access: leadsAccess(IR), log, recordIdPrefix: P, clock: () => NOW }), calls };
+}
+
+test('the focus panel carries next step, last contact and the latest note', async () => {
+  const r = focusRig({ lead: 'lead.get-focus', touch: 'coql.touch-latest', notes: 'notes.related' });
+  const res = await r.svc.read(principal(IR), `${P}740996101`);
+  assert.deepEqual(res.value, {
+    leadId: `${P}740996101`,
+    nextStep: { text: 'Call back about the deck', channel: 'Call', at: '2026-09-28T11:00:00+05:30' },
+    lastReplyAt: '2026-09-25T18:00:00+05:30',
+    lastContact: { channel: 'WhatsApp', at: '2026-09-26T12:00:00+05:30', isReply: false },
+    latestNote: { text: 'Synthetic latest note', at: '2026-09-26T09:00:00+05:30' },
+  });
+  assert.match(r.calls[1], /order by Occurred_At desc limit 0, 1/);
+});
+
+test('a lead with no touches or notes shows none; a lead Zoho hides is unavailable', async () => {
+  let r = focusRig({ lead: 'lead.get-focus', touch: 'coql.today-meetings', notes: 'coql.today-meetings' });
+  let res = await r.svc.read(principal(IR), `${P}740996101`);
+  assert.equal(res.value.lastContact, null);
+  assert.equal(res.value.latestNote, null);
+  r = focusRig({ lead: 'coql.today-meetings' });
+  res = await r.svc.read(principal(IR), `${P}740996101`);
+  assert.equal(res.reasonCode, 'not-visible');
+  assert.equal(r.calls.length, 1);
 });

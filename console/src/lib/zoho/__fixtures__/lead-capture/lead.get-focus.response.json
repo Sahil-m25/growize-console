@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Next_Step": "Call back about the deck",
+        "Next_Step_Channel": "Call",
+        "Next_Step_At": "2026-09-28T11:00:00+05:30",
+        "Last_Reply_At": "2026-09-25T18:00:00+05:30"
+      }
+    ]
+  }
+}
