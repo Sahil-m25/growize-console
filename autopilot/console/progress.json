@@ -250,16 +250,20 @@
    ]
   },
   "M03-S05": {
-   "status": "in_progress",
+   "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "in_progress"
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "zoho": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T14:40:30.113Z"
+   "at": "2026-09-27T14:56:13.239Z",
+   "note": "Built fail-closed D80 role/profile-id seat directory; 234 recorded-fixture tests pass and typecheck is clean. Waiting on T11/user provisioning, sanitized role/profile exports, staging sign-ins, Farm Operations mapping, Administrator-token conflict, and Enterprise entitlement proof.",
+   "commits": [
+    "1782ffe"
+   ]
   }
  },
  "subtasks": {
@@ -530,8 +534,8 @@
    "phase": "zoho"
   },
   "M03-S05-T02": {
-   "status": "in_progress",
-   "at": "2026-09-27T14:40:30.113Z",
+   "status": "done",
+   "at": "2026-09-27T14:56:13.239Z",
    "phase": "zoho"
   },
   "M03-S05-T01": {
@@ -768,6 +772,15 @@
    "attempt": 1,
    "hours": 3,
    "note": ""
+  },
+  {
+   "at": "2026-09-27T14:56:13.239Z",
+   "story": "M03-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Built fail-closed D80 role/profile-id seat directory; 234 recorded-fixture tests pass and typecheck is clean. Waiting on T11/user provisioning, sanitized role/profile exports, staging sign-ins, Farm Operations mapping, Administrator-token conflict, and Enterprise entitlement proof."
   }
  ],
  "last_regression_round": 0,
