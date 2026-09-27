@@ -38,3 +38,10 @@ declare module "@/lib/store" {
     PLANDATERESETGEN?: number;
   }
 }
+
+declare module "@/lib/store" {
+  interface UiState {
+    /** which of the Plan page's four "more" sections is open, or none. ir-merged.js 8718 */
+    G6PLAN?: string | null;
+  }
+}

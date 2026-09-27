@@ -95,7 +95,7 @@ export function PlanPage() {
   const resetPlanDate = (pk: string) => dispatch({ type: "setUi",
     patch: { PLANDATEERR: omit(dateErrors, pk), PLANDATERESETGEN: resetGen + 1 } });
 
-  const issues: { t: string; d: string }[] = [];
+  const issues: { t: string; d: string; rec?: ReturnType<typeof planKpi> }[] = [];
   if (g.baseline.units + T.target !== g.masterUnits) {
     issues.push({
       t: "Align the master target",
@@ -114,17 +114,27 @@ export function PlanPage() {
     issues.push({
       t: "Confirm more deliverable units",
       d: `${Math.max(0, T.target - T.actual)} units remain in the plan; ${Math.max(0, state.INV.released - invAlloc(state))} released units are not allocated.`,
+      rec: planKpi("The plan — fully paid against target", T.actual, T.target, "total"),
     });
   }
   past.forEach((p) => issues.push({
     t: `Review ${p.t}`, d: `The period has ended with ${p.target - p.actual} units below target.`,
+    rec: planKpi(p.t + " — fully paid against target", p.actual, p.target, String(p.k)),
   }));
 
   const active = ps.find((p) => planPhase(p, state.NOW) === "current");
   const next = ps.find((p) => planPhase(p, state.NOW) === "future");
   const focus = active || next;
 
-  const setEditing = (v: boolean) => dispatch({ type: "setUi", patch: { UXPLANEDIT: v } });
+  const setEditing = (v: boolean) => dispatch({ type: "setUi", patch: { UXPLANEDIT: v, G6PLAN: "periods" } });
+  const G6PLAN = state.ui.G6PLAN ?? null;
+  const open = editing ? "periods" : (ASKB && fin) ? "baseline" : G6PLAN;
+  const g6PlanOpen = (k: string) => {
+    dispatch({ type: "setUi", patch: { G6PLAN: G6PLAN === k ? null : k } });
+    dispatch({ type: "closeDrawer" });
+  };
+  const MORE: { k: string; t: string; n?: number }[] = [{ k: "periods", t: "Period targets", n: ps.length },
+    { k: "capture", t: "Capture needs" }, { k: "assume", t: "Assumptions" }, { k: "baseline", t: "Baseline" }];
 
   const doors: { k: string; t: string; v: string }[] = [
     { k: "goals.rates", t: "Funnel rates", v: `${g.rates.lead2qual}% → ${g.rates.qual2res}% → ${g.rates.res2paid}%` },
@@ -135,13 +145,9 @@ export function PlanPage() {
   ];
 
   return (
-    <div className="ux-plan rd-page rd-plan">
+    <div className="ux-plan rd-page rd-plan g6-plan">
       <div className="ph rd-page-heading">
-        <div>
-          <span className="rd-eyebrow">Targets &amp; progress</span>
-          <h1>Plan</h1>
-          <p className="sub">Fully paid units · FY26–27</p>
-        </div>
+        <div><h1>Plan</h1></div>
         <div className="sp" />
         {canEdit ? (
           <button type="button" className={`btn ${editing ? "on" : ""}`} aria-pressed={editing}
@@ -152,12 +158,13 @@ export function PlanPage() {
       </div>
 
       <div className="stats ux-plan-summary">
-        {([
-          [T.target, "Planned units"], [T.actual, "Fully paid"], [Math.max(0, T.target - T.actual), "Still to close"],
-          ...(seeMoney(state) ? [[cr(T.coll), "Banked in plan"] as [string, string]] : []),
-        ] as [number | string, string][]).map(([v, t]) => (
-          <div className="stat" key={t}><b>{v}</b><span>{t}</span></div>
-        ))}
+        {focus ? (
+          <div className="stat" title={`${dISOtoDisp(focus.from, state.NOW)} → ${dISOtoDisp(focus.to, state.NOW)}`}>
+            <b>{focus.actual} of {focus.target}</b><span>Fully paid · {active ? "current" : "next"} period, {focus.t}</span></div>
+        ) : null}
+        <div className="stat"><b>{T.actual} of {T.target}</b><span>Fully paid · whole plan, FY26–27</span></div>
+        <div className="stat"><b>{Math.max(0, T.target - T.actual)}</b><span>Still to close</span></div>
+        {seeMoney(state) ? <div className="stat"><b>{cr(T.coll)}</b><span>Banked in plan</span></div> : null}
       </div>
 
       {issues.length > 0 && (
@@ -165,24 +172,21 @@ export function PlanPage() {
           <div className="ch"><h2>Decisions needed</h2><span className="tag due">{issues.length}</span></div>
           <div className="cb">
             {issues.map((x, i) => (
-              <div className="ux-plan-issue" key={i}><b>{x.t}</b><span>{x.d}</span></div>
+              <div className="ux-plan-issue" key={i}><b>{x.t}</b><div className="g6-issue-d"><span>{x.d}</span>{x.rec ? <RecovRow m={x.rec} /> : null}</div></div>
             ))}
           </div>
         </section>
       )}
 
-      <section className="card ux-primary ux-plan-periods">
+      <div className="secbar g6-plan-more" role="group" aria-label="More on the plan">{MORE.map(x => (
+        <button type="button" key={x.k} className={`sc ${open === x.k ? "on" : ""}`} aria-expanded={open === x.k}
+          aria-controls="g6-plan-sec" onClick={() => g6PlanOpen(x.k)}>{x.t}{x.n ? <i>{x.n}</i> : null}</button>
+      ))}</div>
+      <div id="g6-plan-sec">
+      {open === "periods" ? <section className="card ux-primary ux-plan-periods">
         <div className="ch">
           <div><h2>Period targets</h2><p className="sm rd-table-caption">Actuals come from confirmed payments</p></div>
-          <div className="sp" />
-          {focus ? <span className="tag">{active ? "Current period" : "Next period"}: {focus.t}</span> : null}
         </div>
-        {focus ? (
-          <div className="ux-plan-focus">
-            <b>{focus.actual} of {focus.target} fully paid</b>
-            <span>{dISOtoDisp(focus.from, state.NOW)} → {dISOtoDisp(focus.to, state.NOW)}</span>
-          </div>
-        ) : null}
         {editing ? (
           <div className="ux-toolbar ux-plan-edit-tools">
             {edit ? (
@@ -296,32 +300,10 @@ export function PlanPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
 
-      {(past.length || short) ? (
-        <details className="ux-disclosure" data-ux-key="goals-recovery">
-          <summary>Recovery actions · {past.length} ended periods{short ? " · inventory gap" : ""}</summary>
-          <div className="ux-section">
-            {past.map((p) => (
-              <div className="ux-plan-recovery" key={p.k}>
-                <b>{p.t}</b>
-                <RecovRow m={planKpi(p.t + " — fully paid against target", p.actual, p.target, p.k)} />
-              </div>
-            ))}
-            {short ? (
-              <div className="ux-plan-recovery">
-                <b>Deliverable inventory for the plan</b>
-                <RecovRow m={planKpi("The plan — fully paid against target", T.actual, T.target, "total")} />
-              </div>
-            ) : null}
-          </div>
-        </details>
-      ) : null}
-
-      <details className="ux-disclosure" data-ux-key="goals-upstream">
-        <summary>Capture requirements by period</summary>
-        <div className="ux-section">
-          <p className="sm">Calculated from each period target and the funnel assumptions.</p>
+      {open === "capture" ? <section className="card"><div className="ch"><h2>Capture requirements by period</h2></div><div className="cb">
+          <p className="sm" style={{ margin: "0 0 8px" }}>Calculated from each period target and the funnel assumptions.</p>
           <div className="ux-overflow">
             <table className="ptab ux-plan-table">
               <thead>
@@ -356,19 +338,11 @@ export function PlanPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      </details>
+        </div></section> : null}
 
-      <details className="ux-disclosure" data-ux-key="goals-reference">
-        <summary>Planning assumptions &amp; reference</summary>
-        <div className="ux-section">
-          <div className="ux-plan-settings"><PlanDoors items={doors} /></div>
-        </div>
-      </details>
+      {open === "assume" ? <div className="ux-plan-settings"><PlanDoors items={doors} /></div> : null}
 
-      <details className="ux-disclosure" data-ux-key="goals-baseline" open={ASKB && fin}>
-        <summary>Baseline &amp; master target · {g.baseline.units} + {T.target} planned</summary>
-        <div className="ux-section ux-plan-baseline">
+      {open === "baseline" ? <section className="card"><div className="cb ux-plan-baseline">
           <div>
             <b>{g.baseline.units} baseline units · {g.masterUnits} master target</b>
             <p className="sm">{g.baseline.src}. Baseline is prior stock, separate from new sales. Finance records a reason when replacing it.</p>
@@ -388,8 +362,8 @@ export function PlanPage() {
               <button type="button" className="btn" onClick={() => dispatch({ type: "setUi", patch: { ASKB: false } })}>Cancel change</button>
             </div>
           ) : null}
-        </div>
-      </details>
+        </div></section> : null}
+      </div>
     </div>
   );
 }

@@ -172,6 +172,18 @@ export function Rail({ view }: { view: View | null }) {
       <div className="foot" id="foot">
         {/* the demo book is "Sample data" only in fixture mode; the product's own book is not */}
         <span>{state.FIXTURES ? `Sample data · ${dLabel(state.NOW)}` : dLabel(state.NOW)}</span>
+        {/* merge-glue.js:150 */}
+        <a
+          className="mnlink"
+          role="button"
+          tabIndex={0}
+          onClick={() => dispatch({ type: "openDrawer", k: "p:merge.notes" })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") dispatch({ type: "openDrawer", k: "p:merge.notes" });
+          }}
+        >
+          How the merge works
+        </a>
       </div>
     </aside>
   );

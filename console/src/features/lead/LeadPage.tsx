@@ -35,7 +35,7 @@ import {
   type EmDraft, type LpDraft, type LpFlow,
 } from "./lp";
 import type { LpNotice } from "./reducer";
-import { Live, say } from "./Live";
+import { say } from "./Live";
 import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
 import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
 
@@ -514,7 +514,6 @@ export function LeadPage({ id }: { id: string }) {
           <button type="button" className="btn" id="lp-note-save" hidden={!ndOn.trim()} onClick={addNote}>Add note</button>
         </div>
       ) : null}
-      <Live />
     </div>
   );
 }

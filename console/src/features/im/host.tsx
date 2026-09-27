@@ -15,7 +15,7 @@ import type { NavKey } from "@/domain";
 import { MERGE, IM2M } from "@/domain/signin";
 import { MBOTH, MT, sidesOf } from "@/lib/selectors/access";
 import { useConsole, type ConsoleState } from "@/lib/store";
-import type { ImAction, ImState } from "@/lib/im";
+import { may, pageReadable, type ImAction, type ImState } from "@/lib/im";
 import { pathOf, type View } from "@/components/shell/routes";
 import type { ImPageProps } from "./common";
 import { ImDash } from "./dash";
@@ -94,7 +94,11 @@ export function Sided({ k, lead }: { k: NavKey; lead: ReactNode }) {
       <section className="imsec" aria-labelledby={`imsec-${k}`}>
         <h2 className="imsech" id={`imsec-${k}`}>Investors side seats</h2>
         <p className="sm imsecs">Who holds which seat on the Investors pages. Lead-side access is set above.</p>
-        {v === "team" ? <ImTeamBody {...im} /> : <ImPage v={v} />}
+        {/* merge-glue's strip regex stops at the .ph block's first </div> (the .sp spacer), so the
+            seat tag survives at the top of the section */}
+        {v === "team" && pageReadable(im.s, im.me, "team")
+          ? <><span className={`tag ${may(im.s, im.me, "team") ? "br" : ""}`}>{may(im.s, im.me, "team") ? "you can change seats" : "read only"}</span><ImTeamBody {...im} /></>
+          : v === "team" ? null : <ImPage v={v} />}
       </section>
     </>
   );

@@ -15,7 +15,9 @@
 import { BANDS, RECOVACTS } from "@/domain";
 import type { PersonKey, RecovAction } from "@/domain";
 import { dAdd, dOf, dayGap, dayOf, iso } from "@/lib/format";
-import { canRecov, fmtD, kpis, numNamed, P, roleOf, titleOf } from "@/lib/selectors";
+import { canRecov, fmtD, kpis, numNamed, P, roleOf } from "@/lib/selectors";
+/* titleOf with the Investors title (merge-glue.js imTitle) — the sign-in screen's own */
+import { titleOf } from "@/components/shell/SignIn";
 import type { ConsoleState } from "@/lib/store";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
@@ -84,7 +86,7 @@ function Body({ id }: DrawerProps) {
           patch: { RCWHO: (e.target.value || null) as PersonKey | null } })}>
         <option value="">Choose a person…</option>
         {recovOwners(state).map(w => (
-          <option value={w} key={w}>{P(state.PEOPLE, w).n} — {titleOf(state.PEOPLE, w)}</option>
+          <option value={w} key={w}>{P(state.PEOPLE, w).n} — {titleOf(state, w)}</option>
         ))}
       </select>
       <label className="fi" style={{ marginTop: 14 }}><span>Deadline</span>

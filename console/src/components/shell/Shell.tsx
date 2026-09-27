@@ -20,11 +20,12 @@ import { drawerDef } from "./drawers";
 import { Rail } from "./Rail";
 import { TopBar } from "./TopBar";
 import { findInvestor, landSafe, mayReach, navFor } from "./nav";
-import { parentOf, pathOf, viewOf, type View } from "./routes";
+import { NAV_EVT, parentOf, pathOf, viewOf, type View } from "./routes";
 import { useThemeSync } from "./ThemeButton";
 import { curSide, MNote, useIm } from "@/features/im/host";
 import { ImDrawer, DRAWERS as IMDRAWERS } from "@/features/im/drawers";
 import { useDocked } from "./useDocked";
+import { Live } from "./Live";
 import { LeadPage } from "@/features/lead/LeadPage";
 import TodayRoute from "@/app/today/page";
 import LeadsRoute from "@/app/leads/page";
@@ -110,9 +111,9 @@ export function Shell({ children }: { children: ReactNode }) {
      must not be front-end-only. When the API exists, every route this redirects must also be
      refused server-side for the same person.
      ------------------------------------------------------------------------------------------ */
-  useEffect(() => {
-    if (blocked) router.replace(pathOf(land, land === "lead" || land === "event" ? id ?? undefined : undefined));
-  }, [blocked, land, id, router]);
+  /* (the effect itself sits below pendingView: a page already asked for — a rail press, or a
+     "try them" chip that signs in as somebody else and opens a page — is not bounced back to the
+     landing page while its own route is still on the way) */
 
   /* mirror the path into VIEW — a record screen reports the nav key it sits under, which is what
      navFor(), count() and the help drawer all read.
@@ -148,7 +149,7 @@ export function Shell({ children }: { children: ReactNode }) {
       }
       if (!((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing))) return;
       /* never leave a half-written anything behind */
-      if (typing && t?.id !== "lq") return;
+      if (typing && !["lq", "fq"].includes(t?.id ?? "")) return;
       e.preventDefault();
       findInvestor(state, dispatch, (href) => router.push(href));
     };
@@ -304,15 +305,34 @@ export function Shell({ children }: { children: ReactNode }) {
       if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
       setClicked({ from: window.location.pathname, to: a.getAttribute("href") || "" });
     };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    const onNav = (e: Event) => {
+      const to = (e as CustomEvent<string>).detail;
+      if (typeof to === "string") setClicked({ from: window.location.pathname, to });
+    };
+    /* capture phase: next/link's own onClick (run from React's root listener, before a bubbling
+       document listener) calls preventDefault to navigate client-side, which would hide the press */
+    document.addEventListener("click", onClick, true);
+    window.addEventListener(NAV_EVT, onNav);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener(NAV_EVT, onNav);
+    };
   }, []);
+  /* a click is about the path it was made on: once the path moves (the link landed, or back/forward
+     went somewhere else) it is spent, so returning to that path later never replays it */
+  useEffect(() => {
+    if (clicked && clicked.from !== pathname) setClicked(null);
+  }, [clicked, pathname]);
   const clickedView = clicked && clicked.from === pathname ? viewOf(clicked.to).view : null;
   const wantView = clickedView && clickedView !== view ? clickedView
     : state.ui.NAVSEQ !== seqAtPath.current.seq ? state.VIEW : null;   /* a go() since this path landed */
   const pendingView = !pendingLead && wantView && (!view || wantView !== parentOf(view)) && PENDING[wantView] && mayReach(state, wantView)
     ? wantView : null;
   const Pending = pendingView ? PENDING[pendingView]! : null;
+  const heading = !!(pendingLead || pendingView);
+  useEffect(() => {
+    if (blocked && !heading) router.replace(pathOf(land, land === "lead" || land === "event" ? id ?? undefined : undefined));
+  }, [blocked, heading, land, id, router]);
   const shown = pendingLead ? "lead" : pendingView || view;
   const side = shown ? curSide(state, parentOf(shown)) : "ir";
   const paneCls =
@@ -331,9 +351,9 @@ export function Shell({ children }: { children: ReactNode }) {
         className={`app${state.DRW || imW != null ? " dk" : ""}${state.ui.RAILMIN ? " rc" : ""}`}
         style={dw != null ? ({ ["--dw" as string]: `${dw}px` } as CSSProperties) : undefined}
       >
-        <Rail view={view} />
+        <Rail view={shown} />
         <div className="main">
-          <TopBar />
+          <TopBar side={side} view={shown ? parentOf(shown) : state.VIEW} />
           <main className={paneCls} id="pane" tabIndex={-1} key={state.WHO} data-side={side === "im" ? "im" : undefined}>
             <MNote />
             {nav.length === 0 && view !== "me" ? <NoScreens /> : blocked && !Pending ? null : pendingLead || (shown === "lead" && id) ? <LeadPage id={(pendingLead || id)!} />
@@ -342,13 +362,18 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
         {state.DRW ? <Drawer /> : <ImDrawerSlot />}
       </div>
+      {/* body.html: one polite live region for the whole console, outside the pane */}
+      <Live />
     </>
   );
 }
 
-/* 03-app.js:7080 — a seat that reaches nothing says so, and says whose job it is to change it */
+/* draw() — ir-merged.js 10769-10777: a screen the seat does not reach draws this, and says whose it
+   is to change; the button opens the seat's first destination, when it has one */
 function NoScreens() {
-  const { state } = useConsole();
+  const { state, dispatch } = useConsole();
+  const router = useRouter();
+  const first = navFor(state).filter((n) => !n.bell)[0];
   return (
     <>
       <div className="ph">
@@ -356,10 +381,25 @@ function NoScreens() {
       </div>
       <div className="card">
         <div className="empty">
-          Your seat reaches no screens at the moment.
-          <br />
-          Ask {P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO) ?? ("tasneem" as PersonKey)).n} — a manager is the ceiling on what
-          anybody reaches, so this is theirs to change.
+          This screen is not one your seat reaches, so there is nothing on it to draw. A manager is the ceiling on
+          what anybody reaches, which makes it {P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO) ?? ("tasneem" as PersonKey)).n}
+          &apos;s to change — there is no request to raise and no desk to ring.
+          {first ? (
+            <>
+              <br />
+              <button
+                type="button"
+                className="chip"
+                style={{ marginTop: "10px" }}
+                onClick={() => {
+                  dispatch({ type: "go", v: first.k });
+                  router.push(pathOf(first.k as View));
+                }}
+              >
+                {`Open ${first.t.toLowerCase()}`}
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
     </>

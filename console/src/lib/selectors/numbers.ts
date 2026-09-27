@@ -91,7 +91,7 @@ export function kpis(ctx: Ctx): Kpi[] {
   const PLAN = ctx.PLAN, g = GOALS(PLAN);
   const mult = 1 / ((g.lead2qual / 100) * (g.qual2res / 100) * (g.res2paid / 100));
   const perEv = perEventNeed(PLAN);
-  return [
+  const lines: Kpi[] = [
     { k: "first", t: "First reply inside the window", grp: "Speed",
       have: 71, want: 100, unit: "%", built: false, why: "first_outbound_at is not written yet",
       read: "Three in ten leads never get a same-day reply. Everything downstream is measured on a cohort that was already cold." },
@@ -136,6 +136,20 @@ export function kpis(ctx: Ctx): Kpi[] {
       read: "Two thirds of losses are recorded as nothing at all, so the objection list is built on a third of the evidence.",
       jump: { LFILT: "lost" } },
   ];
+  return lines.concat(planLines(PLAN));
+}
+
+/* The plan's own periods, read as scorecard lines — ir-merged.js 7020 `planLines`. They carry the
+   same bands as every other line, which is what lets the Plan page hang a recovery action on one;
+   Numbers filters them out of its scorecard again. */
+export function planLines(PLAN: Plan): Kpi[] {
+  const T = planTotals(PLAN);
+  return PLAN.periods.map(p => ({ k: "plan_" + p.k, t: p.t + " — fully paid against target", grp: "Plan",
+    have: p.actual, want: p.target, unit: "", built: true, why: null,
+    read: p.actual + " of " + p.target + " units verified by Finance in " + p.t + "." } as Kpi))
+    .concat([{ k: "plan_total", t: "The plan — fully paid against target", grp: "Plan",
+      have: T.actual, want: T.target, unit: "", built: true, why: null,
+      read: T.actual + " of " + T.target + " units verified across every period." }]);
 }
 
 /* an hours metric is better when it is LOWER, so its score is inverted */

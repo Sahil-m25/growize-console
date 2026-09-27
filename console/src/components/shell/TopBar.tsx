@@ -20,8 +20,8 @@
    ============================================================================================== */
 
 import { useRouter } from "next/navigation";
-import type { PersonKey } from "@/domain";
-import { LADDER, PAGECAPS, SEAT, ST, TOUCHDONE, EDIT_H } from "@/domain";
+import type { NavKey, PersonKey } from "@/domain";
+import { LADDER, PAGECAPS, ST, TOUCHDONE, EDIT_H } from "@/domain";
 import {
   canAssign,
   canWork,
@@ -34,7 +34,6 @@ import {
   outOf,
   outTo,
   P,
-  roleOf,
   tList,
   tempFor,
   tempOn,
@@ -47,18 +46,21 @@ import { agoStr } from "@/lib/format";
 import { Icon } from "@/components/ui";
 import { FindBox } from "@/features/leads/FindBox";
 import { pathOf, type View } from "./routes";
+import { titleOf as mergedTitleOf } from "./SignIn";
+import { sidesOf } from "@/lib/selectors/access";
+import { imReadOnly } from "@/lib/im";
 
 const PAGES = PAGECAPS as unknown as Record<string, { t: string } | undefined>;
 const pageTitle = (p: string) => PAGES[p]?.t ?? p;
 
-export function TopBar() {
+export function TopBar({ side = "ir", view }: { side?: "ir" | "im" | "mix"; view?: NavKey }) {
   const { state, dispatch, saves = [], browserOnline = null, lastLocalUpdate = null, retrySave } = useConsole();
   const router = useRouter();
   const me = state.WHO;
   const p = P(state.PEOPLE, me);
 
-  /* titleOf(k) — SEAT[roleOf(k)] || "". 03-app.js:942 */
-  const titleOf = (k: PersonKey) => SEAT[roleOf(state.PEOPLE, k)!] ?? "";
+  /* titleOf(k) — ir-merged.js:1590: imTitle(k) || SEAT[roleOf(k)] || "" (SignIn.tsx) */
+  const titleOf = (k: PersonKey) => mergedTitleOf(state, k);
 
   const out = outOf(state, me);
   const covers = coversOf(state, me);
@@ -93,6 +95,8 @@ export function TopBar() {
     .filter(Boolean)
     .join(" · ");
   const nUp = navFor(state).some((n) => n.k === "updates") ? unread(state) : 0;
+  /* merge-glue.js:147 — on the Investors side of a page, a seat that only reads says so */
+  const ro = side === "im" && sidesOf(state, view ?? state.VIEW).im && imReadOnly({ data: state.IM, ui: state.IMUI }, me);
 
   return (
     <header className="top rd-top">
@@ -219,6 +223,12 @@ export function TopBar() {
               title="Switch it on from your profile"
             >
               {`${lent.length} lent to you`}
+            </span>
+          ) : null}
+          {ro ? (
+            <span className="tag ro" style={{ marginLeft: "6px" }}>
+              <span className="dot" />
+              read only
             </span>
           ) : null}
         </span>
