@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 27 Sep 2026 15:57 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 27 Sep 2026 16:04 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :bar_chart: Summary
@@ -7,6 +7,62 @@
 |Stories in build|Done|Building|Review|Waiting on people|To do|
 |---|---|---|---|---|---|
 |151|9|0|1|3|138|
+
+# :compass: Goal and forecast
+
+**Goal:** the whole Growize Console (lead side and Investors side, one app on Zoho) built by ![](slack_date:2026-10-03), then tested and hardened, and live when the go-live checks pass.
+
+|Measure|Value|
+|---|---|
+|Status|:red_circle: Behind|
+|Built so far|9 of 151 stories (6%)|
+|Pace now|7 stories/day (measured (last 48 h))|
+|Pace needed for the target|21.8 stories/day|
+|Build target|![](slack_date:2026-10-03)|
+|Forecast: everything built|![](slack_date:2026-10-17)|
+|Forecast: testing finished (earliest go-live)|![](slack_date:2026-10-23)|
+
+Dates are forecasts from the measured pace, not fixed deadlines (D66). They move every time the build finishes a story.
+
+## Stages
+
+|Stage|What it delivers|Stories|Done|Forecast done|
+|---|---|---|---|---|
+|S0|Zoho org build-out and access wall|18|8|![](slack_date:2026-09-29)|
+|S1|Foundations, access, test suite|23|1|![](slack_date:2026-10-01)|
+|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-16)|
+|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-17)|
+|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-17)|
+|S5|Hardening, UAT, migration, release|13|0|![](slack_date:2026-10-16)|
+
+# :calendar: Month by month
+
+|Month|Stories finished|Forecast to finish|Cumulative forecast|
+|---|---|---|---|
+|September 2026|9|27|36 of 151|
+|October 2026|0|115|151 of 151|
+
+# :spiral_calendar_pad: Week by week
+
+|Week of|Finished|Forecast|Cumulative|Burn-up|
+|---|---|---|---|---|
+|![](slack_date:2026-09-21) **(this week)**|9|6|15|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 10%|
+|![](slack_date:2026-09-28)|0|49|64|:large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 42%|
+|![](slack_date:2026-10-05)|0|49|113|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 75%|
+|![](slack_date:2026-10-12)|0|38|151|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square: 100%|
+
+## This week
+
+**Finished (9):** M02-S03, M02-S05, M02-S08, M02-S09, M02-S11, M02-S12, M02-S13, M02-S14, M19-S03
+
+**Planned by the forecast (6):** M02-S01, M02-S02, M02-S04, M02-S06, M03-S01, M19-S01
+
+**Stuck: review or waiting on people (4):**
+
+- **M02-S01** Enterprise renewed and seats ordered (waiting)
+- **M02-S02** Lead fields, rungs and picklists per the mapping (waiting)
+- **M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat (review)
+- **M02-S06** Native Lead conversion stopped (waiting)
 
 # :dart: Epics
 
