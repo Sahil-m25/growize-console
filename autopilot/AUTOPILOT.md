@@ -16,6 +16,7 @@ The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` p
 
 - The packet has `phase`, `phase_gate`, and `later_phases_do_not_build_now`. Do not build anything on that list, even if it looks quick.
 - Phase 1 builds the Investors side from `console/prototype/growize-console-merged.html` the same way the lead side was ported.
+- `pm/plan-merged/fe-gaps.json` lists, per story, the Jev cases that pass on the prototype but fail in the app (27 Sep). Match the prototype's behaviour and labels until they pass; that is the phase-1 gate.
 - The first phase-1 unit is **M19-S03**: make every fixture cited by `pm/plan-merged/ui-cases.json` change what the screens show (use each fixture's `prototype` JS in `fixtures-merged.json`). Until then 78 UI cases cannot run.
 - `done.mjs` records the result against the current phase and refreshes the Slack tracker (`ops/tracker/canvas.py --push`) by itself.
 

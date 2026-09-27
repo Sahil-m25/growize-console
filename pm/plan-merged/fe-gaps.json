@@ -1,0 +1,967 @@
+{
+ "note": "D98: cases that pass on the merged prototype but fail in the Next.js app (Jev, 27 Sep). Phase 1 is done for a story when these pass.",
+ "by_story": {
+  "M01-S02": [
+   {
+    "case": "TC-E01-005",
+    "why": "screen differs: The sign-in screen is showing.; It says 'You are signed out.'; It says 'Nothing you had recorded was lost.'; Sanjay Menon's lead page is not showing."
+   },
+   {
+    "case": "TC-E01-006",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M03-S01": [
+   {
+    "case": "TC-E03-003",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E03-005",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M03-S02": [
+   {
+    "case": "TC-E03-011",
+    "why": "control missing: Press 'Open Jhalak Mehta'"
+   },
+   {
+    "case": "TC-E03-012",
+    "why": "control missing: Press 'Open Jhalak Mehta'"
+   },
+   {
+    "case": "TC-E03-013",
+    "why": "screen differs: The members list shows Rohit Deshpande, Kavya Nair, Nikhil Rao and Ananya Iyer.; The members list does not show Jhalak Mehta."
+   },
+   {
+    "case": "TC-E03-014",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M03-S03": [
+   {
+    "case": "TC-E03-015",
+    "why": "control missing: Press 'Open Rohit Deshpande'"
+   },
+   {
+    "case": "TC-E03-016",
+    "why": "control missing: Press 'Open Rohit Deshpande'"
+   },
+   {
+    "case": "TC-E03-018",
+    "why": "screen differs: The members list shows Rohit Deshpande, Kavya Nair, Nikhil Rao and Ananya Iyer.; The members list does not show Sahil Mohite."
+   }
+  ],
+  "M04-S01": [
+   {
+    "case": "TC-E04-004",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M04-S02": [
+   {
+    "case": "TC-E04-006",
+    "why": "screen differs: The panel says the duplicate was flagged to Tasneem Qureshi.; In place of a flag button, the panel says 'Flagged to Tasneem Qureshi' and 'Carry on with the next name.'"
+   }
+  ],
+  "M04-S03": [
+   {
+    "case": "TC-E04-009",
+    "why": "screen differs: Test Person's lead page is open.; The lead page does not say 'No contact permission yet'."
+   }
+  ],
+  "M05-S02": [
+   {
+    "case": "TC-E05-005",
+    "why": "control missing: Press 'WhatsApp' in Sanjay Menon's panel beside the list"
+   }
+  ],
+  "M05-S03": [
+   {
+    "case": "TC-E05-008",
+    "why": "screen differs: Meera Krishnan's row reads 'Call back — today at 16:30'.; Meera Krishnan's row carries 'NDA · your move: Chase the signature'."
+   },
+   {
+    "case": "TC-E05-009",
+    "why": "screen differs: Meera Krishnan's lead page is open.; Its Paperwork section says the NDA is waiting for their signature.; The Paperwork section offers 'Reminded by call', 'Reminded by WhatsApp' and 'Reminded by email'"
+   }
+  ],
+  "M05-S04": [
+   {
+    "case": "TC-E05-011",
+    "why": "screen differs: Meera Krishnan's row reads 'Call back — today at 16:30'."
+   },
+   {
+    "case": "TC-E05-012",
+    "why": "control missing: Press 'Reschedule' in the panel"
+   }
+  ],
+  "M06-S01": [
+   {
+    "case": "TC-E06-001",
+    "why": "screen differs: The line under the Leads heading reads '5 of 6 in your book · 1 closed as lost, held back'.; The table lists Sanjay Menon, Meera Krishnan and Prakash Bhat."
+   },
+   {
+    "case": "TC-E06-002",
+    "why": "control missing: Open 'Filters'"
+   },
+   {
+    "case": "TC-E06-003",
+    "why": "control missing: Press 'Show' next to the held-back count"
+   }
+  ],
+  "M06-S02": [
+   {
+    "case": "TC-E06-004",
+    "why": "control missing: Choose 'Overdue · 1' in the Needs attention dropdown"
+   },
+   {
+    "case": "TC-E06-005",
+    "why": "control missing: Choose 'Overdue · 2' in the Needs attention dropdown"
+   },
+   {
+    "case": "TC-E06-007",
+    "why": "control missing: Type 'zzzz' in the Filter this list box"
+   }
+  ],
+  "M06-S03": [
+   {
+    "case": "TC-E06-009",
+    "why": "screen differs: The search results are headed 'Your book'.; The results say no investor matches “rahul” and only your own book is searched."
+   },
+   {
+    "case": "TC-E06-011",
+    "why": "screen differs: Meera Krishnan's lead page is open.; The lead page shows the phone +91 98450 12277."
+   },
+   {
+    "case": "TC-E06-012",
+    "why": "screen differs: The search results are headed 'All leads in the organisation'.; The results list Rahul Sethi with 'Ananya Iyer · Investor Relations'."
+   }
+  ],
+  "M07-S01": [
+   {
+    "case": "TC-E07-001",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E07-002",
+    "why": "screen differs: Anand Pillai is not offered in the search results."
+   },
+   {
+    "case": "TC-E07-004",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M07-S02": [
+   {
+    "case": "TC-E07-005",
+    "why": "screen differs: The question shown is 'What happened?', not 'How did you reach them?'.; It offers Connected, Interested, Call back, Not now, Not interested, No answer and Wrong number.; A row reading 'Call' with a 'C"
+   },
+   {
+    "case": "TC-E07-006",
+    "why": "control missing: Press 'Log a contact'"
+   },
+   {
+    "case": "TC-E07-007",
+    "why": "screen differs: "
+   },
+   {
+    "case": "TC-E07-008",
+    "why": "control missing: Press 'Call' in the Next step card"
+   },
+   {
+    "case": "TC-E07-009",
+    "why": "control missing: Open Girish Rao"
+   },
+   {
+    "case": "TC-E07-034",
+    "why": "screen differs: "
+   }
+  ],
+  "M07-S03": [
+   {
+    "case": "TC-E07-010",
+    "why": "control missing: Press 'Interested'"
+   },
+   {
+    "case": "TC-E07-011",
+    "why": "screen differs: "
+   }
+  ],
+  "M07-S04": [
+   {
+    "case": "TC-E07-015",
+    "why": "control missing: Press 'Interested'"
+   },
+   {
+    "case": "TC-E07-016",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E07-017",
+    "why": "control missing: Open Meera Krishnan"
+   },
+   {
+    "case": "TC-E07-018",
+    "why": "control missing: Press 'Call' in the Next step card"
+   }
+  ],
+  "M07-S05": [
+   {
+    "case": "TC-E07-020",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E07-023",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E07-025",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M07-S06": [
+   {
+    "case": "TC-E07-026",
+    "why": "control missing: Press 'Not interested'"
+   },
+   {
+    "case": "TC-E07-027",
+    "why": "control missing: Press 'Not interested'"
+   },
+   {
+    "case": "TC-E07-028",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E07-029",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E07-033",
+    "why": "control missing: Press 'Not interested'"
+   }
+  ],
+  "M07-S07": [
+   {
+    "case": "TC-E07-031",
+    "why": "control missing: Type 'Prefers WhatsApp on weekdays' in the Add a note box"
+   },
+   {
+    "case": "TC-E07-032",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M08-S01": [
+   {
+    "case": "TC-E08-001",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-002",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-003",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-004",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-005",
+    "why": "control missing: Press 'Mark done' on the Next milestone row"
+   },
+   {
+    "case": "TC-E08-006",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M08-S02": [
+   {
+    "case": "TC-E08-007",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-009",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-024",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M08-S03": [
+   {
+    "case": "TC-E08-012",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-013",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E08-014",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-IM05-005",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM05-008",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M08-S04": [
+   {
+    "case": "TC-E08-015",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-IM05-014",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM05-015",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM05-016",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M08-S05": [
+   {
+    "case": "TC-E08-017",
+    "why": "screen differs: Sanjay Menon is not offered in the search results."
+   },
+   {
+    "case": "TC-E08-018",
+    "why": "control missing: Press 'Investor file'"
+   },
+   {
+    "case": "TC-E08-020",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M12-S11": [
+   {
+    "case": "TC-E09-001",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-002",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-003",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-004",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-005",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-007",
+    "why": "control missing: Open Sanjay Menon"
+   },
+   {
+    "case": "TC-E09-008",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M12-S12": [
+   {
+    "case": "TC-E09-010",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-014",
+    "why": "control missing: Open Meera Krishnan"
+   }
+  ],
+  "M12-S13": [
+   {
+    "case": "TC-E09-015",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-016",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-017",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-018",
+    "why": "control missing: Press 'Investor file'"
+   }
+  ],
+  "M12-S14": [
+   {
+    "case": "TC-E09-019",
+    "why": "screen differs: Meera Krishnan's row on Today shows a 'Call back' step due 28 Aug · 16:30.; Meera Krishnan's row offers 'NDA · your move: Chase the signature'."
+   },
+   {
+    "case": "TC-E09-020",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-021",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E09-022",
+    "why": "screen differs: On Today, the Sanjay Menon entry reads 'Overdue' and 'Intro email — due 22 Aug'.; On Today, Sanjay Menon's row offers only the button 'Sanjay Menon' — no 'your move' chip."
+   }
+  ],
+  "M14-S01": [
+   {
+    "case": "TC-E10-001",
+    "why": "screen differs: Upcoming shows 3 events and Completed shows 4.; The upcoming events are, in order, Sobha Dream Acres (5–6 Sep), Bangalore Club (19–20 Sep) and Embassy Springs (26–27 Sep).; Sobha Dream Acres' team is "
+   },
+   {
+    "case": "TC-E10-002",
+    "why": "control missing: Press the 'Completed' tab"
+   }
+  ],
+  "M14-S02": [
+   {
+    "case": "TC-E10-004",
+    "why": "screen differs: No row or heading on the Events page offers an 'Add event' button."
+   },
+   {
+    "case": "TC-E10-005",
+    "why": "control missing: Press 'Add event' in the page heading"
+   },
+   {
+    "case": "TC-E10-006",
+    "why": "control missing: Press 'Add event' in the page heading"
+   },
+   {
+    "case": "TC-E10-008",
+    "why": "control missing: Press Brigade Cornerstone"
+   }
+  ],
+  "M14-S03": [
+   {
+    "case": "TC-E10-009",
+    "why": "control missing: Press Prestige Falcon City"
+   },
+   {
+    "case": "TC-E10-010",
+    "why": "control missing: Press 'Prestige Falcon City · 31 leads'"
+   },
+   {
+    "case": "TC-E10-011",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E10-013",
+    "why": "control missing: Press 'Prestige Falcon City · 31 leads'"
+   }
+  ],
+  "M15-S01": [
+   {
+    "case": "TC-E11-001",
+    "why": "screen differs: The Updates page reads 'last 7 days on your leads · 2 new'.; It shows 'Finance confirmed something on 1 lead'.; It shows 'Worked by somebody else — 1 lead'."
+   },
+   {
+    "case": "TC-E11-002",
+    "why": "control missing: Press 'Finance confirmed something on 1 lead'"
+   },
+   {
+    "case": "TC-E11-003",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E11-005",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M15-S03": [
+   {
+    "case": "TC-E11-008",
+    "why": "screen differs: The Activity page reads 'Your actions, latest first.'; It offers the views 'Log' and 'By day'.; The log table has columns When, Action and Investor, and no Person column."
+   },
+   {
+    "case": "TC-E11-009",
+    "why": "control missing: Press 'By person'"
+   },
+   {
+    "case": "TC-E11-011",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-IM10-006",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM10-009",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M16-S01": [
+   {
+    "case": "TC-E12-001",
+    "why": "screen differs: The Numbers page shows an 'Assignments by IR' section.; Its columns include This week, Last week, Earlier this month, Before this month and Total.; It has a row for each of Rohit, Kavya, Nikhil and An"
+   },
+   {
+    "case": "TC-E12-004",
+    "why": "screen differs: The Assignments by IR section has rows for Rohit, Kavya, Nikhil and Ananya."
+   }
+  ],
+  "M16-S02": [
+   {
+    "case": "TC-E12-006",
+    "why": "control missing: Press the '1' in the Missed first touch column on Ananya's row"
+   }
+  ],
+  "M16-S03": [
+   {
+    "case": "TC-E12-008",
+    "why": "screen differs: The page offers these sections in this order: Assignments by IR, Review, Checks, Funnel, Speed, Effort, Owners, Forecast, Sources, Why we lose."
+   },
+   {
+    "case": "TC-E12-010",
+    "why": "control missing: Open the Checks section"
+   }
+  ],
+  "M16-S04": [
+   {
+    "case": "TC-E12-013",
+    "why": "screen differs: The Plan page is marked read only.; The whole-plan figure reads '0 of 193'."
+   },
+   {
+    "case": "TC-E12-015",
+    "why": "control missing: Open the Period targets section"
+   }
+  ],
+  "M16-S06": [
+   {
+    "case": "TC-E13-001",
+    "why": "control missing: Open Transfers from the menu"
+   },
+   {
+    "case": "TC-E13-002",
+    "why": "control missing: Open Transfers from the menu"
+   },
+   {
+    "case": "TC-E13-004",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E13-005",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M16-S07": [
+   {
+    "case": "TC-E13-006",
+    "why": "control missing: Open Transfers from the menu"
+   },
+   {
+    "case": "TC-E13-007",
+    "why": "special fixture not loaded"
+   }
+  ],
+  "M17-S01": [
+   {
+    "case": "TC-E14-001",
+    "why": "screen differs: The page reads '5 active members'.; The members table has rows for Tasneem Qureshi, Rohit Deshpande, Kavya Nair, Nikhil Rao and Ananya Iyer."
+   }
+  ],
+  "M17-S05": [
+   {
+    "case": "TC-E14-015",
+    "why": "control missing: Type 'Rohit D.' in the Display name box"
+   },
+   {
+    "case": "TC-E14-017",
+    "why": "control missing: Open 'Your page access'"
+   }
+  ],
+  "M17-S06": [
+   {
+    "case": "TC-E14-018",
+    "why": "screen differs: The page says 'you own this page'.; It counts 10 working, 7 needing attention and 3 not working."
+   }
+  ],
+  "M18-S02": [
+   {
+    "case": "TC-E15-006",
+    "why": "screen differs: The search results list is headed 'Your book'.; The search results say no investor matches “Anand Pillai”.; The search results say only your own book is searched.; The search results do not list Anand"
+   },
+   {
+    "case": "TC-IM12-005",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M18-S03": [
+   {
+    "case": "TC-E15-020",
+    "why": "screen differs: Sanjay Menon's lead page is open."
+   },
+   {
+    "case": "TC-IM12-007",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM12-008",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M18-S04": [
+   {
+    "case": "TC-E15-022",
+    "why": "special fixture not loaded"
+   },
+   {
+    "case": "TC-E15-023",
+    "why": "control missing: Type 'offline note' in the 'Add a note' box"
+   }
+  ],
+  "M01-S07": [
+   {
+    "case": "TC-IM01-005",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM12-010",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM12-016",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M01-S08": [
+   {
+    "case": "TC-IM01-007",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M01-S09": [
+   {
+    "case": "TC-IM01-011",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM01-012",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M03-S06": [
+   {
+    "case": "TC-IM02-006",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-007",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-008",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M03-S07": [
+   {
+    "case": "TC-IM02-009",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-010",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-011",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M03-S08": [
+   {
+    "case": "TC-IM02-012",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-013",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-014",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M02-S04": [
+   {
+    "case": "TC-IM02-015",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-016",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-009",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-010",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-011",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-012",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-013",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M01-S10": [
+   {
+    "case": "TC-IM02-018",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-022",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M03-S04": [
+   {
+    "case": "TC-IM02-023",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM02-024",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M15-S05": [
+   {
+    "case": "TC-IM10-010",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M05-S08": [
+   {
+    "case": "TC-IM03-011",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M09-S01": [
+   {
+    "case": "TC-IM04-001",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-002",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-003",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M09-S02": [
+   {
+    "case": "TC-IM04-004",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-005",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-006",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M09-S03": [
+   {
+    "case": "TC-IM04-007",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-008",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M09-S04": [
+   {
+    "case": "TC-IM04-014",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM04-015",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M10-S01": [
+   {
+    "case": "TC-IM05-003",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M10-S03": [
+   {
+    "case": "TC-IM05-013",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M11-S03": [
+   {
+    "case": "TC-IM06-001",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM06-002",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM06-003",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M11-S04": [
+   {
+    "case": "TC-IM06-004",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM06-005",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM06-006",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M11-S05": [
+   {
+    "case": "TC-IM06-007",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM06-009",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM06-010",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M12-S03": [
+   {
+    "case": "TC-IM07-001",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM07-002",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM07-003",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M12-S04": [
+   {
+    "case": "TC-IM07-004",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM07-007",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M12-S06": [
+   {
+    "case": "TC-IM07-012",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM07-013",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M12-S07": [
+   {
+    "case": "TC-IM07-014",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM07-016",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M13-S02": [
+   {
+    "case": "TC-IM08-001",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM08-002",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM08-003",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M13-S03": [
+   {
+    "case": "TC-IM08-004",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM08-006",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M13-S04": [
+   {
+    "case": "TC-IM08-007",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM08-008",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM08-015",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M13-S06": [
+   {
+    "case": "TC-IM08-010",
+    "why": "Investors-side page missing"
+   },
+   {
+    "case": "TC-IM08-011",
+    "why": "Investors-side page missing"
+   }
+  ],
+  "M08-S08": [
+   {
+    "case": "TC-IM11-005",
+    "why": "Investors-side page missing"
+   }
+  ]
+ }
+}
