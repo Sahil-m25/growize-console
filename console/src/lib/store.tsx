@@ -49,8 +49,13 @@ type ConsoleCtx = {
 
 const Ctx = createContext<ConsoleCtx | null>(null);
 
-export function ConsoleProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState(initialState);
+export function ConsoleProvider({ children, initial }: { children: ReactNode; initial?: DataPayload }) {
+  const [state, setState] = useState(() => {
+    const s0 = initialState();
+    if (!initial) return s0;
+    pinClock(initial.ds.CLOCKPIN);
+    return reducer(s0, { type: "hydrate", ds: initial.ds, version: initial.version, fixtures: initial.fixtures });
+  });
   const stateRef = useRef(state), sessionRef = useRef(0), onlineRef = useRef(false);
   const [saves, setSaves] = useState<SaveEntry[]>([]);
   const [browserOnline, setBrowserOnline] = useState<boolean | null>(null);
