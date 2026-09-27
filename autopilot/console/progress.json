@@ -451,6 +451,22 @@
    "commits": [
     "74f8d1d"
    ]
+  },
+  "M05-S04": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:34:53.857Z",
+   "note": "Reschedule moves the lead step and its Call/Meeting/Task together with 10 s Undo, 2 tests; waits on activity access (M02-S07) and the tester's reminder check.",
+   "commits": [
+    "2613b40"
+   ]
   }
  },
  "subtasks": {
@@ -804,6 +820,16 @@
    "status": "done",
    "at": "2026-09-27T16:31:36.017Z",
    "phase": "zoho"
+  },
+  "M05-S04-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:34:53.857Z",
+   "phase": "zoho"
+  },
+  "M05-S04-T02": {
+   "status": "blocked",
+   "at": "2026-09-27T16:32:08.001Z",
+   "note": "waiting on Tester"
   }
  },
  "rounds": [
@@ -1241,6 +1267,24 @@
    "attempt": 1,
    "hours": 2,
    "note": "CSV import server with row verdicts, event tag, owner rules and duplicate-safe retry, 5 tests; waits on the Leads.Mobile duplicate check and an event staff source."
+  },
+  {
+   "at": "2026-09-27T16:32:07.828Z",
+   "story": "M05-S04",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:34:53.857Z",
+   "story": "M05-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Reschedule moves the lead step and its Call/Meeting/Task together with 10 s Undo, 2 tests; waits on activity access (M02-S07) and the tester's reminder check."
   }
  ],
  "last_regression_round": 0,
