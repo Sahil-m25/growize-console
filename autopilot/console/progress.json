@@ -200,17 +200,21 @@
    }
   },
   "M02-S10": {
-   "status": "in_progress",
+   "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "in_progress"
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "zoho": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T12:20:10.046Z",
-   "notes": 2
+   "at": "2026-09-27T12:22:00.015Z",
+   "notes": 2,
+   "note": "Waiting on owner-created sandbox, OAuth clients and sandbox parity evidence; live Zoho writes are forbidden in this run. Typecheck passed; sandbox reset tests 3/3 passed; npm test is not yet defined on the frontend-owned package.",
+   "commits": [
+    "ba0c27a"
+   ]
   }
  },
  "subtasks": {
@@ -451,8 +455,8 @@
    "note": "D98: reopened — fixture endpoint records the name only"
   },
   "M02-S10-T01": {
-   "status": "in_progress",
-   "at": "2026-09-27T12:20:10.046Z",
+   "status": "done",
+   "at": "2026-09-27T12:22:00.015Z",
    "phase": "zoho"
   },
   "M02-S10-T02": {
@@ -635,6 +639,15 @@
    "attempt": 1,
    "hours": 1.5,
    "note": ""
+  },
+  {
+   "at": "2026-09-27T12:22:00.015Z",
+   "story": "M02-S10",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": "Waiting on owner-created sandbox, OAuth clients and sandbox parity evidence; live Zoho writes are forbidden in this run. Typecheck passed; sandbox reset tests 3/3 passed; npm test is not yet defined on the frontend-owned package."
   }
  ],
  "last_regression_round": 0,
