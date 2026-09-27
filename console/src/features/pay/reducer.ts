@@ -1,4 +1,3 @@
-"use client";
 
 /* ── pages-d's reducer — money, paper, the shelf and the transfer ───────────────────────────
    Ports `ref/03-app.js` 668–737 (setReleased, askExt, decideExt, lapse), 1476–1477 (setPay),
