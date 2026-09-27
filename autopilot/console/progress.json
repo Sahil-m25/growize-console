@@ -281,6 +281,23 @@
    "commits": [
     "9bcc4e3"
    ]
+  },
+  "M04-S01": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T15:53:12.391Z",
+   "notes": 2,
+   "note": "createLead server boundary built with 10 recorded-fixture tests; waits on Leads picklist/field setup (Introduced_By, Consent_Visit, source and consent-how values), the unassigned-queue PROVISIONAL, and the session layer that supplies the capture access authority.",
+   "commits": [
+    "f938534"
+   ]
   }
  },
  "subtasks": {
@@ -569,6 +586,16 @@
    "status": "blocked",
    "at": "2026-09-27T14:56:42.314Z",
    "note": "waiting on Sahil"
+  },
+  "M04-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T15:53:12.391Z",
+   "phase": "zoho"
+  },
+  "M04-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T15:53:12.391Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -826,6 +853,24 @@
    "attempt": 1,
    "hours": 3,
    "note": "KAM book service (own book, Head-of-AM team+pool, guarded detail and Touch writes, identity wall) with 20 recorded-fixture tests; typecheck clean. Waiting on T01 Zoho sharing config and the sharing proof (NOTE-1); T03 Jev UI cases and T04 UAT follow in later phases."
+  },
+  {
+   "at": "2026-09-27T15:47:07.546Z",
+   "story": "M04-S01",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T15:53:12.391Z",
+   "story": "M04-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3.5,
+   "note": "createLead server boundary built with 10 recorded-fixture tests; waits on Leads picklist/field setup (Introduced_By, Consent_Visit, source and consent-how values), the unassigned-queue PROVISIONAL, and the session layer that supplies the capture access authority."
   }
  ],
  "last_regression_round": 0,
