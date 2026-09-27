@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740993124",
+        "Supplementary_Sign_Req_Id": "9007199254740993123",
+        "Modified_Time": "2026-09-27T09:30:00+05:30",
+        "Agreement_Signed": false,
+        "Full_Name": "Synthetic Fixture Investor",
+        "Email": "fixture.investor@example.invalid"
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}

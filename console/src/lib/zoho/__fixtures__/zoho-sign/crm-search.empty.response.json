@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [],
+    "info": {
+      "more_records": false
+    }
+  }
+}

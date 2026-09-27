@@ -215,6 +215,19 @@
    "commits": [
     "ba0c27a"
    ]
+  },
+  "M20-S08": {
+   "status": "in_progress",
+   "attempts": 1,
+   "phases": {
+    "zoho": "in_progress"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T12:22:28.424Z",
+   "notes": 2
   }
  },
  "subtasks": {
@@ -463,6 +476,21 @@
    "status": "blocked",
    "at": "2026-09-27T12:21:30.836Z",
    "note": "waiting on Sahil"
+  },
+  "M20-S08-T03": {
+   "status": "in_progress",
+   "at": "2026-09-27T12:22:28.424Z",
+   "phase": "zoho"
+  },
+  "M20-S08-T01": {
+   "status": "blocked",
+   "at": "2026-09-27T12:28:17.901Z",
+   "note": "waiting on Sahil"
+  },
+  "M20-S08-T02": {
+   "status": "blocked",
+   "at": "2026-09-27T12:28:22.795Z",
+   "note": "waiting on Sahil"
   }
  },
  "rounds": [
@@ -648,6 +676,15 @@
    "attempt": 1,
    "hours": 1.5,
    "note": "Waiting on owner-created sandbox, OAuth clients and sandbox parity evidence; live Zoho writes are forbidden in this run. Typecheck passed; sandbox reset tests 3/3 passed; npm test is not yet defined on the frontend-owned package."
+  },
+  {
+   "at": "2026-09-27T12:22:28.424Z",
+   "story": "M20-S08",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
   }
  ],
  "last_regression_round": 0,

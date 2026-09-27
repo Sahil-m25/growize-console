@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "access_token": "synthetic-invalid-domain-token",
+    "api_domain": "https://not-zoho.example.invalid",
+    "expires_in": 3600,
+    "error_description": "Synthetic malformed grant fixture"
+  }
+}

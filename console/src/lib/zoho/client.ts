@@ -101,6 +101,8 @@ export type ZohoRecord = { readonly id: string; readonly [field: string]: unknow
 export interface ZohoPage {
   readonly records: readonly ZohoRecord[];
   readonly moreRecords: boolean;
+  /** Present only when Zoho returned a row without a lossless string id. */
+  readonly invalidRecordIds?: true;
 }
 export interface WriteAck {
   readonly id: string;
@@ -182,7 +184,19 @@ export interface ZohoClientOptions {
 
 /* ===== CREDENTIALS ======================================================================== */
 
-const ZOHO_API_HOST = /^(?:[a-z0-9-]+\.)*zohoapis\.[a-z]{2,3}(?:\.[a-z]{2})?$/;
+/** Explicit service API hosts published for Zoho data centres. Never accept a lookalike TLD. */
+const ZOHO_API_HOSTS: ReadonlySet<string> = new Set([
+  "www.zohoapis.com",
+  "www.zohoapis.eu",
+  "www.zohoapis.in",
+  "www.zohoapis.com.au",
+  "www.zohoapis.jp",
+  "www.zohoapis.ca",
+  "www.zohoapis.sa",
+  "www.zohoapis.com.cn",
+  "www.zohoapis.uk",
+  "www.zohoapis.ae",
+]);
 const mintedCredentials = new WeakSet<object>();
 
 /** Validates a token response's `api_domain`: https, a Zoho API host, nothing else in the URL. */
@@ -195,7 +209,7 @@ export function apiDomainOf(raw: unknown): ApiDomain {
     throw new TypeError(`api_domain ${JSON.stringify(raw)} is not a URL.`);
   }
   const bare = !url.username && !url.password && !url.port && !url.search && !url.hash && (url.pathname === "/" || url.pathname === "");
-  if (url.protocol !== "https:" || !bare || !ZOHO_API_HOST.test(url.hostname)) {
+  if (url.protocol !== "https:" || !bare || !ZOHO_API_HOSTS.has(url.hostname.toLowerCase())) {
     throw new TypeError(`Refusing api_domain ${JSON.stringify(raw)}: not an https Zoho API host. A token is never sent anywhere else.`);
   }
   return url.origin as ApiDomain;
@@ -239,6 +253,18 @@ function assertCredential(credential: unknown, kind: Credential["kind"]): assert
   }
   if ((credential as Credential).kind !== kind) {
     throw new TypeError(kind === "user" ? "A service credential never serves a screen (D53)." : "A person's token is not a background job's (D53).");
+  }
+}
+
+/** Runtime provenance check for server integrations that operate outside the CRM executor. */
+export function assertServiceCredential(
+  credential: unknown,
+  job?: ServiceJob,
+): asserts credential is ServiceCredential {
+  assertCredential(credential, "service");
+  if (credential.kind !== "service") throw new TypeError("A person's token is not a background job's (D53).");
+  if (job !== undefined && credential.job !== job) {
+    throw new TypeError(`This integration requires the ${job} service credential.`);
   }
 }
 
@@ -297,14 +323,31 @@ function recordsIn(body: unknown): ZohoRecord[] {
   const out: ZohoRecord[] = [];
   for (const raw of data) {
     const r = obj(raw);
-    const id = r ? (typeof r.id === "string" ? r.id : typeof r.id === "number" ? String(r.id) : null) : null;
+    // IDs are source identifiers, not quantities. Never accept a JSON number:
+    // 18/19-digit Zoho ids lose precision before they can be stringified.
+    const id = r && typeof r.id === "string" && RECORD.test(r.id) ? r.id : null;
     if (r && id !== null) out.push(Object.freeze({ ...r, id }));
   }
   return out;
 }
+function invalidRecordIdsIn(body: unknown): boolean {
+  const data = obj(body)?.data;
+  if (!Array.isArray(data)) return false;
+  return data.some((raw) => {
+    const record = obj(raw);
+    return record === null || typeof record.id !== "string" || !RECORD.test(record.id);
+  });
+}
 const moreRecords = (body: unknown): boolean => obj(obj(body)?.info)?.more_records === true;
-const pageOf = (result: ZohoSuccess): ZohoPage =>
-  result.kind === "empty" ? { records: [], moreRecords: false } : { records: recordsIn(result.body), moreRecords: moreRecords(result.body) };
+const pageOf = (result: ZohoSuccess): ZohoPage => {
+  if (result.kind === "empty") return { records: [], moreRecords: false };
+  const invalidRecordIds = invalidRecordIdsIn(result.body);
+  return {
+    records: recordsIn(result.body),
+    moreRecords: moreRecords(result.body),
+    ...(invalidRecordIds ? { invalidRecordIds: true as const } : {}),
+  };
+};
 
 function parseJson(text: string): unknown {
   if (!text) return null;

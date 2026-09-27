@@ -1,0 +1,11 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INTERNAL_ERROR",
+    "message": "Synthetic CRM outage fixture",
+    "status": "error"
+  }
+}

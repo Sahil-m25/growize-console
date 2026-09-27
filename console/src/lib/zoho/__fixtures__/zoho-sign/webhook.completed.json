@@ -1,0 +1,11 @@
+{
+  "requests": {
+    "request_id": "9007199254740993123",
+    "request_status": "declined",
+    "record_id": "9007199254740993999",
+    "recipient_name": "Synthetic Fixture Person",
+    "recipient_email": "fixture.person@example.invalid",
+    "recipient_phone": "+91 90000 00000"
+  },
+  "event": "request_completed"
+}

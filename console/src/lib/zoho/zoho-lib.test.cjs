@@ -443,7 +443,7 @@ test('client: the API domain comes from the token response, and a token is only 
   assert.equal(calls[0].url, `https://www.zohoapis.eu/crm/v8/Leads/${ID}`);
   assert.equal(calls[1].url, `https://www.zohoapis.in/crm/v8/Leads/${ID}`);
   assert.equal(calls[0].init.headers.Authorization, 'Zoho-oauthtoken 1000.secret-token');
-  for (const bad of ['http://www.zohoapis.in', 'https://www.zohoapis.com.evil.net', 'https://evilzohoapis.com', 'https://evil.example', 'https://www.zohoapis.in/steal', 'https://www.zohoapis.in:8443', '', undefined]) {
+  for (const bad of ['http://www.zohoapis.in', 'https://www.zohoapis.com.evil.net', 'https://tenant.zohoapis.in', 'https://www.zohoapis.xyz', 'https://evilzohoapis.com', 'https://evil.example', 'https://www.zohoapis.in/steal', 'https://www.zohoapis.in:8443', '', undefined]) {
     assert.throws(() => userCredential('kavya', { ...grantFor(), api_domain: bad }), TypeError, `api_domain ${bad} is refused`);
   }
   assert.equal(apiDomainOf('https://www.zohoapis.com.au/'), 'https://www.zohoapis.com.au');

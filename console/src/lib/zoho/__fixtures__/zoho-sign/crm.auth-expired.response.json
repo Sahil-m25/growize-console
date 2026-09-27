@@ -1,0 +1,11 @@
+{
+  "status": 401,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INVALID_OAUTHTOKEN",
+    "message": "Synthetic expired CRM token fixture",
+    "status": "error"
+  }
+}
