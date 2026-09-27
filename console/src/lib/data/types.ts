@@ -79,6 +79,8 @@ export type Dataset = {
   EVID: string;
   /** the Investors side */
   im: ImData;
+  /** fixture mode only: a clock fixture's pinned time of day on NOW ("HH:mm"); absent = the wall clock's hour */
+  CLOCKPIN?: string | null;
 };
 
 /** Where records come from. Phase 1: the fixture book or nothing; phase 2: Zoho. */

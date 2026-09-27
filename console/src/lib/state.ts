@@ -260,6 +260,9 @@ export type ConsoleState = {
   /* the System test toolbar's switch — the next business write fails once, then this clears
      itself, exactly as the prototype's own `FAILNEXT` (03-app.js:4613, 4731, 10641). */
   FAILNEXT: boolean;
+  /* fixture mode only (NEXT_SAVE_REFUSED): every sign-in arms FAILNEXT, as the prototype's fixture
+     wraps signIn() to set FAILNEXT after it */
+  FXFAIL: boolean;
   SC: { today: Scope; leads: Scope; activity: Scope }; // "mine" | "team"
   SEC: Record<string, string>; // per-page section tab
   DRW: DrawerState | null;
@@ -324,6 +327,10 @@ export type Action =
   | { type: "hideRef"; k: string }
   /* armFail(v) — 03-app.js:10641. The System test toolbar's one-shot failed-write switch. */
   | { type: "armFail"; v: boolean }
+  /* a test fixture's client half (FIXTURE_MODE=local only, dispatched by the store from GET
+     /api/data): "offline" is an effect the store performs (the browser reports it lost its
+     connection); "failNextOnSignIn" arms FAILNEXT on every sign-in (NEXT_SAVE_REFUSED) */
+  | { type: "fixture"; k: "offline" | "failNextOnSignIn" }
   /* ---- TODO(pages-a): leads, one lead, today ---- */
   | { type: "logTouch"; id: LeadId; k: string }
   | { type: "tick"; id: LeadId }
@@ -586,6 +593,7 @@ export function initialState(ds: Dataset = emptyDataset(clockDay(kolkataNow())))
     NSEEN: {},
     REFSEEN: {},
     FAILNEXT: false,
+    FXFAIL: false,
     SC: { today: "mine", leads: "mine", activity: "mine" } as ConsoleState["SC"],
     SEC: {},
     DRW: null,
@@ -729,8 +737,10 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
     const opened: ConsoleState = {
       ...endSession(state), authed: true, SIGNOUT: null, WHO: a.k, ROLE: seatOf(state.PEOPLE, a.k), LEAD: state.LEAD,
     };
-    return consoleAccount(state.PEOPLE, a.k) ? reducer(opened, { type: "setPerson", k: a.k }) : opened;
+    const signed = consoleAccount(state.PEOPLE, a.k) ? reducer(opened, { type: "setPerson", k: a.k }) : opened;
+    return state.FXFAIL ? { ...signed, FAILNEXT: true } : signed;
   }
+  if (a.type === "fixture") return a.k === "failNextOnSignIn" && state.FIXTURES ? { ...state, FXFAIL: true } : state;
   if (!state.authed && a.type !== "setTheme") return state;
   /* the Investors side (merge-glue.js IMHOOK): its writes run as the signed-in person; opening one of
      its drawers closes the lead side's (IMHOOK.closeIR); its go(v) lands on the console page that

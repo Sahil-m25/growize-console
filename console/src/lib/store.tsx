@@ -31,6 +31,7 @@ import type { Action, ConsoleState } from "./state";
 import type { SaveEntry, SaveResult } from "./save-queue";
 import { createConsoleWriter } from "./console-save";
 import { consoleAccount, scopeOf } from "@/lib/selectors";
+import { pinClock } from "@/lib/format";
 import type { Ctx as SelectorCtx } from "@/lib/selectors";
 import type { DataPayload } from "@/lib/data/types";
 import type { Session } from "@/lib/data/session";
@@ -82,13 +83,25 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let dead = false, busy = false;
     let timer: ReturnType<typeof setInterval> | null = null;
+    /* a fixture's client actions arrive with every load while it stays applied; each runs once
+       (a fresh load of "/" clears the fixtures and remounts this provider, so the set starts empty) */
+    const ran = new Set<string>();
     const load = async (): Promise<DataPayload | null> => {
       const r = await fetch("/api/data", { cache: "no-store" }).catch(() => null);
       if (!r || !r.ok || dead) return null;
       const p = (await r.json()) as DataPayload;
       if (dead) return null;
+      pinClock(p.ds.CLOCKPIN);
       writer.apply({ type: "hydrate", ds: p.ds, version: p.version, fixtures: p.fixtures });
-      for (const x of p.actions) writer.apply(x as Action);
+      for (const x of p.actions as { fx: string; a: Action }[]) {
+        if (!x || ran.has(x.fx)) continue;
+        ran.add(x.fx);
+        if (x.a.type === "fixture" && x.a.k === "offline") {
+          /* BROWSER_OFFLINE — the prototype's own fixture: the browser says it lost its connection */
+          Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+          window.dispatchEvent(new Event("offline"));
+        } else writer.apply(x.a);
+      }
       return p;
     };
     void (async () => {
