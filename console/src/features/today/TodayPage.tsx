@@ -1078,8 +1078,8 @@ function FinanceToday() {
           <summary>Investor entry status</summary>
           <div className="ux-section">
             <p className="ux-secondary">
-              {xferRows(state).filter((x) => !x.ack).length} confirmed investor entries need acknowledgement from{" "}
-              {P(state.PEOPLE, xOwner()).n}.
+              {xferRows(state).filter((x) => !x.ack).length} confirmed investor entries need acknowledgement
+              {xOwner(state) ? <> from {P(state.PEOPLE, xOwner(state)!).n}</> : null}.
             </p>
             <button type="button" className="btn" onClick={() => goView("xfer")}>
               Review investor transfers

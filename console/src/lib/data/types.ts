@@ -1,7 +1,7 @@
 /* ── @/lib/data — THE ONE DATA INTERFACE (phase 1) ───────────────────────────────────────────
    Every record collection the console holds arrives through a `Dataset`. Pages never import a
    record: the client store hydrates from `GET /api/data`, which asks `getSource()`. Constants that
-   are product rules or copy (LADDER, ST, NAV, SEAT, PAGECAPS, KINDS, CHECKS, HELP…) stay in
+   are product rules or copy (LADDER, ST, NAV, SEAT, PAGECAPS, KINDS, CKS, HELP…) stay in
    `@/domain`; nothing here is a rule, everything here is a record.
 
    The clock travels as a naive wall-clock ISO string ("2026-08-28T00:00") read in Asia/Kolkata
@@ -9,7 +9,7 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import type {
-  Absence, Account, CallRec, CapGrid, Claim, Cover, DocRec, EventRec, ExtRec, InteractionRec, Inventory, Lead,
+  Absence, Account, CallRec, CapGrid, Check, Claim, Cover, DocRec, EventRec, ExtRec, InteractionRec, Inventory, Lead,
   LeadId, LogEntry, MoveReq, Note, PaperRow, PayRec, Person, PersonKey, Plan, RecovRec,
   Sendable, SheetRec, Stamp, TempGrant, XferRow,
 } from "@/domain";
@@ -74,6 +74,9 @@ export type Dataset = {
   SHEETNAMES: string[];
   SHEETNOTES: string[];
   FINMIRROR: FinanceMirror;
+  /** System's checks — who owns each part and since when it has been in its state (records, not
+   *  rules: the demo list is in `console/fixtures/book/system.ts`); absent = none recorded */
+  CHECKS?: Check[];
   /** a lead's emails, as the Zoho CRM Emails API returns them (M12-S09); absent = none */
   LEADMAIL?: RecEmail[];
   /** the lead and event a fresh session opens on, when the book has them */

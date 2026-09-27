@@ -7,7 +7,7 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import {
   banked, careQueue, freeUnits, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad, may, mineQueue,
-  money, myBook, cared, outstandingReserved, pageReadable, poolBook, tierOf, TIERS, tkOpen, who, FORFEIT,
+  money, myBook, cared, outstandingReserved, pageReadable, poolBook, tierOf, TIERS, tkOpen, who, FORFEIT, primaryName,
 } from "@/lib/im";
 import type { ImInvestor, ImQ } from "@/lib/im";
 import { ProvIR } from "../common";
@@ -84,6 +84,7 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
   const holds = s.data.INV.filter(x => x.st === "reserved" && x.hold), soon = holds.filter(x => (holdDays(s, x) ?? 0) <= 30).length;
   const forfeit = holds.reduce((a, x) => a + FORFEIT * x.units, 0), tk = tkOpen(s, me).length;
   const sup = isSuper(s, me);
+  const fin = primaryName(s.data, "head"), comp = primaryName(s.data, "comp"), aml = primaryName(s.data, "amlead");
   const sig = (k: string, t: string, run: () => void, warn: boolean) => (
     <a key={k} className={`chip sig ${warn ? "warn" : ""}`} role="button" tabIndex={0} onClick={run} onKeyDown={enterOrSpace(run)}>
       {t}<span className="sigto" aria-hidden="true">→</span></a>
@@ -101,8 +102,8 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
         {sig("farms", freeUnits(s) + " units free to sell · Farms", () => dispatch({ type: "go", v: "farms" }), false)}
         {sig("tkt", tk + " ticket" + (tk === 1 ? "" : "s") + " open · Tickets", () => dispatch({ type: "go", v: "tkt" }), tk > 0)}
       </div>
-      {sup ? <div className="note su" style={{ marginBottom: 12 }}><b>Super user.</b> These are other people&apos;s queues. Finance (primary doer: Harsha Bhat) owns money and paper; Compliance (Fahad Rizvi) owns KYC; Account Management (Divya Kamath) owns care. Every button works for you so you can test it, and what you do is recorded as yours.</div> : null}
-      <div className="card fill"><div className="ch"><h3>{sup ? "Finance's queue · primary: Harsha Bhat" : "Waiting on you"}</h3><div className="sp" />
+      {sup ? <div className="note su" style={{ marginBottom: 12 }}><b>Super user.</b> These are other people&apos;s queues. Finance{fin ? " (primary doer: " + fin + ")" : ""} owns money and paper; Compliance{comp ? " (" + comp + ")" : ""} owns KYC; Account Management{aml ? " (" + aml + ")" : ""} owns care. Every button works for you so you can test it, and what you do is recorded as yours.</div> : null}
+      <div className="card fill"><div className="ch"><h3>{sup ? "Finance's queue" + (fin ? " · primary: " + fin : "") : "Waiting on you"}</h3><div className="sp" />
         {now.length ? <span className="tag late"><span className="dot" />{now.length} today</span>
           : <span className="tag go"><span className="dot" />clear</span>}</div>
         <div className="cb">{q.length ? <div className="q">{q.map((x, i) => <QRow key={i} s={s} me={me} dispatch={dispatch} x={x} />)}</div>
@@ -112,7 +113,7 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
               : "This is a read-only seat — the queue belongs to the people who can act on it."}</span></div>}
         </div></div>
       {sup ? (
-        <div className="card fill" style={{ marginTop: 12 }}><div className="ch"><h3>Account Management&apos;s queue · primary: Divya Kamath</h3>
+        <div className="card fill" style={{ marginTop: 12 }}><div className="ch"><h3>Account Management&apos;s queue{aml ? " · primary: " + aml : ""}</h3>
           <div className="sp" /><span className={`tag ${c.length ? "due" : "go"}`}><span className="dot" />{c.length || "clear"}</span></div>
           <div className="cb">{c.length ? <div className="q">{c.map((x, i) => <QRow key={i} s={s} me={me} dispatch={dispatch} x={x} />)}</div>
             : <div className="empty">Nothing is owed.</div>}</div></div>

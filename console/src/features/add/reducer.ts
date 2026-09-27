@@ -209,7 +209,7 @@ export function pagesBReducer(state: ConsoleState, a: Action): ConsoleState | nu
       const id = ("E-0" + (state.EVENTS.length + 1)) as EventId;
       const ev: EventRec = {
         id, n: "New field event", type: "Society", ch: "MyGate", date: "10–11 Oct",
-        city: "Bengaluru", cost: 70000, staff: ["kavya" as PersonKey], state: "planned", off: 0,
+        city: "Bengaluru", cost: 70000, staff: [], state: "planned", off: 0,
       };
       return {
         ...state,

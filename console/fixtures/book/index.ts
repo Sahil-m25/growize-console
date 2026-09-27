@@ -19,6 +19,7 @@ import { CLAIM, CLAIMARCHIVE, EXT, PAY, REQ } from "./payments";
 import { AVAIL, COVER, PEOPLE, SIGNINS } from "./people";
 import { PLAN } from "./plan";
 import { seedBook } from "./seed";
+import { CHECKS } from "./system";
 
 export function demoBook(): Dataset {
   /* the paper, accounts, transfers and document references the ladder implies (03-app.js:2009) */
@@ -29,7 +30,7 @@ export function demoBook(): Dataset {
     PAY, CLAIM, CLAIMARCHIVE, REQ, EXT, XFER: BOOK.XFER, ACCT: BOOK.ACCT, ARLSEQ: 207, PAPER: BOOK.PAPER,
     SENT, NOTES, CALLS, PACK, PACKAT, RECOV, SHEET, INTERACTIONS,
     SHEETNAMES: [...SHEETNAMES], SHEETNOTES: [...SHEETNOTES],
-    FINMIRROR,
+    FINMIRROR, CHECKS,
     LEADMAIL,   /* a lead's emails (M12-S09) — ./emails.ts */
     LEAD: "L3", EVID: "E-04", // 03-app.js:936
     /* IMX.align(PEOPLE) — merge-glue.js: name the lead side's people so a raw key never reaches a sentence */

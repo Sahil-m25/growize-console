@@ -9,7 +9,8 @@ export type SignOutWhy = "chose" | "expired" | "revoked";
 export const SIGNOUTMSG: Record<SignOutWhy, readonly [string, string]> = {
   chose:  ["You are signed out.", "Nothing you had recorded was lost."],
   expired:["Your session ended after 12 hours.", "Sign in again to carry on. Recorded work is saved; unsaved inputs were cleared."],
-  revoked:["Your access has been turned off.", "Pradeep Ram or Sahil Mohite can turn it back on."],
+  /* the second line names who can grant, read from the record (@/lib/signin-copy revokedLine) */
+  revoked:["Your access has been turned off.", "Digital Infrastructure can turn it back on."],
 };
 
 /** Console access only by a Digital Infrastructure grant. */

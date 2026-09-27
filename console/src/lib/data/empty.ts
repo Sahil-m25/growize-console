@@ -27,7 +27,7 @@ export function emptyDataset(now: string, imNow: string = now): Dataset {
     TEMP: [], GRANT: {}, COVER: {}, AVAIL: {}, PAY: {}, CLAIM: {}, CLAIMARCHIVE: {}, REQ: {}, EXT: {},
     XFER: [], ACCT: {}, ARLSEQ: 0, PAPER: {}, SENT: {}, NOTES: {}, CALLS: {}, PACK: {}, PACKAT: {},
     RECOV: {}, SHEET: {}, INTERACTIONS: {}, SHEETNAMES: [], SHEETNOTES: [],
-    FINMIRROR: structuredClone(EMPTY_FINMIRROR),
+    FINMIRROR: structuredClone(EMPTY_FINMIRROR), CHECKS: [],
     LEAD: "", EVID: "",
     im: emptyImData(imNow),
   };
@@ -38,7 +38,7 @@ export function recordCount(ds: Dataset): number {
   const n = (v: unknown): number => (Array.isArray(v) ? v.length : v && typeof v === "object" ? Object.keys(v).length : 0);
   const lead = [ds.LEADS, ds.PEOPLE, ds.SIGNINS, ds.PLAN.periods, ds.EVENTS, ds.LOG, ds.DOCS, ds.TEMP, ds.GRANT, ds.COVER,
     ds.AVAIL, ds.PAY, ds.CLAIM, ds.CLAIMARCHIVE, ds.REQ, ds.EXT, ds.XFER, ds.ACCT, ds.PAPER, ds.SENT, ds.NOTES, ds.CALLS,
-    ds.PACK, ds.PACKAT, ds.RECOV, ds.SHEET, ds.INTERACTIONS, ds.SHEETNAMES, ds.SHEETNOTES, ds.FINMIRROR.accounts]
+    ds.PACK, ds.PACKAT, ds.RECOV, ds.SHEET, ds.INTERACTIONS, ds.SHEETNAMES, ds.SHEETNOTES, ds.FINMIRROR.accounts, ds.CHECKS ?? []]
     .reduce((a, v) => a + n(v), 0) + ds.INV.total;
   const im = ds.im;
   const inv = [im.P, im.SIGNINS, im.IRN, im.FARMS, im.INV, im.CONTACT, im.TXN, im.DOCS, im.INBOX, im.ANS, im.OUTBOX,

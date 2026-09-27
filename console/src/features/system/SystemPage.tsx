@@ -8,7 +8,7 @@
    carries the logged-action count that used to be a tile you could not click) and, for the page
    owner, the failed-write test. */
 
-import { CAPT, CHECKS, CKDAYS, CKS, DEFSEATS, NOSIGN, PAGECAPS, SEAT, SEATCAPS } from "@/domain";
+import { CAPT, CKDAYS, CKS, DEFSEATS, NOSIGN, PAGECAPS, SEAT, SEATCAPS } from "@/domain";
 import type { Check, PersonKey, SeatKey } from "@/domain";
 import { useRouter } from "next/navigation";
 import { ActLegend, Ag, Pname } from "@/components/ui";
@@ -65,9 +65,10 @@ const G8Demo = () => (
 );
 
 function OkBody() {
+  const { state } = useConsole();
   return (
     <div className="cb" style={{ padding: 0 }}>
-      {CHECKS.filter((c) => c.st === "ok").map((c) => <Row c={c} key={c.k} />)}
+      {state.CHECKS.filter((c) => c.st === "ok").map((c) => <Row c={c} key={c.k} />)}
       <p className="sm" style={{ margin: "12px 0 0" }}>
         Prototype status data, not a live poll. Open a check for its history and owner.
       </p>
@@ -257,7 +258,7 @@ function TestBody() {
 registerDrawer("p:system.ok" as DrawerKind, {
   w: 640,
   title: () => "Working checks",
-  sub: () => CHECKS.filter((c) => c.st === "ok").length + " checks · last " + CKDAYS + " days",
+  sub: (state) => state.CHECKS.filter((c) => c.st === "ok").length + " checks · last " + CKDAYS + " days",
   Body: OkBody,
 });
 registerDrawer("p:system.grid" as DrawerKind, {
@@ -284,9 +285,9 @@ registerDrawer("p:system.test" as DrawerKind, {
 
 export function SystemPage() {
   const { state } = useConsole();
-  const okC = CHECKS.filter((c) => c.st === "ok");
-  const warnC = CHECKS.filter((c) => c.st === "warn");
-  const failC = CHECKS.filter((c) => c.st === "fail");
+  const okC = state.CHECKS.filter((c) => c.st === "ok");
+  const warnC = state.CHECKS.filter((c) => c.st === "warn");
+  const failC = state.CHECKS.filter((c) => c.st === "fail");
   return (
     <>
       <div className="ph">

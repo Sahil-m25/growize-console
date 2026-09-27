@@ -285,8 +285,9 @@ function OwnerBody({ lead }: DrawerProps) {
         <div className="drwsec">
           <p className="lbl">Not the right person for this one?</p>
           <p className="sm" style={{ margin: "0 0 9px" }}>
-            Ask {P(state.PEOPLE, P(state.PEOPLE, l.own).mgr || ("tasneem" as PersonKey)).n} or a
-            manager above them to approve a new owner.
+            {P(state.PEOPLE, l.own).mgr
+              ? <>Ask {P(state.PEOPLE, P(state.PEOPLE, l.own).mgr!).n} or a manager above them to approve a new owner.</>
+              : "Ask a manager to approve a new owner."}
           </p>
           <button
             type="button"
@@ -319,7 +320,7 @@ function ReassignBody({ lead }: DrawerProps) {
       <p className="sm" style={{ margin: "0 0 12px" }}>
         This changes nothing on its own. It appears on the lead, on your manager's day and in
         Updates, and{" "}
-        <b>{P(state.PEOPLE, P(state.PEOPLE, l.own).mgr || ("tasneem" as PersonKey)).n} or anyone above</b>{" "}
+        <b>{P(state.PEOPLE, l.own).mgr ? P(state.PEOPLE, P(state.PEOPLE, l.own).mgr!).n + " or anyone above" : "a manager"}</b>{" "}
         approves or declines it.
       </p>
       <p className="lbl">To whom</p>

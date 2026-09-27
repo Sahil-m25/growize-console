@@ -5,7 +5,7 @@
    What it does, what breaks if it stops, who owns it, and the last three weeks day by day. The
    history is read off the record, not sampled. */
 
-import { CHECKS, CKDAYS, CKS } from "@/domain";
+import { CKDAYS, CKS } from "@/domain";
 import { Pname } from "@/components/ui";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers";
 import { dISOtoDisp, dLabel, isoDay } from "@/lib/format";
@@ -15,7 +15,7 @@ import { ckDays, ckHist } from "./checks";
 
 function Body({ id }: DrawerProps) {
   const { state } = useConsole();
-  const c = CHECKS.find((x) => x.k === id);
+  const c = state.CHECKS.find((x) => x.k === id);
   if (!c) return null;
   const h = ckHist(c, state.NOW);
   const bad = h.filter((x) => x.s !== "ok").length;
@@ -106,10 +106,10 @@ function Body({ id }: DrawerProps) {
 
 registerDrawer("check", {
   w: 430,
-  ok: (_state, k) => CHECKS.some((c) => c.k === k),
-  title: (_state, a) => CHECKS.find((x) => x.k === a.id)?.t ?? "Check",
-  sub: (_state, a) => {
-    const c = CHECKS.find((x) => x.k === a.id);
+  ok: (state, k) => state.CHECKS.some((c) => c.k === k),
+  title: (state, a) => state.CHECKS.find((x) => x.k === a.id)?.t ?? "Check",
+  sub: (state, a) => {
+    const c = state.CHECKS.find((x) => x.k === a.id);
     return c ? CKS[c.st].t : "";
   },
   Body,

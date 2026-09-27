@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { BYGRANT, IM2M, SEAT, SIGNOUTMSG } from "@/domain";
 import type { PersonKey } from "@/domain";
 import { admitted, leadAccount } from "@/lib/data/admission";
+import { revokedLine, signInHelp } from "@/lib/signin-copy";
 import { imHas, imReach, imTitle } from "@/lib/im";
 import { P, roleOf } from "@/lib/selectors";
 import { useConsole, useSession, type ConsoleState } from "@/lib/store";
@@ -43,7 +44,8 @@ export function SignIn() {
   const { signIn } = useSession();
   const [hint, setHint] = useState<string | null>(null);
   const h1 = useRef<HTMLHeadingElement>(null);
-  const m = state.SIGNOUT ? SIGNOUTMSG[state.SIGNOUT] : null;
+  const m0 = state.SIGNOUT ? SIGNOUTMSG[state.SIGNOUT] : null;
+  const m = m0 && state.SIGNOUT === "revoked" ? [m0[0], revokedLine(state.PEOPLE)] as const : m0;
   /* D60: exactly the people who hold console access right now — both sides */
   const who = state.FIXTURES ? admitted({ PEOPLE: state.PEOPLE, GRANT: state.CAPS, SIGNINS: state.SIGNINS, im: state.IM }) : [];
 
@@ -57,7 +59,12 @@ export function SignIn() {
   const zoho = async () => {
     const r = await fetch("/api/auth/zoho", { method: "POST" }).catch(() => null);
     const body = r ? ((await r.json().catch(() => null)) as { wired?: boolean; message?: string } | null) : null;
-    if (body?.wired) return;
+    /* signed in (phase 1: the dev stub; phase 2: the OAuth callback) — the page loads again, as the
+       OAuth redirect will, and comes back with the session and the book it serves */
+    if (body?.wired) {
+      window.location.reload();
+      return;
+    }
     const msg = body?.message || "Zoho sign-in is connected in phase 2.";
     setHint(state.FIXTURES ? msg.replace(/\.$/, "") + " — pick a person below." : msg);
   };
@@ -126,7 +133,7 @@ export function SignIn() {
         and the Auditor sign in for the investors. Anybody else needs a page granted by Digital Infrastructure
         first.
         <br />
-        Trouble signing in? Ask Sahil Mohite, Digital Infrastructure &amp; Data.
+        Trouble signing in? Ask {signInHelp(state.PEOPLE)}.
       </p>
     </div>
   );

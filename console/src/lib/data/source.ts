@@ -5,6 +5,8 @@
 import { appliedFixtures, currentLane, fixtureModeOn, fixtureVersion } from "@/lib/fixture-mode";
 import { clockDay, kolkataNow } from "./clock";
 import { emptyDataset } from "./empty";
+import { decodeSession, SESSION_COOKIE } from "./session";
+import { stubUser, withStubUser } from "./stub-user";
 import type { DataPayload, DataSource, Dataset } from "./types";
 
 /** Phase 2 replaces this with the live read on the signed-in person's own Zoho token (D53). */
@@ -39,5 +41,15 @@ export async function loadPayload(lane?: string): Promise<DataPayload> {
     const { ds, actions } = await fixtureSource.loadApplied(l);
     return { ds, actions, version, fixtures: true };
   }
-  return { ds: await src.load(), actions: [], version: 0, fixtures: false };
+  return { ds: await withSessionStub(await src.load()), actions: [], version: 0, fixtures: false };
+}
+
+/** Phase 1's Zoho stub (./stub-user): while the configured stub person is the one signed in, they
+ *  are on the book this session is served — and nowhere else. */
+async function withSessionStub(ds: Dataset): Promise<Dataset> {
+  const u = stubUser();
+  if (!u) return ds;
+  const { cookies } = await import("next/headers");
+  const s = decodeSession((await cookies()).get(SESSION_COOKIE)?.value);
+  return s && s.who === u.key && s.seat === u.seat ? withStubUser(ds, u) : ds;
 }

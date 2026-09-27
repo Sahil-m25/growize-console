@@ -5,7 +5,7 @@
    Every function keeps its prototype name and its prototype argument order after `(s, WHO)`.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 import {
-  APPLOCK, CAN, DAY, FORFEIT, KINDS, NAV, ROLE, ROUNDS, SECRETS, TEAM, TIERS, UNIT,
+  APPLOCK, CAN, DAY, FORFEIT, KINDS, NAV, PRIMARY, ROLE, ROUNDS, SECRETS, TEAM, TIERS, UNIT,
   type ImNavItem, type ImTier,
 } from "./constants";
 import { aged, gap, mid, nowDay, when } from "./dates";
@@ -17,6 +17,20 @@ import type {
 import { MONEY_DRAWERS, moneyDrawerReadable } from "./money";
 
 /* ============================ 1. the people ============================ */
+/** The name of whoever holds seat `r` on the record (the first in sign-in order who can sign in),
+ *  or null when nobody does — the prototype's "primary: Harsha Bhat" read from the data. */
+export function primaryName(data: ImData, r: ImRoleKey): string | null {
+  const k = [...data.SIGNINS, ...Object.keys(data.P)].find(x => data.P[x]?.r === r && has(data, x));
+  return k ? data.P[k]!.n : null;
+}
+/** PRIMARY[k] as a sentence: "Finance — <name>" per team, the bare team when that seat is empty. */
+export function primaryDoer(data: ImData, k: string): string | null {
+  const p = PRIMARY[k];
+  if (p == null) return null;
+  if (typeof p === "string") return p;
+  return p.map(([t, r]) => { const n = primaryName(data, r); return n ? t + " — " + n : t; }).join(" or ");
+}
+
 export function who(s: ImCtx, k: string | null | undefined): ImWho {
   const p = k ? s.data.P[k] : undefined;
   if (p) return p;

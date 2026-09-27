@@ -338,7 +338,7 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
           {!cap
             ? (
               <p className="sm" style={{ margin: "0 0 10px" }}>
-                Your seat cannot add leads. Pass the name to {P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO) ?? "tasneem").n}.
+                Your seat cannot add leads. Pass the name to {mgrOf(state.PEOPLE, state.WHO) ? P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO)!).n : "an IR"}.
               </p>
             )
             : ok

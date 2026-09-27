@@ -172,7 +172,8 @@ export function Rail({ view }: { view: View | null }) {
       <div className="foot" id="foot">
         {/* the demo book is "Sample data" only in fixture mode; the product's own book is not */}
         <span>{state.FIXTURES ? `Sample data · ${dLabel(state.NOW)}` : dLabel(state.NOW)}</span>
-        {/* merge-glue.js:150 */}
+        {/* merge-glue.js:150 — prototype documentation, shown only beside the demo book */}
+        {state.FIXTURES ? (
         <a
           className="mnlink"
           role="button"
@@ -184,6 +185,7 @@ export function Rail({ view }: { view: View | null }) {
         >
           How the merge works
         </a>
+        ) : null}
       </div>
     </aside>
   );

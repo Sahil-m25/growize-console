@@ -30,10 +30,12 @@ export const CAN: Record<ImCan, string> = {
   root: "Run both apps — every log, every seat, no investor data",
   farm: "Release land",
 };
-/** who the primary doer of each step is — shown to the super user (superNote) */
-export const PRIMARY: Record<string, string> = {
-  claim: "Finance — Harsha Bhat", pay: "Finance — Harsha Bhat", send: "Finance — Harsha Bhat",
-  verify: "Finance — Harsha Bhat or Compliance — Fahad Rizvi", kyc: "Compliance — Fahad Rizvi", kam: "Account Management — Divya Kamath",
+/** who the primary doer of each step is — shown to the super user (superNote). A team step names
+ *  the team and the seat whose holder is its primary doer; the person's name is read from the record
+ *  (`primaryDoer`), never written here. A plain string is the prototype's copy as is. */
+export const PRIMARY: Record<string, string | [team: string, seat: ImRoleKey][]> = {
+  claim: [["Finance", "head"]], pay: [["Finance", "head"]], send: [["Finance", "head"]],
+  verify: [["Finance", "head"], ["Compliance", "comp"]], kyc: [["Compliance", "comp"]], kam: [["Account Management", "amlead"]],
   talk: "the investor's key account manager", tkt: "whoever owns the ticket", upd: "Finance or Account Management", field: "Account Management",
   details: "the investor's key account manager",
 };

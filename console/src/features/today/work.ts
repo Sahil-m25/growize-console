@@ -4,7 +4,7 @@
    this file's own reimplementation used to be missing — re-exported here so every existing caller
    (`WORK_GROUPS`, `workList`, `TodayPage.tsx`) keeps importing it from `./work` unchanged. ─────── */
 
-import { CHECKS, ST, TOUCHCHANNELS } from "@/domain";
+import { ST, TOUCHCHANNELS } from "@/domain";
 import type { Channel, Claim, InteractionRec, Lead, PersonKey, XferRow } from "@/domain";
 import { DAY, dISOtoDisp, money, when, whenT } from "@/lib/format";
 import type { Ctx, NextUp } from "@/lib/selectors";
@@ -105,10 +105,10 @@ export function xferRows(ctx: Ctx): XferRow[] {
   );
 }
 
-/** the "transfer" Check's own owner (`@/domain/system`'s `CHECKS`) — who an unacknowledged
- *  investor entry is chased to. 03-app.js:9170. */
-export function xOwner(): PersonKey {
-  return (CHECKS.find((c) => c.k === "transfer")?.own ?? "sahil") as PersonKey;
+/** the "transfer" Check's own owner (the dataset's `CHECKS`) — who an unacknowledged investor
+ *  entry is chased to. 03-app.js:9170. null when no such check is recorded (the empty book). */
+export function xOwner(ctx: { CHECKS: readonly { k: string; own: PersonKey }[] }): PersonKey | null {
+  return ctx.CHECKS.find((c) => c.k === "transfer")?.own ?? null;
 }
 
 /* waNum() — 03-app.js:3373. Also below: partnerLabel/primaryWorkChannel (workRow/investorWorkPanel,

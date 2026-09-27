@@ -12,7 +12,7 @@
 
 import type { ReactNode } from "react";
 import {
-  CHANS, FSTATE, I, KAMS, MOODS, PMODES, PRIMARY, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
+  CHANS, FSTATE, I, KAMS, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
   aged, ansOf, bookOf, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
   mayDetails, money, nOpen, nState, notFin, plusDays, quiet, readBook, roundOf, safeNote, tierOf, who,
 } from "@/lib/im";
@@ -513,9 +513,9 @@ export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
 
 /* superNote(k) — imx.js 79 */
 function SuperNote({ s, me, k }: { s: ImPageProps["s"]; me: string; k: ImDrawerKey }) {
-  return isSuper(s, me) && PRIMARY[k] ? (
+  return isSuper(s, me) && primaryDoer(s.data, k) ? (
     <div className="note su" style={{ marginBottom: 12 }}><b>Super user.</b> The primary doer of this
-      step is {PRIMARY[k]}. You can do it here to test it; it is recorded as yours.</div>
+      step is {primaryDoer(s.data, k)}. You can do it here to test it; it is recorded as yours.</div>
   ) : null;
 }
 

@@ -384,7 +384,7 @@ function NoScreens() {
       <div className="card">
         <div className="empty">
           This screen is not one your seat reaches, so there is nothing on it to draw. A manager is the ceiling on
-          what anybody reaches, which makes it {P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO) ?? ("tasneem" as PersonKey)).n}
+          what anybody reaches, which makes it {mgrOf(state.PEOPLE, state.WHO) ? P(state.PEOPLE, mgrOf(state.PEOPLE, state.WHO)!).n : "Digital Infrastructure"}
           &apos;s to change — there is no request to raise and no desk to ring.
           {first ? (
             <>
