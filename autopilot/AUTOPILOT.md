@@ -20,6 +20,19 @@ The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` p
 - The first phase-1 unit is **M19-S03**: make every fixture cited by `pm/plan-merged/ui-cases.json` change what the screens show (use each fixture's `prototype` JS in `fixtures-merged.json`). Until then 78 UI cases cannot run.
 - `done.mjs` records the result against the current phase and refreshes the Slack tracker (`ops/tracker/canvas.py --push`) by itself.
 
+## Two loops at once (D100)
+
+The backend may be built beside the front end, in a second git worktree `growize-console-backend` on branch `autopilot/backend`, whose `autopilot/.phase` file holds `zoho` (git-ignored). There `next.mjs` hands out only phase-2 units.
+
+Rules for the backend worktree:
+- Work only in `console/src/server/**`, `console/src/lib/zoho/**`, `console/src/app/api/**` (except `api/test/**`), `zoho/`, `contracts/` and their tests. Never edit pages, components, `src/lib/data/**` types or the store; that is the front-end loop's.
+- Implement the Zoho source of the data interface in `console/src/lib/data/` **only after** the front-end loop has committed that interface; until then build the server layer beneath it (OAuth, session, Zoho reads and writes per module, cache, gate, logs, Zoho Sign webhooks, contract push, the payouts schedule job).
+- Unit and API tests run against recorded Zoho responses (fixtures under `console/src/lib/zoho/__fixtures__`), never live Zoho. Live proof waits for the sandbox (M02-S10).
+- A unit whose code is written but needs a screen or the sandbox to prove is recorded as `waiting` with the reason.
+- Never run the app on port 3001 (the front-end loop's). Use `npx next dev -p 3002` if a route needs a server.
+- Every day, and before each merge: `git merge autopilot/console`, then `node autopilot/merge-progress.mjs autopilot/console`, run the tests, commit.
+- The Slack tracker is pushed only by the main worktree; it reads this branch's progress by itself.
+
 ## The round
 
 1. **Stop checks.** If `autopilot/STOP` exists, write nothing and stop.

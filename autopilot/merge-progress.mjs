@@ -1,9 +1,10 @@
 // D100: merge the other worktree's autopilot progress into this one, story by story and phase by phase.
 // Usage: node autopilot/merge-progress.mjs <branch>     e.g. node autopilot/merge-progress.mjs autopilot/backend
+// --out <file>: write a merged view elsewhere (the tracker uses this; progress.json is untouched).
 // Run it right after `git merge <branch>` (take either side of progress.json on a conflict first; this script fixes it).
 import { execSync } from "node:child_process";
 import { progress, write, dir } from "./lib.mjs";
-const [ref] = process.argv.slice(2); if (!ref) { console.error("usage: merge-progress.mjs <branch>"); process.exit(64); }
+const a = process.argv.slice(2), [ref] = a, out = a.includes("--out") ? a[a.indexOf("--out") + 1] : null; if (!ref) { console.error("usage: merge-progress.mjs <branch>"); process.exit(64); }
 const q = "console", mine = progress(q);
 const theirs = JSON.parse(execSync(`git show ${ref}:autopilot/${q}/progress.json`, { encoding: "utf8" }));
 const RANK = { pending: 0, in_progress: 1, regressed: 2, review: 3, waiting: 4, done: 5 };
@@ -26,5 +27,5 @@ for (const [id, t] of Object.entries(theirs.subtasks || {})) {
 const seen = new Set(mine.rounds.map(r => `${r.at}|${r.story}|${r.phase}|${r.status}`));
 for (const r of theirs.rounds || []) if (!seen.has(`${r.at}|${r.story}|${r.phase}|${r.status}`)) mine.rounds.push(r);
 mine.rounds.sort((a, b) => a.at.localeCompare(b.at));
-write(`${dir(q)}/progress.json`, mine);
-console.log(`merged progress from ${ref}`);
+write(out || `${dir(q)}/progress.json`, mine);
+console.log(`merged progress from ${ref}${out ? " into " + out : ""}`);

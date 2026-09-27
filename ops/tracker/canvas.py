@@ -5,10 +5,16 @@ Usage: python3 ops/tracker/canvas.py [--push]
   autopilot/done.mjs runs it with --push after every recorded round (D98)."""
 import json, re, collections, datetime, os, sys, subprocess
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); os.chdir(ROOT)
-subprocess.run(['node', 'autopilot/status.mjs'], check=False, capture_output=True)
+# D100: when the backend worktree's branch exists, show its progress too (merged view, progress.json untouched)
+VIEW = 'autopilot/console/progress.view.json'; env = dict(os.environ)
+br = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, text=True).stdout.strip()
+if br != 'autopilot/backend' and subprocess.run(['git', 'rev-parse', '--verify', '-q', 'autopilot/backend'], capture_output=True).returncode == 0 \
+   and subprocess.run(['node', 'autopilot/merge-progress.mjs', 'autopilot/backend', '--out', VIEW], capture_output=True).returncode == 0:
+    env['PROGRESS_VIEW'] = VIEW
+subprocess.run(['node', 'autopilot/status.mjs'], check=False, capture_output=True, env=env)
 PH = json.load(open('autopilot/phases.json', encoding='utf-8'))
 P = json.load(open('pm/plan-merged/growize-console-plan.json', encoding='utf-8'))
-PR = json.load(open('autopilot/console/progress.json', encoding='utf-8'))
+PR = json.load(open(env.get('PROGRESS_VIEW', 'autopilot/console/progress.json'), encoding='utf-8'))
 blocked = open('autopilot/console/BLOCKED.md', encoding='utf-8').read()
 st = {k: v.get('status') for k, v in PR['stories'].items()}
 IC = {'done': 'Done', 'review': 'Review', 'waiting': 'Waiting on people', 'in_progress': 'Building', 'regressed': 'Regressed', None: 'To do'}
@@ -33,6 +39,7 @@ cur = S.get('current_phase')
 out.append("# :compass: Where we are\n")
 out.append(f"**Goal:** the whole Growize Console (lead side and Investors side, one app on Zoho), built in three phases: **front end first, then plug into Zoho, then test**. Owner's build target ![](slack_date:{target.date()}).\n")
 out.append(f"**Now working on:** {PH['names'].get(cur, 'all phases finished')}" + (f" — {PH['gate'][cur]}" if cur else "") + "\n")
+if env.get('PROGRESS_VIEW') and cur != 'zoho': out.append(f"**Also running in parallel:** {PH['names']['zoho']} — the backend worktree (branch autopilot/backend) builds the Zoho layer; screens are wired to it after phase 1.\n")
 if S.get('idle_hours') and S['idle_hours'] > 6: out.append(f"::: {{.callout}}\n:warning: The build loop has not run for {round(S['idle_hours'])} hours. Nothing moves until /build runs on the laptop again.\n:::\n")
 out.append("|Phase|Done|Review|Left|Loop hours left|Forecast finish|Pace|\n|---|---|---|---|---|---|---|")
 for k in PH['order']:
