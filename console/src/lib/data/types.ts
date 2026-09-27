@@ -86,7 +86,22 @@ export type Dataset = {
   im: ImData;
   /** fixture mode only: a clock fixture's pinned time of day on NOW ("HH:mm"); absent = the wall clock's hour */
   CLOCKPIN?: string | null;
+  /** fixture mode only: the "How the merge works" panel's content (it names demo people, so it is
+   *  data that travels with the demo book, never a bundled module); absent = none */
+  MERGENOTES?: NoteBlock[];
 };
+
+/* ---- fixture-mode prototype documentation ("How the merge works") -------------------------- */
+/** a run of text; `b` = bold */
+export type NoteRun = { t: string; b?: boolean };
+/** a "try them" chip: sign in as `k`, open `page` (on `side`, if given) */
+export type NoteStep = { k: PersonKey; page: string; side?: "im"; t: string };
+export type NoteBlock =
+  | { kind: "h"; t: string }
+  | { kind: "p"; runs: NoteRun[] }
+  | { kind: "table"; head: string[]; rows: NoteRun[][][] }
+  | { kind: "steps"; steps: NoteStep[] }
+  | { kind: "ul"; items: NoteRun[][] };
 
 /** Where records come from. Phase 1: the fixture book or nothing; phase 2: Zoho. */
 export interface DataSource {

@@ -281,6 +281,8 @@ export type ConsoleState = {
   LEADMAIL?: Dataset["LEADMAIL"];
   /* System's checks — records from the dataset; the empty book has none */
   CHECKS: NonNullable<Dataset["CHECKS"]>;
+  /* fixture mode only: the "How the merge works" panel's blocks; the empty book has none */
+  MERGENOTES: NonNullable<Dataset["MERGENOTES"]>;
   /* the Investors side's records — read by imHas/imReach/imTitle; its screens are a later story */
   IM: ImData;
   /* the Investors side's own screen state (imx.js section 8 globals) and, per two-sided page, the
@@ -573,6 +575,7 @@ export function dataSlices(ds: Dataset) {
     FINMIRROR: d.FINMIRROR,
     LEADMAIL: d.LEADMAIL || [],
     CHECKS: d.CHECKS ?? [],
+    MERGENOTES: d.MERGENOTES ?? [],
     IM: d.im,
   };
 }

@@ -27,7 +27,7 @@ export function emptyDataset(now: string, imNow: string = now): Dataset {
     TEMP: [], GRANT: {}, COVER: {}, AVAIL: {}, PAY: {}, CLAIM: {}, CLAIMARCHIVE: {}, REQ: {}, EXT: {},
     XFER: [], ACCT: {}, ARLSEQ: 0, PAPER: {}, SENT: {}, NOTES: {}, CALLS: {}, PACK: {}, PACKAT: {},
     RECOV: {}, SHEET: {}, INTERACTIONS: {}, SHEETNAMES: [], SHEETNOTES: [],
-    FINMIRROR: structuredClone(EMPTY_FINMIRROR), CHECKS: [],
+    FINMIRROR: structuredClone(EMPTY_FINMIRROR), CHECKS: [], MERGENOTES: [],
     LEAD: "", EVID: "",
     im: emptyImData(imNow),
   };

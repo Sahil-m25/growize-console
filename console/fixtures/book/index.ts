@@ -20,6 +20,7 @@ import { AVAIL, COVER, PEOPLE, SIGNINS } from "./people";
 import { PLAN } from "./plan";
 import { seedBook } from "./seed";
 import { CHECKS } from "./system";
+import { MERGENOTES } from "../merge-notes";
 
 export function demoBook(): Dataset {
   /* the paper, accounts, transfers and document references the ladder implies (03-app.js:2009) */
@@ -32,6 +33,7 @@ export function demoBook(): Dataset {
     SHEETNAMES: [...SHEETNAMES], SHEETNOTES: [...SHEETNOTES],
     FINMIRROR, CHECKS,
     LEADMAIL,   /* a lead's emails (M12-S09) — ./emails.ts */
+    MERGENOTES, /* the "How the merge works" panel — ../merge-notes.ts */
     LEAD: "L3", EVID: "E-04", // 03-app.js:936
     /* IMX.align(PEOPLE) — merge-glue.js: name the lead side's people so a raw key never reaches a sentence */
     im: imAlign(imDemoData(), PEOPLE),
