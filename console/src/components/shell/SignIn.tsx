@@ -144,10 +144,14 @@ export function SignIn() {
 export function Door({ children }: { children: React.ReactNode }) {
   const { state } = useConsole();
   if (!state.authed) {
+    /* the prototype's body always starts with the skip link, the sign-in screen included */
     return (
-      <div id="signin">
-        <SignIn />
-      </div>
+      <>
+        <a className="rd-skip" href="#pane">Skip to main content</a>
+        <div id="signin">
+          <SignIn />
+        </div>
+      </>
     );
   }
   return <Shell>{children}</Shell>;

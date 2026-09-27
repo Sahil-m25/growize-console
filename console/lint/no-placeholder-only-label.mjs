@@ -1,5 +1,5 @@
 /* gz/no-placeholder-only-label (M19-S01) — an input, select or textarea must carry a programmatic
-   name: a wrapping <label>, a <label htmlFor> naming its id, aria-label or aria-labelledby. A
+   name: a wrapping <label>, a <label htmlFor> naming its id, aria-label, aria-labelledby or a title. A
    placeholder is not a name (it disappears as soon as someone types, and a runner reading the box
    would name it by its value). Reported: "named only by its placeholder" when a placeholder is the
    only thing naming it, "has no label" otherwise. A spread ({...props}) is trusted. */
@@ -45,7 +45,7 @@ export default {
         if (node.attributes.some(a => a.type === "JSXSpreadAttribute")) return;
         const type = literal(attr(node, "type"));
         if (el === "input" && type && SKIP_TYPES.has(type)) return;
-        if (attr(node, "aria-label") || attr(node, "aria-labelledby")) return;
+        if (attr(node, "aria-label") || attr(node, "aria-labelledby") || attr(node, "title")) return;   /* a title is an accessible name too (accname fallback) */
         /* inside a <label> element */
         for (let p = node.parent && node.parent.parent; p; p = p.parent) {
           if (p.type === "JSXElement" && p.openingElement.name.type === "JSXIdentifier" && wrappers.has(p.openingElement.name.name)) return;

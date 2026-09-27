@@ -31,7 +31,8 @@ function useFresh() {
 /** the top bar's freshness line and its Retry */
 export function DataFresh() {
   const { f, reloadData } = useFresh();
-  if (!f || !f.line) return null;
+  /* healthy (live) is the top bar the prototype already draws; only a stale or failed read adds a line */
+  if (!f || !f.line || f.tone === "live") return null;
   return (
     <small id="data-fresh" data-tone={f.tone}>
       {f.line}
