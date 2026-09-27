@@ -84,7 +84,8 @@ export interface CaptureCommand {
 export type CaptureRefusal =
   | "invalid-request" | "session-changed" | "capability-missing" | "invalid-name" | "invalid-mobile"
   | "invalid-email" | "invalid-source" | "event-missing" | "introducer-missing" | "owner-not-assignable"
-  | "unassigned-queue-missing" | "invalid-units" | "consent-how-missing" | "email-consent-without-email";
+  | "unassigned-queue-missing" | "invalid-units" | "consent-how-missing" | "email-consent-without-email"
+  | "duplicate-mobile";
 
 export type CaptureResult =
   | { readonly ok: true; readonly value: { readonly leadId: string; readonly ownerId: string | null } }
@@ -106,7 +107,18 @@ const REASON: Readonly<Record<CaptureRefusal, string>> = Object.freeze({
   "invalid-units": "units must be a whole number",
   "consent-how-missing": "how contact permission was given",
   "email-consent-without-email": "an email for email permission",
+  "duplicate-mobile": "the book already has this number",
 });
+
+/** Zoho's duplicate check on Mobile is the hard stop (M04-S02): a second capture of the same number,
+ *  even one racing the first, is refused by Zoho. Which record holds it is never passed on. */
+export function isDuplicateMobile(error: unknown): boolean {
+  const e = error as { kind?: string; code?: string; field?: string | null; records?: readonly { ok: boolean; code: string; field: string | null }[] } | null;
+  if (!e) return false;
+  if (e.kind === "invalid-data") return e.code === "DUPLICATE_DATA" && (e.field === "Mobile" || e.field == null);
+  if (e.kind === "partial" && e.records?.length === 1) return !e.records[0].ok && e.records[0].code === "DUPLICATE_DATA" && e.records[0].field === "Mobile";
+  return false;
+}
 
 /** Ten Indian digits, an 0- or 91-prefixed Indian number, or + and a country code (features/add/csv.ts phoneOK). */
 export function mobileToE164(raw: unknown): string | null {
@@ -255,7 +267,10 @@ export function createLeadCapture(deps: CaptureDependencies) {
         return { ok: false, kind: "source-error", source: "zoho", errorKind: "unexpected", retryable: false };
       }
       // A create is never retried here: a lost reply may have landed (the client does not resend either).
-      if (!res.ok) return { ok: false, kind: "source-error", source: "zoho", errorKind: res.error.kind, retryable: false };
+      if (!res.ok) {
+        if (isDuplicateMobile(res.error)) return refuse(cred.userId, "duplicate-mobile");
+        return { ok: false, kind: "source-error", source: "zoho", errorKind: res.error.kind, retryable: false };
+      }
       const out = res.value.length === 1 ? res.value[0] : null;
       if (!out || !out.ok || !validId(out.id)) {
         return { ok: false, kind: "source-error", source: "zoho", errorKind: "unexpected", retryable: false };

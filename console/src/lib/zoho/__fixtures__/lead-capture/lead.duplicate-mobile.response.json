@@ -1,0 +1,19 @@
+{
+  "status": 207,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Mobile",
+          "id": "9007199254740996444"
+        },
+        "message": "synthetic duplicate data",
+        "status": "error"
+      }
+    ]
+  }
+}

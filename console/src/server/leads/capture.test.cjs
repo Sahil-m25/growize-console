@@ -43,6 +43,7 @@ const sources = [
   'server/oauth/seat.ts',
   'domain/plan.ts',
   'server/leads/capture.ts',
+  'server/leads/duplicate.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -66,6 +67,7 @@ const load = (file) => require(path.join(outDir, file));
 const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js'));
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
 const { createLeadCapture, mobileToE164, splitName } = load(path.join('server', 'leads', 'capture.js'));
+const { createDuplicateCheck, mobileClause } = load(path.join('server', 'leads', 'duplicate.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -81,7 +83,7 @@ const NOW = Date.parse('2026-09-27T15:30:00Z'); // 21:00 IST
 const AT = '2026-09-27T21:00:00+05:30';
 
 const recorded = (name) => JSON.parse(fs.readFileSync(path.join(fixtureRoot, `${name}.response.json`), 'utf8'));
-const toResponse = (r) => new Response(JSON.stringify(r.body), { status: r.status, headers: r.headers || {} });
+const toResponse = (r) => new Response(r.status === 204 ? null : JSON.stringify(r.body), { status: r.status, headers: r.headers || {} });
 const immediateGate = () => ({ async acquire() { return { waitedMs: 0, release() {} }; } });
 
 const credentials = new Map();
@@ -127,6 +129,7 @@ function rig(reply = 'lead.created', accessOverrides) {
       const u = new URL(url);
       calls.push({ method: init.method, pathname: u.pathname, body: init.body ? JSON.parse(init.body) : null });
       if (init.method === 'POST' && u.pathname === '/crm/v8/Leads') return toResponse(recorded(reply));
+      if (init.method === 'POST' && u.pathname === '/crm/v8/coql') return toResponse(recorded(reply));
       throw new Error(`unexpected synthetic CRM request ${init.method} ${u.pathname}`);
     },
   });
@@ -134,7 +137,8 @@ function rig(reply = 'lead.created', accessOverrides) {
   const cache = { async invalidate(sel) { invalidated.push(sel); return 0; } };
   const access = accessFor(accessOverrides);
   const service = createLeadCapture({ crm, access, log, cache, recordIdPrefix: P, clock: () => NOW });
-  return { service, calls, sink, access, invalidated, refusals: () => sink.records().filter((r) => r.kind === 'refusal') };
+  const dupes = createDuplicateCheck({ crm, access, log, recordIdPrefix: P, clock: () => NOW });
+  return { service, dupes, calls, sink, access, invalidated, refusals: () => sink.records().filter((r) => r.kind === 'refusal') };
 }
 
 const BASE = Object.freeze({ name: 'Synthetic Fixture Lead', mobile: '98450 33021', source: 'Website' });
@@ -298,4 +302,53 @@ test('Zoho rejecting the row or failing is reported, never retried, and leaks no
   assert.equal(r.calls.length, 1);
   assert.ok(!JSON.stringify(res).includes('example.invalid'));
   noPii(r.sink.records());
+});
+
+// ---------------- M04-S02 duplicate mobile ----------------
+
+test('the lookup matches every stored spelling of the number, with the person\'s own token', async () => {
+  assert.equal(mobileClause('+919845033021'),
+    "(Mobile in ('+919845033021', '919845033021', '9845033021', '09845033021') or Mobile like '%9845033021')");
+  assert.equal(mobileClause('+442079460958'), "Mobile in ('+442079460958', '442079460958')");
+  const r = rig('coql.duplicate-none');
+  const res = await r.dupes.lookup(principal(IR), '098450 33021');
+  assert.deepEqual(res, { ok: true, value: { status: 'none' } });
+  assert.equal(r.calls.length, 1);
+  assert.match(r.calls[0].body.select_query, /^select id, First_Name, Owner from Leads where \(Mobile in/);
+  assert.ok(!/Last_Name|Email|Full_Name/.test(r.calls[0].body.select_query), 'only id and first name are asked for');
+  noPii(r.sink.records());
+});
+
+test('a duplicate in the IR\'s own book offers Open <first name>', async () => {
+  const r = rig('coql.duplicate-own');
+  const res = await r.dupes.lookup(principal(IR), '+91 98450 33021');
+  assert.deepEqual(res, { ok: true, value: { status: 'own', leadId: `${P}740996002`, firstName: 'Synthetic' } });
+});
+
+test('a lead the manager sees in their team is "visible", not "own"', async () => {
+  const r = rig('coql.duplicate-team');
+  const res = await r.dupes.lookup(principal(MANAGER), '9845033021');
+  assert.equal(res.value.status, 'visible');
+});
+
+test('the lookup is refused for a bad number or a seat that cannot add', async () => {
+  let r = rig('coql.duplicate-none');
+  let res = await r.dupes.lookup(principal(IR), '12345');
+  assert.equal(res.reasonCode, 'invalid-mobile');
+  assert.equal(r.calls.length, 0);
+  r = rig('coql.duplicate-none');
+  res = await r.dupes.lookup(principal(VIEWER), '9845033021');
+  assert.equal(res.reasonCode, 'capability-missing');
+  assert.equal(r.calls.length, 0);
+});
+
+test('a number held outside the book is stopped by Zoho\'s duplicate check, without a name or id', async () => {
+  const r = rig('lead.duplicate-mobile');
+  const res = await r.service.createLead(principal(IR), { ...BASE });
+  assert.equal(res.ok, false);
+  assert.equal(res.reasonCode, 'duplicate-mobile');
+  assert.equal(res.reason, 'the book already has this number');
+  assert.ok(!JSON.stringify(res).includes('740996444'), 'the other record\'s id is not passed on');
+  assert.deepEqual(r.invalidated, []);
+  assert.deepEqual(r.refusals().map((x) => x.reason), ['duplicate-mobile']);
 });
