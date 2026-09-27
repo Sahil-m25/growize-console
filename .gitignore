@@ -13,6 +13,7 @@ __pycache__/
 
 # Next.js build output — regenerable, and it is 506 MiB of this repo
 .next/
+.next-local/
 *.tsbuildinfo
 
 # graphify: the generated graph and its working files. Corrected 22 Sep —

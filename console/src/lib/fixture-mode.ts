@@ -4,7 +4,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-export const fixtureModeOn = (env: NodeJS.ProcessEnv = process.env): boolean => env.FIXTURE_MODE === "local" && env.NODE_ENV !== "production";
+/* On only with FIXTURE_MODE=local, and never in a production build — except the separate local TEST
+   build (`npm run build:local` / `start:local`, GZ_LOCAL_BUILD=1, output in .next-local), which exists
+   so the UI cases run against compiled pages instead of the dev server's on-demand compiler. */
+export const fixtureModeOn = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.FIXTURE_MODE === "local" && (env.NODE_ENV !== "production" || env.GZ_LOCAL_BUILD === "1");
 
 const FILE = path.resolve(process.cwd(), "..", "pm", "merge-audit", "ui-sahil", "fixtures-merged.json");
 const catalogue = (): Record<string, unknown> => JSON.parse(readFileSync(FILE, "utf8"));

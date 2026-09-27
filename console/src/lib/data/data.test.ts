@@ -38,6 +38,9 @@ describe("getSource()", () => {
     expect(getSource({ FIXTURE_MODE: "local", NODE_ENV: "development" } as NodeJS.ProcessEnv)).toBe(fixtureSource);
     expect(getSource({ FIXTURE_MODE: "local", NODE_ENV: "test" } as NodeJS.ProcessEnv)).toBe(fixtureSource);
     expect(getSource({ FIXTURE_MODE: "local", NODE_ENV: "production" } as NodeJS.ProcessEnv)).toBe(zohoSource);
+    /* the separate local test build (npm run build:local) is the one production-mode exception */
+    expect(getSource({ FIXTURE_MODE: "local", NODE_ENV: "production", GZ_LOCAL_BUILD: "1" } as NodeJS.ProcessEnv)).toBe(fixtureSource);
+    expect(getSource({ NODE_ENV: "production", GZ_LOCAL_BUILD: "1" } as NodeJS.ProcessEnv)).toBe(zohoSource);
     expect(getSource({ NODE_ENV: "development" } as NodeJS.ProcessEnv)).toBe(zohoSource);
     expect(getSource({ FIXTURE_MODE: "on", NODE_ENV: "development" } as NodeJS.ProcessEnv)).toBe(zohoSource);
   });

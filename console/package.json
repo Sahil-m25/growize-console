@@ -2,14 +2,16 @@
   "name": "@growize/console",
   "version": "0.1.0",
   "private": true,
-  "description": "Growize IR lead console — the twelve pages of stage 2, built to console/prototype/ir-console.html",
+  "description": "Growize IR lead console \u2014 the twelve pages of stage 2, built to console/prototype/ir-console.html",
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
     "typecheck": "tsc --noEmit",
     "dev:local": "node -e \"process.env.FIXTURE_MODE='local';require('child_process').spawn('npx next dev -p 3001',{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\"",
-    "test": "vitest run --passWithNoTests && node --test src/lib/zoho/identity.test.cjs src/lib/zoho/zoho-lib.test.cjs"
+    "test": "vitest run --passWithNoTests && node --test src/lib/zoho/identity.test.cjs src/lib/zoho/zoho-lib.test.cjs",
+    "build:local": "node -e \"Object.assign(process.env,{FIXTURE_MODE:'local',GZ_LOCAL_BUILD:'1'});require('child_process').spawn('npx next build',{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\"",
+    "start:local": "node -e \"Object.assign(process.env,{FIXTURE_MODE:'local',GZ_LOCAL_BUILD:'1'});require('child_process').spawn('npx next start -p '+(process.env.PORT||3001),{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\""
   },
   "dependencies": {
     "next": "15.5.4",
