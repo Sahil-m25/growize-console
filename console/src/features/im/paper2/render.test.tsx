@@ -13,11 +13,11 @@ const d041 = (s: ImState) => s.data.DOCS.find(d => d.id === "D-041")!;
 describe("paper2 pieces", () => {
   it("SignCell: Viewed with its time, and reminder and recall for a doc seat only", () => {
     const s = st();
-    const h = renderToStaticMarkup(<SignCell s={s} me="meena" dispatch={() => {}} d={d041(s)} />);
+    const h = renderToStaticMarkup(<SignCell s={s} me="meena" dispatch={() => {}} d={d041(s)} actions />);
     expect(h).toContain("Viewed 31 Aug 19:05");
     expect(h).toContain(">Send a reminder</button>");
     expect(h).toContain(">Recall</button>");
-    const ro = renderToStaticMarkup(<SignCell s={s} me="latha" dispatch={() => {}} d={d041(s)} />);
+    const ro = renderToStaticMarkup(<SignCell s={s} me="latha" dispatch={() => {}} d={d041(s)} actions />);
     expect(ro).toContain("Viewed 31 Aug 19:05");
     expect(ro).not.toContain("Send a reminder");
   });

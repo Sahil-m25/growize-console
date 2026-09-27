@@ -11,14 +11,16 @@ import { lastReminder, may, RECALLWHY, signChip, signOpen, who } from "@/lib/im"
 import type { ImDoc } from "@/lib/im";
 import type { ImPageProps } from "../common";
 
-export function SignCell({ s, me, dispatch, d }: ImPageProps & { d: ImDoc }) {
+/* In a register row only the status is drawn (so the row keeps the prototype's controls); the reminder
+   and the recall live in the document's own drawer (`actions`). */
+export function SignCell({ s, me, dispatch, d, actions }: ImPageProps & { d: ImDoc; actions?: boolean }) {
   const [ask, setAsk] = useState(false);
   const [why, setWhy] = useState("");
   const c = signChip(s, d);
   /* a signed row already says so in its State tag; the chip adds only what that tag cannot */
   if (!c || c.st === "signed") return null;
   const rem = lastReminder(s, d.id);
-  const acts = may(s, me, "doc") && signOpen(s, d);
+  const acts = !!actions && may(s, me, "doc") && signOpen(s, d);
   const stop = (run: () => void) => (e: MouseEvent) => { e.stopPropagation(); run(); };
   const rec = ((s.data.SIGN || {})[d.id] || { recalled: undefined }).recalled;
   return (

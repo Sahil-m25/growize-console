@@ -412,11 +412,11 @@ function SecPaper({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
               <td><b>{d.t}</b><div className="sm">{d.cls + " · "}<ImPname s={s} k={d.by} first /></div></td>
               <td className="sm mono">{day6(d.sent)}</td>
               <td className="sm">{d.sig || "—"}</td>
-              <td><DocTag d={d} />{d.state === "awaiting" && d.exp ? <div className="sm">{"link expires " + d.exp}</div> : null}</td>
+              <td><DocTag d={d} />{d.state === "awaiting" && d.exp ? <div className="sm">{"link expires " + d.exp}</div> : null}
+                <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td>
               <td className="sm mono">{d.ref || "—"}</td>
               <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state === "awaiting"
-                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } })}>Verify</button> : null}
-                <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td>
+                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } })}>Verify</button> : null}</td>
             </tr>
           )) : <tr><td colSpan={6}><div className="empty">Nothing on file.</div></td></tr>}
           </tbody></table></div></div>

@@ -10,6 +10,7 @@
    and closeDrawer, so a drawer here only reads the active draft. drawerReadable gates the whole
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
+import { SignCell } from "../paper2/SignCell";
 import type { ReactNode } from "react";
 import {
   CHANS, FSTATE, I, KAMS, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
@@ -288,6 +289,8 @@ function verifyBody(c: Ctx): ReactNode {
         <dt>Signing</dt><dd>{d.sig || "—"}</dd>
         <dt>Out for</dt><dd>{age} day{age === 1 ? "" : "s"}{d.exp ? ` · link expires ${d.exp}` : ""}</dd>
       </dl>
+      {/* M12-S05 — the request's Zoho Sign status, a reminder and a recall (not in the prototype) */}
+      <SignCell s={s} me={me} dispatch={c.dispatch} d={d} actions />
       {said ? (
         <div className="note ir" style={{ marginTop: 12 }}><b>{who(s, said.ir).n || said.ir} says the
           investor has signed and sent it</b> <span className="mono">{said.at}</span>. {said.d || ""}

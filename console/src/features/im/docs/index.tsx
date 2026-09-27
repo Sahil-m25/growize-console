@@ -41,13 +41,13 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
                 <td className="sm">{d.sig || "—"}</td>
                 <td><DocTag d={d} />{d.state === "awaiting"
                   ? <div className="sm">{ago(s.data.NOW, d.sent)}{d.exp ? " · expires " + d.exp : ""}</div>
-                  : d.on ? <div className="sm mono">{day6(d.on)}</div> : null}</td>
+                  : d.on ? <div className="sm mono">{day6(d.on)}</div> : null}
+                  <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td>
                 <td className="sm mono">{d.ref || "—"}</td>
                 <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state === "awaiting"
                   ? <button className="chip" onClick={e => { e.stopPropagation();
                     dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } }); }}>Verify</button>
-                  : d.state === "blocked" ? <span className="sm">{safeNote(s, me, d.why)}</span> : null}
-                  <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td></tr>
+                  : d.state === "blocked" ? <span className="sm">{safeNote(s, me, d.why)}</span> : null}</td></tr>
             );
           }) : <tr><td colSpan={7}><div className="empty">Nothing out for signature.</div></td></tr>}
           </tbody></table></div></div>}
