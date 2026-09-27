@@ -467,6 +467,23 @@
    "commits": [
     "2613b40"
    ]
+  },
+  "M08-S01": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:40:25.547Z",
+   "notes": 1,
+   "note": "Journey tick/untick/skip on Lead stamps with gates and one-back 8 h undo, 6 tests; waits on two new Leads fields and the Finance gate reader (M08-S02).",
+   "commits": [
+    "105ba18"
+   ]
   }
  },
  "subtasks": {
@@ -830,6 +847,11 @@
    "status": "blocked",
    "at": "2026-09-27T16:32:08.001Z",
    "note": "waiting on Tester"
+  },
+  "M08-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:40:25.547Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -1285,6 +1307,24 @@
    "attempt": 1,
    "hours": 2,
    "note": "Reschedule moves the lead step and its Call/Meeting/Task together with 10 s Undo, 2 tests; waits on activity access (M02-S07) and the tester's reminder check."
+  },
+  {
+   "at": "2026-09-27T16:35:07.943Z",
+   "story": "M08-S01",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:40:25.547Z",
+   "story": "M08-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 5,
+   "note": "Journey tick/untick/skip on Lead stamps with gates and one-back 8 h undo, 6 tests; waits on two new Leads fields and the Finance gate reader (M08-S02)."
   }
  ],
  "last_regression_round": 0,
