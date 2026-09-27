@@ -184,6 +184,8 @@ export interface ZohoApi<C extends Credential> {
   /** Deletes one record the person may delete (moves it to Zoho's recycle bin). Never retried: a
    *  lost reply is checked with `wasDeleted()`. Used to take back a write inside its Undo window. */
   deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
+  /** PUT /users/{id} for the signed-in person's own user: only full name and mobile (M17-S05). */
+  updateOwnUser(as: C, fields: { readonly first_name?: string; readonly last_name: string; readonly mobile?: string | null }, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
   /** A COQL aggregate query (must use COUNT/SUM/MIN/MAX/AVG). Rows carry only group keys and numbers. */
   aggregate(as: C, selectQuery: string, options?: CallOptions): Promise<ZohoResult<readonly AggregateRow[]>>;
   /** GET /{module}/{id}/__timeline — who changed which fields when, newest first; values dropped. */
@@ -946,6 +948,26 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         recordIds: [], logReturnedIds: true, signal: opts.signal,
       });
       return out.ok ? done(pageOf(out.result), out) : out;
+    },
+
+    async updateOwnUser(as, fields, opts = {}) {
+      const userId = (as as { userId?: unknown }).userId;
+      if (typeof userId !== "string" || !RECORD.test(userId)) throw new TypeError("updateOwnUser() needs a user credential.");
+      const allowed = ["first_name", "last_name", "mobile"];
+      if (!fields || typeof fields !== "object" || Object.keys(fields).some((k) => !allowed.includes(k)) || typeof fields.last_name !== "string") {
+        throw new TypeError("updateOwnUser() changes first_name, last_name and mobile only.");
+      }
+      const out = await execute(as, {
+        op: "updateOwnUser", method: "PUT", path: `/users/${userId}`, endpoint: "/users/{id}",
+        body: { users: [{ ...fields }] }, shape: { op: "write", records: 1 }, idempotent: false, perRecord: false,
+        recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      const first = out.result.kind === "ok" ? obj((obj(out.result.body)?.users as unknown[] | undefined)?.[0]) : null;
+      if (!first || first.status !== "success") {
+        return { ok: false, error: { kind: "invalid-data", status: out.result.status, code: typeof first?.code === "string" ? first.code : "INVALID_DATA", field: null, records: null }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly updated: true }>;
+      }
+      return done({ updated: true } as const, out);
     },
 
     async aggregate(as, selectQuery, opts = {}) {
