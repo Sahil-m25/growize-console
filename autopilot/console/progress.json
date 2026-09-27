@@ -264,6 +264,23 @@
    "commits": [
     "1782ffe"
    ]
+  },
+  "M03-S07": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T15:20:19.639Z",
+   "notes": 1,
+   "note": "KAM book service (own book, Head-of-AM team+pool, guarded detail and Touch writes, identity wall) with 20 recorded-fixture tests; typecheck clean. Waiting on T01 Zoho sharing config and the sharing proof (NOTE-1); T03 Jev UI cases and T04 UAT follow in later phases.",
+   "commits": [
+    "9bcc4e3"
+   ]
   }
  },
  "subtasks": {
@@ -542,6 +559,16 @@
    "status": "blocked",
    "at": "2026-09-27T14:40:30.181Z",
    "note": "waiting on Sahil"
+  },
+  "M03-S07-T02": {
+   "status": "done",
+   "at": "2026-09-27T15:20:19.639Z",
+   "phase": "zoho"
+  },
+  "M03-S07-T01": {
+   "status": "blocked",
+   "at": "2026-09-27T14:56:42.314Z",
+   "note": "waiting on Sahil"
   }
  },
  "rounds": [
@@ -781,6 +808,24 @@
    "attempt": 1,
    "hours": 3,
    "note": "Built fail-closed D80 role/profile-id seat directory; 234 recorded-fixture tests pass and typecheck is clean. Waiting on T11/user provisioning, sanitized role/profile exports, staging sign-ins, Farm Operations mapping, Administrator-token conflict, and Enterprise entitlement proof."
+  },
+  {
+   "at": "2026-09-27T14:56:42.248Z",
+   "story": "M03-S07",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T15:20:19.639Z",
+   "story": "M03-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3,
+   "note": "KAM book service (own book, Head-of-AM team+pool, guarded detail and Touch writes, identity wall) with 20 recorded-fixture tests; typecheck clean. Waiting on T01 Zoho sharing config and the sharing proof (NOTE-1); T03 Jev UI cases and T04 UAT follow in later phases."
   }
  ],
  "last_regression_round": 0,
