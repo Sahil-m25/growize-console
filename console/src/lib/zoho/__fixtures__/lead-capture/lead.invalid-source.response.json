@@ -1,0 +1,18 @@
+{
+  "status": 207,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "INVALID_DATA",
+        "details": {
+          "api_name": "Lead_Source"
+        },
+        "message": "synthetic picklist value not in the list",
+        "status": "error"
+      }
+    ]
+  }
+}

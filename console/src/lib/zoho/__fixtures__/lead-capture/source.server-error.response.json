@@ -1,0 +1,11 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INTERNAL_ERROR",
+    "message": "Synthetic Lead fixture.lead@example.invalid +91 90000 12345",
+    "status": "error"
+  }
+}
