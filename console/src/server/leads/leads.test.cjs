@@ -49,6 +49,7 @@ const sources = [
   'server/leads/assign.ts',
   'server/leads/focus.ts',
   'server/leads/search.ts',
+  'server/leads/import.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -78,6 +79,7 @@ const { createTodayRead } = load(path.join('server', 'leads', 'today.js'));
 const { createLeadAssign } = load(path.join('server', 'leads', 'assign.js'));
 const { createFocusRead } = load(path.join('server', 'leads', 'focus.js'));
 const { createLeadSearch, searchQueryFor } = load(path.join('server', 'leads', 'search.js'));
+const { createLeadImport, checkRows } = load(path.join('server', 'leads', 'import.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -652,5 +654,78 @@ test('no Zoho call for a short term or a seat without Leads', async () => {
   r = searchRig('search.mixed', IR, { recheck: (b) => ({ ...b, mayViewLeads: false }) });
   res = await r.svc.find(principal(IR), 'Match');
   assert.equal(res.reasonCode, 'capability-missing');
+  assert.equal(r.calls.length, 0);
+});
+
+// ---------------- M04-S04 CSV import ----------------
+
+const EVENT_ID = `${P}740997001`;
+const FILE = Object.freeze([
+  { name: 'Synthetic Alpha', mobile: '9000000101', email: '' },
+  { name: 'Synthetic Beta', mobile: '9000000102' },
+  { name: 'Synthetic Gamma', mobile: '9000000103', city: 'Pune', units: 2 },
+  { name: 'A', mobile: '9000000104' },
+  { name: 'Synthetic Delta', mobile: '12345' },
+  { name: 'Synthetic Eps', mobile: '9000000105', email: 'bad' },
+  { name: 'Synthetic Alpha Again', mobile: '+91 90000 00101' },
+]);
+function importRig(reply, id = MANAGER) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => { calls.push(JSON.parse(init.body)); return toResponse(recorded(reply)); } });
+  return { svc: createLeadImport({ crm, access: accessFor(), log, recordIdPrefix: P, clock: () => NOW }), calls };
+}
+
+test('the preview refuses rows by the file alone: short name, bad mobile, bad email, a number twice', () => {
+  const { good, refused } = checkRows(FILE);
+  assert.deepEqual(good.map((g) => g.row), [0, 1, 2]);
+  assert.deepEqual(refused.map((r) => [r.row, r.reason]), [[3, 'name'], [4, 'mobile'], [5, 'email'], [6, 'duplicate-in-file']]);
+});
+
+test('no event, nothing written', async () => {
+  const r = importRig('import.partial');
+  const res = await r.svc.load(principal(MANAGER), '', { kind: 'me' }, FILE);
+  assert.equal(res.reasonCode, 'event-missing');
+  assert.equal(r.calls.length, 0);
+});
+
+test('good rows land tagged to the event, round-robin across its staff, with no consent whatever the file says', async () => {
+  const r = importRig('import.partial');
+  const res = await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'round-robin', staffIds: [IR, OTHER_IR] },
+    FILE.map((x) => ({ ...x, consent: 'yes', Consent_WhatsApp: true })));
+  assert.equal(r.calls.length, 1);
+  const rows = r.calls[0].data;
+  assert.deepEqual(rows.map((x) => x.Owner.id), [IR, OTHER_IR, IR]);
+  for (const x of rows) {
+    assert.equal(x.Lead_Source, 'Events');
+    assert.deepEqual(x.Lead_Event, { id: EVENT_ID });
+    assert.ok(!Object.keys(x).some((k) => /consent/i.test(k)), 'no consent from a file');
+  }
+  assert.equal(res.value.added, 2);
+  assert.deepEqual(res.value.rows.map((v) => [v.row, v.status, v.reason ?? '']),
+    [[0, 'added', ''], [1, 'refused', 'duplicate-on-book'], [2, 'added', ''], [3, 'refused', 'name'], [4, 'refused', 'mobile'], [5, 'refused', 'email'], [6, 'refused', 'duplicate-in-file']]);
+});
+
+test('a retry after a part-way failure writes no row twice: Zoho returns the landed rows as duplicates', async () => {
+  const r = importRig('import.retry');
+  const res = await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'me' }, FILE);
+  assert.equal(res.value.added, 0);
+  assert.ok(res.value.rows.filter((v) => v.row < 3).every((v) => v.reason === 'duplicate-on-book'));
+});
+
+test('owner rules: leave unassigned uses the queue; one person must be assignable; an IR always keeps the load', async () => {
+  let r = importRig('import.partial');
+  await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'unassigned' }, FILE);
+  assert.ok(r.calls[0].data.every((x) => x.Owner.id === QUEUE && !('Owner_Assigned_At' in x)));
+  r = importRig('import.partial');
+  assert.equal((await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'one', ownerId: `${P}740995555` }, FILE)).reasonCode, 'owner-not-assignable');
+  assert.equal((await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'round-robin', staffIds: [] }, FILE)).reasonCode, 'owner-not-assignable');
+  r = importRig('import.partial', IR);
+  await r.svc.load(principal(IR), EVENT_ID, { kind: 'one', ownerId: OTHER_IR }, FILE);
+  assert.ok(r.calls[0].data.every((x) => x.Owner.id === IR));
+  r = importRig('import.partial', VIEWER);
+  assert.equal((await r.svc.load(principal(VIEWER), EVENT_ID, { kind: 'me' }, FILE)).reasonCode, 'capability-missing');
   assert.equal(r.calls.length, 0);
 });

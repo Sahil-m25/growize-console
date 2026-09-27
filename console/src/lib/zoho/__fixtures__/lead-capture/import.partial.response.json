@@ -1,0 +1,37 @@
+{
+  "status": 207,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740996301",
+          "Modified_Time": "2026-09-27T21:00:00+05:30"
+        },
+        "message": "record added",
+        "status": "success"
+      },
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Mobile",
+          "id": "9007199254740996999"
+        },
+        "message": "duplicate data",
+        "status": "error"
+      },
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740996303",
+          "Modified_Time": "2026-09-27T21:00:00+05:30"
+        },
+        "message": "record added",
+        "status": "success"
+      }
+    ]
+  }
+}

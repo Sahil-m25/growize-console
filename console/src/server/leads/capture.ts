@@ -132,7 +132,7 @@ export function mobileToE164(raw: unknown): string | null {
   return null;
 }
 
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+export const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const text = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
 /** Zoho's Last_Name is mandatory and 80 long, First_Name 40: the last word is the surname. */

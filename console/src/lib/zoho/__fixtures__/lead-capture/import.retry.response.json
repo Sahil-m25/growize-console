@@ -1,0 +1,34 @@
+{
+  "status": 207,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Mobile"
+        },
+        "message": "duplicate data",
+        "status": "error"
+      },
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Mobile"
+        },
+        "message": "duplicate data",
+        "status": "error"
+      },
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Mobile"
+        },
+        "message": "duplicate data",
+        "status": "error"
+      }
+    ]
+  }
+}
