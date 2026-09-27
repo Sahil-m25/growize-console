@@ -12,7 +12,15 @@ const { createHmac } = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { before, test } = require('node:test');
+const { after, before, test } = require('node:test');
+
+// The service's deadline timers are unref'd on purpose (they must never hold a server process open).
+// Several tests stall a dependency on a bare promise and wait for such a deadline; with nothing else
+// ref'd, the event loop drains first and node:test cancels that test and every test after it. One
+// ref'd handle for the life of this file keeps the loop alive; a real hang still fails at the npm
+// test runner's per-file timeout.
+const eventLoopKeepAlive = setInterval(() => {}, 60_000);
+after(() => clearInterval(eventLoopKeepAlive));
 
 const consoleRoot = path.resolve(__dirname, '..', '..', '..');
 const srcRoot = path.join(consoleRoot, 'src');
