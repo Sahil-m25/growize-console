@@ -1,23 +1,17 @@
-"use client";
+/* "/" — where a person starts (Home). In FIXTURE_MODE=local, a fresh load of "/" (a document request,
+   not a client-side navigation) is also where a test case starts: the applied fixtures are cleared so
+   every case begins from the plain demo book, exactly as a fresh prototype page does. */
 
-/* "/" is not a screen. It is the question "where does this person start?", and landSafe() is the
-   prototype's answer to it — the first screen the seat holds, with My day preferred when the seat
-   has one. 03-app.js:7145. */
+import { headers } from "next/headers";
+import { fixtureModeOn, resetFixtures } from "@/lib/fixture-mode";
+import { Home } from "./Home";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useConsole } from "@/lib/store";
-import { landSafe } from "@/components/shell/nav";
-import { pathOf } from "@/components/shell/routes";
+export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const { state } = useConsole();
-  const router = useRouter();
-  const land = landSafe(state, null);
-
-  useEffect(() => {
-    router.replace(pathOf(land));
-  }, [land, router]);
-
-  return null;
+export default async function Page() {
+  if (fixtureModeOn()) {
+    const h = await headers();
+    if (h.get("rsc") !== "1" && h.get("next-router-prefetch") == null) resetFixtures();
+  }
+  return <Home />;
 }
