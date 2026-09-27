@@ -126,7 +126,7 @@ function Payouts({ s, me, dispatch, a }: ImPageProps & { a: ImAllot }) {
 
 /* ---- Money: per-farm blocks when there are several allotments (M10-S08) ---- */
 export const allotCount = (p: P): number => allotsOf(p.s, p.me, p.x.id).length;
-/** the Payment_Status tag the Money card's header carries when there is one allotment */
+/** the Payment_Status tag of a single allotment (What they hold carries it; the Money card keeps the prototype's header) */
 export function MoneyStatusTag(p: P) {
   const rows = allotsOf(p.s, p.me, p.x.id);
   if (rows.length !== 1) return null;

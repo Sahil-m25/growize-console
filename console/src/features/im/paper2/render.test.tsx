@@ -30,9 +30,9 @@ describe("paper2 pieces", () => {
   it("InvEmails: the list for a reader, an in-page refusal for anyone else", () => {
     const s = st();
     const h = renderToStaticMarkup(<InvEmails s={s} me="harsha" id="ARL-INV-0208" />);
-    expect(h).toContain("<th>From</th><th>Subject</th><th>When</th>");
-    expect(h).toContain("Balance for Block B");
-    expect(h).not.toContain("second week of September");   /* the body only when opened */
+    /* closed until asked for: the count and the one control, no subjects on the record's face */
+    expect(h).toContain("Show emails");
+    expect(h).not.toContain("Balance for Block B");
     expect(renderToStaticMarkup(<InvEmails s={s} me="imran" id="ARL-INV-0208" />)).toContain("This record is not one you can open, so its emails were");
   });
   it("UploadPanel: refused for a read-only seat; a labelled file box and the allowlist for Finance", () => {

@@ -51,9 +51,17 @@ export const EmailsRefused = () => (
 );
 
 /** the investor record's Emails section */
+/* closed by default, like the lead page's row: the record reads exactly as the prototype's until the
+   emails are asked for */
 export function InvEmails({ s, me, id }: { s: ImState; me: string; id: string }) {
+  const [open, setOpen] = useState(false);
   const rows = investorEmails(s, me, id);
   if (!rows) return <EmailsRefused />;
+  if (!open) return (
+    <div className="card"><div className="ch"><h3>Emails</h3><div className="sp" />
+      <span className="sm">{rows.length + " email" + (rows.length === 1 ? "" : "s") + " · read only"}</span>
+      <button type="button" className="chip" aria-expanded={false} onClick={() => setOpen(true)}>Show emails</button></div></div>
+  );
   return <EmailList rows={rows} title="Emails" empty="No email is filed on this investor." />;
 }
 
