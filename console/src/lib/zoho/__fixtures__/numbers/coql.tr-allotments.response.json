@@ -1,0 +1,58 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996801",
+        "Customer": {
+          "id": "9007199254740996701",
+          "name": "x"
+        },
+        "Issued_Units": 0,
+        "Reserved_Units": 2,
+        "Total_Amount_Receivable": 5000000,
+        "Allocation_Status": "Issued"
+      },
+      {
+        "id": "9007199254740996802",
+        "Customer": {
+          "id": "9007199254740996702",
+          "name": "x"
+        },
+        "Issued_Units": 1,
+        "Reserved_Units": 1,
+        "Total_Amount_Receivable": 2500000,
+        "Allocation_Status": "Issued"
+      },
+      {
+        "id": "9007199254740996803",
+        "Customer": {
+          "id": "9007199254740996702",
+          "name": "x"
+        },
+        "Issued_Units": 1,
+        "Reserved_Units": 1,
+        "Total_Amount_Receivable": 2500000,
+        "Allocation_Status": "Issued"
+      },
+      {
+        "id": "9007199254740996804",
+        "Customer": {
+          "id": "9007199254740996703",
+          "name": "x"
+        },
+        "Issued_Units": 3,
+        "Reserved_Units": 3,
+        "Total_Amount_Receivable": 7500000,
+        "Allocation_Status": "Issued"
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}

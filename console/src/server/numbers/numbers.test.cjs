@@ -46,6 +46,7 @@ const sources = [
   'domain/plan.ts',
   'server/numbers/sections.ts',
   'server/numbers/plan.ts',
+  'server/numbers/transfers.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -73,6 +74,7 @@ const { createScopedCache } = load(path.join('lib', 'zoho', 'cache.js'));
 const { computeAssignments, createAssignmentsReport, periodBounds } = load(path.join('server', 'numbers', 'assignments.js'));
 const { createNumbersSections } = load(path.join('server', 'numbers', 'sections.js'));
 const { createPlanRead } = load(path.join('server', 'numbers', 'plan.js'));
+const { createTransfers } = load(path.join('server', 'numbers', 'transfers.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -241,4 +243,39 @@ test('a seat without money sees units only; a token that cannot read Receipts ge
   res = await planRig(true, 'forbidden').svc.read(principal(MANAGER));
   assert.equal(res.value.paidKnown, false);
   assert.ok(res.value.periods.every((p) => p.paidUnits === null && p.banked === null));
+});
+
+// ---------------- M16-S06 Transfers ----------------
+
+function transfersRig(seat, money, legacyField = false) {
+  const queries = [];
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(createMemorySink()), maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => { const q = JSON.parse(init.body).select_query; queries.push(q);
+      return toResponse(recorded(/from Leads/.test(q) ? 'coql.tr-leads' : /from Contacts/.test(q) ? 'coql.tr-contacts' : 'coql.tr-allotments')); } });
+  const access = { async recheck(c) { return { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat },
+    seesTransfers: true, seesMoney: money, ownerIds: [IR, IR2], orgWide: false }; } };
+  return { svc: createTransfers({ crm, access, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW, legacyField }), queries };
+}
+
+test('Transfers counts leads by their yes month, newest first, with units from the investors\' allotments', async () => {
+  const r = transfersRig('ir-manager', false);
+  const res = await r.svc.read(principal(MANAGER));
+  assert.equal(res.value.since, '2026-04');
+  assert.equal(res.value.total, 3);
+  assert.deepEqual(res.value.months.slice(0, 2).map((m) => [m.month, m.count, m.units, m.value]), [['2026-09', 1, 2, null], ['2026-08', 2, 5, null]]);
+  assert.equal(res.value.months.length, 6);
+  assert.equal(res.value.medianDays, 26);
+  assert.match(r.queries[0], /Said_Yes_At >= '2026-04-01T00:00:00\+05:30'/);
+  assert.ok(!/Legacy_Record/.test(r.queries[0]));
+  assert.match(r.queries[2], /Allocation_Status != 'Cancelled'/);
+});
+
+test('value only for money seats; legacy rows left out once the field exists; an IR is refused', async () => {
+  let res = await transfersRig('head-of-finance', true).svc.read(principal(MANAGER));
+  assert.deepEqual(res.value.months.slice(0, 2).map((m) => m.value), [5000000, 12500000]);
+  const r = transfersRig('ir-manager', false, true);
+  await r.svc.read(principal(MANAGER));
+  assert.match(r.queries[0], /Legacy_Record is null or Legacy_Record = false/);
+  res = await transfersRig('investor-relations', false).svc.read(principal(IR));
+  assert.equal(res.reasonCode, 'capability-missing');
 });
