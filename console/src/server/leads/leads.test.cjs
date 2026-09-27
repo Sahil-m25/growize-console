@@ -45,6 +45,7 @@ const sources = [
   'server/leads/capture.ts',
   'server/leads/duplicate.ts',
   'server/leads/book.ts',
+  'server/leads/today.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -70,6 +71,7 @@ const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'clie
 const { createLeadCapture, mobileToE164, splitName } = load(path.join('server', 'leads', 'capture.js'));
 const { createDuplicateCheck, mobileClause } = load(path.join('server', 'leads', 'duplicate.js'));
 const { createLeadsBook } = load(path.join('server', 'leads', 'book.js'));
+const { createTodayRead } = load(path.join('server', 'leads', 'today.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -388,7 +390,7 @@ test('an IR\'s book is owner, secondary, live cover and the unassigned queue —
   assert.equal(res.value.rows[4].lostAt, '2026-09-25T10:00:00+05:30');
   assert.equal(res.value.rows[0].unitsInterested, 2);
   assert.equal(res.value.nextOffset, null);
-  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where (Owner = '${IR}' or Secondary_Owner = '${IR}' or (Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or Owner = '${QUEUE}') order by id asc limit 0, 200`);
+  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Onboarded_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where (Owner = '${IR}' or Secondary_Owner = '${IR}' or (Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or Owner = '${QUEUE}') order by id asc limit 0, 200`);
   assert.equal(r.access.calls(), 2);
 });
 
@@ -435,4 +437,46 @@ test('no leads view, or a scope changed during the read, returns nothing', async
   res = await r.book.list(principal(MANAGER), 'team');
   assert.equal(res.reasonCode, 'session-changed');
   assert.ok(!('value' in res));
+});
+
+// ---------------- M05-S01 Today (Lead side) ----------------
+
+function todayRig(routes) {
+  const queries = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const q = JSON.parse(init.body).select_query; queries.push(q);
+      const m = / from (\w+) /.exec(q)[1];
+      return toResponse(recorded(routes[m]));
+    } });
+  const book = createLeadsBook({ crm, access: leadsAccess(IR), log, recordIdPrefix: P, clock: () => NOW });
+  return { today: createTodayRead({ book, crm, clock: () => NOW }), queries };
+}
+
+test('Today reads the open book and its open Tasks, Calls and Meetings; lost leads are left out', async () => {
+  const r = todayRig({ Leads: 'coql.book-personal', Tasks: 'coql.today-tasks', Calls: 'coql.today-calls', Events: 'coql.today-meetings' });
+  const res = await r.today.read(principal(IR), 'personal');
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.value.leads.map((l) => l.id.slice(-2)), ['01', '02', '03', '04'], 'the lost lead 05 is not listed');
+  assert.ok(res.value.leads.some((l) => l.why === 'unassigned'), 'unassigned leads come through for No owner yet');
+  assert.deepEqual(res.value.activities.map((a) => [a.kind, a.leadId.slice(-2), a.when]),
+    [['task', '01', '2026-09-26'], ['call', '02', '2026-09-27T16:00:00+05:30']]);
+  const ids = ['01', '02', '03', '04'].map((k) => `'${P}74099610${k.slice(-1)}'`).join(', ');
+  assert.equal(r.queries[1], `select id, Subject, Due_Date, Status, What_Id from Tasks where (What_Id in (${ids}) and Status != 'Completed') order by id asc limit 0, 2000`);
+  assert.match(r.queries[3], /from Events where \(What_Id in \(.*\) and End_DateTime >= '2026-09-27T21:00:00\+05:30'\)/);
+});
+
+test('an activity on a lead outside the book refuses Today', async () => {
+  const r = todayRig({ Leads: 'coql.book-personal', Tasks: 'coql.today-foreign', Calls: 'coql.today-calls', Events: 'coql.today-meetings' });
+  const res = await r.today.read(principal(IR), 'personal');
+  assert.equal(res.reasonCode, 'scope-drift');
+});
+
+test('a Leads refusal passes straight through Today', async () => {
+  const r = todayRig({ Leads: 'coql.book-personal-drift' });
+  const res = await r.today.read(principal(IR), 'personal');
+  assert.equal(res.reasonCode, 'scope-drift');
+  assert.equal(r.queries.length, 1);
 });

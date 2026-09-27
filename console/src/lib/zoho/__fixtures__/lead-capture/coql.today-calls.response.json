@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997201",
+        "Subject": "Callback",
+        "Call_Start_Time": "2026-09-27T16:00:00+05:30",
+        "Outgoing_Call_Status": "Scheduled",
+        "What_Id": {
+          "id": "9007199254740996102",
+          "name": "Synthetic Lead"
+        }
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

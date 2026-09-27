@@ -29,7 +29,7 @@ const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 
 const FIELDS = Object.freeze([
   "id", "First_Name", "Last_Name", "Mobile", "Owner", "Secondary_Owner", "Cover_By", "Cover_Until",
-  "Lead_Source", "Lead_Status", "Created_Time", "Lost_At", "Units_Interested", "Next_Step_At", "Last_Reply_At",
+  "Lead_Source", "Lead_Status", "Created_Time", "Lost_At", "Onboarded_At", "Units_Interested", "Next_Step_At", "Last_Reply_At",
 ] as const);
 
 export type LeadScope = "personal" | "team";
@@ -65,6 +65,7 @@ export interface LeadRow {
   readonly status: string | null;
   readonly createdAt: string;
   readonly lostAt: string | null;
+  readonly onboardedAt: string | null;
   readonly unitsInterested: number | null;
   readonly nextStepAt: string | null;
   readonly lastReplyAt: string | null;
@@ -119,6 +120,7 @@ export function createLeadsBook(deps: BookDependencies) {
       ownerId: owner === queue ? null : owner, secondaryOwnerId: secondary, coverById: cover,
       coverUntil: str(r, "Cover_Until", 10, DATE), source: str(r, "Lead_Source", 120), status: str(r, "Lead_Status", 120),
       createdAt: str(r, "Created_Time", 40, DATETIME), lostAt: str(r, "Lost_At", 40, DATETIME),
+      onboardedAt: str(r, "Onboarded_At", 40, DATETIME),
       nextStepAt: str(r, "Next_Step_At", 40, DATETIME), lastReplyAt: str(r, "Last_Reply_At", 40, DATETIME),
       unitsInterested: r.Units_Interested === null || r.Units_Interested === undefined ? null
         : Number.isSafeInteger(r.Units_Interested) && (r.Units_Interested as number) >= 0 ? r.Units_Interested as number : undefined,
