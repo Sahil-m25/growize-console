@@ -13,26 +13,38 @@ const catalogue = (): Record<string, unknown> => JSON.parse(readFileSync(FILE, "
 export const resolveFixture = (name: string, all: Record<string, unknown> = catalogue()): string | null =>
   Object.hasOwn(all, name) ? name : Object.hasOwn(all, "IM:" + name) ? "IM:" + name : null;
 
+/* LANES. Several test runs may share one dev server (several agents, one machine); each run names a
+   lane (`?lane=x` on the first URL — the middleware keeps it in a cookie — or the `x-gz-lane` header
+   the seeder sends) and gets its own applied-fixture list. No lane is the lane "". */
 type FixtureState = { applied: string[]; version: number };
-const g = globalThis as { __gzFixtures?: FixtureState };
-const fx = (): FixtureState => (g.__gzFixtures ??= { applied: [], version: 0 });
+const g = globalThis as { __gzLanes?: Record<string, FixtureState> };
+const fx = (lane = ""): FixtureState => ((g.__gzLanes ??= {})[lane] ??= { applied: [], version: 0 });
 
-export const appliedFixtures = (): string[] => [...fx().applied];
-export const fixtureVersion = (): number => fx().version;
+export const appliedFixtures = (lane = ""): string[] => [...fx(lane).applied];
+export const fixtureVersion = (lane = ""): number => fx(lane).version;
 
 /** Apply a named fixture (catalogue-checked). Re-applying one already applied still bumps the version. */
-export const applyFixture = (name: string): string | null => {
+export const applyFixture = (name: string, lane = ""): string | null => {
   const key = resolveFixture(name);
   if (!key) return null;
-  const s = fx();
+  const s = fx(lane);
   if (!s.applied.includes(key)) s.applied.push(key);
   s.version++;
   return key;
 };
 
 /** Clear every applied fixture — back to the plain demo book. */
-export const resetFixtures = (): void => {
-  const s = fx();
+export const resetFixtures = (lane = ""): void => {
+  const s = fx(lane);
   s.applied = [];
   s.version++;
 };
+
+/** The lane a request belongs to: the seeder's header, else the page's cookie. */
+export const LANE_COOKIE = "gz_lane";
+export async function currentLane(): Promise<string> {
+  const { headers, cookies } = await import("next/headers");
+  const h = await headers();
+  const v = h.get("x-gz-lane") ?? (await cookies()).get(LANE_COOKIE)?.value ?? "";
+  return /^[a-z0-9-]{0,24}$/i.test(v) ? v : "";
+}

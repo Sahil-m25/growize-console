@@ -8,7 +8,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { ConsoleProvider } from "@/lib/store";
 import { loadPayload } from "@/lib/data/source";
-import { fixtureModeOn, resetFixtures } from "@/lib/fixture-mode";
+import { currentLane, fixtureModeOn, resetFixtures } from "@/lib/fixture-mode";
 import { Door } from "@/components/shell/SignIn";
 import "./console.css";
 import { ReticleDev } from "./reticle-dev";
@@ -30,7 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
      starts from its own demo book. */
   if (fixtureModeOn()) {
     const h = await headers();
-    if (h.get("x-gz-path") === "/" && h.get("rsc") !== "1" && h.get("next-router-prefetch") == null) resetFixtures();
+    if (h.get("x-gz-path") === "/" && h.get("rsc") !== "1" && h.get("next-router-prefetch") == null) resetFixtures(await currentLane());
   }
   /* the records are in the first paint: the same payload GET /api/data serves */
   const initial = await loadPayload();

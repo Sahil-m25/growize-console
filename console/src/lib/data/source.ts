@@ -2,7 +2,7 @@
    mode serves the demo book from `console/fixtures/` plus the applied fixtures; everything else
    serves `zohoSource`, which in phase 1 is the empty book on a real Kolkata clock. */
 
-import { appliedFixtures, fixtureModeOn, fixtureVersion } from "@/lib/fixture-mode";
+import { appliedFixtures, currentLane, fixtureModeOn, fixtureVersion } from "@/lib/fixture-mode";
 import { clockDay, kolkataNow } from "./clock";
 import { emptyDataset } from "./empty";
 import type { DataPayload, DataSource, Dataset } from "./types";
@@ -17,10 +17,10 @@ export const zohoSource: DataSource = {
 
 /** The demo book, then whatever fixtures the test runner has applied. The fixtures load lazily so
  *  nothing of them is ever bundled into a module that did not ask. */
-export const fixtureSource: DataSource & { loadApplied(): Promise<{ ds: Dataset; actions: unknown[] }> } = {
-  async loadApplied() {
+export const fixtureSource: DataSource & { loadApplied(lane?: string): Promise<{ ds: Dataset; actions: unknown[] }> } = {
+  async loadApplied(lane = "") {
     const [{ demoBook }, { applyFixtures }] = await Promise.all([import("@fixtures/book"), import("@fixtures/apply")]);
-    return applyFixtures(demoBook(), appliedFixtures());
+    return applyFixtures(demoBook(), appliedFixtures(lane));
   },
   async load() {
     return (await this.loadApplied()).ds;
@@ -31,11 +31,12 @@ export const getSource = (env: NodeJS.ProcessEnv = process.env): DataSource =>
   fixtureModeOn(env) ? fixtureSource : zohoSource;
 
 /** What `GET /api/data` answers. */
-export async function loadPayload(): Promise<DataPayload> {
+export async function loadPayload(lane?: string): Promise<DataPayload> {
   const src = getSource();
   if (src === fixtureSource) {
-    const version = fixtureVersion();
-    const { ds, actions } = await fixtureSource.loadApplied();
+    const l = lane ?? (await currentLane());
+    const version = fixtureVersion(l);
+    const { ds, actions } = await fixtureSource.loadApplied(l);
     return { ds, actions, version, fixtures: true };
   }
   return { ds: await src.load(), actions: [], version: 0, fixtures: false };
