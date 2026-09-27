@@ -39,7 +39,12 @@ export const phasesFor = s => PHASES.order.filter(ph => autoTasks(s, ph).length)
 export const phaseStatus = (pr, id, ph) => pr.stories[id]?.phases?.[ph] || "pending";
 export const PHASE_OK = new Set(["done", "waiting"]);        // a phase unit counts as built; review still needs a look
 /** The phase being worked: the first phase with a unit not yet built (review counts as not built). */
+// D100: a second worktree can pin its phase with a one-word file autopilot/.phase (git-ignored), e.g. "zoho",
+// so the backend loop runs beside the front-end loop without both picking the same units.
+export const pinnedPhase = () => { try { const v = fs.readFileSync(P("autopilot", ".phase"), "utf8").trim(); return PHASES.order.includes(v) ? v : null; } catch { return null; } };
 export function currentPhase(Qd, pr) {
+  const pin = pinnedPhase();
+  if (pin) return Qd.stories.some(s => phasesFor(s).includes(pin) && !PHASE_OK.has(phaseStatus(pr, s.id, pin))) ? pin : null;
   for (const ph of PHASES.order) if (Qd.stories.some(s => phasesFor(s).includes(ph) && !PHASE_OK.has(phaseStatus(pr, s.id, ph)))) return ph;
   return null;
 }
