@@ -1,0 +1,143 @@
+{
+  "recordIdPrefix": "554023",
+  "roleIds": {
+    "CEO": "554023000000100001",
+    "BU Owner": "554023000000100002",
+    "Digital Infrastructure": "554023000000100003",
+    "IR Manager": "554023000000100004",
+    "Investor Relations": "554023000000100005",
+    "Channel Partner": "554023000000100006",
+    "Head of Finance": "554023000000100007",
+    "Finance Operations": "554023000000100008",
+    "Compliance and Audit": "554023000000100009",
+    "Head of Account Management": "554023000000100010",
+    "Key Account Manager": "554023000000100011",
+    "Exec": "554023000000100012"
+  },
+  "profileIds": {
+    "Administrator": "554023000000200001",
+    "Leadership": "554023000000200002",
+    "IR Manager": "554023000000200003",
+    "IR": "554023000000200004",
+    "Channel Partner": "554023000000200005",
+    "Finance Head": "554023000000200006",
+    "Finance Ops": "554023000000200007",
+    "Compliance & Audit": "554023000000200008",
+    "AM Head": "554023000000200009",
+    "KAM": "554023000000200010",
+    "Viewer": "554023000000200011"
+  },
+  "accepted": [
+    {
+      "seat": "business-unit-owner",
+      "body": { "users": [{ "id": "554023000000300002", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100002", "name": "BU Owner" }, "profile": { "id": "554023000000200002", "name": "Leadership" } }] }
+    },
+    {
+      "seat": "ir-manager",
+      "body": { "users": [{ "id": "554023000000300004", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100004", "name": "IR Manager" }, "profile": { "id": "554023000000200003", "name": "IR Manager" } }] }
+    },
+    {
+      "seat": "investor-relations",
+      "body": { "users": [{ "id": "554023000000300005", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "seat": "channel-partner",
+      "body": { "users": [{ "id": "554023000000300006", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100006", "name": "Channel Partner" }, "profile": { "id": "554023000000200005", "name": "Channel Partner" } }] }
+    },
+    {
+      "seat": "head-of-finance",
+      "body": { "users": [{ "id": "554023000000300007", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100007", "name": "Head of Finance" }, "profile": { "id": "554023000000200006", "name": "Finance Head" } }] }
+    },
+    {
+      "seat": "finance-operations",
+      "body": { "users": [{ "id": "554023000000300008", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100008", "name": "Finance Operations" }, "profile": { "id": "554023000000200007", "name": "Finance Ops" } }] }
+    },
+    {
+      "seat": "compliance-audit",
+      "body": { "users": [{ "id": "554023000000300009", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100009", "name": "Compliance and Audit" }, "profile": { "id": "554023000000200008", "name": "Compliance & Audit" } }] }
+    },
+    {
+      "seat": "head-of-account-management",
+      "body": { "users": [{ "id": "554023000000300010", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100010", "name": "Head of Account Management" }, "profile": { "id": "554023000000200009", "name": "AM Head" } }] }
+    },
+    {
+      "seat": "key-account-manager",
+      "body": { "users": [{ "id": "554023000000300011", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100011", "name": "Key Account Manager" }, "profile": { "id": "554023000000200010", "name": "KAM" } }] }
+    },
+    {
+      "seat": "viewer",
+      "body": { "users": [{ "id": "554023000000300012", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100012", "name": "Exec" }, "profile": { "id": "554023000000200011", "name": "Viewer" } }] }
+    }
+  ],
+  "administratorRefused": [
+    {
+      "mappedSeat": "corporate-root",
+      "body": { "users": [{ "id": "554023000000300001", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100001", "name": "CEO" }, "profile": { "id": "554023000000200001", "name": "Administrator" } }] }
+    },
+    {
+      "mappedSeat": "digital-infrastructure",
+      "body": { "users": [{ "id": "554023000000300003", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100003", "name": "Digital Infrastructure" }, "profile": { "id": "554023000000200001", "name": "Administrator" } }] }
+    }
+  ],
+  "refused": [
+    {
+      "case": "marketing",
+      "reason": "unknown-role",
+      "body": { "users": [{ "id": "554023000000300020", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100020", "name": "Marketing" }, "profile": { "id": "554023000000200020", "name": "Marketing" } }] }
+    },
+    {
+      "case": "legacy-manager",
+      "reason": "unknown-role",
+      "body": { "users": [{ "id": "554023000000300021", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100021", "name": "Manager" }, "profile": { "id": "554023000000200020", "name": "Standard" } }] }
+    },
+    {
+      "case": "farm-operations-not-decided",
+      "reason": "unknown-role",
+      "body": { "users": [{ "id": "554023000000300022", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100022", "name": "Farm Operations" }, "profile": { "id": "554023000000200022", "name": "Farm Operations" } }] }
+    },
+    {
+      "case": "stale-ir-shorthand",
+      "reason": "unknown-role",
+      "body": { "users": [{ "id": "554023000000300023", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100023", "name": "IR" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "case": "wrong-profile",
+      "reason": "profile-mismatch",
+      "body": { "users": [{ "id": "554023000000300024", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200003", "name": "IR Manager" } }] }
+    },
+    {
+      "case": "recreated-role-id",
+      "reason": "role-binding-mismatch",
+      "body": { "users": [{ "id": "554023000000300025", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000199999", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "case": "inactive",
+      "reason": "inactive",
+      "body": { "users": [{ "id": "554023000000300026", "status": "inactive", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "case": "invitation-unconfirmed",
+      "reason": "unconfirmed",
+      "body": { "users": [{ "id": "554023000000300027", "status": "active", "confirm": false, "type__s": "Regular User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "case": "team-user",
+      "reason": "unsupported-user-type",
+      "body": { "users": [{ "id": "554023000000300028", "status": "active", "confirm": true, "type__s": "Team User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "case": "foreign-user",
+      "reason": "foreign-org",
+      "body": { "users": [{ "id": "999999000000300029", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    },
+    {
+      "case": "missing-role",
+      "reason": "malformed",
+      "body": { "users": [{ "id": "554023000000300030", "status": "active", "confirm": true, "type__s": "Regular User", "profile": { "id": "554023000000200004", "name": "IR" } }] }
+    }
+  ],
+  "roleChange": {
+    "before": { "users": [{ "id": "554023000000300040", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100005", "name": "Investor Relations" }, "profile": { "id": "554023000000200004", "name": "IR" } }] },
+    "after": { "users": [{ "id": "554023000000300040", "status": "active", "confirm": true, "type__s": "Regular User", "role": { "id": "554023000000100004", "name": "IR Manager" }, "profile": { "id": "554023000000200003", "name": "IR Manager" } }] }
+  }
+}

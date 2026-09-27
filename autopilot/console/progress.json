@@ -248,6 +248,18 @@
    "commits": [
     "e31dc2d"
    ]
+  },
+  "M03-S05": {
+   "status": "in_progress",
+   "attempts": 1,
+   "phases": {
+    "zoho": "in_progress"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T14:40:30.113Z"
   }
  },
  "subtasks": {
@@ -516,6 +528,16 @@
    "status": "done",
    "at": "2026-09-27T14:39:52.519Z",
    "phase": "zoho"
+  },
+  "M03-S05-T02": {
+   "status": "in_progress",
+   "at": "2026-09-27T14:40:30.113Z",
+   "phase": "zoho"
+  },
+  "M03-S05-T01": {
+   "status": "blocked",
+   "at": "2026-09-27T14:40:30.181Z",
+   "note": "waiting on Sahil"
   }
  },
  "rounds": [
@@ -737,6 +759,15 @@
    "attempt": 1,
    "hours": 5,
    "note": "Built and offline-verified validate-before-replay receipt backend with 222 passing recorded-fixture tests and clean typecheck. Waiting on sandbox Idempotency_Key/atomicity proofs, authoritative OAuth session-seat wiring, refund/UTR decisions, and frontend queue integration. npm test is unavailable because console/package.json has no test script; explicit suites passed."
+  },
+  {
+   "at": "2026-09-27T14:40:30.113Z",
+   "story": "M03-S05",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
   }
  ],
  "last_regression_round": 0,
