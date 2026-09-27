@@ -366,6 +366,23 @@
    "commits": [
     "48628f4"
    ]
+  },
+  "M06-S03": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:12:54.729Z",
+   "notes": 1,
+   "note": "Leads-only search cut to the book with last-4 masking, 5 tests; waits on staging proof of Zoho search/phone behaviour and the front-end box.",
+   "commits": [
+    "2c92b62"
+   ]
   }
  },
  "subtasks": {
@@ -688,6 +705,11 @@
   "M05-S02-T02": {
    "status": "done",
    "at": "2026-09-27T16:09:02.973Z",
+   "phase": "zoho"
+  },
+  "M06-S03-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:12:54.729Z",
    "phase": "zoho"
   }
  },
@@ -1036,6 +1058,24 @@
    "attempt": 1,
    "hours": 1,
    "note": "Assign-to-me guarded write and focus-panel read built with 7 tests; waits on IR read/write sharing on unassigned-queue leads and the front-end wiring."
+  },
+  {
+   "at": "2026-09-27T16:09:14.824Z",
+   "story": "M06-S03",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:12:54.729Z",
+   "story": "M06-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": "Leads-only search cut to the book with last-4 masking, 5 tests; waits on staging proof of Zoho search/phone behaviour and the front-end box."
   }
  ],
  "last_regression_round": 0,
