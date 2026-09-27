@@ -44,6 +44,7 @@ const sources = [
   'domain/plan.ts',
   'server/leads/capture.ts',
   'server/leads/followup.ts',
+  'server/leads/journey.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -68,6 +69,7 @@ const load = (file) => require(path.join(outDir, file));
 const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js'));
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
 const { activityFor, createFollowups, UNDO_WINDOW_MS } = load(path.join('server', 'leads', 'followup.js'));
+const { createJourney, doneOf } = load(path.join('server', 'leads', 'journey.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -344,4 +346,75 @@ test('a task\'s due date moves by whole days; nothing dated means nothing to mov
   res = await r.svc.reschedule(principal(), LEAD, LOADED, null, 1);
   assert.equal(res.reasonCode, 'nothing-to-reschedule');
   assert.equal(r.writes().length, 0);
+});
+
+// ---------------- M08-S01 journey ----------------
+
+function journeyRig(get, put = 'lead.updated', gates) {
+  const r = rig({ [`GET /Leads/${LEAD}`]: get, [`PUT /Leads/${LEAD}`]: put });
+  const access = { async recheck(c) { return { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, mayRecordFollowup: true, teamOwnerIds: [] }; } };
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(r.sink), maxAttempts: 1, clock: () => now,
+    fetch: async (url, init) => { const u = new URL(url); const key = `${init.method} ${u.pathname.replace('/crm/v8', '')}`;
+      r.calls.push({ key, headers: init.headers, body: init.body ? JSON.parse(init.body) : null });
+      return toResponse(recorded(init.method === 'GET' ? get : put)); } });
+  return { j: createJourney({ crm, access, log: createOpsLog(r.sink), recordIdPrefix: P, clock: () => now, gates }), ...r };
+}
+
+test('the next rung is read from the lead\'s own stamps; a gap is refused', () => {
+  const lead = (n) => recorded(n).body.data[0];
+  assert.equal(doneOf(lead('journey.at1')), 1);
+  assert.equal(doneOf(lead('journey.at3')), 3);
+  assert.equal(doneOf(lead('journey.gap')), null);
+});
+
+test('Mark done advances one rung with a guarded write; first touch comes only from a follow-up', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z');
+  let r = journeyRig('journey.at3');
+  let res = await r.j.tick(principal(), LEAD, LOADED);
+  assert.deepEqual(res.value.rung, 4);
+  assert.deepEqual(r.writes()[0].body.data[0], { Engaged_At: '2026-09-27T14:30:00+05:30' });
+  assert.equal(r.writes()[0].headers['If-Unmodified-Since'], LOADED);
+  r = journeyRig('journey.at1');
+  assert.equal((await r.j.tick(principal(), LEAD, LOADED)).reasonCode, 'first-touch-by-followup');
+  assert.equal(r.writes().length, 0);
+});
+
+test('Qualified needs a dated next step and the stated scorecard; nothing is ticked before', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z');
+  let r = journeyRig('journey.at2');
+  assert.equal((await r.j.tick(principal(), LEAD, LOADED)).reasonCode, 'scorecard-needed');
+  assert.equal((await journeyRig('journey.at2-no-next').j.tick(principal(), LEAD, LOADED, true)).reasonCode, 'next-step-needed');
+  assert.equal(r.writes().length, 0);
+  r = journeyRig('journey.at2');
+  assert.equal((await r.j.tick(principal(), LEAD, LOADED, true)).value.rung, 3);
+});
+
+test('gated rungs open only on Finance\'s fact, and need a unit intent', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z');
+  let r = journeyRig('journey.at5');
+  assert.equal((await r.j.tick(principal(), LEAD, LOADED)).reasonCode, 'gate-shut', 'no gate reader: shut');
+  r = journeyRig('journey.at5', 'lead.updated', { async met(c, id, g) { return g === 'advance'; } });
+  assert.equal((await r.j.tick(principal(), LEAD, LOADED)).value.rung, 6);
+  assert.equal((await journeyRig('journey.at5-no-units', 'lead.updated', { async met() { return true; } }).j.tick(principal(), LEAD, LOADED)).reasonCode, 'units-needed');
+});
+
+test('Undo: one rung back inside 8 hours with a reason; refused when older, twice, or over a payment', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z'); // 14:30 IST, 2.5 h after the 12:00 stamps
+  let r = journeyRig('journey.at3');
+  assert.equal((await r.j.untick(principal(), LEAD, LOADED, 'because')).reasonCode, 'reason-needed');
+  const res = await r.j.untick(principal(), LEAD, LOADED, 'Ticked the wrong rung');
+  assert.equal(res.value.rung, 2);
+  assert.deepEqual(r.writes()[0].body.data[0], { Qualified_At: null, Rung_Undone_At: '2026-09-27T14:30:00+05:30' });
+  assert.equal((await journeyRig('journey.at3-old').j.untick(principal(), LEAD, LOADED, 'Ticked the wrong rung')).reasonCode, 'undo-window-closed');
+  assert.equal((await journeyRig('journey.at3-undone').j.untick(principal(), LEAD, LOADED, 'Ticked the wrong rung')).reasonCode, 'already-undone');
+  assert.equal((await journeyRig('journey.at6').j.untick(principal(), LEAD, LOADED, 'Ticked the wrong rung')).reasonCode, 'payment-stands');
+});
+
+test('skip is only for Engagement when it is next, and marks the skip', async () => {
+  now = Date.parse('2026-09-27T09:00:00Z');
+  let r = journeyRig('journey.at3');
+  assert.equal((await r.j.skip(principal(), LEAD, LOADED)).value.rung, 4);
+  assert.deepEqual(r.writes()[0].body.data[0], { Engaged_At: '2026-09-27T14:30:00+05:30', Engagement_Skipped: true });
+  r = journeyRig('journey.at2');
+  assert.equal((await r.j.skip(principal(), LEAD, LOADED)).reasonCode, 'not-skippable');
 });

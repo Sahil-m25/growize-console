@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Modified_Time": "2026-09-27T09:00:00+05:30",
+        "Lost_At": null,
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": null,
+        "Cover_Until": null,
+        "Next_Step_At": "2026-09-28T11:00:00+05:30",
+        "Units_Interested": 2,
+        "Engagement_Skipped": false,
+        "Rung_Undone_At": null,
+        "First_Touch_At": "2026-09-27T12:00:00+05:30",
+        "Qualified_At": "2026-09-26T08:00:00+05:30",
+        "Engaged_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Fully_Paid_At": null,
+        "Allocated_At": null,
+        "Onboarded_At": null
+      }
+    ]
+  }
+}
