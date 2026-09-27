@@ -1,0 +1,109 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996401",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Owner_Assigned_At": "2026-09-27T10:00:00+05:30",
+        "Created_Time": "2026-09-01T10:00:00+05:30",
+        "Lost_At": null,
+        "Qualified_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Onboarded_At": null,
+        "Next_Step_At": null,
+        "Last_Reply_At": null,
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true
+      },
+      {
+        "id": "9007199254740996402",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Owner_Assigned_At": "2026-09-22T10:00:00+05:30",
+        "Created_Time": "2026-09-01T10:00:00+05:30",
+        "Lost_At": null,
+        "Qualified_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Onboarded_At": null,
+        "Next_Step_At": "2026-09-30T10:00:00+05:30",
+        "Last_Reply_At": null,
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true
+      },
+      {
+        "id": "9007199254740996403",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Owner_Assigned_At": "2026-09-15T10:00:00+05:30",
+        "Created_Time": "2026-09-01T10:00:00+05:30",
+        "Lost_At": null,
+        "Qualified_At": "2026-09-18T10:00:00+05:30",
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Onboarded_At": null,
+        "Next_Step_At": null,
+        "Last_Reply_At": null,
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true
+      },
+      {
+        "id": "9007199254740996404",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Owner_Assigned_At": null,
+        "Created_Time": "2026-08-20T10:00:00+05:30",
+        "Lost_At": "2026-09-01T10:00:00+05:30",
+        "Qualified_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Onboarded_At": null,
+        "Next_Step_At": null,
+        "Last_Reply_At": null,
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true
+      },
+      {
+        "id": "9007199254740996405",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "Owner_Assigned_At": "2026-09-23T10:00:00+05:30",
+        "Created_Time": "2026-09-01T10:00:00+05:30",
+        "Lost_At": null,
+        "Qualified_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Onboarded_At": null,
+        "Next_Step_At": null,
+        "Last_Reply_At": null,
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true
+      }
+    ],
+    "info": {
+      "count": 5,
+      "more_records": false
+    }
+  }
+}

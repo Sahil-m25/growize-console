@@ -1,0 +1,89 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Lead": {
+          "id": "9007199254740996402",
+          "name": "x"
+        },
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Occurred_At": "2026-09-22T11:00:00+05:30",
+        "Channel": "WhatsApp",
+        "Is_Reply": false,
+        "Note": "Sent — synthetic",
+        "id": "9007199254740996500"
+      },
+      {
+        "Lead": {
+          "id": "9007199254740996402",
+          "name": "x"
+        },
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Occurred_At": "2026-09-22T11:05:00+05:30",
+        "Channel": "WhatsApp",
+        "Is_Reply": false,
+        "Note": "Sent — dup within 15 min",
+        "id": "9007199254740996501"
+      },
+      {
+        "Lead": {
+          "id": "9007199254740996402",
+          "name": "x"
+        },
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Occurred_At": "2026-09-23T12:00:00+05:30",
+        "Channel": "Call",
+        "Is_Reply": false,
+        "Note": "Connected — synthetic",
+        "id": "9007199254740996502"
+      },
+      {
+        "Lead": {
+          "id": "9007199254740996403",
+          "name": "x"
+        },
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Occurred_At": "2026-09-18T09:00:00+05:30",
+        "Channel": "Call",
+        "Is_Reply": false,
+        "Note": "No answer — synthetic",
+        "id": "9007199254740996503"
+      },
+      {
+        "Lead": {
+          "id": "9007199254740996405",
+          "name": "x"
+        },
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "Occurred_At": "2026-09-23T11:00:00+05:30",
+        "Channel": "WhatsApp",
+        "Is_Reply": false,
+        "Note": "Sent",
+        "id": "9007199254740996504"
+      }
+    ],
+    "info": {
+      "count": 5,
+      "more_records": false
+    }
+  }
+}
