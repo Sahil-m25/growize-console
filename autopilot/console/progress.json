@@ -332,6 +332,23 @@
    "commits": [
     "a817cd6"
    ]
+  },
+  "M05-S01": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:05:05.827Z",
+   "notes": 2,
+   "note": "Today server read built (open book + open activities) with 3 tests; waits on activity-module access (M02-S07) and staging proof of activity field names; nextUp/workGroup PROVISIONAL (b).",
+   "commits": [
+    "d069836"
+   ]
   }
  },
  "subtasks": {
@@ -645,6 +662,11 @@
    "status": "done",
    "at": "2026-09-27T16:01:35.684Z",
    "phase": "zoho"
+  },
+  "M05-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:05:05.827Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -956,6 +978,24 @@
    "attempt": 1,
    "hours": 2.5,
    "note": "Leads book server read built with 5 recorded-fixture tests; waits on Leads sharing (unassigned queue, secondary owner) and the front-end wiring."
+  },
+  {
+   "at": "2026-09-27T16:01:54.412Z",
+   "story": "M05-S01",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:05:05.827Z",
+   "story": "M05-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Today server read built (open book + open activities) with 3 tests; waits on activity-module access (M02-S07) and staging proof of activity field names; nextUp/workGroup PROVISIONAL (b)."
   }
  ],
  "last_regression_round": 0,
