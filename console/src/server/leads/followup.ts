@@ -34,9 +34,17 @@ const NEXT_CHANNEL: Readonly<Record<string, string | null>> = { msg: "WhatsApp",
 const CONSENT: Readonly<Record<string, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call", visit: "Consent_Visit" };
 const ACTIVITY_MODULES: ReadonlySet<string> = new Set(["Tasks", "Calls", "Events"]);
 /** The Lead fields a follow-up may change, and so the ones Undo restores. */
-const STAMPS = ["Next_Step", "Next_Step_At", "Next_Step_Channel", "Last_Reply_At", "First_Touch_At"] as const;
+const STAMPS = ["Next_Step", "Next_Step_At", "Next_Step_Channel", "Last_Reply_At", "First_Touch_At", "Lost_At", "Lost_Reason"] as const;
 const GUARD_FIELDS = [...STAMPS, "Modified_Time", "Created_Time", "Lost_At", "Onboarded_At", "Owner", "Secondary_Owner",
-  "Cover_By", "Cover_Until", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit"];
+  "Cover_By", "Cover_Until", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit", "Reserved_At", "Fully_Paid_At"];
+/** The eight reasons (prototype LOSTWHY) and the value Zoho's Lost_Reason picklist holds for each. */
+export const LOST_REASONS: Readonly<Record<string, string>> = Object.freeze({
+  "Price too high": "Price too high", "Went cold — no reply": "Went cold - no reply", "Lock-in too long": "Lock-in too long",
+  "Timing — not now": "Timing - not now", "Yield not convincing": "Yield not convincing", "KYC / FEMA blocked": "KYC / FEMA blocked",
+  "Bought somewhere else": "Bought somewhere else", "Never a real prospect": "Never a real prospect",
+});
+/** Only these answers lead to "Why are they out?" (D57). */
+const LOSS_OUTCOMES: ReadonlySet<string> = new Set(["Not interested", "Wrong number"]);
 
 /** D58: which Zoho record a next step becomes, by the action picked (the prototype's NEXTS). */
 export function activityFor(next: { readonly text: string; readonly at: string }, leadId: string): { readonly module: "Calls" | "Events" | "Tasks"; readonly row: ZohoFields } {
@@ -82,12 +90,14 @@ export interface FollowupCommand {
   readonly complete: boolean;
   readonly keep: boolean;
   readonly next: { readonly text: string; readonly at: string; readonly channel: NextChannel } | null;
+  /** Close as lost in the same save (one of LOST_REASONS). */
+  readonly lost?: { readonly reason: string } | null;
 }
 
 export type FollowupRefusal = "invalid-request" | "session-changed" | "capability-missing" | "not-visible" | "not-in-book"
   | "lead-changed" | "no-consent" | "contact-in-future" | "contact-before-capture" | "choose-complete-or-keep"
   | "nothing-to-keep" | "scheduled-changed" | "next-step-needed" | "next-step-in-past" | "undo-expired" | "undo-invalid"
-  | "source-invalid" | "followup-partial";
+  | "source-invalid" | "followup-partial" | "lead-lost" | "money-in" | "loss-not-offered" | "not-lost";
 export type FollowupResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: FollowupRefusal; readonly reason: string }
@@ -112,6 +122,10 @@ const REASON: Readonly<Record<FollowupRefusal, string>> = Object.freeze({
   "undo-invalid": "this Undo does not match a save of yours",
   "source-invalid": "Zoho returned an invalid record",
   "followup-partial": "the follow-up could not be completed and could not be fully taken back; it has been reported",
+  "lead-lost": "this lead is closed as lost; only Re-open is available",
+  "money-in": "money has come in on this lead, so it is not a loss but a refund or forfeit with Finance",
+  "loss-not-offered": "closing as lost follows only 'Not interested' or 'Wrong number', with one of the eight reasons",
+  "not-lost": "this lead is not closed as lost",
 });
 
 export interface FollowupDependencies {
@@ -216,7 +230,8 @@ export function createFollowups(deps: FollowupDependencies) {
         || (c.scheduled !== null && (!c.scheduled || !ACTIVITY_MODULES.has(c.scheduled.module) || !validId(c.scheduled.id)))
         || (c.next !== null && (!c.next || !text(c.next.text, 200) || typeof c.next.at !== "string" || !DATETIME.test(c.next.at)
           || !(c.next.channel in NEXT_CHANNEL)))
-        || (c.keep && c.next !== null) || (c.complete && !c.scheduled)) {
+        || (c.keep && c.next !== null) || (c.complete && !c.scheduled)
+        || (c.lost !== undefined && c.lost !== null && (typeof c.lost !== "object" || c.next !== null || c.keep))) {
         return refuse(me, "invalid-request", validId(c?.leadId) ? [c.leadId] : []);
       }
       const now = clock();
@@ -245,7 +260,13 @@ export function createFollowups(deps: FollowupDependencies) {
       const hasNext = L.Next_Step_At !== null && L.Next_Step_At !== undefined;
       if (c.scheduled && !c.keep && !c.complete) return refuse(me, "choose-complete-or-keep", [c.leadId]);
       if (c.keep && !hasNext) return refuse(me, "nothing-to-keep", [c.leadId]);
-      const active = !L.Lost_At && !L.Onboarded_At;
+      if (L.Lost_At) return refuse(me, "lead-lost", [c.leadId]);
+      const losing = !!c.lost;
+      if (losing) {
+        if (!LOSS_OUTCOMES.has(outcome) || !LOST_REASONS[c.lost!.reason]) return refuse(me, "loss-not-offered", [c.leadId]);
+        if (L.Reserved_At || L.Fully_Paid_At) return refuse(me, "money-in", [c.leadId]);
+      }
+      const active = !L.Onboarded_At && !losing;
       if (active && !c.keep && !c.next) return refuse(me, "next-step-needed", [c.leadId]);
       if (c.scheduled) {
         let s: Awaited<ReturnType<typeof crm.getRecord>>;
@@ -260,6 +281,8 @@ export function createFollowups(deps: FollowupDependencies) {
       const leadFields: Record<string, ZohoFields[string]> = { Next_Step: snapshot.Next_Step };
       if (c.next) Object.assign(leadFields, { Next_Step: c.next.text.trim(), Next_Step_At: c.next.at, Next_Step_Channel: NEXT_CHANNEL[c.next.channel] });
       else if (!c.keep && c.complete) Object.assign(leadFields, { Next_Step: null, Next_Step_At: null, Next_Step_Channel: null });
+      if (losing) Object.assign(leadFields, { Next_Step: null, Next_Step_At: null, Next_Step_Channel: null,
+        Lost_At: zohoTime(now), Lost_Reason: LOST_REASONS[c.lost!.reason] });
       if (inbound) leadFields.Last_Reply_At = c.contact.occurredAt;
       if (humanTouch && !snapshot.First_Touch_At) leadFields.First_Touch_At = c.contact.occurredAt;
 
@@ -322,6 +345,40 @@ export function createFollowups(deps: FollowupDependencies) {
       const undoToken = sign({ v: 1, actor: me, session: principal.sessionId, lead: c.leadId, exp: undoUntil,
         leadModified: leadModified ?? "", snapshot, created, reopened });
       return { ok: true, value: { touchId, nextId, undoToken, undoUntil } };
+    },
+
+    /** Re-open a lead closed as lost. The close stays in the record's history (Zoho's audit keeps
+     *  the Lost_At and Lost_Reason it had); a next step comes back only if one is given and ahead. */
+    async reopen(principal: { credential: UserCredential; sessionId: string }, leadId: string, expectedModifiedTime: string,
+      next: FollowupCommand["next"], signal?: AbortSignal): Promise<FollowupResult<{ readonly modifiedTime: string | null }>> {
+      if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
+      const cred = principal.credential, me = cred.userId;
+      if (!validId(leadId) || typeof expectedModifiedTime !== "string" || !DATETIME.test(expectedModifiedTime)
+        || (next !== null && (!next || !text(next.text, 200) || typeof next.at !== "string" || !DATETIME.test(next.at) || !(next.channel in NEXT_CHANNEL)))) {
+        return refuse(me, "invalid-request", validId(leadId) ? [leadId] : []);
+      }
+      if (next && Date.parse(next.at) <= clock()) return refuse(me, "next-step-in-past", [leadId]);
+      const a = await recheck(principal, signal);
+      if (!("actor" in a)) return a;
+      let got: Awaited<ReturnType<typeof crm.getRecord>>;
+      try { got = await crm.getRecord(cred, LEADS_MODULE, leadId, { fields: GUARD_FIELDS, signal }); } catch { return zoho("unexpected"); }
+      if (!got.ok) return got.error.kind === "not-found" || got.error.kind === "forbidden" ? refuse(me, "not-visible", [leadId]) : zoho(got.error.kind);
+      if (!got.value || got.value.id !== leadId) return refuse(me, "not-visible", [leadId]);
+      const L = got.value as ZohoRecord;
+      if (L.Modified_Time !== expectedModifiedTime) return refuse(me, "lead-changed", [leadId]);
+      if (!L.Lost_At) return refuse(me, "not-lost", [leadId]);
+      const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
+      const inBook = owner === me || idOf(L.Secondary_Owner) === me
+        || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
+        || (owner !== null && a.teamOwnerIds.includes(owner));
+      if (!inBook) return refuse(me, "not-in-book", [leadId]);
+      if (next && next.channel !== "other" && L[CONSENT[next.channel]] !== true) return refuse(me, "no-consent", [leadId]);
+      const fields: Record<string, ZohoFields[string]> = { Lost_At: null, Lost_Reason: null };
+      if (next) Object.assign(fields, { Next_Step: next.text.trim(), Next_Step_At: next.at, Next_Step_Channel: NEXT_CHANNEL[next.channel] });
+      let put: Awaited<ReturnType<typeof crm.update>>;
+      try { put = await crm.update(cred, LEADS_MODULE, leadId, fields, { ifUnmodifiedSince: expectedModifiedTime, signal }); } catch { return zoho("unexpected"); }
+      if (!put.ok) return put.error.kind === "conflict" ? refuse(me, "lead-changed", [leadId]) : zoho(put.error.kind);
+      return { ok: true, value: { modifiedTime: put.value.modifiedTime } };
     },
 
     async undo(principal: { credential: UserCredential; sessionId: string }, token: string, signal?: AbortSignal): Promise<FollowupResult<{ readonly undone: true }>> {

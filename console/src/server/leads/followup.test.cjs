@@ -155,7 +155,7 @@ test('Undo within ten seconds restores the lead and deletes what the save create
   assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `DELETE /Calls/${CALL}`, `DELETE /Touches/${TOUCH}`, `PUT /Tasks/${TASK}`]);
   assert.equal(r.writes()[0].headers['If-Unmodified-Since'], '2026-09-27T21:00:00+05:30', 'restored only if nobody changed it since the save');
   assert.deepEqual(r.writes()[0].body.data[0], { Next_Step: 'Send the deck', Next_Step_At: '2026-09-27T18:00:00+05:30', Next_Step_Channel: 'WhatsApp',
-    Last_Reply_At: null, First_Touch_At: null });
+    Last_Reply_At: null, First_Touch_At: null, Lost_At: null, Lost_Reason: null });
   assert.deepEqual(r.writes()[3].body.data[0], { Status: 'Not Started' });
 
   now += 2_000;
@@ -265,4 +265,49 @@ test('D58: call backs and onboarding calls are Calls, office meetings and farm v
   const task = activityFor({ text: 'Send the yield note', at: '2026-09-29T23:59:00+05:30' }, LEAD);
   assert.deepEqual(task, { module: 'Tasks', row: { Subject: 'Send the yield note', Due_Date: '2026-09-29', Status: 'Not Started', What_Id: { id: LEAD }, $se_module: 'Leads' } });
   assert.equal(activityFor({ text: 'Book a farm visit', at }, LEAD).module, 'Tasks', 'booking a visit is a task; the visit itself is the meeting');
+});
+
+// ---------------- M07-S06 close as lost, undo, re-open ----------------
+
+const LOSS = Object.freeze({ ...CMD, contact: { ...CMD.contact, outcome: 'Not interested' }, next: null, lost: { reason: 'Timing — not now' } });
+
+test('the contact and the loss are recorded in one save, the next step cleared, and Undo covers both', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig(ROUTES());
+  const res = await r.svc.save(principal(), LOSS);
+  assert.equal(res.ok, true);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Tasks/${TASK}`]);
+  assert.deepEqual(r.writes()[0].body.data[0], { Next_Step: null, Next_Step_At: null, Next_Step_Channel: null,
+    Lost_At: '2026-09-27T21:00:00+05:30', Lost_Reason: 'Timing - not now', First_Touch_At: '2026-09-27T20:30:00+05:30' });
+  assert.ok(!('Lead_Status' in r.writes()[0].body.data[0]), 'the blueprint owns Lead_Status');
+  const u = rig(ROUTES());
+  assert.equal((await u.svc.undo(principal(), res.value.undoToken)).ok, true);
+  assert.deepEqual(u.writes()[0].body.data[0].Lost_At, null);
+  assert.equal(u.writes()[0].body.data[0].Next_Step, 'Send the deck', 'the next step the loss cleared comes back with Undo');
+});
+
+test('loss is offered only after Not interested / Wrong number, with one of the eight reasons, and never once money is in', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  let r = rig(ROUTES());
+  assert.equal((await r.svc.save(principal(), { ...LOSS, contact: { ...LOSS.contact, outcome: 'Spoke' } })).reasonCode, 'loss-not-offered');
+  assert.equal((await r.svc.save(principal(), { ...LOSS, lost: { reason: 'Rude' } })).reasonCode, 'loss-not-offered');
+  r = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-paid' });
+  assert.equal((await r.svc.save(principal(), LOSS)).reasonCode, 'money-in');
+  assert.equal(r.writes().length, 0);
+});
+
+test('a lost lead takes no contact; Re-open clears the loss with a guarded write and brings back a future next step', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  let r = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-lost' });
+  assert.equal((await r.svc.save(principal(), CMD)).reasonCode, 'lead-lost');
+  r = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-lost' });
+  const res = await r.svc.reopen(principal(), LEAD, LOADED, { text: 'Call back', at: '2026-09-30T10:00:00+05:30', channel: 'call' });
+  assert.equal(res.ok, true);
+  assert.equal(r.writes()[0].headers['If-Unmodified-Since'], LOADED);
+  assert.deepEqual(r.writes()[0].body.data[0], { Lost_At: null, Lost_Reason: null, Next_Step: 'Call back', Next_Step_At: '2026-09-30T10:00:00+05:30', Next_Step_Channel: 'Call' });
+  r = rig(ROUTES());
+  assert.equal((await r.svc.reopen(principal(), LEAD, LOADED, null)).reasonCode, 'not-lost');
+  r = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-lost' });
+  assert.equal((await r.svc.reopen(principal(), LEAD, LOADED, { text: 'Call back', at: '2026-09-20T10:00:00+05:30', channel: 'call' })).reasonCode, 'next-step-in-past');
+  assert.equal(r.writes().length, 0);
 });
