@@ -518,6 +518,23 @@
    "commits": [
     "45ce49e"
    ]
+  },
+  "M16-S03": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:55:41.794Z",
+   "notes": 1,
+   "note": "Numbers sections as scoped COQL aggregates in the scope-keyed cache with money only for money seats, 4 tests; waits on staging proof of aggregate response keys and the front end.",
+   "commits": [
+    "3261785"
+   ]
   }
  },
  "subtasks": {
@@ -895,6 +912,11 @@
   "M16-S01-T01": {
    "status": "done",
    "at": "2026-09-27T16:50:56.317Z",
+   "phase": "zoho"
+  },
+  "M16-S03-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:55:41.794Z",
    "phase": "zoho"
   }
  },
@@ -1405,6 +1427,24 @@
    "attempt": 1,
    "hours": 3,
    "note": "Assignments by IR computed from Zoho Leads and Touches, counts-only in the scope-keyed cache, 4 tests; waits on the owner-change workflow and the session layer's IR lists."
+  },
+  {
+   "at": "2026-09-27T16:51:13.121Z",
+   "story": "M16-S03",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:55:41.794Z",
+   "story": "M16-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Numbers sections as scoped COQL aggregates in the scope-keyed cache with money only for money seats, 4 tests; waits on staging proof of aggregate response keys and the front end."
   }
  ],
  "last_regression_round": 0,
