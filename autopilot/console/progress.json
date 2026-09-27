@@ -217,17 +217,21 @@
    ]
   },
   "M20-S08": {
-   "status": "in_progress",
+   "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "in_progress"
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "zoho": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T12:22:28.424Z",
-   "notes": 2
+   "at": "2026-09-27T12:56:15.204Z",
+   "notes": 2,
+   "note": "Local HMAC, India-DC OAuth refresh, source re-read, request-id binding, callback limits and failure logs pass 74 recorded-response tests plus 3 sandbox-reset tests. Waiting on paid plan, owner OAuth/HMAC secrets, sandbox Aadhaar/email-OTP proof, M12-S05 durable worker/dead-letter, and persistent Plane B; npm test is not defined in the frontend-owned package.",
+   "commits": [
+    "e7a7a46"
+   ]
   }
  },
  "subtasks": {
@@ -478,8 +482,8 @@
    "note": "waiting on Sahil"
   },
   "M20-S08-T03": {
-   "status": "in_progress",
-   "at": "2026-09-27T12:22:28.424Z",
+   "status": "done",
+   "at": "2026-09-27T12:56:15.204Z",
    "phase": "zoho"
   },
   "M20-S08-T01": {
@@ -685,6 +689,15 @@
    "attempt": 1,
    "hours": 2,
    "note": ""
+  },
+  {
+   "at": "2026-09-27T12:56:15.204Z",
+   "story": "M20-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Local HMAC, India-DC OAuth refresh, source re-read, request-id binding, callback limits and failure logs pass 74 recorded-response tests plus 3 sandbox-reset tests. Waiting on paid plan, owner OAuth/HMAC secrets, sandbox Aadhaar/email-OTP proof, M12-S05 durable worker/dead-letter, and persistent Plane B; npm test is not defined in the frontend-owned package."
   }
  ],
  "last_regression_round": 0,
