@@ -48,6 +48,7 @@ const sources = [
   'server/leads/today.ts',
   'server/leads/assign.ts',
   'server/leads/focus.ts',
+  'server/leads/search.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -76,6 +77,7 @@ const { createLeadsBook } = load(path.join('server', 'leads', 'book.js'));
 const { createTodayRead } = load(path.join('server', 'leads', 'today.js'));
 const { createLeadAssign } = load(path.join('server', 'leads', 'assign.js'));
 const { createFocusRead } = load(path.join('server', 'leads', 'focus.js'));
+const { createLeadSearch, searchQueryFor } = load(path.join('server', 'leads', 'search.js'));
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -591,4 +593,64 @@ test('a lead with no touches or notes shows none; a lead Zoho hides is unavailab
   res = await r.svc.read(principal(IR), `${P}740996101`);
   assert.equal(res.reasonCode, 'not-visible');
   assert.equal(r.calls.length, 1);
+});
+
+// ---------------- M06-S03 Find a lead ----------------
+
+function searchRig(reply, id = IR, overrides) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url) => { const u = new URL(url); calls.push(u); return toResponse(recorded(reply)); } });
+  return { svc: createLeadSearch({ crm, access: leadsAccess(id, overrides), log, recordIdPrefix: P, clock: () => NOW }), calls, sink };
+}
+
+test('search terms: 3+ digits search the phone, 2+ letters a word, anything shorter nothing', () => {
+  assert.deepEqual(searchQueryFor(' 98450 '), { phone: '98450' });
+  assert.deepEqual(searchQueryFor('+91 98-450'), { phone: '9198450' });
+  assert.deepEqual(searchQueryFor('Asha (Rao)'), { word: 'Asha Rao' });
+  assert.equal(searchQueryFor('a'), null);
+  assert.equal(searchQueryFor('12'), null);
+});
+
+test('an IR finds only their own book — never another IR\'s lead, an expired cover or the queue', async () => {
+  const r = searchRig('search.mixed');
+  const res = await r.svc.find(principal(IR), 'Match');
+  assert.equal(res.value.book, 'yours');
+  assert.deepEqual(res.value.hits.map((h) => h.id.slice(-2)), ['01', '03', '05']);
+  assert.deepEqual(res.value.hits[0], { id: `${P}740996201`, name: 'Synthetic Match 1', phoneLast4: '0001', stage: 'Lead captured', ownerId: IR });
+  assert.equal(r.calls[0].pathname, '/crm/v8/Leads/search', 'Leads only, never Contacts');
+  assert.equal(r.calls[0].searchParams.get('word'), 'Match');
+  assert.ok(!JSON.stringify(res).includes('+91 90000'), 'the full number never leaves');
+  const dropped = r.sink.records().filter((x) => x.kind === 'refusal');
+  assert.deepEqual(dropped[0].recordIds.map((x) => x.slice(-2)), ['02', '04', '06']);
+});
+
+test('the IR Manager sees the team\'s book; an org-wide seat sees every book, masked to the last four', async () => {
+  let res = await searchRig('search.mixed', MANAGER).svc.find(principal(MANAGER), 'Match');
+  assert.equal(res.value.book, 'team');
+  assert.deepEqual(res.value.hits.map((h) => [h.id.slice(-2), h.ownerId === null ? 'queue' : 'owner']),
+    [['01', 'owner'], ['02', 'owner'], ['03', 'owner'], ['04', 'owner'], ['05', 'owner'], ['06', 'queue']]);
+  res = await searchRig('search.mixed', MANAGER, { recheck: (b) => ({ ...b, teamOrgWide: true, teamOwnerIds: null }) }).svc.find(principal(MANAGER), '0003');
+  assert.equal(res.value.book, 'all');
+  assert.ok(res.value.hits.every((h) => /^\d{4}$/.test(h.phoneLast4)));
+});
+
+test('at most eight rows show, with how many more to keep typing for', async () => {
+  const r = searchRig('search.many');
+  const res = await r.svc.find(principal(IR), '90000');
+  assert.equal(r.calls[0].searchParams.get('phone'), '90000');
+  assert.equal(res.value.hits.length, 8);
+  assert.equal(res.value.more, 3, 'two over the eight plus a further page');
+});
+
+test('no Zoho call for a short term or a seat without Leads', async () => {
+  let r = searchRig('search.mixed');
+  let res = await r.svc.find(principal(IR), 'a');
+  assert.equal(res.reasonCode, 'term-too-short');
+  r = searchRig('search.mixed', IR, { recheck: (b) => ({ ...b, mayViewLeads: false }) });
+  res = await r.svc.find(principal(IR), 'Match');
+  assert.equal(res.reasonCode, 'capability-missing');
+  assert.equal(r.calls.length, 0);
 });
