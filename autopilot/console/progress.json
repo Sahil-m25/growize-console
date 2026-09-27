@@ -434,6 +434,23 @@
    "commits": [
     "d6c3c4b"
    ]
+  },
+  "M04-S04": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:31:36.017Z",
+   "notes": 1,
+   "note": "CSV import server with row verdicts, event tag, owner rules and duplicate-safe retry, 5 tests; waits on the Leads.Mobile duplicate check and an event staff source.",
+   "commits": [
+    "74f8d1d"
+   ]
   }
  },
  "subtasks": {
@@ -781,6 +798,11 @@
   "M07-S06-T01": {
    "status": "done",
    "at": "2026-09-27T16:27:47.328Z",
+   "phase": "zoho"
+  },
+  "M04-S04-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:31:36.017Z",
    "phase": "zoho"
   }
  },
@@ -1201,6 +1223,24 @@
    "attempt": 1,
    "hours": 4,
    "note": "Loss in the same guarded save with Undo, money-in refusal and guarded re-open, 3 tests; waits on the Lead_Status-on-loss blueprint choice and staging proof."
+  },
+  {
+   "at": "2026-09-27T16:28:33.041Z",
+   "story": "M04-S04",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:31:36.017Z",
+   "story": "M04-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 2,
+   "note": "CSV import server with row verdicts, event tag, owner rules and duplicate-safe retry, 5 tests; waits on the Leads.Mobile duplicate check and an event staff source."
   }
  ],
  "last_regression_round": 0,
