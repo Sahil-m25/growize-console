@@ -17,7 +17,11 @@ for (const ph of PHASES.order) {
 }
 const mins = (s, ph) => measured[ph] ?? MPU[key(s, ph)] ?? MPU[ph] ?? 30;
 const phases = {}, projected = {}; let clock = +now;
+// D100/D101: with the backend worktree running, phase 2 runs beside phase 1 (its own clock from now); phase 3 starts when both end.
+const parallel = !!process.env.PROGRESS_VIEW; let feEnd = +now;
 for (const ph of PHASES.order) {
+  if (parallel && ph === "zoho") { feEnd = clock; clock = +now; }
+  if (parallel && ph === "test") clock = Math.max(clock, feEnd);
   const units = Qd.stories.filter(s => phasesFor(s).includes(ph));
   const built = units.filter(s => PHASE_OK.has(phaseStatus(pr, s.id, ph))), review = units.filter(s => ["review", "regressed"].includes(phaseStatus(pr, s.id, ph)));
   const left = units.filter(s => !PHASE_OK.has(phaseStatus(pr, s.id, ph)));
@@ -40,7 +44,7 @@ for (const s of Qd.stories) for (const t of s.subtasks.filter(t => HUMAN(t.doer)
   (t.when === "Testing phase" ? testing : people).push(item);
 }
 people.sort((a, b) => a.need_by.localeCompare(b.need_by));
-const status = { at: now.toISOString(), targets: T, model: "D98 phases", current_phase: current, phases, loop_hours_per_day: perDay,
+const status = { at: now.toISOString(), targets: T, model: parallel ? "D98 phases, 1 and 2 in parallel" : "D98 phases", parallel, current_phase: current, phases, loop_hours_per_day: perDay,
   finish: { all: buildEnd.toISOString() }, test_end: testEnd.toISOString(), on_track: buildEnd <= new Date(T.build_target),
   stopped: fs.existsSync(P("autopilot", "STOP")), last_round: lastRound, idle_hours: idleH == null ? null : +idleH.toFixed(1),
   projected, people_next: people.slice(0, 40), people_due_soon: people.filter(p => new Date(p.need_by) - now < 1.5 * DAY), testing_phase: testing };

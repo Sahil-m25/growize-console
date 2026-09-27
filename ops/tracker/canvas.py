@@ -51,7 +51,7 @@ for k in PH['order']:
 ok = ':large_green_circle: On track' if S.get('on_track') else ':red_circle: Behind the target'
 out.append(f"\n|Forecast|Date|\n|---|---|\n|All three phases through the loop|![](slack_date:{fin.date()})|\n|People's testing and UAT finished (earliest go-live)|![](slack_date:{tend.date()})|\n|Status|{ok}|\n")
 out.append("::: {.callout}\n**What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be tested without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); the autopilot writes the code meanwhile. Phase 3 needs the tester's weekend reviews and UAT by the business users.\n:::\n")
-out.append(f"Forecast = loop hours left ÷ {S['loop_hours_per_day']} loop hours a day. Minutes per unit are assumptions until each phase has 5 measured rounds; then the measured pace takes over. Stories count once per phase they have work in.\n")
+out.append(("Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are through. " if S.get('parallel') else "") + f"Forecast = loop hours left ÷ {S['loop_hours_per_day']} loop hours a day. Minutes per unit are assumptions until each phase has 5 measured rounds; then the measured pace takes over. Stories count once per phase they have work in.\n")
 done_at = {k: d(v['at']) for k, v in PR['stories'].items() if v.get('status') == 'done' and v.get('at')}
 proj = {}
 for k, v in S.get('projected', {}).items():
