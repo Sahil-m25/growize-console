@@ -194,6 +194,7 @@ export type ImAction =
   | { type: "openDrawer"; k: ImDrawerKey; id?: string | null; seed?: Partial<ImDrafts> }
   | { type: "closeDrawer" }
   | { type: "setPerson"; k: string }
+  | { type: "setSel"; id: string | null }
   | { type: "setDraft"; patch: Partial<ImDrafts> }
   | { type: "setFilter"; patch: Partial<Pick<ImUi, "IQ" | "IFILT" | "TFILT" | "KFILT" | "LOGWHO" | "LOGKIND">> }
   /* the page note (the prototype's alert/confirm) */
