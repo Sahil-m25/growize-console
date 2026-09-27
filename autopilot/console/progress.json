@@ -501,6 +501,23 @@
    "commits": [
     "ad93c95"
    ]
+  },
+  "M16-S01": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T16:50:56.317Z",
+   "notes": 1,
+   "note": "Assignments by IR computed from Zoho Leads and Touches, counts-only in the scope-keyed cache, 4 tests; waits on the owner-change workflow and the session layer's IR lists.",
+   "commits": [
+    "45ce49e"
+   ]
   }
  },
  "subtasks": {
@@ -873,6 +890,11 @@
   "M15-S01-T01": {
    "status": "done",
    "at": "2026-09-27T16:45:05.525Z",
+   "phase": "zoho"
+  },
+  "M16-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T16:50:56.317Z",
    "phase": "zoho"
   }
  },
@@ -1365,6 +1387,24 @@
    "attempt": 1,
    "hours": 3,
    "note": "Updates from Plane A timelines, value-free, grouped with unread, 2 tests; waits on the Plane B/C seen store, manager state sources and the grants store."
+  },
+  {
+   "at": "2026-09-27T16:45:16.584Z",
+   "story": "M16-S01",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T16:50:56.317Z",
+   "story": "M16-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Assignments by IR computed from Zoho Leads and Touches, counts-only in the scope-keyed cache, 4 tests; waits on the owner-change workflow and the session layer's IR lists."
   }
  ],
  "last_regression_round": 0,
