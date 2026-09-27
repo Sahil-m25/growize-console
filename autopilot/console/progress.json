@@ -298,6 +298,23 @@
    "commits": [
     "f938534"
    ]
+  },
+  "M04-S02": {
+   "status": "pending",
+   "attempts": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-09-27T15:57:43.556Z",
+   "notes": 2,
+   "note": "Own-token duplicate lookup + Zoho DUPLICATE_DATA refusal built and tested; waits on Leads.Mobile duplicate check in Zoho and the FACT CHANGE on service-read wording.",
+   "commits": [
+    "9a18fed"
+   ]
   }
  },
  "subtasks": {
@@ -596,6 +613,11 @@
    "status": "done",
    "at": "2026-09-27T15:53:12.391Z",
    "phase": "zoho"
+  },
+  "M04-S02-T01": {
+   "status": "done",
+   "at": "2026-09-27T15:57:43.556Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -871,6 +893,24 @@
    "attempt": 1,
    "hours": 3.5,
    "note": "createLead server boundary built with 10 recorded-fixture tests; waits on Leads picklist/field setup (Introduced_By, Consent_Visit, source and consent-how values), the unassigned-queue PROVISIONAL, and the session layer that supplies the capture access authority."
+  },
+  {
+   "at": "2026-09-27T15:53:42.128Z",
+   "story": "M04-S02",
+   "phase": "zoho",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T15:57:43.556Z",
+   "story": "M04-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Own-token duplicate lookup + Zoho DUPLICATE_DATA refusal built and tested; waits on Leads.Mobile duplicate check in Zoho and the FACT CHANGE on service-read wording."
   }
  ],
  "last_regression_round": 0,
