@@ -159,10 +159,14 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
   "/api/investors/[id]/kam": { kind: "page", page: "inv" },
   "/api/receipts": { kind: "page", page: "pay" },
+  "/api/statements": { kind: "page", page: "pay" },   /* M10-S05 bank statement upload on the Payments page: Finance ("pay") decided inside too */
   "/api/claims": { kind: "page", page: "pay" },          /* M10-S03 claim answers: Finance ("pay") decided inside too */
   "/api/teams": { kind: "session" },   /* M17-S01 Teams from Zoho: server/teams teamsAccess decides inside (IR refused, lead vs Investors side) */
   "/api/payouts": { kind: "page", page: "pay" },   /* M10-S20-T02 payouts: Finance pay/bank read, pay writes — server/payouts/authority decides inside */
   "/api/documents": { kind: "session" },   /* M12-S01-T03: not page "docs" — KAM/Head of AM (AC5) do not reach it; server/documents/scope + ir-guard decide inside */
+  "/api/emails": { kind: "session" },   /* M12-S09-T01: a record's emails; server/emails/record-emails admits the record inside (ir-guard / lead book) */
+  "/api/holds": { kind: "session" },   /* M08-S04 holds: server/holds decides inside (list: Money seats on the whole book; one: ir-guard scope; extend/release: the refund right) */
+  "/api/numbers/investors-today": { kind: "session" },   /* M05-S06 headline figures: server/numbers/investors-today hides tiles a seat may not see */
 });
 
 /** The rule for a route: the longest API_ROUTES prefix that matches ("/api/leads/123" → "/api/leads"). */

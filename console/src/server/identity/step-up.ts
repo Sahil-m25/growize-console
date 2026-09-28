@@ -24,7 +24,8 @@ import type { PlaneCLog } from "./plane-c";
 import { idHash, pkceChallenge, randomToken, sameToken, type Sealer } from "../oauth/crypto";
 import type { TokenGrant, ZohoAccounts } from "../oauth/zoho-accounts";
 
-export const STEP_UP_ACTIONS = ["reveal", "export", "erase", "release"] as const;
+/* "seat": a seat change on Teams (M17-S02, D22) */
+export const STEP_UP_ACTIONS = ["reveal", "export", "erase", "release", "seat"] as const;
 export type StepUpAction = (typeof STEP_UP_ACTIONS)[number];
 export const isStepUpAction = (x: unknown): x is StepUpAction => typeof x === "string" && (STEP_UP_ACTIONS as readonly string[]).includes(x);
 

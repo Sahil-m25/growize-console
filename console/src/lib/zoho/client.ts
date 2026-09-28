@@ -207,6 +207,20 @@ export interface ZohoApi<C extends Credential> {
   settingsRoles(as: C, options?: CallOptions): Promise<ZohoResult<readonly ZohoRoleRow[]>>;
   /** GET /settings/profiles (M17-S01): the org's profiles — id and name only. */
   settingsProfiles(as: C, options?: CallOptions): Promise<ZohoResult<readonly ZohoProfileRow[]>>;
+  /** M12-S02: POST /{module}/{id}/Attachments (multipart "file"). Not idempotent; the caller guards double presses. */
+  uploadAttachment(as: C, module: string, id: string, file: UploadFile, options?: CallOptions): Promise<ZohoResult<{ readonly attachmentId: string }>>;
+  /** M12-S02: POST /files (ZFS) for a file-upload field; the returned id is then written to the field. */
+  uploadFile(as: C, file: UploadFile, options?: CallOptions): Promise<ZohoResult<{ readonly fileId: string }>>;
+  /** M12-S09: GET /{module}/{id}/Emails — metadata only (no body). `index` is Zoho's next_index. */
+  listEmails(as: C, module: string, id: string, options?: CallOptions & { readonly index?: string }): Promise<ZohoResult<EmailPage>>;
+  /** M12-S09: GET /{module}/{id}/Emails/{message_id} — one email with its content. `null` when Zoho returns nothing. */
+  getEmail(as: C, module: string, id: string, messageId: string, options?: CallOptions & { readonly ownerId?: string }): Promise<ZohoResult<EmailContent | null>>;
+  /** M13-S04: PUT /{module}/{id}/actions/change_owner — hand one record to another user on the caller's own
+   *  token (Zoho writes the Owner change to field history). Re-sending the same owner is harmless. */
+  changeOwner(as: C, module: string, id: string, ownerId: string, options?: CallOptions & { readonly notify?: boolean }): Promise<ZohoResult<{ readonly changed: true }>>;
+  /** M17-S02: PUT /users/{id} Reporting_To — another user's manager (null: nobody), on the changer's own user
+   *  token only (D53). Never retried: a lost reply is re-read. PROVISIONAL body until the sandbox proves it. */
+  updateUserManager(as: C, userId: string, managerId: string | null, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
 }
 export type UsersListType = "AllUsers" | "ActiveUsers" | "DeactiveUsers";
 export interface UsersPage { readonly users: readonly Readonly<Record<string, unknown>>[]; readonly moreRecords: boolean }
@@ -228,6 +242,84 @@ export const SEND_MAIL_MAX_TO = 10;
 export const SEND_MAIL_MAX_SUBJECT = 500;
 export const SEND_MAIL_MAX_CONTENT = 100_000;
 const MAIL_ADDRESS = /^[A-Za-z0-9._%+'-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}$/;
+
+/* ----- M12-S02 uploads / M12-S09 record emails (additive) ----- */
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+/** PDF/JPEG/PNG for papers (M12-S02); text/csv for bank statements (server/money). Each caller keeps its own allowlist. */
+export type UploadMime = "application/pdf" | "image/jpeg" | "image/png" | "text/csv";
+export const UPLOAD_MIMES: readonly UploadMime[] = Object.freeze(["application/pdf", "image/jpeg", "image/png", "text/csv"]);
+export interface UploadFile { readonly fileName: string; readonly contentType: UploadMime; readonly bytes: Uint8Array }
+export interface EmailParty { readonly email: string; readonly name: string | null }
+export interface EmailLine {
+  readonly messageId: string;
+  readonly subject: string;
+  readonly from: EmailParty | null;
+  readonly to: readonly EmailParty[];
+  readonly sentTime: string | null;
+  /** true: sent from CRM; false: received */
+  readonly sent: boolean;
+  readonly hasAttachment: boolean;
+  readonly ownerId: string | null;
+}
+export interface EmailPage { readonly emails: readonly EmailLine[]; readonly nextIndex: string | null }
+export interface EmailContent extends EmailLine {
+  readonly cc: readonly EmailParty[];
+  /** Zoho's content as given (HTML or text). Never logged, never cached. */
+  readonly content: string;
+  readonly attachments: readonly { readonly id: string; readonly name: string; readonly size: number | null }[];
+}
+const MESSAGE_ID = /^[A-Za-z0-9_-]{1,200}$/;
+const EMAIL_INDEX = /^[A-Za-z0-9_-]{1,200}$/;
+const FILE_ID = /^[A-Za-z0-9._~+\/=-]{8,1024}$/;
+const MAX_EMAIL_ROWS = 200;
+const MAX_EMAIL_CONTENT = 2 * 1024 * 1024;
+
+/** A file name safe inside a multipart header: printable ASCII, no quotes or path, the type's own extension. */
+export function uploadFileName(name: string, type: UploadMime): string {
+  const ext = type === "application/pdf" ? ".pdf" : type === "image/png" ? ".png" : type === "text/csv" ? ".csv" : ".jpg";
+  const base = String(name ?? "").replace(/^.*[\\/]/, "").replace(/\.[A-Za-z0-9]{1,5}$/, "")
+    .replace(/[^A-Za-z0-9 ._()-]/g, "_").replace(/\s+/g, " ").trim().slice(0, 120) || "document";
+  return base + ext;
+}
+
+/** One multipart/form-data body with a single "file" part, built in memory (never written to disk). */
+function multipartOf(file: UploadFile, random: () => number): { bytes: Uint8Array; contentType: string } {
+  if (!file || !(file.bytes instanceof Uint8Array) || file.bytes.byteLength < 1 || file.bytes.byteLength > MAX_UPLOAD_BYTES) {
+    throw new RangeError(`An upload is 1 byte to ${MAX_UPLOAD_BYTES} bytes.`);
+  }
+  if (!UPLOAD_MIMES.includes(file.contentType)) throw new TypeError("An upload is a PDF, JPEG, PNG or CSV.");
+  let boundary = "----gz";
+  for (let i = 0; i < 24; i++) boundary += "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(random() * 36) % 36];
+  const enc = new TextEncoder();
+  const head = enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${uploadFileName(file.fileName, file.contentType)}"\r\nContent-Type: ${file.contentType}\r\n\r\n`);
+  const tail = enc.encode(`\r\n--${boundary}--\r\n`);
+  const bytes = new Uint8Array(head.byteLength + file.bytes.byteLength + tail.byteLength);
+  bytes.set(head, 0); bytes.set(file.bytes, head.byteLength); bytes.set(tail, head.byteLength + file.bytes.byteLength);
+  return { bytes, contentType: `multipart/form-data; boundary=${boundary}` };
+}
+
+const partyOf = (raw: unknown): EmailParty | null => {
+  const o = typeof raw === "object" && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+  if (!o || typeof o.email !== "string" || !MAIL_ADDRESS.test(o.email)) return null;
+  return Object.freeze({ email: o.email, name: typeof o.user_name === "string" ? o.user_name.slice(0, 200) : null });
+};
+const partiesOf = (raw: unknown): readonly EmailParty[] =>
+  Object.freeze((Array.isArray(raw) ? raw : []).slice(0, 100).map(partyOf).filter((x): x is EmailParty => x !== null));
+function emailLineOf(raw: unknown): EmailLine | null {
+  const o = typeof raw === "object" && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+  if (!o || typeof o.message_id !== "string" || !MESSAGE_ID.test(o.message_id)) return null;
+  const owner = o.owner && typeof o.owner === "object" ? (o.owner as Record<string, unknown>).id : null;
+  return Object.freeze({
+    messageId: o.message_id,
+    subject: typeof o.subject === "string" ? o.subject.slice(0, 500) : "",
+    from: partyOf(o.from),
+    to: partiesOf(o.to),
+    sentTime: typeof o.sent_time === "string" ? o.sent_time.slice(0, 40) : null,
+    sent: o.sent === true,
+    hasAttachment: o.has_attachment === true,
+    ownerId: typeof owner === "string" && /^\d{1,25}$/.test(owner) ? owner : null,
+  });
+}
 export type ZohoClient = ZohoApi<UserCredential>;
 export type ZohoServiceClient = ZohoApi<ServiceCredential>;
 
@@ -246,7 +338,7 @@ export interface FetchResponseLike {
 }
 export type FetchLike = (
   url: string,
-  init: { method: HttpMethod; headers: Record<string, string>; body?: string; signal?: AbortSignal },
+  init: { method: HttpMethod; headers: Record<string, string>; body?: string | Uint8Array; signal?: AbortSignal },
 ) => Promise<FetchResponseLike>;
 
 export interface ZohoClientOptions {
@@ -772,6 +864,8 @@ type Spec = {
   /** List reads log the ids they returned: who read what is Plane B's to know (D47). */
   readonly logReturnedIds: boolean;
   readonly signal?: AbortSignal;
+  /** M12-S02: a non-JSON body sent as-is (multipart upload). Never logged; the log line carries ids only. */
+  readonly raw?: { readonly bytes: Uint8Array; readonly contentType: string };
 };
 type Outcome =
   | { readonly ok: true; readonly result: ZohoSuccess; readonly creditsRemaining: number | null }
@@ -827,8 +921,9 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
     const qs = spec.query && spec.query.length ? `?${new URLSearchParams(spec.query.map(([k, v]) => [k, v])).toString()}` : "";
     const url = `${as.apiDomain}/crm/${API_VERSION}${spec.path}${qs}`;
     const headers: Record<string, string> = { Accept: "application/json", ...spec.headers, Authorization: `Zoho-oauthtoken ${as.accessToken}` };
-    const body = spec.body === undefined ? undefined : JSON.stringify(spec.body);
-    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const body: string | Uint8Array | undefined = spec.raw ? spec.raw.bytes : spec.body === undefined ? undefined : JSON.stringify(spec.body);
+    if (spec.raw) headers["Content-Type"] = spec.raw.contentType;
+    else if (body !== undefined) headers["Content-Type"] = "application/json";
     const line = (at: number, status: number | null, durationMs: number, gateWaitMs: number, attempt: number, credits: number | null, outcome: ZohoClassified) =>
       log.call({
         at, actor, op: spec.op, method: spec.method, endpoint: spec.endpoint, callClass, status, durationMs, gateWaitMs, attempt,
@@ -1244,6 +1339,37 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       return done(Object.freeze(list) as readonly FromAddress[], out);
     },
 
+    async changeOwner(as, module, id, ownerId, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      checkScopedId(ownerId, "owner id");
+      const out = await execute(as, {
+        op: "changeOwner", method: "PUT", path: `/${module}/${id}/actions/change_owner`, endpoint: `/${module}/{id}/actions/change_owner`,
+        body: { owner: { id: ownerId }, notify: opts.notify !== false },
+        shape: { op: "write", records: 1 }, idempotent: true, perRecord: true, responseShape: "data", maxRows: 1,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      return out.ok ? done({ changed: true } as const, out) : out;
+    },
+
+    async updateUserManager(as, userId, managerId, opts = {}) {
+      if ((as as { kind?: unknown }).kind !== "user") throw new TypeError("A manager change is written on the changer's own user token (D53).");
+      if (typeof userId !== "string" || !RECORD.test(userId) || userId === (as as { userId?: unknown }).userId) throw new TypeError("updateUserManager() takes another user's id.");
+      if (managerId !== null && (typeof managerId !== "string" || !RECORD.test(managerId) || managerId === userId)) throw new TypeError("updateUserManager() takes a manager id other than the user's own, or null.");
+      const out = await execute(as, {
+        op: "updateUserManager", method: "PUT", path: `/users/${userId}`, endpoint: "/users/{id}",
+        body: { users: [{ id: userId, Reporting_To: managerId === null ? null : { id: managerId } }] },
+        shape: { op: "write", records: 1 }, idempotent: false, perRecord: false,
+        recordIds: managerId ? [userId, managerId] : [userId], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      const first = out.result.kind === "ok" ? obj((obj(out.result.body)?.users as unknown[] | undefined)?.[0]) : null;
+      if (!first || first.status !== "success") {
+        return { ok: false, error: { kind: "invalid-data", status: out.result.status, code: typeof first?.code === "string" ? first.code : "INVALID_DATA", field: null, records: null }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly updated: true }>;
+      }
+      return done({ updated: true } as const, out);
+    },
+
     async listUsers(as, opts = {}) {
       const type = opts.type ?? "AllUsers";
       if (!["AllUsers", "ActiveUsers", "DeactiveUsers"].includes(type)) throw new TypeError("listUsers() type is AllUsers, ActiveUsers or DeactiveUsers.");
@@ -1298,6 +1424,86 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         list.push(Object.freeze({ id: r.id, name: r.name }));
       }
       return done(Object.freeze(list) as readonly ZohoProfileRow[], out);
+    },
+
+    async uploadAttachment(as, module, id, file, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      const raw = multipartOf(file, options.random ?? Math.random);
+      const out = await execute(as, {
+        op: "uploadAttachment", method: "POST", path: `/${module}/${id}/Attachments`, endpoint: `/${module}/{id}/Attachments`,
+        raw, shape: { op: "write", records: 1 }, idempotent: false, perRecord: true, responseShape: "data", maxRows: 1,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      const first = out.result.kind === "ok" ? out.result.records?.[0] : undefined;
+      if (!first || !first.ok || !first.id || !RECORD.test(first.id)) {
+        return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly attachmentId: string }>;
+      }
+      return done({ attachmentId: first.id }, out);
+    },
+
+    async uploadFile(as, file, opts = {}) {
+      const raw = multipartOf(file, options.random ?? Math.random);
+      const out = await execute(as, {
+        op: "uploadFile", method: "POST", path: "/files", endpoint: "/files",
+        raw, shape: { op: "write", records: 1 }, idempotent: false, perRecord: false, responseShape: "data", maxRows: 1,
+        recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      const first = out.result.kind === "ok" ? obj((obj(out.result.body)?.data as unknown[] | undefined)?.[0]) : null;
+      const fid = obj(first?.details)?.id;
+      if (!first || (first.status !== "success" && first.code !== "SUCCESS") || typeof fid !== "string" || !FILE_ID.test(fid)) {
+        return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly fileId: string }>;
+      }
+      return done({ fileId: fid }, out);
+    },
+
+    async listEmails(as, module, id, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      if (opts.index !== undefined && (typeof opts.index !== "string" || !EMAIL_INDEX.test(opts.index))) throw new TypeError("listEmails() index is Zoho's next_index.");
+      const out = await execute(as, {
+        op: "listEmails", method: "GET", path: `/${module}/${id}/Emails`, endpoint: `/${module}/{id}/Emails`,
+        query: opts.index ? [["index", opts.index]] : undefined, shape: { op: "read" }, idempotent: true, perRecord: false,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done({ emails: [], nextIndex: null } as EmailPage, out);
+      const root = obj(out.result.body);
+      const list = root?.email_related_list;
+      if (!Array.isArray(list) || list.length > MAX_EMAIL_ROWS) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<EmailPage>;
+      const next = obj(root?.info)?.next_index;
+      return done(Object.freeze({
+        emails: Object.freeze(list.map(emailLineOf).filter((x): x is EmailLine => x !== null)),
+        nextIndex: typeof next === "string" && EMAIL_INDEX.test(next) ? next : null,
+      }) as EmailPage, out);
+    },
+
+    async getEmail(as, module, id, messageId, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      if (typeof messageId !== "string" || !MESSAGE_ID.test(messageId)) throw new TypeError("getEmail() needs Zoho's message_id.");
+      if (opts.ownerId !== undefined) checkScopedId(opts.ownerId, "user id");
+      const out = await execute(as, {
+        op: "getEmail", method: "GET", path: `/${module}/${id}/Emails/${messageId}`, endpoint: `/${module}/{id}/Emails/{message_id}`,
+        query: opts.ownerId ? [["user_id", opts.ownerId]] : undefined, shape: { op: "read" }, idempotent: true, perRecord: false,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done(null, out);
+      const list = obj(out.result.body)?.Emails;
+      if (!Array.isArray(list) || list.length > 1) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<EmailContent | null>;
+      const e = obj(list[0]);
+      if (!e) return done(null, out);
+      const line = emailLineOf({ ...e, message_id: typeof e.message_id === "string" ? e.message_id : messageId });
+      if (!line || line.messageId !== messageId) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<EmailContent | null>;
+      const content = typeof e.content === "string" ? e.content : "";
+      if (content.length > MAX_EMAIL_CONTENT) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<EmailContent | null>;
+      const attachments = (Array.isArray(e.attachments) ? e.attachments : []).slice(0, 50).map(obj)
+        .filter((a): a is Obj => a !== null && typeof a.id === "string" && a.id.length <= 200 && typeof a.name === "string")
+        .map((a) => Object.freeze({ id: a.id as string, name: (a.name as string).slice(0, 255), size: typeof a.size === "number" ? a.size : typeof a.size === "string" && /^\d{1,12}$/.test(a.size) ? Number(a.size) : null }));
+      return done(Object.freeze({ ...line, cc: partiesOf(e.cc), content, attachments: Object.freeze(attachments) }) as EmailContent, out);
     },
 
     async deleteRecord(as, module, id, opts = {}) {
@@ -1356,4 +1562,39 @@ export function createZohoClient(options: ZohoClientOptions): ZohoClient {
 /** The client background jobs use: service credentials only. Never handed to a request path. */
 export function createZohoServiceClient(options: ZohoClientOptions): ZohoServiceClient {
   return buildApi<ServiceCredential>("service", options);
+}
+
+/* ---- M11-S04 / M11-S07: a Zoho guard's refusal, named (additive) -------------------------------------------------
+ * Two business rules live IN Zoho as Deluge validation-rule functions (zoho/deluge/*.dg, attached by Sahil), so they
+ * hold whichever door writes — this console, the Zoho UI, an import, another integration:
+ *   oversell     LLP_UnitAllocation_Module: an allotment insert/update whose units exceed the LLP's free units;
+ *   units-held   LLP_Creation_Module: Units_Released lowered below the units investors hold (take-back).
+ * A validation rule's refusal reaches the API as a record-level error blaming the field the rule is attached to
+ * (classified `invalid-data` with `field`). This names it; the caller re-counts to put numbers in the in-page
+ * message. Codes that are plainly not a rule (a missing mandatory field, a duplicate) are never read as one. The
+ * exact code Zoho sends for a function rule is confirmed on the sandbox (M11-S07-T02) — tighten here if it differs.
+ * Nothing of Zoho's message is kept or logged: the name, the code and the field only. */
+export type GuardRefusalName = "oversell" | "units-held";
+export interface GuardRule { readonly name: GuardRefusalName; readonly module: string; readonly fields: readonly string[] }
+export const ZOHO_GUARD_RULES: readonly GuardRule[] = Object.freeze([
+  Object.freeze({ name: "oversell" as const, module: "LLP_UnitAllocation_Module", fields: Object.freeze(["Reserved_Units", "Issued_Units", "Allocation_Status", "LLP"]) }),
+  Object.freeze({ name: "units-held" as const, module: "LLP_Creation_Module", fields: Object.freeze(["Units_Released"]) }),
+]);
+const NOT_A_RULE: ReadonlySet<string> = new Set(["MANDATORY_NOT_FOUND", "DUPLICATE_DATA", "INVALID_MODULE", "INVALID_URL_PATTERN", "AMBIGUITY_DURING_PROCESSING", "LIMIT_EXCEEDED"]);
+
+export interface GuardRefusal { readonly name: GuardRefusalName; readonly code: string; readonly field: string }
+
+/** The named guard behind a failed write on `module`, or null when the failure is anything else. */
+export function guardRefusalOf(module: string, failure: ZohoFailure): GuardRefusal | null {
+  const rule = ZOHO_GUARD_RULES.find((r) => r.module === module);
+  if (!rule) return null;
+  const blamed: { code: string; field: string | null }[] = [];
+  if (failure.kind === "invalid-data") {
+    blamed.push({ code: failure.code, field: failure.field });
+    for (const r of failure.records ?? []) if (!r.ok) blamed.push({ code: r.code, field: r.field });
+  } else if (failure.kind === "partial") {
+    for (const r of failure.records) if (!r.ok) blamed.push({ code: r.code, field: r.field });
+  } else return null;
+  const hit = blamed.find((b) => b.field !== null && rule.fields.includes(b.field) && !NOT_A_RULE.has(b.code));
+  return hit ? Object.freeze({ name: rule.name, code: hit.code || "INVALID_DATA", field: hit.field! }) : null;
 }

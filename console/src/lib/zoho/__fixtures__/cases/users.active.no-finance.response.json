@@ -1,0 +1,64 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "users": [
+   {
+    "id": "554023000000300011",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100011",
+     "name": "Key Account Manager"
+    },
+    "profile": {
+     "id": "554023000000200010",
+     "name": "KAM"
+    },
+    "full_name": "Test User 11",
+    "email": "user11@example.invalid"
+   },
+   {
+    "id": "554023000000300013",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100011",
+     "name": "Key Account Manager"
+    },
+    "profile": {
+     "id": "554023000000200010",
+     "name": "KAM"
+    },
+    "full_name": "Test User 13",
+    "email": "user13@example.invalid"
+   },
+   {
+    "id": "554023000000300010",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100010",
+     "name": "Head of Account Management"
+    },
+    "profile": {
+     "id": "554023000000200009",
+     "name": "AM Head"
+    },
+    "full_name": "Test User 10",
+    "email": "user10@example.invalid"
+   }
+  ],
+  "info": {
+   "per_page": 200,
+   "count": 3,
+   "page": 1,
+   "more_records": false
+  }
+ }
+}

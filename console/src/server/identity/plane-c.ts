@@ -17,7 +17,9 @@ export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session
   /* M01-S04-T01: access-policy refusals and grant changes (see identity/authority.ts) */
   | "refused-page" | "refused-action" | "grant-change"
   /* M03-S04-T01: a person crossing the sign-in line — first page granted / last page taken (D40/D60) */
-  | "access-granted" | "access-ended";
+  | "access-granted" | "access-ended"
+  /* M17-S02-T01: who someone reports to changed (their manager is their ceiling, D60) */
+  | "manager-change";
 export type PlaneCOutcome = "ok" | "refused" | "ended";
 
 export interface PlaneCEvent {
@@ -47,7 +49,7 @@ export interface PlaneCLog {
 }
 
 const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change",
-  "refused-page", "refused-action", "grant-change", "access-granted", "access-ended"]);
+  "refused-page", "refused-action", "grant-change", "access-granted", "access-ended", "manager-change"]);
 const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;

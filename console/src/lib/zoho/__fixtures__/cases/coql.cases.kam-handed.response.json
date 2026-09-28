@@ -1,0 +1,63 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998401",
+    "Case_Number": "C-401",
+    "Subject": "Change the bank account for payouts",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740993001",
+     "name": "x"
+    },
+    "Priority": "High",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Bank",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null,
+    "Handed_By": {
+     "id": "9007199254740994001",
+     "name": "x"
+    },
+    "Handed_At": "2026-09-28T11:30:00+05:30"
+   },
+   {
+    "id": "9007199254740998402",
+    "Case_Number": "C-402",
+    "Subject": "Wants the Block A harvest note for her brother",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740994001",
+     "name": "x"
+    },
+    "Priority": "High",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Records",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null,
+    "Handed_By": null,
+    "Handed_At": null
+   }
+  ],
+  "info": {
+   "count": 2,
+   "more_records": false
+  }
+ }
+}

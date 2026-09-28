@@ -10,7 +10,8 @@
  *   STEPUP_ALERT_TO     where a lock is reported (Sahil and Pradeep; a human item with the mail provider)
  *   GZ_RELEASE_APPROVAL "on" once Sahil has built the Zoho approval process on releases (M01-S10-T03)
  *
- *   seatChanges()                  PUT /api/users/{id} (seat-change.ts, M03-S04-T02)
+ *   seatChanges()                  PUT /api/users/{id} (seat-change.ts, M03-S04-T02; Leads side M17-S02), behind step-up "seat"
+ *   managerChanges()               PUT /api/users/{id}/manager (manager-change.ts, M17-S02-T01)
  *   ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN  the "kam-pool-return" service grant (ZohoCRM.coql.READ +
  *                       ZohoCRM.modules.contacts.READ on a profile that sees every Contact, identity fields
  *                       hidden). Without it a KAM cannot be moved off the seat (503, nothing changed).
@@ -28,8 +29,9 @@ import { SID_COOKIE } from "../oauth/user-session";
 import { alertOutbox } from "../ops/runtime";
 import { createGrantService, type GrantService } from "./grant-service";
 import { sharedGrantStore } from "./grants";
+import { createManagerChangeService, type ManagerChangeService } from "./manager-change";
 
-type Held = { grants: GrantService; stepUp: StepUp; seats: SeatChangeService };
+type Held = { grants: GrantService; stepUp: StepUp; seats: SeatChangeService; managers: ManagerChangeService };
 const G = globalThis as typeof globalThis & { __gzAccessRuntime?: Held };
 
 export const accessRuntimeConfigured = (env: NodeJS.ProcessEnv = process.env): boolean => zohoSignInConfigured(env);
@@ -81,14 +83,23 @@ function held(): Held {
     kamBook: kamBookOrgRead(createZohoServiceClient({ gate: o.gate, log: o.log, recordIdPrefix: o.recordIdPrefix, maxAttempts: 2 }), poolCredential),
     events: authorityEvents(),
     sessions: o.sessions,
+    store: sharedGrantStore(),
   });
-  G.__gzAccessRuntime = { grants, stepUp, seats };
+  const managers = createManagerChangeService({
+    users: createZohoUserDirectory({ seats: o.seats, gate: o.gate, log: o.log }),
+    crm: createZohoClient({ gate: o.gate, log: o.log, recordIdPrefix: o.recordIdPrefix, maxAttempts: 1 }),
+    events: authorityEvents(),
+    store: sharedGrantStore(),
+  });
+  G.__gzAccessRuntime = { grants, stepUp, seats, managers };
   return G.__gzAccessRuntime;
 }
 
 export const grantService = (): GrantService => held().grants;
 export const stepUp = (): StepUp => held().stepUp;
 export const seatChanges = (): SeatChangeService => held().seats;
+/** PUT /api/users/{id}/manager (manager-change.ts, M17-S02-T01). */
+export const managerChanges = (): ManagerChangeService => held().managers;
 
 const NO_STORE = { "Cache-Control": "no-store" };
 

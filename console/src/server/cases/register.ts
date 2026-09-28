@@ -23,12 +23,14 @@ import type { ImTicket } from "../../lib/im/types";
 import type { InvestorEvents } from "../data/events";
 import { checkProjection } from "../data/projections";
 import { scopedKey, scopesFor, type BookScope } from "../data/scope";
-import { idOf, istStamp, ownerWhere, pagedSelect, str } from "./predicate";
+import { idOf, inClause, istStamp, ownerWhere, pagedSelect, str } from "./predicate";
 
 export const CASES_MODULE = "Cases";
 export const CASE_FIELDS = checkProjection(CASES_MODULE, [
   "id", "Case_Number", "Subject", "Description", "Related_To", "Owner", "Priority", "Status", "Case_Origin",
   "Created_Time", "Ticket_Category", "SLA_Due", "Closed_At",
+  // M13-S04: the watcher (user lookup) and when it was handed on. Zoho config: created by Sahil (HUMAN).
+  "Handed_By", "Handed_At",
 ]);
 /** Seats that read the register and may never act on it (the Auditor). */
 export const READ_ONLY_SEATS: ReadonlySet<string> = new Set(["audit"]);
@@ -37,7 +39,11 @@ export const READ_ONLY_SEATS: ReadonlySet<string> = new Set(["audit"]);
 export type CaseCuts = Readonly<Record<"open" | "high" | "waiting" | "closed" | "all", number>>;
 export type CutsRead = CacheFresh<CaseCuts> | CacheStale<CaseCuts> | CacheError<CaseCuts>;
 export interface CasesPrincipal { readonly credential: UserCredential; readonly seat: string }
-export interface CaseRow extends ImTicket { readonly number: string | null }
+export interface CaseRow extends ImTicket {
+  readonly number: string | null;
+  /** M13-S04: handed on by the person reading, and no longer theirs — they see where it got to and cannot work it. */
+  readonly watched?: boolean;
+}
 
 export interface CasesDeps {
   readonly crm: Pick<ZohoClient, "coql" | "aggregate">;
@@ -51,9 +57,32 @@ export interface CasesDeps {
 const stateOf = (status: string | null): ImTicket["state"] =>
   status === "Closed" ? "closed" : status === "On Hold" ? "waiting" : "open";
 
+/** M13-S04: a Case's handover as the row carries it — Handed_By set and no longer the owner. */
+export function handedOf(x: ZohoRecord): { readonly by: string; readonly at: string } | null {
+  const by = idOf(x.Handed_By);
+  if (!by || by === idOf(x.Owner)) return null;
+  return Object.freeze({ by, at: istStamp(str(x, "Handed_At", 40)) ?? "" });
+}
+
+/**
+ * M13-S04: the register's predicate — the owner predicate, and for Account Management the tickets they
+ * handed on too (they keep watching: Handed_By = me, or anyone in the Head of AM's subtree).
+ */
+export function casesWhere(scope: BookScope, team: readonly string[] | null): string | null {
+  const own = ownerWhere(scope, { team });
+  if (!own) return null;
+  if (scope.kind === "own-book") return `(${own} or Handed_By = '${scope.userId}')`;
+  if (scope.kind === "subtree" && team) {
+    const handed = inClause("Handed_By", [scope.managerId, ...team]);
+    return handed ? `(${own} or ${handed})` : own;
+  }
+  return own;
+}
+
 export function caseOf(x: ZohoRecord): CaseRow | null {
   if (!idOf(x.id)) return null;
   const closed = istStamp(str(x, "Closed_At", 40));
+  const handed = handedOf(x);
   return Object.freeze({
     id: x.id, number: str(x, "Case_Number", 30), inv: idOf(x.Related_To) ?? "", t: str(x, "Subject", 255) ?? "",
     cat: str(x, "Ticket_Category", 40) ?? "", opened: istStamp(str(x, "Created_Time", 40)) ?? "",
@@ -62,6 +91,7 @@ export function caseOf(x: ZohoRecord): CaseRow | null {
     own: idOf(x.Owner) ?? "", pri: str(x, "Priority", 20) === "High" ? "high" : "normal",
     state: stateOf(str(x, "Status", 20)), d: str(x, "Description", 2000) ?? "", sla: istStamp(str(x, "SLA_Due", 40)) ?? "",
     ...(closed ? { closed } : {}),
+    ...(handed ? { handed } : {}),
   });
 }
 
@@ -91,16 +121,17 @@ export function createCasesRegister(deps: CasesDeps) {
       const me = p.credential.userId;
       const scope: BookScope = scopesFor(p.seat, me).cases;
       const team = scope.kind === "subtree" && deps.subtreeOf ? await deps.subtreeOf(scope.managerId, signal) : null;
-      const where = ownerWhere(scope, { team });
+      const where = casesWhere(scope, team);
       if (!where) {
         deps.events.refusal(me, "cases-list", "seat-denied");
         return { ok: false, kind: "refused", reason: "no-book" };
       }
       const r = await pagedSelect(deps.crm, p.credential, CASE_FIELDS, CASES_MODULE, where, "Created_Time desc", signal, deps.maxPages);
       if (!r.ok) return r;
-      const rows = r.rows.map(caseOf).filter((x): x is CaseRow => x !== null);
+      const rows = r.rows.map(caseOf).filter((x): x is CaseRow => x !== null)
+        .map((x) => (x.handed?.by === me && x.own !== me ? Object.freeze({ ...x, watched: true }) : x));
       const allowed = scope.kind === "own-book" ? new Set([me]) : scope.kind === "subtree" && team ? new Set([scope.managerId, ...team]) : null;
-      const foreign = allowed ? rows.filter((x) => !allowed.has(x.own)) : [];
+      const foreign = allowed ? rows.filter((x) => !allowed.has(x.own) && !(x.handed && allowed.has(x.handed.by))) : [];
       if (foreign.length) {
         deps.events.refusal(me, "cases-list", "scope-drift", foreign.map((x) => x.id));
         return { ok: false, kind: "refused", reason: "scope-drift" };

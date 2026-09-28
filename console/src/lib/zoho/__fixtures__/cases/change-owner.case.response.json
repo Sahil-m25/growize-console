@@ -1,0 +1,18 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "SUCCESS",
+    "details": {
+     "id": "554023000000500114"
+    },
+    "message": "Owner of the record updated successfully",
+    "status": "success"
+   }
+  ]
+ }
+}

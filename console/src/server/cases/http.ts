@@ -65,6 +65,7 @@ const WRITE_STATUS: Readonly<Record<string, number>> = Object.freeze({
   "read-only": 403, "not-yours": 403, "bank-seat": 403, "cannot-assign": 403, "no-book": 403, "kind-not-yours": 403,
   "not-found": 404, "invalid-request": 400, "not-in-book": 422, "identity-in-reply": 422, "identity-in-text": 422,
   "audience-not-in-zoho": 422, "empty-segment": 422, "segment-too-large": 422,
+  "not-finance-work": 422, "already-finance": 409, "no-finance": 409,   /* M13-S04 hand to Finance */
 });
 
 /** A write's refusal, conflict or source failure as a response: the in-page message and a short code, never a Zoho body. */

@@ -84,7 +84,8 @@ function bookOf(b: GrantBook): { PEOPLE: Record<PersonKey, Person>; GRANT: Recor
   return { PEOPLE, GRANT };
 }
 
-function ctxOf(by: string, b: GrantBook, now: Date): Ctx {
+/** The front end's Ctx over a small book of seated people, seen by `by` (shared with seat and manager changes). */
+export function ctxOf(by: string, b: GrantBook, now: Date): Ctx {
   const { PEOPLE, GRANT } = bookOf(b);
   return {
     WHO: by, ROLE: PEOPLE[by]?.seat ?? "exec", NOW: now, TODAY: now,

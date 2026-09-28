@@ -16,6 +16,12 @@
  *      that could not be written is reported back as not returned, never retried silently.
  *   6. Plane C `seat-change`: who, whom, from → to (reason "kam-to-amlead"), count and the returned ids;
  *      the moved person's sessions end at once (their seat token is stale).
+ *
+ * M17-S02-T01 — the Leads side (`side: "lead"`), the prototype's setSeat (vTeams 14426): the front end's own
+ * canManage / canGrant / seatClash over the granter's and the holder's manager chains (grant-rules ctxOf), so
+ * Digital Infrastructure seats anyone into a Leads seat and an IR Manager only gives "ir" to their own IRs;
+ * a seat above the holder's manager is refused. The new seat's preset replaces their by-name grid (every
+ * page they held by name is reset in the grant store). The route asks a live step-up first (D22).
  */
 
 import type { UserCredential, ZohoResult, ZohoPage, ZohoFields, WriteAck, ServiceCredential, UserSeatWrite } from "../../lib/zoho/client";
@@ -25,6 +31,10 @@ import type { ZohoUserDirectory } from "../identity/users";
 import type { ZohoSeat, ZohoSeatDirectory } from "../oauth/seat";
 import { CONSOLE_SEAT, type ConsoleSession } from "../oauth/user-session";
 import { ADMINISTRATOR_SEATS, ZOHO_SEAT_SIDES } from "./policy";
+import type { CapGrid, SeatKey } from "../../domain";
+import { canGrant, canManage, seatClash } from "../../lib/selectors/access";
+import { ctxOf, type GrantBook, type SeatedPerson } from "./grant-rules";
+import type { GrantStore } from "./grants";
 
 export const CONTACTS = "Contacts";
 export const POOL_PAGE = 200;
@@ -38,10 +48,17 @@ export const IM_SEAT_TO_ZOHO: Readonly<Partial<Record<ImRoleKey, ZohoSeat>>> = O
     .filter(([z, s]) => s.im !== null && !ADMINISTRATOR_SEATS.has(z)).map(([z, s]) => [s.im!, z]),
 ) as Partial<Record<ImRoleKey, ZohoSeat>>);
 
+/** Leads seat → the Zoho seat it is written as: the seats with no Investors side, never an Administrator one. */
+export const LEAD_SEAT_TO_ZOHO: Readonly<Partial<Record<SeatKey, ZohoSeat>>> = Object.freeze(Object.fromEntries(
+  (Object.entries(ZOHO_SEAT_SIDES) as [ZohoSeat, { lead: SeatKey; im: ImRoleKey | null }][])
+    .filter(([z, s]) => s.im === null && !ADMINISTRATOR_SEATS.has(z)).map(([z, s]) => [s.lead, z]),
+) as Partial<Record<SeatKey, ZohoSeat>>);
+
 /** The seats nobody is moved into or out of from the console (super admin, super user). */
 const UNTOUCHABLE: ReadonlySet<ImRoleKey> = new Set(["root", "di"]);
 
-export type SeatRefusal = "bad-request" | "own-seat" | "super-admin" | "cannot-seat" | "same-seat" | "unknown-person" | "seat-moved" | "zoho-unavailable" | "book-unreadable" | "zoho-refused" | "unconfirmed";
+export type SeatRefusal = "bad-request" | "own-seat" | "super-admin" | "cannot-seat" | "same-seat" | "unknown-person" | "seat-moved" | "zoho-unavailable" | "book-unreadable" | "zoho-refused" | "unconfirmed"
+  | "ir-seat-only" | "above-manager";
 
 export const SEAT_REFUSALS: Readonly<Record<SeatRefusal, string>> = Object.freeze({
   "bad-request": "That is not a seat the console hands out.",
@@ -55,11 +72,14 @@ export const SEAT_REFUSALS: Readonly<Record<SeatRefusal, string>> = Object.freez
   "book-unreadable": "Their accounts could not be listed, so the seat was not changed. Try again.",
   "zoho-refused": "Zoho refused the seat change. Nothing was changed.",
   "unconfirmed": "Zoho did not confirm the seat change. Reload Teams to see whether it applied.",
+  "ir-seat-only": "An IR Manager gives only the Investor Relations seat, and only to their own IRs. Nothing changed.",
+  "above-manager": "That seat is above their manager: it reaches pages whoever they report to cannot. Move them to a manager who reaches it first, then give them the seat.",
 });
 
 const STATUS: Readonly<Record<SeatRefusal, 400 | 403 | 404 | 409 | 502 | 503>> = Object.freeze({
   "bad-request": 400, "own-seat": 403, "super-admin": 403, "cannot-seat": 403, "same-seat": 409, "unknown-person": 404,
   "seat-moved": 403, "zoho-unavailable": 503, "book-unreadable": 503, "zoho-refused": 502, "unconfirmed": 503,
+  "ir-seat-only": 403, "above-manager": 409,
 });
 
 export type SeatChangeResult =
@@ -68,6 +88,7 @@ export type SeatChangeResult =
     /** Contact ids returned to the pool / listed but not written (a newer change, or no write access) */
     readonly returned: readonly string[]; readonly notReturned: readonly string[];
   }
+  | { readonly ok: true; readonly side: "lead"; readonly whom: string; readonly from: SeatKey; readonly to: SeatKey; readonly overridesCleared: number }
   | { readonly ok: false; readonly status: 400 | 403 | 404 | 409 | 502 | 503; readonly refusal: SeatRefusal; readonly message: string };
 
 /** One Contact of the moved KAM's book: its id and the Modified_Time the clear is guarded by. */
@@ -86,12 +107,19 @@ export interface SeatChangeDeps {
   readonly kamBook: KamBookOrgRead;
   readonly events: AuthorityEvents;
   readonly sessions?: { endSessionsOf(who: string, reason: string): Promise<number> };
+  /** M17-S02: the grant store — read for the Leads-side rules, and reset when a Leads seat changes */
+  readonly store?: Pick<GrantStore, "grantsOf" | "set">;
   readonly clock?: () => number;
 }
 
 export interface SeatChangeService {
-  change(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown }): Promise<SeatChangeResult>;
+  change(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown; readonly side?: unknown }): Promise<SeatChangeResult>;
 }
+
+const putFailure = (k: string): SeatRefusal =>
+  /* not retried: a lost reply may have applied (network/aborted/server); refused before sending otherwise */
+  k === "network" || k === "aborted" || k === "server" || k === "unexpected" ? "unconfirmed"
+    : k === "busy" || k === "concurrency-exceeded" || k === "credits-exhausted" || k === "rate-limited-unclassified" || k === "auth-expired" ? "zoho-unavailable" : "zoho-refused";
 
 /** The org-scope KAM book read over a service client (COQL, ids and Modified_Time only, ≤2000 rows). */
 export function kamBookOrgRead(service: { coql(as: ServiceCredential, q: string, o?: { signal?: AbortSignal }): Promise<ZohoResult<ZohoPage>> },
@@ -117,10 +145,69 @@ export function kamBookOrgRead(service: { coql(as: ServiceCredential, q: string,
   };
 }
 
+/**
+ * M17-S02-T01: may `by` give `whom` the Leads seat `to`? The front end's own canManage / canGrant / seatClash
+ * over the two chains (the prototype's setSeat). null = yes; otherwise the refusal. Pure: exported for tests.
+ */
+export function decideLeadSeat(by: string, whom: string, to: SeatKey, b: GrantBook, now: Date = new Date(0)): SeatRefusal | null {
+  const me = b.people.find((p) => p.who === by), them = b.people.find((p) => p.who === whom);
+  if (!me || !them) return "unknown-person";
+  if (by === whom) return "own-seat";
+  if (ADMINISTRATOR_SEATS.has(them.seat)) return "super-admin";
+  if (!Object.prototype.hasOwnProperty.call(LEAD_SEAT_TO_ZOHO, to)) return "bad-request";
+  const ctx = ctxOf(by, b, now);
+  if (!canManage(ctx, whom)) return "cannot-seat";
+  if (!canGrant(ctx, to)) return ZOHO_SEAT_SIDES[me.seat].lead === "conv" ? "ir-seat-only" : "cannot-seat";
+  if (ZOHO_SEAT_SIDES[them.seat].lead === to) return "same-seat";
+  if (seatClash(ctx.PEOPLE, whom, to).length) return "above-manager";
+  return null;
+}
+
 export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
   const clock = d.clock ?? Date.now;
+
+  /** M17-S02-T01: a Leads-side seat (setSeat), decided by the front end's canManage/canGrant/seatClash. */
+  async function changeLead(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown }): Promise<SeatChangeResult> {
+    const by = session.who;
+    const whom = typeof ask.whom === "string" && USER_ID.test(ask.whom) ? ask.whom : "";
+    const to = typeof ask.to === "string" && Object.prototype.hasOwnProperty.call(LEAD_SEAT_TO_ZOHO, ask.to) ? (ask.to as SeatKey) : null;
+    let from = "none";
+    const no = (refusal: SeatRefusal): SeatChangeResult => {
+      if (whom) d.events.seatChanged(by, whom, session.seat, from, to ?? "none", "refused");
+      return { ok: false, status: STATUS[refusal], refusal, message: SEAT_REFUSALS[refusal] };
+    };
+    if (!whom || !to) return no("bad-request");
+    if (as.userId !== by) return no("seat-moved");
+    if (whom === by) return no("own-seat");
+    const [mine, theirs] = await Promise.all([d.users.chainOf(as, by), d.users.chainOf(as, whom)]);
+    if (!mine) return no("zoho-unavailable");
+    if (!theirs) return no("unknown-person");
+    const me = mine[0]!, them = theirs[0]!;
+    if (CONSOLE_SEAT[me.seat] !== session.seat) return no("seat-moved");
+    from = ZOHO_SEAT_SIDES[them.seat].lead;
+    if (ADMINISTRATOR_SEATS.has(them.seat)) return no("super-admin");
+    const people = new Map<string, SeatedPerson>();
+    for (const p of [...mine, ...theirs]) people.set(p.who, p);
+    const grants: Record<string, CapGrid> = {};
+    for (const k of people.keys()) grants[k] = d.store ? d.store.grantsOf(k) : {};
+    const v = decideLeadSeat(by, whom, to, { people: [...people.values()], grants }, new Date(clock()));
+    if (v) return no(v);
+    const target = LEAD_SEAT_TO_ZOHO[to]!;
+    const write = d.seats.seatWrite ? d.seats.seatWrite(target) : null;
+    if (!write) return no("cannot-seat");
+    const put = await d.crm.updateUserSeat(as, whom, { roleId: write.roleId, roleName: write.roleName, profileId: write.profileId, profileName: write.profileName });
+    if (!put.ok) return no(putFailure(put.error.kind));
+    /* the new seat's preset replaces the grid (prototype: delete GRANT[k]) */
+    const held = d.store ? Object.keys(d.store.grantsOf(whom)) : [];
+    for (const page of held) d.store!.set({ at: clock(), by, whom, page, caps: null });
+    d.events.seatChanged(by, whom, session.seat, from, to, "ok");
+    try { await d.sessions?.endSessionsOf(whom, "seat-changed"); } catch { /* their next refresh ends it (seat mismatch) */ }
+    return { ok: true, side: "lead", whom, from: from as SeatKey, to, overridesCleared: held.length };
+  }
+
   return Object.freeze({
-    async change(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown }): Promise<SeatChangeResult> {
+    async change(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown; readonly side?: unknown }): Promise<SeatChangeResult> {
+      if (ask.side === "lead") return changeLead(as, session, ask);
       const by = session.who;
       const whom = typeof ask.whom === "string" && USER_ID.test(ask.whom) ? ask.whom : "";
       const to = typeof ask.to === "string" && Object.prototype.hasOwnProperty.call(ROLE, ask.to) ? (ask.to as ImRoleKey) : null;
@@ -159,12 +246,7 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
       if (book === null) return no("book-unreadable");
 
       const put = await d.crm.updateUserSeat(as, whom, { roleId: write.roleId, roleName: write.roleName, profileId: write.profileId, profileName: write.profileName });
-      if (!put.ok) {
-        const k = put.error.kind;
-        /* not retried: a lost reply may have applied (network/aborted/server); refused before sending otherwise */
-        return no(k === "network" || k === "aborted" || k === "server" || k === "unexpected" ? "unconfirmed"
-          : k === "busy" || k === "concurrency-exceeded" || k === "credits-exhausted" || k === "rate-limited-unclassified" || k === "auth-expired" ? "zoho-unavailable" : "zoho-refused");
-      }
+      if (!put.ok) return no(putFailure(put.error.kind));
 
       const returned: string[] = [], notReturned: string[] = [];
       for (const row of book) {

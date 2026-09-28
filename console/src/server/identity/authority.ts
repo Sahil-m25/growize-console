@@ -28,6 +28,9 @@ export interface AuthorityEvents {
   accessEnded(who: string, whom: string, seat: string | null, reason?: string): void;
   /** M03-S04-T02: `who` moved `whom` from one seat to another (codes); `returned` = Contacts put back in the pool. */
   seatChanged(who: string, whom: string, seat: string | null, from: string, to: string, outcome: Exclude<PlaneCOutcome, "ended">, returned?: readonly string[]): void;
+  /** M17-S02-T01: `who` changed (or tried to change) who `whom` reports to. `reason` is a short code ("set",
+   *  "cleared" or the refusal); `ids` = the previous and new manager's user ids — ids only, never a name. */
+  managerChanged(who: string, whom: string, seat: string | null, outcome: Exclude<PlaneCOutcome, "ended">, reason: string, ids?: readonly string[]): void;
 }
 
 /** Lower-cased only. Anything that is not already a code (a space, an `@`, a digit run) is left for
@@ -54,6 +57,9 @@ export function createAuthorityEvents(planeC: PlaneCLog, clock: () => number = D
     seatChanged(who: string, whom: string, seat: string | null, from: string, to: string, outcome: Exclude<PlaneCOutcome, "ended">, returned: readonly string[] = []): void {
       planeC.record({ at: clock(), who, whom, action: "seat-change", outcome, reason: code(`${from}-to-${to}`), seat,
         ...(outcome === "ok" ? { count: returned.length, recordIds: returned } : {}) });
+    },
+    managerChanged(who: string, whom: string, seat: string | null, outcome: Exclude<PlaneCOutcome, "ended">, reason: string, ids: readonly string[] = []): void {
+      planeC.record({ at: clock(), who, whom, action: "manager-change", outcome, reason: code(reason), seat, recordIds: ids });
     },
   });
 }
