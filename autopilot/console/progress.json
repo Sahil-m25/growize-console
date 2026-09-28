@@ -753,16 +753,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "aac9202"
    ],
-   "at": "2026-09-27T22:56:01.564Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2",
+   "at": "2026-09-28T07:44:35.409Z",
+   "note": "/api/data returns a fresh block with error past the 5-minute ceiling; waiting on the front-end store reading it and staging proof (TC-IM01-013).",
    "notes": 1
   },
   "M03-S02": {
@@ -3020,6 +3022,11 @@
   "M09-S01-T01": {
    "status": "done",
    "at": "2026-09-28T07:44:32.286Z",
+   "phase": "zoho"
+  },
+  "M01-S09-T02": {
+   "status": "done",
+   "at": "2026-09-28T07:44:35.409Z",
    "phase": "zoho"
   }
  },
@@ -5403,6 +5410,14 @@
    "status": "waiting",
    "hours": 4,
    "note": "Finance list read (T01) built and tested; waiting on an API route, the front-end table (T02) and Jev UI cases."
+  },
+  {
+   "at": "2026-09-28T07:44:35.409Z",
+   "story": "M01-S09",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "/api/data returns a fresh block with error past the 5-minute ceiling; waiting on the front-end store reading it and staging proof (TC-IM01-013)."
   }
  ],
  "last_regression_round": 0,
