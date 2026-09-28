@@ -206,3 +206,62 @@ The autopilot adds items here and never waits for them. Tick an item when it is 
 - [ ] M19-S05-NOTE-1 (M19-S05) HUMAN: Turn on branch protection for main requiring the 'check' status, add Required reviewers to the 'production' Environment, and add secrets JEV_STAGING_CONFIG_JSON, JEV_SESSIONS_TGZ_B64 and TYPESAFE_API_KEY.
 - [ ] M19-S05-NOTE-2 (M19-S05) GAP: pm/jev-calibrate.mjs is not in this repo (only in the growize/pm archive), so the CI calibration gate marks every staging run untrusted until it is copied in unchanged.
 - [ ] M19-S05-NOTE-3 (M19-S05) HUMAN PROOF: TC-E16-010 (a failing P1 case blocks promotion and names TC-E05-004) needs a real staging deploy.
+- [ ] M03-S03-NOTE-1 (M03-S03) HUMAN: Digital Infrastructure (Sahil) cannot hold a console session while that role uses the Administrator profile (D80 vs CLAUDE.md), so 'Sahil grants Rohit Numbers' is proven only at rule level (grants.test.cjs).
+- [ ] M03-S03-NOTE-2 (M03-S03) FRONT-END LOOP: TC-E03-015..018 (Jev grantor matrix, T02) need the Teams screens on staging.
+- [ ] M03-S04-NOTE-1 (M03-S04) HUMAN: Create the 'kam-pool-return' service grant (ZohoCRM.coql.READ + ZohoCRM.modules.contacts.READ on a profile that sees every Contact, identity fields hidden) and set ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN; without it moving a KAM off the seat answers 503 and changes nothing.
+- [ ] M03-S04-NOTE-2 (M03-S04) HUMAN: Add ZohoCRM.users.UPDATE to the user OAuth client (M02-S10-T02), give the AM Head and Finance Head profiles 'Manage Users', and confirm on the sandbox that PUT /users/{id} with role and profile {id,name} applies (PROVISIONAL body shape).
+- [ ] M03-S04-NOTE-3 (M03-S04) GAP: server/activity must map the new Plane C actions access-granted and access-ended to 'Console access granted/ended' and show the seat-change count ('N accounts returned to the pool').
+- [ ] M03-S04-NOTE-4 (M03-S04) FRONT-END LOOP: The T03 seat dropdown calls PUT /api/users/{id} {seat}, labels rows 'Seat for <name>', and never offers root/di or a seat control on the super admin's or own row.
+- [ ] M03-S04-NOTE-5 (M03-S04) PROVISIONAL: Contacts return to the pool (KAM, KAM_Since, KAM_Intro_At cleared) on the seat-changer's token after an org-scope service read (Jev 0.98); crossing the sign-in line is filed as Plane C access-granted/access-ended (Jev 0.97); lead-side seat changes are not handled by PUT /api/users.
+- [ ] M09-S04-NOTE-1 (M09-S04) HUMAN: In Zoho add a Contacts workflow 'KAM changed -> clear KAM_Intro_At', turn on field history for Contacts.KAM, and let only the AM Head profile edit KAM and KAM_Since.
+- [ ] M09-S04-NOTE-2 (M09-S04) PROVISIONAL: The console PUT writes only KAM and KAM_Since and leaves KAM_Intro_At to the Zoho workflow (Jev 0.28, low); 'logged with both names' is a Plane C line with user ids only, names coming from Zoho field history (Jev 1.00).
+- [ ] M09-S04-NOTE-3 (M09-S04) GAP: Contacts has no Tier field (28 Sep 2026); the story lists tier, so it must be computed or created.
+- [ ] M09-S04-NOTE-4 (M09-S04) FRONT-END LOOP: The care card and manager drawer call PUT /api/investors/[id]/kam {kamUserId|null, expectedModifiedTime}, with per-KAM counts worked out from /api/investors/am.
+- [ ] M09-S04-NOTE-5 (M09-S04) HUMAN PROOF: On the sandbox as Head of AM name a KAM on an allotted Contact and confirm KAM/KAM_Since change, the workflow clears KAM_Intro_At and field history shows both names.
+- [ ] M09-S08-NOTE-1 (M09-S08) HUMAN: In Zoho stamp Contacts.Originating_IR with the lead owner at Said yes, add the sharing rule 'IR role reads Contacts where Originating_IR = self' under Private sharing, and hide money and identity fields from the IR profile.
+- [ ] M09-S08-NOTE-2 (M09-S08) HUMAN PROOF: On staging read Contacts through the API as the restricted IR test user and confirm Zoho returns only that IR's own-lead investors, and that another IR's investor by URL gives 403.
+- [ ] M09-S08-NOTE-3 (M09-S08) FRONT-END LOOP: IR columns on Investors (name, ARL code, farms, state, lead link); the server sends an IR no price, amount, yield or receipts.
+- [ ] M11-S02-NOTE-1 (M11-S02) FRONT-END LOOP: Allotment rows on the investor record and the LLP (GET /api/investors/[id]/allotments, GET /api/farms/[id]/allotments) and the Jev cases.
+- [ ] M11-S02-NOTE-2 (M11-S02) GAP: 'Refuse to save an allotment without Customer and LLP' needs an allotment write path no T02 covers; reads expose linked:false for such rows.
+- [ ] M11-S02-NOTE-3 (M11-S02) HUMAN: Hide the older LLP_Unit_Allocation module from console profiles so only LLP_UnitAllocation_Module (related lists Customer1 / Customer_List) is used.
+- [ ] M11-S02-NOTE-4 (M11-S02) FACT CHANGE PROPOSED: The story names LLP_Lookup, committed units and Agreement_Signed; the org's allotment module has LLP, Reserved_Units/Issued_Units and Supplementary_Verified_At, which the code uses.
+- [ ] M10-S08-NOTE-1 (M10-S08) FRONT-END LOOP: Per-farm Money blocks (GET /api/investors/[id]/money) and the Jev cases.
+- [ ] M10-S08-NOTE-2 (M10-S08) PROVISIONAL: Blocks are one per allotment, not merged per LLP; totals are cross-checked against register.ts and allotment-receipts.ts (record.ts does not subtract matched refunds and should be aligned).
+- [ ] M10-S09-NOTE-1 (M10-S09) FRONT-END LOOP: The ARL holdings panel (GET /api/investors/[id]/holdings, readOnly) and the Jev cases.
+- [ ] M10-S09-NOTE-2 (M10-S09) FACT CHANGE PROPOSED: server/data/projections.ts holdings/arlTransactions use Contact, Instrument_Type, Amount_Invested, Invested_On, Interest_Rate, Maturity_On, Date, but the org has Investor, Instrument_Class, Invested_Amount, Invested_Date, Interest_Rate_Pct, Maturity_Date, Txn_Date (holdings.ts uses the org's names).
+- [ ] M08-S03-NOTE-1 (M08-S03) FACT CHANGE PROPOSED: There is no Payment_Claims module (D82 agrees), so the IR's payment report is a Receipts record with Match_State = Claimed.
+- [ ] M08-S03-NOTE-2 (M08-S03) PROVISIONAL: A claim's Receipts.UTR holds a unique key CLAIM-<leadId>-<n> (Jev 0.73), the IR's reference is kept only masked in the Note, paise are refused, and kind 'other' is stored as Part with a note; a Claim_Ref field would free UTR for bank references.
+- [ ] M08-S03-NOTE-3 (M08-S03) HUMAN: Add a unique Idempotency_Key text field to Receipts, and set RECEIPT_IDEMPOTENCY_SECRET and RECEIPT_CONTEXT_SIGNING_SECRET (each 32+ bytes, different); until then /api/receipts answers 503.
+- [ ] M08-S03-NOTE-4 (M08-S03) FRONT-END LOOP: The claim drawer and row (T02) and the record-a-receipt drawer (T05: POST /api/receipts/prepare then POST /api/receipts with a per-press Idempotency-Key).
+- [ ] M08-S03-NOTE-5 (M08-S03) HUMAN PROOF: T06 Jev/API cases and T07 Finance UAT on the sandbox.
+- [ ] M14-S02-NOTE-1 (M14-S02) FACT CHANGE PROPOSED: Removal clears Leads.Lead_Event (not Event_Name) and staff are written through Lead_Events.Event_Staff (rows in Lead_Events_X_Users).
+- [ ] M14-S02-NOTE-2 (M14-S02) HUMAN PROOF: On the sandbox confirm Event_Staff entries keyed by userlookup221_3 add a user and {id, _delete: null} removes one (getFields suggests the reverse direction of what events.ts reads).
+- [ ] M14-S02-NOTE-3 (M14-S02) GAP: No roster reader is wired, so staff are checked for shape and uniqueness only, not that they carry a book.
+- [ ] M14-S02-NOTE-4 (M14-S02) FRONT-END LOOP: The event drawer (gaps list, confirm-before-remove from the 428 answer) and the activity lines written from the API answer.
+- [ ] M14-S03-NOTE-1 (M14-S03) PROVISIONAL: Until a Google/Zoho Sheet reader exists, the page posts parsed intake rows to POST /api/events/[id]/sheet and the loader re-checks every row (Jev 0.95); 'All to one person' must be the loader, the event's staff or a roster-eligible user.
+- [ ] M14-S03-NOTE-2 (M14-S03) HUMAN: Sahil names the tablet intake sheet source and sets Lead_Events.Load_State to Ready when a sheet is ready; nothing sets it today.
+- [ ] M14-S03-NOTE-3 (M14-S03) FACT CHANGE PROPOSED: Leads have no Event_Name/Event_Date/Event_Channel; loaded leads carry the lookup Leads.Lead_Event.
+- [ ] M14-S03-NOTE-4 (M14-S03) GAP: The front-end policy gives Digital Infrastructure the events load right but TC-E10-012 says Sahil cannot load; the server follows the policy until the owner decides.
+- [ ] M14-S03-NOTE-5 (M14-S03) GAP: server/leads/capture.ts writes Consent_How 'On the event sheet' but the picklist holds Form, Verbal, Email reply and Event sheet.
+- [ ] M14-S03-NOTE-6 (M14-S03) FRONT-END LOOP: The capture event picker and the sheet card (rule select, split preview, 'Loaded the event sheet' lines).
+- [ ] M13-S03-NOTE-1 (M13-S03) PROVISIONAL: A reply is stored as a Note on the Case and pushed as case.replied; requestToCase now writes Related_To and Case_Origin (the org's names).
+- [ ] M13-S03-NOTE-2 (M13-S03) FRONT-END LOOP: The Tickets drawer and row chips call POST /api/cases, PATCH /api/cases/[id] {to, expectedModifiedTime} and POST /api/cases/[id]/reply.
+- [ ] M13-S03-NOTE-3 (M13-S03) HUMAN PROOF: On the sandbox open a Records ticket as Finance, park and close it, and confirm a KAM and a Compliance seat are refused on a Bank ticket.
+- [ ] M13-S03-NOTE-4 (M13-S03) GAP: A new ticket is owned by the opener (or a named owner with assign); the category assignment rule (T01) is not in Zoho yet.
+- [ ] M13-S06-NOTE-1 (M13-S06) PROVISIONAL: contracts/update.published.json is added and each update is pushed as one signed event per investor in the segment (Jev 0.82); a Notice is written as Category Other (Jev 0.24, low).
+- [ ] M13-S06-NOTE-2 (M13-S06) FACT CHANGE PROPOSED: Add Notice to Investor_Updates.Category, NRI only to Audience, and a text field Audience_Predicate; until then an NRI-only publish is refused.
+- [ ] M13-S06-NOTE-3 (M13-S06) HUMAN: Sahil adds the custom function refusing Statement and Compliance updates from Account Management profiles (T01).
+- [ ] M13-S06-NOTE-4 (M13-S06) FRONT-END LOOP: The Investor updates page and publish drawer read GET /api/updates and POST {headline, kind, audience, llpId, body}.
+- [ ] M13-S06-NOTE-5 (M13-S06) HUMAN PROOF: On the sandbox publish a Statement to everyone as Finance and confirm Sent_Count matches the book and the stub records one update.published per investor.
+- [ ] M15-S05-NOTE-1 (M15-S05) GAP: Plane C reveal lines carry only the field, not the chosen reason; Plane C has no test-link action; server/leads/search.ts still files a successful search as a refusal and should use the new log.event kind.
+- [ ] M15-S05-NOTE-2 (M15-S05) GAP: No /api/system route feeds server/system/checks.ts; it should pass planeBBetween(...) as SystemFacts.ops so headroom reads the stored credits header, plus auditArchive().lastRun() and investorAppOutbox().stats().
+- [ ] M15-S05-NOTE-3 (M15-S05) GAP: The sign-in history runbook ops/runbooks/sign-in-history.md the reader points to does not exist (T03).
+- [ ] M15-S05-NOTE-4 (M15-S05) FRONT-END LOOP: The Logs view on GET /api/logs (filters, byActor chips, identityReveals, headroom, signInHistory).
+- [ ] M15-S05-NOTE-5 (M15-S05) HUMAN PROOF: TC-E11-016..019 and TC-IM10-010..013 on staging, and a locked archive for the day files.
+- [ ] M10-S22-NOTE-1 (M10-S22) PROVISIONAL: The app preview shows payout dates and states to every seat with the record, amounts only to seats with Money (Jev 0.75).
+- [ ] M10-S22-NOTE-2 (M10-S22) GAP: Investor_Payouts exists in Zoho but has no rows in pm/plan-merged/zoho-field-mapping.json and no sandbox fixtures.
+- [ ] M10-S22-NOTE-3 (M10-S22) FRONT-END LOOP: Wire features/im/money/preview.tsx to GET /api/investors/[id]/preview.
+- [ ] M10-S23-NOTE-1 (M10-S23) PROVISIONAL: The one-time test link comes from a TestLinkIssuer interface that answers 503 not-configured until MA1 names the app's endpoint (Jev 0.25, low); only a reason length code is logged and the words stay in the in-process register (Jev 0.54).
+- [ ] M10-S23-NOTE-2 (M10-S23) HUMAN: MA1 must name the investor app's generate-link endpoint and its 'link used' receiver, then a contract is declared in contracts/.
+- [ ] M10-S23-NOTE-3 (M10-S23) GAP: No Zoho field marks a test investor account; ZOHO_TEST_INVESTOR_IDS stands in.
+- [ ] M10-S23-NOTE-4 (M10-S23) FRONT-END LOOP: Wire the 'Create test sign-in link' drawer to POST/GET /api/investors/[id]/test-link (409 confirm-needed carries the warning).
