@@ -72,6 +72,7 @@ function rig(f = {}, opts = {}) {
   const log = createOpsLog(sink);
   const calls = [];
   const events = [];
+  const contactPuts = [...(f.contactPuts ?? [])];
   const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => opts.now ?? NOW,
     fetch: async (url, init) => {
       const u = new URL(String(url));
@@ -90,7 +91,7 @@ function rig(f = {}, opts = {}) {
       if (m === 'PUT') {
         const h = new Headers(init.headers);
         calls.push(['put', mod, id, JSON.parse(init.body).data[0], h.get('If-Unmodified-Since')]);
-        const name = mod === 'Receipts' ? (f.put ?? 'receipt.updated') : mod === 'Contacts' ? 'contact.updated' : 'allotment.updated';
+        const name = mod === 'Receipts' ? (f.put ?? 'receipt.updated') : mod === 'Contacts' ? (contactPuts.shift() ?? 'contact.updated') : 'allotment.updated';
         return toResponse(recorded(name));
       }
       throw new Error(`unexpected call ${m} ${u.pathname}`);
@@ -199,7 +200,7 @@ test('an investor\'s first matched money: account.opened tentative, App_Access o
   const p = puts(r.calls);
   assert.deepEqual(p.map((c) => [c[1], c[3]]), [
     ['Receipts', { Match_State: 'Matched', Matched_By: { id: HEAD } }],
-    ['Contacts', { App_Access: 'Hold' }],
+    ['Contacts', { App_Access: 'Hold', App_Account_Mark: 'Tentative', App_Mark_At: '2026-09-02T09:02:00+05:30' }],
     ['LLP_UnitAllocation_Module', { Hold_Until: '2026-10-02' }],
   ]);
   assert.equal(p[1][4], '2026-09-01T12:00:00+05:30');
@@ -299,4 +300,125 @@ test('T04: the events go through the signed outbox to the stub receiver and are 
   await again.svc.match(principal(), R);
   const types = stub.recorded().map((e) => e.type);
   assert.deepEqual(types, ['money.confirmed', 'account.opened', 'money.confirmed'], 'a retried event is applied once');
+});
+
+/* ---- M08-S08-T02: open on match, not on record ------------------------------------------------------ */
+
+const FIRST = { receipt: 'receipt.pending-advance', allotment: 'allotment.first-advance', investorAllotments: 'allotments.investor-first',
+  investorReceipts: 'receipts.first-advance', allotmentReceipts: 'receipts.first-advance' };
+
+test('M08-S08: the first matched advance opens the account On hold AND tentative in one guarded Contacts write; no welcome, no Invite', async () => {
+  const r = rig(FIRST);
+  const res = await r.svc.match(principal(), RADV);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.value.appAccess, { ok: true, value: 'opened-on-hold', code: null });
+  assert.deepEqual(res.value.appMark, { ok: true, value: 'tentative-set', code: null });
+  const contact = puts(r.calls).filter((c) => c[1] === 'Contacts');
+  assert.equal(contact.length, 1, 'one write on the Contact');
+  assert.equal(contact[0][4], '2026-09-01T12:00:00+05:30', 'guarded on the Contact as read (D44)');
+  assert.equal('App_Mark_By' in contact[0][3], false, 'App_Mark_By stays empty: the system set it');
+  const s = JSON.stringify(r.calls);
+  assert.ok(!s.includes('Invite'), 'the welcome waits for "Send welcome and unlock" (D93)');
+  assert.ok(!/Welcome/.test(s), 'the console never writes App_Welcome_*');
+  assert.deepEqual(r.events.map((e) => e.type), ['money.confirmed', 'account.opened'], 'no welcome event');
+});
+
+test('M08-S08: every contract publish logs its delivery result (type + status + ids, never the payload)', async () => {
+  const r = rig(FIRST);
+  await r.svc.match(principal(), RADV);
+  const ev = r.sink.records().filter((x) => x.kind === 'event' && x.action === 'contract-publish');
+  assert.deepEqual(ev.map((x) => x.reason), ['money.confirmed.queued', 'account.opened.queued']);
+  for (const x of ev) assert.deepEqual([...x.recordIds].sort(), [C2, RADV].sort());
+  noSecrets(r.sink.records(), ['ARL-INV-0212', 'SYNTH048']);
+  const failed = rig(FIRST, { publish: async () => ({ ok: false, reason: 'queue-full' }) });
+  await failed.svc.match(principal(), RADV);
+  assert.deepEqual(failed.sink.records().filter((x) => x.kind === 'event').map((x) => x.reason), ['money.confirmed.not-sent', 'account.opened.not-sent']);
+});
+
+test('M08-S08: through the stub receiver the log reads delivered', async () => {
+  const keys = ['synthetic-contract-signing-key-0000000000000009'];
+  const stub = createInProcessStub({ schemas, keys, accepts: ['money.confirmed', 'account.opened'] });
+  const outbox = createOutbox({ schemas, target: () => ({ url: 'stub://investor-app/events', key: keys[0] }), fetch: stub.fetch, clock: () => NOW });
+  const publish = async (event) => { const q = outbox.enqueue(event); if (!q.ok) return q; await outbox.drain(); return { ok: true, eventId: q.eventId, state: outbox.state(q.eventId) }; };
+  const r = rig(FIRST, { publish });
+  await r.svc.match(principal(), RADV);
+  assert.deepEqual(r.sink.records().filter((x) => x.kind === 'event').map((x) => x.reason), ['money.confirmed.delivered', 'account.opened.delivered']);
+  const opened = stub.recorded().find((e) => e.type === 'account.opened');
+  assert.equal(opened.payload.state, 'tentative');
+});
+
+test('M08-S08: an account already On hold (added as paid) gets only the mark; Hold/Invite are never rewritten', async () => {
+  const r = rig({ ...FIRST, contact: 'contact.hold-no-mark' });
+  const res = await r.svc.match(principal(), RADV);
+  assert.deepEqual(res.value.appAccess, { ok: true, value: 'already-set', code: null });
+  assert.deepEqual(res.value.appMark, { ok: true, value: 'tentative-set', code: null });
+  assert.deepEqual(puts(r.calls).filter((c) => c[1] === 'Contacts').map((c) => c[3]),
+    [{ App_Account_Mark: 'Tentative', App_Mark_At: '2026-09-02T09:02:00+05:30' }]);
+  const both = rig({ ...FIRST, contact: 'contact.hold-tentative' });
+  const b = await both.svc.match(principal(), RADV);
+  assert.equal(b.value.appMark.value, 'already-set');
+  assert.equal(puts(both.calls).filter((c) => c[1] === 'Contacts').length, 0, 'nothing to write');
+  assert.equal(b.value.accountOpened.ok, true, 'account.opened is still (re)sent — same event id, the app applies it once');
+});
+
+test('M08-S08: if Zoho refuses the mark (T01 made it a formula), App_Access is still opened alone', async () => {
+  const r = rig({ ...FIRST, contactPuts: ['contact.validation-mark', 'contact.updated'] });
+  const res = await r.svc.match(principal(), RADV);
+  assert.deepEqual(res.value.appAccess, { ok: true, value: 'opened-on-hold', code: null });
+  assert.deepEqual(res.value.appMark, { ok: true, value: 'left-to-zoho', code: null });
+  const c = puts(r.calls).filter((x) => x[1] === 'Contacts');
+  assert.equal(c.length, 2);
+  assert.deepEqual(c[1][3], { App_Access: 'Hold' });
+  assert.equal(c[1][4], c[0][4], 'the retry is guarded on the same Modified_Time');
+});
+
+test('M08-S08: not only an Advance — any first matched inbound money opens; a Refund never does; later money does not re-open', async () => {
+  const first = rig({ receipt: 'receipt.pending-balance', investorReceipts: 'receipts.first-part', allotmentReceipts: 'receipts.first-part', contact: 'contact.no-app-kiran' });
+  const fp = await first.svc.match(principal(), R);
+  assert.equal(fp.ok, true, JSON.stringify(fp));
+  assert.equal(fp.value.firstMoney, true, 'a Part/Full as the first confirmed money opens (D10)');
+  assert.equal(fp.value.appAccess.value, 'opened-on-hold');
+  assert.equal(first.events.find((e) => e.type === 'account.opened').payload.state, 'tentative');
+  assert.equal(fp.value.hold.value, null, 'only an Advance starts the hold');
+  const part = rig({ receipt: 'receipt.pending-balance', investorReceipts: 'receipts.first-advance', contact: 'contact.no-app' });
+  const pending = await part.svc.match(principal(), R);
+  assert.equal(pending.ok, true, JSON.stringify(pending));
+  // receipts.first-advance lists the advance as Matched → this Part is NOT first money
+  assert.equal(pending.value.firstMoney, false);
+  assert.equal(pending.value.accountOpened, null);
+  assert.equal(puts(part.calls).filter((c) => c[1] === 'Contacts').length, 0, 'second money never re-opens');
+  // A refund: no account, no App_Access, no event beyond the receipt write.
+  const refund = rig({ ...FIRST, receipt: 'receipt.pending-refund' });
+  const rf = await refund.svc.match(principal(), RADV);
+  assert.equal(rf.ok, true, JSON.stringify(rf));
+  assert.equal(rf.value.firstMoney, false);
+  assert.equal(rf.value.accountOpened, null);
+  assert.deepEqual(puts(refund.calls).map((c) => c[1]), ['Receipts']);
+  assert.equal(refund.events.length, 0);
+});
+
+test('M08-S08: recording alone never opens — one opening path on money (match.ts); unlock only moves Hold ↔ Invite', () => {
+  const src = (f) => fs.readFileSync(path.join(srcRoot, f), 'utf8');
+  const recordSide = ['server/money/record-receipt.ts', 'server/money/allotment-receipts.ts', 'server/money/receipt-replay.ts',
+    'app/api/receipts/route.ts', 'app/api/receipts/compose.ts'];
+  for (const f of recordSide) {
+    const t = src(f);
+    assert.ok(!/account\.opened/.test(t), `${f} publishes no account.opened`);
+    assert.ok(!/App_Access|App_Account_Mark/.test(t), `${f} writes no app access or mark`);
+  }
+  const moneyOpeners = fs.readdirSync(__dirname).filter((f) => f.endsWith('.ts') && /type: "account\.opened"/.test(fs.readFileSync(path.join(__dirname, f), 'utf8')));
+  assert.deepEqual(moneyOpeners, ['match.ts']);
+  const unlock = src('server/investors/unlock.ts');
+  assert.match(unlock, /"no-account"/, 'unlock refuses an account that was never opened');
+  assert.ok(!/account\.opened/.test(unlock));
+});
+
+test('M08-S08: an unmatched (pending) receipt never reaches the consequences — a refused match writes nothing on the Contact', async () => {
+  for (const f of [{ ...FIRST, receipt: 'receipt.pending-own' }, { ...FIRST, allotment: 'allotment.unverified' }, { ...FIRST, put: 'receipt.conflict-412' }]) {
+    const r = rig(f);
+    const res = await r.svc.match(principal(), f.receipt === 'receipt.pending-own' ? R : RADV);
+    assert.equal(res.ok, false);
+    assert.equal(puts(r.calls).filter((c) => c[1] === 'Contacts').length, 0);
+    assert.equal(r.events.length, 0);
+  }
 });

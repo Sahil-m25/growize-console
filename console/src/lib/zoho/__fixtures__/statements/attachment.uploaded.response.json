@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740995300",
+          "Created_Time": "2026-09-28T10:00:01+05:30"
+        },
+        "message": "attachment uploaded successfully",
+        "status": "success"
+      }
+    ]
+  }
+}

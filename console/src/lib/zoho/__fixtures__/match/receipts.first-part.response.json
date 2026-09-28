@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994049",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 2250000,
+        "Match_State": "Pending"
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}

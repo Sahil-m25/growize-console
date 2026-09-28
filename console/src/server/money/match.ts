@@ -23,9 +23,15 @@
  *      the bank reference never leaves (outbox identity guard);
  *   3. the allotment's Payment_Status: allotment-receipts.ts re-reads it and computes it from matched receipts
  *      (T01's Zoho workflow is its only writer); a mismatch is flagged, never written here;
- *   4. the investor's FIRST matched inbound money: account.opened { arl_code, at, state: tentative } (D10), and
- *      Contacts.App_Access empty → Hold with one guarded write (PROVISIONAL, Jev 0.54) — Hold/Invite once set are
- *      never touched (server/investors/unlock.ts owns them);
+ *   4. the investor's FIRST matched inbound money (Advance, Part or Full — D10 "first confirmed money"; a Refund
+ *      never opens): account.opened { arl_code, at, state: tentative } (D10), and ONE guarded Contacts write of
+ *      what is still empty — App_Access empty → Hold (PROVISIONAL, Jev 0.54) and App_Account_Mark empty →
+ *      Tentative with App_Mark_At = the match time (M08-S08, PROVISIONAL, Jev 0.56; App_Mark_By stays empty: the
+ *      system set it). If Zoho refuses the mark fields (T01 turning App_Account_Mark into a formula), the write is
+ *      retried once with App_Access alone. Hold/Invite once set are never touched (server/investors/unlock.ts owns
+ *      Hold → Invite, and so the welcome: nothing here sends one or sets Invite). Permanent is Zoho's (T01).
+ *      M08-S08: this is the ONLY path that opens an account on money; recording (record-receipt.ts) never does.
+ *      Every publish result (delivered / queued / not sent) is logged as an ops event: type + status + ids only;
  *   5. the first matched Advance of a Reserved allotment starts the hold 30 days out (Asia/Kolkata): Hold_Until =
  *      match day + 30, written only when empty or earlier — never shortening a hold (PROVISIONAL, Jev 0.56).
  *
@@ -61,7 +67,8 @@ const STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not found", 
 const EVENT_KIND: Readonly<Record<string, "advance" | "balance" | "full">> = Object.freeze({ Advance: "advance", Part: "balance", Balance: "balance", Full: "full" });
 const RECEIPT_FIELDS = Object.freeze(["Allotment", "Kind", "Amount", "Match_State", "Matched_By", "Created_By", "Modified_Time"]);
 const ALLOTMENT_FIELDS = Object.freeze(["Allocation_Status", "Customer", "Hold_Until", "Supplementary_Verified_At", "Modified_Time"]);
-const CONTACT_FIELDS = Object.freeze(["ARL_ID", "App_Access", "Modified_Time"]);
+const CONTACT_FIELDS = Object.freeze(["ARL_ID", "App_Access", "App_Account_Mark", "Modified_Time"]);
+const MARK_FIELDS: ReadonlySet<string> = new Set(["App_Account_Mark", "App_Mark_At"]);
 
 export type MatchRefusal =
   | "invalid-request" | "not-matcher" | "not-visible" | "is-claim" | "not-pending" | "same-hand" | "receipt-changed"
@@ -105,6 +112,8 @@ export interface MatchView {
   readonly firstMoney: boolean;
   readonly accountOpened: Published | null;
   readonly appAccess: Consequence<"opened-on-hold" | "already-set">;
+  /** App_Account_Mark on the first money: set Tentative here, already set, or left to Zoho (T01 formula refused the write). */
+  readonly appMark: Consequence<"tentative-set" | "already-set" | "left-to-zoho">;
   readonly hold: Consequence<{ readonly until: string; readonly written: boolean }>;
 }
 
@@ -223,6 +232,7 @@ export function createReceiptMatch(deps: MatchDependencies) {
     let investorId = "";
     let moneyConfirmed: Published | null = null, accountOpened: Published | null = null, firstMoney = false;
     let appAccess: MatchView["appAccess"] = { ok: true, value: null, code: null };
+    let appMark: MatchView["appMark"] = { ok: true, value: null, code: null };
     let hold: MatchView["hold"] = { ok: true, value: null, code: null };
     const fail = (code: string) => ({ ok: false, value: null, code }) as const;
 
@@ -232,11 +242,11 @@ export function createReceiptMatch(deps: MatchDependencies) {
     if (!allot || !investorId) {
       note(me, "match-consequences-unread", [t.id, t.allotmentId]);
       const skipped = fail("allotment-unread");
-      return view(t, investorId, paymentStatus, null, false, null, inbound ? skipped : appAccess, inbound ? skipped : hold, inbound);
+      return view(t, investorId, paymentStatus, null, false, null, inbound ? skipped : appAccess, inbound ? skipped : appMark, inbound ? skipped : hold, inbound);
     }
 
     if (inbound) {
-      moneyConfirmed = await safePublish({
+      moneyConfirmed = await safePublish([investorId, t.id], {
         event_id: factEventId(`money.confirmed:${t.id}`), type: "money.confirmed", schema_version: 1, occurred_at: istIso(t.matchedAt),
         actor: { kind: "user", zoho_user_id: t.matchedBy }, ids: { investor_contact_id: investorId },
         payload: { kind: EVENT_KIND[t.kind]!, amount: t.amount, at: istIso(t.matchedAt), matched_by: t.matchedBy, receipt_id: t.id },
@@ -247,56 +257,83 @@ export function createReceiptMatch(deps: MatchDependencies) {
       try { others = await otherMatched(cred, investorId, t.allotmentId, t.id, signal); } catch { others = null; }
       if (!others) {
         appAccess = fail("receipts-unread");
+        appMark = fail("receipts-unread");
         hold = fail("receipts-unread");
       } else {
         firstMoney = others.anywhere === 0;
-        if (firstMoney) ({ accountOpened, appAccess } = await openAccount(cred, investorId, t, signal));
+        if (firstMoney) ({ accountOpened, appAccess, appMark } = await openAccount(cred, investorId, t, signal));
         if (t.kind === "Advance" && others.advancesHere === 0 && allot.Allocation_Status === "Reserved") hold = await startHold(cred, allot, t, signal);
       }
     }
-    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, hold, inbound);
+    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound);
   }
 
   const view = (t: Target, investorId: string, paymentStatus: PaymentStatusReading | null, moneyConfirmed: Published | null, firstMoney: boolean,
-    accountOpened: Published | null, appAccess: MatchView["appAccess"], hold: MatchView["hold"], inbound: boolean): MatchView => Object.freeze({
+    accountOpened: Published | null, appAccess: MatchView["appAccess"], appMark: MatchView["appMark"], hold: MatchView["hold"], inbound: boolean): MatchView => Object.freeze({
     receiptId: t.id, state: "matched" as const, duplicate: t.duplicate, matchedBy: t.matchedBy, matchedAt: istIso(t.matchedAt),
     kind: t.kind, amountRupees: t.amount, link: Object.freeze({ allotmentId: t.allotmentId, investorId }),
     gate: inbound ? "opens-through-receipts" as const : "not-money" as const,
-    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, hold,
+    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold,
   });
 
-  async function safePublish(event: Record<string, unknown>): Promise<Published> {
+  /** Publish, and log the delivery result (type + status code + record ids — never the payload). */
+  async function safePublish(ids: readonly string[], event: Record<string, unknown>): Promise<Published> {
+    let r: Published;
+    try { r = await publish(event); } catch { r = { ok: false, reason: "unexpected" }; }
+    if (!r.ok) note("system", "event-not-sent", ids);
+    const st = r.ok ? (r.state && typeof r.state === "object" && typeof (r.state as { status?: unknown }).status === "string"
+      ? (r.state as { status: string }).status : "queued") : "not-sent";
     try {
-      const r = await publish(event);
-      if (!r.ok) note("system", "event-not-sent", []);
-      return r;
-    } catch { return { ok: false, reason: "unexpected" }; }
+      log.event?.({ at: now(), actor: { kind: "service", job: "contract-publish" }, action: "contract-publish", reason: `${String(event.type)}.${st}`.toLowerCase().replace(/[^a-z0-9.-]/g, "-"), recordIds: ids.filter(validId) });
+    } catch { /* logging never breaks a match */ }
+    return r;
   }
 
-  async function openAccount(cred: UserCredential, investorId: string, t: Target, signal?: AbortSignal) {
+  type Opened = { accountOpened: Published | null; appAccess: MatchView["appAccess"]; appMark: MatchView["appMark"] };
+  async function openAccount(cred: UserCredential, investorId: string, t: Target, signal?: AbortSignal): Promise<Opened> {
     let c: ZohoRecord | null = null;
     try { c = await read(cred, CONTACTS_MODULE, investorId, CONTACT_FIELDS, signal); } catch { c = null; }
-    if (!c) return { accountOpened: null, appAccess: { ok: false, value: null, code: "contact-unread" } as MatchView["appAccess"] };
+    const unread = { ok: false, value: null, code: "contact-unread" } as const;
+    if (!c) return { accountOpened: null, appAccess: unread, appMark: unread };
     const code = typeof c.ARL_ID === "string" && ARL_CODE.test(c.ARL_ID) ? c.ARL_ID : null;
     const accountOpened: Published = code
-      ? await safePublish({
+      ? await safePublish([investorId, t.id], {
         event_id: factEventId(`account.opened:${investorId}`), type: "account.opened", schema_version: 1, occurred_at: istIso(t.matchedAt),
         actor: { kind: "system" }, ids: { investor_contact_id: investorId, arl_code: code },
         payload: { arl_code: code, at: istIso(t.matchedAt), state: "tentative" }, origin: "console",
       })
       : { ok: false, reason: "no-arl-code" };
-    const access = c.App_Access;
-    if (access !== undefined && access !== null && access !== "") {
-      return { accountOpened, appAccess: { ok: true, value: "already-set", code: null } as MatchView["appAccess"] };
-    }
+    const empty = (v: unknown) => v === undefined || v === null || v === "";
+    const needAccess = empty(c.App_Access), needMark = empty(c.App_Account_Mark);
+    const setAlready = { ok: true, value: "already-set", code: null } as const;
+    if (!needAccess && !needMark) return { accountOpened, appAccess: setAlready, appMark: setAlready };
     const mt = typeof c.Modified_Time === "string" && ZDT.test(c.Modified_Time) ? c.Modified_Time : null;
-    if (!mt) return { accountOpened, appAccess: { ok: false, value: null, code: "contact-unread" } as MatchView["appAccess"] };
-    const w = await crm.update(cred, CONTACTS_MODULE, investorId, { App_Access: "Hold" }, { ifUnmodifiedSince: mt, signal });
+    if (!mt) return { accountOpened, appAccess: needAccess ? unread : setAlready, appMark: needMark ? unread : setAlready };
+    const fields: { [field: string]: string } = {};
+    if (needAccess) fields.App_Access = "Hold";
+    if (needMark) { fields.App_Account_Mark = "Tentative"; fields.App_Mark_At = istIso(t.matchedAt); }
+    let w = await crm.update(cred, CONTACTS_MODULE, investorId, fields, { ifUnmodifiedSince: mt, signal });
+    let markLeft = false;
+    if (!w.ok && needMark && w.error.kind === "invalid-data") {
+      const e = w.error;
+      const names = [e.field, ...(e.records ?? []).map((r) => r.field)].filter((x): x is string => typeof x === "string");
+      if (names.some((f) => MARK_FIELDS.has(f))) {
+        markLeft = true;
+        note(cred.userId, "app-mark-left-to-zoho", [investorId, t.id]);
+        if (needAccess) w = await crm.update(cred, CONTACTS_MODULE, investorId, { App_Access: "Hold" }, { ifUnmodifiedSince: mt, signal });
+      }
+    }
+    if (markLeft && !needAccess) return { accountOpened, appAccess: setAlready, appMark: { ok: true, value: "left-to-zoho", code: null } };
     if (!w.ok) {
       note(cred.userId, "app-access-not-opened", [investorId, t.id]);
-      return { accountOpened, appAccess: { ok: false, value: null, code: w.error.kind === "conflict" ? "contact-changed" : w.error.kind } as MatchView["appAccess"] };
+      const failed = { ok: false, value: null, code: w.error.kind === "conflict" ? "contact-changed" : w.error.kind } as const;
+      return { accountOpened, appAccess: needAccess ? failed : setAlready, appMark: markLeft ? { ok: true, value: "left-to-zoho", code: null } : needMark ? failed : setAlready };
     }
-    return { accountOpened, appAccess: { ok: true, value: "opened-on-hold", code: null } as MatchView["appAccess"] };
+    return {
+      accountOpened,
+      appAccess: needAccess ? { ok: true, value: "opened-on-hold", code: null } : setAlready,
+      appMark: markLeft ? { ok: true, value: "left-to-zoho", code: null } : needMark ? { ok: true, value: "tentative-set", code: null } : setAlready,
+    };
   }
 
   async function startHold(cred: UserCredential, allot: ZohoRecord, t: Target, signal?: AbortSignal): Promise<MatchView["hold"]> {

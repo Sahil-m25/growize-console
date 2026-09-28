@@ -1,0 +1,18 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "INVALID_DATA",
+        "details": {
+          "api_name": "App_Account_Mark"
+        },
+        "message": "App Account Mark is a formula field and cannot be updated",
+        "status": "error"
+      }
+    ]
+  }
+}

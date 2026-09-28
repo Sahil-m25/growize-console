@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994012",
+        "ARL_ID": "ARL-INV-0212",
+        "App_Access": "Hold",
+        "Modified_Time": "2026-09-01T12:00:00+05:30",
+        "Email": "fixture.investor@example.invalid",
+        "App_Account_Mark": "Tentative"
+      }
+    ]
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740995101",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "UTR": "HDFCN52026092200001",
+        "Received_On": "2026-09-22T00:00:00+05:30",
+        "Match_State": "Matched",
+        "Matched_By": {
+          "id": "9007199254740994090",
+          "name": "Synthetic Head of Finance"
+        },
+        "Created_By": {
+          "id": "9007199254740994091",
+          "name": "Synthetic Recorder"
+        }
+      },
+      {
+        "id": "9007199254740995102",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 2250000,
+        "UTR": "ICICR52026092300000002",
+        "Received_On": "2026-09-23T00:00:00+05:30",
+        "Match_State": "Pending",
+        "Matched_By": null,
+        "Created_By": {
+          "id": "9007199254740994091",
+          "name": "Synthetic Recorder"
+        }
+      },
+      {
+        "id": "9007199254740995103",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "UTR": "526712345678",
+        "Received_On": "2026-09-23T00:00:00+05:30",
+        "Match_State": "Pending",
+        "Matched_By": null,
+        "Created_By": {
+          "id": "9007199254740994090",
+          "name": "Synthetic Recorder"
+        }
+      },
+      {
+        "id": "9007199254740995104",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "UTR": "HDFCN52026092400004",
+        "Received_On": "2026-09-24T00:00:00+05:30",
+        "Match_State": "Pending",
+        "Matched_By": null,
+        "Created_By": {
+          "id": "9007199254740994091",
+          "name": "Synthetic Recorder"
+        }
+      },
+      {
+        "id": "9007199254740995107",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Refund",
+        "Amount": 50000,
+        "UTR": "hdfcn52026092600007",
+        "Received_On": "2026-09-26T00:00:00+05:30",
+        "Match_State": "Pending",
+        "Matched_By": null,
+        "Created_By": {
+          "id": "9007199254740994091",
+          "name": "Synthetic Recorder"
+        }
+      }
+    ],
+    "info": {
+      "more_records": false,
+      "count": 5
+    }
+  }
+}

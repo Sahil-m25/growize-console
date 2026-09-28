@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740995200",
+        "Name": "Statement 2026-W39 (22 Sep\u201326 Sep)",
+        "Period_From": "2026-09-22",
+        "Period_To": "2026-09-26",
+        "Lines": 7,
+        "Lines_Matched": 4,
+        "Lines_Needs_Owner": 3,
+        "Created_Time": "2026-09-28T10:00:00+05:30"
+      }
+    ],
+    "info": {
+      "more_records": false,
+      "count": 1
+    }
+  }
+}
