@@ -1,0 +1,18 @@
+{
+  "status": 412,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "ALREADY_MODIFIED",
+        "details": {
+          "id": "9007199254740993001"
+        },
+        "message": "Synthetic Fixture Investor record was modified",
+        "status": "error"
+      }
+    ]
+  }
+}

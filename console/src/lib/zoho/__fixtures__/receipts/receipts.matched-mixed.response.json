@@ -1,0 +1,61 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740993021",
+        "Allotment": {
+          "id": "9007199254740993001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "Match_State": "Matched",
+        "UTR": "SYNTHADV001",
+        "Fixture_Email": "fixture.investor@example.invalid"
+      },
+      {
+        "id": "9007199254740993022",
+        "Allotment": {
+          "id": "9007199254740993001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 500000,
+        "Match_State": "Pending",
+        "UTR": "SYNTHPRT002",
+        "Fixture_Email": "fixture.investor@example.invalid"
+      },
+      {
+        "id": "9007199254740993023",
+        "Allotment": {
+          "id": "9007199254740993001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 100000,
+        "Match_State": "Reversed",
+        "UTR": "SYNTHPRT003",
+        "Fixture_Email": "fixture.investor@example.invalid"
+      },
+      {
+        "id": "9007199254740993024",
+        "Allotment": {
+          "id": "9007199254740993001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Refund",
+        "Amount": 50000,
+        "Match_State": "Matched",
+        "UTR": "SYNTHREF004",
+        "Fixture_Email": "fixture.investor@example.invalid"
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}
