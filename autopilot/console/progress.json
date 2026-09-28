@@ -1263,16 +1263,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "421f8d9"
    ],
-   "at": "2026-09-27T22:56:14.511Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T09:16:22.255Z",
+   "note": "Shelf read built and tested; waiting on the block mapping (T01) and the Farms page.",
    "notes": 4
   },
   "M11-S02": {
@@ -1489,16 +1491,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "421f8d9"
    ],
-   "at": "2026-09-27T22:56:19.327Z",
-   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3",
+   "at": "2026-09-28T09:16:22.452Z",
+   "note": "Events read built; waiting on the Leads sharing decision for counts and the Events pages.",
    "notes": 3
   },
   "M14-S02": {
@@ -1595,16 +1599,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "421f8d9"
    ],
-   "at": "2026-09-27T22:56:21.515Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
+   "at": "2026-09-28T09:16:22.620Z",
+   "note": "Cases read built; waiting on Cases fields (T01) and the Tickets page.",
    "notes": 4
   },
   "M13-S03": {
@@ -3195,6 +3201,21 @@
   "M08-S05-T01": {
    "status": "done",
    "at": "2026-09-28T09:16:10.496Z",
+   "phase": "zoho"
+  },
+  "M11-S01-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:16:22.255Z",
+   "phase": "zoho"
+  },
+  "M14-S01-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:16:22.452Z",
+   "phase": "zoho"
+  },
+  "M13-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:16:22.620Z",
    "phase": "zoho"
   }
  },
@@ -5682,6 +5703,30 @@
    "status": "waiting",
    "hours": 5,
    "note": "Cover windows built; waiting on the service grant, roster reader, sweep schedule and sandbox TC-E08-025."
+  },
+  {
+   "at": "2026-09-28T09:16:22.255Z",
+   "story": "M11-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Shelf read built and tested; waiting on the block mapping (T01) and the Farms page."
+  },
+  {
+   "at": "2026-09-28T09:16:22.452Z",
+   "story": "M14-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 1.5,
+   "note": "Events read built; waiting on the Leads sharing decision for counts and the Events pages."
+  },
+  {
+   "at": "2026-09-28T09:16:22.620Z",
+   "story": "M13-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Cases read built; waiting on Cases fields (T01) and the Tickets page."
   }
  ],
  "last_regression_round": 0,
