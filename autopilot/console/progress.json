@@ -1969,17 +1969,44 @@
   "M06-S05": {
    "status": "pending",
    "attempts": 0,
-   "notes": 3
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:10.105Z",
+   "note": "Search wall built and tested; waiting on the sandbox proof with the restricted IR user.",
+   "commits": [
+    "399b469"
+   ]
   },
   "M08-S02": {
    "status": "pending",
    "attempts": 0,
-   "notes": 4
+   "notes": 4,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:10.290Z",
+   "note": "Gates built on Receipts and allotment stamps; waiting on field-register decision, staging TC-E08-010 and the front end.",
+   "commits": [
+    "399b469"
+   ]
   },
   "M08-S05": {
    "status": "pending",
    "attempts": 0,
-   "notes": 5
+   "notes": 5,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:10.496Z",
+   "note": "Cover windows built; waiting on the service grant, roster reader, sweep schedule and sandbox TC-E08-025.",
+   "commits": [
+    "399b469"
+   ]
   },
   "M13-S01": {
    "status": "pending",
@@ -3148,6 +3175,26 @@
   "M10-S21-T02": {
    "status": "done",
    "at": "2026-09-28T09:15:57.540Z",
+   "phase": "zoho"
+  },
+  "M06-S05-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:10.105Z",
+   "phase": "zoho"
+  },
+  "M06-S05-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:16:10.105Z",
+   "phase": "zoho"
+  },
+  "M08-S02-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:10.290Z",
+   "phase": "zoho"
+  },
+  "M08-S05-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:10.496Z",
    "phase": "zoho"
   }
  },
@@ -5611,6 +5658,30 @@
    "status": "waiting",
    "hours": 4,
    "note": "Unlock/lock built and tested; waiting on App_Access history tracking, front-end card wiring and the app's staging webhook (MA1)."
+  },
+  {
+   "at": "2026-09-28T09:16:10.105Z",
+   "story": "M06-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2.5,
+   "note": "Search wall built and tested; waiting on the sandbox proof with the restricted IR user."
+  },
+  {
+   "at": "2026-09-28T09:16:10.290Z",
+   "story": "M08-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Gates built on Receipts and allotment stamps; waiting on field-register decision, staging TC-E08-010 and the front end."
+  },
+  {
+   "at": "2026-09-28T09:16:10.496Z",
+   "story": "M08-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Cover windows built; waiting on the service grant, roster reader, sweep schedule and sandbox TC-E08-025."
   }
  ],
  "last_regression_round": 0,
