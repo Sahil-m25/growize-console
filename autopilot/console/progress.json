@@ -711,7 +711,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:00.364Z",
-   "note": "Jev run 28 Sep: app 2/10 vs prototype 2/10"
+   "note": "Jev run 28 Sep: app 2/10 vs prototype 2/10",
+   "notes": 5
   },
   "M01-S03": {
    "status": "pending",
@@ -759,7 +760,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:01.564Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2",
+   "notes": 1
   },
   "M03-S02": {
    "status": "pending",
@@ -939,7 +941,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:07.596Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
+   "notes": 5
   },
   "M09-S01": {
    "status": "pending",
@@ -954,7 +957,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:07.897Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
+   "notes": 2
   },
   "M09-S02": {
    "status": "pending",
@@ -1872,6 +1876,35 @@
    "commits": [
     "27b8b83"
    ]
+  },
+  "M01-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T07:43:52.510Z",
+   "note": "Sinks built and tested; waiting on the staging host LOG_DIR (AP4) and TC-E01-010/011 on staging.",
+   "commits": [
+    "5a4eb31"
+   ]
+  },
+  "M18-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 2
+  },
+  "M03-S09": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 3
+  },
+  "M19-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 2
   }
  },
  "subtasks": {
@@ -2925,6 +2958,11 @@
   "M19-S02-T03": {
    "status": "done",
    "at": "2026-09-28T06:47:15.220Z",
+   "phase": "zoho"
+  },
+  "M01-S04-T01": {
+   "status": "done",
+   "at": "2026-09-28T07:43:52.510Z",
    "phase": "zoho"
   }
  },
@@ -5268,6 +5306,14 @@
    "status": "waiting",
    "hours": 9,
    "note": "Scripts built; T03 proven on a workbook copy; T01/T02 wait on sandbox users per seat (M02-S10) and staging seeding (M19-S03)."
+  },
+  {
+   "at": "2026-09-28T07:43:52.510Z",
+   "story": "M01-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Sinks built and tested; waiting on the staging host LOG_DIR (AP4) and TC-E01-010/011 on staging."
   }
  ],
  "last_regression_round": 0,
