@@ -702,16 +702,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "1690a59"
    ],
-   "at": "2026-09-27T22:56:00.364Z",
-   "note": "Jev run 28 Sep: app 2/10 vs prototype 2/10",
+   "at": "2026-09-28T07:44:02.938Z",
+   "note": "Guard built and tested; waiting on the front-end template.tsx wiring and sandbox proof (M02-S10).",
    "notes": 5
   },
   "M01-S03": {
@@ -2982,6 +2984,16 @@
   "M18-S02-T03": {
    "status": "done",
    "at": "2026-09-28T07:43:57.578Z",
+   "phase": "zoho"
+  },
+  "M01-S01-T04": {
+   "status": "done",
+   "at": "2026-09-28T07:44:02.938Z",
+   "phase": "zoho"
+  },
+  "M01-S01-T06": {
+   "status": "done",
+   "at": "2026-09-28T07:44:02.938Z",
    "phase": "zoho"
   }
  },
@@ -5341,6 +5353,14 @@
    "status": "waiting",
    "hours": 6,
    "note": "Log scrub test (T03) passes; leak matrix script (T02) built, waiting on staging users per role; T04 is Sahil's."
+  },
+  {
+   "at": "2026-09-28T07:44:02.938Z",
+   "story": "M01-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Guard built and tested; waiting on the front-end template.tsx wiring and sandbox proof (M02-S10)."
   }
  ],
  "last_regression_round": 0,
