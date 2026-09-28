@@ -717,16 +717,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "3d38b79"
    ],
-   "at": "2026-09-27T22:56:00.664Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T06:46:49.508Z",
+   "note": "Live source built and tested on fixtures; waiting on sandbox proof (T06/T07), front-end freshness states (T04) and a Zoho Users reader for PEOPLE.",
    "notes": 6
   },
   "M01-S07": {
@@ -2872,6 +2874,26 @@
   "M03-S01-T02": {
    "status": "done",
    "at": "2026-09-28T06:46:36.621Z",
+   "phase": "zoho"
+  },
+  "M01-S03-T01": {
+   "status": "done",
+   "at": "2026-09-28T06:46:49.508Z",
+   "phase": "zoho"
+  },
+  "M01-S03-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:46:49.508Z",
+   "phase": "zoho"
+  },
+  "M01-S03-T03": {
+   "status": "done",
+   "at": "2026-09-28T06:46:49.508Z",
+   "phase": "zoho"
+  },
+  "M01-S03-T05": {
+   "status": "done",
+   "at": "2026-09-28T06:46:49.508Z",
    "phase": "zoho"
   }
  },
@@ -5191,6 +5213,14 @@
    "status": "waiting",
    "hours": 4,
    "note": "Admission built on the shared policy and tested for every seat; waiting on sandbox admission matrix (T03) and owner decisions on Sahil and Pradeep."
+  },
+  {
+   "at": "2026-09-28T06:46:49.508Z",
+   "story": "M01-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 15.5,
+   "note": "Live source built and tested on fixtures; waiting on sandbox proof (T06/T07), front-end freshness states (T04) and a Zoho Users reader for PEOPLE."
   }
  ],
  "last_regression_round": 0,
