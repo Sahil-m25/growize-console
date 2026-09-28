@@ -669,16 +669,19 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "62b38ea"
+    "62b38ea",
+    "181979c"
    ],
-   "at": "2026-09-27T13:42:40.896Z",
-   "note": "sign-in screen (Continue with Zoho stub + fixture people), session, data interface, empty by default; app = prototype on M03-S01 (1/5 each; 3 fact changes proposed)"
+   "at": "2026-09-28T06:46:36.621Z",
+   "note": "Admission built on the shared policy and tested for every seat; waiting on sandbox admission matrix (T03) and owner decisions on Sahil and Pradeep.",
+   "notes": 5
   },
   "M19-S01": {
    "status": "pending",
@@ -723,7 +726,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:00.664Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "notes": 6
   },
   "M01-S07": {
    "status": "pending",
@@ -1221,7 +1225,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:14.198Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "notes": 3
   },
   "M11-S01": {
    "status": "pending",
@@ -1849,6 +1854,11 @@
    "commits": [
     "58ae166"
    ]
+  },
+  "M19-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 5
   }
  },
  "subtasks": {
@@ -2852,6 +2862,16 @@
   "M18-S12-T01": {
    "status": "done",
    "at": "2026-09-28T06:14:46.398Z",
+   "phase": "zoho"
+  },
+  "M03-S01-T01": {
+   "status": "done",
+   "at": "2026-09-28T06:46:36.621Z",
+   "phase": "zoho"
+  },
+  "M03-S01-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:46:36.621Z",
    "phase": "zoho"
   }
  },
@@ -5163,6 +5183,14 @@
    "status": "waiting",
    "hours": 5,
    "note": "Migration script (T01) shared with M10-S01 and tested; waiting on Sahil's sandbox dry run (T02) and legacy column confirmation."
+  },
+  {
+   "at": "2026-09-28T06:46:36.621Z",
+   "story": "M03-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Admission built on the shared policy and tested for every seat; waiting on sandbox admission matrix (T03) and owner decisions on Sahil and Pradeep."
   }
  ],
  "last_regression_round": 0,
