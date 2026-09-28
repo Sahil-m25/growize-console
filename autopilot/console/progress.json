@@ -1894,7 +1894,16 @@
   "M18-S02": {
    "status": "pending",
    "attempts": 0,
-   "notes": 2
+   "notes": 2,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T07:43:57.578Z",
+   "note": "Log scrub test (T03) passes; leak matrix script (T02) built, waiting on staging users per role; T04 is Sahil's.",
+   "commits": [
+    "5a4eb31"
+   ]
   },
   "M03-S09": {
    "status": "pending",
@@ -2963,6 +2972,16 @@
   "M01-S04-T01": {
    "status": "done",
    "at": "2026-09-28T07:43:52.510Z",
+   "phase": "zoho"
+  },
+  "M18-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T07:43:57.578Z",
+   "phase": "zoho"
+  },
+  "M18-S02-T03": {
+   "status": "done",
+   "at": "2026-09-28T07:43:57.578Z",
    "phase": "zoho"
   }
  },
@@ -5314,6 +5333,14 @@
    "status": "waiting",
    "hours": 3,
    "note": "Sinks built and tested; waiting on the staging host LOG_DIR (AP4) and TC-E01-010/011 on staging."
+  },
+  {
+   "at": "2026-09-28T07:43:57.578Z",
+   "story": "M18-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 6,
+   "note": "Log scrub test (T03) passes; leak matrix script (T02) built, waiting on staging users per role; T04 is Sahil's."
   }
  ],
  "last_regression_round": 0,
