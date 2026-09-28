@@ -2260,7 +2260,16 @@
   "M18-S01": {
    "status": "pending",
    "attempts": 0,
-   "notes": 3
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T13:47:00.608Z",
+   "note": "Harness and tuning built; waiting on a staging load run and real mail.",
+   "commits": [
+    "9fa00b5"
+   ]
   }
  },
  "subtasks": {
@@ -3749,6 +3758,21 @@
   "M16-S09-T01": {
    "status": "done",
    "at": "2026-09-28T13:46:38.448Z",
+   "phase": "zoho"
+  },
+  "M18-S01-T01": {
+   "status": "done",
+   "at": "2026-09-28T13:47:00.608Z",
+   "phase": "zoho"
+  },
+  "M18-S01-T02": {
+   "status": "done",
+   "at": "2026-09-28T13:47:00.608Z",
+   "phase": "zoho"
+  },
+  "M18-S01-T03": {
+   "status": "done",
+   "at": "2026-09-28T13:47:00.608Z",
    "phase": "zoho"
   }
  },
@@ -6644,6 +6668,14 @@
    "status": "waiting",
    "hours": 3,
    "note": "Server refusal built and tested; waiting on the screens, the Sahil decision and profile permissions."
+  },
+  {
+   "at": "2026-09-28T13:47:00.608Z",
+   "story": "M18-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 7,
+   "note": "Harness and tuning built; waiting on a staging load run and real mail."
   }
  ],
  "last_regression_round": 0,
