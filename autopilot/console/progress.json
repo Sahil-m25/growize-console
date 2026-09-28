@@ -1713,16 +1713,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "89793a0"
    ],
-   "at": "2026-09-27T22:56:23.401Z",
-   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4",
+   "at": "2026-09-28T10:53:35.849Z",
+   "note": "Reader and route built and tested; waiting on the Logs view, the runbook and staging cases.",
    "notes": 5
   },
   "M17-S01": {
@@ -1870,32 +1872,36 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "89793a0"
    ],
-   "at": "2026-09-27T22:56:27.467Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T10:53:36.206Z",
+   "note": "Preview read built and tested; waiting on the front-end wiring and Investor_Payouts mapping.",
    "notes": 3
   },
   "M10-S23": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "89793a0"
    ],
-   "at": "2026-09-27T22:56:27.777Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T10:53:36.543Z",
+   "note": "Test-link gate built and tested; waiting on the investor app endpoint (MA1) and the drawer.",
    "notes": 4
   },
   "M01-S02": {
@@ -3419,6 +3425,21 @@
   "M13-S06-T02": {
    "status": "done",
    "at": "2026-09-28T10:53:14.856Z",
+   "phase": "zoho"
+  },
+  "M15-S05-T01": {
+   "status": "done",
+   "at": "2026-09-28T10:53:35.849Z",
+   "phase": "zoho"
+  },
+  "M10-S22-T02": {
+   "status": "done",
+   "at": "2026-09-28T10:53:36.206Z",
+   "phase": "zoho"
+  },
+  "M10-S23-T02": {
+   "status": "done",
+   "at": "2026-09-28T10:53:36.543Z",
    "phase": "zoho"
   }
  },
@@ -6066,6 +6087,30 @@
    "status": "waiting",
    "hours": 4,
    "note": "Publish built and tested; waiting on Investor_Updates picklist/field changes, the AM custom function and the page."
+  },
+  {
+   "at": "2026-09-28T10:53:35.849Z",
+   "story": "M15-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Reader and route built and tested; waiting on the Logs view, the runbook and staging cases."
+  },
+  {
+   "at": "2026-09-28T10:53:36.206Z",
+   "story": "M10-S22",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Preview read built and tested; waiting on the front-end wiring and Investor_Payouts mapping."
+  },
+  {
+   "at": "2026-09-28T10:53:36.543Z",
+   "story": "M10-S23",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Test-link gate built and tested; waiting on the investor app endpoint (MA1) and the drawer."
   }
  ],
  "last_regression_round": 0,
