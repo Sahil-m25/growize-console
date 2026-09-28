@@ -1524,32 +1524,36 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "77f1666"
    ],
-   "at": "2026-09-27T22:56:19.680Z",
-   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5",
+   "at": "2026-09-28T10:52:53.843Z",
+   "note": "Event writes built and tested; waiting on the staff field direction on the sandbox, a roster reader and the drawer.",
    "notes": 4
   },
   "M14-S03": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "77f1666"
    ],
-   "at": "2026-09-27T22:56:19.984Z",
-   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5",
+   "at": "2026-09-28T10:52:54.112Z",
+   "note": "Loader built and tested; waiting on the sheet source, Load_State setup, the Sahil load-right decision and the sheet card.",
    "notes": 6
   },
   "M10-S08": {
@@ -3391,6 +3395,16 @@
   "M08-S03-T04": {
    "status": "done",
    "at": "2026-09-28T10:52:35.136Z",
+   "phase": "zoho"
+  },
+  "M14-S02-T01": {
+   "status": "done",
+   "at": "2026-09-28T10:52:53.843Z",
+   "phase": "zoho"
+  },
+  "M14-S03-T01": {
+   "status": "done",
+   "at": "2026-09-28T10:52:54.112Z",
    "phase": "zoho"
   }
  },
@@ -6006,6 +6020,22 @@
    "status": "waiting",
    "hours": 8,
    "note": "Claim and receipt writes built and tested; waiting on Receipts Idempotency_Key, secrets, the drawers and sandbox/UAT."
+  },
+  {
+   "at": "2026-09-28T10:52:53.843Z",
+   "story": "M14-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "Event writes built and tested; waiting on the staff field direction on the sandbox, a roster reader and the drawer."
+  },
+  {
+   "at": "2026-09-28T10:52:54.112Z",
+   "story": "M14-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Loader built and tested; waiting on the sheet source, Load_State setup, the Sahil load-right decision and the sheet card."
   }
  ],
  "last_regression_round": 0,
