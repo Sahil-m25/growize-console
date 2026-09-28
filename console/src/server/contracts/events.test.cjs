@@ -111,7 +111,7 @@ test('request.raised becomes one Case on the Contact, with the provider-callback
   assert.equal(validateEvent(schemas, e).ok, true);
   const res = await requestToCase(e, { crm, credential: cred, seen: store, contactIdPrefix: '9007199254' });
   assert.deepEqual(res, { ok: true, caseId: '9007199254740999100' });
-  assert.deepEqual(inserts[0].rows[0].Contact_Name, { id: '9007199254740994101' });
+  assert.deepEqual(inserts[0].rows[0].Related_To, { id: '9007199254740994101' });
   assert.deepEqual(await requestToCase(e, { crm, credential: cred, seen: store, contactIdPrefix: '9007199254' }), { ok: true, caseId: null });
   assert.equal(inserts.length, 1, 'once per event id');
   const other = serviceCredential('audit-archive', { access_token: 'synthetic-service-2', api_domain: 'https://www.zohoapis.in', expires_in: 3600 }, NOW);

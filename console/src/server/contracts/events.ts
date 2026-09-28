@@ -169,7 +169,9 @@ export async function requestToCase(event: Record<string, unknown>, deps: {
   if (typeof contact !== "string" || !/^\d{15,22}$/.test(contact) || !contact.startsWith(deps.contactIdPrefix)) return { ok: false, reason: "no-contact" };
   const r = await deps.crm.insert(deps.credential, "Cases", [{
     Subject: `App request: ${p.kind.replace(/_/g, " ")}`.slice(0, 120),
-    Contact_Name: { id: contact }, Origin: "Web", Status: "New",
+    // The org's Cases name the investor Related_To and the origin Case_Origin (getFields, 28 Sep 2026);
+    // Contact_Name / Origin do not exist there. Web is the app until an "App" origin value exists (M13-S02 GAP).
+    Related_To: { id: contact }, Case_Origin: "Web", Status: "New",
     Description: `From the investor app, request ${p.app_request_id} (event ${id}).`,
   }]);
   const o = r.ok && r.value.length === 1 ? r.value[0] : null;

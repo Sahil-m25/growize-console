@@ -1,0 +1,65 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740994803",
+    "Name": "Block A — year-3 flowering ahead of schedule",
+    "Category": "Produce",
+    "Audience": "One farm",
+    "LLP": {
+     "id": "9007199254740996001",
+     "name": "Block A LLP"
+    },
+    "Body": "fixture text",
+    "Published_At": "2026-09-20T10:00:00+05:30",
+    "Published_By": {
+     "id": "9007199254740993002",
+     "name": "Harsha"
+    },
+    "Sent_Count": 4,
+    "Delivered_Count": null,
+    "Created_Time": "2026-09-20T10:00:00+05:30"
+   },
+   {
+    "id": "9007199254740994802",
+    "Name": "Quarterly statement — Jul to Sep",
+    "Category": "Statement",
+    "Audience": "All investors",
+    "LLP": null,
+    "Body": "fixture text",
+    "Published_At": "2026-09-05T10:00:00+05:30",
+    "Published_By": {
+     "id": "9007199254740993002",
+     "name": "Harsha"
+    },
+    "Sent_Count": 14,
+    "Delivered_Count": null,
+    "Created_Time": "2026-09-05T10:00:00+05:30"
+   },
+   {
+    "id": "9007199254740994804",
+    "Name": "FEMA declarations — NRI investors",
+    "Category": "Compliance",
+    "Audience": "Allotted only",
+    "LLP": null,
+    "Body": "fixture text",
+    "Published_At": "2026-08-20T10:00:00+05:30",
+    "Published_By": {
+     "id": "9007199254740993002",
+     "name": "Harsha"
+    },
+    "Sent_Count": 3,
+    "Delivered_Count": null,
+    "Created_Time": "2026-08-20T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 3,
+   "more_records": false
+  }
+ }
+}

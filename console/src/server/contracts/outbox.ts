@@ -101,6 +101,13 @@ export const farmProgress = (a: { contactId: string; project: string; phase: str
   newEvent("farm.progress", { actor: { kind: "system" }, ids: { investor_contact_id: a.contactId },
     payload: { project: a.project, phase: a.phase, ...(a.note ? { note: a.note } : {}), at: istIso(a.at ?? clock()) }, occurredAt: a.at }, clock);
 
+/** An investor update for one investor in the resolved segment (M13-S06). `text` is exactly what the console shows. */
+export const updatePublished = (a: {
+  updateId: string; contactId: string; headline: string; kind: "Produce" | "Statement" | "Compliance" | "Notice"; body: string; byUserId: string; at: number;
+}, clock: () => number = Date.now) =>
+  newEvent("update.published", { actor: { kind: "user", zoho_user_id: a.byUserId }, ids: { investor_contact_id: a.contactId },
+    payload: { update_id: a.updateId, headline: a.headline, kind: a.kind, body: a.body, published_at: istIso(a.at), by: a.byUserId }, occurredAt: a.at }, clock);
+
 /* ---- the outbox ----------------------------------------------------------------------------------- */
 
 const RECORD_ID = /^\d{15,22}$/;

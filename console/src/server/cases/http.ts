@@ -58,3 +58,38 @@ export function failureResponse(r: { kind: "refused"; reason: string } | { kind:
   }
   return Response.json({ error: "Zoho is not answering. Try again.", code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
 }
+
+/* ---- the write half (M13-S03-T02, M13-S06-T02) ---- */
+
+const WRITE_STATUS: Readonly<Record<string, number>> = Object.freeze({
+  "read-only": 403, "not-yours": 403, "bank-seat": 403, "cannot-assign": 403, "no-book": 403, "kind-not-yours": 403,
+  "not-found": 404, "invalid-request": 400, "not-in-book": 422, "identity-in-reply": 422, "identity-in-text": 422,
+  "audience-not-in-zoho": 422, "empty-segment": 422, "segment-too-large": 422,
+});
+
+/** A write's refusal, conflict or source failure as a response: the in-page message and a short code, never a Zoho body. */
+export function writeFailure(r:
+  | { kind: "refused"; reason: string; message: string }
+  | { kind: "conflict"; recordId: string | null; reason: string }
+  | { kind: "source-error"; errorKind: string; retryable: boolean }): Response {
+  if (r.kind === "refused") return Response.json({ error: r.message, code: r.reason }, { status: WRITE_STATUS[r.reason] ?? 422, headers: NO_STORE });
+  if (r.kind === "conflict") return Response.json({ error: r.reason, code: "changed", recordId: r.recordId }, { status: 409, headers: NO_STORE });
+  return Response.json({ error: "Zoho is not answering. Nothing was changed that you cannot see; try again.", code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
+}
+
+export const MAX_WRITE_BODY = 64 * 1024;
+/** A JSON object body, or {} (the writers refuse what is missing). */
+export async function jsonBody(req: Request, max = MAX_WRITE_BODY): Promise<Record<string, unknown>> {
+  const raw = await req.text().catch(() => "");
+  if (!raw || raw.length > max) return {};
+  try { const p: unknown = JSON.parse(raw); return p && typeof p === "object" && !Array.isArray(p) ? (p as Record<string, unknown>) : {}; } catch { return {}; }
+}
+
+/** The contract push (server/contracts/runtime publishToInvestorApp), loaded only when a write needs it. */
+export async function investorAppPush(): Promise<(event: Record<string, unknown>) => Promise<{ ok: boolean; eventId?: string; state?: { label: string; status: string } }>> {
+  const { publishToInvestorApp } = await import("../contracts/runtime");
+  return async (e) => {
+    const r = await publishToInvestorApp(e);
+    return r.ok ? { ok: true, eventId: r.eventId, state: { label: r.state.label, status: r.state.status } } : { ok: false };
+  };
+}

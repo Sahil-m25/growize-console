@@ -57,4 +57,25 @@ async function makeRig(load, route) {
   return { crm, cache, events, sink, queries, cred };
 }
 
-module.exports = { compile, makeRig, recorded, P, NOW };
+
+/** As makeRig, for writers: `route({ method, path, body, query, headers })` → [dir, name] | response.
+ *  Every call is kept in `calls` (method, path, parsed body, headers) so a test can assert what was written. */
+async function makeHttpRig(load, route) {
+  const calls = [];
+  const rig = await makeRig(load, () => { throw new Error('unused'); });
+  const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
+  const { createZohoClient } = load('lib/zoho/client.js');
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(rig.sink), maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const u = new URL(String(url));
+      const body = init.body ? JSON.parse(init.body) : null;
+      const headers = Object.fromEntries(new Headers(init.headers || {}).entries());
+      const c = { method: init.method || 'GET', path: u.pathname.replace(/^\/crm\/v\d+/, ''), body, query: body && body.select_query, headers };
+      calls.push(c);
+      const r = route(c);
+      return toResponse(Array.isArray(r) ? recorded(r[0], r[1]) : r);
+    } });
+  return { ...rig, crm, calls, writes: () => calls.filter((c) => c.path !== '/coql') };
+}
+
+module.exports = { compile, makeRig, makeHttpRig, recorded, P, NOW };

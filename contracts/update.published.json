@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/update.published.json",
+  "title": "update.published",
+  "x-direction": "app ↔ investor",
+  "x-produced-by": "Finance or Account Management publishing an investor update (M13-S06)",
+  "x-consumed-by": "The app's updates feed",
+  "x-rule": "One event per investor in the segment resolved at publish; the text is exactly what the console shows. Never PAN, Aadhaar or bank numbers.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "update.published"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "update_id",
+        "headline",
+        "kind",
+        "body",
+        "published_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "update_id": {
+          "type": "string",
+          "pattern": "^[0-9]{15,22}$"
+        },
+        "headline": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "Produce",
+            "Statement",
+            "Compliance",
+            "Notice"
+          ]
+        },
+        "body": {
+          "type": "string"
+        },
+        "published_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "by": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

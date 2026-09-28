@@ -9,7 +9,7 @@ stamped by the sender on each delivery attempt — M13-S01, PROVISIONAL),
 `actor`, the identifier pair, and the typed payload. Deliveries are HTTPS POSTs signed with HMAC-SHA256
 over the body, with two active keys during rotation. A receiver that cannot verify the signature logs and drops.
 
-29 events.
+30 events.
 
 | Event | Direction | Produced by | Consumed by | Reverses |
 |---|---|---|---|---|
@@ -41,6 +41,7 @@ over the body, with two active keys during rotation. A receiver that cannot veri
 | `push.delivered` | outside → investor | FCM | Contact; update rows | — |
 | `request.executed` | app ↔ investor | Finance, Compliance or the owner | The app's request row and notifications | — |
 | `request.raised` | app ↔ investor | investor | Requests / Cases; the KAM's queue | — |
+| `update.published` | app ↔ investor | Finance or Account Management (M13-S06) | The app's updates feed; one event per investor in the segment | — |
 | `welcome.delivered` | investor → leads | The mailer | The console display | — |
 
 ## The three reversals

@@ -14,7 +14,7 @@
  * Field names are the org as found (read-only getFields, 28 Sep 2026): the investor is `Related_To`
  * (lookup → Contacts; the org has no Cases.Contact_Name), the category is `Ticket_Category`, Status is
  * New / Escalated / On Hold / Closed, Priority High / Medium / Low, Case_Origin Email / Phone / Web.
- * The register is read-only for every seat today (no write route exists); `readOnly` marks the viewer seats.
+ * Writes (open, waiting, close, reply) are ./writes.ts (M13-S03-T02); `readOnly` marks the viewer seats.
  */
 
 import type { CacheError, CacheFresh, CacheStale, ScopedCache } from "../../lib/zoho/cache";
