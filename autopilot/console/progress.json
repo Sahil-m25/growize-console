@@ -1701,16 +1701,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "19ec347"
    ],
-   "at": "2026-09-27T22:56:22.113Z",
-   "note": "Jev run 28 Sep: app 2/3 vs prototype 3/3; TC-IM08-007 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour",
+   "at": "2026-09-28T12:32:27.955Z",
+   "note": "Handover built; waiting on the Handed_By/Handed_At fields (register depends on them) and the ticket row.",
    "notes": 5
   },
   "M13-S06": {
@@ -2194,7 +2196,16 @@
   "M17-S02": {
    "status": "pending",
    "attempts": 0,
-   "notes": 4
+   "notes": 4,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T12:32:28.222Z",
+   "note": "Grant, seat and manager writes built; waiting on staging runs and the Teams step-up handling.",
+   "commits": [
+    "19ec347"
+   ]
   }
  },
  "subtasks": {
@@ -3608,6 +3619,16 @@
   "M12-S09-T01": {
    "status": "done",
    "at": "2026-09-28T12:32:08.251Z",
+   "phase": "zoho"
+  },
+  "M13-S04-T01": {
+   "status": "done",
+   "at": "2026-09-28T12:32:27.955Z",
+   "phase": "zoho"
+  },
+  "M17-S02-T01": {
+   "status": "done",
+   "at": "2026-09-28T12:32:28.222Z",
    "phase": "zoho"
   }
  },
@@ -6415,6 +6436,22 @@
    "status": "waiting",
    "hours": 3,
    "note": "Emails read built; waiting on the Emails tab and sandbox shape check."
+  },
+  {
+   "at": "2026-09-28T12:32:27.955Z",
+   "story": "M13-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Handover built; waiting on the Handed_By/Handed_At fields (register depends on them) and the ticket row."
+  },
+  {
+   "at": "2026-09-28T12:32:28.222Z",
+   "story": "M17-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "Grant, seat and manager writes built; waiting on staging runs and the Teams step-up handling."
   }
  ],
  "last_regression_round": 0,
