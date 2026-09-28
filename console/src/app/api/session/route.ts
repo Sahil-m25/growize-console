@@ -1,22 +1,41 @@
-/* /api/session — who is signed in (M03-S01-T04).
-   GET    → { session: {who, seat} | null }
+/* /api/session — who is signed in (M03-S01-T04, M01-S02).
+   GET    → { session: {who, seat} | null }. With Zoho sign-in configured the answer comes from the
+            server session (server/oauth): a session past its 12 hours or revoked comes back null with
+            `signedOut: "expired" | "revoked"`, and a refused sign-in comes back once with
+            `refusal: { code, message }` for the sign-in screen.
    POST   → { who } signs in as a listed person. Fixture mode only: outside it the only door is
-            Zoho OAuth (/api/auth/zoho, phase 2), and no person can be picked.
-   DELETE → signs out (clears the cookie). */
+            Zoho OAuth (/api/auth/zoho), and no person can be picked.
+   DELETE → signs out: revokes the Zoho refresh token, deletes the server session, clears the cookies. */
 import { cookies } from "next/headers";
 import { admitted } from "@/lib/data/admission";
 import { decodeSession, encodeSession, SESSION_COOKIE, SESSION_MAX_AGE_S } from "@/lib/data/session";
 import { fixtureSource } from "@/lib/data/source";
 import { currentLane, fixtureModeOn } from "@/lib/fixture-mode";
+import { userSessions, zohoSignInConfigured } from "@/server/oauth/runtime";
+import { NOTE_COOKIE, SID_COOKIE, SIGNIN_REFUSALS, type RefusalCode } from "@/server/oauth/user-session";
+import { withErrorCapture } from "@/server/ops/runtime";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+const NO_STORE = { "Cache-Control": "no-store" };
+
+async function get_() {
   const jar = await cookies();
-  return Response.json({ session: decodeSession(jar.get(SESSION_COOKIE)?.value) }, { headers: { "Cache-Control": "no-store" } });
+  if (!zohoSignInConfigured()) {
+    return Response.json({ session: decodeSession(jar.get(SESSION_COOKIE)?.value) }, { headers: NO_STORE });
+  }
+  const note = jar.get(NOTE_COOKIE)?.value;
+  if (note) jar.delete(NOTE_COOKIE);
+  const refusal = note && Object.prototype.hasOwnProperty.call(SIGNIN_REFUSALS, note)
+    ? { code: note, message: SIGNIN_REFUSALS[note as RefusalCode] } : undefined;
+  const r = await userSessions().current(jar.get(SID_COOKIE)?.value);
+  if (r.ok) return Response.json({ session: r.session }, { headers: NO_STORE });
+  jar.delete(SID_COOKIE);
+  jar.delete(SESSION_COOKIE);
+  return Response.json({ session: null, ...(r.why ? { signedOut: r.why } : {}), ...(refusal ? { refusal } : {}) }, { headers: NO_STORE });
 }
 
-export async function POST(req: Request) {
+async function post_(req: Request) {
   if (!fixtureModeOn()) return Response.json({ error: "Zoho sign-in is connected in phase 2." }, { status: 403 });
   const body: unknown = await req.json().catch(() => null);
   const who = body && typeof body === "object" ? (body as { who?: unknown }).who : null;
@@ -29,8 +48,14 @@ export async function POST(req: Request) {
   return Response.json({ session });
 }
 
-export async function DELETE() {
+async function delete_() {
   const jar = await cookies();
+  if (zohoSignInConfigured()) await userSessions().signOut(jar.get(SID_COOKIE)?.value, "chose");
+  jar.delete(SID_COOKIE);
   jar.delete(SESSION_COOKIE);
   return Response.json({ session: null });
 }
+
+export const GET = withErrorCapture(get_, "/api/session");
+export const POST = withErrorCapture(post_, "/api/session");
+export const DELETE = withErrorCapture(delete_, "/api/session");

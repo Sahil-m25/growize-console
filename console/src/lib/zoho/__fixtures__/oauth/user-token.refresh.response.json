@@ -1,0 +1,11 @@
+{
+  "note": "Synthetic refresh_token grant (M01-S02). A refresh grant carries no refresh_token.",
+  "status": 200,
+  "headers": { "content-type": "application/json;charset=UTF-8" },
+  "body": {
+    "access_token": "synthetic-user-access-token-refreshed",
+    "api_domain": "https://www.zohoapis.in",
+    "token_type": "Bearer",
+    "expires_in": "3600"
+  }
+}

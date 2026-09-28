@@ -280,6 +280,12 @@ export interface UserCredentialOptions {
   /** Sampled before the identity request, so network latency never extends token expiry. */
   readonly clock?: () => number;
   readonly signal?: AbortSignal;
+  /**
+   * Receives the decoded CurrentUser body once the token has identified itself, so the OAuth
+   * callback resolves the seat from this one request (M01-S02, seat.ts) instead of asking twice.
+   * Never called on failure; the body is never logged.
+   */
+  readonly onCurrentUser?: (body: unknown) => void;
 }
 
 function grantOf(tokenResponse: unknown, requireExpiry = false): Grant {
@@ -387,6 +393,7 @@ export async function userCredential(
   let creditsRemaining: number | null = null;
   let errorClass: ZohoFailureKind | null = null;
   let userId: string | null = null;
+  let currentUser: unknown = null;
   try {
     let response: FetchResponseLike;
     try {
@@ -441,6 +448,7 @@ export async function userCredential(
       throw new TypeError("Zoho CurrentUser verification failed.");
     }
     userId = candidate;
+    currentUser = body;
   } catch {
     throw new TypeError("Zoho CurrentUser verification failed.");
   } finally {
@@ -463,7 +471,9 @@ export async function userCredential(
     finish();
   }
   if (userId === null) throw new TypeError("Zoho CurrentUser verification failed.");
-  return mint({ kind: "user", userId }, grant, issuedAt) as UserCredential;
+  const credential = mint({ kind: "user", userId }, grant, issuedAt) as UserCredential;
+  options.onCurrentUser?.(currentUser);
+  return credential;
 }
 
 /** A background job's credential (D53's list). There is no job called "admin". */

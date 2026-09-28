@@ -1,0 +1,6 @@
+{
+  "note": "Synthetic answer to POST /oauth/v2/token/revoke?token=<refresh token>.",
+  "status": 200,
+  "headers": { "content-type": "application/json;charset=UTF-8" },
+  "body": { "status": "success" }
+}

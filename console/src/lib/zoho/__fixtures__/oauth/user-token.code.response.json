@@ -1,0 +1,12 @@
+{
+  "note": "Synthetic authorization_code grant (M01-S02). Shape per Zoho Accounts: expires_in may be a number; api_domain names the data centre. Never a live token.",
+  "status": 200,
+  "headers": { "content-type": "application/json;charset=UTF-8" },
+  "body": {
+    "access_token": "synthetic-user-access-token-never-live",
+    "refresh_token": "synthetic-user-refresh-token-never-live",
+    "api_domain": "https://www.zohoapis.in",
+    "token_type": "Bearer",
+    "expires_in": 3600
+  }
+}
