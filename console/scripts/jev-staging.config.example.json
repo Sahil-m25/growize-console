@@ -1,0 +1,17 @@
+{
+  "_readme": "Copy to jev-staging.config.json (or point JEV_STAGING_CONFIG at it). STAGING_URL overrides baseUrl. One Zoho sandbox user per seat (M02-S10). storageState paths are relative to sessionsDir. seeds maps a fixture name to its staging seed id and overrides `seeded` in the fixtures file; an empty string means 'no seed yet'.",
+  "baseUrl": "https://staging.example.invalid/",
+  "lane": "",
+  "sessionsDir": "~/.growize-jev/sessions",
+  "signIn": { "startPath": "/api/auth/zoho", "timeoutMs": 300000 },
+  "seats": {
+    "rohit":   { "login": "rohit.test@sandbox.example", "storageState": "rohit.json" },
+    "kavya":   { "login": "kavya.test@sandbox.example" },
+    "nikhil":  { "login": "nikhil.test@sandbox.example" },
+    "tasneem": { "login": "tasneem.test@sandbox.example" },
+    "sahil":   { "login": "sahil.test@sandbox.example" },
+    "harsha":  { "login": "harsha.test@sandbox.example" },
+    "jhalak":  { "login": "jhalak.test@sandbox.example" }
+  },
+  "seeds": {}
+}
