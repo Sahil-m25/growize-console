@@ -1910,7 +1910,16 @@
   "M03-S09": {
    "status": "pending",
    "attempts": 0,
-   "notes": 3
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T07:44:26.546Z",
+   "note": "Guard and record share built and tested; waiting on the handoff-share credential, a hand-off caller, Plane C scope-refused action and two sandbox IR users.",
+   "commits": [
+    "1f09598"
+   ]
   },
   "M19-S04": {
    "status": "pending",
@@ -2994,6 +3003,16 @@
   "M01-S01-T06": {
    "status": "done",
    "at": "2026-09-28T07:44:02.938Z",
+   "phase": "zoho"
+  },
+  "M03-S09-T02": {
+   "status": "done",
+   "at": "2026-09-28T07:44:26.546Z",
+   "phase": "zoho"
+  },
+  "M03-S09-T03": {
+   "status": "done",
+   "at": "2026-09-28T07:44:26.546Z",
    "phase": "zoho"
   }
  },
@@ -5361,6 +5380,14 @@
    "status": "waiting",
    "hours": 4,
    "note": "Guard built and tested; waiting on the front-end template.tsx wiring and sandbox proof (M02-S10)."
+  },
+  {
+   "at": "2026-09-28T07:44:26.546Z",
+   "story": "M03-S09",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 6,
+   "note": "Guard and record share built and tested; waiting on the handoff-share credential, a hand-off caller, Plane C scope-refused action and two sandbox IR users."
   }
  ],
  "last_regression_round": 0,
