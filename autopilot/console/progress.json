@@ -1809,7 +1809,16 @@
   "M01-S02": {
    "status": "pending",
    "attempts": 0,
-   "notes": 6
+   "notes": 6,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T06:14:32.628Z",
+   "note": "Server flow built and tested on fixtures; waiting on sandbox OAuth clients (M02-S10) for live proof and the front-end redirect/refusal wiring.",
+   "commits": [
+    "58e93b5"
+   ]
   },
   "M18-S04": {
    "status": "pending",
@@ -2802,6 +2811,21 @@
   "M18-S04-T02": {
    "status": "done",
    "at": "2026-09-28T06:14:16.778Z",
+   "phase": "zoho"
+  },
+  "M01-S02-T01": {
+   "status": "done",
+   "at": "2026-09-28T06:14:32.628Z",
+   "phase": "zoho"
+  },
+  "M01-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:14:32.628Z",
+   "phase": "zoho"
+  },
+  "M01-S02-T03": {
+   "status": "done",
+   "at": "2026-09-28T06:14:32.628Z",
    "phase": "zoho"
   }
  },
@@ -5089,6 +5113,14 @@
    "status": "waiting",
    "hours": 5,
    "note": "Server side built and tested on fixtures; waiting on mail provider (HUMAN), the front-end beacon call and sandbox proof T03 (M02-S10)."
+  },
+  {
+   "at": "2026-09-28T06:14:32.628Z",
+   "story": "M01-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 9,
+   "note": "Server flow built and tested on fixtures; waiting on sandbox OAuth clients (M02-S10) for live proof and the front-end redirect/refusal wiring."
   }
  ],
  "last_regression_round": 0,
