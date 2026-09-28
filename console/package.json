@@ -12,7 +12,8 @@
     "test": "vitest run --passWithNoTests && node scripts/run-tests.cjs",
     "build:local": "node -e \"Object.assign(process.env,{FIXTURE_MODE:'local',GZ_LOCAL_BUILD:'1'});require('child_process').spawn('npx next build',{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\"",
     "start:local": "node -e \"Object.assign(process.env,{FIXTURE_MODE:'local',GZ_LOCAL_BUILD:'1'});require('child_process').spawn('npx next start -p '+(process.env.PORT||3001),{stdio:'inherit',shell:true,env:process.env}).on('exit',c=>process.exit(c??0))\"",
-    "lint:a11y": "eslint --max-warnings=0 \"src/**/*.tsx\""
+    "lint:a11y": "eslint --max-warnings=0 \"src/**/*.tsx\"",
+    "test:scripts": "node --test scripts/*.test.cjs"
   },
   "dependencies": {
     "next": "15.5.4",

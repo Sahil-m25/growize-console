@@ -1,0 +1,314 @@
+# Growize console pipeline — M19-S05 (CI), M01-S05 (staging + production), M19-S06 (rule tests on every push).
+#
+#   check       every push and PR: tsc, vitest (reports the rule-test count), a11y lint, node --test (src/ and scripts/)
+#   staging     push to main: build with staging env, bundle secret scan, DEPLOY (placeholder), smoke,
+#               reset sandbox, Jev UI suite, calibration gate, publish results.csv
+#   production  after green staging, behind the `production` Environment's required reviewers (manual approval)
+#
+# Merge blocking: in GitHub branch protection for `main`, require the status check "check".
+# Promotion blocking: `production` needs `staging`, and `staging` fails on any non-PASS case, an untrusted run
+# (exit 3 / calibration gate), or a missing calibrator — so a P1 FAIL can never be promoted (TC-E16-010).
+#
+# HOSTING IS NOT CHOSEN (AP4). staging/production run only when the repository variable HOSTING_READY == 'true',
+# and their "Deploy" steps are placeholders that fail until replaced with the host's deploy action.
+# Env matrix and every secret: ops/env/README.md.
+
+name: pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: console
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python deps for the workbook script test
+        run: pip install openpyxl
+      - run: npm ci
+
+      - name: Type-check
+        run: node node_modules/typescript/bin/tsc --noEmit -p .
+
+      - name: Unit tests (vitest) — all
+        run: npx vitest run --passWithNoTests --reporter=default --reporter=json --outputFile=vitest-results.json
+
+      - name: Report rule-test count (TC-E16-011)
+        if: always()
+        run: |
+          node -e '
+            const r = require("./vitest-results.json");
+            const rules = r.testResults.filter(f => /src[\\/]server[\\/]rules[\\/]/.test(f.name));
+            const n = rules.reduce((a, f) => a + f.assertionResults.length, 0);
+            const bad = rules.reduce((a, f) => a + f.assertionResults.filter(t => t.status !== "passed").length, 0);
+            const line = `Rule tests (src/server/rules): ${n} run, ${n - bad} passed, ${bad} failed · all vitest: ${r.numPassedTests}/${r.numTotalTests} passed`;
+            console.log(line);
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### ${line}\n`);
+          '
+
+      - name: Accessibility lint
+        run: npm run lint:a11y
+
+      - name: Server tests (node --test, src/**/*.test.cjs)
+        run: node scripts/run-tests.cjs
+
+      - name: Script tests (node --test, scripts/*.test.cjs)
+        run: npm run test:scripts
+
+  staging:
+    name: staging
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.HOSTING_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    env:
+      # ---- app (see ops/env/README.md; staging talks ONLY to the Zoho sandbox) ----
+      ZOHO_ACCOUNTS_ORIGIN: ${{ vars.ZOHO_ACCOUNTS_ORIGIN }}
+      ZOHO_OAUTH_CLIENT_ID: ${{ vars.ZOHO_OAUTH_CLIENT_ID }}
+      ZOHO_OAUTH_CLIENT_SECRET: ${{ secrets.ZOHO_OAUTH_CLIENT_SECRET }}
+      ZOHO_OAUTH_REDIRECT_URI: ${{ vars.ZOHO_OAUTH_REDIRECT_URI }}
+      ZOHO_OAUTH_SCOPES: ${{ vars.ZOHO_OAUTH_SCOPES }}
+      ZOHO_SESSION_KEY: ${{ secrets.ZOHO_SESSION_KEY }}
+      ZOHO_CRM_RECORD_ID_PREFIX: ${{ vars.ZOHO_CRM_RECORD_ID_PREFIX }}
+      ZOHO_SEAT_IDS: ${{ vars.ZOHO_SEAT_IDS }}
+      ZOHO_UNASSIGNED_QUEUE_USER_ID: ${{ vars.ZOHO_UNASSIGNED_QUEUE_USER_ID }}
+      ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN: ${{ secrets.ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN }}
+      ZOHO_SIGN_API_ORIGIN: ${{ vars.ZOHO_SIGN_API_ORIGIN }}
+      ZOHO_SIGN_WEBHOOK_SECRET: ${{ secrets.ZOHO_SIGN_WEBHOOK_SECRET }}
+      ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS: ${{ secrets.ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS }}
+      ORG_EMAIL_DOMAINS: ${{ vars.ORG_EMAIL_DOMAINS }}
+      FOLLOWUP_UNDO_SECRET: ${{ secrets.FOLLOWUP_UNDO_SECRET }}
+      ALERT_EMAIL_TO: ${{ vars.ALERT_EMAIL_TO }}
+      LOG_STORE: ${{ vars.LOG_STORE }}
+      LOG_DIR: ${{ vars.LOG_DIR }}
+      GZ_SIGNIN_LIST: staging
+      JEV_SEED_TOKEN: ${{ secrets.JEV_SEED_TOKEN }}
+      # ---- Jev tooling ----
+      STAGING_URL: ${{ vars.STAGING_URL }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+      PASS_AT: ${{ vars.PASS_AT || '0.80' }}
+      ONLY: ${{ vars.JEV_ONLY }}
+      JEV_STAGING_CONFIG: ${{ github.workspace }}/.jev/jev-staging.config.json
+      JEV_SESSIONS_DIR: ${{ github.workspace }}/.jev/sessions
+      JEV_OUT: ${{ github.workspace }}/.jev/results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+
+      - name: Build (staging env)
+        run: npx next build
+
+      - name: Bundle secret scan (TC-E01-018)
+        env:
+          S1: ${{ secrets.ZOHO_OAUTH_CLIENT_SECRET }}
+          S2: ${{ secrets.ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN }}
+          S3: ${{ secrets.ZOHO_SIGN_WEBHOOK_SECRET }}
+          S4: ${{ secrets.ZOHO_SESSION_KEY }}
+          S5: ${{ secrets.FOLLOWUP_UNDO_SECRET }}
+        run: |
+          bad=0
+          for pat in client_secret refresh_token ZOHO_SIGN_WEBHOOK_SECRET ZOHO_OAUTH_CLIENT_SECRET; do
+            if grep -rIl -- "$pat" .next/static; then echo "::error::'$pat' appears in the client bundle"; bad=1; fi
+          done
+          for v in "$S1" "$S2" "$S3" "$S4" "$S5"; do
+            [ -n "$v" ] || continue
+            if grep -rIlF -- "$v" .next/static >/dev/null; then echo "::error::a secret value appears in the client bundle"; bad=1; fi
+          done
+          exit $bad
+
+      # ------------------------------------------------------------------------------------------------
+      # DEPLOY — PLACEHOLDER (AP4: hosting account not chosen). Replace this step with the host's deploy
+      # action/CLI, deploying console/ built above to the STAGING target with this Environment's secrets.
+      # It fails on purpose so nobody mistakes a skipped deploy for a real one.
+      # ------------------------------------------------------------------------------------------------
+      - name: Deploy to staging (PLACEHOLDER — host not chosen)
+        run: |
+          echo "::error::Deploy is not wired: the hosting account is not chosen (AP4). Replace this step in .github/workflows/pipeline.yml."
+          exit 1
+
+      - name: Smoke
+        run: |
+          set -e
+          base="${STAGING_URL%/}"
+          for i in $(seq 1 30); do code=$(curl -s -o /dev/null -w '%{http_code}' "$base/") || code=000; [ "$code" -lt 500 ] && [ "$code" != 000 ] && break; sleep 10; done
+          echo "GET / -> $code"; [ "$code" -lt 500 ] && [ "$code" != 000 ]
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$base/api/session"); echo "GET /api/session -> $code"; [ "$code" -lt 500 ]
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$base/api/test/reset"); echo "POST /api/test/reset (no token) -> $code"
+
+      - name: Jev config and saved sessions
+        env:
+          CFG: ${{ secrets.JEV_STAGING_CONFIG_JSON }}
+          SESS: ${{ secrets.JEV_SESSIONS_TGZ_B64 }}
+        run: |
+          mkdir -p "$JEV_SESSIONS_DIR" "$JEV_OUT"
+          [ -n "$CFG" ] || { echo "::error::secret JEV_STAGING_CONFIG_JSON is not set (see console/scripts/jev-staging.config.example.json)"; exit 1; }
+          printf '%s' "$CFG" > "$JEV_STAGING_CONFIG"
+          if [ -n "$SESS" ]; then printf '%s' "$SESS" | base64 -d | tar -xz -C "$JEV_SESSIONS_DIR"; fi
+          node scripts/jev-sessions.mjs check || { echo "::error::saved Jev sessions are missing or expired (12 h) — re-run jev-sessions.mjs sign-in and update JEV_SESSIONS_TGZ_B64"; exit 1; }
+
+      - name: Reset sandbox fixtures
+        run: node scripts/jev-staging-seed.mjs --reset
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Jev UI suite (current stage)
+        id: suite
+        run: |
+          set +e
+          node scripts/jev-staging-run.mjs --out-dir "$JEV_OUT" ${{ vars.JEV_STORY && format('--story {0}', vars.JEV_STORY) || '' }}
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "suite exit $code (0 all PASS · 1 not all PASS · 3 calibration case passed · 2 setup error)"
+          exit 0
+
+      - name: Calibration gate (D63)
+        id: gate
+        if: always() && steps.suite.outcome == 'success'
+        run: |
+          set +e
+          cal=../pm/jev-calibrate.mjs
+          if [ ! -f "$cal" ]; then
+            echo "::error::pm/jev-calibrate.mjs is missing — the run cannot be calibrated, so it is untrusted."
+            echo "code=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          node scripts/jev-calibration-gate.mjs --results "$JEV_OUT/results.json" --run-calibrate "$cal" \
+            --calibration "$JEV_OUT/calibration.json" --record "$JEV_OUT/gate.json"
+          echo "code=$?" >> "$GITHUB_OUTPUT"; exit 0
+
+      - name: Publish results
+        if: always()
+        run: |
+          f="$JEV_OUT/results.json"
+          if [ -f "$f" ]; then
+            node -e '
+              const r = require(process.argv[1]).results || [];
+              const bad = r.filter(x => !x.expect_fail && x.verdict !== "PASS");
+              const s = [`### Jev staging suite: ${r.filter(x => !x.expect_fail && x.verdict === "PASS").length}/${r.filter(x => !x.expect_fail).length} PASS`]
+                .concat(bad.map(x => `- ${x.verdict} **${x.id}** ${x.title || ""} ${x.runError || ""}`));
+              require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, s.join("\n") + "\n");
+            ' "$f"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jev-staging-${{ github.sha }}
+          path: ${{ github.workspace }}/.jev/results/
+          if-no-files-found: warn
+
+      - name: Block promotion unless green and trusted
+        if: always()
+        run: |
+          s="${{ steps.suite.outputs.code }}"; g="${{ steps.gate.outputs.code }}"
+          [ "$s" = "0" ] || { echo "::error::Promotion blocked: Jev suite exit ${s:-none} (see the failing case ids above and results.csv)."; exit 1; }
+          [ "$g" = "0" ] || { echo "::error::Promotion blocked: calibration gate ${g:-not run} — the run is untrusted."; exit 1; }
+          echo "Staging green and trusted."
+
+  production:
+    name: production
+    needs: staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.HOSTING_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Manual approval: add Required reviewers to the `production` Environment in repo settings.
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    env:
+      ZOHO_ACCOUNTS_ORIGIN: ${{ vars.ZOHO_ACCOUNTS_ORIGIN }}
+      ZOHO_OAUTH_CLIENT_ID: ${{ vars.ZOHO_OAUTH_CLIENT_ID }}
+      ZOHO_OAUTH_CLIENT_SECRET: ${{ secrets.ZOHO_OAUTH_CLIENT_SECRET }}
+      ZOHO_OAUTH_REDIRECT_URI: ${{ vars.ZOHO_OAUTH_REDIRECT_URI }}
+      ZOHO_OAUTH_SCOPES: ${{ vars.ZOHO_OAUTH_SCOPES }}
+      ZOHO_SESSION_KEY: ${{ secrets.ZOHO_SESSION_KEY }}
+      ZOHO_CRM_RECORD_ID_PREFIX: ${{ vars.ZOHO_CRM_RECORD_ID_PREFIX }}
+      ZOHO_SEAT_IDS: ${{ vars.ZOHO_SEAT_IDS }}
+      ZOHO_UNASSIGNED_QUEUE_USER_ID: ${{ vars.ZOHO_UNASSIGNED_QUEUE_USER_ID }}
+      ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN: ${{ secrets.ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN }}
+      ZOHO_SIGN_API_ORIGIN: ${{ vars.ZOHO_SIGN_API_ORIGIN }}
+      ZOHO_SIGN_WEBHOOK_SECRET: ${{ secrets.ZOHO_SIGN_WEBHOOK_SECRET }}
+      ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS: ${{ secrets.ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS }}
+      ORG_EMAIL_DOMAINS: ${{ vars.ORG_EMAIL_DOMAINS }}
+      FOLLOWUP_UNDO_SECRET: ${{ secrets.FOLLOWUP_UNDO_SECRET }}
+      ALERT_EMAIL_TO: ${{ vars.ALERT_EMAIL_TO }}
+      LOG_STORE: ${{ vars.LOG_STORE }}
+      LOG_DIR: ${{ vars.LOG_DIR }}
+      PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+      # GZ_SIGNIN_LIST, JEV_SEED_TOKEN, FIXTURE_MODE, ZOHO_STUB_USER: deliberately absent in production.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+
+      - name: Build (production env)
+        run: npx next build
+
+      - name: Bundle secret scan
+        env:
+          S1: ${{ secrets.ZOHO_OAUTH_CLIENT_SECRET }}
+          S2: ${{ secrets.ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN }}
+          S3: ${{ secrets.ZOHO_SIGN_WEBHOOK_SECRET }}
+          S4: ${{ secrets.ZOHO_SESSION_KEY }}
+          S5: ${{ secrets.FOLLOWUP_UNDO_SECRET }}
+        run: |
+          bad=0
+          for pat in client_secret refresh_token ZOHO_SIGN_WEBHOOK_SECRET ZOHO_OAUTH_CLIENT_SECRET; do
+            if grep -rIl -- "$pat" .next/static; then echo "::error::'$pat' appears in the client bundle"; bad=1; fi
+          done
+          for v in "$S1" "$S2" "$S3" "$S4" "$S5"; do
+            [ -n "$v" ] || continue
+            if grep -rIlF -- "$v" .next/static >/dev/null; then echo "::error::a secret value appears in the client bundle"; bad=1; fi
+          done
+          exit $bad
+
+      # DEPLOY — PLACEHOLDER (AP4). Replace with the host's production deploy of this same commit.
+      - name: Deploy to production (PLACEHOLDER — host not chosen)
+        run: |
+          echo "::error::Deploy is not wired: the hosting account is not chosen (AP4). Replace this step in .github/workflows/pipeline.yml."
+          exit 1
+
+      - name: Smoke
+        run: |
+          set -e
+          base="${PRODUCTION_URL%/}"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$base/"); echo "GET / -> $code"; [ "$code" -lt 500 ]
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$base/api/test/reset"); echo "POST /api/test/reset -> $code"
+          [ "$code" -ge 400 ] || { echo "::error::the test API answers in production"; exit 1; }
