@@ -1,0 +1,54 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "Lead_Event": {
+     "id": "9007199254740997301",
+     "name": "x"
+    },
+    "Lead_Status": "Lead captured",
+    "COUNT(id)": 1
+   },
+   {
+    "Lead_Event": {
+     "id": "9007199254740997301",
+     "name": "x"
+    },
+    "Lead_Status": "Qualified",
+    "COUNT(id)": 1
+   },
+   {
+    "Lead_Event": {
+     "id": "9007199254740997301",
+     "name": "x"
+    },
+    "Lead_Status": "Reserved - 10% in",
+    "COUNT(id)": 1
+   },
+   {
+    "Lead_Event": {
+     "id": "9007199254740997302",
+     "name": "x"
+    },
+    "Lead_Status": "Lead captured",
+    "COUNT(id)": 2
+   },
+   {
+    "Lead_Event": {
+     "id": "9007199254740997302",
+     "name": "x"
+    },
+    "Lead_Status": "Investor said yes",
+    "COUNT(id)": 1
+   }
+  ],
+  "info": {
+   "count": 5,
+   "more_records": false
+  }
+ }
+}

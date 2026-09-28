@@ -1,0 +1,29 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "Status": "New",
+    "Priority": "High",
+    "COUNT(id)": 1
+   },
+   {
+    "Status": "New",
+    "Priority": "Medium",
+    "COUNT(id)": 1
+   },
+   {
+    "Status": "On Hold",
+    "Priority": "Low",
+    "COUNT(id)": 1
+   }
+  ],
+  "info": {
+   "count": 3,
+   "more_records": false
+  }
+ }
+}

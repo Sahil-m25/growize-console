@@ -1,0 +1,86 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997301",
+    "Name": "Prestige Falcon City",
+    "Starts_On": "2026-08-08",
+    "Ends_On": "2026-08-09",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Done",
+    "Event_Cost": 60000,
+    "Names_Taken": 3
+   },
+   {
+    "id": "9007199254740997302",
+    "Name": "Koramangala Club",
+    "Starts_On": "2026-08-15",
+    "Ends_On": "2026-08-16",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Done",
+    "Event_Cost": 40000,
+    "Names_Taken": 5
+   },
+   {
+    "id": "9007199254740997303",
+    "Name": "Sobha Dream Acres",
+    "Starts_On": "2026-09-05",
+    "Ends_On": "2026-09-06",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Planned",
+    "Event_Cost": null,
+    "Names_Taken": null
+   },
+   {
+    "id": "9007199254740997304",
+    "Name": "Bangalore Club",
+    "Starts_On": "2026-09-19",
+    "Ends_On": "2026-09-20",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Planned",
+    "Event_Cost": null,
+    "Names_Taken": null
+   },
+   {
+    "id": "9007199254740997305",
+    "Name": "Embassy Springs",
+    "Starts_On": "2026-09-26",
+    "Ends_On": "2026-09-27",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Planned",
+    "Event_Cost": null,
+    "Names_Taken": null
+   },
+   {
+    "id": "9007199254740997306",
+    "Name": "Cancelled Fair",
+    "Starts_On": "2026-09-01",
+    "Ends_On": "2026-09-01",
+    "Event_City": "Pune",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Cancelled",
+    "Event_Cost": null,
+    "Names_Taken": null
+   }
+  ],
+  "info": {
+   "count": 6,
+   "more_records": false
+  }
+ }
+}

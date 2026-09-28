@@ -1,0 +1,20 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "COUNT(id)": 4,
+    "SUM(Total_Units)": 124,
+    "SUM(Units_Reserved)": 5,
+    "SUM(Units_Issued)": 81
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

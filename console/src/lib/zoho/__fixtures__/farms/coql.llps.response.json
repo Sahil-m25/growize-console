@@ -1,0 +1,86 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998101",
+    "Name": "Growize Farm LLP A",
+    "Block_Code": "A",
+    "Acreage_Acres": 2.5,
+    "Total_Units": 62,
+    "Units_Reserved": 0,
+    "Units_Issued": 62,
+    "Units_Released": 62,
+    "Pet_Unit_Price": 250000,
+    "LLP_Status": "Fully Subscribed / Closed",
+    "Annual_Rental_Yield": "25%",
+    "Crop_Stage": "Year 3 \u2014 bearing",
+    "Insurance_Provider": "Fixture Insurer",
+    "Insurance_Policy_No": "FX-1",
+    "Insured_Amount": 15500000,
+    "Insurance_expiry_date": "2027-03-31T00:00:00+05:30"
+   },
+   {
+    "id": "9007199254740998102",
+    "Name": "Growize Farm LLP B",
+    "Block_Code": "B",
+    "Acreage_Acres": 2,
+    "Total_Units": 22,
+    "Units_Reserved": 0,
+    "Units_Issued": 19,
+    "Units_Released": 22,
+    "Pet_Unit_Price": 2500000,
+    "LLP_Status": "Open for Reservation",
+    "Annual_Rental_Yield": null,
+    "Crop_Stage": null,
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   },
+   {
+    "id": "9007199254740998103",
+    "Name": "Growize Farm LLP C",
+    "Block_Code": "C",
+    "Acreage_Acres": null,
+    "Total_Units": 40,
+    "Units_Reserved": 5,
+    "Units_Issued": 0,
+    "Units_Released": 0,
+    "Pet_Unit_Price": 250000,
+    "LLP_Status": "Darft",
+    "Annual_Rental_Yield": "20%",
+    "Crop_Stage": "-None-",
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   },
+   {
+    "id": "9007199254740998104",
+    "Name": "Growize Farm LLP D",
+    "Block_Code": null,
+    "Acreage_Acres": 1,
+    "Total_Units": null,
+    "Units_Reserved": null,
+    "Units_Issued": null,
+    "Units_Released": null,
+    "Pet_Unit_Price": null,
+    "LLP_Status": "On Hold",
+    "Annual_Rental_Yield": "-None-",
+    "Crop_Stage": null,
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   }
+  ],
+  "info": {
+   "count": 4,
+   "more_records": false
+  }
+ }
+}

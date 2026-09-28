@@ -1,0 +1,161 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998401",
+    "Case_Number": "C-401",
+    "Subject": "Change the bank account for payouts",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740994001",
+     "name": "x"
+    },
+    "Priority": "High",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Bank",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null
+   },
+   {
+    "id": "9007199254740998402",
+    "Case_Number": "C-402",
+    "Subject": "Wants the Block A harvest note for her brother",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740994001",
+     "name": "x"
+    },
+    "Priority": "Medium",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Records",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null
+   },
+   {
+    "id": "9007199254740998403",
+    "Case_Number": "C-403",
+    "Subject": "New address after a move to Baner",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740994001",
+     "name": "x"
+    },
+    "Priority": "Low",
+    "Status": "On Hold",
+    "Case_Origin": "Phone",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Records",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null
+   },
+   {
+    "id": "9007199254740998404",
+    "Case_Number": "C-404",
+    "Subject": "Asked to move her quarterly call to evenings",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740993001",
+     "name": "x"
+    },
+    "Priority": "Medium",
+    "Status": "Escalated",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Query",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null
+   },
+   {
+    "id": "9007199254740998405",
+    "Case_Number": "C-405",
+    "Subject": "FIRC copy for the inward remittance",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740994002",
+     "name": "x"
+    },
+    "Priority": "High",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Compliance",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null
+   },
+   {
+    "id": "9007199254740998406",
+    "Case_Number": "C-406",
+    "Subject": "Add a nominee",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740993001",
+     "name": "x"
+    },
+    "Priority": "Low",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Records",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": null
+   },
+   {
+    "id": "9007199254740998407",
+    "Case_Number": "C-407",
+    "Subject": "Old closed one",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740993001",
+     "name": "x"
+    },
+    "Priority": "High",
+    "Status": "Closed",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-10T10:00:00+05:30",
+    "Ticket_Category": "Query",
+    "SLA_Due": "2026-09-12T10:00:00+05:30",
+    "Closed_At": "2026-09-11T12:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 7,
+   "more_records": false
+  }
+ }
+}

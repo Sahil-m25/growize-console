@@ -1,0 +1,39 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998102",
+    "Name": "Growize Farm LLP B",
+    "Block_Code": "B",
+    "Acreage_Acres": 2,
+    "Total_Units": 22,
+    "Units_Reserved": 0,
+    "Units_Issued": 19,
+    "Units_Released": 22,
+    "Pet_Unit_Price": 2500000,
+    "LLP_Status": "Open for Reservation",
+    "Annual_Rental_Yield": "23%",
+    "Crop_Stage": null,
+    "Insurance_Provider": "Fixture Insurer",
+    "Insurance_Policy_No": "FX-2",
+    "Insured_Amount": 5000000,
+    "Insurance_expiry_date": "2027-06-30T00:00:00+05:30",
+    "PAN": "AAZFX1234Q",
+    "GST": "29AAZFX1234Q1Z5",
+    "SPOC_1_Full_Name": "Fixture Spoc One",
+    "SPOC_1_Contact_No": "+910000000001",
+    "SPOC_2_Full_Name": null,
+    "SPOC_2_Contact_No": null,
+    "Incorporation_No": "AAA-0000"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997301",
+    "Name": "Prestige Falcon City",
+    "Starts_On": "2026-08-08",
+    "Ends_On": "2026-08-09",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "Direct",
+    "Event_State": "Done",
+    "Event_Cost": 60000,
+    "Names_Taken": 3
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}
