@@ -200,7 +200,7 @@ test('a signed-in IR\'s Leads come from COQL with the IR\'s own credential throu
   assert.equal(b.lost.why, 'Went cold — no reply', 'Zoho\'s picklist value maps back to the console\'s reason');
   assert.equal(b.units, 0);
   assert.equal(b.unitsKnown, false);
-  assert.match(r.queries[0], new RegExp(`^select .* from Leads where \\(Owner = '${IR}' or Secondary_Owner = '${IR}'`));
+  assert.match(r.queries[0], new RegExp(`^select .* from Leads where \\(Owner = '${IR}'`));
   assert.match(r.queries[1], /from Leads where \(id in|from Leads where id in/);
   // the IR's own-lead investors (D69)
   assert.deepEqual(ds.im.INV.map((i) => i.id), [`${P}740997101`]);

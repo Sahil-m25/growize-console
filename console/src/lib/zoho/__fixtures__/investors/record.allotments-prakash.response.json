@@ -1,0 +1,37 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998301",
+        "Customer": {
+          "id": "9007199254740997301",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Reserved",
+        "Issued_Units": 0,
+        "Reserved_Units": 1,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": 250000,
+        "Total_Amount_Receivable": 2250000,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8,
+        "Hold_Until": "2026-09-23",
+        "Hold_Extension_State": null,
+        "Supplementary_Verified_At": null
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

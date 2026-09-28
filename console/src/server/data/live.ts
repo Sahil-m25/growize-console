@@ -18,7 +18,7 @@
 import type { Channel, Lead, LostWhy, Source } from "../../domain/types";
 import type { Dataset } from "../../lib/data/types";
 import { emptyDataset } from "../../lib/data/empty";
-import type { ImInvestor } from "../../lib/im/types";
+import type { ImAllot, ImInvestor } from "../../lib/im/types";
 import type { CacheError, CacheFresh, CacheStale, ScopedCache } from "../../lib/zoho/cache";
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
@@ -33,6 +33,7 @@ import type { InvestorEvents } from "./events";
 import { contactsWhere, createInvestorGuard, investorsKey, type GuardRefusal, type PlaneCRefusal } from "./ir-guard";
 import { MODULES } from "./projections";
 import { scopedKey, scopesFor, type BookScope, type SeatScopes } from "./scope";
+import { amKey, amScopeOf, isAmSeat } from "./am-scope";
 
 export interface LivePrincipal {
   readonly credential: UserCredential;
@@ -62,6 +63,18 @@ export interface LiveDeps {
   readonly clock?: () => number;
   /** Plane C's half of an Investors-side refusal (PROVISIONAL, ./ir-guard). */
   readonly planeCRefusal?: (e: PlaneCRefusal) => void;
+  /**
+   * The Zoho user ids whose current seat is Key Account Manager (M09-S02): the Head of AM's book counts an
+   * account whose KAM is not among them as the pool. Absent → none known (PROVISIONAL): only an account
+   * with no KAM reads as "No manager".
+   */
+  readonly activeKamUserIds?: (signal?: AbortSignal) => Promise<readonly string[] | null>;
+}
+
+/** The AM book's summary (M09-S02): counts only, cached under the AM scope — a KAM's by user, the Head of AM's by subtree. */
+export interface AmSummary {
+  readonly underCare: number;
+  readonly noManager: number;
 }
 
 /** One investor opened by URL or API: the Contact, its allotments and receipts — or a logged refusal. */
@@ -162,8 +175,18 @@ export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], block
     units, blocks, st: live.some((a) => a.Allocation_Status === "Issued") ? "allocated" : paid ? "paid" : "reserved",
     ir: c.originatingIrId ?? "", src: "", since: c.saidYesAt ?? c.createdAt ?? "", nominee: c.nominee ?? "",
     kam: c.kamId, kamOn: c.kamSince, intro: c.introAt, ...(c.originLeadId ? { lead: c.originLeadId } : {}),
+    ...(holdOf(live) ? { hold: holdOf(live)! } : {}),
   };
 }
+
+/** The earliest Hold_Until among Reserved allotments (the hold banner, M09-S03), or null. */
+export function holdOf(allots: readonly Pick<AllotmentRow, "Allocation_Status" | "holdUntil">[]): string | null {
+  const d = allots.filter((a) => a.Allocation_Status === "Reserved" && a.holdUntil).map((a) => a.holdUntil!).sort();
+  return d[0] ?? null;
+}
+
+/** An allotment row as the Dataset carries it: the server-only fields dropped. */
+export const toImAllot = ({ received: _r, receivable: _v, token: _t, holdUntil: _h, holdExtension: _e, agreementSignedAt: _a, ...a }: AllotmentRow): ImAllot => a;
 
 const kamEntryToContact = (e: KamBookEntry): ContactRow => ({
   id: e.id, code: e.investorCode, firstName: e.firstName, lastName: e.lastName, mobile: e.mobile, email: e.email, city: e.city,
@@ -212,8 +235,11 @@ export function createLiveDataLayer(deps: LiveDeps) {
       if (now.session.seat !== start.seat) { deps.events.seatChange(cred.userId, start.seat, now.session.seat); return null; }
       const seat = zohoSeatOf(now.session.seat);
       const ids = seat ? SEAT_ROLE[seat] : undefined;
-      if (seat !== "key-account-manager" || !ids) return null;
-      return { actor: { userId: cred.userId, roleId: deps.seatIds?.roleIds[ids.role] ?? "", profileId: deps.seatIds?.profileIds[ids.profile] ?? "", seat }, activeKamUserIds: [cred.userId] };
+      if ((seat !== "key-account-manager" && seat !== "head-of-account-management") || !ids) return null;
+      const actor = { userId: cred.userId, roleId: deps.seatIds?.roleIds[ids.role] ?? "", profileId: deps.seatIds?.profileIds[ids.profile] ?? "", seat };
+      if (seat === "key-account-manager") return { actor, activeKamUserIds: [cred.userId] };
+      const active = deps.activeKamUserIds ? await deps.activeKamUserIds(signal) : [];
+      return active ? { actor, activeKamUserIds: [...new Set(active)] } : null;
     },
   });
 
@@ -242,6 +268,12 @@ export function createLiveDataLayer(deps: LiveDeps) {
     return [...rows.values()].map((row) => leadOf(row, detail.get(row.id)));
   }
 
+  /** The AM book (KAM: own accounts; Head of AM: every allotted account and the pool) on the person's own token. */
+  function amBook(p: LivePrincipal, signal?: AbortSignal) {
+    const kam = createKamBookService({ crm: deps.crm, access: kamAccess(p.session), log: deps.log, recordIdPrefix: deps.recordIdPrefix, clock });
+    return kam.list({ credential: p.credential, sessionId: p.sessionId }, signal);
+  }
+
   async function readInvestors(p: LivePrincipal, scopes: SeatScopes, ds: Dataset, problems: string[], signal?: AbortSignal) {
     const me = p.credential.userId;
     const ok = <T>(book: string, r: ReadResult<T>): readonly T[] => {
@@ -250,19 +282,24 @@ export function createLiveDataLayer(deps: LiveDeps) {
       return [];
     };
     let contacts: readonly ContactRow[] = [];
-    if (scopes.investors.kind === "own-book") {
-      const kam = createKamBookService({ crm: deps.crm, access: kamAccess(p.session), log: deps.log, recordIdPrefix: deps.recordIdPrefix, clock });
-      const r = await kam.list({ credential: p.credential, sessionId: p.sessionId }, signal);
-      if (r.ok) contacts = r.value.filter((e) => e.kamUserId === me).map(kamEntryToContact);
+    // M09-S02-T02: an account-management seat (KAM or Head of AM) reads the AM book — allotted accounts
+    // (and the pool, for the Head) through the KAM book service — and never a Receipt or a money field.
+    const am = isAmSeat(p.session.seat) && !!amScopeOf(p.session.seat, me);
+    if (am) {
+      const r = await amBook(p, signal);
+      if (r.ok) contacts = r.value.filter((e) => scopes.investors.kind !== "own-book" || e.kamUserId === me).map(kamEntryToContact);
       else problems.push(`investors:${r.kind === "refused" ? r.reasonCode : r.errorKind}`);
     } else contacts = ok("investors", await adapters.contacts(p.credential, scopes.investors, signal));
     if (scopes.farms.kind === "none" && scopes.investors.kind === "none") return;
 
     const llps = scopes.farms.kind === "none" ? [] : ok("farms", await adapters.llps(p.credential, signal));
     const contactIds = contacts.map((c) => c.id);
-    const allots = ok("allotments", await adapters.allotments(p.credential, scopes.money, contactIds, signal));
-    const receipts = ok("receipts", await adapters.receipts(p.credential, scopes.money, allots.map((a) => a.id), signal));
-    const cases = ok("cases", await adapters.cases(p.credential, scopes.cases, contactIds, signal));
+    // An AM seat reads only its own accounts' allotments, on the AM projection (no price, no amount).
+    const allots = ok("allotments", await adapters.allotments(p.credential, scopes.money, contactIds, signal, am, !am));
+    const receipts = am ? [] : ok("receipts", await adapters.receipts(p.credential, scopes.money, allots.map((a) => a.id), signal));
+    const cases = am
+      ? ok("cases", await adapters.cases(p.credential, { kind: "own-book", userId: me }, contactIds, signal))
+      : ok("cases", await adapters.cases(p.credential, scopes.cases, contactIds, signal));
     const holdings = ok("holdings", await adapters.holdings(p.credential, scopes.holdings, signal));
     const arl = holdings.length ? ok("arl-transactions", await adapters.arlTransactions(p.credential, holdings.map((h) => h.id), signal)) : [];
 
@@ -273,7 +310,7 @@ export function createLiveDataLayer(deps: LiveDeps) {
     const im = ds.im;
     im.INV = contacts.map((c) => investorOf(c, byContact.get(c.id) ?? [], (id) => blockOf.get(id) ?? ""));
     im.LLP = [...llps];
-    im.ALLOT = allots.map(({ received: _r, receivable: _v, token: _t, ...a }) => a);
+    im.ALLOT = allots.map(toImAllot);
     im.TXN = receipts.filter((x) => x.allotmentId && custOf.has(x.allotmentId)).map((x) => ({
       id: x.id, inv: custOf.get(x.allotmentId!)!, kind: x.reversalOf ? "refund" : x.kind === "Advance" ? "advance" : x.kind === "Balance" ? "balance" : x.kind === "Refund" ? "refund" : "full",
       amt: x.amount, mode: x.mode ?? "", utr: x.utr ?? "", on: x.on ?? "", by: x.byId ?? "", rec: x.matched ? "matched" : "pending", Allotment: x.allotmentId!,
@@ -305,17 +342,35 @@ export function createLiveDataLayer(deps: LiveDeps) {
       const one = await guard.one(deps.crm, p.credential, p.session.seat, contactId, signal);
       if (!one.ok) return one;
       const scopes = scopesFor(p.session.seat, p.credential.userId);
-      const al = await adapters.allotments(p.credential, scopes.money, [one.contact.id], signal, true);
+      const am = isAmSeat(p.session.seat);
+      const al = await adapters.allotments(p.credential, scopes.money, [one.contact.id], signal, true, !am);
       if (!al.ok) return al.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: al.errorKind };
       const own = al.rows.filter((a) => a.Customer === one.contact.id);
+      if (am) return { ok: true, investor: investorOf(one.contact, own, () => ""), allotments: own.map(toImAllot), receipts: [] };
       const rc = await adapters.receipts(p.credential, scopes.money, own.map((a) => a.id), signal, true);
       if (!rc.ok) return rc.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: rc.errorKind };
       return {
         ok: true,
         investor: investorOf(one.contact, own, () => ""),
-        allotments: own.map(({ received: _r, receivable: _v, token: _t, ...a }) => a),
+        allotments: own.map(toImAllot),
         receipts: rc.rows,
       };
+    },
+
+    /**
+     * M09-S02-T02: the AM book's counts ("4 under care", "No manager"), cached under the AM scope — a KAM's
+     * by user, the Head of AM's by subtree (./am-scope). Null for any other seat. Counts only, never a row.
+     */
+    async amSummary(p: LivePrincipal, signal?: AbortSignal) {
+      const s = amScopeOf(p.session.seat, p.credential.userId);
+      if (!s) return null;
+      return deps.cache.readSettled<Readonly<Record<string, number>>>(amKey(s, "book.summary"), async () => {
+        const r = await amBook(p, signal);
+        if (!r.ok) throw Object.assign(new Error("zoho"), { kind: r.kind === "refused" ? r.reasonCode : r.errorKind });
+        const rows = s.kind === "kam" ? r.value.filter((e) => e.kamUserId === s.userId) : r.value;
+        const summary: AmSummary = { underCare: rows.length, noManager: rows.filter((e) => e.kamUserId === null || (!!deps.activeKamUserIds && e.scope === "pool")).length };
+        return { ...summary };
+      });
     },
 
     /** A badge count for one book, cached under this person's scope for that book — never another's (D53). */

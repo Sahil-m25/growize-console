@@ -90,7 +90,7 @@ test('Finance reads every investor with units, farms, state, KYC, NRI, FEMA, pai
   const r = rig();
   const res = await r.list.list(creds.get(FIN), 'fin');
   assert.equal(res.ok, true, JSON.stringify(res));
-  assert.deepEqual({ ...res.summary }, { onBook: 4, units: 12, kycNotPassed: 1, balanceOutstanding: 2, nri: 2, femaOutstanding: 1 });
+  assert.deepEqual({ ...res.summary }, { onBook: 4, units: 12, kycNotPassed: 1, balanceOutstanding: 2, nri: 2, femaOutstanding: 1, saidYes: 0 });
   const by = Object.fromEntries(res.rows.map((x) => [x.name, x]));
   assert.deepEqual([by['Prakash Bhat'].paid, by['Prakash Bhat'].due, by['Prakash Bhat'].state], [250000, 2250000, 'reserved'], '₹2.5 L paid, ₹22.5 L due');
   assert.deepEqual([by['Joseph Mathew'].paid, by['Joseph Mathew'].due], [1000000, 9000000], '₹10 L paid, ₹90 L due — the reversed balance does not stand');
@@ -126,7 +126,7 @@ test('only the summary counts are cached, keyed by the visibility scope, for 60 
   const r = rig();
   const a = await r.list.summary(creds.get(FIN), 'fin');
   assert.equal(a.state, 'fresh');
-  assert.deepEqual({ ...a.value }, { onBook: 4, units: 12, kycNotPassed: 1, balanceOutstanding: 2, nri: 2, femaOutstanding: 1 });
+  assert.deepEqual({ ...a.value }, { onBook: 4, units: 12, kycNotPassed: 1, balanceOutstanding: 2, nri: 2, femaOutstanding: 1, saidYes: 0 });
   const calls = r.queries.length;
   const b = await r.list.summary(creds.get(FIN), 'head');
   assert.equal(b.origin, 'cache', 'Head of Finance shares the org scope');

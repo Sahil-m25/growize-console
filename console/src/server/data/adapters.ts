@@ -54,6 +54,12 @@ export interface AllotmentRow extends ImAllot {
   readonly received: number | null;
   readonly receivable: number | null;
   readonly token: number | null;
+  /** Hold_Until (date) — the reservation is held until then (M09-S03 hold banner). */
+  readonly holdUntil: string | null;
+  /** Hold_Extension_State as read (Requested / Approved / Declined), or null. */
+  readonly holdExtension: string | null;
+  /** Supplementary_Verified_At — the supplementary agreement was signed and verified then (Agreement_Signed). */
+  readonly agreementSignedAt: string | null;
 }
 
 export interface CaseRow extends ImTicket {
@@ -178,12 +184,17 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
       });
     },
 
-    /** Allotments of the given contacts (own scopes), or every allotment the token sees (wider scopes). */
-    async allotments(cred: UserCredential, scope: BookScope, contactIds: readonly string[], signal?: AbortSignal, only = false): Promise<ReadResult<AllotmentRow>> {
+    /**
+     * Allotments of the given contacts (own scopes), or every allotment the token sees (wider scopes).
+     * `money: false` (an account-management seat, M09-S02-T02) reads the AM projection: no price, no amount —
+     * the row carries 0 / null there, never a number the seat may not see.
+     */
+    async allotments(cred: UserCredential, scope: BookScope, contactIds: readonly string[], signal?: AbortSignal, only = false, money = true): Promise<ReadResult<AllotmentRow>> {
       if (scope.kind === "none" || scope.kind === "user") return EMPTY;
       // `only`: read just these ids even for a wider scope (one investor opened by id).
       const own = only || scope.kind === "own-lead" || scope.kind === "own-book";
-      const raw = own ? await selectIn(cred, "allotments", "Customer", contactIds, signal) : await selectAll(cred, "allotments", "id is not null", signal);
+      const key: ModuleKey = money ? "allotments" : "amAllotments";
+      const raw = own ? await selectIn(cred, key, "Customer", contactIds, signal) : await selectAll(cred, key, "id is not null", signal);
       const r = mapRows(raw, (x): AllotmentRow | null => {
         const customer = idOf(x.Customer);
         if (!idOf(x.id) || !customer) return null;
@@ -196,6 +207,8 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
           Unit_Price: price, Ticket_Snapshot: committed * price, Allocation_Status: status,
           Issued_On: day(s(x, "Issued_On", 40)), Annual_Rental_Yield: n(x, "Annual_Rental_Yield") ?? 0,
           received: n(x, "Total_Amount_Received"), receivable: n(x, "Total_Amount_Receivable"), token: n(x, "Token_Advance_Amount"),
+          holdUntil: day(s(x, "Hold_Until", 40)), holdExtension: s(x, "Hold_Extension_State", 20),
+          agreementSignedAt: stamp(s(x, "Supplementary_Verified_At", 40)),
         });
       });
       if (!r.ok || !own) return r;

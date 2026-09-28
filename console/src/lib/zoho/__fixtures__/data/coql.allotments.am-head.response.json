@@ -1,0 +1,174 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996200",
+        "Customer": {
+          "id": "9007199254740994101",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996201",
+        "Customer": {
+          "id": "9007199254740994102",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996202",
+        "Customer": {
+          "id": "9007199254740994103",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996203",
+        "Customer": {
+          "id": "9007199254740994104",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996204",
+        "Customer": {
+          "id": "9007199254740994201",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996205",
+        "Customer": {
+          "id": "9007199254740994202",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996206",
+        "Customer": {
+          "id": "9007199254740994203",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996207",
+        "Customer": {
+          "id": "9007199254740994204",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996208",
+        "Customer": {
+          "id": "9007199254740994301",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996209",
+        "Customer": {
+          "id": "9007199254740994302",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": "2026-09-05",
+        "Hold_Until": null
+      }
+    ],
+    "info": {
+      "count": 10,
+      "more_records": false
+    }
+  }
+}

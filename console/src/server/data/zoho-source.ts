@@ -59,6 +59,36 @@ export function mustFail(load: LiveLoad): boolean {
   return load.problems.some((p) => PRIMARY.test(p));
 }
 
+/**
+ * One request's live context for an Investors-side API route (M09-S02/S03, M08-S07): the process-wide
+ * runtime, one Zoho client on the shared gate, the live data layer and the signed-in person — or null
+ * when Zoho sign-in is not configured or nobody is signed in. The credential is the person's own (D53).
+ */
+export async function liveContext(env: NodeJS.ProcessEnv = process.env) {
+  if (!zohoSignInConfigured(env)) return null;
+  const { cookies } = await import("next/headers");
+  const sid = (await cookies()).get(SID_COOKIE)?.value;
+  if (!sid) return null;
+  const sessions = userSessions(env);
+  const first = await sessions.credential(sid);
+  if (!first.ok) return null;
+  const rt = dataRuntime();
+  const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
+  let seatIds: SeatIds | undefined;
+  try { seatIds = JSON.parse(env.ZOHO_SEAT_IDS!) as SeatIds; } catch { seatIds = undefined; }
+  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  const layer = createLiveDataLayer({
+    crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
+    unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,
+    recheck: async (s) => {
+      const r = await sessions.credential(s);
+      return r.ok ? { credential: r.credential, session: r.session } : null;
+    },
+  });
+  return Object.freeze({ rt, crm, layer, principal: Object.freeze({ credential: first.credential, session: first.session, sessionId: sid }) });
+}
+export type LiveContext = NonNullable<Awaited<ReturnType<typeof liveContext>>>;
+
 /** The signed-in person's live Dataset, or null when there is no Zoho sign-in or no session. */
 export async function loadLiveDataset(env: NodeJS.ProcessEnv = process.env): Promise<Dataset | null> {
   if (!zohoSignInConfigured(env)) return null;

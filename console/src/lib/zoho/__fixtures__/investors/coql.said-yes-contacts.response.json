@@ -1,0 +1,55 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Email": null,
+        "Mailing_City": null,
+        "Residency": "Resident",
+        "KYC": "Not Started",
+        "KYC_Completed_On": null,
+        "FEMA_Applicable": false,
+        "FEMA_Verified_At": null,
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Origin_Lead": {
+          "id": "9007199254740996421",
+          "name": "x"
+        },
+        "Said_Yes_At": "2026-09-27T16:00:00+05:30",
+        "id": "9007199254740997320",
+        "ARL_ID": "ARL-INV-0220",
+        "First_Name": "Kiran",
+        "Last_Name": "Joshi"
+      },
+      {
+        "Email": null,
+        "Mailing_City": null,
+        "Residency": "Resident",
+        "KYC": "Not Started",
+        "KYC_Completed_On": null,
+        "FEMA_Applicable": false,
+        "FEMA_Verified_At": null,
+        "Originating_IR": null,
+        "Origin_Lead": {
+          "id": "9007199254740996422",
+          "name": "x"
+        },
+        "Said_Yes_At": "2026-09-26T12:00:00+05:30",
+        "id": "9007199254740997321",
+        "ARL_ID": "ARL-INV-0221",
+        "First_Name": "Meera",
+        "Last_Name": "Iyer"
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

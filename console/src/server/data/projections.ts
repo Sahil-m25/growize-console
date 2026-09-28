@@ -18,6 +18,8 @@ export const MODULES = Object.freeze({
   contacts: "Contacts",
   llps: "LLP_Creation_Module",
   allotments: "LLP_UnitAllocation_Module",
+  /** The same module, read for an account-management seat (M09-S02-T02): no money field. */
+  amAllotments: "LLP_UnitAllocation_Module",
   receipts: "Receipts",
   cases: "Cases",
   holdings: "ARL_Holdings",
@@ -39,6 +41,21 @@ export function checkProjection(module: string, fields: readonly string[]): read
   return Object.freeze([...fields]);
 }
 
+/**
+ * M09-S02-T02 — the account-management wall: a KAM's or the Head of AM's read carries no identity field
+ * AND no money or Receipt field (D12, D40). Anything naming an amount, a price, a payment, a receipt, a UTR
+ * or capital is refused here, at load, on top of the identity rule.
+ */
+const AM_MONEY_PATTERN = /(amount|price|paid|payment|receipt|receivable|received|utr|capital|advance|ticket|yield|refund|txn|transaction)/i;
+export function isAmForbiddenField(field: string): boolean {
+  return isForbiddenField(field) || AM_MONEY_PATTERN.test(field);
+}
+export function checkAmProjection(module: string, fields: readonly string[]): readonly string[] {
+  const bad = fields.filter((f) => AM_MONEY_PATTERN.test(f));
+  if (bad.length) throw new TypeError(`${module}: an account-management projection may not select money or Receipt fields (${bad.join(", ")}) — D12/D40.`);
+  return checkProjection(module, fields);
+}
+
 export const PROJECTIONS: Readonly<Record<ModuleKey, readonly string[]>> = Object.freeze({
   contacts: checkProjection(MODULES.contacts, [
     "id", "ARL_ID", ...DETAIL_FIELDS, "Residency", "KAM", "KAM_Since", "KAM_Intro_At",
@@ -52,6 +69,11 @@ export const PROJECTIONS: Readonly<Record<ModuleKey, readonly string[]>> = Objec
   allotments: checkProjection(MODULES.allotments, [
     "id", "Customer", "LLP", "Allocation_Status", "Issued_Units", "Reserved_Units", "Unit_Price",
     "Token_Advance_Amount", "Total_Amount_Received", "Total_Amount_Receivable", "Issued_On", "Annual_Rental_Yield",
+    "Hold_Until", "Hold_Extension_State", "Supplementary_Verified_At",
+  ]),
+  // M09-S02-T02: the AM book's allotments — units, farm, status and hold; no price, no amount, no receipt.
+  amAllotments: checkAmProjection(MODULES.amAllotments, [
+    "id", "Customer", "LLP", "Allocation_Status", "Issued_Units", "Reserved_Units", "Issued_On", "Hold_Until",
   ]),
   receipts: checkProjection(MODULES.receipts, [
     "id", "Allotment", "Kind", "Amount", "Mode", "UTR", "Received_On", "Match_State", "Reversal_Of", "Created_By",

@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740999502",
+        "File_Name": "Supplementary agreement (draft).pdf",
+        "Size": 220000,
+        "Created_Time": "2026-09-02T10:00:00+05:30"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}
