@@ -37,20 +37,21 @@ tg = S['targets']; target = d(tg['build_target']); fin = d(S['finish']['all']); 
 today = datetime.datetime.now(IST)
 cur = S.get('current_phase')
 out.append("# :compass: Where we are\n")
-out.append(f"**Goal:** the whole Growize Console (lead side and Investors side, one app on Zoho), built in three phases: **front end first, then plug into Zoho, then test**. Owner's build target ![](slack_date:{target.date()}).\n")
+out.append(f"**Goal:** the whole Growize Console (lead side and Investors side, one app on Zoho), built in phases: **front end first, then plug into Zoho, then wire the screens to it, then test**. Owner's build target ![](slack_date:{target.date()}).\n")
 out.append(f"**Now working on:** {PH['names'].get(cur, 'all phases finished')}" + (f" — {PH['gate'][cur]}" if cur else "") + "\n")
 if env.get('PROGRESS_VIEW') and cur != 'zoho': out.append(f"**Also running in parallel:** {PH['names']['zoho']} — the backend worktree (branch autopilot/backend) builds the Zoho layer; screens are wired to it after phase 1.\n")
 if S.get('idle_hours') and S['idle_hours'] > 6: out.append(f"::: {{.callout}}\n:warning: The build loop has not run for {round(S['idle_hours'])} hours. Nothing moves until /build runs on the laptop again.\n:::\n")
-out.append("|Phase|Done|Review|Left|Loop hours left|Forecast finish|Pace|\n|---|---|---|---|---|---|---|")
+# D104: done (proven) is shown apart from waiting (code written, proof waits on a person) — the two used to be added together
+out.append("|Phase|Done (proven)|Waiting on people|Review|Left for the loop|Loop hours left|Forecast finish|Pace|\n|---|---|---|---|---|---|---|---|")
 for k in PH['order']:
-    x = S['phases'][k]; pct = round(100 * x['built'] / max(x['units'], 1))
-    here = ' :arrow_left:' if k == cur else ''
+    x = S['phases'][k]; pct = round(100 * x.get('done', x['built']) / max(x['units'], 1)); wpct = round(100 * x.get('waiting', 0) / max(x['units'], 1))
+    here = ' :arrow_left:' if k == cur else (' :twisted_rightwards_arrows: parallel worktree' if k in PH.get('parallel', []) else '')
     fin_k = 'done' if x['finish'] == 'done' else '![](slack_date:%s)' % d(x['finish']).date()
     pace = f"{x['minutes_per_unit']} min/unit measured" if x['source'] == 'measured' else 'assumed until 5 rounds'
-    out.append(f"|**{x['name']}**{here}|{x['built']} of {x['units']} ({pct}%)|{x['review']}|{x['left']}|{x['loop_hours_left']}|{fin_k}|{pace}|")
+    out.append(f"|**{x['name']}**{here}|{x.get('done', x['built'])} of {x['units']} ({pct}%)|{x.get('waiting', 0)} ({wpct}%)|{x['review']}|{x['left']}|{x['loop_hours_left']}|{fin_k}|{pace}|")
 ok = ':large_green_circle: On track' if S.get('on_track') else ':red_circle: Behind the target'
-out.append(f"\n|Forecast|Date|\n|---|---|\n|All three phases through the loop|![](slack_date:{fin.date()})|\n|People's testing and UAT finished (earliest go-live)|![](slack_date:{tend.date()})|\n|Status|{ok}|\n")
-out.append("::: {.callout}\n**What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be tested without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); the autopilot writes the code meanwhile. Phase 3 needs the tester's weekend reviews and UAT by the business users.\n:::\n")
+out.append(f"\n|Forecast|Date|\n|---|---|\n|All three phases through the loop|![](slack_date:{fin.date()})|\n|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:{fin.date()}) → ![](slack_date:{tend.date()})|\n|Status|{ok}|\n")
+out.append("::: {.callout}\n**What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be proven without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); its code is written and unit-tested, so it sits in *Waiting on people*, not *Done*. Phase 2b wires each screen to its API route on demo data and needs nothing. Phase 3 needs the sandbox for every live proof, then the tester's reviews and UAT by the business users (M18-S08).\n:::\n")
 out.append(("Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are through. " if S.get('parallel') else "") + f"Forecast = loop hours left ÷ {S['loop_hours_per_day']} loop hours a day. Minutes per unit are assumptions until each phase has 5 measured rounds; then the measured pace takes over. Stories count once per phase they have work in.\n")
 done_at = {k: d(v['at']) for k, v in PR['stories'].items() if v.get('status') == 'done' and v.get('at')}
 proj = {}
@@ -121,6 +122,24 @@ for e in P.get('epics', []):
     bar = ':large_green_square:' * (pct // 20) + ':white_large_square:' * (5 - pct // 20)
     goal = re.sub(r'\s+', ' ', e.get('goal', ''))[:140].replace('|', '/')
     out.append(f"|**{e['id']}** {e['name']}|{e.get('stage','')}|{len(es)}|{d}|{bar} {pct}%|{goal}|")
+# D104: BLOCKED.md by kind, so the backlog is countable
+kinds = [('FRONT-END LOOP', 'Screens to wire to their API route (now phase 2b units)'), ('PROVISIONAL', 'Choices the build made at low confidence — owner confirms or reverses'),
+         ('FACT CHANGE PROPOSED', 'Test cases that contradict a decision — owner rules, then the case changes'), ('BLOCK', 'Do-not-activate blocks (a design or decision gap)'),
+         ('STAGING PROOF', 'Proofs to run on the sandbox'), ('OWNER ACTION', 'Owner actions in Zoho')]
+open_l = [l for l in blocked.splitlines() if l.startswith('- [ ]')]; done_l = [l for l in blocked.splitlines() if l.startswith('- [x]')]
+def kind_of(l):
+    head = l.split(') ', 1)[-1][:70].upper()
+    for k, _ in kinds:
+        if k in head: return k
+    return 'task' if re.match(r'- \[ \] \S+-T\d', l) else 'note'
+kc = collections.Counter(kind_of(l) for l in open_l)
+who = collections.Counter(m.group(1).strip() for l in open_l if kind_of(l) == 'task' for m in [re.match(r'- \[ \] \S+ \([^,]*,\s*([^,]*?)(?:\s*\([^)]*\))?,', l)] if m)
+out.append(f"# :card_index_dividers: Backlog in BLOCKED.md — {len(open_l)} open, {len(done_l)} ticked\n")
+out.append("|Kind|Open|What it is|\n|---|---|---|")
+for k, what in kinds: out.append(f"|{k}|{kc.get(k, 0)}|{what}|")
+out.append(f"|Tasks for people|{kc.get('task', 0)}|" + ", ".join(f"{w} {n}" for w, n in who.most_common()) + "|")
+out.append(f"|Other notes|{kc.get('note', 0)}|Zoho fields/modules the code expects, secrets and config, staging steps|")
+out.append("\nDecisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line in BLOCKED.md when it is done; the loop reads the ticks.\n")
 out.append("\n# :hammer_and_wrench: People's to-do (from the build)\n")
 items = [l[5:].strip() for l in blocked.splitlines() if l.startswith('- [ ]') and ', Autopilot' not in l]
 out += [f"- [ ] {i[:300]}" for i in items] or ["- Nothing waiting on people."]
@@ -130,14 +149,14 @@ for e in P.get('epics', []):
     es = sorted([s for s in stories if s['epic'] == e['id']], key=lambda s: (order.get(st.get(s['id']), 3), s['id']))
     if not es: continue
     out.append(f"## {e['id']} · {e['name']}\n")
-    out.append("|Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|\n|---|---|---|---|---|---|---|---|")
+    out.append("|Story|" + "|".join(PH['names'][p] for p in PH['order']) + "|Screens today|Stage|Priority|Subtasks done|\n|---|" + "---|" * len(PH['order']) + "---|---|---|---|")
     for s in es:
         ts = sub[s['id']]; hd = [t for t in ts if not str(t.get('doer') or t.get('owner') or '').startswith('Autopilot')]
         title = s['title'].replace('|', '/')[:110]
         au = AU.get(s['id'], {}); phs = PR['stories'].get(s['id'], {}).get('phases', {})
         tp = {p: [t for t in ts if str(t.get('doer') or '').startswith('Autopilot') and any(t['type'] in PH['types'][p] for _ in [0])] for p in PH['order']}
         cell = lambda p: '—' if not tp[p] else PI.get(phs.get(p), 'To do')
-        out.append(f"|**{s['id']}** {title}|{cell('fe')}|{cell('zoho')}|{cell('test')}|{FE.get(au.get('front_end'), '—')}|{s.get('stage','')}|{s.get('priority','')}|{sum(t['id'] in subdone for t in ts)}/{len(ts)}|")
+        out.append(f"|**{s['id']}** {title}|" + "|".join(cell(p) for p in PH['order']) + f"|{FE.get(au.get('front_end'), '—')}|{s.get('stage','')}|{s.get('priority','')}|{sum(t['id'] in subdone for t in ts)}/{len(ts)}|")
     out.append("")
 md = "\n".join(out)
 open('ops/tracker/canvas.md', 'w', encoding='utf-8').write(md)

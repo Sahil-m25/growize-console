@@ -4,7 +4,7 @@
  "url": "http://localhost:3001",
  "prototype": "console/prototype/growize-console-merged.html",
  "next_queue": null,
- "built": "2026-09-27T11:21:10.806Z",
+ "built": "2026-09-28T18:01:21.576Z",
  "stories": [
   {
    "id": "M03-S01",
@@ -2869,6 +2869,15 @@
      "doer": "Tester",
      "est_hours": 12,
      "when": "Testing phase"
+    },
+    {
+     "id": "M01-S01-W1",
+     "type": "Wiring",
+     "title": "Wire: Add console/src/app/template.tsx as a server component that calls pageGuard(pageIdOf(headers()",
+     "detail": "Add console/src/app/template.tsx as a server component that calls pageGuard(pageIdOf(headers().get('x-gz-path'))) from @/server/access/guard and redirects to v.landing when refused (middleware runs on Edge and cannot read the session store).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -3237,6 +3246,15 @@
      "title": "Session cases",
      "detail": "Jev session cases (change of person, sign-out clears reveals) and the staging sign-in case.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M01-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: In SignIn.tsx zoho(), when POST /api/auth/zoho returns redirect, navigate with window",
+     "detail": "In SignIn.tsx zoho(), when POST /api/auth/zoho returns redirect, navigate with window.location.assign(body.redirect); on load show GET /api/session's refusal.message on the sign-in screen, and when it returns signedOut expired|revoked call signOut(why).",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -4267,6 +4285,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M01-S09-W1",
+     "type": "Wiring",
+     "title": "Wire: /api/data now returns fresh {source, at, failed, tone, ceilingMs, servedAt, problems}; src/lib/store.tsx shoul",
+     "detail": "/api/data now returns fresh {source, at, failed, tone, ceilingMs, servedAt, problems}; src/lib/store.tsx should take failed from fresh.failed and treat source 'none' as no live source connected. TC-IM01-013 needs staging with Zoho unreachable.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -4395,6 +4422,15 @@
      "detail": "Tester grants and removes pages for Jhalak on staging and signs in as her.",
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M03-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: The T02 access grid should call POST/DELETE /api/grants {whom, page, cap} and show the returned refusal messag",
+     "detail": "The T02 access grid should call POST/DELETE /api/grants {whom, page, cap} and show the returned refusal message.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -4552,6 +4588,15 @@
      "title": "Grantor matrix",
      "detail": "Tester tries each grantor × grantee × page combination on staging.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M03-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: TC-E03-015..018 (Jev grantor matrix, T02) need the Teams screens on staging",
+     "detail": "TC-E03-015..018 (Jev grantor matrix, T02) need the Teams screens on staging.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -4745,6 +4790,15 @@
      "detail": "Jev seat-change cases.",
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M03-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: The T03 seat dropdown calls PUT /api/users/{id} {seat}, labels rows 'Seat for <name>', and never offers root/d",
+     "detail": "The T03 seat dropdown calls PUT /api/users/{id} {seat}, labels rows 'Seat for <name>', and never offers root/di or a seat control on the super admin's or own row.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -6860,6 +6914,15 @@
      "doer": "Finance users (UAT)",
      "est_hours": 2,
      "when": "Testing phase"
+    },
+    {
+     "id": "M05-S08-W1",
+     "type": "Wiring",
+     "title": "Wire: The KAM Today tiles and cadence/last-heard cards read GET /api/queues/investors (side am: rows, tiles",
+     "detail": "The KAM Today tiles and cadence/last-heard cards read GET /api/queues/investors (side am: rows, tiles, accounts, tickets).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -8379,6 +8442,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 3,
      "when": "Build"
+    },
+    {
+     "id": "M07-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: The composer's Send calls POST /api/leads/[id]/email with {expectedModifiedTime, template, subject, message",
+     "detail": "The composer's Send calls POST /api/leads/[id]/email with {expectedModifiedTime, template, subject, message, to, scheduled?}, shows error inline on a 4xx and notice on a 200.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -8983,6 +9055,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
      "when": "Build"
+    },
+    {
+     "id": "M09-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: AM columns, care filters and the 'My accounts'/'Accounts' heading (T03); counts are served by GET /api/investo",
+     "detail": "AM columns, care filters and the 'My accounts'/'Accounts' heading (T03); counts are served by GET /api/investors/am.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -9140,6 +9221,15 @@
      "doer": "Tester",
      "est_hours": 4,
      "when": "Testing phase"
+    },
+    {
+     "id": "M09-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: Record header, banners and section bar by seat (T02) from GET /api/investors/[id]/record (sections, holdings",
+     "detail": "Record header, banners and section bar by seat (T02) from GET /api/investors/[id]/record (sections, holdings, hold, money, paper, version); show a 409 'Changed by someone else - reload.' in the page.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -9266,6 +9356,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M09-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: The care card and manager drawer call PUT /api/investors/[id]/kam {kamUserId|null, expectedModifiedTime}",
+     "detail": "The care card and manager drawer call PUT /api/investors/[id]/kam {kamUserId|null, expectedModifiedTime}, with per-KAM counts worked out from /api/investors/am.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -9388,6 +9487,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M09-S07-W1",
+     "type": "Wiring",
+     "title": "Wire: The Investors search box calls GET /api/investors/search?q=&farm=<LLP id> with a 200 ms debounce",
+     "detail": "The Investors search box calls GET /api/investors/search?q=&farm=<LLP id> with a 200 ms debounce.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -9472,6 +9580,15 @@
      "detail": "Two IR test users on staging; foreign investor refused; API read with the restricted user returns own investors only.",
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M09-S08-W1",
+     "type": "Wiring",
+     "title": "Wire: IR columns on Investors (name, ARL code, farms, state, lead link); the server sends an IR no price, amount",
+     "detail": "IR columns on Investors (name, ARL code, farms, state, lead link); the server sends an IR no price, amount, yield or receipts.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -10129,6 +10246,15 @@
      "doer": "Finance users (UAT)",
      "est_hours": 2,
      "when": "Testing phase"
+    },
+    {
+     "id": "M01-S10-W1",
+     "type": "Wiring",
+     "title": "Wire: The T02 step-up panel asks the reason first, then navigates to /api/auth/step-up?action=...&back=..., reads ?s",
+     "detail": "The T02 step-up panel asks the reason first, then navigates to /api/auth/step-up?action=...&back=..., reads ?stepup=ok|failed|cancelled|locked, and asks /api/auth/step-up/status before offering reveal or release.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -10373,6 +10499,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M05-S06-W1",
+     "type": "Wiring",
+     "title": "Wire: The four tiles, the 'as of HH:MM' line and the stale state read GET /api/numbers/investors-today before TC-IM0",
+     "detail": "The four tiles, the 'as of HH:MM' line and the stale state read GET /api/numbers/investors-today before TC-IM03-001/002/013 run in the UI.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -10542,6 +10677,24 @@
      "detail": "Jev queue cases, including a claim answered and shown to the IR.",
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M05-S07-W1",
+     "type": "Wiring",
+     "title": "Wire: Today (Investors side) reads GET /api/queues/investors (side money: rows with kind/text/urg/action/ref) and re",
+     "detail": "Today (Investors side) reads GET /api/queues/investors (side money: rows with kind/text/urg/action/ref) and renders one control per row; answering a claim stays POST /api/claims/[id].",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M05-S07-W2",
+     "type": "Wiring",
+     "title": "Wire: A Declined/Recalled/Expired paper is no longer a Remind row; decide whether the queue needs a 'send a new one'",
+     "detail": "A Declined/Recalled/Expired paper is no longer a Remind row; decide whether the queue needs a 'send a new one' row kind.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -10893,6 +11046,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M08-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: The lead page's Next milestone row and payment drawer should read GET /api/leads/[id]/gate",
+     "detail": "The lead page's Next milestone row and payment drawer should read GET /api/leads/[id]/gate.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -11125,6 +11287,15 @@
      "doer": "Finance users (UAT)",
      "est_hours": 3,
      "when": "Testing phase"
+    },
+    {
+     "id": "M08-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: The claim drawer and row (T02) and the record-a-receipt drawer (T05: POST /api/receipts/prepare then POST /api",
+     "detail": "The claim drawer and row (T02) and the record-a-receipt drawer (T05: POST /api/receipts/prepare then POST /api/receipts with a per-press Idempotency-Key).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -11451,6 +11622,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 3,
      "when": "Build"
+    },
+    {
+     "id": "M08-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: The Holds running and Land cards, the reservation alert and drawer, and Extend/Release confirmations read /api",
+     "detail": "The Holds running and Land cards, the reservation alert and drawer, and Extend/Release confirmations read /api/holds, /api/holds/land and /api/holds/[id].",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -11696,6 +11876,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 3,
      "when": "Build"
+    },
+    {
+     "id": "M08-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: The People & details 'Start - <duration>' and 'End the cover' controls call POST/DELETE /api/leads/[id]/cover ",
+     "detail": "The People & details 'Start - <duration>' and 'End the cover' controls call POST/DELETE /api/leads/[id]/cover with expectedModifiedTime.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -11904,6 +12093,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M08-S07-W1",
+     "type": "Wiring",
+     "title": "Wire: ImSt in src/lib/im/types.ts has no 'said yes' state, so the Dataset shows a said-yes Contact as 'reserved'",
+     "detail": "ImSt in src/lib/im/types.ts has no 'said yes' state, so the Dataset shows a said-yes Contact as 'reserved'; the correct label is in the Finance list's stateLabel and the record's state.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -12057,6 +12255,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M08-S08-W1",
+     "type": "Wiring",
+     "title": "Wire: The app account panel and TC-IM11-005/006 against the stub receiver",
+     "detail": "The app account panel and TC-IM11-005/006 against the stub receiver.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -12204,6 +12411,15 @@
      "detail": "TC-IM05-001..004.",
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S01-W1",
+     "type": "Wiring",
+     "title": "Wire: Register received/refunded/netBanked/stillDue are now matched-only (D21) and totals.recorded holds Pending mon",
+     "detail": "Register received/refunded/netBanked/stillDue are now matched-only (D21) and totals.recorded holds Pending money; the Payments page shows 'recorded, not yet matched' separately.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -12387,6 +12603,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M10-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: 'Match it' posts /api/receipts/[id]/match {expectedModifiedTime}; match time is carried only in events (Receip",
+     "detail": "'Match it' posts /api/receipts/[id]/match {expectedModifiedTime}; match time is carried only in events (Receipts has no Matched_At).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -12555,6 +12780,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
      "when": "Build"
+    },
+    {
+     "id": "M10-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: The claim drawer on Today and Payments reads GET /api/claims and /api/claims/[id], posts confirm with an Idemp",
+     "detail": "The claim drawer on Today and Payments reads GET /api/claims and /api/claims/[id], posts confirm with an Idempotency-Key and not-there with {reason}, and the IR's lead page shows 'Finance did not find it: <reason>'.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -12720,6 +12954,15 @@
      "detail": "Who uploads, when, what 'needs an owner' means and how it is closed.",
      "doer": "Autopilot",
      "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: 'Upload the bank statement' plus the matched and 'needs an owner' lists, and TC-IM05-019",
+     "detail": "'Upload the bank statement' plus the matched and 'needs an owner' lists, and TC-IM05-019.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -12955,6 +13198,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M11-S01-W1",
+     "type": "Wiring",
+     "title": "Wire: The Farms list and detail drawer (T03) read GET /api/farms and /api/farms/[id]",
+     "detail": "The Farms list and detail drawer (T03) read GET /api/farms and /api/farms/[id].",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -13040,6 +13292,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M11-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: Allotment rows on the investor record and the LLP (GET /api/investors/[id]/allotments, GET /api/farms/[id]/all",
+     "detail": "Allotment rows on the investor record and the LLP (GET /api/investors/[id]/allotments, GET /api/farms/[id]/allotments) and the Jev cases.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -13122,6 +13383,15 @@
      "title": "Jev cases for the shelf",
      "detail": "TC-IM06-001..003.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M11-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: Farms tiles, per-LLP bars and occupancy table read GET /api/farms/shelf",
+     "detail": "Farms tiles, per-LLP bars and occupancy table read GET /api/farms/shelf.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -13260,6 +13530,15 @@
      "title": "Jev cases",
      "detail": "TC-IM06-004..006.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M11-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: Farms 'Release N' and 'Take it back' call POST/DELETE /api/farms/{id}/release with {version}, show the 422 err",
+     "detail": "Farms 'Release N' and 'Take it back' call POST/DELETE /api/farms/{id}/release with {version}, show the 422 error in the page, and hide for seats without the farm capability.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -13436,6 +13715,15 @@
      "doer": "Finance users (UAT)",
      "est_hours": 2,
      "when": "Testing phase"
+    },
+    {
+     "id": "M11-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: Verify on the Allocation letter row posts /api/investors/{id}/allot {allotmentId, reference",
+     "detail": "Verify on the Allocation letter row posts /api/investors/{id}/allot {allotmentId, reference, expectedModifiedTime} and shows the 422 facts-missing message.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -13642,6 +13930,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M11-S07-W1",
+     "type": "Wiring",
+     "title": "Wire: The receipt and allot drawers show the oversell refusal naming the LLP and its free units (TC-IM06-012)",
+     "detail": "The receipt and allot drawers show the oversell refusal naming the LLP and its free units (TC-IM06-012).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -13779,6 +14076,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M12-S01-W1",
+     "type": "Wiring",
+     "title": "Wire: The investor DOCS tab reads /api/documents/investor/[id] and /api/documents/farm/[id] (AC7)",
+     "detail": "The investor DOCS tab reads /api/documents/investor/[id] and /api/documents/farm/[id] (AC7).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -13873,6 +14179,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M12-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: The upload control sends file bytes to POST /api/documents/upload?scope=&id=&slot=&name=&expected= with one Id",
+     "detail": "The upload control sends file bytes to POST /api/documents/upload?scope=&id=&slot=&name=&expected= with one Idempotency-Key per chosen file, reused on retry.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -13962,6 +14277,15 @@
      "title": "Jev cases",
      "detail": "TC-IM07-001..003 reworked for Zoho Sign rows and IR scope.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: The Documents page reads GET /api/documents/list?cut=out|all; the rail badge is outCount; a 503 carries fresh",
+     "detail": "The Documents page reads GET /api/documents/list?cut=out|all; the rail badge is outCount; a 503 carries fresh.at/tone for the stale block.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -14137,6 +14461,15 @@
      "title": "Jev cases",
      "detail": "NRI method, duplicate refusal, viewer permission, send from the allotment.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: The send drawer and Send one panel call GET /api/documents/sign/prefill and POST /api/documents/sign/send with",
+     "detail": "The send drawer and Send one panel call GET /api/documents/sign/prefill and POST /api/documents/sign/send with an Idempotency-Key per press.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -14324,6 +14657,33 @@
      "doer": "Autopilot",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M12-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: Status chips, Send a reminder and Recall with an in-page reason call /api/documents/sign/remind and /recall",
+     "detail": "Status chips, Send a reminder and Recall with an in-page reason call /api/documents/sign/remind and /recall.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S05-W2",
+     "type": "Wiring",
+     "title": "Wire: Documents rows carry sign.label and yourMove 'Send a new one' / 'Finance to send a new one', and Numbers Paper",
+     "detail": "Documents rows carry sign.label and yourMove 'Send a new one' / 'Finance to send a new one', and Numbers Paper rows carry status.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S05-H5",
+     "type": "Hardening",
+     "title": "Webhook HMAC, replay and dead-letter tests",
+     "detail": "Tests: bad HMAC → 401 and nothing stored; duplicate event id → acknowledged once, processed once; unlinked event → dead-letter row; handler answers 200 within 5 s with the heavy work deferred (M20-S08-NOTE-3).",
+     "doer": "Autopilot",
+     "est_hours": 2,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -14456,6 +14816,15 @@
      "title": "Jev cases",
      "detail": "Auto-file on completion, manual verify, FEMA clear, viewer read-only.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S06-W1",
+     "type": "Wiring",
+     "title": "Wire: The manual verify drawer uploads via /api/documents/upload then POSTs /api/documents/sign/verify with method a",
+     "detail": "The manual verify drawer uploads via /api/documents/upload then POSTs /api/documents/sign/verify with method and reference.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -14608,6 +14977,15 @@
      "title": "Jev cases",
      "detail": "TC-IM07-014..016 reworked.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S07-W1",
+     "type": "Wiring",
+     "title": "Wire: 'Nothing has come back' and 'Block it' call POST /api/documents/sign/block",
+     "detail": "'Nothing has come back' and 'Block it' call POST /api/documents/sign/block.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -14943,6 +15321,15 @@
      "detail": "TC-E09-001..008 and TC-IM07-008..010 incl. wrong-document regression, restricted user.",
      "doer": "Autopilot (Jev)",
      "est_hours": 3,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S11-W1",
+     "type": "Wiring",
+     "title": "Wire: The lead page Paperwork row GETs /api/leads/[id]/paperwork and sends each step's rowToken (plus channel",
+     "detail": "The lead page Paperwork row GETs /api/leads/[id]/paperwork and sends each step's rowToken (plus channel, attachmentId or link) and undoToken back; Finance's queue and verify panel use hints.ts hintForDocument/rankForFinance.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -15490,6 +15877,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M12-S13-W1",
+     "type": "Wiring",
+     "title": "Wire: Hide Deck follow-up/Webinar invite and the deck next steps before the NDA is signed, and add the Investor file",
+     "detail": "Hide Deck follow-up/Webinar invite and the deck next steps before the NDA is signed, and add the Investor file 'Paperwork & material' tab (T02).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -15682,6 +16078,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
      "when": "Build"
+    },
+    {
+     "id": "M14-S01-W1",
+     "type": "Wiring",
+     "title": "Wire: The Events pages (T03) read GET /api/events and /api/events/[id]",
+     "detail": "The Events pages (T03) read GET /api/events and /api/events/[id].",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -15826,6 +16231,15 @@
      "detail": "TC-E10-004..008.",
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M14-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: The event drawer (gaps list, confirm-before-remove from the 428 answer) and the activity lines written from th",
+     "detail": "The event drawer (gaps list, confirm-before-remove from the 428 answer) and the activity lines written from the API answer.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -16032,6 +16446,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M14-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: The capture event picker and the sheet card (rule select, split preview, 'Loaded the event sheet' lines)",
+     "detail": "The capture event picker and the sheet card (rule select, split preview, 'Loaded the event sheet' lines).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -16225,6 +16648,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M10-S08-W1",
+     "type": "Wiring",
+     "title": "Wire: Per-farm Money blocks (GET /api/investors/[id]/money) and the Jev cases",
+     "detail": "Per-farm Money blocks (GET /api/investors/[id]/money) and the Jev cases.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -16295,6 +16727,15 @@
      "title": "Jev cases for the ARL panel",
      "detail": "Finance sees it; KAM and IR do not; no write controls for any seat.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S09-W1",
+     "type": "Wiring",
+     "title": "Wire: The ARL holdings panel (GET /api/investors/[id]/holdings, readOnly) and the Jev cases",
+     "detail": "The ARL holdings panel (GET /api/investors/[id]/holdings, readOnly) and the Jev cases.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -16449,6 +16890,15 @@
      "title": "Email visibility cases",
      "detail": "Own lead vs other IR's lead, investor from own lead, Finance.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M12-S09-W1",
+     "type": "Wiring",
+     "title": "Wire: The Emails tab reads GET /api/emails/{lead|investor|allotment}/{id} and opens /api/emails/{kind}/{id}/{message",
+     "detail": "The Emails tab reads GET /api/emails/{lead|investor|allotment}/{id} and opens /api/emails/{kind}/{id}/{messageId}?owner={ownerId}; a 403 shows the in-page refusal.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -16827,6 +17277,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M13-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: The Tickets page (T03) reads GET /api/cases",
+     "detail": "The Tickets page (T03) reads GET /api/cases.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -16971,6 +17430,15 @@
      "title": "Jev cases",
      "detail": "TC-IM08-004..006.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M13-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: The Tickets drawer and row chips call POST /api/cases, PATCH /api/cases/[id] {to, expectedModifiedTime} and PO",
+     "detail": "The Tickets drawer and row chips call POST /api/cases, PATCH /api/cases/[id] {to, expectedModifiedTime} and POST /api/cases/[id]/reply.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -17124,6 +17592,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1,
      "when": "Build"
+    },
+    {
+     "id": "M13-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: Ticket rows show 'handed to <Finance> by <KAM>' and the watched note, no 'Close it' on a watched row; 'Hand it",
+     "detail": "Ticket rows show 'handed to <Finance> by <KAM>' and the watched note, no 'Close it' on a watched row; 'Hand it to Finance' posts /api/cases/{id}/handover with expectedModifiedTime.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -17271,6 +17748,15 @@
      "title": "Jev cases",
      "detail": "TC-IM08-009..011.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M13-S06-W1",
+     "type": "Wiring",
+     "title": "Wire: The Investor updates page and publish drawer read GET /api/updates and POST {headline, kind, audience, llpId",
+     "detail": "The Investor updates page and publish drawer read GET /api/updates and POST {headline, kind, audience, llpId, body}.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -17654,6 +18140,15 @@
      "doer": "Finance users (UAT)",
      "est_hours": 2,
      "when": "Testing phase"
+    },
+    {
+     "id": "M15-S03-W1",
+     "type": "Wiring",
+     "title": "Wire: The Activity page with the Lead side | Investors side switch (T03/T06) reads GET /api/activity and /api/activi",
+     "detail": "The Activity page with the Lead side | Investors side switch (T03/T06) reads GET /api/activity and /api/activity/history.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -17945,6 +18440,15 @@
      "detail": "TC-E11-016..019 and TC-IM10-010..013 on staging; verify Object Lock retention.",
      "doer": "Autopilot (Jev)",
      "est_hours": 2.5,
+     "when": "Build"
+    },
+    {
+     "id": "M15-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: The Logs view on GET /api/logs (filters, byActor chips, identityReveals, headroom",
+     "detail": "The Logs view on GET /api/logs (filters, byActor chips, identityReveals, headroom, signInHistory).",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -18800,6 +19304,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M16-S09-W1",
+     "type": "Wiring",
+     "title": "Wire: TC-IM09-004..007 need Numbers to show only Service for KAM and Head of AM and hide the switch for IRs; the ser",
+     "detail": "TC-IM09-004..007 need Numbers to show only Service for KAM and Head of AM and hide the switch for IRs; the server refuses money sections with 403 money-hidden.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -18972,6 +19485,15 @@
      "title": "Test Teams",
      "detail": "Run TC-E14-001..003 and TC-IM10-001..004 regenerated against the merged console.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M17-S01-W1",
+     "type": "Wiring",
+     "title": "Wire: The Teams page and rights-grid tile are ported onto GET /api/teams and /api/teams/{id}, then TC-E14-001..003 a",
+     "detail": "The Teams page and rights-grid tile are ported onto GET /api/teams and /api/teams/{id}, then TC-E14-001..003 and TC-IM10-001..004 re-run (T04).",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -19179,6 +19701,15 @@
      "detail": "Run TC-E14-004..007 and repeat 004 with a real restricted Zoho user on staging.",
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M17-S02-W1",
+     "type": "Wiring",
+     "title": "Wire: PUT /api/users/{id} answers 403 {code:'step-up'} until a fresh Zoho sign-in (action 'seat'); lead-side seats s",
+     "detail": "PUT /api/users/{id} answers 403 {code:'step-up'} until a fresh Zoho sign-in (action 'seat'); lead-side seats send {seat, side:'lead'}; setMgr calls PUT /api/users/{id}/manager and shows 409 loop / would-lose.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -19681,6 +20212,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 1.5,
      "when": "Build"
+    },
+    {
+     "id": "M13-S05-W1",
+     "type": "Wiring",
+     "title": "Wire: The reply thread and 'Reply to the investor' control read GET /api/cases/[id]/deliveries for 'Reply not delive",
+     "detail": "The reply thread and 'Reply to the investor' control read GET /api/cases/[id]/deliveries for 'Reply not delivered yet' / 'Delivered'.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -20012,6 +20552,15 @@
      "title": "Jev cases TC-IM09-001..003",
      "detail": "Regenerate TC-IM09-001..003 against the merged console with seeded LLPs, allotments and Receipts; no hard-coded demo totals.",
      "doer": "Autopilot (Jev)",
+     "est_hours": 1,
+     "when": "Build"
+    },
+    {
+     "id": "M16-S08-W1",
+     "type": "Wiring",
+     "title": "Wire: Investors side sections (Collection, At risk, Paper, Compliance, Service) and TC-IM09-001..003 read /api/numbe",
+     "detail": "Investors side sections (Collection, At risk, Paper, Compliance, Service) and TC-IM09-001..003 read /api/numbers/investors-side.",
+     "doer": "Autopilot",
      "est_hours": 1,
      "when": "Build"
     }
@@ -20964,6 +21513,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M18-S04-W1",
+     "type": "Wiring",
+     "title": "Wire: call installErrorBeacon() (console/src/lib/zoho/error-beacon.ts) from a client component and sendErrorBeacon({",
+     "detail": "call installErrorBeacon() (console/src/lib/zoho/error-beacon.ts) from a client component and sendErrorBeacon({source:'save-failed', requestId, zohoStatus, zohoCode}) from the save queue so browser errors and the failed-saves alert are fed.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -21403,6 +21961,24 @@
      "doer": "Tester",
      "est_hours": 2,
      "when": "Testing phase"
+    },
+    {
+     "id": "M18-S08-H5",
+     "type": "Hardening",
+     "title": "UAT pack: per-seat scenarios and sign-off sheet",
+     "detail": "docs/uat/: one scenario script per seat (IR, IR Manager, Finance, Head of Finance, KAM, Farm ops, Sahil/DI) walking the real day (capture → follow-up → said yes → hand-off → money → paper → app access → payout → ticket), each step with the expected screen and the record state in Zoho; entry criteria (sandbox live, phase 2b through, smoke suite green); a sign-off sheet per seat with pass/fail/notes and the acceptance rule (no P1 open, every Must scenario passed by its real seat holder).",
+     "doer": "Autopilot",
+     "est_hours": 3,
+     "when": "Build"
+    },
+    {
+     "id": "M18-S08-H6",
+     "type": "Hardening",
+     "title": "UAT defect intake",
+     "detail": "A one-page how-to-report (screenshot, seat, record id, what you expected) and the BLOCKED.md/issue route it lands in; links from the sign-off sheet.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [
@@ -21791,6 +22367,225 @@
    ]
   },
   {
+   "id": "M18-S14",
+   "epic": "M18",
+   "title": "Every API route refuses at the door: no session, wrong seat, bad input, masked fields",
+   "priority": "Must",
+   "stage": "S5",
+   "day": 6,
+   "depends_on": [
+    "M18-S02",
+    "M01-S02"
+   ],
+   "as_a": "IR Manager",
+   "i_want": "a generated contract test over every route under console/src/app/api that proves the HTTP boundary itself refuses correctly",
+   "so_that": "a bug one layer down can never expose data or accept a bad write through the door",
+   "acceptance": [
+    "Given the routes discovered by scripts/leak-matrix.lib.cjs, when the suite runs, then every route (except sign-in, webhooks, test hooks and the beacon) answers 401 with no session cookie and a body of {code} only",
+    "Given a seat that the route's capability table refuses, when it calls the route, then the answer is 403 and the body names no record, field or count",
+    "Given a malformed or oversized body, missing required field or wrong content type, when it is posted, then the answer is 4xx with a short code and never a stack trace, file path or Zoho error body",
+    "Given each seat in SEATCAPS, when it reads every route on the fixture book, then no response contains pan, bank_account, Aadhaar_Number, UTR (full), DOB or a rupee figure the seat may not see (the leak matrix field list)",
+    "Given a route added later without an entry in the contract table, when the suite runs, then it fails naming the route"
+   ],
+   "decisions": [
+    "D52",
+    "D53",
+    "D60",
+    "D68"
+   ],
+   "prototype": [
+    "All pages"
+   ],
+   "zoho": [],
+   "subtasks": [
+    {
+     "id": "M18-S14-H1",
+     "type": "Hardening",
+     "title": "Route manifest and contract table",
+     "detail": "One table (route, methods, allowed seats, body schema ref, masked fields) generated from src/app/api and SEATCAPS; fails on an unlisted route.",
+     "doer": "Autopilot",
+     "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M18-S14-H2",
+     "type": "Hardening",
+     "title": "401 / 403 / 4xx suite",
+     "detail": "node --test suite that starts the compiled test server (FIXTURE_MODE=local) and runs the three refusals per route and method.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M18-S14-H3",
+     "type": "Hardening",
+     "title": "Boundary leak suite per seat",
+     "detail": "Every GET per seat on the fixture book; assert the masked-field list is absent from every body; extend leak-matrix.lib.cjs rather than duplicate.",
+     "doer": "Autopilot",
+     "est_hours": 3,
+     "when": "Build"
+    }
+   ],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [
+    "TC-M18-CAL1"
+   ],
+   "open_decisions": [
+    "OD10: Dates and targets: go-live once gates pass, UAT people, KPI targets, whether refunds are in plan."
+   ],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+    "AP3: Zoho Sign plan with API + webhooks (Enterprise or API plan, India DC).",
+    "MA3: Finance: receipt field list and picklists, a sample bank statement CSV, old payments per allotment."
+   ]
+  },
+  {
+   "id": "M18-S15",
+   "epic": "M18",
+   "title": "Browser and request hardening: security headers, Origin check, rate limits, upload limits",
+   "priority": "Must",
+   "stage": "S5",
+   "day": 6,
+   "depends_on": [
+    "M01-S05",
+    "M12-S02"
+   ],
+   "as_a": "Sahil (Digital Infrastructure)",
+   "i_want": "the console to send strict security headers, refuse cross-site writes, throttle sign-in, search, upload and webhook endpoints, and cap uploads",
+   "so_that": "the app resists the ordinary web attacks before any tester or investor data reaches it",
+   "acceptance": [
+    "Given any page or API response, when the headers are read, then Content-Security-Policy (no unsafe-inline scripts; Zoho origins only where needed), Strict-Transport-Security (on https), X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin and Permissions-Policy are present, with a test that fails if one goes missing",
+    "Given a POST/PUT/PATCH/DELETE whose Origin or Sec-Fetch-Site says cross-site, when it reaches any route, then it is refused 403 before the handler runs; same-origin requests pass; the test covers both",
+    "Given more than N attempts per minute per IP or session on /api/auth/*, /api/*/search, /api/documents/upload and /api/webhooks/*, when the limit is crossed, then 429 with Retry-After; limits live in one config and the test proves each",
+    "Given an upload over the size cap or with a content type outside the allow list, when it is posted, then 413/415 and nothing is written; the test proves both",
+    "Given the CI check job, when it runs, then npm audit --audit-level=high passes or the job fails; the a11y lint and secret scan stay"
+   ],
+   "decisions": [
+    "D47"
+   ],
+   "prototype": [
+    "All pages"
+   ],
+   "zoho": [],
+   "subtasks": [
+    {
+     "id": "M18-S15-H1",
+     "type": "Hardening",
+     "title": "Security headers in next.config + test",
+     "detail": "Headers per acceptance 1; CSP built from one allow-list constant; test reads / and one API route.",
+     "doer": "Autopilot",
+     "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M18-S15-H2",
+     "type": "Hardening",
+     "title": "Origin / Sec-Fetch-Site guard on writes",
+     "detail": "One guard in the route wrapper, applied to every mutating method; tests for same-origin pass, cross-site refuse, missing headers on a top-level GET redirect still pass.",
+     "doer": "Autopilot",
+     "est_hours": 1.5,
+     "when": "Build"
+    },
+    {
+     "id": "M18-S15-H3",
+     "type": "Hardening",
+     "title": "Rate limits on sign-in, search, upload, webhooks",
+     "detail": "In-process token bucket keyed by IP+session behind one config; 429 + Retry-After; tests per endpoint; note in ops/env/README.md that a multi-instance host needs a shared store.",
+     "doer": "Autopilot",
+     "est_hours": 2.5,
+     "when": "Build"
+    },
+    {
+     "id": "M18-S15-H4",
+     "type": "Hardening",
+     "title": "Upload size and type caps + npm audit in CI",
+     "detail": "Cap and allow-list on /api/documents/upload with 413/415 tests; add npm audit --audit-level=high to the check job of .github/workflows/pipeline.yml.",
+     "doer": "Autopilot",
+     "est_hours": 1.5,
+     "when": "Build"
+    }
+   ],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [
+    "TC-M18-CAL1"
+   ],
+   "open_decisions": [
+    "OD10: Dates and targets: go-live once gates pass, UAT people, KPI targets, whether refunds are in plan."
+   ],
+   "known_gaps": [
+    "AP2: Zoho Setup still with the owner: profiles, field-level security (PAN/bank/Aadhaar wall) and sharing rules (docs/ACCESS-PLAN.md); hide full Aadhaar after back-fill; retire the sample Blueprint 'Lead nurturing process' so 6 old Lead_Status values can go. Done: D74–D85 modules, fields, roles, clean-up.",
+    "AP3: Zoho Sign plan with API + webhooks (Enterprise or API plan, India DC).",
+    "MA3: Finance: receipt field list and picklists, a sample bank statement CSV, old payments per allotment."
+   ]
+  },
+  {
+   "id": "M19-S12",
+   "epic": "M19",
+   "title": "The 88 unexplained Jev failures are each a fixed bug or a proposed fact change",
+   "priority": "Must",
+   "stage": "S5",
+   "day": 6,
+   "depends_on": [
+    "M19-S10",
+    "M19-S11"
+   ],
+   "as_a": "Tester",
+   "i_want": "every failing Jev UI case from the 28 Sep run classified as a real defect (fixed, with the case passing) or a stale case (a FACT CHANGE PROPOSED line in BLOCKED.md naming the decision it contradicts)",
+   "so_that": "the 69% pass rate becomes a number that means something before phase 3 starts",
+   "acceptance": [
+    "Given docs/reports/phase1-jev-2026-09-28.md, when triage runs, then a table lists every failing case with class = bug | stale | flaky and the evidence line",
+    "Given a case classed bug, when its fix lands, then the case passes on demo data and the regression stays green",
+    "Given a case classed stale, when it is written up, then BLOCKED.md holds one FACT CHANGE PROPOSED line naming the decision (D-number) and the new expected behaviour; the case itself is not edited",
+    "Given a case classed flaky, when it is re-run three times, then it passes three times or is classed bug",
+    "Given the finished triage, when the full suite runs again, then the pass count and the stale count add up to the total or the difference is listed by case id"
+   ],
+   "decisions": [
+    "D98"
+   ],
+   "prototype": [
+    "All pages"
+   ],
+   "zoho": [],
+   "subtasks": [
+    {
+     "id": "M19-S12-H1",
+     "type": "Hardening",
+     "title": "Triage table for the 98 failures",
+     "detail": "Classify each failing case (bug | stale | flaky) with the evidence line; write docs/reports/jev-triage-2026-09-28.md.",
+     "doer": "Autopilot",
+     "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S12-H2",
+     "type": "Hardening",
+     "title": "Fix the bugs; propose the stale cases",
+     "detail": "Fix cases classed bug on demo data; one FACT CHANGE PROPOSED line per stale case; re-run flaky cases three times.",
+     "doer": "Autopilot",
+     "est_hours": 4,
+     "when": "Build"
+    },
+    {
+     "id": "M19-S12-H3",
+     "type": "Hardening",
+     "title": "Re-run the full suite and reconcile",
+     "detail": "Full Jev suite; pass + stale must equal total or list the difference.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
+    }
+   ],
+   "tests": [],
+   "ui_cases": [],
+   "calibration": [],
+   "open_decisions": [],
+   "known_gaps": [
+    "AP4: Zoho sandbox + OAuth client; hosting account for staging/production; Object Lock log bucket; service credential for background jobs."
+   ]
+  },
+  {
    "id": "M20-S03",
    "epic": "M20",
    "title": "Training and quick guides",
@@ -22126,6 +22921,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M09-S09-W1",
+     "type": "Wiring",
+     "title": "Wire: The Add investor drawer still dispatches the demo reducer; wire it to POST /api/investors/add-paid (send an Id",
+     "detail": "The Add investor drawer still dispatches the demo reducer; wire it to POST /api/investors/add-paid (send an Idempotency-Key, show message, and on 409 link to existing.contactId).",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -22195,6 +22999,15 @@
      "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S20-W1",
+     "type": "Wiring",
+     "title": "Wire: The Payouts tab and 'payouts due this month' queue use GET /api/payouts/allotments/[id], GET /api/payouts and ",
+     "detail": "The Payouts tab and 'payouts due this month' queue use GET /api/payouts/allotments/[id], GET /api/payouts and POST /api/payouts/[id]/paid (Idempotency-Key per press); the issue flow calls POST /api/payouts/schedule.",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],
@@ -22270,6 +23083,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M10-S21-W1",
+     "type": "Wiring",
+     "title": "Wire: The App account card and Lock drawer still run on the demo reducer; wire them to GET/POST/DELETE /api/investor",
+     "detail": "The App account card and Lock drawer still run on the demo reducer; wire them to GET/POST/DELETE /api/investors/[id]/unlock, sending card.modifiedTime back as expectedModifiedTime.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -22344,6 +23166,15 @@
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
      "when": "Build"
+    },
+    {
+     "id": "M10-S22-W1",
+     "type": "Wiring",
+     "title": "Wire: Wire features/im/money/preview.tsx to GET /api/investors/[id]/preview",
+     "detail": "Wire features/im/money/preview.tsx to GET /api/investors/[id]/preview.",
+     "doer": "Autopilot",
+     "est_hours": 1,
+     "when": "Build"
     }
    ],
    "tests": [],
@@ -22414,6 +23245,15 @@
      "detail": "D98: Jev UI cases from the acceptance criteria (FACT CHANGE rules apply) and API tests.",
      "doer": "Autopilot (Jev)",
      "est_hours": 2,
+     "when": "Build"
+    },
+    {
+     "id": "M10-S23-W1",
+     "type": "Wiring",
+     "title": "Wire: Wire the 'Create test sign-in link' drawer to POST/GET /api/investors/[id]/test-link (409 confirm-needed carri",
+     "detail": "Wire the 'Create test sign-in link' drawer to POST/GET /api/investors/[id]/test-link (409 confirm-needed carries the warning).",
+     "doer": "Autopilot",
+     "est_hours": 1,
      "when": "Build"
     }
    ],

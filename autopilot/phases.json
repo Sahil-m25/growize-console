@@ -1,14 +1,18 @@
 {
- "note": "D98 (27 Sep 2026): the build runs in three phases, in this order. A story is worked once per phase that has autopilot subtasks for it. Change the order here only with the owner.",
+ "note": "D98 (27 Sep 2026): the build runs in three phases, in this order. A story is worked once per phase that has autopilot subtasks for it. Change the order here only with the owner. D104 (28 Sep 2026): phase 2b \"wire\" holds the FRONT-END LOOP items from BLOCKED.md as counted units (autopilot/wire-units.mjs); a phase with only review/waiting units left no longer blocks the next phase. D105 (28 Sep 2026): phase 2c \"harden\" (route contract suite, browser/request hardening, webhook tests, Jev triage, UAT pack) runs in a second worktree pinned to it. Phases in \"parallel\" run in their own worktree on their own clock; the last phase starts when every clock has ended.",
  "order": [
   "fe",
   "zoho",
+  "wire",
+  "harden",
   "test"
  ],
  "names": {
   "fe": "1. Front end on demo data",
   "zoho": "2. Plug into Zoho",
-  "test": "3. Test and harden"
+  "test": "3. Test and harden",
+  "wire": "2b. Wire screens to the API",
+  "harden": "2c. Test contracts and security hardening"
  },
  "types": {
   "fe": [
@@ -23,17 +27,28 @@
   "test": [
    "Test",
    "Docs"
+  ],
+  "wire": [
+   "Wiring"
+  ],
+  "harden": [
+   "Hardening"
   ]
  },
  "gate": {
   "fe": "The story's screens exist in console/ and its Jev UI cases pass on demo data (FIXTURE_MODE=local). No Zoho calls.",
   "zoho": "The same screens read and write Zoho through src/lib/zoho (as the signed-in person), unit and API tests pass, and the UI cases still pass on demo data.",
-  "test": "API cases, staging cases on the Zoho sandbox, the full regression, tester review and UAT."
+  "test": "API cases, staging cases on the Zoho sandbox, the full regression, tester review and UAT.",
+  "wire": "The screen no longer touches the demo reducer: it reads and writes through its /api route (src/lib/data \u2192 the route), its Jev UI cases still pass with FIXTURE_MODE=local, typecheck and npm test pass. No live Zoho needed.",
+  "harden": "The unit's tests exist and pass on demo data (FIXTURE_MODE=local), typecheck and npm test pass, and CI's check job runs them. No live Zoho needed."
  },
  "first": {
   "fe": [
    "M03-S01",
    "M19-S03"
   ]
- }
+ },
+ "parallel": [
+  "harden"
+ ]
 }

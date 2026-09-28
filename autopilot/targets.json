@@ -9,7 +9,9 @@
   "fe:not started": 75,
   "fe:n/a": 20,
   "zoho": 40,
-  "test": 15
+  "test": 15,
+  "wire": 30,
+  "harden": 150
  },
- "note": "D98: three phases (front end \u2192 Zoho \u2192 test). The forecast is loop time: units left \u00d7 minutes per unit \u00f7 loop hours per day. minutes_per_unit are assumptions until a phase has 5 measured rounds; then the measured average replaces them. loop_hours_per_day is how long the laptop runs /build each day. test_days is the people's testing after the loop (tester, UAT). build_target is the owner's goal date; the forecast is compared with it. Minutes per unit set on 27 Sep from the D98 test run: even stories marked 'built' pass only about a quarter of their cases, so they are not treated as free."
+ "note": "D98: three phases (front end \u2192 Zoho \u2192 test). The forecast is loop time: units left \u00d7 minutes per unit \u00f7 loop hours per day. minutes_per_unit are assumptions until a phase has 5 measured rounds; then the measured average replaces them. loop_hours_per_day is how long the laptop runs /build each day. test_days is the people's testing after the loop (tester, UAT). build_target is the owner's goal date; the forecast is compared with it. Minutes per unit set on 27 Sep from the D98 test run: even stories marked 'built' pass only about a quarter of their cases, so they are not treated as free. 28 Sep (D104): 'wire' = one FRONT-END LOOP item (a screen onto its API route), assumed 30 min until measured. D105: 'harden' units are whole test suites, assumed 150 min each."
 }
