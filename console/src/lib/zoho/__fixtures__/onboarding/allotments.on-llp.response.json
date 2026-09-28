@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994011",
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 3,
+        "Issued_Units": 0
+      },
+      {
+        "id": "9007199254740994012",
+        "Allocation_Status": "Issued",
+        "Reserved_Units": 0,
+        "Issued_Units": 4
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

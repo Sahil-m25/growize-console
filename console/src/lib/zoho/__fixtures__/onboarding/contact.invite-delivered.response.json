@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994001",
+        "ARL_ID": "ARL-INV-0206",
+        "App_Access": "Invite",
+        "App_Welcome_At": "2026-09-28T10:32:00+05:30",
+        "App_Welcome_Channel": "Email",
+        "Modified_Time": "2026-09-28T10:32:00+05:30"
+      }
+    ]
+  }
+}

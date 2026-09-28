@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994001",
+        "ARL_ID": "ARL-INV-0206",
+        "First_Name": "Synthetic Paid",
+        "Last_Name": "Investor",
+        "Email": "synthetic.paid@example.invalid"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "DUPLICATE_DATA",
+        "details": {
+          "api_name": "Email"
+        },
+        "message": "synthetic duplicate",
+        "status": "error"
+      }
+    ]
+  }
+}

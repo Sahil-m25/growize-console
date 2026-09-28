@@ -1,0 +1,18 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "INVALID_DATA",
+        "details": {
+          "api_name": "Investment_Date"
+        },
+        "message": "synthetic invalid",
+        "status": "error"
+      }
+    ]
+  }
+}

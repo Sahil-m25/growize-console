@@ -1,0 +1,362 @@
+/* M09-S09-T02 (add an investor who already paid) and M10-S21-T02 (unlock the investor app / lock it again).
+ *
+ * Run from console/: node --test src/server/investors/onboarding.test.cjs
+ *
+ * Compiles the real Zoho client, the allotment receipt guard and both services with the project's TypeScript
+ * and drives them with synthetic recorded responses (__fixtures__/onboarding/*). No request reaches Zoho.
+ */
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { before, test } = require('node:test');
+
+const consoleRoot = path.resolve(__dirname, '..', '..', '..');
+const srcRoot = path.join(consoleRoot, 'src');
+const fixtureRoot = path.join(srcRoot, 'lib', 'zoho', '__fixtures__', 'onboarding');
+const ts = require(path.join(consoleRoot, 'node_modules', 'typescript'));
+const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zoho-onboarding-'));
+process.on('exit', () => fs.rmSync(outDir, { recursive: true, force: true }));
+
+const config = ts.readConfigFile(path.join(consoleRoot, 'tsconfig.json'), ts.sys.readFile);
+const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot);
+const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
+  module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
+const sources = ['lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib/zoho/log.ts', 'lib/zoho/client.ts', 'server/money/receipt-replay.ts',
+  'server/money/allotment-receipts.ts', 'server/investors/add-paid.ts', 'server/investors/unlock.ts'].map((f) => path.join(srcRoot, f));
+const program = ts.createProgram(sources, options);
+const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
+if (diagnostics.length) {
+  console.error(ts.formatDiagnostics(diagnostics, { getCanonicalFileName: (f) => f, getCurrentDirectory: () => consoleRoot, getNewLine: () => '\n' }));
+  process.exit(1);
+}
+const load = (file) => require(path.join(outDir, file));
+const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
+const { createZohoClient, userCredential } = load('lib/zoho/client.js');
+const { createAllotmentReceiptWrites } = load('server/money/allotment-receipts.js');
+const { createAddPaid, splitName, nextArlCode, checkForm, kolkataDay } = load('server/investors/add-paid.js');
+const { createAppAccess, cardState } = load('server/investors/unlock.js');
+
+const P = '9007199254';
+const CONTACT = '9007199254740994001', LLP = '9007199254740994003', ALLOT = '9007199254740994010', RECEIPT = '9007199254740994020';
+const ACTOR = '9007199254740993090', EXISTING = '9007199254740994099';
+const SESSION = 'session_fixture_00000001';
+const NOW = Date.parse('2026-09-28T10:00:00+05:30');
+const T1 = '2026-09-28T09:00:00+05:30';
+const IDENTITY = ['Synthetic Paid', 'synthetic.paid@example.invalid', '+91 90000 00001', '9000000001', 'the investor asked us to pause access'];
+const recorded = (name) => JSON.parse(fs.readFileSync(path.join(fixtureRoot, `${name}.response.json`), 'utf8'));
+const toResponse = (r) => new Response(r.body === null ? null : JSON.stringify(r.body), { status: r.status, headers: r.headers || {} });
+const immediateGate = () => ({ async acquire() { return { waitedMs: 0, release() {} }; } });
+const noIdentity = (sink) => { const s = JSON.stringify(sink.records()); for (const x of IDENTITY) assert.ok(!s.includes(x), `Plane B leaked ${x}`); };
+
+let cred;
+before(async () => {
+  cred = await userCredential({ access_token: 'synthetic-user-access-token-never-live', api_domain: 'https://www.zohoapis.in', expires_in: 3_600 },
+    { recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(createMemorySink()), clock: () => NOW,
+      fetch: async () => toResponse(recorded('current-user.finance')) });
+  assert.equal(cred.userId, ACTOR);
+});
+const principal = () => ({ credential: cred, sessionId: SESSION });
+const form = (over = {}) => ({ name: 'Synthetic Paid Investor', email: 'synthetic.paid@example.invalid', mobile: '+91 90000 00001',
+  llpId: LLP, units: 2, amountPaid: 5_000_000, investmentDate: '2026-09-01', ...over });
+
+/**
+ * The real client over recorded replies. `o` picks a fixture per step; a function value gets the call count.
+ * Every call is kept in `calls` as [method, path, body|query].
+ */
+function rig(o = {}) {
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const calls = [];
+  const state = { contactInserts: 0, allotInserted: false, receiptInserted: false, searches: 0 };
+  const pick = (v, n) => (typeof v === 'function' ? v(n) : v);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const u = new URL(String(url));
+      const p = u.pathname.replace('/crm/v8', '');
+      const m = init.method;
+      const body = init.body ? JSON.parse(init.body) : null;
+      calls.push([m, p, body ?? Object.fromEntries(u.searchParams), init.headers]);
+      if (p === '/coql') {
+        const q = body.select_query;
+        if (/from Contacts where ARL_ID like/.test(q)) return toResponse(recorded(o.highest ?? 'contacts.highest-code'));
+        if (/from LLP_UnitAllocation_Module where LLP = /.test(q)) return toResponse(recorded('allotments.on-llp'));
+        if (/select id from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(state.allotInserted ? 'receipts.one-pending' : 'receipts.none'));
+        if (/from Receipts where Allotment = /.test(q)) return toResponse(recorded(state.receiptInserted ? 'receipts.one-pending' : 'receipts.none'));
+        throw new Error(`unexpected query ${q}`);
+      }
+      if (m === 'GET' && p === '/Contacts/search') return toResponse(recorded(pick(o.search ?? 'contacts.search-none', state.searches++)));
+      if (m === 'GET' && p === `/LLP_Creation_Module/${LLP}`) return toResponse(recorded(o.llp ?? 'llp.open'));
+      if (m === 'GET' && p === `/LLP_UnitAllocation_Module/${ALLOT}`) return toResponse(recorded(o.allotment ?? 'allotment.issued'));
+      if (m === 'POST' && p === '/Contacts') {
+        const n = state.contactInserts++;
+        const f = pick(o.contactInsert ?? 'contact.created', n);
+        if (f === 'THROW') throw new TypeError('synthetic network drop');
+        return toResponse(recorded(f));
+      }
+      if (m === 'POST' && p === '/LLP_UnitAllocation_Module') {
+        const f = o.allotInsert ?? 'allotment.created';
+        if (f === 'allotment.created') state.allotInserted = true;
+        return toResponse(recorded(f));
+      }
+      if (m === 'POST' && p === '/Receipts') {
+        const f = o.receiptInsert ?? 'receipt.created';
+        if (f === 'receipt.created') state.receiptInserted = true;
+        return toResponse(recorded(f));
+      }
+      if (m === 'DELETE') return toResponse(recorded(pick(o.del ?? 'delete.success', p)));
+      if (m === 'GET' && p === `/Contacts/${CONTACT}`) return toResponse(recorded(pick(o.contact ?? 'contact.hold', calls.filter((c) => c[0] === 'GET' && c[1] === p).length - 1)));
+      if (m === 'GET' && p === `/Contacts/${CONTACT}/__timeline`) return toResponse(recorded(pick(o.timeline ?? 'timeline.opened', calls.filter((c) => c[1] === p).length - 1)));
+      if (m === 'PUT' && p === `/Contacts/${CONTACT}`) return toResponse(recorded(o.update ?? 'contact.updated'));
+      if (m === 'POST' && p === '/Notes') return toResponse(recorded(o.note ?? 'note.created'));
+      throw new Error(`unexpected call ${m} ${p}`);
+    } });
+  const receipts = createAllotmentReceiptWrites({ crm, replay: { async replay() { throw new Error('the replay path is not used here'); } },
+    log, recordIdPrefix: P, clock: () => NOW });
+  const allow = { mayAdd: async () => o.finance !== false, mayChange: async () => o.finance !== false };
+  const add = createAddPaid({ crm, receipts, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
+  const app = createAppAccess({ crm, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
+  const writes = () => calls.filter((c) => c[0] !== 'GET' && c[1] !== '/coql');
+  return { add, app, calls, sink, writes };
+}
+
+/* ---- pure pieces ---------------------------------------------------------------------------------- */
+
+test('names split into First/Last (Zoho needs Last_Name); ARL codes count up; the day is Kolkata\'s', () => {
+  assert.deepEqual({ ...splitName('Asha K. Menon') }, { first: 'Asha K.', last: 'Menon' });
+  assert.deepEqual({ ...splitName('  Menon ') }, { first: null, last: 'Menon' });
+  assert.equal(nextArlCode('ARL-INV-0205'), 'ARL-INV-0206');
+  assert.equal(nextArlCode(null), 'ARL-INV-0001');
+  assert.equal(kolkataDay(Date.parse('2026-09-27T19:00:00Z')), '2026-09-28', '00:30 IST is the next day');
+});
+
+test('the form asks for name, email, mobile, farm, units, amount and date — nothing else — with the drawer\'s lines', () => {
+  const today = '2026-09-28';
+  assert.ok('form' in checkForm(form(), today));
+  assert.equal(checkForm({}, today).message, 'Not saved yet — name, email, mobile, farm, investment date, units, amount paid are missing.');
+  assert.equal(checkForm(form({ mobile: '' }), today).message, 'Not saved yet — mobile is missing.');
+  assert.equal(checkForm(form({ email: 'not-an-email' }), today).code, 'email-invalid');
+  assert.equal(checkForm(form({ units: 1.5 }), today).code, 'units-invalid');
+  assert.equal(checkForm(form({ investmentDate: '2026-09-29' }), today).code, 'date-invalid');
+  assert.equal(checkForm(form({ investmentDate: '2026-02-30' }), today).code, 'date-invalid');
+});
+
+/* ---- M09-S09: add an investor who already paid ------------------------------------------------------ */
+
+test('paid in full: one Contact on hold, one Issued allotment, one Pending Full receipt — on the person\'s token, no email', async () => {
+  const r = rig();
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual({ ...res.value }, { contactId: CONTACT, code: 'ARL-INV-0206', allotmentId: ALLOT, allocationStatus: 'Issued',
+    receiptId: RECEIPT, app: 'App: on hold — data synced, sign-in locked', replayed: false });
+  const w = r.writes();
+  assert.deepEqual(w.map((c) => c[0] + ' ' + c[1]), ['POST /Contacts', 'POST /LLP_UnitAllocation_Module', 'POST /Receipts']);
+  assert.deepEqual(w[0][2].data[0], { First_Name: 'Synthetic Paid', Last_Name: 'Investor', Email: 'synthetic.paid@example.invalid',
+    Mobile: '+91 90000 00001', ARL_ID: 'ARL-INV-0206', App_Access: 'Hold' });
+  assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
+    Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Issued', Issued_Units: 2, Reserved_Units: 0, Capital_Invested: 5_000_000 });
+  const rc = w[2][2].data[0];
+  assert.equal(rc.Kind, 'Full'); assert.equal(rc.Amount, 5_000_000); assert.equal(rc.Match_State, 'Pending');
+  assert.equal(rc.Received_On, '2026-09-01T00:00:00+05:30'); assert.deepEqual(rc.Allotment, { id: ALLOT });
+  assert.ok(!r.calls.some((c) => /send_mail|actions\/send/.test(c[1])), 'no mail of any kind');
+  for (const c of r.calls) assert.equal(c[3]?.Authorization ?? c[3]?.authorization, 'Zoho-oauthtoken synthetic-user-access-token-never-live');
+  noIdentity(r.sink);
+});
+
+test('part paid: the allotment is Reserved with a 30-day hold and the receipt is an Advance', async () => {
+  const r = rig({ allotment: 'allotment.reserved' });
+  const res = await r.add.add(principal(), form({ amountPaid: 1_000_000 }));
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.allocationStatus, 'Reserved');
+  const w = r.writes();
+  assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
+    Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Reserved', Reserved_Units: 2, Issued_Units: 0, Hold_Until: '2026-10-28' });
+  assert.equal(w[2][2].data[0].Kind, 'Advance');
+  assert.equal(w[2][2].data[0].Amount, 1_000_000);
+});
+
+test('an email already on a Contact is refused with a link to that investor, and nothing is written', async () => {
+  const r = rig({ search: 'contacts.search-existing' });
+  const res = await r.add.add(principal(), form({ email: 'SYNTHETIC.EXISTING@example.invalid' }));
+  assert.equal(res.reasonCode, 'duplicate-email');
+  assert.deepEqual({ ...res.existing }, { contactId: EXISTING, code: 'ARL-INV-0042', name: 'Synthetic Existing Investor' });
+  assert.match(res.message, /already belongs to Synthetic Existing Investor \(ARL-INV-0042\)/);
+  assert.equal(r.writes().length, 0);
+});
+
+test('a duplicate the search could not see is still refused: Zoho\'s unique Email answers', async () => {
+  const r = rig({ contactInsert: 'contact.duplicate-email' });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.reasonCode, 'duplicate-email');
+  assert.deepEqual(r.writes().map((c) => c[1]), ['/Contacts']);
+});
+
+test('two adds racing for one ARL code: the second takes the next one', async () => {
+  const r = rig({ contactInsert: (n) => (n === 0 ? 'contact.duplicate-arl' : 'contact.created') });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const inserts = r.writes().filter((c) => c[1] === '/Contacts').map((c) => c[2].data[0].ARL_ID);
+  assert.deepEqual(inserts, ['ARL-INV-0206', 'ARL-INV-0207']);
+  assert.equal(res.value.code, 'ARL-INV-0207');
+});
+
+test('the farm rules hold on the server: closed farm, too few units free, more money than the units cost', async () => {
+  let r = rig({ llp: 'llp.closed' });
+  let res = await r.add.add(principal(), form());
+  assert.equal(res.reasonCode, 'farm-closed');
+  assert.match(res.message, /Synthetic Farm LLP is Fully Subscribed/);
+  r = rig();
+  res = await r.add.add(principal(), form({ units: 4 }));
+  assert.equal(res.reasonCode, 'units-not-free', '10 units, 3 reserved + 4 issued = 3 free');
+  assert.match(res.message, /has 3 units free/);
+  r = rig();
+  res = await r.add.add(principal(), form({ amountPaid: 5_000_001 }));
+  assert.equal(res.reasonCode, 'overpaid');
+  assert.equal(r.writes().length, 0);
+});
+
+test('an IR or viewer seat is refused before Zoho is asked', async () => {
+  const r = rig({ finance: false });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.reasonCode, 'not-finance');
+  assert.equal(r.calls.length, 0);
+});
+
+test('"one commit": the allotment fails, the Contact is taken back, and the answer is Not saved yet', async () => {
+  const r = rig({ allotInsert: 'allotment.invalid' });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.kind, 'not-saved');
+  assert.equal(res.step, 'allotment');
+  assert.match(res.message, /^Not saved yet/);
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), ['POST /Contacts', 'POST /LLP_UnitAllocation_Module', `DELETE /Contacts/${CONTACT}`]);
+});
+
+test('the receipt fails: allotment then Contact are taken back, newest first', async () => {
+  const r = rig({ receiptInsert: 'source.server-error' });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.kind, 'not-saved');
+  assert.equal(res.step, 'receipt');
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]).slice(-2), [`DELETE /LLP_UnitAllocation_Module/${ALLOT}`, `DELETE /Contacts/${CONTACT}`]);
+});
+
+test('a clean-up Zoho refuses is reported with what is left, and one Plane B line — never a silent half', async () => {
+  const r = rig({ receiptInsert: 'source.server-error', del: 'delete.forbidden' });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.kind, 'incomplete');
+  assert.deepEqual({ ...res.left }, { contactId: CONTACT, allotmentId: ALLOT, receiptId: null });
+  assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.reason === 'rollback-incomplete' && x.recordIds.includes(CONTACT)));
+  noIdentity(r.sink);
+});
+
+test('a lost Contact insert answer is settled by re-reading the email, and the add carries on', async () => {
+  const r = rig({ contactInsert: 'THROW', search: (n) => (n === 0 ? 'contacts.search-none' : 'contacts.search-created') });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.contactId, CONTACT);
+  assert.equal(r.writes().filter((c) => c[1] === '/Contacts').length, 1, 'the Contact is not written twice');
+});
+
+test('the same Idempotency-Key from the same person gets the first answer back and writes nothing new', async () => {
+  const r = rig();
+  const a = await r.add.add(principal(), form(), 'add-investor-key-0001');
+  const n = r.calls.length;
+  const b = await r.add.add(principal(), form(), 'add-investor-key-0001');
+  assert.equal(a.ok, true);
+  assert.equal(b.ok, true);
+  assert.equal(b.value.replayed, true);
+  assert.equal(b.value.contactId, a.value.contactId);
+  assert.equal(r.calls.length, n);
+  const bad = await r.add.add(principal(), form(), 'x');
+  assert.equal(bad.reasonCode, 'idempotency-key-invalid');
+});
+
+/* ---- M10-S21: the App account card ------------------------------------------------------------------ */
+
+test('what the card reads, from App_Access, the welcome write-back and the history', () => {
+  const opened = [{ at: '2026-09-20T11:00:00+05:30', byId: ACTOR }];
+  const unlocked = [{ at: '2026-09-28T10:30:00+05:30', byId: ACTOR }, ...opened];
+  assert.equal(cardState(null, null, null, []).text, 'No account yet — it opens On hold at the first matched receipt');
+  assert.equal(cardState('Hold', null, null, opened).text, 'On hold — data synced, sign-in locked, no email sent');
+  assert.equal(cardState('Invite', null, null, unlocked).text, 'Welcome sending…');
+  assert.equal(cardState('Invite', '2026-09-28T10:32:00+05:30', 'Email', unlocked).text, 'Welcome delivered 28 Sep 10:32 · Email');
+  assert.equal(cardState('Invite', '2026-09-01T10:32:00+05:30', 'Email', unlocked).state, 'sending', 'a welcome from before this unlock does not count');
+  assert.equal(cardState('Hold', '2026-09-28T10:32:00+05:30', 'Email', unlocked).text, 'Locked — sign-in blocked');
+  assert.equal(cardState('Hold', null, null, unlocked).state, 'locked', 'invited then locked before the welcome landed');
+});
+
+test('card: an account on hold, with its history, for Finance; read-only for everyone else', async () => {
+  let r = rig();
+  let res = await r.app.card(principal(), CONTACT);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.state, 'hold');
+  assert.equal(res.value.modifiedTime, T1);
+  assert.equal(res.value.mayChange, true);
+  assert.deepEqual(res.value.history.map((h) => ({ ...h })), [{ at: '2026-09-20T11:00:00+05:30', byId: '9007199254740993091' }]);
+  r = rig({ finance: false });
+  res = await r.app.card(principal(), CONTACT);
+  assert.equal(res.value.mayChange, false);
+  assert.equal(r.writes().length, 0);
+});
+
+test('Send welcome and unlock: App_Access Hold → Invite, guarded by Modified_Time, and nothing mailed from the console', async () => {
+  const r = rig({ contact: (n) => (n === 0 ? 'contact.hold' : 'contact.invite'), timeline: 'timeline.unlocked' });
+  const res = await r.app.unlock(principal(), CONTACT, T1);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.already, false);
+  assert.equal(res.value.state, 'sending');
+  assert.equal(res.value.text, 'Welcome sending…');
+  const w = r.writes();
+  assert.equal(w.length, 1);
+  assert.deepEqual(w[0][2].data[0], { App_Access: 'Invite' });
+  assert.equal(w[0][3]['If-Unmodified-Since'], T1);
+  assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.reason === 'unlocked' && x.recordIds.includes(CONTACT)));
+});
+
+test('unlocking an unlocked account changes nothing (the welcome goes once)', async () => {
+  const r = rig({ contact: 'contact.invite-delivered', timeline: 'timeline.unlocked' });
+  const res = await r.app.unlock(principal(), CONTACT);
+  assert.equal(res.ok, true);
+  assert.equal(res.already, true);
+  assert.equal(res.value.text, 'Welcome delivered 28 Sep 10:32 · Email');
+  assert.equal(r.writes().length, 0);
+});
+
+test('someone else changed the investor: a stale screen and a 412 are both refused as changed', async () => {
+  let r = rig();
+  let res = await r.app.unlock(principal(), CONTACT, '2026-09-27T09:00:00+05:30');
+  assert.equal(res.reasonCode, 'changed');
+  assert.equal(r.writes().length, 0);
+  r = rig({ update: 'contact.conflict-412' });
+  res = await r.app.unlock(principal(), CONTACT, T1);
+  assert.equal(res.reasonCode, 'changed');
+});
+
+test('no account yet, or not Finance: refused, nothing written', async () => {
+  let r = rig({ contact: 'contact.no-access' });
+  let res = await r.app.unlock(principal(), CONTACT);
+  assert.equal(res.reasonCode, 'no-account');
+  r = rig({ finance: false });
+  res = await r.app.unlock(principal(), CONTACT);
+  assert.equal(res.reasonCode, 'not-finance');
+  assert.equal(r.calls.length, 0);
+});
+
+test('Lock app access: a reason is required; Invite → Hold, the reason is a Note under the person\'s name, never in the log', async () => {
+  let r = rig({ contact: 'contact.invite-delivered' });
+  let res = await r.app.lock(principal(), CONTACT, '   ');
+  assert.equal(res.reasonCode, 'reason-required');
+  assert.equal(r.calls.length, 0);
+  r = rig({ contact: (n) => (n === 0 ? 'contact.invite-delivered' : 'contact.hold-locked'), timeline: 'timeline.unlocked' });
+  res = await r.app.lock(principal(), CONTACT, 'the investor asked us to pause access');
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.text, 'Locked — sign-in blocked');
+  assert.equal(res.noteSaved, true);
+  const w = r.writes();
+  assert.deepEqual(w.map((c) => c[0] + ' ' + c[1]), [`PUT /Contacts/${CONTACT}`, 'POST /Notes']);
+  assert.deepEqual(w[0][2].data[0], { App_Access: 'Hold' });
+  assert.deepEqual(w[1][2].data[0], { Note_Title: 'App access locked', Note_Content: 'the investor asked us to pause access',
+    Parent_Id: { module: { api_name: 'Contacts' }, id: CONTACT } });
+  noIdentity(r.sink);
+});

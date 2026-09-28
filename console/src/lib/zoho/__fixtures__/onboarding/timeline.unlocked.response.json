@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "__timeline": [
+      {
+        "audited_time": "2026-09-28T10:30:00+05:30",
+        "action": "updated",
+        "done_by": {
+          "id": "9007199254740993090",
+          "name": "Synthetic Finance Maker"
+        },
+        "field_history": [
+          {
+            "api_name": "App_Access",
+            "_value": {
+              "old": "Hold",
+              "new": "Invite"
+            }
+          }
+        ]
+      },
+      {
+        "audited_time": "2026-09-20T11:00:00+05:30",
+        "action": "updated",
+        "done_by": {
+          "id": "9007199254740993091",
+          "name": "Synthetic Head"
+        },
+        "field_history": [
+          {
+            "api_name": "App_Access",
+            "_value": {
+              "old": null,
+              "new": "Hold"
+            }
+          }
+        ]
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}
