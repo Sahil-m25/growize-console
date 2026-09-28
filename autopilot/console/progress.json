@@ -1218,16 +1218,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "bd9bcf4"
    ],
-   "at": "2026-09-27T22:56:14.198Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T06:47:03.143Z",
+   "note": "Guard layer built and tested; waiting on Sahil's T01 Zoho config (lookups, Payment_Status workflow, Idempotency_Key) and sandbox proof.",
    "notes": 3
   },
   "M11-S01": {
@@ -2894,6 +2896,11 @@
   "M01-S03-T05": {
    "status": "done",
    "at": "2026-09-28T06:46:49.508Z",
+   "phase": "zoho"
+  },
+  "M10-S07-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:47:03.143Z",
    "phase": "zoho"
   }
  },
@@ -5221,6 +5228,14 @@
    "status": "waiting",
    "hours": 15.5,
    "note": "Live source built and tested on fixtures; waiting on sandbox proof (T06/T07), front-end freshness states (T04) and a Zoho Users reader for PEOPLE."
+  },
+  {
+   "at": "2026-09-28T06:47:03.143Z",
+   "story": "M10-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "Guard layer built and tested; waiting on Sahil's T01 Zoho config (lookups, Payment_Status workflow, Idempotency_Key) and sandbox proof."
   }
  ],
  "last_regression_round": 0,
