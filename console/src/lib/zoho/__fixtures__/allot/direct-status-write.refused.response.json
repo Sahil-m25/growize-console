@@ -1,0 +1,18 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "INVALID_DATA",
+    "details": {
+     "api_name": "Allocation_Status"
+    },
+    "message": "Allocation Status is controlled by the blueprint",
+    "status": "error"
+   }
+  ]
+ }
+}

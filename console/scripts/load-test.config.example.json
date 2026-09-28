@@ -1,0 +1,37 @@
+{
+  "_readme": "M18-S01-T01. Copy to load-test.config.json (or pass --config / LOAD_TEST_CONFIG). STAGING_URL overrides baseUrl. One restricted sandbox user per seat, saved with jev-sessions.mjs (storageState paths are relative to sessionsDir). 'copies' reuses one session for several simulated seats — it under-states load (one person's identical reads coalesce), so the acceptance run wants 6 + 15 real users. ids fill {placeholders} in page paths; a page whose id a seat lacks is skipped for that seat. Pages list the API reads each screen makes (PROVISIONAL — confirm against the front end's network tab). Set logDir to the staging LOG_DIR (LOG_STORE=jsonl) to measure the in-flight peak and Zoho 429s from Plane B.",
+  "baseUrl": "https://staging.example.invalid/",
+  "sessionsDir": "~/.growize-jev/sessions",
+  "logDir": "",
+  "durationMs": 1200000,
+  "rampMs": 60000,
+  "thinkMs": [3000, 12000],
+  "timeoutMs": 20000,
+  "expect": { "lead": 6, "investors": 15 },
+  "limits": { "p95Ms": 2000, "maxInFlight": 12, "maxComplex": 8 },
+  "pages": {
+    "lead": [
+      { "name": "Today", "paths": ["/api/data", "/api/data/version"] },
+      { "name": "Leads", "paths": ["/api/data"] },
+      { "name": "Lead page", "paths": ["/api/data", "/api/leads/{leadId}/gate", "/api/activity/history"] },
+      { "name": "Numbers", "paths": ["/api/data"] }
+    ],
+    "investors": [
+      { "name": "Today", "paths": ["/api/data", "/api/numbers/investors-today"] },
+      { "name": "Investors", "paths": ["/api/data", "/api/investors/am"] },
+      { "name": "Investor record", "paths": ["/api/investors/{investorId}/record", "/api/investors/{investorId}/holdings", "/api/investors/{investorId}/money"] },
+      { "name": "Documents", "paths": ["/api/documents/list"] },
+      { "name": "Tickets", "paths": ["/api/cases"] },
+      { "name": "Numbers", "paths": ["/api/numbers/investors-side"] }
+    ]
+  },
+  "seats": {
+    "ir-1":  { "side": "lead", "storageState": "load-ir-1.json", "ids": { "leadId": "554023000000527003" } },
+    "ir-2":  { "side": "lead", "storageState": "load-ir-2.json", "ids": { "leadId": "554023000000527011" } },
+    "ir-3":  { "side": "lead", "storageState": "load-ir-3.json" },
+    "ir-4":  { "side": "lead", "storageState": "load-ir-4.json" },
+    "ir-5":  { "side": "lead", "storageState": "load-ir-5.json" },
+    "ir-mgr": { "side": "lead", "storageState": "load-ir-mgr.json" },
+    "kam":   { "side": "investors", "storageState": "load-kam.json", "ids": { "investorId": "554023000000600001" }, "copies": 15 }
+  }
+}

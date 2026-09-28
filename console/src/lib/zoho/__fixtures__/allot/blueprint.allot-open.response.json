@@ -1,0 +1,54 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "blueprint": {
+   "process_info": {
+    "field_id": "9007199254740999700",
+    "is_continuous": false,
+    "api_name": "Allocation_Status",
+    "continuous": false,
+    "field_label": "Allocation Status",
+    "name": "Allotment",
+    "column_name": "x",
+    "field_value": "Reserved",
+    "id": "9007199254740999699",
+    "field_name": "Allocation_Status"
+   },
+   "transitions": [
+    {
+     "next_transitions": [],
+     "percent_partial_save": null,
+     "data": {},
+     "next_field_value": "Issued",
+     "name": "Allot",
+     "criteria_matched": true,
+     "criteria_message": null,
+     "id": "9007199254740999701",
+     "fields": [
+      {
+       "api_name": "Issued_Units",
+       "display_label": "Issued Units",
+       "data_type": "integer"
+      }
+     ],
+     "type": 2,
+     "execution_time": null
+    },
+    {
+     "next_transitions": [],
+     "data": {},
+     "next_field_value": "Cancelled",
+     "name": "Cancel",
+     "criteria_matched": true,
+     "criteria_message": null,
+     "id": "9007199254740999702",
+     "fields": [],
+     "type": 2
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740990208",
+    "First_Name": "Prakash",
+    "Last_Name": "Bhat",
+    "ARL_ID": "ARL-INV-0208",
+    "KYC": "Completed",
+    "FEMA_Applicable": false,
+    "FEMA_Verified_At": null
+   }
+  ]
+ }
+}

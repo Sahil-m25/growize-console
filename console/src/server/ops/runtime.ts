@@ -6,7 +6,7 @@
  * outbox mailer holds each alert until delivery is configured (human item: provider + `ALERT_EMAIL_TO`).
  */
 
-import { createAlertEngine, createOutboxMailer, eventsFromErrors, tapOpsSink, type AlertEngine, type AlertMailer } from "./alerts";
+import { createAlertEngine, createOutboxMailer, creditProjectionLine, eventsFromErrors, tapOpsSink, type AlertEngine, type AlertMailer } from "./alerts";
 import type { OpsSink } from "../../lib/zoho/log";
 import { createErrorLog } from "../http/error-log";
 import { sharedErrorSink } from "../logs/factory";
@@ -50,4 +50,9 @@ export function reportOpsFailure(kind: "push-failed" | "backup-failed", reason: 
   } catch {
     /* never throws into the job */
   }
+}
+
+/** M18-S01-T03: the day's credit projection line (System page / ops check), from the readings this process has seen. */
+export function creditsProjectionLine(): string {
+  return creditProjectionLine(alertEngine().creditProjection());
 }

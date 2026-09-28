@@ -1,0 +1,12 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": "INVALID_DATA",
+  "details": {},
+  "message": "FEMA must be cleared for an NRI before allotment",
+  "status": "error"
+ }
+}

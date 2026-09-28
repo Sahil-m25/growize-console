@@ -28,7 +28,7 @@ if (diagnostics.length) { console.error(format(diagnostics)); process.exit(1); }
 const emitted = program.emit();
 if (emitted.diagnostics.length) { console.error(format(emitted.diagnostics)); process.exit(1); }
 
-const { createAlertEngine, createOutboxMailer, eventsFromOps, eventsFromErrors, tapOpsSink, ALERT_RULES } = require(path.join(outDir, 'server', 'ops', 'alerts.js'));
+const { createAlertEngine, createOutboxMailer, eventsFromOps, eventsFromErrors, tapOpsSink, ALERT_RULES, projectCredits, creditProjectionLine, creditProjectionCode, kolkataDayStart } = require(path.join(outDir, 'server', 'ops', 'alerts.js'));
 const { createOpsLog, createMemorySink } = require(path.join(outDir, 'lib', 'zoho', 'log.js'));
 
 const MIN = 60_000;
@@ -116,7 +116,7 @@ test('Plane B taps: credits header, failed refreshToken and Sign-webhook failure
   log.refusal({ at: T0, actor: { kind: 'service', job: 'provider-callback' }, action: 'signWebhook', reason: 'invalid-signature', recordIds: [] });
   log.refusal({ at: T0, actor: { kind: 'service', job: 'provider-callback' }, action: 'signWebhook', reason: 'callback-unavailable', recordIds: [] });
   assert.deepEqual(engine.fired().map((a) => a.rule).sort(), ['credits-header', 'sign-webhook-failed', 'token-refresh-failed']);
-  assert.equal(inner.records().length, 5, 'the inner sink still receives every line');
+  assert.equal(inner.records().length, 7, 'the inner sink still receives every line, plus the two credits-alarm event lines (M18-S01-T03)');
   assert.equal(eventsFromOps({ kind: 'refusal', at: 0, actor: { kind: 'user', userId: 'x' }, action: 'update', reason: 'crm-failed', recordIds: [] }).length, 0);
   void mailer;
 });
@@ -140,4 +140,59 @@ test('a mailer that throws never throws into the caller; the alert text holds no
   await e2.settled();
   assert.ok(!mailer.sent()[0].text.includes('sanjay'), 'a reason that is not a code is not quoted');
   assert.match(mailer.sent()[0].text, /2026-09-28T10:00/);
+});
+
+/* ===== M18-S01-T03 — API-credits alarm: Plane B event + daily projection ===== */
+const HOUR = 60 * MIN;
+const MIDNIGHT = Date.UTC(2026, 8, 27, 18, 30); // 2026-09-28 00:00 Asia/Kolkata
+
+test('T03 projection: one reading uses the half-allowance basis (spent ≈ left, since Kolkata midnight)', () => {
+  assert.equal(kolkataDayStart(T0), MIDNIGHT);
+  // 10:00 IST, 20,000 left → spent ~20,000 in 10 h → 2,000/h → 14,000 more by midnight → runs out at 20:00.
+  const p = projectCredits([{ at: T0, creditsRemaining: 20_000 }]);
+  assert.equal(p.basis, 'half-allowance');
+  assert.equal(p.usedPerHour, 2_000);
+  assert.equal(p.projectedAtDayEnd, 20_000 - 2_000 * 14);
+  assert.equal(p.exhaustsAt, T0 + 10 * HOUR);
+  assert.equal(creditProjectionCode(p), 'exhausts-2000');
+  assert.match(creditProjectionLine(p), /^Credits projection 2026-09-28: 20000 left at 10:00 Asia\/Kolkata; about 2000\/h \(half-allowance basis\); runs out about 20:00 at this rate\.$/);
+});
+
+test('T03 projection: two readings 10+ min apart use the trend; yesterday\'s readings are ignored', () => {
+  const p = projectCredits([
+    { at: MIDNIGHT - HOUR, creditsRemaining: 1 }, // yesterday
+    { at: T0, creditsRemaining: 30_000 },
+    { at: T0 + 2 * HOUR, creditsRemaining: 29_000 }, // 500/h
+  ]);
+  assert.equal(p.basis, 'trend');
+  assert.equal(p.usedPerHour, 500);
+  assert.equal(p.projectedAtDayEnd, 29_000 - 500 * 12);
+  assert.equal(p.exhaustsAt, null);
+  assert.equal(creditProjectionCode(p), 'end-of-day-23000');
+  assert.equal(projectCredits([]), null);
+  assert.equal(creditProjectionCode(null), 'no-rate');
+  assert.match(creditProjectionLine(null), /no X-API-CREDITS-REMAINING reading yet/);
+});
+
+test('T03 alarm: the first header of the day writes credits-alarm + credits-projection to Plane B and mails the projection; later headers do not', async () => {
+  const { mailer, engine } = rig();
+  const inner = createMemorySink();
+  const log = createOpsLog(tapOpsSink(inner, () => engine));
+  const call = { actor: { kind: 'user', userId: '554023000000100001' }, op: 'coql', method: 'POST', endpoint: '/coql', callClass: 'complex', status: 200, durationMs: 40, gateWaitMs: 0, attempt: 1, errorClass: null, recordIds: [] };
+  log.call({ ...call, at: T0 - HOUR, creditsRemaining: null });
+  assert.equal(inner.records().filter((r) => r.kind === 'event').length, 0, 'no header, no alarm');
+  log.call({ ...call, at: T0, creditsRemaining: 20_000 });
+  log.call({ ...call, at: T0 + MIN, creditsRemaining: 19_990 });
+  const events = inner.records().filter((r) => r.kind === 'event');
+  assert.deepEqual(events.map((e) => [e.action, e.reason, e.actor.job]), [
+    ['credits-alarm', 'remaining-20000', 'ops-alerts'],
+    ['credits-projection', 'exhausts-2000', 'ops-alerts'],
+  ]);
+  assert.equal(events[0].at, T0);
+  await engine.settled();
+  assert.equal(mailer.sent().length, 1, 'one alert for the day');
+  assert.match(mailer.sent()[0].text, /credits=20000/);
+  assert.match(mailer.sent()[0].text, /Credits projection 2026-09-28: 20000 left at 10:00/);
+  assert.equal(engine.creditProjection().remaining, 19_990, 'later readings still feed the projection');
+  for (const r of inner.records()) assert.doesNotMatch(JSON.stringify(r), /@/);
 });

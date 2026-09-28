@@ -67,6 +67,94 @@ export interface Alert {
   readonly firstAt: number;
   /** Request ids, route templates, job names and reason codes — at most 10 each. */
   readonly refs: readonly string[];
+  /** M18-S01-T03: extra lines for the message (the credits projection). Numbers and times only. */
+  readonly lines?: readonly string[];
+}
+
+/* ===== M18-S01-T03 — THE DAILY CREDIT PROJECTION ========================================== */
+
+/** One X-API-CREDITS-REMAINING reading. The header is org-wide, so every actor's reading counts. */
+export interface CreditSample {
+  readonly at: number;
+  readonly creditsRemaining: number;
+}
+
+export interface CreditProjection {
+  /** The Kolkata calendar day the readings belong to ("2026-09-28"). */
+  readonly day: string;
+  readonly at: number;
+  readonly remaining: number;
+  /** Credits spent per hour; null when there is nothing to measure it from. */
+  readonly usedPerHour: number | null;
+  /** Credits left at Kolkata midnight at that rate (negative: the day runs out first). */
+  readonly projectedAtDayEnd: number | null;
+  /** When the allowance runs out at that rate, if before midnight. */
+  readonly exhaustsAt: number | null;
+  /**
+   * "trend": the slope between the day's first and latest readings (at least 10 min apart).
+   * "half-allowance": one reading only — Zoho first sends the header at half the daily allowance (D47),
+   * so the day has spent about what is left, since Kolkata midnight. PROVISIONAL: Zoho's window is a
+   * rolling 24 h, not the calendar day, so this is an early-warning estimate, not an accounting.
+   */
+  readonly basis: "trend" | "half-allowance";
+}
+
+const DAY_MS = 86_400_000;
+const IST_OFFSET_MS = 19_800_000;
+const HOUR_MS = 3_600_000;
+const TREND_MIN_SPAN_MS = 10 * 60_000;
+/** Kolkata midnight at or before `at`. */
+export const kolkataDayStart = (at: number): number => Math.floor((at + IST_OFFSET_MS) / DAY_MS) * DAY_MS - IST_OFFSET_MS;
+
+/** Projects the day's credits from its readings (only the latest reading's Kolkata day counts). */
+export function projectCredits(samples: readonly CreditSample[]): CreditProjection | null {
+  const ok = samples.filter((x) => Number.isFinite(x.at) && Number.isFinite(x.creditsRemaining) && x.creditsRemaining >= 0);
+  if (!ok.length) return null;
+  const last = ok.reduce((a, b) => (b.at >= a.at ? b : a));
+  const start = kolkataDayStart(last.at);
+  const day = ok.filter((x) => x.at >= start && x.at <= last.at).sort((a, b) => a.at - b.at);
+  const first = day[0]!;
+  let perMs: number | null = null;
+  let basis: CreditProjection["basis"] = "half-allowance";
+  if (last.at - first.at >= TREND_MIN_SPAN_MS && first.creditsRemaining >= last.creditsRemaining) {
+    perMs = (first.creditsRemaining - last.creditsRemaining) / (last.at - first.at);
+    basis = "trend";
+  } else if (first.at > start) {
+    perMs = first.creditsRemaining / (first.at - start);
+  }
+  const end = start + DAY_MS;
+  const projectedAtDayEnd = perMs === null ? null : Math.round(last.creditsRemaining - perMs * (end - last.at));
+  const exhaustsAt = perMs !== null && perMs > 0 && projectedAtDayEnd !== null && projectedAtDayEnd < 0
+    ? Math.round(last.at + last.creditsRemaining / perMs)
+    : null;
+  return Object.freeze({
+    day: kolkataNow(new Date(last.at)).slice(0, 10),
+    at: last.at,
+    remaining: last.creditsRemaining,
+    usedPerHour: perMs === null ? null : Math.round(perMs * HOUR_MS),
+    projectedAtDayEnd,
+    exhaustsAt,
+    basis,
+  });
+}
+
+/** The one-line projection for the alert and the System check. */
+export function creditProjectionLine(p: CreditProjection | null): string {
+  if (!p) return "Credits projection: no X-API-CREDITS-REMAINING reading yet today.";
+  const time = (ms: number) => kolkataNow(new Date(ms)).slice(11);
+  const head = `Credits projection ${p.day}: ${p.remaining} left at ${time(p.at)} Asia/Kolkata`;
+  if (p.usedPerHour === null || p.projectedAtDayEnd === null) return `${head}; not enough readings for a rate yet.`;
+  const tail = p.exhaustsAt !== null
+    ? `runs out about ${time(p.exhaustsAt)} at this rate`
+    : `about ${p.projectedAtDayEnd} left at midnight`;
+  return `${head}; about ${p.usedPerHour}/h (${p.basis} basis); ${tail}.`;
+}
+
+/** The Plane B reason code for a projection: "exhausts-2320", "end-of-day-12000" or "no-rate". */
+export function creditProjectionCode(p: CreditProjection | null): string {
+  if (!p || p.projectedAtDayEnd === null) return "no-rate";
+  if (p.exhaustsAt !== null) return `exhausts-${kolkataNow(new Date(p.exhaustsAt)).slice(11).replace(":", "")}`;
+  return `end-of-day-${Math.max(0, p.projectedAtDayEnd)}`;
 }
 
 export interface AlertMessage {
@@ -99,7 +187,8 @@ export function createOutboxMailer(capacity = 200): OutboxMailer {
   };
 }
 
-const REF = /^[A-Za-z0-9._{}/\[\]-]{1,80}$/;
+/** "=" admits the credits ref ("credits=20000"); before M18-S01 it was silently dropped. */
+const REF = /^[A-Za-z0-9._{}/\[\]=-]{1,80}$/;
 
 function refOf(e: AlertEvent): string | null {
   const v =
@@ -117,6 +206,7 @@ export function alertText(alert: Alert): string {
     alert.subject,
     `Rule: ${alert.rule} — ${alert.count} in ${mins} min (first ${kolkataNow(new Date(alert.firstAt))}, last ${kolkataNow(new Date(alert.at))} Asia/Kolkata).`,
     ...(alert.refs.length ? ["References:", ...alert.refs.map((r) => `  ${r}`)] : []),
+    ...(alert.lines ?? []),
     "Open System in the console for the Plane B lines.",
   ].join("\n");
 }
@@ -135,6 +225,8 @@ export interface AlertEngine {
   fired(): readonly Alert[];
   /** Resolves when every delivery started so far has settled. */
   settled(): Promise<void>;
+  /** M18-S01-T03: today's credit projection from the credits-header readings seen so far. */
+  creditProjection(): CreditProjection | null;
 }
 
 export function createAlertEngine(options: AlertEngineOptions): AlertEngine {
@@ -145,6 +237,14 @@ export function createAlertEngine(options: AlertEngineOptions): AlertEngine {
   const firedDay = new Map<string, string>();
   const history: Alert[] = [];
   let inflight: Promise<void>[] = [];
+  let credits: CreditSample[] = [];
+  const noteCredits = (e: AlertEvent, now: number) => {
+    if (e.kind !== "credits-header") return;
+    const start = kolkataDayStart(now);
+    credits = credits.filter((x) => x.at >= start);
+    credits.push({ at: now, creditsRemaining: e.creditsRemaining });
+    if (credits.length > 500) credits.splice(1, credits.length - 500); // keep the day's first reading
+  };
 
   const deliver = (alert: Alert) => {
     const p = Promise.resolve()
@@ -163,6 +263,7 @@ export function createAlertEngine(options: AlertEngineOptions): AlertEngine {
     record(event) {
       const now = typeof event.at === "number" && Number.isFinite(event.at) ? event.at : clock();
       const out: Alert[] = [];
+      noteCredits(event, now);
       for (const rule of rules) {
         if (rule.on !== event.kind) continue;
         const win = (windows.get(rule.key) ?? []).filter((e) => now - e.at < rule.windowMs);
@@ -177,6 +278,7 @@ export function createAlertEngine(options: AlertEngineOptions): AlertEngine {
         const alert: Alert = Object.freeze({
           rule: rule.key, subject: rule.subject, at: now, count: win.length, windowMs: rule.windowMs,
           firstAt: win[0]!.at, refs: Object.freeze(refs),
+          ...(event.kind === "credits-header" ? { lines: Object.freeze([creditProjectionLine(projectCredits(credits))]) } : {}),
         });
         lastFired.set(rule.key, now);
         firedDay.set(rule.key, day);
@@ -189,6 +291,7 @@ export function createAlertEngine(options: AlertEngineOptions): AlertEngine {
       return out;
     },
     fired: () => history.slice(),
+    creditProjection: () => projectCredits(credits),
     async settled() {
       const now = inflight;
       inflight = [];
@@ -224,13 +327,29 @@ export function eventsFromErrors(r: ErrorRecord): AlertEvent[] {
   return r.source === "save-failed" ? [{ kind: "save-failed", at: r.at, requestId: r.failedRequestId, route: r.route }] : [];
 }
 
-/** Wraps a Plane B sink so every line it takes is also offered to the alert engine. */
+/** The service actor Plane B files the alarm's own lines under. */
+export const ALERTS_ACTOR = "ops-alerts";
+
+/**
+ * Wraps a Plane B sink so every line it takes is also offered to the alert engine. M18-S01-T03: when the
+ * credits alarm fires, two Plane B event lines follow the call line that carried the header —
+ * "credits-alarm" (reason "remaining-<n>") and "credits-projection" (creditProjectionCode) — so the
+ * day's first header and its projection stay on record after the in-memory engine is gone.
+ */
 export function tapOpsSink(inner: OpsSink, engine: () => AlertEngine): OpsSink {
   return {
     write(record) {
       inner.write(record);
       try {
-        for (const e of eventsFromOps(record)) engine().record(e);
+        const e = engine();
+        for (const ev of eventsFromOps(record)) {
+          for (const alert of e.record(ev)) {
+            if (alert.rule !== "credits-header" || ev.kind !== "credits-header") continue;
+            const actor = { kind: "service", job: ALERTS_ACTOR } as const;
+            inner.write({ kind: "event", at: alert.at, actor, action: "credits-alarm", reason: `remaining-${ev.creditsRemaining}`, recordIds: [] });
+            inner.write({ kind: "event", at: alert.at, actor, action: "credits-projection", reason: creditProjectionCode(e.creditProjection()), recordIds: [] });
+          }
+        }
       } catch {
         /* Alerting never fails the call it watches. */
       }

@@ -1,0 +1,19 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740990209",
+    "First_Name": "Joseph",
+    "Last_Name": "Mathew",
+    "ARL_ID": "ARL-INV-0209",
+    "KYC": "Completed",
+    "FEMA_Applicable": true,
+    "FEMA_Verified_At": null
+   }
+  ]
+ }
+}

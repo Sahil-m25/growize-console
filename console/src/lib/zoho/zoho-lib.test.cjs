@@ -1213,3 +1213,103 @@ test('adapter (live): a typed stub that fails loudly, never falls back to the fi
   assert.equal(funnel.state, 'error'); assert.equal(funnel.reason, 'not-implemented');
   assert.equal(calls.length, 0);
 });
+
+/* ===== M18-S01-T02 — COALESCED READS ======================================================= */
+
+function slowRig(extra = {}) {
+  const sink = createMemorySink();
+  const pending = [];
+  const calls = [];
+  const fetch = (url, init) => new Promise((resolve, reject) => {
+    calls.push({ url, method: init.method });
+    const onAbort = () => { const e = new Error('aborted'); e.name = 'AbortError'; reject(e); };
+    if (init.signal) { if (init.signal.aborted) return onAbort(); init.signal.addEventListener('abort', onAbort, { once: true }); }
+    pending.push((status, body) => resolve(new Response(JSON.stringify(body), { status })));
+  });
+  const client = createZohoClient({ gate: createGate(), log: createOpsLog(sink), recordIdPrefix: RECORD_ID_PREFIX, fetch, sleep: async () => {}, random: () => 0.5, ...extra });
+  const flush = async () => { await new Promise((r) => setImmediate(r)); while (pending.length) pending.shift()(200, { data: [record(ID, { Last_Name: 'X' })], info: { more_records: false, count: 1 } }); };
+  return { sink, calls, client, flush, pending };
+}
+const tickT02 = () => new Promise((r) => setImmediate(r));
+
+test('M18-S01-T02 coalesce: identical in-flight reads by one person share one Zoho call; a later read calls again', async () => {
+  const me = await mintUser();
+  const { client, calls, flush, sink } = slowRig();
+  const a = client.getRecord(me, 'Leads', ID);
+  const b = client.getRecord(me, 'Leads', ID);
+  const c = client.coql(me, `select id from Leads where id = '${ID}' limit 0, 1`);
+  const d = client.coql(me, `select id from Leads where id = '${ID}' limit 0, 1`);
+  await tickT02();
+  assert.equal(calls.length, 2, 'two distinct reads, two calls — not four');
+  await flush();
+  const [ra, rb, rc, rd] = await Promise.all([a, b, c, d]);
+  for (const r of [ra, rb, rc, rd]) assert.equal(r.ok, true);
+  assert.equal(ra.value.id, ID); assert.equal(rb.value.id, ID);
+  assert.equal(sink.records().filter((r) => r.kind === 'zoho-call').length, 2, 'Plane B logs the Zoho calls made, not the joins');
+  const e = client.getRecord(me, 'Leads', ID);
+  await tickT02(); await flush();
+  assert.equal((await e).ok, true);
+  assert.equal(calls.length, 3, 'nothing is kept once the call lands');
+});
+
+test('M18-S01-T02 coalesce: a different person never joins; writes and coalesceReads:false are never shared', async () => {
+  const me = await mintUser();
+  const other = await mintUser(grantFor(), { fetch: recordedCurrentUserFetch({ users: [{ id: ID2, status: 'active' }] }) });
+  const { client, calls, flush } = slowRig();
+  const p = [client.getRecord(me, 'Leads', ID), client.getRecord(other, 'Leads', ID)];
+  await tickT02();
+  assert.equal(calls.length, 2, 'D53: same query, different token, separate calls');
+  await flush(); await Promise.all(p);
+
+  const off = slowRig({ coalesceReads: false });
+  const q = [off.client.getRecord(me, 'Leads', ID), off.client.getRecord(me, 'Leads', ID)];
+  await tickT02();
+  assert.equal(off.calls.length, 2);
+  await off.flush(); await Promise.all(q);
+});
+
+test('M18-S01-T02 coalesce: a joiner that aborts stops waiting; a joiner outliving an aborted leader runs its own call', async () => {
+  const me = await mintUser();
+  const { client, calls, flush } = slowRig();
+  const joinerCtl = new AbortController();
+  const lead = client.getRecord(me, 'Leads', ID);
+  const joiner = client.getRecord(me, 'Leads', ID, { signal: joinerCtl.signal });
+  await tickT02();
+  joinerCtl.abort();
+  const j = await joiner;
+  assert.equal(j.ok, false); assert.equal(j.error.kind, 'aborted');
+  await flush();
+  assert.equal((await lead).ok, true, 'the leader carries on');
+  assert.equal(calls.length, 1);
+
+  const leaderCtl = new AbortController();
+  const lead2 = client.getRecord(me, 'Leads', ID, { signal: leaderCtl.signal });
+  const join2 = client.getRecord(me, 'Leads', ID);
+  await tickT02();
+  leaderCtl.abort();
+  const l2 = await lead2;
+  assert.equal(l2.ok, false); assert.equal(l2.error.kind, 'aborted');
+  await tickT02(); await flush();
+  const r2 = await join2;
+  assert.equal(r2.ok, true, 'not an abort it never asked for');
+  assert.equal(calls.length, 3, 'the aborted leader\'s call and the joiner\'s own');
+});
+
+test('M18-S01-T02 cache: identical scoped aggregate reads in flight cost one load; stale-once then error, never past five minutes', async () => {
+  let now = 1_000_000;
+  const cache = createScopedCache({ clock: () => now });
+  const key = cacheKey({ kind: 'user', userId: ID }, 'today.leads.counts');
+  let loads = 0;
+  let fail = false;
+  const load = async () => { loads++; await tickT02(); if (fail) { const e = new Error('x'); e.kind = 'concurrency-exceeded'; throw e; } return { open: 3 }; };
+  const [x, y] = await Promise.all([cache.readSettled(key, load), cache.readSettled(key, load)]);
+  assert.equal(loads, 1); assert.equal(x.value.open, 3); assert.equal(y.value.open, 3);
+  now += DEFAULT_TTL_MS + 1; fail = true;
+  const stale = await cache.read(key, load);
+  assert.equal(stale.state, 'stale-but-refreshing', 'shown once with its age');
+  assert.equal(stale.ageMs, DEFAULT_TTL_MS + 1);
+  const after = await stale.settled;
+  assert.equal(after.state, 'error');
+  assert.equal((await cache.read(key, load)).state, 'error', 'the old number is gone after the failed refresh');
+  assert.throws(() => createScopedCache({ defaultTtlMs: MAX_AGE_MS + 1 }), RangeError, 'no TTL past the ceiling');
+});
