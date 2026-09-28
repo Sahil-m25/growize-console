@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997301",
+        "UTR": "CLAIM-9007199254740997007-1",
+        "Allotment": {
+          "id": "9007199254740997201",
+          "name": "x"
+        },
+        "Kind": "Part",
+        "Amount": 900000,
+        "Mode": "SWIFT",
+        "Received_On": "2026-08-27T00:00:00+05:30",
+        "Match_State": "Claimed"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

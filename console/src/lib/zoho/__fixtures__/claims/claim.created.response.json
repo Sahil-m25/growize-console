@@ -1,0 +1,20 @@
+{
+  "status": 201,
+  "headers": {
+    "content-type": "application/json",
+    "x-api-credits-remaining": "42000"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740997301",
+          "Modified_Time": "2026-08-29T10:00:01+05:30"
+        },
+        "message": "record added",
+        "status": "success"
+      }
+    ]
+  }
+}

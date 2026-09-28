@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997401",
+        "Allotment": {
+          "id": "9007199254740997201",
+          "name": "x"
+        },
+        "Kind": "Advance",
+        "Amount": 200000,
+        "Match_State": "Matched"
+      },
+      {
+        "id": "9007199254740997301",
+        "Allotment": {
+          "id": "9007199254740997201",
+          "name": "x"
+        },
+        "Kind": "Part",
+        "Amount": 1500000,
+        "Match_State": "Claimed"
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997201",
+        "Customer": {
+          "id": "9007199254740997102",
+          "name": "x"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 20,
+        "Issued_Units": null,
+        "Unit_Price": 100000,
+        "Hold_Until": "2026-09-10",
+        "Supplementary_Verified_At": null
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}
