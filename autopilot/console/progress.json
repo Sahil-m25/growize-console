@@ -975,32 +975,36 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "a4b0e76"
    ],
-   "at": "2026-09-27T22:56:08.194Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
+   "at": "2026-09-28T09:15:34.432Z",
+   "note": "AM scope keys built and tested; waiting on Contacts sharing (T01), the front-end columns and staging.",
    "notes": 4
   },
   "M09-S03": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "a4b0e76"
    ],
-   "at": "2026-09-27T22:56:08.528Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2",
+   "at": "2026-09-28T09:15:34.641Z",
+   "note": "Record read built and tested; waiting on the front-end record page (T02) and UI cases.",
    "notes": 3
   },
   "M09-S04": {
@@ -1145,16 +1149,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "a4b0e76"
    ],
-   "at": "2026-09-27T22:56:12.283Z",
-   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1",
+   "at": "2026-09-28T09:15:34.899Z",
+   "note": "Said-yes Contacts read built; waiting on the lifecycle blueprint (T01) and front-end state.",
    "notes": 4
   },
   "M08-S08": {
@@ -3113,6 +3119,21 @@
   "M01-S10-T04": {
    "status": "done",
    "at": "2026-09-28T09:15:23.454Z",
+   "phase": "zoho"
+  },
+  "M09-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:15:34.432Z",
+   "phase": "zoho"
+  },
+  "M09-S03-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:15:34.641Z",
+   "phase": "zoho"
+  },
+  "M08-S07-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:15:34.899Z",
    "phase": "zoho"
   }
  },
@@ -5536,6 +5557,30 @@
    "status": "waiting",
    "hours": 9,
    "note": "Step-up and release built and tested; waiting on the Zoho approval process (T03), the step-up redirect URI and the front-end panel."
+  },
+  {
+   "at": "2026-09-28T09:15:34.432Z",
+   "story": "M09-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "AM scope keys built and tested; waiting on Contacts sharing (T01), the front-end columns and staging."
+  },
+  {
+   "at": "2026-09-28T09:15:34.641Z",
+   "story": "M09-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Record read built and tested; waiting on the front-end record page (T02) and UI cases."
+  },
+  {
+   "at": "2026-09-28T09:15:34.899Z",
+   "story": "M08-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Said-yes Contacts read built; waiting on the lifecycle blueprint (T01) and front-end state."
   }
  ],
  "last_regression_round": 0,
