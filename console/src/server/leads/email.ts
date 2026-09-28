@@ -173,7 +173,7 @@ export function createEmailSender(deps: EmailDependencies) {
       if (!got.value || got.value.id !== lead) return refuse(me, "not-visible", [lead]);
       const L = got.value as ZohoRecord;
       const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
-      const inBook = owner === me || idOf(L.Secondary_Owner) === me
+      const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
         || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
         || (owner !== null && a.teamOwnerIds.includes(owner));
       if (!inBook) return refuse(me, "not-in-book", [lead]);

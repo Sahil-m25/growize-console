@@ -6,20 +6,33 @@
  * seat granted org-wide reading, every book (D60) — and anything else is dropped without a trace in
  * the answer (a line in Plane B records that sharing let it through). A result carries the name,
  * the last four digits of the phone, the stage and the owner: never the full number (D60).
+ *
+ * M06-S05 — the search wall (D69, D52, D53, D47). Whatever the browser sends:
+ *  - `searchRequestOf` admits a word or a phone (`q`) and nothing else; a request naming any module other
+ *    than Leads (Contacts, Accounts…) or carrying a criteria/word/phone/email/fields parameter is refused
+ *    before anything is read. An owner filter is ignored: the book is the caller's own, never a parameter.
+ *  - the module is fixed to Leads here, and every row is post-filtered to the caller's book (D44: a named
+ *    secondary alone is dormant; ./cover's `activeFor`).
+ *  - the call runs on the person's own token; the only thing cached is the in-book COUNT (an aggregate),
+ *    keyed by the caller's visibility scope and by a keyed hash of the term, never the term (PROVISIONAL
+ *    jev "a" 0.83). Hit rows are records and are never cached (D52).
+ *  - one Plane B line per completed search: the searcher id, the result count and the scope, no text.
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
+import type { ScopedCache } from "../../lib/zoho/cache";
+import { scopedKey, type BookScope } from "../data/scope";
 import type { LeadsAccess, LeadsAccessAuthority } from "./book";
 import { LEADS_MODULE } from "./capture";
+import { activeFor, rosterNow, type RosterReader } from "./cover";
 
 export const SHOWN = 8;
 const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
 const RECORD_ID = /^\d{15,22}$/;
 const RECORD_PREFIX = /^\d{6,16}$/;
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const FIELDS = ["First_Name", "Last_Name", "Mobile", "Lead_Status", "Owner", "Secondary_Owner", "Cover_By", "Cover_Until"];
 
 export interface SearchHit {
@@ -39,8 +52,30 @@ export interface SearchDependencies {
   readonly access: LeadsAccessAuthority;
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
+  /** Plane C's roster (D49); absent → only an explicit cover window admits a secondary (D44). */
+  readonly roster?: RosterReader;
+  /** The scoped aggregate cache (D53) and the keyed hash that stands in for the term in its key. */
+  readonly cache?: Pick<ScopedCache, "readSettled">;
+  readonly termKey?: (term: string) => string;
   readonly clock?: () => number;
 }
+
+/** What the route may pass on: one term. Anything that tries to choose the module or the criteria is refused. */
+export type SearchRequest = { readonly ok: true; readonly term: string } | { readonly ok: false; readonly reasonCode: "invalid-request" | "module-refused" };
+const IGNORED_PARAMS: ReadonlySet<string> = new Set(["owner", "ownerId", "Owner", "owner_id"]);
+export function searchRequestOf(params: URLSearchParams): SearchRequest {
+  let term: string | null = null;
+  for (const [k, v] of params) {
+    if (k === "q") { if (term !== null) return { ok: false, reasonCode: "invalid-request" }; term = v; continue; }
+    if (k === "module") { if (v !== LEADS_MODULE) return { ok: false, reasonCode: "module-refused" }; continue; }
+    if (IGNORED_PARAMS.has(k)) continue; // the book is the caller's; a foreign owner filter changes nothing
+    return { ok: false, reasonCode: "invalid-request" };
+  }
+  return term !== null && term.length <= 200 ? { ok: true, term } : { ok: false, reasonCode: "invalid-request" };
+}
+
+const bookScopeOf = (book: "yours" | "team" | "all", me: string): BookScope =>
+  book === "all" ? { kind: "all" } : book === "team" ? { kind: "subtree", managerId: me } : { kind: "user", userId: me };
 
 /** Three or more digits search the phone; otherwise two or more letters search words. */
 export function searchQueryFor(raw: unknown): { phone: string } | { word: string } | null {
@@ -71,15 +106,14 @@ export function createLeadSearch(deps: SearchDependencies) {
     return { ok: false, kind: "refused", reasonCode };
   };
 
-  const inBook = (a: LeadsAccess, me: string, r: ZohoRecord, today: string): boolean => {
+  const inBook = (a: LeadsAccess, me: string, r: ZohoRecord, today: string, roster: Awaited<ReturnType<typeof rosterNow>>): boolean => {
     if (a.teamOrgWide) return true;
     const owner = idOf(r.Owner);
     if (a.teamOwnerIds !== null) {
-      return owner === me || (owner !== null && (a.teamOwnerIds.includes(owner) || owner === a.unassignedQueueUserId));
+      return owner === me || (owner !== null && (a.teamOwnerIds.includes(owner) || owner === a.unassignedQueueUserId))
+        || activeFor(r, me, today, roster) !== null;
     }
-    const until = r.Cover_Until;
-    return owner === me || idOf(r.Secondary_Owner) === me
-      || (idOf(r.Cover_By) === me && typeof until === "string" && DATE.test(until) && until >= today);
+    return owner === me || activeFor(r, me, today, roster) !== null;
   };
 
   return Object.freeze({
@@ -112,11 +146,12 @@ export function createLeadSearch(deps: SearchDependencies) {
       }
       if (res.value.invalidRecordIds) return refuse(me, "source-invalid");
       const today = istDate(clock());
+      const roster = await rosterNow(deps.roster, signal);
       const hits: SearchHit[] = [];
       const dropped: string[] = [];
       for (const r of res.value.records) {
         if (!validId(r.id)) return refuse(me, "source-invalid");
-        if (!inBook(a, me, r, today)) { dropped.push(r.id); continue; }
+        if (!inBook(a, me, r, today, roster)) { dropped.push(r.id); continue; }
         const last = typeof r.Last_Name === "string" ? r.Last_Name : "";
         const first = typeof r.First_Name === "string" ? r.First_Name : "";
         const digits = typeof r.Mobile === "string" ? r.Mobile.replace(/\D/g, "") : "";
@@ -131,8 +166,17 @@ export function createLeadSearch(deps: SearchDependencies) {
       }
       if (dropped.length) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-search", reason: "outside-book", recordIds: dropped });
       const more = hits.length - SHOWN + (res.value.moreRecords ? 1 : 0);
+      const book = a.teamOrgWide ? "all" as const : a.teamOwnerIds !== null ? "team" as const : "yours" as const;
+      // D47: one Plane B line — who searched, how many they got, in which scope. Never the term, never a name.
+      log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-search.done", reason: `scope-${book}.count-${Math.min(hits.length, 9999)}`, recordIds: [] });
+      if (deps.cache && deps.termKey) {
+        try {
+          const n = hits.length;
+          await deps.cache.readSettled(scopedKey<number>(bookScopeOf(book, me), `leads.search.${deps.termKey(JSON.stringify(q))}`), async () => n);
+        } catch { /* the cache is a convenience; the answer stands */ }
+      }
       return { ok: true, value: {
-        book: a.teamOrgWide ? "all" : a.teamOwnerIds !== null ? "team" : "yours",
+        book,
         hits: Object.freeze(hits.slice(0, SHOWN)),
         more: Math.max(0, more),
       } };

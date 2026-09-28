@@ -1,0 +1,96 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996401",
+        "First_Name": "Synthetic",
+        "Last_Name": "Wall 1",
+        "Mobile": "+91 90000 10001",
+        "Lead_Status": "Lead captured",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": null,
+        "Cover_Until": null
+      },
+      {
+        "id": "9007199254740996402",
+        "First_Name": "Synthetic",
+        "Last_Name": "Wall 2",
+        "Mobile": "+91 90000 10002",
+        "Lead_Status": "Lead captured",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "Secondary_Owner": {
+          "id": "9007199254740995005",
+          "name": "x"
+        },
+        "Cover_By": null,
+        "Cover_Until": null
+      },
+      {
+        "id": "9007199254740996403",
+        "First_Name": "Synthetic",
+        "Last_Name": "Wall 3",
+        "Mobile": "+91 90000 10003",
+        "Lead_Status": "Lead captured",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": {
+          "id": "9007199254740995005",
+          "name": "x"
+        },
+        "Cover_Until": "2026-09-30"
+      },
+      {
+        "id": "9007199254740996404",
+        "First_Name": "Synthetic",
+        "Last_Name": "Wall 4",
+        "Mobile": "+91 90000 10004",
+        "Lead_Status": "Lead captured",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": null,
+        "Cover_Until": null
+      },
+      {
+        "id": "9007199254740996405",
+        "First_Name": "Synthetic",
+        "Last_Name": "Wall 5",
+        "Mobile": "+91 90000 10005",
+        "Lead_Status": "Lead captured",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "x"
+        },
+        "Secondary_Owner": {
+          "id": "9007199254740995005",
+          "name": "x"
+        },
+        "Cover_By": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Cover_Until": "2026-09-30"
+      }
+    ],
+    "info": {
+      "count": 5,
+      "more_records": false
+    }
+  }
+}

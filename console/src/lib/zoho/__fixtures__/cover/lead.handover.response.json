@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996303",
+        "Modified_Time": "2026-09-27T20:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Secondary_Owner": {
+          "id": "9007199254740995005",
+          "name": "x"
+        },
+        "Cover_By": null,
+        "Cover_Until": null,
+        "Lost_At": null,
+        "Onboarded_At": null
+      }
+    ]
+  }
+}

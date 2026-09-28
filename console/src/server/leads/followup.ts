@@ -253,7 +253,7 @@ export function createFollowups(deps: FollowupDependencies) {
       const L = got.value as ZohoRecord;
       if (L.Modified_Time !== c.expectedModifiedTime) return refuse(me, "lead-changed", [c.leadId]);
       const owner = idOf(L.Owner), today = zohoTime(now).slice(0, 10);
-      const inBook = owner === me || idOf(L.Secondary_Owner) === me
+      const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
         || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
         || (owner !== null && a.teamOwnerIds.includes(owner));
       if (!inBook) return refuse(me, "not-in-book", [c.leadId]);
@@ -371,7 +371,7 @@ export function createFollowups(deps: FollowupDependencies) {
       if (L.Modified_Time !== expectedModifiedTime) return refuse(me, "lead-changed", [leadId]);
       if (!L.Lost_At) return refuse(me, "not-lost", [leadId]);
       const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
-      const inBook = owner === me || idOf(L.Secondary_Owner) === me
+      const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
         || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
         || (owner !== null && a.teamOwnerIds.includes(owner));
       if (!inBook) return refuse(me, "not-in-book", [leadId]);
@@ -407,7 +407,7 @@ export function createFollowups(deps: FollowupDependencies) {
       if (L.Modified_Time !== expectedModifiedTime) return refuse(me, "lead-changed", [leadId]);
       if (L.Lost_At) return refuse(me, "lead-lost", [leadId]);
       const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
-      const inBook = owner === me || idOf(L.Secondary_Owner) === me
+      const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
         || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
         || (owner !== null && a.teamOwnerIds.includes(owner));
       if (!inBook) return refuse(me, "not-in-book", [leadId]);

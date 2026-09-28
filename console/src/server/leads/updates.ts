@@ -95,7 +95,7 @@ export function createUpdates(deps: UpdatesDependencies) {
         const owners = [...new Set([me, ...a.teamOwnerIds, ...(a.unassignedQueueUserId ? [a.unassignedQueueUserId] : [])])].filter(validId).slice(0, 100);
         scope = `Owner in (${owners.map((id) => `'${id}'`).join(", ")})`;
       } else {
-        scope = `Owner = '${me}' or Secondary_Owner = '${me}' or (Cover_By = '${me}' and Cover_Until >= '${today}')`;
+        scope = `Owner = '${me}' or (Cover_By = '${me}' and Cover_Until >= '${today}')`; // D44: a dormant secondary sees nothing
       }
       let res: Awaited<ReturnType<typeof crm.coql>>;
       try {

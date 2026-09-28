@@ -1,7 +1,8 @@
 /**
  * M06-S01 — the Leads list, read live from Zoho with the person's own token (D45, D53).
  *
- * Personal scope is what the person carries: owner, secondary, or cover still running, plus the
+ * Personal scope is what the person carries: owner, or an ACTIVE secondary — a cover window still running
+ * or a live roster absence (D44, ./cover; a named secondary alone is dormant) — plus the
  * unassigned queue for an IR (prototype `visible()`). Team scope is the owners the session layer
  * says the person manages (IR Manager) or, for a seat granted org-wide reading (D60, D68), no owner
  * filter at all. Zoho's sharing already limits the token; each row is still checked against the
@@ -17,6 +18,7 @@ import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { SeatedZohoUser } from "../oauth/seat";
 import { LEADS_MODULE } from "./capture";
+import { activeClause, activeFor, rosterNow, type RosterReader } from "./cover";
 
 export const PAGE_SIZE = 200;
 /** COQL takes at most 2,000 rows per query and 100,000 by paging one criteria set. */
@@ -83,6 +85,8 @@ export interface BookDependencies {
   readonly access: LeadsAccessAuthority;
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
+  /** Plane C's roster (D49), for owner-absence cover. Absent → a secondary is admitted only by an explicit window (D44). */
+  readonly roster?: RosterReader;
   readonly clock?: () => number;
 }
 
@@ -153,11 +157,13 @@ export function createLeadsBook(deps: BookDependencies) {
       if (!("actor" in a)) return a;
       const queue = a.unassignedQueueUserId;
       const today = istDate(clock());
+      const roster = scope === "personal" ? await rosterNow(deps.roster, signal) : undefined;
 
       let where: string;
       let team: ReadonlySet<string> | null = null;
       if (scope === "personal") {
-        const parts = [`Owner = '${me}'`, `Secondary_Owner = '${me}'`, `(Cover_By = '${me}' and Cover_Until >= '${today}')`];
+        // D44: a named secondary is dormant — only a live window or a live roster absence admits (./cover).
+        const parts = [`Owner = '${me}'`, activeClause(me, today, roster)];
         if (a.seesUnassignedInPersonal && queue) parts.push(`Owner = '${queue}'`);
         where = parts.join(" or ");
       } else {
@@ -194,8 +200,8 @@ export function createLeadsBook(deps: BookDependencies) {
           const owner = row.ownerId ?? queue;
           why = a.teamOrgWide || (owner !== null && team?.has(owner)) ? "team" : null;
         } else if (row.ownerId === me) why = "owner";
-        else if (row.secondaryOwnerId === me) why = "secondary";
-        else if (row.coverById === me && row.coverUntil !== null && row.coverUntil >= today) why = "cover";
+        else if (activeFor(r, me, today, roster) === "cover") why = "cover";
+        else if (activeFor(r, me, today, roster) === "roster") why = "secondary";
         else if (row.ownerId === null && a.seesUnassignedInPersonal) why = "unassigned";
         else why = null;
         if (!why) return refuse(me, "scope-drift", [row.id]);

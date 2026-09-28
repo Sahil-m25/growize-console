@@ -44,6 +44,7 @@ const sources = [
   'domain/plan.ts',
   'server/leads/capture.ts',
   'server/leads/duplicate.ts',
+  'server/leads/cover.ts',
   'server/leads/book.ts',
   'server/leads/today.ts',
   'server/leads/assign.ts',
@@ -388,11 +389,13 @@ function bookRig(reply, id, overrides) {
   const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
     fetch: async (url, init) => { calls.push(JSON.parse(init.body).select_query); return toResponse(recorded(reply)); } });
   const access = leadsAccess(id, overrides);
-  return { book: createLeadsBook({ crm, access, log, recordIdPrefix: P, clock: () => NOW }), calls, sink, access };
+  return { book: createLeadsBook({ crm, access, log, recordIdPrefix: P, clock: () => NOW, ...(overrides && overrides.roster ? { roster: overrides.roster } : {}) }), calls, sink, access };
 }
 
-test('an IR\'s book is owner, secondary, live cover and the unassigned queue — lost leads come back marked', async () => {
-  const r = bookRig('coql.book-personal', IR);
+test('an IR\'s book is owner, an ACTIVE secondary (roster absence), live cover and the unassigned queue — lost leads come back marked', async () => {
+  // D44: row 02 names the IR secondary on OTHER_IR's lead; the roster says OTHER_IR is away today.
+  const roster = { async current() { return { absentOwnerIds: [OTHER_IR], covers: [] }; } };
+  const r = bookRig('coql.book-personal', IR, { roster });
   const res = await r.book.list(principal(IR), 'personal');
   assert.equal(res.ok, true);
   assert.deepEqual(res.value.rows.map((x) => [x.id.slice(-2), x.why, x.ownerId]),
@@ -400,8 +403,18 @@ test('an IR\'s book is owner, secondary, live cover and the unassigned queue —
   assert.equal(res.value.rows[4].lostAt, '2026-09-25T10:00:00+05:30');
   assert.equal(res.value.rows[0].unitsInterested, 2);
   assert.equal(res.value.nextOffset, null);
-  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Onboarded_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where (Owner = '${IR}' or Secondary_Owner = '${IR}' or (Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or Owner = '${QUEUE}') order by id asc limit 0, 200`);
+  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Onboarded_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where (Owner = '${IR}' or (Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or (Cover_By is null and Secondary_Owner = '${IR}' and Owner in ('${OTHER_IR}')) or Owner = '${QUEUE}') order by id asc limit 0, 200`);
   assert.equal(r.access.calls(), 2);
+});
+
+test('D44: a named secondary alone is dormant — never asked for, and refused if sharing lets one through', async () => {
+  const r = bookRig('coql.book-personal', IR);
+  const res = await r.book.list(principal(IR), 'personal');
+  assert.equal(res.reasonCode, 'scope-drift');
+  assert.ok(!r.calls[0].includes(`Secondary_Owner = '${IR}' or`), 'no unconditional secondary clause');
+  assert.match(r.calls[0], new RegExp(`where \\(Owner = '${IR}' or \\(Cover_By = '${IR}' and Cover_Until >= '2026-09-27'\\) or Owner = '${QUEUE}'\\)`));
+  const drift = r.sink.records().filter((x) => x.kind === 'refusal');
+  assert.deepEqual(drift[0].recordIds.map((x) => x.slice(-2)), ['02']);
 });
 
 test('a row outside the book (expired cover, stale share) refuses the page', async () => {
@@ -461,7 +474,9 @@ function todayRig(routes) {
       const m = / from (\w+) /.exec(q)[1];
       return toResponse(recorded(routes[m]));
     } });
-  const book = createLeadsBook({ crm, access: leadsAccess(IR), log, recordIdPrefix: P, clock: () => NOW });
+  // D44: lead 02 names the IR secondary; the roster has its owner away, so it is in the book.
+  const roster = { async current() { return { absentOwnerIds: [OTHER_IR], covers: [] }; } };
+  const book = createLeadsBook({ crm, access: leadsAccess(IR), log, recordIdPrefix: P, clock: () => NOW, roster });
   return { today: createTodayRead({ book, crm, clock: () => NOW }), queries };
 }
 
@@ -622,13 +637,13 @@ test('an IR finds only their own book — never another IR\'s lead, an expired c
   const r = searchRig('search.mixed');
   const res = await r.svc.find(principal(IR), 'Match');
   assert.equal(res.value.book, 'yours');
-  assert.deepEqual(res.value.hits.map((h) => h.id.slice(-2)), ['01', '03', '05']);
+  assert.deepEqual(res.value.hits.map((h) => h.id.slice(-2)), ['01', '03'], 'D44: 05 names the IR secondary only — dormant');
   assert.deepEqual(res.value.hits[0], { id: `${P}740996201`, name: 'Synthetic Match 1', phoneLast4: '0001', stage: 'Lead captured', ownerId: IR });
   assert.equal(r.calls[0].pathname, '/crm/v8/Leads/search', 'Leads only, never Contacts');
   assert.equal(r.calls[0].searchParams.get('word'), 'Match');
   assert.ok(!JSON.stringify(res).includes('+91 90000'), 'the full number never leaves');
   const dropped = r.sink.records().filter((x) => x.kind === 'refusal');
-  assert.deepEqual(dropped[0].recordIds.map((x) => x.slice(-2)), ['02', '04', '06']);
+  assert.deepEqual(dropped[0].recordIds.map((x) => x.slice(-2)), ['02', '04', '05', '06']);
 });
 
 test('the IR Manager sees the team\'s book; an org-wide seat sees every book, masked to the last four', async () => {
