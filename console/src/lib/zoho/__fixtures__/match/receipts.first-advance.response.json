@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994048",
+        "Allotment": {
+          "id": "9007199254740994011",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "Match_State": "Matched",
+        "UTR": "SYNTH048"
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}

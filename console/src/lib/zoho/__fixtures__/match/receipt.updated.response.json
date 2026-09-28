@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740994049",
+          "Modified_Time": "2026-09-02T09:02:00+05:30",
+          "Modified_By": {
+            "id": "9007199254740994090",
+            "name": "Synthetic Head of Finance"
+          }
+        },
+        "message": "record updated",
+        "status": "success"
+      }
+    ]
+  }
+}

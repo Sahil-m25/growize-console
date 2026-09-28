@@ -1,0 +1,18 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "INVALID_DATA",
+        "details": {
+          "api_name": "Matched_By"
+        },
+        "message": "Matched By cannot be the person who recorded the receipt (Synthetic Meena Recorder)",
+        "status": "error"
+      }
+    ]
+  }
+}

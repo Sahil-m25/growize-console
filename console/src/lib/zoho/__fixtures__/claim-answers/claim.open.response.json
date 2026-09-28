@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994301",
+        "UTR": "CLAIM-9007199254740994007-1",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 2250000,
+        "Mode": "RTGS",
+        "Received_On": "2026-08-27T00:00:00+05:30",
+        "Match_State": "Claimed",
+        "Created_By": {
+          "id": "9007199254740994095",
+          "name": "Synthetic Rohit IR",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Note": "Investor says they paid (balance), reported by the IR in the console.\nReference the investor gave: ••••8994\nIR's note: Synthetic IR words about the transfer",
+        "Modified_Time": "2026-08-27T11:00:00+05:30"
+      }
+    ]
+  }
+}

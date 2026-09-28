@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994049",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 2250000,
+        "Mode": "RTGS",
+        "UTR": "HDFC2708994",
+        "Received_On": "2026-09-01T00:00:00+05:30",
+        "Match_State": "Pending",
+        "Matched_By": null,
+        "Created_By": {
+          "id": "9007199254740994091",
+          "name": "Synthetic Meena Recorder",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Modified_Time": "2026-09-02T08:00:00+05:30",
+        "Note": null
+      }
+    ]
+  }
+}

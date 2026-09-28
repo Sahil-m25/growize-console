@@ -1,0 +1,35 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994021",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "Match_State": "Matched",
+        "UTR": "SYNTH021"
+      },
+      {
+        "id": "9007199254740994301",
+        "Allotment": {
+          "id": "9007199254740994001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 2250000,
+        "Match_State": "Claimed",
+        "UTR": "SYNTH301"
+      }
+    ],
+    "info": {
+      "more_records": false
+    }
+  }
+}

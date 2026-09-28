@@ -1,0 +1,18 @@
+{
+  "status": 412,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "ALREADY_MODIFIED",
+        "details": {
+          "id": "9007199254740994301"
+        },
+        "message": "record was modified",
+        "status": "error"
+      }
+    ]
+  }
+}
