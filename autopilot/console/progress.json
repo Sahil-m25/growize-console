@@ -1862,7 +1862,16 @@
   "M19-S02": {
    "status": "pending",
    "attempts": 0,
-   "notes": 5
+   "notes": 5,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T06:47:15.220Z",
+   "note": "Scripts built; T03 proven on a workbook copy; T01/T02 wait on sandbox users per seat (M02-S10) and staging seeding (M19-S03).",
+   "commits": [
+    "27b8b83"
+   ]
   }
  },
  "subtasks": {
@@ -2901,6 +2910,21 @@
   "M10-S07-T02": {
    "status": "done",
    "at": "2026-09-28T06:47:03.143Z",
+   "phase": "zoho"
+  },
+  "M19-S02-T01": {
+   "status": "done",
+   "at": "2026-09-28T06:47:15.220Z",
+   "phase": "zoho"
+  },
+  "M19-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:47:15.220Z",
+   "phase": "zoho"
+  },
+  "M19-S02-T03": {
+   "status": "done",
+   "at": "2026-09-28T06:47:15.220Z",
    "phase": "zoho"
   }
  },
@@ -5236,6 +5260,14 @@
    "status": "waiting",
    "hours": 2,
    "note": "Guard layer built and tested; waiting on Sahil's T01 Zoho config (lookups, Payment_Status workflow, Idempotency_Key) and sandbox proof."
+  },
+  {
+   "at": "2026-09-28T06:47:15.220Z",
+   "story": "M19-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 9,
+   "note": "Scripts built; T03 proven on a workbook copy; T01/T02 wait on sandbox users per seat (M02-S10) and staging seeding (M19-S03)."
   }
  ],
  "last_regression_round": 0,
