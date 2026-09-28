@@ -1858,16 +1858,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "dc2cbc6"
    ],
-   "at": "2026-09-27T22:56:25.898Z",
-   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3",
+   "at": "2026-09-28T13:46:38.228Z",
+   "note": "Sections built and tested; waiting on the Numbers screens and the Sign status reader for paper dates.",
    "notes": 2
   },
   "M18-S03": {
@@ -2244,7 +2246,16 @@
   "M16-S09": {
    "status": "pending",
    "attempts": 0,
-   "notes": 3
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T13:46:38.448Z",
+   "note": "Server refusal built and tested; waiting on the screens, the Sahil decision and profile permissions.",
+   "commits": [
+    "dc2cbc6"
+   ]
   },
   "M18-S01": {
    "status": "pending",
@@ -3728,6 +3739,16 @@
   "M05-S08-T01": {
    "status": "done",
    "at": "2026-09-28T13:46:20.499Z",
+   "phase": "zoho"
+  },
+  "M16-S08-T01": {
+   "status": "done",
+   "at": "2026-09-28T13:46:38.228Z",
+   "phase": "zoho"
+  },
+  "M16-S09-T01": {
+   "status": "done",
+   "at": "2026-09-28T13:46:38.448Z",
    "phase": "zoho"
   }
  },
@@ -6607,6 +6628,22 @@
    "status": "waiting",
    "hours": 4,
    "note": "Care queue built and tested; waiting on the KAM Today screen and staging UAT."
+  },
+  {
+   "at": "2026-09-28T13:46:38.228Z",
+   "story": "M16-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Sections built and tested; waiting on the Numbers screens and the Sign status reader for paper dates."
+  },
+  {
+   "at": "2026-09-28T13:46:38.448Z",
+   "story": "M16-S09",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Server refusal built and tested; waiting on the screens, the Sahil decision and profile permissions."
   }
  ],
  "last_regression_round": 0,
