@@ -1662,16 +1662,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "ab04ccf"
    ],
-   "at": "2026-09-27T22:56:23.100Z",
-   "note": "Jev run 28 Sep: app 5/8 vs prototype 5/8",
+   "at": "2026-09-28T09:16:43.126Z",
+   "note": "Archive, export job and query built and tested; waiting on the S3 account, audit service token, sandbox export shapes and the Activity page.",
    "notes": 6
   },
   "M15-S05": {
@@ -2017,7 +2019,16 @@
   "M13-S01": {
    "status": "pending",
    "attempts": 0,
-   "notes": 4
+   "notes": 4,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:42.922Z",
+   "note": "Outbox, inbound and stub built and tested; waiting on the investor app URL/key (MA1) and sandbox Case proof.",
+   "commits": [
+    "ab04ccf"
+   ]
   },
   "M19-S06": {
    "status": "pending",
@@ -3216,6 +3227,36 @@
   "M13-S02-T02": {
    "status": "done",
    "at": "2026-09-28T09:16:22.620Z",
+   "phase": "zoho"
+  },
+  "M13-S01-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:42.922Z",
+   "phase": "zoho"
+  },
+  "M13-S01-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:16:42.922Z",
+   "phase": "zoho"
+  },
+  "M13-S01-T03": {
+   "status": "done",
+   "at": "2026-09-28T09:16:42.922Z",
+   "phase": "zoho"
+  },
+  "M15-S03-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:43.126Z",
+   "phase": "zoho"
+  },
+  "M15-S03-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:16:43.126Z",
+   "phase": "zoho"
+  },
+  "M15-S03-T05": {
+   "status": "done",
+   "at": "2026-09-28T09:16:43.126Z",
    "phase": "zoho"
   }
  },
@@ -5727,6 +5768,22 @@
    "status": "waiting",
    "hours": 4,
    "note": "Cases read built; waiting on Cases fields (T01) and the Tickets page."
+  },
+  {
+   "at": "2026-09-28T09:16:42.922Z",
+   "story": "M13-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 9,
+   "note": "Outbox, inbound and stub built and tested; waiting on the investor app URL/key (MA1) and sandbox Case proof."
+  },
+  {
+   "at": "2026-09-28T09:16:43.126Z",
+   "story": "M15-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 13.5,
+   "note": "Archive, export job and query built and tested; waiting on the S3 account, audit service token, sandbox export shapes and the Activity page."
   }
  ],
  "last_regression_round": 0,
