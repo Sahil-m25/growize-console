@@ -1,0 +1,80 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998411",
+        "Customer": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "EKA LLP"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 1,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Capital_Invested": null,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": "2026-10-15",
+        "Supplementary_Verified_At": null
+      },
+      {
+        "id": "9007199254740998412",
+        "Customer": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "LLP": {
+          "id": "9007199254740998102",
+          "name": "Block B LLP"
+        },
+        "Allocation_Status": "Issued",
+        "Reserved_Units": 0,
+        "Issued_Units": 2,
+        "Unit_Price": 2000000,
+        "Capital_Invested": 4000000,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": null,
+        "Supplementary_Verified_At": "2026-08-22T10:00:00+05:30"
+      },
+      {
+        "id": "9007199254740998413",
+        "Customer": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "EKA LLP"
+        },
+        "Allocation_Status": "Cancelled",
+        "Reserved_Units": 1,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Capital_Invested": null,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": null,
+        "Supplementary_Verified_At": null
+      }
+    ],
+    "info": {
+      "count": 3,
+      "more_records": false
+    }
+  }
+}

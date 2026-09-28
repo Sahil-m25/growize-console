@@ -1,0 +1,102 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998401",
+        "Customer": {
+          "id": "9007199254740997320",
+          "name": "Kiran Joshi"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "EKA LLP"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 2,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Capital_Invested": null,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": "2026-10-15",
+        "Supplementary_Verified_At": null
+      },
+      {
+        "id": "9007199254740998411",
+        "Customer": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "EKA LLP"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 1,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Capital_Invested": null,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": "2026-10-15",
+        "Supplementary_Verified_At": null
+      },
+      {
+        "id": "9007199254740998413",
+        "Customer": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "EKA LLP"
+        },
+        "Allocation_Status": "Cancelled",
+        "Reserved_Units": 1,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Capital_Invested": null,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": null,
+        "Supplementary_Verified_At": null
+      },
+      {
+        "id": "9007199254740998421",
+        "Customer": {
+          "id": "9007199254740997331",
+          "name": "Asha Varghese"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "EKA LLP"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 1,
+        "Issued_Units": 0,
+        "Unit_Price": 2500000,
+        "Capital_Invested": null,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Investment_Date": "2026-08-15",
+        "Hold_Until": "2026-10-15",
+        "Supplementary_Verified_At": null
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}

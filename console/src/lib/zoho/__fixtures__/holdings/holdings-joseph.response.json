@@ -1,0 +1,52 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998601",
+        "Name": "CCD-2025-01",
+        "Investor": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "Instrument_Class": "CCD",
+        "Invested_Amount": 1000000,
+        "Current_Value": 1080000,
+        "Interest_Accrued": 80000,
+        "Invested_Date": "2025-04-01",
+        "Maturity_Date": "2028-03-31",
+        "Interest_Rate_Pct": 8,
+        "Units_Held": 100,
+        "Face_Value": 10000,
+        "Conversion_Status": "Yet to convert",
+        "Certificate_No": "CCD/0001"
+      },
+      {
+        "id": "9007199254740998602",
+        "Name": "EQ-2024-07",
+        "Investor": {
+          "id": "9007199254740997330",
+          "name": "Joseph Mathew"
+        },
+        "Instrument_Class": "Equity",
+        "Invested_Amount": 500000,
+        "Current_Value": null,
+        "Interest_Accrued": null,
+        "Invested_Date": "2024-07-10",
+        "Maturity_Date": null,
+        "Interest_Rate_Pct": null,
+        "Units_Held": 50,
+        "Face_Value": 10,
+        "Conversion_Status": "-None-",
+        "Certificate_No": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998701",
+        "Name": "T1",
+        "Holding": {
+          "id": "9007199254740998601",
+          "name": "x"
+        },
+        "Type": "Capital Call",
+        "Amount": 1000000,
+        "Txn_Date": "2025-04-01",
+        "Reference": "CC-1"
+      },
+      {
+        "id": "9007199254740998702",
+        "Name": "T2",
+        "Holding": {
+          "id": "9007199254740998601",
+          "name": "x"
+        },
+        "Type": "Interest",
+        "Amount": 80000,
+        "Txn_Date": "2026-03-31",
+        "Reference": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}
