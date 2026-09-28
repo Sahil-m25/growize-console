@@ -1,0 +1,41 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "LLP": {
+     "id": "9007199254740998301",
+     "name": "x"
+    },
+    "Allocation_Status": "Issued",
+    "SUM(Reserved_Units)": 0,
+    "SUM(Issued_Units)": 29
+   },
+   {
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "x"
+    },
+    "Allocation_Status": "Issued",
+    "SUM(Reserved_Units)": 0,
+    "SUM(Issued_Units)": 6
+   },
+   {
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "x"
+    },
+    "Allocation_Status": "Reserved",
+    "SUM(Reserved_Units)": 5,
+    "SUM(Issued_Units)": 0
+   }
+  ],
+  "info": {
+   "count": 3,
+   "more_records": false
+  }
+ }
+}

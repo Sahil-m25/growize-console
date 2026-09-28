@@ -1,0 +1,49 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997216",
+    "ARL_ID": "ARL-INV-0216",
+    "First_Name": "Fixture",
+    "Last_Name": "Harish",
+    "Mobile": "+91 90000 33017",
+    "Mailing_City": "Mysuru",
+    "KAM": {
+     "id": "9007199254740994002",
+     "name": "x"
+    },
+    "Origin_Lead": {
+     "id": "9007199254740997016"
+    },
+    "Originating_IR": {
+     "id": "9007199254740995002",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740997230",
+    "ARL_ID": "ARL-INV-0230",
+    "First_Name": "Fixture",
+    "Last_Name": "Kiran",
+    "Mobile": "+91 90000 13017",
+    "Mailing_City": "Pune",
+    "KAM": null,
+    "Origin_Lead": {
+     "id": "9007199254740997030"
+    },
+    "Originating_IR": {
+     "id": "9007199254740995002",
+     "name": "x"
+    }
+   }
+  ],
+  "info": {
+   "count": 2,
+   "more_records": false
+  }
+ }
+}

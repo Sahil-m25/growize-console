@@ -1,0 +1,33 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997220",
+    "ARL_ID": "ARL-INV-0220",
+    "First_Name": "Fixture",
+    "Last_Name": "Anand",
+    "Mobile": "+91 90000 20220",
+    "Mailing_City": "Bengaluru",
+    "KAM": {
+     "id": "9007199254740994001",
+     "name": "x"
+    },
+    "Origin_Lead": {
+     "id": "9007199254740997020"
+    },
+    "Originating_IR": {
+     "id": "9007199254740995001",
+     "name": "x"
+    }
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

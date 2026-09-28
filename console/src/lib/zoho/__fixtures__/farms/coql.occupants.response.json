@@ -1,0 +1,118 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998401",
+    "Customer": {
+     "id": "9007199254740997208",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Fixture Prakash",
+    "Customer.ARL_ID": "ARL-INV-0208",
+    "Customer.KAM": null,
+    "Customer.Origin_Lead": {
+     "id": "9007199254740997001"
+    },
+    "Customer.Originating_IR": {
+     "id": "9007199254740995001"
+    },
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "x"
+    },
+    "Allocation_Status": "Reserved",
+    "Reserved_Units": 1,
+    "Issued_Units": 0,
+    "Total_Amount_Received": 50000,
+    "Total_Amount_Receivable": 200000
+   },
+   {
+    "id": "9007199254740998402",
+    "Customer": {
+     "id": "9007199254740997209",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Fixture Joseph",
+    "Customer.ARL_ID": "ARL-INV-0209",
+    "Customer.KAM": null,
+    "Customer.Origin_Lead": {
+     "id": "9007199254740997002"
+    },
+    "Customer.Originating_IR": {
+     "id": "9007199254740995002"
+    },
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "x"
+    },
+    "Allocation_Status": "Reserved",
+    "Reserved_Units": 4,
+    "Issued_Units": 0,
+    "Total_Amount_Received": 250000,
+    "Total_Amount_Receivable": 750000
+   },
+   {
+    "id": "9007199254740998403",
+    "Customer": {
+     "id": "9007199254740997216",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Fixture Harish",
+    "Customer.ARL_ID": "ARL-INV-0216",
+    "Customer.KAM": {
+     "id": "9007199254740994002"
+    },
+    "Customer.Origin_Lead": {
+     "id": "9007199254740997003"
+    },
+    "Customer.Originating_IR": {
+     "id": "9007199254740995002"
+    },
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "x"
+    },
+    "Allocation_Status": "Issued",
+    "Reserved_Units": 0,
+    "Issued_Units": 2,
+    "Total_Amount_Received": 500000,
+    "Total_Amount_Receivable": 0
+   },
+   {
+    "id": "9007199254740998404",
+    "Customer": {
+     "id": "9007199254740997205",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Fixture Radhika",
+    "Customer.ARL_ID": "ARL-INV-0205",
+    "Customer.KAM": {
+     "id": "9007199254740994001"
+    },
+    "Customer.Origin_Lead": {
+     "id": "9007199254740997004"
+    },
+    "Customer.Originating_IR": {
+     "id": "9007199254740995002"
+    },
+    "LLP": {
+     "id": "9007199254740998301",
+     "name": "x"
+    },
+    "Allocation_Status": "Issued",
+    "Reserved_Units": 0,
+    "Issued_Units": 4,
+    "Total_Amount_Received": 1000000,
+    "Total_Amount_Receivable": 0
+   }
+  ],
+  "info": {
+   "count": 4,
+   "more_records": false
+  }
+ }
+}

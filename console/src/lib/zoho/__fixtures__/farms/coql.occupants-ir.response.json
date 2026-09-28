@@ -1,0 +1,39 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998401",
+    "Customer": {
+     "id": "9007199254740997208",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Fixture Prakash",
+    "Customer.ARL_ID": "ARL-INV-0208",
+    "Customer.KAM": null,
+    "Customer.Origin_Lead": {
+     "id": "9007199254740997001"
+    },
+    "Customer.Originating_IR": {
+     "id": "9007199254740995001"
+    },
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "x"
+    },
+    "Allocation_Status": "Reserved",
+    "Reserved_Units": 1,
+    "Issued_Units": 0,
+    "Total_Amount_Received": 50000,
+    "Total_Amount_Receivable": 200000
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

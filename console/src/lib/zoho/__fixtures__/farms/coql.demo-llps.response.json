@@ -1,0 +1,86 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998301",
+    "Name": "Fixture Block A",
+    "Block_Code": "A",
+    "Acreage_Acres": 2.4,
+    "Total_Units": 62,
+    "Units_Reserved": 0,
+    "Units_Issued": 29,
+    "Units_Released": 62,
+    "Pet_Unit_Price": 250000,
+    "LLP_Status": "Open for Issuance",
+    "Annual_Rental_Yield": "20%",
+    "Crop_Stage": "Alphonso · year 3",
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   },
+   {
+    "id": "9007199254740998302",
+    "Name": "Fixture Block B",
+    "Block_Code": "B",
+    "Acreage_Acres": 1.3,
+    "Total_Units": 34,
+    "Units_Reserved": 5,
+    "Units_Issued": 7,
+    "Units_Released": 34,
+    "Pet_Unit_Price": 250000,
+    "LLP_Status": "Open for Reservation",
+    "Annual_Rental_Yield": "20%",
+    "Crop_Stage": "Alphonso · year 2",
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   },
+   {
+    "id": "9007199254740998303",
+    "Name": "Fixture Block C",
+    "Block_Code": "C",
+    "Acreage_Acres": 2.1,
+    "Total_Units": 54,
+    "Units_Reserved": 0,
+    "Units_Issued": 0,
+    "Units_Released": 0,
+    "Pet_Unit_Price": 250000,
+    "LLP_Status": "Darft",
+    "Annual_Rental_Yield": "20%",
+    "Crop_Stage": "Prepared, not planted",
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   },
+   {
+    "id": "9007199254740998304",
+    "Name": "Fixture Block D",
+    "Block_Code": "D",
+    "Acreage_Acres": 2.2,
+    "Total_Units": 58,
+    "Units_Reserved": 0,
+    "Units_Issued": 0,
+    "Units_Released": null,
+    "Pet_Unit_Price": 250000,
+    "LLP_Status": "On Hold",
+    "Annual_Rental_Yield": "20%",
+    "Crop_Stage": null,
+    "Insurance_Provider": null,
+    "Insurance_Policy_No": null,
+    "Insured_Amount": null,
+    "Insurance_expiry_date": null
+   }
+  ],
+  "info": {
+   "count": 4,
+   "more_records": false
+  }
+ }
+}
