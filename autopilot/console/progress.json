@@ -1401,32 +1401,36 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "9b84356"
    ],
-   "at": "2026-09-27T22:56:16.399Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T12:32:07.731Z",
+   "note": "Upload built and tested; waiting on the upload control and sandbox uploader proof.",
    "notes": 3
   },
   "M12-S03": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "9b84356"
    ],
-   "at": "2026-09-27T22:56:16.741Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
+   "at": "2026-09-28T12:32:08.021Z",
+   "note": "Documents list built; waiting on sign fields/Documents module and the page.",
    "notes": 3
   },
   "M12-S04": {
@@ -1628,16 +1632,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "9b84356"
    ],
-   "at": "2026-09-27T22:56:20.915Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T12:32:08.251Z",
+   "note": "Emails read built; waiting on the Emails tab and sandbox shape check.",
    "notes": 3
   },
   "M12-S14": {
@@ -3587,6 +3593,21 @@
   "M11-S07-T01": {
    "status": "done",
    "at": "2026-09-28T12:31:49.764Z",
+   "phase": "zoho"
+  },
+  "M12-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T12:32:07.731Z",
+   "phase": "zoho"
+  },
+  "M12-S03-T02": {
+   "status": "done",
+   "at": "2026-09-28T12:32:08.021Z",
+   "phase": "zoho"
+  },
+  "M12-S09-T01": {
+   "status": "done",
+   "at": "2026-09-28T12:32:08.251Z",
    "phase": "zoho"
   }
  },
@@ -6370,6 +6391,30 @@
    "status": "waiting",
    "hours": 3,
    "note": "Oversell guard built; waiting on the Deluge install, writer wiring and drawers."
+  },
+  {
+   "at": "2026-09-28T12:32:07.731Z",
+   "story": "M12-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Upload built and tested; waiting on the upload control and sandbox uploader proof."
+  },
+  {
+   "at": "2026-09-28T12:32:08.021Z",
+   "story": "M12-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Documents list built; waiting on sign fields/Documents module and the page."
+  },
+  {
+   "at": "2026-09-28T12:32:08.251Z",
+   "story": "M12-S09",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Emails read built; waiting on the Emails tab and sandbox shape check."
   }
  ],
  "last_regression_round": 0,
