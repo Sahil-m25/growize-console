@@ -103,6 +103,13 @@ export type SeatResolution =
 
 export interface ZohoSeatDirectory {
   readonly resolveCurrentUser: (body: unknown) => SeatResolution;
+  /**
+   * M03-S02: the same checks for a user looked up by id (GET /users/{id}) — to bound a grant by the
+   * holder's seat and manager chain — except that an Administrator-profile seat (CEO, Digital
+   * Infrastructure) is still named: it is a manager in the chain, never a sign-in. Optional so test
+   * doubles that only resolve the CurrentUser stay valid; absent = fail closed.
+   */
+  readonly resolveDirectoryUser?: (body: unknown) => SeatResolution;
 }
 
 export interface ZohoSeatDirectoryConfig {
@@ -201,8 +208,7 @@ export function createZohoSeatDirectory(config: ZohoSeatDirectoryConfig): ZohoSe
   const roleIds = assertPinnedIds(config.roleIds, ROLE_NAMES, prefix, "role");
   const profileIds = assertPinnedIds(config.profileIds, PROFILE_NAMES, prefix, "profile");
 
-  return Object.freeze({
-    resolveCurrentUser(body: unknown): SeatResolution {
+  function resolve(body: unknown, allowAdministrator: boolean): SeatResolution {
       const root = objectOf(body);
       const users = root === null ? MISSING : ownData(root, "users");
       const current = objectOf(onlyOwnArrayItem(users));
@@ -238,12 +244,16 @@ export function createZohoSeatDirectory(config: ZohoSeatDirectoryConfig): ZohoSe
       if (profileName !== policy.profile || profileIds[policy.profile] !== profileId) {
         return { ok: false, reason: "profile-mismatch" };
       }
-      if (policy.administrator) return { ok: false, reason: "administrator-profile" };
+      if (policy.administrator && !allowAdministrator) return { ok: false, reason: "administrator-profile" };
 
       return {
         ok: true,
         value: Object.freeze({ userId, roleId, profileId, seat: policy.seat }),
       };
-    },
+  }
+
+  return Object.freeze({
+    resolveCurrentUser: (body: unknown): SeatResolution => resolve(body, false),
+    resolveDirectoryUser: (body: unknown): SeatResolution => resolve(body, true),
   });
 }

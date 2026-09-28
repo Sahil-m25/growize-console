@@ -10,9 +10,9 @@
  * T02  `admitZohoSeat` is the callback's door: `signInAdmits` (either side admits) over that book. A
  *      refusal carries a code whose named message is SIGNIN_REFUSALS (oauth/user-session.ts).
  *
- * Grants are read through an injectable `GrantReader` (M03-S02 stores them; until then NO_GRANTS,
- * so a granted-only seat is refused — fail closed). PROVISIONAL: the manager chain that bounds a
- * grant (reachCeil) is not read from Zoho yet; the seat's own ceiling applies.
+ * Grants are read through an injectable `GrantReader`: the runtimes pass the grant store's reader
+ * (access/grants.ts, M03-S02); NO_GRANTS remains the fail-closed default for tests and doubles. Here the
+ * seat's own ceiling applies; a grant CHANGE is bounded by the real manager chain (grant-service.ts).
  */
 
 import type { Cap, CapGrid, Person, PersonKey, SeatKey } from "../../domain";

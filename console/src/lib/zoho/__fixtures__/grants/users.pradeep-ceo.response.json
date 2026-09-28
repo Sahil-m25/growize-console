@@ -1,0 +1,20 @@
+{
+ "users": [
+  {
+   "id": "554023000000300001",
+   "status": "active",
+   "confirm": true,
+   "type__s": "Regular User",
+   "role": {
+    "id": "554023000000100001",
+    "name": "CEO"
+   },
+   "profile": {
+    "id": "554023000000200001",
+    "name": "Administrator"
+   },
+   "full_name": "Test User 01",
+   "email": "user01@example.invalid"
+  }
+ ]
+}

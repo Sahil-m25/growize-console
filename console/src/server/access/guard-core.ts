@@ -8,18 +8,18 @@
  * T06  Refusal. `createGuard` decides a page or an API route for the signed-in session: a page outside
  *      the seat is refused with a named message and a landing page (the seat's first page, never an
  *      empty one), and one Plane C line is written: ids and short codes only — the Zoho user id, the
- *      seat token and `page-refused-<page>` / `api-refused-<route>`. Never a name, an email or a body.
+ *      seat token and the page id / `api-<route>` (see below). Never a name, an email or a body.
  *
- * PROVISIONAL (jev decide 0.99): Plane C (identity/plane-c.ts, owned by M01-S04) has no page-refusal
- * action, and its cleaner turns any other action into `sign-in-refused`; the refusal is therefore written
- * as `sign-in-refused` / `refused` with the reason code carrying what was refused. M01-S04 is asked for a
- * `page-refused` action.
+ * Plane C: a refused page is `refused-page` (reason = the page id), a refused API route `refused-action`
+ * (reason = `api-<route>`), through identity/authority.ts. A session the door no longer admits (no seat,
+ * a grant taken back) stays `sign-in-refused` with the admission code.
  */
 
 import type { CapGrid, NavKey, PersonKey } from "../../domain";
 import { MERGE, NAV, PAGECAPS } from "../../domain";
 import { signInAdmits } from "../../lib/data/admission";
 import { canReach, navFor } from "../../lib/selectors/access";
+import { createAuthorityEvents, type AuthorityEvents } from "../identity/authority";
 import type { PlaneCLog } from "../identity/plane-c";
 import { CONSOLE_SEAT, SIGNIN_REFUSALS, type ConsoleSession, type SignOutWhy } from "../oauth/user-session";
 import type { ZohoSeat } from "../oauth/seat";
@@ -137,9 +137,20 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/data": { kind: "session" },
   "/api/data/version": { kind: "session" },
   "/api/leads": { kind: "page", page: "leads" },
+  "/api/grants": { kind: "page", page: "people" },
+  "/api/auth/step-up": { kind: "session" },
+  "/api/farms": { kind: "page", page: "farms" },
+  "/api/events": { kind: "page", page: "events" },
+  "/api/cases": { kind: "page", page: "tkt" },
   "/api/session": { kind: "open", why: "the sign-in door itself: GET answers who is signed in, DELETE signs out" },
   "/api/errors": { kind: "open", why: "the client error beacon: carries no data and reports from the sign-in screen too" },
   "/api/webhooks/zoho-sign": { kind: "open", why: "a provider callback: no person, authenticated by its HMAC signature" },
+  "/api/webhooks/investor-app": { kind: "open", why: "the investor app's signed events (M13-S01): no person, authenticated by the contract HMAC" },
+  "/api/contracts": { kind: "session" },
+  "/api/activity": { kind: "session" },
+  "/api/investors": { kind: "session" },
+  "/api/investors/add-paid": { kind: "page", page: "inv" },
+  "/api/investors/[id]/unlock": { kind: "page", page: "inv" },
 });
 
 /** The rule for a route: the longest API_ROUTES prefix that matches ("/api/leads/123" → "/api/leads"). */
@@ -161,6 +172,8 @@ export interface GuardDeps {
   readonly mode: () => "enforce" | "pass" | "not-configured";
   readonly readSession: () => Promise<SessionRead>;
   readonly planeC: PlaneCLog;
+  /** refused pages and API routes (authority.ts); defaults to a writer over `planeC` */
+  readonly events?: AuthorityEvents;
   readonly grants?: GrantReader;
   readonly clock?: () => number;
 }
@@ -173,8 +186,12 @@ export interface Guard {
 export function createGuard(d: GuardDeps): Guard {
   const clock = d.clock ?? Date.now;
   const grantsOf = d.grants ?? NO_GRANTS;
+  const events = d.events ?? createAuthorityEvents(d.planeC, clock);
 
-  async function decide(page: string | null, reason: string): Promise<GuardVerdict> {
+  /** what was refused: a page (refusedPage, reason = the page id) or an API route (refusedAction, `api-<route>`) */
+  type Refused = { readonly kind: "page"; readonly page: string } | { readonly kind: "api"; readonly code: string };
+
+  async function decide(page: string | null, what: Refused): Promise<GuardVerdict> {
     const mode = d.mode();
     if (mode === "pass") return { ok: true, page, landing: "/", passThrough: true };
     if (mode === "not-configured") return refuse("not-configured", 503, "/");
@@ -195,18 +212,21 @@ export function createGuard(d: GuardDeps): Guard {
       return refuse(admission.code, 403, "/");
     }
     const v = decidePage(sides, who, grants, page, new Date(clock()));
-    if (!v.ok) log(reason);
+    if (!v.ok) {
+      if (what.kind === "page") events.refusedPage(who, seat, what.page);
+      else events.refusedAction(who, seat, what.code);
+    }
     return v;
   }
 
   return Object.freeze({
-    page: (pageId: string | null) => decide(pageId, "page-refused-" + (pageId ?? "root")),
+    page: (pageId: string | null) => decide(pageId, { kind: "page", page: pageId ?? "root" }),
     async api(route: string): Promise<GuardVerdict> {
       const r = apiRuleOf(route);
       /* an unlisted route is refused: every handler must be named in API_ROUTES (fail closed) */
       if (!r) return d.mode() === "pass" ? { ok: true, page: null, landing: "/", passThrough: true } : refuse("page", 403, "/");
       if (r.rule.kind === "open") return { ok: true, page: null, landing: "/", passThrough: true };
-      return decide(r.rule.kind === "page" ? r.rule.page : null, "api-refused-" + slug(r.key));
+      return decide(r.rule.kind === "page" ? r.rule.page : null, { kind: "api", code: "api-" + slug(r.key) });
     },
   });
 }

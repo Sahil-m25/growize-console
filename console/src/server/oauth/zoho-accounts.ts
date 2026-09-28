@@ -39,7 +39,12 @@ export interface ZohoAccountsOptions {
   readonly fetch?: TokenFetch;
   readonly clock?: () => number;
   readonly timeoutMs?: number;
+  /** M01-S10-T01: this deployment's exact …/api/auth/step-up/callback, registered on the same Zoho client. */
+  readonly stepUpRedirectUri?: string | null;
 }
+
+/** M01-S10-T01: the step-up asks only enough to learn who signed in again (the CRM CurrentUser). */
+export const STEP_UP_SCOPES: readonly string[] = Object.freeze(["ZohoCRM.users.READ"]);
 
 export interface ZohoAccounts {
   readonly accountsOrigin: string;
@@ -47,6 +52,15 @@ export interface ZohoAccounts {
   exchangeCode(p: { readonly code: string; readonly codeVerifier: string }): Promise<AccountsResult<TokenGrant>>;
   refresh(refreshToken: string, actor: LogActor): Promise<AccountsResult<TokenGrant>>;
   revoke(refreshToken: string, actor: LogActor): Promise<AccountsResult<null>>;
+  /** M01-S10-T01: true when a step-up redirect URI is configured. */
+  readonly stepUpReady: boolean;
+  /**
+   * M01-S10-T01: a re-authentication round trip — prompt=login and max_age force a fresh Zoho
+   * sign-in even when a Zoho session is open; access_type=online, so no refresh token is issued.
+   */
+  stepUpUrl(p: { readonly state: string; readonly codeChallenge: string; readonly maxAgeS: number }): string;
+  /** Trades a step-up code (the step-up redirect URI, PKCE). The grant is used once to name the person, then dropped. */
+  exchangeStepUpCode(p: { readonly code: string; readonly codeVerifier: string }): Promise<AccountsResult<TokenGrant>>;
 }
 
 function configured(value: unknown, name: string): string {
@@ -122,6 +136,7 @@ export function createZohoAccounts(o: ZohoAccountsOptions): ZohoAccounts {
     throw new TypeError("OAuth scopes must be a non-empty list of Zoho scope names.");
   }
   const scope = o.scopes.join(",");
+  const stepUpRedirect = o.stepUpRedirectUri ? redirectUriOf(o.stepUpRedirectUri) : null;
   const fetchImpl: TokenFetch = o.fetch ?? ((url, init) => fetch(url, { ...init, redirect: "error" }));
   const clock = o.clock ?? Date.now;
   const timeoutMs = o.timeoutMs ?? ACCOUNTS_TIMEOUT_MS;
@@ -216,6 +231,34 @@ export function createZohoAccounts(o: ZohoAccountsOptions): ZohoAccounts {
         grant_type: "refresh_token", client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken,
       });
       return post("refreshToken", "/oauth/v2/token", `${origin}/oauth/v2/token`, form, actor, (t) => {
+        const g = parseGrant(t);
+        return g ? { v: g } : null;
+      });
+    },
+    stepUpReady: stepUpRedirect !== null,
+    stepUpUrl({ state, codeChallenge, maxAgeS }: { readonly state: string; readonly codeChallenge: string; readonly maxAgeS: number }): string {
+      if (!stepUpRedirect) throw new TypeError("The step-up redirect URI is not configured.");
+      const q = new URLSearchParams({
+        response_type: "code",
+        client_id: clientId,
+        scope: STEP_UP_SCOPES.join(","),
+        redirect_uri: stepUpRedirect,
+        access_type: "online",
+        prompt: "login",
+        max_age: String(Math.max(0, Math.floor(maxAgeS))),
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: "S256",
+      });
+      return `${origin}/oauth/v2/auth?${q.toString()}`;
+    },
+    exchangeStepUpCode({ code, codeVerifier }: { readonly code: string; readonly codeVerifier: string }) {
+      if (!stepUpRedirect) return Promise.resolve({ ok: false, reason: "unavailable" } as const);
+      const form = new URLSearchParams({
+        grant_type: "authorization_code", client_id: clientId, client_secret: clientSecret,
+        redirect_uri: stepUpRedirect, code, code_verifier: codeVerifier,
+      });
+      return post("exchangeStepUpCode", "/oauth/v2/token", `${origin}/oauth/v2/token`, form, nobody, (t) => {
         const g = parseGrant(t);
         return g ? { v: g } : null;
       });

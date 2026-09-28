@@ -14,7 +14,9 @@
 
 import { cookies } from "next/headers";
 import { fixtureModeOn } from "../../lib/fixture-mode";
-import { createPlaneCLog, createPlaneCMemorySink, type PlaneCLog } from "../identity/plane-c";
+import { authorityEvents, identityLog } from "../identity/authority";
+import type { PlaneCLog } from "../identity/plane-c";
+import { sharedGrantReader } from "./grants";
 import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
 import { SID_COOKIE } from "../oauth/user-session";
 import { createGuard, refusalResponse, type Guard, type GuardVerdict } from "./guard-core";
@@ -31,13 +33,15 @@ export function guardMode(env: NodeJS.ProcessEnv = process.env): "enforce" | "pa
 type Held = { guard: Guard; planeC: PlaneCLog };
 const G = globalThis as typeof globalThis & { __gzRouteGuard?: Held };
 
-/** PROVISIONAL until M01-S04's durable Plane C sink: an in-memory Plane C, as oauth/runtime.ts has. */
+/** Plane C on the shared sink (logs/factory.ts) through authority.ts; grants from the grant store (M03-S02). */
 function held(): Held {
   if (G.__gzRouteGuard) return G.__gzRouteGuard;
-  const planeC = createPlaneCLog(createPlaneCMemorySink());
+  const planeC = identityLog();
   const guard = createGuard({
     mode: () => guardMode(),
     planeC,
+    events: authorityEvents(),
+    grants: sharedGrantReader(),
     async readSession() {
       const jar = await cookies();
       const r = await userSessions().current(jar.get(SID_COOKIE)?.value);

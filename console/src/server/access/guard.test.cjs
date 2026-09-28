@@ -155,7 +155,7 @@ test('T06: an IR typing /system is refused, lands on Today, and Plane C gets one
   const lines = sink.events();
   assert.equal(lines.length, 1);
   assert.deepEqual(Object.keys(lines[0]).sort(), ['action', 'at', 'outcome', 'reason', 'seat', 'who']);
-  assert.deepEqual({ ...lines[0] }, { at: 1_700_000_000_000, who: ID, action: 'sign-in-refused', outcome: 'refused', reason: 'page-refused-system', seat: 'ir' });
+  assert.deepEqual({ ...lines[0] }, { at: 1_700_000_000_000, who: ID, action: 'refused-page', outcome: 'refused', reason: 'system', seat: 'ir' });
   assert.doesNotMatch(JSON.stringify(lines), /@|Rohit|Deshpande|token|system page/i);
 });
 
@@ -225,7 +225,8 @@ test('T04: API rules — session routes, page routes by prefix, open routes said
   const kam = rig({ session: { who: ID, seat: 'kam' } });
   const v = await kam.g.api('/api/leads/4876876000000999999');
   assert.equal(v.ok, false); assert.equal(v.status, 403);
-  assert.equal(kam.sink.events()[0].reason, 'api-refused-leads');
+  assert.equal(kam.sink.events()[0].action, 'refused-action');
+  assert.equal(kam.sink.events()[0].reason, 'api-leads');
   assert.equal((await kam.g.api('/api/data')).ok, true);
   assert.equal((await kam.g.api('/api/nope')).status, 403);
   assert.equal((await kam.g.api('/api/webhooks/zoho-sign')).ok, true);
