@@ -1,0 +1,18 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "INVALID_DATA",
+        "details": {
+          "api_name": "to"
+        },
+        "message": "synthetic",
+        "status": "error"
+      }
+    ]
+  }
+}

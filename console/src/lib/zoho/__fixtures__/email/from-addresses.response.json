@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "from_addresses": [
+      {
+        "email": "synthetic.ir@agresearchlabs.com",
+        "type": "primary",
+        "id": "9007199254740990001",
+        "user_name": "Synthetic IR",
+        "default": true
+      },
+      {
+        "email": "investors@agresearchlabs.com",
+        "type": "org_email",
+        "id": "9007199254740990002",
+        "user_name": "Growize Investors",
+        "default": false
+      }
+    ]
+  }
+}

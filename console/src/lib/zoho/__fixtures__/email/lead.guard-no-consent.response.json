@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Modified_Time": "2026-09-27T09:00:00+05:30",
+        "Created_Time": "2026-09-20T10:00:00+05:30",
+        "Lost_At": null,
+        "Onboarded_At": null,
+        "Owner": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": null,
+        "Cover_Until": null,
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true,
+        "Consent_Visit": false,
+        "Email_Opt_Out": false,
+        "Email": "synthetic.lead@example.com",
+        "Full_Name": "Synthetic Lead",
+        "Next_Step": "Send the deck",
+        "Next_Step_At": "2026-09-28T18:00:00+05:30",
+        "Next_Step_Channel": "WhatsApp",
+        "Last_Reply_At": null,
+        "First_Touch_At": "2026-09-21T10:00:00+05:30",
+        "Reserved_At": null,
+        "Fully_Paid_At": null
+      }
+    ]
+  }
+}

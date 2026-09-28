@@ -1,0 +1,16 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "EMAIL_OPTED_OUT",
+        "details": {},
+        "message": "synthetic",
+        "status": "error"
+      }
+    ]
+  }
+}

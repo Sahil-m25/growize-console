@@ -1,0 +1,16 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "LIMIT_EXCEEDED",
+        "details": {},
+        "message": "synthetic",
+        "status": "error"
+      }
+    ]
+  }
+}

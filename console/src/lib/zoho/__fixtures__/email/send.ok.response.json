@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "message_id": "synthetic-message-id-0001"
+        },
+        "message": "Your mail has been sent successfully.",
+        "status": "success"
+      }
+    ]
+  }
+}
