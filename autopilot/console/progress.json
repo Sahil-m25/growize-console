@@ -1928,9 +1928,18 @@
    ]
   },
   "M19-S04": {
-   "status": "pending",
+   "status": "done",
    "attempts": 0,
-   "notes": 2
+   "notes": 2,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T07:44:54.258Z",
+   "note": "Gate script built and tested on sample outputs; waiting on a CI pipeline to run it after each suite.",
+   "commits": [
+    "5ca833b"
+   ]
   }
  },
  "subtasks": {
@@ -3034,6 +3043,11 @@
   "M07-S05-T02": {
    "status": "done",
    "at": "2026-09-28T07:44:43.151Z",
+   "phase": "zoho"
+  },
+  "M19-S04-T01": {
+   "status": "done",
+   "at": "2026-09-28T07:44:54.258Z",
    "phase": "zoho"
   }
  },
@@ -5433,6 +5447,14 @@
    "status": "waiting",
    "hours": 4,
    "note": "Sender built and tested; waiting on secrets/scopes, the NDA stamp reader, the composer screen and staging proof TC-E07-024."
+  },
+  {
+   "at": "2026-09-28T07:44:54.258Z",
+   "story": "M19-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "Gate script built and tested on sample outputs; waiting on a CI pipeline to run it after each suite."
   }
  ],
  "last_regression_round": 0,
