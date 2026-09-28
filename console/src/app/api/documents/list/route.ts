@@ -12,9 +12,9 @@ async function get(req: Request) {
   const c = await investorsContext();
   if (!c.ok) return c.response;
   const { rt, crm, principal } = c.ctx;
-  const { createDocumentsList } = await import("@/server/documents/list");
+  const { documentsList } = await import("@/server/documents/runtime");
   const cut = new URL(req.url).searchParams.get("cut") ?? "out";
-  const r = await createDocumentsList({ crm, log: rt.log }).read(principal.credential, principal.session.seat, cut as never, req.signal);
+  const r = await documentsList(crm, rt.log).read(principal.credential, principal.session.seat, cut as never, req.signal);
   if (r.ok) return Response.json({ documents: r.page }, { headers: NO_STORE });
   if (r.kind === "refused") return Response.json({ error: r.reason === "seat-denied" ? "Your seat has no Documents page." : "Unknown view.", code: r.reason }, { status: r.reason === "seat-denied" ? 403 : 400, headers: NO_STORE });
   return Response.json({ error: "Zoho is not answering. Try again.", code: r.errorKind, fresh: r.fresh }, { status: 503, headers: NO_STORE });

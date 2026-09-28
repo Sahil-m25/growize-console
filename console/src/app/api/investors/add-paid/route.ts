@@ -1,7 +1,8 @@
 /* POST /api/investors/add-paid — Add investor (M09-S09-T02): an investor who already paid, from the Investors page.
    Body: { name, email, mobile, llpId, units, amountPaid, investmentDate }. Optional header Idempotency-Key.
-   Writes one Contact (App_Access = Hold, no email), one allotment and one Pending receipt on the signed-in
-   person's own token (server/investors/add-paid). Finance and the super user only; everyone else 403.
+   Writes one Contact (App_Access empty — it opens On hold when the receipt is matched; no email), one allotment
+   (free units checked by server/farms/oversell first) and one Pending receipt on the signed-in person's own token
+   (server/investors/add-paid). Finance and the super user only; everyone else 403.
    200 → { investor: { contactId, code, allotmentId, allocationStatus, receiptId, app, replayed } }
    409 → { error, code: "duplicate-email", existing: { contactId, code, name } } — the in-page link
    4xx/5xx → { error: "Not saved yet — …", code } — nothing was kept (kind "incomplete": 500, ids for the operator). */
@@ -22,6 +23,7 @@ async function post_(req: Request) {
   try { body = JSON.parse(raw); } catch { body = null; }
   const { createAddPaid } = await import("@/server/investors/add-paid");
   const { createAllotmentReceiptWrites } = await import("@/server/money/allotment-receipts");
+  const { createOversellGuard } = await import("@/server/farms/oversell");
   const { userSessions } = await import("@/server/oauth/runtime");
   const { zohoSeatOf } = await import("@/server/data/live");
   const { seatAccess } = await import("@/server/access/policy");
@@ -33,7 +35,7 @@ async function post_(req: Request) {
     replay: { async replay() { return { ok: false, kind: "source-error", source: "zoho", errorKind: "refused", retryable: false } as const; } },
   });
   const service = createAddPaid({
-    crm, receipts, log: rt.log, recordIdPrefix,
+    crm, receipts, log: rt.log, recordIdPrefix, oversell: createOversellGuard({ crm, events: rt.events }),
     authority: {
       // Re-derived from the live session: the Investors-side "pay" capability (Finance, Head of Finance, super user).
       async mayAdd(cred, sid) {

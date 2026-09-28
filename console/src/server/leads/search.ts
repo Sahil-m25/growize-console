@@ -168,7 +168,7 @@ export function createLeadSearch(deps: SearchDependencies) {
       const more = hits.length - SHOWN + (res.value.moreRecords ? 1 : 0);
       const book = a.teamOrgWide ? "all" as const : a.teamOwnerIds !== null ? "team" as const : "yours" as const;
       // D47: one Plane B line — who searched, how many they got, in which scope. Never the term, never a name.
-      log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-search.done", reason: `scope-${book}.count-${Math.min(hits.length, 9999)}`, recordIds: [] });
+      log.event?.({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-search", reason: `scope-${book}.count-${Math.min(hits.length, 9999)}`, recordIds: [] });
       if (deps.cache && deps.termKey) {
         try {
           const n = hits.length;

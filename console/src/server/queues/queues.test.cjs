@@ -192,6 +192,19 @@ test('paper seats: a signed paper is "Verify it" (today); one out 5 days is "Rem
   ]);
 });
 
+test('paper reminders run oldest-first (most days out first, no sent time last); a Declined / Recalled request is not chased', async () => {
+  const rig = await makeRig(load, route()); rig.refusals = [];
+  const doc = (key, sentAt, status = 'sent', label = 'Supplementary agreement') => ({ key, paper: 'supplementary', label, scope: 'allotment', module: 'LLP_UnitAllocation_Module',
+    recordId: `${P}740996204`, party: 'Joseph Mathew', contactId: C(1), llpId: null, requestId: '1234567890', method: null, state: 'sent', verifiedAt: null,
+    sign: sentAt ? { status, sentAt, sentBy: null, expiresAt: null, label: null } : null, yourMove: null });
+  const docs = [doc('n', null, 'sent', 'FEMA declaration'), doc('a', '2026-09-24T10:00+05:30'), doc('o', '2026-09-10T10:00+05:30', 'viewed', 'Allocation letter'),
+    doc('x', '2026-09-01T10:00+05:30', 'declined'), doc('y', '2026-09-02T10:00+05:30', 'recalled')];
+  const r = await queues(rig, { docs }).q.today(await principal(rig, FAHAD, 'comp', 'comp'));
+  assert.deepEqual(r.queue.rows.filter((y) => y.kind === 'remind').map((y) => y.text), [
+    'Allocation letter · sent 18 days ago', 'Supplementary agreement · sent 4 days ago', 'FEMA declaration · out for signature',
+  ]);
+});
+
 test('TC-IM03-004: the Auditor has nothing waiting and is told the seat is read-only — no Zoho read at all', async () => {
   const rig = await makeRig(load, route()); rig.refusals = [];
   const { q, calls } = queues(rig);

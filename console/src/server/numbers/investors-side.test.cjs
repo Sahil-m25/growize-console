@@ -152,6 +152,7 @@ test('TC-IM09-002: Paper — the FEMA declaration for Joseph Mathew, sent 26 Aug
   assert.equal(p.contactId, `${P}740997209`); assert.equal(p.method, 'Class 3 DSC');
   assert.equal(p.sentBy, 'Meena'); assert.equal(p.sentAt.slice(0, 10), '2026-08-26'); assert.equal(p.expiresAt, '2026-09-09');
   assert.equal(p.daysOut, 33);
+  assert.equal(p.status, null, 'no Sign label in this stand-in; the live reader passes "Viewed" / "Declined" / "Recalled"');
 });
 
 test('TC-IM09-003: Compliance — Joseph Mathew listed with KYC pending and FEMA outstanding; count 1; no PAN/bank value selected', async () => {

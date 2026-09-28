@@ -205,7 +205,11 @@ test('an investor\'s first matched money: account.opened tentative, App_Access o
   ]);
   assert.equal(p[1][4], '2026-09-01T12:00:00+05:30');
   assert.equal(p[2][4], '2026-09-02T07:00:00+05:30');
-  assert.deepEqual(r.events.map((e) => e.type), ['money.confirmed', 'account.opened']);
+  assert.deepEqual(r.events.map((e) => e.type), ['money.confirmed', 'account.opened', 'hold.changed']);
+  const held = r.events[2];
+  assert.deepEqual(held.payload, { deadline: '2026-10-02T23:59:59+05:30', state: 'open', by: HEAD }, 'TC-IM05-028: the hold opens on the investor app');
+  assert.deepEqual(held.ids, { investor_contact_id: C2 });
+  assert.equal(held.event_id, factEventId(`hold.changed:${A2}:open:2026-10-02`));
   const opened = r.events[1];
   assert.deepEqual(opened.payload, { arl_code: 'ARL-INV-0212', at: '2026-09-02T09:02:00+05:30', state: 'tentative' });
   assert.deepEqual(opened.ids, { investor_contact_id: C2, arl_code: 'ARL-INV-0212' });
@@ -260,7 +264,7 @@ test('T04: every emitted money.confirmed / account.opened validates against cont
   const r2 = rig();
   await r2.svc.match(principal(), R);
   const all = [...r.events, ...r2.events];
-  assert.deepEqual(all.map((e) => e.type).sort(), ['account.opened', 'money.confirmed', 'money.confirmed']);
+  assert.deepEqual(all.map((e) => e.type).sort(), ['account.opened', 'hold.changed', 'money.confirmed', 'money.confirmed']);
   for (const e of all) {
     assert.deepEqual(validateEvent(schemas, e), { ok: true, type: e.type }, e.type);
     assert.deepEqual(identityPaths({ ...e, event_id: undefined, occurred_at: undefined }), [], `${e.type} carries no identity value`);
@@ -287,7 +291,7 @@ test('T04: every emitted money.confirmed / account.opened validates against cont
 
 test('T04: the events go through the signed outbox to the stub receiver and are delivered once', async () => {
   const keys = ['synthetic-contract-signing-key-0000000000000009'];
-  const stub = createInProcessStub({ schemas, keys, accepts: ['money.confirmed', 'account.opened', 'money.not_found'] });
+  const stub = createInProcessStub({ schemas, keys, accepts: ['money.confirmed', 'account.opened', 'money.not_found', 'hold.changed'] });
   const outbox = createOutbox({ schemas, target: () => ({ url: 'stub://investor-app/events', key: keys[0] }), fetch: stub.fetch, clock: () => NOW });
   const publish = async (event) => { const q = outbox.enqueue(event); if (!q.ok) return q; await outbox.drain(); return { ok: true, eventId: q.eventId, state: outbox.state(q.eventId) }; };
   const r = rig({ receipt: 'receipt.pending-advance', allotment: 'allotment.first-advance', investorAllotments: 'allotments.investor-first',
@@ -299,7 +303,7 @@ test('T04: the events go through the signed outbox to the stub receiver and are 
   await again.svc.match(principal(), R);
   await again.svc.match(principal(), R);
   const types = stub.recorded().map((e) => e.type);
-  assert.deepEqual(types, ['money.confirmed', 'account.opened', 'money.confirmed'], 'a retried event is applied once');
+  assert.deepEqual(types, ['money.confirmed', 'account.opened', 'hold.changed', 'money.confirmed'], 'a retried event is applied once');
 });
 
 /* ---- M08-S08-T02: open on match, not on record ------------------------------------------------------ */
@@ -320,29 +324,29 @@ test('M08-S08: the first matched advance opens the account On hold AND tentative
   const s = JSON.stringify(r.calls);
   assert.ok(!s.includes('Invite'), 'the welcome waits for "Send welcome and unlock" (D93)');
   assert.ok(!/Welcome/.test(s), 'the console never writes App_Welcome_*');
-  assert.deepEqual(r.events.map((e) => e.type), ['money.confirmed', 'account.opened'], 'no welcome event');
+  assert.deepEqual(r.events.map((e) => e.type), ['money.confirmed', 'account.opened', 'hold.changed'], 'no welcome event');
 });
 
 test('M08-S08: every contract publish logs its delivery result (type + status + ids, never the payload)', async () => {
   const r = rig(FIRST);
   await r.svc.match(principal(), RADV);
   const ev = r.sink.records().filter((x) => x.kind === 'event' && x.action === 'contract-publish');
-  assert.deepEqual(ev.map((x) => x.reason), ['money.confirmed.queued', 'account.opened.queued']);
+  assert.deepEqual(ev.map((x) => x.reason), ['money.confirmed.queued', 'account.opened.queued', 'hold.changed.queued']);
   for (const x of ev) assert.deepEqual([...x.recordIds].sort(), [C2, RADV].sort());
   noSecrets(r.sink.records(), ['ARL-INV-0212', 'SYNTH048']);
   const failed = rig(FIRST, { publish: async () => ({ ok: false, reason: 'queue-full' }) });
   await failed.svc.match(principal(), RADV);
-  assert.deepEqual(failed.sink.records().filter((x) => x.kind === 'event').map((x) => x.reason), ['money.confirmed.not-sent', 'account.opened.not-sent']);
+  assert.deepEqual(failed.sink.records().filter((x) => x.kind === 'event').map((x) => x.reason), ['money.confirmed.not-sent', 'account.opened.not-sent', 'hold.changed.not-sent']);
 });
 
 test('M08-S08: through the stub receiver the log reads delivered', async () => {
   const keys = ['synthetic-contract-signing-key-0000000000000009'];
-  const stub = createInProcessStub({ schemas, keys, accepts: ['money.confirmed', 'account.opened'] });
+  const stub = createInProcessStub({ schemas, keys, accepts: ['money.confirmed', 'account.opened', 'hold.changed'] });
   const outbox = createOutbox({ schemas, target: () => ({ url: 'stub://investor-app/events', key: keys[0] }), fetch: stub.fetch, clock: () => NOW });
   const publish = async (event) => { const q = outbox.enqueue(event); if (!q.ok) return q; await outbox.drain(); return { ok: true, eventId: q.eventId, state: outbox.state(q.eventId) }; };
   const r = rig(FIRST, { publish });
   await r.svc.match(principal(), RADV);
-  assert.deepEqual(r.sink.records().filter((x) => x.kind === 'event').map((x) => x.reason), ['money.confirmed.delivered', 'account.opened.delivered']);
+  assert.deepEqual(r.sink.records().filter((x) => x.kind === 'event').map((x) => x.reason), ['money.confirmed.delivered', 'account.opened.delivered', 'hold.changed.delivered']);
   const opened = stub.recorded().find((e) => e.type === 'account.opened');
   assert.equal(opened.payload.state, 'tentative');
 });

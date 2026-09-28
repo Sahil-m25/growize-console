@@ -21,7 +21,7 @@ const config = ts.readConfigFile(path.join(consoleRoot, 'tsconfig.json'), ts.sys
 const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot);
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
-const program = ts.createProgram(['server/documents/upload.ts', 'server/documents/upload-body.ts', 'server/documents/list.ts', 'server/access/guard-core.ts']
+const program = ts.createProgram(['server/documents/upload.ts', 'server/documents/upload-body.ts', 'server/documents/list.ts', 'server/zoho-sign/status.ts', 'server/access/guard-core.ts']
   .map((f) => path.join(srcRoot, f)), options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -42,6 +42,7 @@ const { createUploader, sniffMime, SLOTS, NOT_SAVED } = load('server/documents/u
 const { readLimitedBytes } = load('server/documents/upload-body.js');
 const { createDocumentsList, documentsSideFor } = load('server/documents/list.js');
 const guardCore = load('server/access/guard-core.js');
+const { createSignStatusReader } = load('server/zoho-sign/status.js');
 
 const P = '9007199254';
 const HARSHA = `${P}740993002`, ROHIT = `${P}740995001`, OTHER_IR = `${P}740995002`, IMRAN = `${P}740994001`, LATHA = `${P}740993903`, SAHIL = `${P}740993900`;
@@ -299,7 +300,7 @@ test('TC-IM07-001: Harsha sees "Out for signature" = 1 — Joseph Mathew\'s FEMA
   assert.equal(row.method, 'Class 3 DSC');
   assert.equal(row.state, 'sent');
   assert.equal(row.recordId, JOSEPH);
-  assert.equal(row.sign, null, 'no per-viewer Sign reader wired yet (D53)');
+  assert.equal(row.sign, null, 'no Sign reader in this rig (Zoho Sign not configured) → sign: null');
   assert.deepEqual(p.actions, { send: true, verify: true });
   assert.equal(p.fresh.tone, 'live');
   const qs = r.calls.map((c) => c.q).filter(Boolean);
@@ -365,6 +366,40 @@ test('a per-viewer Sign reader, when wired, marks a completed request "signed" w
   assert.equal(res.page.rows[0].state, 'signed');
   assert.equal(res.page.rows[0].yourMove, 'Verify');
   assert.equal(res.page.rows[0].sign.expiresAt, '2026-09-09');
+});
+
+/** A per-viewer SignApi stand-in: getRequest answers the given Zoho request_status (and VIEWED action) for every id. */
+const fakeSign = (status, viewed = false) => {
+  const seen = [];
+  return { seen, api: { async getRequest(cred, requestId) {
+    seen.push(cred.userId);
+    return { ok: true, value: { requestId, status, sentAt: Date.parse('2026-09-21T04:30:00Z'), modifiedTime: null, expiresAt: Date.parse('2026-10-05T04:30:00Z'),
+      declineReason: null, actions: [{ actionId: '1', type: 'SIGN', status: viewed ? 'VIEWED' : 'NOACTION', recipientEmail: null, embedded: false }], documentIds: [] } };
+  } } };
+};
+
+test('M12-S05 wiring: createSignStatusReader as signStatus — Viewed with the sent date, on the VIEWER\'s own credential (D53)', async () => {
+  const f = fakeSign('inprogress', true);
+  const r = rig(signRoute(), { signStatus: createSignStatusReader(f.api) });
+  const res = await r.list.read(creds.get(HARSHA), 'fin', 'out');
+  const row = res.page.rows[0];
+  assert.equal(row.state, 'sent');
+  assert.equal(row.sign.status, 'viewed');
+  assert.equal(row.sign.label, 'Viewed');
+  assert.equal(row.sign.sentAt, '2026-09-21T10:00+05:30');
+  assert.equal(row.sign.expiresAt.slice(0, 10), '2026-10-05');
+  assert.deepEqual([...new Set(f.seen)], [HARSHA], 'every Sign read on the viewer\'s own token');
+});
+
+test('M12-S05 wiring: a Declined / Recalled request is not "remind" — Finance sends a new one; the IR is told Finance will', async () => {
+  for (const st of ['declined', 'recalled']) {
+    const fin = await rig(signRoute(), { signStatus: createSignStatusReader(fakeSign(st).api) }).list.read(creds.get(HARSHA), 'fin', 'out');
+    assert.equal(fin.page.rows[0].sign.label, st === 'declined' ? 'Declined' : 'Recalled');
+    assert.equal(fin.page.rows[0].state, 'sent');
+    assert.equal(fin.page.rows[0].yourMove, 'Send a new one');
+    const ir = await rig(signRoute(), { signStatus: createSignStatusReader(fakeSign(st).api) }).list.read(creds.get(ROHIT), 'ir', 'out');
+    assert.equal(ir.page.rows[0].yourMove, 'Finance to send a new one');
+  }
 });
 
 test('D45: a failed read shows stale/error with the last good time — never old rows', async () => {

@@ -3,8 +3,13 @@
  *
  * Finance (and the super user) adds someone who paid before the console: name, email, mobile, farm (LLP),
  * units, amount paid and investment date. On the person's own token (D53) this writes, in order:
- *   1. one Contact — First_Name / Last_Name / Email / Mobile, a fresh ARL_ID, App_Access = Hold (D93: data
- *      synced, sign-in locked, and NO email of any kind goes to the investor from here);
+ *   1. one Contact — First_Name / Last_Name / Email / Mobile, a fresh ARL_ID, App_Access left EMPTY: the account
+ *      opens only on MATCHED money (M08-S08, D21) — the Pending receipt below is matched by a second person and
+ *      money/match.ts then opens it On hold + Tentative and publishes account.opened, exactly as for any other
+ *      investor (PROVISIONAL, jev decide "a" 0.85: no second account-opening path; recording never opens one).
+ *      NO email of any kind goes to the investor from here (D93);
+ *   The farm's free units are checked by ../farms/oversell (M11-S07: the one oversell rule, Units_Released − held,
+ *   read fresh) BEFORE anything is written; a Zoho oversell refusal of the allotment insert is named the same way.
  *   2. one allotment in LLP_UnitAllocation_Module — Customer, LLP, Unit_Price, Investment_Date and, per D70
  *      ("reserved until the balance lands"), Issued with Issued_Units + Capital_Invested when the amount
  *      covers units × unit price, else Reserved with Reserved_Units and a 30-day Hold_Until (PROVISIONAL,
@@ -34,11 +39,13 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { RecordOutcome, ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { AllotmentReceiptWrites } from "../money/allotment-receipts";
+import type { OversellGuard } from "../farms/oversell";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE, type ReceiptReplayResult } from "../money/receipt-replay";
 
 export const CONTACTS_MODULE = "Contacts";
 export const LLPS_MODULE = "LLP_Creation_Module";
 export const ADD_PAID_HOLD_DAYS = 30;
+export const ADD_PAID_APP = "App: not open yet — it opens On hold when the Head of Finance matches the receipt";
 export const ADD_PAID_REPLAY_TTL_MS = 10 * 60 * 1_000;
 const MAX_REPLAYS = 500;
 const MAX_CODE_ATTEMPTS = 3;
@@ -95,8 +102,8 @@ export interface AddPaidCreated {
   readonly allotmentId: string;
   readonly allocationStatus: "Issued" | "Reserved";
   readonly receiptId: string;
-  /** what the investor record shows (D93) */
-  readonly app: "App: on hold — data synced, sign-in locked";
+  /** what the investor record shows: no account until the receipt is matched (M08-S08) */
+  readonly app: typeof ADD_PAID_APP;
   readonly replayed: boolean;
 }
 
@@ -133,6 +140,8 @@ export type AddPaidResult =
 export interface AddPaidDependencies {
   readonly crm: Pick<ZohoClient, "getRecord" | "coql" | "search" | "insert" | "deleteRecord">;
   readonly receipts: Pick<AllotmentReceiptWrites, "guarded">;
+  /** ../farms/oversell createOversellGuard — the one free-units rule (M11-S07). */
+  readonly oversell: Pick<OversellGuard, "check" | "explain">;
   readonly authority: AddPaidAuthority;
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
@@ -221,8 +230,9 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
   if (!deps || typeof deps.crm?.insert !== "function" || typeof deps.crm?.coql !== "function" || typeof deps.crm?.search !== "function"
     || typeof deps.crm?.getRecord !== "function" || typeof deps.crm?.deleteRecord !== "function"
     || typeof deps.receipts?.guarded !== "function" || typeof deps.authority?.mayAdd !== "function"
+    || typeof deps.oversell?.check !== "function" || typeof deps.oversell?.explain !== "function"
     || typeof deps.log?.refusal !== "function" || typeof deps.recordIdPrefix !== "string" || !RECORD_PREFIX.test(deps.recordIdPrefix)) {
-    throw new TypeError("add-paid needs crm (getRecord/coql/search/insert/deleteRecord), the allotment receipt guard, the Finance authority, the ops log and the record-id prefix");
+    throw new TypeError("add-paid needs crm (getRecord/coql/search/insert/deleteRecord), the allotment receipt guard, the oversell guard, the Finance authority, the ops log and the record-id prefix");
   }
   const { crm, log } = deps;
   const clock = deps.clock ?? Date.now;
@@ -260,7 +270,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     name: [c.First_Name, c.Last_Name].filter((x) => typeof x === "string" && x).join(" ") || null,
   });
 
-  interface Farm { name: string; price: number; free: number }
+  interface Farm { name: string; price: number }
   const readFarm = async (cred: UserCredential, llpId: string, signal?: AbortSignal): Promise<Farm | "not-visible" | { closed: string; name: string }> => {
     const r = await crm.getRecord(cred, LLPS_MODULE, llpId, { fields: ["Name", "Unit_Price", "Total_Units", "LLP_Status"], signal });
     if (!r.ok) {
@@ -276,17 +286,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     if (typeof price !== "number" || !Number.isSafeInteger(price) || price <= 0 || typeof total !== "number" || !Number.isSafeInteger(total) || total < 0) {
       throw new Unreadable([llpId]);
     }
-    const a = await crm.coql(cred,
-      `select id, Allocation_Status, Reserved_Units, Issued_Units from ${ALLOTMENTS_MODULE} where LLP = '${llpId}' and Allocation_Status in ('Reserved', 'Issued') limit 0, 2000`,
-      { signal });
-    if (!a.ok) throw new SourceFail(a.error.kind);
-    if (a.value.moreRecords || a.value.invalidRecordIds) throw new Unreadable([llpId]);
-    let taken = 0;
-    for (const x of a.value.records) {
-      const u = x.Allocation_Status === "Issued" ? x.Issued_Units : x.Reserved_Units;
-      if (typeof u === "number" && Number.isSafeInteger(u) && u > 0) taken += u;
-    }
-    return { name, price, free: Math.max(0, total - taken) };
+    return { name, price }; // free units: ../farms/oversell (Units_Released − held), never counted here
   };
 
   const highestCode = async (cred: UserCredential, signal?: AbortSignal): Promise<string | null> => {
@@ -343,13 +343,20 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     } catch (e) {
       return readFailure(me, e, "contact");
     }
-    if (f.units > farm.free) return refuse(me, "units-not-free", farm.name + " has " + pl(farm.free, "unit") + " free. " + pl(f.units, "unit") + " would sell land twice.", [f.llpId]);
+    const ask = { llpId: f.llpId, units: f.units, investorName: f.name };
+    let g: Awaited<ReturnType<AddPaidDependencies["oversell"]["check"]>>;
+    try { g = await deps.oversell.check(cred, ask, signal); } catch { return notSaved(me, "contact", "unexpected", [f.llpId]); }
+    if (!g.ok) {
+      if (g.kind === "source-error") return notSaved(me, "contact", g.errorKind, [f.llpId]);
+      if (g.reason === "not-found") return refuse(me, "farm-not-visible", "Not saved yet — pick the farm.", [f.llpId]);
+      return refuse(me, "units-not-free", "Not saved yet — " + g.message, [f.llpId]);
+    }
     const total = f.units * farm.price;
     if (!Number.isSafeInteger(total)) return refuse(me, "units-invalid", "Not saved yet — units are whole units.", [f.llpId]);
     if (f.amountPaid > total) return refuse(me, "overpaid", "Not saved yet — " + inr(f.amountPaid) + " is more than " + pl(f.units, "unit") + " cost (" + inr(total) + ").", [f.llpId]);
     const full = f.amountPaid >= total;
 
-    // 2. the Contact, App_Access = Hold (D93). No email is sent from here.
+    // 2. the Contact, App_Access empty (opens on match, M08-S08). No email is sent from here (D93).
     const nm = splitName(f.name);
     let contactId: string | null = null, code = "";
     try {
@@ -358,7 +365,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
         code = nextArlCode(highest);
         const fields: ZohoFields = {
           ...(nm.first ? { First_Name: nm.first } : {}), Last_Name: nm.last, Email: f.email, Mobile: f.mobile,
-          ARL_ID: code, App_Access: "Hold",
+          ARL_ID: code, // App_Access stays empty: match.ts opens the account on the matched receipt (M08-S08)
         };
         const tryCode = code;
         const r = await insertOne(cred, CONTACTS_MODULE, fields, async () => {
@@ -397,7 +404,17 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     const cid = contactId;
     const a = await insertOne(cred, ALLOTMENTS_MODULE, allot,
       () => firstOf(`select id from ${ALLOTMENTS_MODULE} where Customer = '${cid}' limit 0, 1`), signal);
-    if (!("id" in a)) return rollBack(cred, "allotment", a.failed ? "invalid-data" : a.kind, cid, null, null);
+    if (!("id" in a)) {
+      // Zoho's oversell guard (zoho/deluge/oversell_guard.dg) refusing the insert is named with the LLP's free units.
+      let named: Awaited<ReturnType<AddPaidDependencies["oversell"]["explain"]>> = null;
+      if (a.failed) {
+        try {
+          named = await deps.oversell.explain(cred, ask, { kind: "invalid-data", status: 200, code: a.failed.code ?? "INVALID_DATA", field: a.failed.field ?? null, records: [a.failed] }, signal);
+        } catch { named = null; }
+      }
+      const back = await rollBack(cred, "allotment", a.failed ? "invalid-data" : a.kind, cid, null, null);
+      return named && !back.ok && back.kind === "not-saved" ? refuse(me, "units-not-free", "Not saved yet — " + named.message, [f.llpId]) : back;
+    }
     const allotmentId = a.id;
 
     // 4. the receipt, Pending, through the allotment guard
@@ -432,7 +449,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
       ok: true,
       value: Object.freeze({
         contactId, code, allotmentId, allocationStatus: full ? "Issued" as const : "Reserved" as const, receiptId,
-        app: "App: on hold — data synced, sign-in locked" as const, replayed: false,
+        app: ADD_PAID_APP, replayed: false,
       }),
     };
   };

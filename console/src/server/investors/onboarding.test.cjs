@@ -25,19 +25,27 @@ const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
 const sources = ['lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib/zoho/log.ts', 'lib/zoho/client.ts', 'server/money/receipt-replay.ts',
-  'server/money/allotment-receipts.ts', 'server/investors/add-paid.ts', 'server/investors/unlock.ts'].map((f) => path.join(srcRoot, f));
+  'server/money/allotment-receipts.ts', 'server/investors/add-paid.ts', 'server/investors/unlock.ts', 'server/farms/oversell.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
   console.error(ts.formatDiagnostics(diagnostics, { getCanonicalFileName: (f) => f, getCurrentDirectory: () => consoleRoot, getNewLine: () => '\n' }));
   process.exit(1);
 }
+const Module = require('node:module');
+process.env.NODE_PATH = path.join(consoleRoot, 'node_modules');
+Module._initPaths();
+const resolveFilename = Module._resolveFilename;
+Module._resolveFilename = function (request, ...rest) {
+  return resolveFilename.call(this, request.startsWith('@/') ? path.join(outDir, request.slice(2)) : request, ...rest);
+};
 const load = (file) => require(path.join(outDir, file));
 const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createZohoClient, userCredential } = load('lib/zoho/client.js');
 const { createAllotmentReceiptWrites } = load('server/money/allotment-receipts.js');
 const { createAddPaid, splitName, nextArlCode, checkForm, kolkataDay } = load('server/investors/add-paid.js');
 const { createAppAccess, cardState } = load('server/investors/unlock.js');
+const { createOversellGuard } = load('server/farms/oversell.js');
 
 const P = '9007199254';
 const CONTACT = '9007199254740994001', LLP = '9007199254740994003', ALLOT = '9007199254740994010', RECEIPT = '9007199254740994020';
@@ -82,7 +90,9 @@ function rig(o = {}) {
       if (p === '/coql') {
         const q = body.select_query;
         if (/from Contacts where ARL_ID like/.test(q)) return toResponse(recorded(o.highest ?? 'contacts.highest-code'));
-        if (/from LLP_UnitAllocation_Module where LLP = /.test(q)) return toResponse(recorded('allotments.on-llp'));
+        if (/SUM\(Reserved_Units\)/.test(q) && /from LLP_UnitAllocation_Module where LLP = /.test(q)) return toResponse(recorded('agg.held-on-llp'));
+        if (/from LLP_Creation_Module where/.test(q)) return toResponse(recorded('guard.llp'));
+        if (/from LLP_UnitAllocation_Module where LLP = /.test(q)) throw new Error('the free units are the oversell guard\'s (farms/oversell), never counted inline');
         if (/select id from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(state.allotInserted ? 'receipts.one-pending' : 'receipts.none'));
         if (/from Receipts where Allotment = /.test(q)) return toResponse(recorded(state.receiptInserted ? 'receipts.one-pending' : 'receipts.none'));
         throw new Error(`unexpected query ${q}`);
@@ -116,10 +126,12 @@ function rig(o = {}) {
   const receipts = createAllotmentReceiptWrites({ crm, replay: { async replay() { throw new Error('the replay path is not used here'); } },
     log, recordIdPrefix: P, clock: () => NOW });
   const allow = { mayAdd: async () => o.finance !== false, mayChange: async () => o.finance !== false };
-  const add = createAddPaid({ crm, receipts, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
+  const guardRefusals = [];
+  const oversell = createOversellGuard({ crm, events: { refusal: (...a) => guardRefusals.push(a) } });
+  const add = createAddPaid({ crm, receipts, oversell, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
   const app = createAppAccess({ crm, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
   const writes = () => calls.filter((c) => c[0] !== 'GET' && c[1] !== '/coql');
-  return { add, app, calls, sink, writes };
+  return { add, app, calls, sink, writes, guardRefusals };
 }
 
 /* ---- pure pieces ---------------------------------------------------------------------------------- */
@@ -145,16 +157,17 @@ test('the form asks for name, email, mobile, farm, units, amount and date — no
 
 /* ---- M09-S09: add an investor who already paid ------------------------------------------------------ */
 
-test('paid in full: one Contact on hold, one Issued allotment, one Pending Full receipt — on the person\'s token, no email', async () => {
+test('paid in full: one Contact (App_Access empty — it opens on match, M08-S08), one Issued allotment, one Pending Full receipt — on the person\'s token, no email', async () => {
   const r = rig();
   const res = await r.add.add(principal(), form());
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.deepEqual({ ...res.value }, { contactId: CONTACT, code: 'ARL-INV-0206', allotmentId: ALLOT, allocationStatus: 'Issued',
-    receiptId: RECEIPT, app: 'App: on hold — data synced, sign-in locked', replayed: false });
+    receiptId: RECEIPT, app: 'App: not open yet — it opens On hold when the Head of Finance matches the receipt', replayed: false });
   const w = r.writes();
   assert.deepEqual(w.map((c) => c[0] + ' ' + c[1]), ['POST /Contacts', 'POST /LLP_UnitAllocation_Module', 'POST /Receipts']);
   assert.deepEqual(w[0][2].data[0], { First_Name: 'Synthetic Paid', Last_Name: 'Investor', Email: 'synthetic.paid@example.invalid',
-    Mobile: '+91 90000 00001', ARL_ID: 'ARL-INV-0206', App_Access: 'Hold' });
+    Mobile: '+91 90000 00001', ARL_ID: 'ARL-INV-0206' });
+  assert.equal('App_Access' in w[0][2].data[0], false, 'no second account-opening path: money/match.ts opens it on the matched receipt');
   assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
     Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Issued', Issued_Units: 2, Reserved_Units: 0, Capital_Invested: 5_000_000 });
   const rc = w[2][2].data[0];
@@ -209,12 +222,23 @@ test('the farm rules hold on the server: closed farm, too few units free, more m
   assert.match(res.message, /Synthetic Farm LLP is Fully Subscribed/);
   r = rig();
   res = await r.add.add(principal(), form({ units: 4 }));
-  assert.equal(res.reasonCode, 'units-not-free', '10 units, 3 reserved + 4 issued = 3 free');
-  assert.match(res.message, /has 3 units free/);
+  assert.equal(res.reasonCode, 'units-not-free', '10 released, 3 reserved + 4 issued = 3 free (farms/oversell)');
+  assert.match(res.message, /^Not saved yet — Synthetic Farm LLP has only 3 free units for Synthetic Paid Investor's 4 units\.$/);
+  assert.equal(r.writes().length, 0, 'no Contact is written when the units are not free');
+  assert.deepEqual(r.guardRefusals.map((x) => [x[1], x[2]]), [['allotment-oversell', 'no-free-units']]);
   r = rig();
   res = await r.add.add(principal(), form({ amountPaid: 5_000_001 }));
   assert.equal(res.reasonCode, 'overpaid');
   assert.equal(r.writes().length, 0);
+});
+
+test('M11-S07: Zoho\'s oversell guard refusing the allotment insert is named with the LLP; the Contact is taken back', async () => {
+  const r = rig({ allotInsert: 'allotment.oversell-refused' });
+  const res = await r.add.add(principal(), form());
+  assert.equal(res.kind, 'refused');
+  assert.equal(res.reasonCode, 'units-not-free');
+  assert.match(res.message, /^Not saved yet — Synthetic Farm LLP does not have 2 units free — Zoho refused the allotment\.$/);
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), ['POST /Contacts', 'POST /LLP_UnitAllocation_Module', `DELETE /Contacts/${CONTACT}`]);
 });
 
 test('an IR or viewer seat is refused before Zoho is asked', async () => {

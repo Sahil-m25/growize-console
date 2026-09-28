@@ -137,6 +137,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/data": { kind: "session" },
   "/api/data/version": { kind: "session" },
   "/api/leads": { kind: "page", page: "leads" },
+  "/api/leads/[id]/hints": { kind: "session" },   /* M12-S11-T03 the IR's word for Finance beside its queue: read on the viewer's own token (D53), Zoho sharing decides */
   "/api/grants": { kind: "page", page: "people" },
   "/api/users": { kind: "session" },   /* M03-S04-T02 seat change: maySeat (the Investors Team rule) decides inside */
   "/api/auth/step-up": { kind: "session" },

@@ -225,6 +225,22 @@ test('T05: Plane C reveals, step-ups and seat changes join the Investors side, s
   assert.equal(ring.length, 3);
 });
 
+test('Plane C admin rows: console access granted / ended, a reporting-line change, and the seat change\'s pooled count', async () => {
+  const a = await archived();
+  const at = (m) => Date.parse(`2026-09-03T12:0${m}:00+05:30`);
+  const planeC = [
+    { at: at(1), who: U.sahil, whom: U.meena, action: 'access-granted', outcome: 'ok', reason: 'payments', seat: 'di' },
+    { at: at(2), who: U.sahil, whom: U.meena, action: 'access-ended', outcome: 'ended', reason: 'no-page-left', seat: 'di' },
+    { at: at(3), who: U.sahil, whom: U.meena, action: 'manager-change', outcome: 'ok', reason: 'moved', seat: 'di' },
+    { at: at(4), who: U.sahil, whom: U.meena, action: 'seat-change', outcome: 'ok', reason: 'kam-to-amlead', seat: 'di', count: 3 },
+    { at: at(5), who: U.sahil, whom: U.meena, action: 'seat-change', outcome: 'refused', reason: 'kam-to-amlead', seat: 'di' },
+  ];
+  const { d } = deps(a.archive, { planeC });
+  const r = await queryActivity({ seat: 'di', userId: U.sahil }, { ...SEP, side: 'investors', kind: 'admin' }, d);
+  const pc = r.rows.filter((x) => x.source === 'plane-c').map((x) => x.what);
+  assert.deepEqual(pc, ['Seat changed (refused)', 'Seat changed · 3 accounts returned to the pool', 'Changed who they report to', 'Console access ended', 'Console access granted']);
+});
+
 test('T05 / TC-E11-013: a record history is one live __timeline call on the reader token, values never returned', async () => {
   const calls = [];
   const crm = { async timeline(as, module, id, o) { calls.push({ as, module, id, perPage: o.perPage });

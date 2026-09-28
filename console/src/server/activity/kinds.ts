@@ -52,10 +52,12 @@ export function classify(module: string, action: string): { readonly side: Side;
   return { side: m[0], kind: m[1] };
 }
 
-/** Plane C actions (D47) shown on the Activity page: reveals and step-ups are Identity; seat changes Admin. */
+/** Plane C actions (D47) shown on the Activity page: reveals and step-ups are Identity; seat, grant, console-access
+ *  and reporting-line changes are Admin. */
+export const PLANE_C_ADMIN: ReadonlySet<string> = new Set(["seat-change", "grant-change", "access-granted", "access-ended", "manager-change"]);
 export function classifyPlaneC(action: string): { readonly side: Side; readonly kind: string } | null {
   if (action === "reveal" || action === "step-up") return { side: "investors", kind: "pii" };
-  if (action === "seat-change" || action === "grant-change") return { side: "investors", kind: "admin" };
+  if (PLANE_C_ADMIN.has(action)) return { side: "investors", kind: "admin" };
   return null;
 }
 

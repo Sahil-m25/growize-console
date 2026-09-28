@@ -10,9 +10,10 @@
  *   Allocation letter  allotment                        Alloc_Letter_Sign_Req_Id     …_Signed_Via       Alloc_Letter_Verified_At
  * "out" = a request id is set and the paper is not yet verified; "all" = every paper with a request id, plus the
  * Attachments of those records the seat may list (personal / allotment files per ./scope), capped per read.
- * The live Sign status, sent time, sender and expiry (D77/D79 keep them in Zoho Sign) come from an optional
- * per-viewer `signStatus` reader; none is wired yet because lib/zoho/sign.ts takes only the provider-callback
- * SERVICE token and D53 forbids a service token serving a screen — rows then carry `sign: null`.
+ * The live Sign status (Viewed / Declined / Recalled / Expired), sent time, sender and expiry (D77/D79 keep them in
+ * Zoho Sign) come from the per-viewer `signStatus` reader — server/zoho-sign/status.ts createSignStatusReader, on
+ * the viewer's OWN Sign token (D53: never the provider-callback service token for a screen), composed by
+ * ./runtime documentsList(). Without Zoho Sign configured (or in tests without a reader) rows carry `sign: null`.
  * PROVISIONAL (jev "b", 0.07, overridden to a D53-safe build: the CRM rows are the source; Sign joins per viewer).
  *
  * Seats: the Investors side (org/all book: Finance, Head of Finance, Compliance, Auditor, viewers, DI) reads every
@@ -49,8 +50,11 @@ export const PAPERS: readonly PaperSpec[] = Object.freeze([
   { paper: "allocation-letter", label: "Allocation letter", side: "investors", scope: "allotment", module: "LLP_UnitAllocation_Module", req: "Alloc_Letter_Sign_Req_Id", via: "Alloc_Letter_Signed_Via", verified: "Alloc_Letter_Verified_At", names: ["Name", "Customer", "LLP"] },
 ] as const);
 
-/** What Zoho Sign says of one request, read on the viewer's own Sign token (not wired yet — see above). */
-export interface SignStatus { readonly status: string; readonly sentAt: string | null; readonly sentBy: string | null; readonly expiresAt: string | null }
+/** What Zoho Sign says of one request, read on the viewer's own Sign token (see above). `status` is "completed" when
+ *  signed, else the reader's state (sent, viewed, declined, recalled, expired, draft, unknown); `label` its words. */
+export interface SignStatus { readonly status: string; readonly sentAt: string | null; readonly sentBy: string | null; readonly expiresAt: string | null; readonly label?: string | null }
+/** A request Zoho Sign has closed without a signature: nobody can be reminded, a new one must be sent. */
+export const SIGN_CLOSED = /^(declined|recalled|expired)$/i;
 export type SignStatusReader = (cred: UserCredential, requestIds: readonly string[], signal?: AbortSignal) => Promise<ReadonlyMap<string, SignStatus>>;
 
 export interface DocRow {
@@ -181,9 +185,10 @@ export function createDocumentsList(deps: DocumentsListDeps) {
       const s = sign.get(requestId) ?? null;
       const signed = s !== null && /^(completed|signed)$/i.test(s.status);
       const state: DocRow["state"] = verifiedAt ? "verified" : signed ? "signed" : "sent";
+      const closed = state === "sent" && s !== null && SIGN_CLOSED.test(s.status);
       const yourMove = side === "lead"
-        ? (state === "sent" ? "Remind them to sign" : state === "signed" ? "Finance to verify" : null)
-        : acting && state === "signed" ? "Verify" : null;
+        ? (closed ? "Finance to send a new one" : state === "sent" ? "Remind them to sign" : state === "signed" ? "Finance to verify" : null)
+        : acting && state === "signed" ? "Verify" : acting && closed ? "Send a new one" : null;
       return Object.freeze({
         key: `${spec.paper}:${r.id}`, paper: spec.paper, label: spec.label, scope: spec.scope, module: spec.module, recordId: r.id,
         party: partyOf(spec, r), contactId: spec.module === "Contacts" ? r.id : spec.module === "Leads" ? null : idOf(r.Customer),

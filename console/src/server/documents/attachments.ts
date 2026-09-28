@@ -6,8 +6,7 @@
  * log, the cache or a response (D45). A file name that carries an identity number (PAN, Aadhaar, an account
  * number) is masked here, for every seat — the wall on PAN/Aadhaar/bank holds for Sahil too (M12-S01 AC5).
  *
- * server/investors/record.ts has the same lister inline (its ATTACHMENT_FIELDS match this one — the test
- * asserts it); it should switch to `listAttachments` so there is one.
+ * server/investors/record.ts lists its D70 paper through `listAttachments` too, so there is one lister.
  */
 
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";

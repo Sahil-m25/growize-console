@@ -63,6 +63,7 @@ before(async () => {
 });
 
 const CONTACT = { [PRAKASH]: 'record.contact-prakash', [KIRAN]: 'record.contact-kiran', [RADHIKA]: 'record.contact-radhika', [NEHA_ACCOUNT]: 'record.contact-neha-account' };
+let receiptsFx = 'record.receipts-prakash';
 function route(url, q) {
   const u = String(url);
   if (!q) {
@@ -79,7 +80,7 @@ function route(url, q) {
     if (q.includes(RADHIKA)) return recorded('investors', 'record.allotments-radhika');
     return recorded('data', 'coql.none');
   }
-  if (/from Receipts/.test(q)) return q.includes(`${P}740998301`) ? recorded('investors', 'record.receipts-prakash') : recorded('data', 'coql.none');
+  if (/from Receipts/.test(q)) return q.includes(`${P}740998301`) ? recorded('investors', receiptsFx) : recorded('data', 'coql.none');
   if (/from LLP_Creation_Module/.test(q)) return recorded('investors', 'coql.finance-llps');
   if (/from Cases/.test(q)) return recorded('data', 'coql.none');
   throw new Error('unrouted query: ' + q);
@@ -97,6 +98,16 @@ function rig() {
 }
 
 /* ---------------- M09-S03-T01 ---------------- */
+
+test('Payment_Status subtracts matched refunds (as money/allotment-receipts does); a Pending receipt is not paid (D21)', async () => {
+  receiptsFx = 'record.receipts-prakash-refund';
+  try {
+    const res = await rig().reader.read(creds.get(HARSHA), 'head', PRAKASH);
+    assert.equal(res.ok, true, JSON.stringify(res));
+    assert.deepEqual(res.record.holdings.map((h) => h.paymentStatus), ['Yet to initiate'], '₹2.5 L matched − ₹2.5 L refunded = nothing paid');
+    assert.deepEqual([res.record.money.paid, res.record.money.due], [250000, 2500000], 'paid = matched inbound; due over the matched net; the Pending ₹5 L in neither');
+  } finally { receiptsFx = 'record.receipts-prakash'; }
+});
 
 test('sections by seat: Finance has Money and Paper; an AM seat has Care instead; an IR neither', () => {
   assert.deepEqual([...sectionsFor('fin', FIN)], ['who', 'hold', 'money', 'paper', 'jrn', 'tkt']);

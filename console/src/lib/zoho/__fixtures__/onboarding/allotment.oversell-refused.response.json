@@ -1,0 +1,18 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "INVALID_DATA",
+    "details": {
+     "api_name": "Reserved_Units"
+    },
+    "message": "Block B has no free units for 2 units.",
+    "status": "error"
+   }
+  ]
+ }
+}

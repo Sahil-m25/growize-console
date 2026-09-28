@@ -241,11 +241,12 @@ function registerRig(access = {}, mutateReceipts = null) {
 }
 const principal = () => ({ credential: cred, sessionId: SESSION });
 
-test('register totals: received, refunded, net banked, still due; and the chip counts', async () => {
+test('register totals (D21 — matched money only): received, refunded, net banked, still due; the Pending ₹15 L apart as recorded; and the chip counts', async () => {
   const r = registerRig();
   const res = await r.svc.read(principal());
   assert.equal(res.ok, true, JSON.stringify(res));
-  assert.deepEqual({ ...res.value.totals }, { received: 3000000, refunded: 100000, netBanked: 2900000, stillDue: 1500000 });
+  assert.deepEqual({ ...res.value.totals, recorded: { ...res.value.totals.recorded } },
+    { received: 1500000, refunded: 100000, netBanked: 1400000, stillDue: 1500000, recorded: { received: 1500000, refunded: 0, net: 1500000 } });
   assert.deepEqual({ ...res.value.counts }, { all: 6, advance: 2, full: 3, out: 1, pending: 2 });
   assert.equal(res.value.rows.length, 6);
   assert.equal(res.value.readOnly, false);
@@ -260,7 +261,8 @@ test('register filters by kind, by farm and by reconciliation; every row names i
   assert.equal(adv.value.rows[0].farm.id, F1);
   assert.equal(adv.value.counts.all, 6, 'counts ignore the chip that is on');
   const farm = await r.svc.read(principal(), { farm: F1 });
-  assert.deepEqual({ ...farm.value.totals }, { received: 1500000, refunded: 0, netBanked: 1500000, stillDue: 1500000 });
+  assert.deepEqual({ ...farm.value.totals, recorded: { ...farm.value.totals.recorded } },
+    { received: 1500000, refunded: 0, netBanked: 1500000, stillDue: 1500000, recorded: { received: 0, refunded: 0, net: 0 } });
   assert.deepEqual({ ...farm.value.counts }, { all: 4, advance: 2, full: 2, out: 0, pending: 1 });
   const pend = await r.svc.read(principal(), { reconciled: false });
   assert.deepEqual(pend.value.rows.map((x) => x.matchState), ['Claimed', 'Pending']);

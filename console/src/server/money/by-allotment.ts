@@ -6,11 +6,13 @@
  * (investors/record) and the Payments register (money/register) already apply, restated here as pure
  * functions so every screen's number comes from the same arithmetic (the tests replay one set of receipts
  * through the register and through these functions and require the same totals):
- *   a receipt stands unless Reversed / Not found / Claimed
- *   paid        = inbound receipts (Advance, Part/Balance, Full) that stand
- *   standing    = paid − Refunds that stand
+ *   MATCHED money only (D21: recording is free, only matched money counts — the register, Today and Numbers agree)
+ *   paid        = MATCHED inbound receipts (Advance, Part/Balance, Full)
+ *   standing    = paid − MATCHED Refunds
  *   due         = on a Reserved allotment, units × unit price − standing, never below 0 (0 once Issued)
+ *   recorded    = Pending (recorded, not yet matched) inbound − Pending refunds: shown apart, never in paid/due
  *   status      = money/allotment-receipts expectedPaymentStatus over MATCHED inbound − matched refunds
+ * (PROVISIONAL, Jev 0.67 "a": the record follows the register to matched-only.)
  * The total sums the blocks that count on the Investors row (Cancelled allotments do not), so it equals
  * that row; it is offered only when there is more than one block (AC4).
  *
@@ -25,7 +27,6 @@ import type { ReceiptRow } from "../data/adapters";
 import type { AllotmentReader, AllotmentLine } from "../investors/allotments";
 import { expectedPaymentStatus, type PaymentStatus } from "./allotment-receipts";
 
-const NOT_STANDING: ReadonlySet<string> = new Set(["Reversed", "Not found", "Claimed"]);
 const INBOUND: ReadonlySet<string> = new Set(["Advance", "Part", "Balance", "Full"]);
 
 export interface MoneyAllotment {
@@ -43,6 +44,8 @@ export interface AllotmentMoney {
   readonly matchedNet: number;
   readonly amount: number;
   readonly due: number;
+  /** recorded, not yet matched (Pending): inbound − refunds. */
+  readonly recorded: number;
   readonly paymentStatus: PaymentStatus;
 }
 
@@ -51,19 +54,18 @@ const inboundOf = (r: ReceiptRow) => !refundOf(r) && !!r.kind && INBOUND.has(r.k
 
 /** The money of one allotment from the receipts linked to it (receipts of other allotments are ignored). */
 export function moneyOf(a: MoneyAllotment, receipts: readonly ReceiptRow[]): AllotmentMoney {
-  let paid = 0, standing = 0, matchedIn = 0, matchedOut = 0;
+  let matchedIn = 0, matchedOut = 0, recorded = 0;
   for (const r of receipts) {
     if (r.allotmentId !== a.id) continue;
     const isIn = inboundOf(r), isOut = refundOf(r);
     if (r.matched) { if (isIn) matchedIn += r.amount; else if (isOut) matchedOut += r.amount; }
-    if (r.matchState && NOT_STANDING.has(r.matchState)) continue;
-    if (isIn) paid += r.amount;
-    standing += isIn ? r.amount : isOut ? -r.amount : 0;
+    else if (r.matchState === "Pending") recorded += isIn ? r.amount : isOut ? -r.amount : 0;
   }
   const amount = a.units * a.unitPrice;
-  const due = a.status === "Reserved" ? Math.max(0, amount - standing) : 0;
-  const matchedNet = Math.max(0, matchedIn - matchedOut);
-  return Object.freeze({ paid, standing, matchedNet, amount, due, paymentStatus: expectedPaymentStatus(matchedNet, amount) });
+  const standing = matchedIn - matchedOut;
+  const matchedNet = Math.max(0, standing);
+  const due = a.status === "Reserved" ? Math.max(0, amount - matchedNet) : 0;
+  return Object.freeze({ paid: matchedIn, standing, matchedNet, amount, due, recorded, paymentStatus: expectedPaymentStatus(matchedNet, amount) });
 }
 
 export interface MoneyBlock {
@@ -76,6 +78,8 @@ export interface MoneyBlock {
   readonly amount: number;
   readonly paid: number;
   readonly due: number;
+  /** recorded, not yet matched (Pending) — never in paid/due (D21). */
+  readonly recorded: number;
   readonly paymentStatus: PaymentStatus;
   /** false for a Cancelled allotment: shown, but not in the total (the Investors row leaves it out too). */
   readonly countsInTotal: boolean;
@@ -100,7 +104,7 @@ export function groupByAllotment(contactId: string, rows: readonly AllotmentLine
     const m = moneyOf({ id: a.id, status: a.status, units: a.committedUnits, unitPrice: a.unitPrice ?? 0 }, receipts);
     return Object.freeze({
       allotmentId: a.id, llp: a.llp, status: a.status, units: a.committedUnits, issuedUnits: a.issuedUnits, unitPrice: a.unitPrice ?? 0,
-      amount: m.amount, paid: m.paid, due: m.due, paymentStatus: m.paymentStatus, countsInTotal: a.status !== "Cancelled",
+      amount: m.amount, paid: m.paid, due: m.due, recorded: m.recorded, paymentStatus: m.paymentStatus, countsInTotal: a.status !== "Cancelled",
       receipts: Object.freeze(receipts.filter((r) => r.allotmentId === a.id)),
     });
   });

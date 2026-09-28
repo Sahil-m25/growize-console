@@ -152,6 +152,8 @@ export interface PaperRow {
   readonly sentBy: string | null;
   readonly expiresAt: string | null;
   readonly daysOut: number | null;
+  /** Zoho Sign's word for the request, read on the viewer's token ("Viewed", "Declined", "Recalled"…); null unread. */
+  readonly status: string | null;
 }
 export type ComplianceItem = "kyc" | "fema" | "pan-proof" | "bank-proof";
 export interface ComplianceRow {
@@ -362,7 +364,7 @@ export function createInvestorsSide(deps: InvestorsSideDeps) {
     const rows = r.page.rows.filter((d) => d.state === "sent").map((d): PaperRow => Object.freeze({
       key: d.key, document: d.label, module: d.module, recordId: d.recordId, contactId: d.contactId, llpId: d.llpId, party: d.party,
       method: d.method, sentAt: d.sign?.sentAt ?? null, sentBy: d.sign?.sentBy ?? null, expiresAt: d.sign?.expiresAt ?? null,
-      daysOut: daysSince(dayOf(d.sign?.sentAt ?? null), now),
+      daysOut: daysSince(dayOf(d.sign?.sentAt ?? null), now), status: d.sign?.label ?? null,
     }));
     rows.sort((a, b) => (b.daysOut ?? -1) - (a.daysOut ?? -1) || a.key.localeCompare(b.key));
     return { rows, truncated: r.page.truncated };

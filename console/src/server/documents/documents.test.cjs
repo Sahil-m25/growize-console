@@ -134,7 +134,7 @@ test('investor side: a Contact sees project papers only of LLPs they hold a live
   assert.deepEqual([...heldLlps(rows, KIRAN)], []);
 });
 
-test('one lister: ATTACHMENT_FIELDS match record.ts (which should switch to server/documents/attachments)', () => {
+test('one lister: record.ts re-exports and uses server/documents/attachments (same ATTACHMENT_FIELDS)', () => {
   assert.deepEqual([...ATTACHMENT_FIELDS], [...record.ATTACHMENT_FIELDS]);
 });
 

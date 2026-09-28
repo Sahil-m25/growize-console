@@ -112,10 +112,11 @@ test('AC1 + AC2: Joseph Mathew (two LLPs) for Finance — one block per allotmen
   assert.equal(res.ok, true, JSON.stringify(res));
   const m = res.money;
   assert.deepEqual(m.blocks.map((b) => [b.llp.name, b.status, b.units, b.amount, b.paid, b.due, b.paymentStatus, b.countsInTotal, b.receipts.map((x) => x.id.slice(-3))]), [
-    ['EKA LLP', 'Reserved', 1, 2500000, 750000, 1750000, 'Partial', true, ['501', '502']],
+    ['EKA LLP', 'Reserved', 1, 2500000, 250000, 2250000, 'Partial', true, ['501', '502']],
     ['Block B LLP', 'Issued', 2, 4000000, 4000000, 0, 'Full', true, ['503', '504']],
     ['EKA LLP', 'Cancelled', 1, 2500000, 250000, 0, 'Yet to initiate', false, ['505', '506']],
   ]);
+  assert.deepEqual(m.blocks.map((b) => b.recorded), [500000, 0, 0], 'the Pending part is shown apart, never in paid/due (D21)');
   for (const b of m.blocks) assert.ok(b.receipts.every((x) => x.allotmentId === b.allotmentId), 'a block lists only its allotment\'s receipts');
   assert.deepEqual(m.unlinked, []);
   // one read per record: the Contact once, its allotments once, the Receipts once (by allotment id)
@@ -127,7 +128,7 @@ test('AC1 + AC2: Joseph Mathew (two LLPs) for Finance — one block per allotmen
 
 test('AC3: the total sums paid and due over the blocks that count, and equals the Investors row (Cancelled left out)', async () => {
   const res = await rig().money.read(creds.get(FIN), 'fin', JOSEPH);
-  assert.deepEqual(res.money.total, { paid: 4750000, due: 1750000 });
+  assert.deepEqual(res.money.total, { paid: 4250000, due: 2250000 });
   assert.deepEqual(res.money.investorRow, res.money.total);
 });
 
@@ -144,6 +145,7 @@ test('totals agree with the Payments register over the same receipts (received, 
   const mine = (await rig().money.read(creds.get(FIN), 'fin', JOSEPH)).money;
   assert.equal(mine.blocks.reduce((t, b) => t + b.paid, 0), reg.value.totals.received, 'received');
   assert.equal(mine.investorRow.due, reg.value.totals.stillDue, 'still due');
+  assert.equal(mine.blocks.reduce((t, b) => t + b.recorded, 0), reg.value.totals.recorded.net, 'recorded, not yet matched');
 });
 
 test('Payment_Status per block matches money/allotment-receipts for every allotment', async () => {
@@ -180,9 +182,9 @@ test('AC5: a KAM or an IR gets no Money section — refused before anything is r
   }
 });
 
-test('moneyOf: a reversed or unmatched receipt stands per the register rule; only matched money moves the status', () => {
+test('moneyOf: only matched money is paid (D21); a Pending receipt is "recorded", a reversed one is nothing', () => {
   const rc = (kind, amount, matchState) => ({ id: 'x', allotmentId: J1, kind, amount, mode: null, utr: null, on: null, byId: null, matched: matchState === 'Matched', matchState, reversalOf: null });
   const a = { id: J1, status: 'Reserved', units: 1, unitPrice: 1000 };
-  assert.deepEqual({ ...moneyOf(a, [rc('Advance', 400, 'Pending')]) }, { paid: 400, standing: 400, matchedNet: 0, amount: 1000, due: 600, paymentStatus: 'Yet to initiate' });
-  assert.deepEqual({ ...moneyOf(a, [rc('Full', 1000, 'Matched'), rc('Advance', 50, 'Reversed')]) }, { paid: 1000, standing: 1000, matchedNet: 1000, amount: 1000, due: 0, paymentStatus: 'Full' });
+  assert.deepEqual({ ...moneyOf(a, [rc('Advance', 400, 'Pending')]) }, { paid: 0, standing: 0, matchedNet: 0, amount: 1000, due: 1000, recorded: 400, paymentStatus: 'Yet to initiate' });
+  assert.deepEqual({ ...moneyOf(a, [rc('Full', 1000, 'Matched'), rc('Advance', 50, 'Reversed')]) }, { paid: 1000, standing: 1000, matchedNet: 1000, amount: 1000, due: 0, recorded: 0, paymentStatus: 'Full' });
 });

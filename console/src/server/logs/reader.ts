@@ -195,7 +195,14 @@ const C_GROUP: Readonly<Record<string, LogGroup>> = Object.freeze({
   reveal: "identity", "step-up": "identity", "seat-change": "identity",
   "sign-in": "session", "sign-in-refused": "session", "sign-out": "session", "session-expired": "session", "session-revoked": "session",
   "refused-page": "access", "refused-action": "access", "grant-change": "access",
+  "access-granted": "access", "access-ended": "access", "manager-change": "access",
 });
+const C_LABEL: Readonly<Record<string, string>> = Object.freeze({
+  "access-granted": "Console access granted", "access-ended": "Console access ended", "manager-change": "Changed who they report to",
+});
+/** A seat change's count (M03-S04-T02): "3 accounts returned to the pool"; null when none moved. */
+export const pooledLabel = (n: unknown): string | null =>
+  typeof n === "number" && Number.isSafeInteger(n) && n > 0 ? `${n} account${n === 1 ? "" : "s"} returned to the pool` : null;
 const REVEALED: Readonly<Record<string, string>> = Object.freeze({ pan: "Revealed a PAN", "bank-account": "Revealed a bank reference" });
 
 function fromIdentity(l: unknown, identity: boolean): Base | null {
@@ -210,7 +217,8 @@ function fromIdentity(l: unknown, identity: boolean): Base | null {
   const label = action === "reveal"
     ? (!identity ? "Identity event" : outcome === "ok" ? REVEALED[reason ?? ""] ?? "Revealed an identity field" : "Reveal refused")
     : action === "step-up" ? (outcome === "ok" ? "Stepped up" : "Step-up failed")
-      : action === "seat-change" ? "Seat changed" : null;
+      : action === "seat-change" ? (outcome === "ok" && pooledLabel(e.count) ? `Seat changed · ${pooledLabel(e.count)}` : "Seat changed")
+        : C_LABEL[action] ?? null;
   return { at, when: istIso(at), plane: "c", kind: action, group: C_GROUP[action]!, actorId: typeof e.who === "string" && USER_ID.test(e.who) ? e.who : "unrecognised",
     action, outcome, reason: action === "reveal" && !identity ? null : reason, endpoint: null, status: null, durationMs: null, creditsRemaining: null,
     whom: typeof e.whom === "string" && USER_ID.test(e.whom) ? e.whom : null, seat: str(e.seat), recordIds: ids(e.recordIds), label };

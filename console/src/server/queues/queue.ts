@@ -28,7 +28,7 @@ import { amScopeOf } from "../data/am-scope";
 import { checkAmProjection, MODULES } from "../data/projections";
 import { FINANCE_CONTACT_FIELDS } from "../investors/finance-list";
 import { scopesFor } from "../data/scope";
-import type { DocumentsList } from "../documents/list";
+import { SIGN_CLOSED, type DocumentsList } from "../documents/list";
 import type { Holds } from "../holds/holds";
 import { daysLeft } from "../holds/rules";
 import type { KamBookService } from "../investors/book";
@@ -175,7 +175,10 @@ export function createInvestorQueues(deps: QueueDeps) {
     if (p.can("doc")) {
       const d = await deps.documents.read(cred, p.seat, "out", signal);
       if (!d.ok) failed("documents", d.kind === "refused" ? d.reason : d.errorKind);
-      else for (const r of d.page.rows) {
+      else {
+      // "Remind" rows oldest-first (most days out first; no sent time from Zoho Sign last), after the Verify rows.
+      const reminds: { row: MoneyRow; days: number | null }[] = [];
+      for (const r of d.page.rows) {
         if (!r.contactId || r.state === "verified") continue;
         const who = Object.freeze({ id: r.contactId, name: r.party });
         const ref = Object.freeze({ paper: r.paper, recordId: r.recordId });
@@ -183,10 +186,14 @@ export function createInvestorQueues(deps: QueueDeps) {
           out.push(Object.freeze({ key: `verify:${r.key}`, kind: "verify", investor: who, text: verifyText(r.label), urg: "now", days: null, action: "Verify it", ref }));
           continue;
         }
+        if (r.sign && SIGN_CLOSED.test(r.sign.status)) continue; // declined / recalled / expired: nothing to remind (a new request is sent from Documents)
         const sent = r.sign?.sentAt ? istStamp(r.sign.sentAt) : null;
         const days = sent ? -daysLeft(sent.slice(0, 10), clock()) : null;
         if (days !== null && days < REMIND_AFTER_DAYS) continue;
-        out.push(Object.freeze({ key: `remind:${r.key}`, kind: "remind", investor: who, text: remindText(r.label, days), urg: "soon", days, action: "Remind", ref }));
+        reminds.push({ days, row: Object.freeze({ key: `remind:${r.key}`, kind: "remind", investor: who, text: remindText(r.label, days), urg: "soon", days, action: "Remind", ref }) });
+      }
+      reminds.sort((a, b) => (b.days ?? -1) - (a.days ?? -1));
+      for (const x of reminds) out.push(x.row);
       }
     }
 

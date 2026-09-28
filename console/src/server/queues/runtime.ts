@@ -11,7 +11,7 @@ import { ZOHO_SEAT_OF_TOKEN } from "../access/guard-core";
 import { seatAccess } from "../access/policy";
 import { createCasesRegister } from "../cases/register";
 import { NO_STORE } from "../cases/http";
-import { createDocumentsList } from "../documents/list";
+import { documentsList } from "../documents/runtime";
 import { createHolds } from "../holds/holds";
 import { createKamBookService, type KamBookAccessAuthority } from "../investors/book";
 import type { SeatIds } from "../data/live";
@@ -73,7 +73,7 @@ export async function queuesContext(env: NodeJS.ProcessEnv = process.env) {
   const queues = createInvestorQueues({
     crm, log: rt.log, claims,
     holds: createHolds({ crm, cache: rt.cache, events: rt.events }),
-    documents: createDocumentsList({ crm, log: rt.log }),
+    documents: documentsList(crm, rt.log, env), // with the per-viewer Sign status (sent dates, Viewed/Declined/Recalled)
     cases: createCasesRegister({ crm, cache: rt.cache, events: rt.events }),
     amBook: createKamBookService({ crm, log: rt.log, recordIdPrefix, access: kamAccess(s.session, seatIds, async (sid) => {
       const r = await sessions.credential(sid);

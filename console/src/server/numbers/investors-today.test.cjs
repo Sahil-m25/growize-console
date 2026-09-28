@@ -76,6 +76,19 @@ test('agrees with money/register.ts on the same receipts once every one is match
   assert.equal(out.value.totals.stillDue, today.outstanding);
 });
 
+test('D21: with a Pending receipt on the book, Today and the register still agree — the Pending money is the register\'s "recorded", in neither figure', async () => {
+  const rig = await makeRig(load, routeWith('receipts.rows-with-pending'));
+  const cred = await rig.cred(HEAD);
+  const today = (await createInvestorsToday(rig).read({ credential: cred, seat: 'head' })).value.money.value;
+  const reg = createPaymentsRegister({ crm: rig.crm, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW,
+    access: { async recheck(c) { return { actor: { userId: c.userId }, seesRegister: true, seesUtr: false, canRecord: true }; } } });
+  const out = await reg.read({ credential: cred, sessionId: 'session_fixture_00000001' });
+  assert.equal(out.ok, true, JSON.stringify(out));
+  assert.equal(out.value.totals.netBanked, today.banked);
+  assert.equal(out.value.totals.stillDue, today.outstanding);
+  assert.ok(out.value.totals.recorded.net > 0, 'the Pending receipt is shown as recorded, not yet matched');
+});
+
 test('TC-IM03-015: a cold render spends at most five COQL calls; a reload inside the TTL spends none and reads the same', async () => {
   const rig = await makeRig(load, routeWith());
   const cred = await rig.cred(HEAD);

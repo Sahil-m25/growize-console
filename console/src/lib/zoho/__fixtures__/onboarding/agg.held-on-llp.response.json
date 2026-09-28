@@ -1,0 +1,11 @@
+{
+ "status": 200,
+ "headers": { "content-type": "application/json" },
+ "body": {
+  "data": [
+   { "Allocation_Status": "Reserved", "SUM(Reserved_Units)": 3, "SUM(Issued_Units)": 0 },
+   { "Allocation_Status": "Issued", "SUM(Reserved_Units)": 0, "SUM(Issued_Units)": 4 }
+  ],
+  "info": { "count": 2, "more_records": false }
+ }
+}

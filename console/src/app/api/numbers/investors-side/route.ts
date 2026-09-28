@@ -23,8 +23,9 @@ async function get(req: Request) {
   const section = new URL(req.url).searchParams.get("section");
   if (!section) return Response.json({ side: investorsSideFor(c.ctx.seat, c.ctx.credential.userId) }, { headers: NO_STORE });
   const { dataRuntime } = await import("@/server/data/zoho-source");
+  const { documentsSignStatus } = await import("@/server/documents/runtime");
   const a = authorityEvents();
-  const r = await createInvestorsSide({ crm: c.ctx.crm, cache: c.ctx.cache, log: dataRuntime().log, refusedAction: (w, s, x) => a.refusedAction(w, s, x) })
+  const r = await createInvestorsSide({ crm: c.ctx.crm, cache: c.ctx.cache, log: dataRuntime().log, signStatus: documentsSignStatus(), refusedAction: (w, s, x) => a.refusedAction(w, s, x) })
     .read({ credential: c.ctx.credential, seat: c.ctx.seat }, section, req.signal);
   if (r.ok) return Response.json(r.value, { headers: NO_STORE });
   if (r.kind === "refused") {

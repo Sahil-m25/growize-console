@@ -1,0 +1,10 @@
+{
+ "status": 200,
+ "headers": { "content-type": "application/json" },
+ "body": {
+  "data": [
+   { "id": "9007199254740994003", "Name": "Synthetic Farm LLP", "Block_Code": null, "Total_Units": 10, "Units_Released": 10, "Modified_Time": "2026-09-20T10:00:00+05:30" }
+  ],
+  "info": { "count": 1, "more_records": false }
+ }
+}

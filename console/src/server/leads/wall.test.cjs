@@ -335,7 +335,8 @@ test('an IR finds only their own book on Leads; one Plane B line holds searcher,
   assert.deepEqual(res.value.hits.map((h) => h.id.slice(-2)), ['01', '05']);
   assert.equal(res.value.book, 'yours');
   assert.deepEqual(s.calls.map((c) => c.path), ['/crm/v8/Leads/search'], 'Leads only, never Contacts');
-  const done = s.sink.records().filter((x) => x.kind === 'refusal' && x.action === 'lead-search.done');
+  const done = s.sink.records().filter((x) => x.kind === 'event' && x.action === 'lead-search');
+  assert.equal(s.sink.records().filter((x) => x.kind === 'refusal' && x.action === 'lead-search.done').length, 0, 'a search that went through is not filed as a refusal');
   assert.equal(done.length, 1);
   assert.deepEqual({ who: done[0].actor.userId, reason: done[0].reason, ids: done[0].recordIds }, { who: IR, reason: 'scope-yours.count-2', ids: [] });
   const logged = JSON.stringify(s.sink.records());

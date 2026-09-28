@@ -34,6 +34,9 @@
  *      Every publish result (delivered / queued / not sent) is logged as an ops event: type + status + ids only;
  *   5. the first matched Advance of a Reserved allotment starts the hold 30 days out (Asia/Kolkata): Hold_Until =
  *      match day + 30, written only when empty or earlier — never shortening a hold (PROVISIONAL, Jev 0.56).
+ *      When this match writes the hold, hold.changed { deadline, state: open, by } goes to the investor app through
+ *      the same publisher (server/contracts/runtime publishToInvestorApp), built by ../holds/rules holdChangedEvent
+ *      so the deadline and event id are the holds' own (TC-IM05-028). A kept longer hold publishes nothing.
  *
  * Nothing is cached (D45). Logs carry ids and codes only.
  */
@@ -45,6 +48,7 @@ import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { AllotmentReceiptWrites, PaymentStatusReading } from "./allotment-receipts";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "./receipt-replay";
+import { holdChangedEvent } from "../holds/rules";
 
 export const CONTACTS_MODULE = "Contacts";
 export const HOLD_DAYS = 30;
@@ -115,6 +119,8 @@ export interface MatchView {
   /** App_Account_Mark on the first money: set Tentative here, already set, or left to Zoho (T01 formula refused the write). */
   readonly appMark: Consequence<"tentative-set" | "already-set" | "left-to-zoho">;
   readonly hold: Consequence<{ readonly until: string; readonly written: boolean }>;
+  /** hold.changed 'open' when this match started the hold; null when no hold was written. */
+  readonly holdChanged: Published | null;
 }
 
 export type MatchResult =
@@ -234,6 +240,7 @@ export function createReceiptMatch(deps: MatchDependencies) {
     let appAccess: MatchView["appAccess"] = { ok: true, value: null, code: null };
     let appMark: MatchView["appMark"] = { ok: true, value: null, code: null };
     let hold: MatchView["hold"] = { ok: true, value: null, code: null };
+    let holdChanged: Published | null = null;
     const fail = (code: string) => ({ ok: false, value: null, code }) as const;
 
     let allot: ZohoRecord | null = null;
@@ -262,18 +269,25 @@ export function createReceiptMatch(deps: MatchDependencies) {
       } else {
         firstMoney = others.anywhere === 0;
         if (firstMoney) ({ accountOpened, appAccess, appMark } = await openAccount(cred, investorId, t, signal));
-        if (t.kind === "Advance" && others.advancesHere === 0 && allot.Allocation_Status === "Reserved") hold = await startHold(cred, allot, t, signal);
+        if (t.kind === "Advance" && others.advancesHere === 0 && allot.Allocation_Status === "Reserved") {
+          hold = await startHold(cred, allot, t, signal);
+          if (hold.ok && hold.value?.written) {
+            holdChanged = await safePublish([investorId, t.id],
+              holdChangedEvent({ allotmentId: t.allotmentId, investorId, holdDay: hold.value.until, state: "open", at: t.matchedAt, by: t.matchedBy }));
+          }
+        }
       }
     }
-    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound);
+    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound, holdChanged);
   }
 
   const view = (t: Target, investorId: string, paymentStatus: PaymentStatusReading | null, moneyConfirmed: Published | null, firstMoney: boolean,
-    accountOpened: Published | null, appAccess: MatchView["appAccess"], appMark: MatchView["appMark"], hold: MatchView["hold"], inbound: boolean): MatchView => Object.freeze({
+    accountOpened: Published | null, appAccess: MatchView["appAccess"], appMark: MatchView["appMark"], hold: MatchView["hold"], inbound: boolean,
+    holdChanged: Published | null = null): MatchView => Object.freeze({
     receiptId: t.id, state: "matched" as const, duplicate: t.duplicate, matchedBy: t.matchedBy, matchedAt: istIso(t.matchedAt),
     kind: t.kind, amountRupees: t.amount, link: Object.freeze({ allotmentId: t.allotmentId, investorId }),
     gate: inbound ? "opens-through-receipts" as const : "not-money" as const,
-    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold,
+    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, holdChanged,
   });
 
   /** Publish, and log the delivery result (type + status code + record ids — never the payload). */

@@ -127,3 +127,22 @@ test('written, then read: createOpsLog.event and .call through the memory sinks,
   createOpsLog(plain).event({ at: 1, actor: { kind: 'service', job: 'x' }, action: 'test-link-used', reason: 'first-use', recordIds: [PRAKASH] });
   assert.equal(plain.records()[0].kind, 'event');
 });
+
+test('Plane C admin labels: console access granted / ended, a reporting-line change, and a seat change\'s pooled count', () => {
+  const sinks = createLogSinks({}, { clock: () => NOW });
+  const c = createPlaneCLog(sinks.identity);
+  const A = '9007199254740993007', B = '9007199254740993008', X = '9007199254740997101', Y = '9007199254740997102';
+  c.record({ at: NOW - 4, who: SAHIL, whom: A, action: 'access-granted', outcome: 'ok', reason: 'payments', seat: 'di' });
+  c.record({ at: NOW - 3, who: SAHIL, whom: A, action: 'access-ended', outcome: 'ended', reason: 'no-page-left', seat: 'di' });
+  c.record({ at: NOW - 2, who: SAHIL, whom: B, action: 'manager-change', outcome: 'ok', reason: 'moved', seat: 'di' });
+  c.record({ at: NOW - 1, who: SAHIL, whom: B, action: 'seat-change', outcome: 'ok', reason: 'kam-to-amlead', seat: 'di', count: 2, recordIds: [X, Y] });
+  c.record({ at: NOW, who: SAHIL, whom: A, action: 'seat-change', outcome: 'ok', reason: 'fin-to-head', seat: 'di', count: 1, recordIds: [X] });
+  const r = queryLogs({ seat: 'di' }, {}, logSourceOf(sinks), NOW);
+  assert.deepEqual(r.rows.map((x) => [x.kind, x.group, x.label]), [
+    ['seat-change', 'identity', 'Seat changed · 1 account returned to the pool'],
+    ['seat-change', 'identity', 'Seat changed · 2 accounts returned to the pool'],
+    ['manager-change', 'access', 'Changed who they report to'],
+    ['access-ended', 'access', 'Console access ended'],
+    ['access-granted', 'access', 'Console access granted'],
+  ]);
+});

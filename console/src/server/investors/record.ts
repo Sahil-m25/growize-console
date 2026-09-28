@@ -7,7 +7,10 @@
  * own account), then, for that Contact alone:
  *   allotments (with the LLP each sits in)   — every seat with the record ("What they hold", hold banner)
  *   Receipts                                 — only a seat with the Money section (Finance side)
- *   Attachments on Contact / allotment / LLP — only a seat with the Paper section, grouped by D70 scope
+ *   Attachments on Contact / allotment / LLP — only a seat with the Paper section, grouped by D70 scope, through
+ *                                              the one lister (server/documents/attachments listAttachments)
+ * Money per allotment is ../money/by-allotment moneyOf — the register's rule (D21: matched money only; Payment_Status
+ * over matched inbound − matched refunds, as money/allotment-receipts computes it).
  * Money and Paper are hidden for an AM seat and an IR (M09-S03-T02): what a seat may not see is never
  * read, so it cannot leak. No identity field is selected (projections); KYC/FEMA are STATUS fields read
  * for the Finance side only (the same wall as ./finance-list).
@@ -30,7 +33,9 @@ import { admitContact, contactsKeyFor, createInvestorGuard, type GuardRefusal, t
 import { holdOf, investorOf } from "../data/live";
 import { MODULES, PROJECTIONS } from "../data/projections";
 import { scopesFor } from "../data/scope";
-import { expectedPaymentStatus, type PaymentStatus } from "../money/allotment-receipts";
+import type { PaymentStatus } from "../money/allotment-receipts";
+import { moneyOf } from "../money/by-allotment";
+import { listAttachments, type AttachmentLine, type DocScope } from "../documents/attachments";
 import { FINANCE_CONTACT_FIELDS, type FinanceKyc } from "./finance-list";
 import { LIFECYCLE_FIELD, resolveIrs, stateLabel, type InvestorStateLabel } from "./lifecycle";
 
@@ -55,9 +60,8 @@ export function sectionsFor(seat: string, userId: string): readonly RecordSectio
 
 /** Finance-side status fields (KYC, FEMA) — never identity; the same list the Finance list reads. */
 const FINANCE_STATUS = Object.freeze(["KYC", "KYC_Completed_On", "FEMA_Applicable", "FEMA_Verified_At"].filter((f) => FINANCE_CONTACT_FIELDS.includes(f)));
-export const ATTACHMENT_FIELDS = Object.freeze(["id", "File_Name", "Size", "Created_Time"]);
-const NOT_STANDING: ReadonlySet<string> = new Set(["Reversed", "Not found", "Claimed"]);
-const INBOUND: ReadonlySet<string> = new Set(["Advance", "Part", "Balance", "Full"]);
+/** The one lister's field list (server/documents/attachments), re-exported for the record's readers. */
+export { ATTACHMENT_FIELDS } from "../documents/attachments";
 
 export interface HoldingLine {
   readonly id: string;
@@ -74,7 +78,7 @@ export interface HoldingLine {
   readonly holdUntil: string | null;
 }
 
-export interface AttachmentLine { readonly id: string; readonly name: string; readonly size: number | null; readonly at: string | null }
+export type { AttachmentLine };
 
 export interface InvestorRecord {
   readonly id: string;
@@ -119,7 +123,6 @@ export function recordConflict(events: InvestorEvents, userId: string, action: s
   return Object.freeze({ ok: false as const, kind: "conflict" as const, recordId: failure.recordId, message: RECORD_CONFLICT_MESSAGE });
 }
 
-const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const imKyc = (k: FinanceKyc): ImInvestor["kyc"] => (k === "passed" || k === "na" ? "passed" : k === "failed" ? "failed" : "pending");
 const kycOf = (v: string | null): FinanceKyc => (v === "Completed" ? "passed" : v === "Failed" ? "failed" : v === "NA" ? "na" : "pending");
 
@@ -127,15 +130,9 @@ export function createInvestorRecordReader(deps: RecordDeps) {
   const adapters = createInvestorsAdapters({ crm: deps.crm, events: deps.events });
   const guard = createInvestorGuard({ events: deps.events, planeCRefusal: deps.planeCRefusal });
 
-  const attachments = async (cred: UserCredential, module: string, id: string, signal?: AbortSignal): Promise<readonly AttachmentLine[] | { errorKind: string }> => {
-    let r: Awaited<ReturnType<typeof deps.crm.getRelated>>;
-    try {
-      r = await deps.crm.getRelated(cred, module, id, "Attachments", { fields: ATTACHMENT_FIELDS, perPage: 200, signal });
-    } catch { return { errorKind: "unexpected" }; }
-    if (!r.ok) return r.error.kind === "not-found" ? [] : { errorKind: r.error.kind };
-    return Object.freeze(r.value.records.filter((x) => RECORD_ID.test(x.id)).map((x) => Object.freeze({
-      id: x.id, name: str(x, "File_Name", 255) ?? "", size: num(x.Size), at: (str(x, "Created_Time", 40) ?? "").slice(0, 16) || null,
-    })));
+  const attachments = async (cred: UserCredential, scope: DocScope, id: string, signal?: AbortSignal): Promise<readonly AttachmentLine[] | { errorKind: string }> => {
+    const l = await listAttachments(deps.crm, cred, scope, id, signal);
+    return l.ok ? l.files : { errorKind: l.errorKind };
   };
 
   async function read(cred: UserCredential, seat: string, contactId: string, signal?: AbortSignal): Promise<RecordResult> {
@@ -179,41 +176,33 @@ export function createInvestorRecordReader(deps: RecordDeps) {
       if (!rc.ok) return rc.kind === "refused" ? guard.refuse(me, seat, "investor-record", "not-own-lead", [contactId]) : { ok: false, kind: "source-error", errorKind: rc.errorKind };
       receipts = rc.rows;
     }
-    const standing = new Map<string, number>(), matchedIn = new Map<string, number>(), inbound = new Map<string, number>();
-    for (const r of receipts) {
-      if (!r.allotmentId || (r.matchState && NOT_STANDING.has(r.matchState))) continue;
-      const refund = r.kind === "Refund" || !!r.reversalOf;
-      const isIn = !refund && !!r.kind && INBOUND.has(r.kind);
-      if (isIn) inbound.set(r.allotmentId, (inbound.get(r.allotmentId) ?? 0) + r.amount);
-      if (isIn && r.matched) matchedIn.set(r.allotmentId, (matchedIn.get(r.allotmentId) ?? 0) + r.amount);
-      standing.set(r.allotmentId, (standing.get(r.allotmentId) ?? 0) + (isIn ? r.amount : refund ? -r.amount : 0));
-    }
+    const moneyOfAllot = new Map(allots.map((a) => [a.id, moneyOf({ id: a.id, status: a.Allocation_Status, units: a.Committed_Units, unitPrice: a.Unit_Price }, receipts)]));
     const live = allots.filter((a) => a.Allocation_Status !== "Cancelled");
     const holdings: HoldingLine[] = allots.map((a) => {
       const l = llps.get(a.LLP_Lookup);
       return Object.freeze({
         id: a.id, llpId: a.LLP_Lookup, llpName: l?.Name ?? "", block: l?.Block_Code ?? "", committed: a.Committed_Units, issued: a.Issued_Units,
         status: a.Allocation_Status, agreementSigned: paper ? !!a.agreementSignedAt : null,
-        paymentStatus: money ? expectedPaymentStatus(matchedIn.get(a.id) ?? 0, a.Committed_Units * a.Unit_Price) : null,
+        paymentStatus: money ? moneyOfAllot.get(a.id)!.paymentStatus : null,
         holdUntil: a.holdUntil,
       });
     });
-    const paid = live.reduce((t, a) => t + (inbound.get(a.id) ?? 0), 0);
-    const due = live.filter((a) => a.Allocation_Status === "Reserved").reduce((t, a) => t + Math.max(0, a.Committed_Units * a.Unit_Price - (standing.get(a.id) ?? 0)), 0);
+    const paid = live.reduce((t, a) => t + moneyOfAllot.get(a.id)!.paid, 0);
+    const due = live.reduce((t, a) => t + moneyOfAllot.get(a.id)!.due, 0);
 
     let paperOut: InvestorRecord["paper"] = null;
     if (paper) {
-      const personal = await attachments(cred, MODULES.contacts, contactId, signal);
+      const personal = await attachments(cred, "personal", contactId, signal);
       if ("errorKind" in personal) return { ok: false, kind: "source-error", errorKind: personal.errorKind };
       const perAllot: { allotmentId: string; llpId: string; files: readonly AttachmentLine[] }[] = [];
       for (const a of allots) {
-        const f = await attachments(cred, MODULES.allotments, a.id, signal);
+        const f = await attachments(cred, "allotment", a.id, signal);
         if ("errorKind" in f) return { ok: false, kind: "source-error", errorKind: f.errorKind };
         perAllot.push(Object.freeze({ allotmentId: a.id, llpId: a.LLP_Lookup, files: f }));
       }
       const farms: { llpId: string; files: readonly AttachmentLine[] }[] = [];
       for (const llpId of [...new Set(allots.map((a) => a.LLP_Lookup).filter((x) => RECORD_ID.test(x)))]) {
-        const f = await attachments(cred, MODULES.llps, llpId, signal);
+        const f = await attachments(cred, "project", llpId, signal);
         if ("errorKind" in f) return { ok: false, kind: "source-error", errorKind: f.errorKind };
         farms.push(Object.freeze({ llpId, files: f }));
       }

@@ -11,6 +11,7 @@ import type { OpsSink } from "../../lib/zoho/log";
 import { createErrorLog } from "../http/error-log";
 import { sharedErrorSink } from "../logs/factory";
 import { createErrorCapture } from "../http/error-capture";
+import { fixtureModeOn } from "../../lib/fixture-mode";
 
 export const errorLines = sharedErrorSink();
 export const alertOutbox = createOutboxMailer();
@@ -31,12 +32,37 @@ export function setAlertMailer(next: AlertMailer): void {
 
 export const errorLog = createErrorLog(errorLines);
 
-export const withErrorCapture = createErrorCapture({
+const capture = createErrorCapture({
   log: errorLog,
   onRecord: (record) => {
     for (const e of eventsFromErrors(record)) alertEngine().record(e);
   },
 });
+
+/* ---- process-start hooks: background checks that must run even when no webhook arrives ---- */
+const G = globalThis as typeof globalThis & { __gzOpsStarted?: boolean };
+/**
+ * Once per process, on the first request through any wrapped route: start the 10-minute Zoho Sign re-read of open
+ * requests (server/zoho-sign/runtime ensureSignCheck, M12-S05-T02), so a missed webhook is still caught. Lazy (the
+ * Sign runtime is imported only here, on first use), never in fixture mode (D65), and never failing a request.
+ * ensureSignCheck itself does nothing until Zoho Sign and the provider-callback token are configured.
+ */
+export function startProcessHooks(env: NodeJS.ProcessEnv = process.env,
+  loadSign: () => Promise<{ ensureSignCheck(): void }> = () => import("../zoho-sign/runtime")): void {
+  if (G.__gzOpsStarted) return;
+  G.__gzOpsStarted = true;
+  if (fixtureModeOn(env)) return;
+  void loadSign().then((m) => m.ensureSignCheck()).catch(() => { /* retried by the next webhook (it calls ensureSignCheck too) */ });
+}
+
+/** Every route handler, wrapped: Plane B error lines (M18-S04-T01) and the process-start hooks above. */
+export const withErrorCapture: typeof capture = (handler, route) => {
+  const wrapped = capture(handler, route);
+  return (request, context) => {
+    try { startProcessHooks(); } catch { /* a hook never fails a request */ }
+    return wrapped(request, context);
+  };
+};
 
 /** Wrap any Plane B sink so its lines feed the alerts (credits header, token refresh, Sign webhook). */
 export const alertingOpsSink = (inner: OpsSink): OpsSink => tapOpsSink(inner, alertEngine);

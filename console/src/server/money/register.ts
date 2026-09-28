@@ -8,11 +8,13 @@
  * names the investor and farm of the allotment it is linked to (D70: a receipt links to the allotment,
  * and through it to the Contact and the LLP). Nothing is cached — rows are records (D45/D52).
  *
- * Totals, worked out from the receipts, never typed:
- *   received   = inbound receipts (Advance, Part/Balance, Full) that stand (not Reversed/Not found/Claimed)
- *   refunded   = Refund receipts that stand
+ * Totals, worked out from the receipts, never typed — MATCHED money only (D21: recording is free, only matched money
+ * counts), the same rule as Today (numbers/investors-today), Numbers (numbers/investors-side) and holds/rules:
+ *   received   = MATCHED inbound receipts (Advance, Part/Balance, Full)
+ *   refunded   = MATCHED Refund receipts
  *   net banked = received − refunded
- *   still due  = over Reserved allotments, units × unit price − what stands against each, never below 0
+ *   still due  = over Reserved allotments, units × unit price − the allotment's matched net, never below 0
+ *   recorded   = recorded, not yet matched (Pending): { received, refunded, net } — shown apart, never in the above
  * Counts and totals are over the farm the person picked (all farms when none), before the kind and
  * reconciliation cuts, so the chips read the same whichever chip is on.
  */
@@ -37,8 +39,6 @@ const KIND: Readonly<Record<string, RegisterKind>> = Object.freeze({
   Advance: "advance", Part: "balance", Balance: "balance", Full: "full", Refund: "refund", Forfeit: "forfeit",
 });
 const MATCH_STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not found", "Reversed", "Claimed"]);
-/** A receipt in one of these states is not money that stands. */
-const NOT_STANDING: ReadonlySet<string> = new Set(["Reversed", "Not found", "Claimed"]);
 
 export interface RegisterAccess {
   readonly actor: SeatedZohoUser;
@@ -77,7 +77,12 @@ export interface RegisterRow {
   readonly reversalOf: string | null;
 }
 export interface RegisterCounts { readonly all: number; readonly advance: number; readonly full: number; readonly out: number; readonly pending: number }
-export interface RegisterTotals { readonly received: number; readonly refunded: number; readonly netBanked: number; readonly stillDue: number }
+/** Pending receipts: recorded by one hand, waiting for the second (D21). */
+export interface RecordedNotMatched { readonly received: number; readonly refunded: number; readonly net: number }
+export interface RegisterTotals {
+  readonly received: number; readonly refunded: number; readonly netBanked: number; readonly stillDue: number;
+  readonly recorded: RecordedNotMatched;
+}
 export type RegisterResult =
   | { readonly ok: true; readonly value: { readonly rows: readonly RegisterRow[]; readonly counts: RegisterCounts; readonly totals: RegisterTotals;
       readonly farms: readonly { readonly id: string; readonly name: string | null }[]; readonly readOnly: boolean } }
@@ -179,14 +184,17 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
         }
 
         const inFarm = filter.farm ? rows.filter((r) => r.farm.id === filter.farm) : rows;
-        const stands = (r: RegisterRow) => !NOT_STANDING.has(r.matchState);
+        const matched = (r: RegisterRow) => r.matchState === "Matched";
+        const pending = (r: RegisterRow) => r.matchState === "Pending";
         const inbound = (r: RegisterRow) => r.kind === "advance" || r.kind === "balance" || r.kind === "full";
-        const received = inFarm.filter((r) => inbound(r) && stands(r)).reduce((t, r) => t + r.amount, 0);
-        const refunded = inFarm.filter((r) => r.kind === "refund" && stands(r)).reduce((t, r) => t + r.amount, 0);
-        const standingByAllot = new Map<string, number>();
-        for (const r of rows) if (stands(r)) standingByAllot.set(r.allotmentId, (standingByAllot.get(r.allotmentId) ?? 0) + (inbound(r) ? r.amount : r.kind === "refund" ? -r.amount : 0));
+        const sum = (keep: (r: RegisterRow) => boolean) => inFarm.filter(keep).reduce((t, r) => t + r.amount, 0);
+        const received = sum((r) => inbound(r) && matched(r));
+        const refunded = sum((r) => r.kind === "refund" && matched(r));
+        const recIn = sum((r) => inbound(r) && pending(r)), recOut = sum((r) => r.kind === "refund" && pending(r));
+        const matchedByAllot = new Map<string, number>();
+        for (const r of rows) if (matched(r)) matchedByAllot.set(r.allotmentId, (matchedByAllot.get(r.allotmentId) ?? 0) + (inbound(r) ? r.amount : r.kind === "refund" ? -r.amount : 0));
         const stillDue = [...allots.values()].filter((x) => x.status === "Reserved" && (!filter.farm || x.farmId === filter.farm))
-          .reduce((t, x) => t + Math.max(0, x.commitment - (standingByAllot.get(x.id) ?? 0)), 0);
+          .reduce((t, x) => t + Math.max(0, x.commitment - Math.max(0, matchedByAllot.get(x.id) ?? 0)), 0);
         const cut: Record<string, (r: RegisterRow) => boolean> = {
           advance: (r) => r.kind === "advance",
           full: (r) => r.kind === "full" || r.kind === "balance",
@@ -199,7 +207,8 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
         for (const x of allots.values()) if (!farms.has(x.farmId)) farms.set(x.farmId, x.farmName);
         return { ok: true, value: {
           rows: Object.freeze(shown), counts,
-          totals: Object.freeze({ received, refunded, netBanked: received - refunded, stillDue }),
+          totals: Object.freeze({ received, refunded, netBanked: received - refunded, stillDue,
+            recorded: Object.freeze({ received: recIn, refunded: recOut, net: recIn - recOut }) }),
           farms: Object.freeze([...farms].sort((x, y) => x[0].localeCompare(y[0])).map(([id, n]) => Object.freeze({ id, name: n }))),
           readOnly: !a.canRecord,
         } };

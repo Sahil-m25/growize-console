@@ -89,7 +89,13 @@ const validDay = (d: string, month: string): boolean => {
   const t = new Date(d + "T00:00:00Z");
   return Number.isFinite(+t) && t.toISOString().slice(0, 10) === d;
 };
-const PLANE_C_WHAT: Readonly<Record<string, string>> = Object.freeze({ reveal: "Identity revealed", "step-up": "Stepped up", "seat-change": "Seat changed", "grant-change": "Access changed" });
+const PLANE_C_WHAT: Readonly<Record<string, string>> = Object.freeze({
+  reveal: "Identity revealed", "step-up": "Stepped up", "seat-change": "Seat changed", "grant-change": "Access changed",
+  "access-granted": "Console access granted", "access-ended": "Console access ended", "manager-change": "Changed who they report to",
+});
+/** "3 accounts returned to the pool" — a seat change's count (M03-S04-T02); nothing when none moved. */
+export const pooledText = (n: number | undefined): string | null =>
+  typeof n === "number" && Number.isSafeInteger(n) && n > 0 ? `${n} account${n === 1 ? "" : "s"} returned to the pool` : null;
 
 export function rowFromArchive(r: ArchivedAuditRow): ActivityRow | null {
   const c = classify(r.module, r.action);
@@ -102,7 +108,9 @@ export function rowFromPlaneC(e: PlaneCEvent): ActivityRow | null {
   if (!c) return null;
   const at = istIso(e.at);
   const recordId = e.recordIds?.[0] ?? null;
-  return { at, day: at.slice(0, 10), byId: e.who, side: c.side, kind: c.kind, what: PLANE_C_WHAT[e.action]! + (e.outcome === "refused" ? " (refused)" : ""),
+  const pooled = e.action === "seat-change" && e.outcome === "ok" ? pooledText(e.count) : null;
+  return { at, day: at.slice(0, 10), byId: e.who, side: c.side, kind: c.kind,
+    what: (PLANE_C_WHAT[e.action] ?? "Admin action") + (pooled ? ` · ${pooled}` : "") + (e.outcome === "refused" ? " (refused)" : ""),
     module: recordId ? "Contacts" : "Users", recordId, source: "plane-c", withheld: false };
 }
 
