@@ -1,0 +1,27 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997501",
+    "Name": "Koramangala Club",
+    "Starts_On": "2026-08-15",
+    "Ends_On": "2026-08-15",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Club",
+    "Event_Channel": "Direct",
+    "Event_State": "Done",
+    "Event_Cost": 96000,
+    "Names_Taken": 5,
+    "Modified_Time": "2026-09-20T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

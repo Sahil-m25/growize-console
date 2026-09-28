@@ -1,0 +1,27 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997502",
+    "Name": "Embassy Springs",
+    "Starts_On": "2026-10-10",
+    "Ends_On": "2026-10-11",
+    "Event_City": "Bengaluru",
+    "Event_Type": "Society",
+    "Event_Channel": "MyGate",
+    "Event_State": "Planned",
+    "Event_Cost": 70000,
+    "Names_Taken": null,
+    "Modified_Time": "2026-09-21T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}
