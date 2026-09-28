@@ -1644,16 +1644,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "4447586"
    ],
-   "at": "2026-09-27T22:56:21.811Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
+   "at": "2026-09-28T10:53:14.449Z",
+   "note": "Case writes built and tested; waiting on the Tickets drawer, assignment rule (T01) and sandbox proof.",
    "notes": 4
   },
   "M13-S04": {
@@ -1675,16 +1677,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "4447586"
    ],
-   "at": "2026-09-27T22:56:22.463Z",
-   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3",
+   "at": "2026-09-28T10:53:14.856Z",
+   "note": "Publish built and tested; waiting on Investor_Updates picklist/field changes, the AM custom function and the page.",
    "notes": 5
   },
   "M15-S03": {
@@ -3405,6 +3409,16 @@
   "M14-S03-T01": {
    "status": "done",
    "at": "2026-09-28T10:52:54.112Z",
+   "phase": "zoho"
+  },
+  "M13-S03-T02": {
+   "status": "done",
+   "at": "2026-09-28T10:53:14.449Z",
+   "phase": "zoho"
+  },
+  "M13-S06-T02": {
+   "status": "done",
+   "at": "2026-09-28T10:53:14.856Z",
    "phase": "zoho"
   }
  },
@@ -6036,6 +6050,22 @@
    "status": "waiting",
    "hours": 3,
    "note": "Loader built and tested; waiting on the sheet source, Load_State setup, the Sahil load-right decision and the sheet card."
+  },
+  {
+   "at": "2026-09-28T10:53:14.449Z",
+   "story": "M13-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Case writes built and tested; waiting on the Tickets drawer, assignment rule (T01) and sandbox proof."
+  },
+  {
+   "at": "2026-09-28T10:53:14.856Z",
+   "story": "M13-S06",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Publish built and tested; waiting on Investor_Updates picklist/field changes, the AM custom function and the page."
   }
  ],
  "last_regression_round": 0,
