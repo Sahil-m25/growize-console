@@ -882,16 +882,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "846c0a8"
    ],
-   "at": "2026-09-27T22:56:05.414Z",
-   "note": "Jev run 28 Sep: app 1/3 vs prototype 1/3",
+   "at": "2026-09-28T13:46:20.499Z",
+   "note": "Care queue built and tested; waiting on the KAM Today screen and staging UAT.",
    "notes": 5
   },
   "M06-S02": {
@@ -1120,16 +1122,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "846c0a8"
    ],
-   "at": "2026-09-27T22:56:11.057Z",
-   "note": "Jev run 28 Sep: app 2/3 vs prototype 0/3",
+   "at": "2026-09-28T13:46:20.280Z",
+   "note": "Queue built and tested; waiting on the Sign status reader for paper rows and the Today screen.",
    "notes": 3
   },
   "M08-S03": {
@@ -3709,6 +3713,21 @@
   "M12-S08-T02": {
    "status": "done",
    "at": "2026-09-28T13:46:02.927Z",
+   "phase": "zoho"
+  },
+  "M05-S07-T01": {
+   "status": "done",
+   "at": "2026-09-28T13:46:20.280Z",
+   "phase": "zoho"
+  },
+  "M05-S07-T03": {
+   "status": "done",
+   "at": "2026-09-28T13:46:20.280Z",
+   "phase": "zoho"
+  },
+  "M05-S08-T01": {
+   "status": "done",
+   "at": "2026-09-28T13:46:20.499Z",
    "phase": "zoho"
   }
  },
@@ -6572,6 +6591,22 @@
    "status": "waiting",
    "hours": 6,
    "note": "Embed token and contract built; waiting on the investor app (MA1)."
+  },
+  {
+   "at": "2026-09-28T13:46:20.280Z",
+   "story": "M05-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 7,
+   "note": "Queue built and tested; waiting on the Sign status reader for paper rows and the Today screen."
+  },
+  {
+   "at": "2026-09-28T13:46:20.499Z",
+   "story": "M05-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Care queue built and tested; waiting on the KAM Today screen and staging UAT."
   }
  ],
  "last_regression_round": 0,
