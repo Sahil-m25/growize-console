@@ -1158,7 +1158,8 @@
     "3c6435a"
    ],
    "at": "2026-09-27T22:56:12.906Z",
-   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4"
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4",
+   "notes": 5
   },
   "M10-S02": {
    "status": "pending",
@@ -1806,6 +1807,25 @@
    "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
   },
   "M01-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 6
+  },
+  "M18-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 4,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T06:14:16.778Z",
+   "note": "Server side built and tested on fixtures; waiting on mail provider (HUMAN), the front-end beacon call and sandbox proof T03 (M02-S10).",
+   "commits": [
+    "0683e32"
+   ]
+  },
+  "M18-S12": {
    "status": "pending",
    "attempts": 0,
    "notes": 1
@@ -2773,6 +2793,16 @@
    "status": "done",
    "at": "2026-09-27T22:56:27.777Z",
    "phase": "fe"
+  },
+  "M18-S04-T01": {
+   "status": "done",
+   "at": "2026-09-28T06:14:16.778Z",
+   "phase": "zoho"
+  },
+  "M18-S04-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:14:16.778Z",
+   "phase": "zoho"
   }
  },
  "rounds": [
@@ -5051,6 +5081,14 @@
    "at": "2026-09-27T22:56:42.068Z",
    "story": "REGRESSION",
    "status": "done"
+  },
+  {
+   "at": "2026-09-28T06:14:16.778Z",
+   "story": "M18-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Server side built and tested on fixtures; waiting on mail provider (HUMAN), the front-end beacon call and sandbox proof T03 (M02-S10)."
   }
  ],
  "last_regression_round": 0,
