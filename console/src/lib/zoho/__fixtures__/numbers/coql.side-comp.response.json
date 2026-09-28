@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "headers": { "content-type": "application/json" },
+  "body": {
+    "data": [
+      { "id": "9007199254740997209", "ARL_ID": "ARL-INV-0209", "First_Name": "Joseph", "Last_Name": "Mathew", "Residency": "NRI", "KYC": "Pending", "FEMA_Applicable": true, "FEMA_Verified_At": null },
+      { "id": "9007199254740997101", "ARL_ID": "ARL-INV-0101", "First_Name": "Synthetic", "Last_Name": "Passed", "Residency": "Resident Indian", "KYC": "Completed", "FEMA_Applicable": false, "FEMA_Verified_At": null }
+    ],
+    "info": { "count": 2, "more_records": false }
+  }
+}
