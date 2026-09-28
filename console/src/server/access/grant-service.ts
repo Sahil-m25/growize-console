@@ -2,7 +2,9 @@
  * M03-S02-T01 — ONE GRANT CHANGE, END TO END: read the granter and the holder (and both manager chains)
  * from Zoho on the granter's own token, decide it with the front end's rules (grant-rules.ts), write
  * the line to the grant store, and file a Plane C `grant-change` (authority.ts) — ok or refused, and a
- * second line when a granted-only seat crosses the sign-in line ("console-on" / "console-off").
+ * second line when a granted-only seat crosses the sign-in line: Plane C `access-granted` (reason = the
+ * first page) or `access-ended` ("no-page-left"), and on ending every session of theirs is ended at
+ * once (M03-S04-T01; the session read re-asks the door too, so another process ends it on the next request).
  *
  * The session's seat token must still be what Zoho says the granter's role is now; a role moved since
  * sign-in refuses (the session refresh will end it).
@@ -33,6 +35,10 @@ export function createGrantService(d: {
   readonly users: ZohoUserDirectory;
   readonly events: AuthorityEvents;
   readonly clock?: () => number;
+  /** M03-S04-T01: ends the holder's sessions when their access ends (user-session.ts endSessionsOf). */
+  readonly sessions?: { endSessionsOf(who: string, reason: string): Promise<number> };
+  /** the rule; grant-rules.ts decideGrant unless a test replaces it */
+  readonly decide?: typeof decideGrant;
 }): GrantService {
   const clock = d.clock ?? Date.now;
   return Object.freeze({
@@ -59,12 +65,16 @@ export function createGrantService(d: {
       for (const p of [...mine, ...theirs]) people.set(p.who, p);
       const grants: Record<string, CapGrid> = {};
       for (const k of people.keys()) grants[k] = d.store.grantsOf(k);
-      const v = decideGrant(by, { ...ask, whom }, { people: [...people.values()], grants }, new Date(clock()));
+      const v = (d.decide ?? decideGrant)(by, { ...ask, whom }, { people: [...people.values()], grants }, new Date(clock()));
       if (!v.ok) return refuse(v.refusal, v.code);
 
       d.store.set({ at: clock(), by, whom, page: ask.page, caps: v.caps });
       d.events.grantChange(by, whom, session.seat, code(v.code), "ok");
-      if (v.accountBefore !== v.accountAfter) d.events.grantChange(by, whom, session.seat, v.accountAfter ? "console-on" : "console-off", "ok");
+      if (!v.accountBefore && v.accountAfter) d.events.accessGranted(by, whom, session.seat, ask.page);
+      if (v.accountBefore && !v.accountAfter) {
+        d.events.accessEnded(by, whom, session.seat);
+        try { await d.sessions?.endSessionsOf(whom, "access-ended"); } catch { /* the next read ends it (the door is re-asked) */ }
+      }
       return { ok: true, whom, page: ask.page, grants: d.store.grantsOf(whom), consoleAccount: v.accountAfter };
     },
   });

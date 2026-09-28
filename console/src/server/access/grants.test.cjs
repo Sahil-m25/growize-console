@@ -25,7 +25,7 @@ const options = {
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10,
   noEmit: false, noEmitOnError: true, outDir, rootDir: consoleRoot,
 };
-const sources = ['src/server/access/grants.ts', 'src/server/access/grant-service.ts', 'src/server/access/guard-core.ts', 'src/server/identity/users.ts', 'src/server/oauth/seat.ts'].map((f) => path.join(consoleRoot, f));
+const sources = ['src/server/access/grants.ts', 'src/server/access/grant-service.ts', 'src/server/access/guard-core.ts', 'src/server/identity/users.ts', 'src/server/oauth/seat.ts', 'src/server/access/signin-list.ts'].map((f) => path.join(consoleRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -220,4 +220,114 @@ test('service: Sahil (Digital Infrastructure) holds no console session token tod
   assert.equal(out.ok, false); assert.equal(out.refusal, 'cannot-manage');
   assert.equal(r.sink.events()[0].reason, 'seat-moved');
   assert.ok(GRANT_REFUSALS['cannot-manage'].length > 10);
+});
+
+/* ---- M03-S03-T01: the grantor rules, line by line ------------------------------------------------ */
+
+const { reachForSides } = load('src/server/access/guard-core.js');
+const { ZOHO_SEAT_SIDES } = load('src/server/access/policy.js');
+const IR2 = '554023000000300015', IR3 = '554023000000300016';
+/* a second IR under Tasneem, and one reporting straight to Digital Infrastructure (outside her chain) */
+const bookPlus = (ids, extra, grants = {}) => ({ people: [...ids.map(person), ...extra], grants });
+const IR2P = { who: IR2, seat: 'investor-relations', mgr: TASNEEM };
+const IR3P = { who: IR3, seat: 'investor-relations', mgr: SAHIL };
+
+test('M03-S03 acceptance 1: Sahil (DI) grants Rohit Numbers — Numbers is in his rail; System and Teams are not', () => {
+  const v = decideGrant(SAHIL, { op: 'add', whom: ROHIT, page: 'numbers', cap: 'view' }, book([PRADEEP, SAHIL, TASNEEM, ROHIT]));
+  assert.equal(v.ok, true); assert.deepEqual([...v.caps], ['view']);
+  const before = reachForSides(ZOHO_SEAT_SIDES['investor-relations'], ROHIT, {});
+  const after = reachForSides(ZOHO_SEAT_SIDES['investor-relations'], ROHIT, { numbers: [...v.caps] });
+  assert.ok(!before.pages.includes('numbers'));
+  assert.ok(after.pages.includes('numbers'));
+  assert.ok(!after.pages.includes('system')); assert.ok(!after.pages.includes('people'));
+});
+
+test('M03-S03 acceptance 2: Tasneem grants her IR Numbers; System is refused because she does not hold it; an IR outside her chain is refused', () => {
+  const b = bookPlus([PRADEEP, SAHIL, TASNEEM, ROHIT], [IR3P]);
+  assert.equal(decideGrant(TASNEEM, { op: 'add', whom: ROHIT, page: 'numbers', cap: 'view' }, b).ok, true);
+  const sys = decideGrant(TASNEEM, { op: 'add', whom: ROHIT, page: 'system', cap: 'view' }, b);
+  assert.equal(sys.ok, false); assert.equal(sys.refusal, 'not-held'); assert.equal(sys.message, 'You cannot hand out what you do not hold yourself.');
+  const outside = decideGrant(TASNEEM, { op: 'add', whom: IR3, page: 'numbers', cap: 'view' }, b);
+  assert.equal(outside.ok, false); assert.equal(outside.refusal, 'cannot-manage', 'only IRs in her reporting chain');
+  /* DI, by contrast, may grant any person — the IR outside Tasneem's chain included */
+  assert.equal(decideGrant(SAHIL, { op: 'add', whom: IR3, page: 'numbers', cap: 'view' }, b).ok, true);
+});
+
+test('M03-S03 acceptance 3: an IR cannot change another IR\'s access (nor their own, nor their manager\'s)', () => {
+  const b = bookPlus([PRADEEP, SAHIL, TASNEEM, ROHIT], [IR2P]);
+  for (const [whom, page, op] of [[IR2, 'numbers', 'add'], [IR2, 'leads', 'remove'], [ROHIT, 'numbers', 'add'], [TASNEEM, 'leads', 'remove']]) {
+    const v = decideGrant(ROHIT, { op, whom, page, cap: 'view' }, b);
+    assert.equal(v.ok, false, `${whom} ${page} ${op}`); assert.equal(v.refusal, 'cannot-manage');
+  }
+  assert.equal(decideGrant(ROHIT, { op: 'reset', whom: IR2, page: 'leads' }, b).refusal, 'cannot-manage');
+});
+
+test('M03-S03 acceptance 4: the IR Manager cannot change Digital Infrastructure\'s (or the CEO\'s) access', () => {
+  const b = book([PRADEEP, SAHIL, TASNEEM, ROHIT]);
+  for (const whom of [SAHIL, PRADEEP]) for (const op of ['add', 'remove']) {
+    const v = decideGrant(TASNEEM, { op, whom, page: 'leads', cap: 'view' }, b);
+    assert.equal(v.ok, false); assert.equal(v.refusal, 'cannot-manage');
+  }
+});
+
+test('M03-S03 service: an IR\'s and an IR Manager\'s out-of-reach attempts change nothing and file refused grant-changes', async () => {
+  const ir = rig({ session: { who: ROHIT, seat: 'ir' } });
+  const a = await ir.svc.change(ir.as, ir.session, { op: 'add', whom: TASNEEM, page: 'numbers', cap: 'view' });
+  assert.equal(a.ok, false); assert.equal(a.status, 403);
+  assert.deepEqual(ir.store.holders(), []);
+  const mgr = rig();
+  const b = await mgr.svc.change(mgr.as, mgr.session, { op: 'add', whom: SAHIL, page: 'leads', cap: 'view' });
+  assert.equal(b.ok, false); assert.equal(b.refusal, 'cannot-manage');
+  assert.deepEqual(mgr.store.holders(), []);
+  assert.equal(mgr.sink.events()[0].outcome, 'refused'); assert.equal(mgr.sink.events()[0].whom, SAHIL);
+});
+
+/* ---- M03-S04-T01: crossing the sign-in line ------------------------------------------------------ */
+
+function crossingRig(before, after) {
+  const store = createGrantStore();
+  const sink = createPlaneCMemorySink();
+  const ended = [];
+  const r = rig();
+  const svc = createGrantService({
+    store, users: createZohoUserDirectory({ seats, gate: { acquire: async () => ({ waitedMs: 0, release() {} }) }, log: { call() {}, refusal() {} },
+      fetch: async (url) => { const id = url.split('/').pop(); return { status: 200, text: async () => fs.readFileSync(path.join(consoleRoot, 'src/lib/zoho/__fixtures__/grants', `users.${FILES[id]}.response.json`), 'utf8'), headers: { get: () => null } }; } }),
+    events: createAuthorityEvents(createPlaneCLog(sink), () => T0), clock: () => T0,
+    sessions: { endSessionsOf: async (who, reason) => { ended.push([who, reason]); return 1; } },
+    decide: (by, ask) => ({ ok: true, caps: ask.op === 'remove' ? [] : ['view'], code: `${ask.page}-view-${ask.op}`, accountBefore: before, accountAfter: after }),
+  });
+  return { svc, sink, ended, store, as: r.as, session: r.session };
+}
+
+test('M03-S04 acceptance: a first page granted files "access-granted · leads" after the grant-change, and the person is admitted', async () => {
+  const c = crossingRig(false, true);
+  const out = await c.svc.change(c.as, c.session, { op: 'add', whom: ROHIT, page: 'leads', cap: 'view' });
+  assert.equal(out.ok, true); assert.equal(out.consoleAccount, true);
+  const ev = c.sink.events();
+  assert.deepEqual(ev.map((e) => [e.action, e.reason, e.outcome]), [['grant-change', 'leads-view-add', 'ok'], ['access-granted', 'leads', 'ok']]);
+  assert.equal(ev[1].who, TASNEEM); assert.equal(ev[1].whom, ROHIT);
+  assert.deepEqual(c.ended, []);
+});
+
+test('M03-S04 acceptance: the last page removed files "access-ended · no-page-left" and ends every session of theirs', async () => {
+  const c = crossingRig(true, false);
+  const out = await c.svc.change(c.as, c.session, { op: 'remove', whom: ROHIT, page: 'leads', cap: 'view' });
+  assert.equal(out.ok, true); assert.equal(out.consoleAccount, false);
+  assert.deepEqual(c.sink.events().map((e) => [e.action, e.reason, e.outcome]), [['grant-change', 'leads-view-remove', 'ok'], ['access-ended', 'no-page-left', 'ended']]);
+  assert.deepEqual(c.ended, [[ROHIT, 'access-ended']]);
+  /* no crossing: neither line, no session touched */
+  const same = crossingRig(true, true);
+  await same.svc.change(same.as, same.session, { op: 'add', whom: ROHIT, page: 'numbers', cap: 'view' });
+  assert.deepEqual(same.sink.events().map((e) => e.action), ['grant-change']); assert.deepEqual(same.ended, []);
+});
+
+test('M03-S04: the sign-in list follows the grant — Jhalak appears with her first page and disappears with her last', async () => {
+  const { signInList } = load('src/server/access/signin-list.js');
+  const s = createGrantStore();
+  const body = { users: [{ ...FX('grants', 'users.jhalak-exec.response.json').users[0] }] };
+  assert.deepEqual((await signInList(body, seats, grantReaderOf(s))).map((r) => r.userId), []);
+  s.set({ at: T0, by: SAHIL, whom: JHALAK, page: 'leads', caps: ['view'] });
+  assert.deepEqual((await signInList(body, seats, grantReaderOf(s))).map((r) => r.userId), [JHALAK]);
+  s.set({ at: T0, by: SAHIL, whom: JHALAK, page: 'leads', caps: [] });
+  assert.deepEqual((await signInList(body, seats, grantReaderOf(s))).map((r) => r.userId), []);
 });

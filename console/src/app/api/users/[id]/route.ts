@@ -1,0 +1,36 @@
+/* /api/users/[id] — a seat change on Teams (M03-S04-T02, D40/D47/D60).
+     PUT { seat }   seat = an Investors seat key ("amlead", "kam", "head", "ops", "comp")
+   200 → { whom, from, to, returned, notReturned }   (returned = Contacts put back in the pool)
+   4xx/5xx → { error, code } — 400 bad request · 403 own seat / super admin / not yours to move / your seat moved
+   · 404 not a Zoho user you see · 409 already that seat · 502 Zoho refused · 503 Zoho not answering, the book
+   unreadable (nothing changed) or the write unconfirmed ("unconfirmed").
+   On the changer's own Zoho token (Users PUT role+profile, Contacts KAM cleared); the KAM's book is listed by
+   the "kam-pool-return" service read. maySeat decides it (server/access/seat-change.ts); Plane C seat-change. */
+import { guardApi } from "@/server/access/guard";
+import { seatChanges } from "@/server/access/runtime";
+import { sessionCredential } from "@/server/oauth/request";
+import { zohoSignInConfigured } from "@/server/oauth/runtime";
+import { withErrorCapture } from "@/server/ops/runtime";
+
+export const dynamic = "force-dynamic";
+
+const NO_STORE = { "Cache-Control": "no-store" };
+const MAX_BODY = 1024;
+type Ctx = { params: Promise<{ id: string }> };
+
+async function put(req: Request, ctx: Ctx) {
+  if (!zohoSignInConfigured()) return Response.json({ error: "Seats are changed once Zoho sign-in is connected.", code: "not-configured" }, { status: 503, headers: NO_STORE });
+  const s = await sessionCredential();
+  if (!s.ok) return s.response;
+  const { id } = await ctx.params;
+  const raw = await req.text().catch(() => "");
+  let seat: unknown = null;
+  if (raw.length <= MAX_BODY) {
+    try { const p: unknown = JSON.parse(raw); seat = p && typeof p === "object" && !Array.isArray(p) ? (p as { seat?: unknown }).seat : null; } catch { seat = null; }
+  }
+  const r = await seatChanges().change(s.credential, s.session, { whom: id, to: seat });
+  if (!r.ok) return Response.json({ error: r.message, code: r.refusal }, { status: r.status, headers: NO_STORE });
+  return Response.json({ whom: r.whom, from: r.from, to: r.to, returned: r.returned.length, returnedIds: r.returned, notReturned: r.notReturned }, { headers: NO_STORE });
+}
+
+export const PUT = withErrorCapture(guardApi("/api/users", put), "/api/users");

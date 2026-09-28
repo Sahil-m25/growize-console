@@ -1,0 +1,18 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "users": [
+   {
+    "code": "SUCCESS",
+    "details": {
+     "id": "554023000000300011"
+    },
+    "message": "User updated successfully",
+    "status": "success"
+   }
+  ]
+ }
+}

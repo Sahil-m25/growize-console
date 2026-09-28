@@ -138,10 +138,12 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/data/version": { kind: "session" },
   "/api/leads": { kind: "page", page: "leads" },
   "/api/grants": { kind: "page", page: "people" },
+  "/api/users": { kind: "session" },   /* M03-S04-T02 seat change: maySeat (the Investors Team rule) decides inside */
   "/api/auth/step-up": { kind: "session" },
   "/api/farms": { kind: "page", page: "farms" },
   "/api/events": { kind: "page", page: "events" },
   "/api/cases": { kind: "page", page: "tkt" },
+  "/api/updates": { kind: "page", page: "invupd" },
   "/api/session": { kind: "open", why: "the sign-in door itself: GET answers who is signed in, DELETE signs out" },
   "/api/errors": { kind: "open", why: "the client error beacon: carries no data and reports from the sign-in screen too" },
   "/api/webhooks/zoho-sign": { kind: "open", why: "a provider callback: no person, authenticated by its HMAC signature" },
@@ -151,6 +153,11 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/investors": { kind: "session" },
   "/api/investors/add-paid": { kind: "page", page: "inv" },
   "/api/investors/[id]/unlock": { kind: "page", page: "inv" },
+  "/api/investors/[id]/preview": { kind: "page", page: "inv" },   /* M10-S22 app preview: the record's own admission decides inside */
+  "/api/investors/[id]/test-link": { kind: "page", page: "inv" }, /* M10-S23: super user only, decided inside */
+  "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
+  "/api/investors/[id]/kam": { kind: "page", page: "inv" },
+  "/api/receipts": { kind: "page", page: "pay" },
 });
 
 /** The rule for a route: the longest API_ROUTES prefix that matches ("/api/leads/123" → "/api/leads"). */

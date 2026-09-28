@@ -89,6 +89,9 @@ export interface SessionStore {
   get(key: string): Promise<StoredSession | null>;
   put(key: string, record: StoredSession): Promise<void>;
   delete(key: string): Promise<void>;
+  /** M03-S04-T01: the keys of every stored session of this Zoho user, so access ending can end them all.
+   *  Optional for doubles; absent = sessions still end on their next read (the door is re-asked there). */
+  keysOf?(who: string): Promise<readonly string[]>;
 }
 
 export function createMemorySessionStore(): SessionStore & { readonly size: () => number; readonly raw: () => readonly StoredSession[] } {
@@ -97,6 +100,7 @@ export function createMemorySessionStore(): SessionStore & { readonly size: () =
     get: async (k: string) => m.get(k) ?? null,
     put: async (k: string, r: StoredSession) => { m.set(k, Object.freeze({ ...r })); },
     delete: async (k: string) => { m.delete(k); },
+    keysOf: async (who: string) => [...m.entries()].filter(([, r]) => r.who === who).map(([k]) => k),
     size: () => m.size,
     raw: () => [...m.values()],
   });
@@ -148,7 +152,15 @@ export interface UserSessions {
   current(sid: string | null | undefined): Promise<CurrentResult>;
   credential(sid: string | null | undefined): Promise<CredentialResult>;
   signOut(sid: string | null | undefined, why?: SignOutWhy): Promise<void>;
+  /** M03-S04: end every session of this Zoho user now (access ended, seat moved) — 'revoked', Plane C
+   *  `session-revoked` with `reason` ("access-ended" / "seat-changed"). Returns how many ended. */
+  endSessionsOf(who: string, reason: string): Promise<number>;
 }
+
+/** The Zoho seat behind a console seat token (CONSOLE_SEAT inverted; Administrator seats have none). */
+const ZOHO_SEAT_OF: ReadonlyMap<string, ZohoSeat> = new Map(
+  (Object.entries(CONSOLE_SEAT) as [ZohoSeat, string | null][]).filter(([, t]) => t !== null).map(([z, t]) => [t!, z]),
+);
 
 const FLOW_AAD = "gz-oauth-flow";
 const SID = /^[A-Za-z0-9_-]{43}$/;
@@ -199,12 +211,12 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     return admitZohoSeat(zseat, who, grants);
   }
 
-  async function end(key: string, rec: StoredSession, why: SignOutWhy, revoke: boolean): Promise<void> {
+  async function end(key: string, rec: StoredSession, why: SignOutWhy, revoke: boolean, reason: string = why): Promise<void> {
     live.delete(key);
     await d.store.delete(key);
     if (revoke) await revokeQuietly(d.sealer.open(rec.sealedRefresh, key) ?? undefined, rec.who);
     const action = why === "chose" ? "sign-out" : why === "expired" ? "session-expired" : "session-revoked";
-    d.planeC.record({ at: clock(), who: rec.who, action, outcome: "ended", reason: why, seat: rec.seat });
+    d.planeC.record({ at: clock(), who: rec.who, action, outcome: "ended", reason, seat: rec.seat });
   }
 
   async function load(sid: string | null | undefined): Promise<{ key: string; rec: StoredSession } | CurrentResult> {
@@ -215,6 +227,13 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     if (clock() >= rec.expiresAt) {
       await end(key, rec, "expired", true);
       return { ok: false, why: "expired" };
+    }
+    /* M03-S04-T01: the door is asked again on every read, so a person whose last page was taken
+       (or whose grant store entry went) is signed out by their very next request, on any process. */
+    const zseat = ZOHO_SEAT_OF.get(rec.seat);
+    if (!zseat || !(await admit(zseat, rec.who)).ok) {
+      await end(key, rec, "revoked", true, "access-ended");
+      return { ok: false, why: "revoked" };
     }
     return { key, rec };
   }
@@ -338,6 +357,18 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
         return;
       }
       await end(key, rec, why, true);
+    },
+
+    async endSessionsOf(who: string, reason: string): Promise<number> {
+      if (typeof who !== "string" || !/^\d{15,25}$/.test(who) || !d.store.keysOf) return 0;
+      let n = 0;
+      for (const key of await d.store.keysOf(who)) {
+        const rec = await d.store.get(key);
+        if (!rec || rec.who !== who) continue;
+        await end(key, rec, "revoked", true, reason);
+        n++;
+      }
+      return n;
     },
   });
 }

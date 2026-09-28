@@ -22,6 +22,12 @@ export interface AuthorityEvents {
   refusedAction(who: string, seat: string | null, action: string, recordIds?: readonly string[]): void;
   /** A grant was given, returned or refused (D35 borrowed grants, M03-S02). `grant` is a short code. */
   grantChange(who: string, whom: string, seat: string | null, grant: string, outcome: Exclude<PlaneCOutcome, "ended">): void;
+  /** M03-S04-T01: `whom`'s first page was granted — they now appear on the sign-in list. `page` is its code. */
+  accessGranted(who: string, whom: string, seat: string | null, page: string): void;
+  /** M03-S04-T01: `whom`'s last page was taken — off the sign-in list, sessions ended ("no-page-left"). */
+  accessEnded(who: string, whom: string, seat: string | null, reason?: string): void;
+  /** M03-S04-T02: `who` moved `whom` from one seat to another (codes); `returned` = Contacts put back in the pool. */
+  seatChanged(who: string, whom: string, seat: string | null, from: string, to: string, outcome: Exclude<PlaneCOutcome, "ended">, returned?: readonly string[]): void;
 }
 
 /** Lower-cased only. Anything that is not already a code (a space, an `@`, a digit run) is left for
@@ -38,6 +44,16 @@ export function createAuthorityEvents(planeC: PlaneCLog, clock: () => number = D
     },
     grantChange(who: string, whom: string, seat: string | null, grant: string, outcome: Exclude<PlaneCOutcome, "ended">): void {
       planeC.record({ at: clock(), who, whom, action: "grant-change", outcome, reason: code(grant), seat });
+    },
+    accessGranted(who: string, whom: string, seat: string | null, page: string): void {
+      planeC.record({ at: clock(), who, whom, action: "access-granted", outcome: "ok", reason: code(page), seat });
+    },
+    accessEnded(who: string, whom: string, seat: string | null, reason = "no-page-left"): void {
+      planeC.record({ at: clock(), who, whom, action: "access-ended", outcome: "ended", reason: code(reason), seat });
+    },
+    seatChanged(who: string, whom: string, seat: string | null, from: string, to: string, outcome: Exclude<PlaneCOutcome, "ended">, returned: readonly string[] = []): void {
+      planeC.record({ at: clock(), who, whom, action: "seat-change", outcome, reason: code(`${from}-to-${to}`), seat,
+        ...(outcome === "ok" ? { count: returned.length, recordIds: returned } : {}) });
     },
   });
 }

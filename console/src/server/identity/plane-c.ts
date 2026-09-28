@@ -15,7 +15,9 @@ export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session
   /* M01-S03-T05: the Investors side's authority events — an identity reveal, a step-up, a seat change */
   | "reveal" | "step-up" | "seat-change"
   /* M01-S04-T01: access-policy refusals and grant changes (see identity/authority.ts) */
-  | "refused-page" | "refused-action" | "grant-change";
+  | "refused-page" | "refused-action" | "grant-change"
+  /* M03-S04-T01: a person crossing the sign-in line — first page granted / last page taken (D40/D60) */
+  | "access-granted" | "access-ended";
 export type PlaneCOutcome = "ok" | "refused" | "ended";
 
 export interface PlaneCEvent {
@@ -32,6 +34,8 @@ export interface PlaneCEvent {
   readonly recordIds?: readonly string[];
   /** M01-S04-T01: the person the event was done to (a grant's holder), a Zoho user id; never a name. */
   readonly whom?: string;
+  /** M03-S04-T02: how many records the event moved (a seat change's accounts returned to the pool). */
+  readonly count?: number;
 }
 
 export interface PlaneCSink {
@@ -43,7 +47,7 @@ export interface PlaneCLog {
 }
 
 const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change",
-  "refused-page", "refused-action", "grant-change"]);
+  "refused-page", "refused-action", "grant-change", "access-granted", "access-ended"]);
 const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;
@@ -59,6 +63,7 @@ function clean(e: PlaneCEvent): PlaneCEvent {
     reason: typeof x.reason === "string" && CODE.test(x.reason) && !looksLikeIdentity(x.reason) ? x.reason : "unrecognised",
     seat: typeof x.seat === "string" && CODE.test(x.seat) && !looksLikeIdentity(x.seat) ? x.seat : null,
     ...(x.whom !== undefined ? { whom: typeof x.whom === "string" && USER_ID.test(x.whom) ? x.whom : "unrecognised" } : {}),
+    ...(x.count !== undefined ? { count: typeof x.count === "number" && Number.isSafeInteger(x.count) && x.count >= 0 ? x.count : 0 } : {}),
     ...(Array.isArray(x.recordIds)
       ? { recordIds: Object.freeze([...new Set((x.recordIds as unknown[]).filter((v): v is string => typeof v === "string" && RECORD_ID.test(v)))].slice(0, 50)) }
       : {}),

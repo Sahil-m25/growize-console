@@ -444,3 +444,40 @@ test('M03-S01: a grant taken back ends the session at the next refresh as revoke
   assert.deepEqual(await h.sessions.credential(result.sid), { ok: false, why: 'revoked' });
   assert.equal(h.store.size(), 0);
 });
+
+/* ---- M03-S04-T01: access ending ends the session ------------------------------------------------ */
+
+test('M03-S04-T01: a signed-in person who loses their last page is signed out by their next request (Plane C session-revoked · access-ended)', async () => {
+  let grid = { leads: ['view'] };
+  const h = harness({ user: accepted('viewer'), grants: { grantsOf: () => grid } });
+  const { result } = await signIn(h);
+  assert.equal(result.ok, true); assert.equal(result.session.seat, 'exec');
+  assert.equal((await h.sessions.current(result.sid)).ok, true);
+  grid = {};                                   /* Leads taken off: no page left */
+  const next = await h.sessions.current(result.sid);
+  assert.deepEqual(next, { ok: false, why: 'revoked' });
+  assert.equal(h.store.size(), 0, 'the session is gone, not merely refused');
+  const last = h.planeCSink.events().at(-1);
+  assert.equal(last.action, 'session-revoked'); assert.equal(last.reason, 'access-ended'); assert.equal(last.outcome, 'ended');
+  assert.equal(h.calls.revoke.length, 1, 'their refresh token is revoked at Zoho');
+  assert.deepEqual(await h.sessions.credential(result.sid), { ok: false, why: null });
+  assertNothingSecret(h);
+});
+
+test('M03-S04-T01: endSessionsOf ends every session of that person at once, and nobody else\'s', async () => {
+  const h = harness({ user: accepted('investor-relations') });
+  const a = await signIn(h);
+  const b = await signIn(h);
+  h.state.user = accepted('ir-manager');
+  const other = await signIn(h);
+  assert.ok(a.result.ok && b.result.ok && other.result.ok);
+  assert.equal(h.store.size(), 3);
+  const n = await h.sessions.endSessionsOf('554023000000300005', 'seat-changed');
+  assert.equal(n, 2);
+  assert.equal(h.store.size(), 1);
+  assert.equal((await h.sessions.current(a.result.sid)).ok, false);
+  assert.equal((await h.sessions.current(other.result.sid)).ok, true);
+  const ended = h.planeCSink.events().filter((e) => e.action === 'session-revoked');
+  assert.equal(ended.length, 2); assert.ok(ended.every((e) => e.reason === 'seat-changed' && e.who === '554023000000300005'));
+  assert.equal(await h.sessions.endSessionsOf('not-an-id', 'x'), 0);
+});

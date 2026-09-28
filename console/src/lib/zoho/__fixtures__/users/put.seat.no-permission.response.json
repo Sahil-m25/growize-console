@@ -1,0 +1,16 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "users": [
+   {
+    "code": "NO_PERMISSION",
+    "details": {},
+    "message": "permission denied",
+    "status": "error"
+   }
+  ]
+ }
+}

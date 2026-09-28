@@ -9,10 +9,17 @@
  *
  *   STEPUP_ALERT_TO     where a lock is reported (Sahil and Pradeep; a human item with the mail provider)
  *   GZ_RELEASE_APPROVAL "on" once Sahil has built the Zoho approval process on releases (M01-S10-T03)
+ *
+ *   seatChanges()                  PUT /api/users/{id} (seat-change.ts, M03-S04-T02)
+ *   ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN  the "kam-pool-return" service grant (ZohoCRM.coql.READ +
+ *                       ZohoCRM.modules.contacts.READ on a profile that sees every Contact, identity fields
+ *                       hidden). Without it a KAM cannot be moved off the seat (503, nothing changed).
  */
 
 import { cookies } from "next/headers";
-import { userCredential } from "../../lib/zoho/client";
+import { createZohoClient, createZohoServiceClient, userCredential } from "../../lib/zoho/client";
+import { createServiceTokenProvider, type ServiceTokenProvider } from "../oauth/service-token";
+import { createSeatChangeService, kamBookOrgRead, type SeatChangeService } from "./seat-change";
 import { authorityEvents, identityLog } from "../identity/authority";
 import { createStepUp, STEP_UP_MESSAGES, type StepUp, type StepUpAction } from "../identity/step-up";
 import { createZohoUserDirectory } from "../identity/users";
@@ -22,7 +29,7 @@ import { alertOutbox } from "../ops/runtime";
 import { createGrantService, type GrantService } from "./grant-service";
 import { sharedGrantStore } from "./grants";
 
-type Held = { grants: GrantService; stepUp: StepUp };
+type Held = { grants: GrantService; stepUp: StepUp; seats: SeatChangeService };
 const G = globalThis as typeof globalThis & { __gzAccessRuntime?: Held };
 
 export const accessRuntimeConfigured = (env: NodeJS.ProcessEnv = process.env): boolean => zohoSignInConfigured(env);
@@ -34,6 +41,7 @@ function held(): Held {
     store: sharedGrantStore(),
     users: createZohoUserDirectory({ seats: o.seats, gate: o.gate, log: o.log }),
     events: authorityEvents(),
+    sessions: o.sessions,
   });
   const stepUp = createStepUp({
     accounts: o.accounts,
@@ -56,12 +64,31 @@ function held(): Held {
       }).catch(() => undefined);
     },
   });
-  G.__gzAccessRuntime = { grants, stepUp };
+  const env = process.env;
+  let provider: ServiceTokenProvider | null = null;
+  const poolCredential = async (signal?: AbortSignal) => {
+    if (!env.ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN || !env.ZOHO_ACCOUNTS_ORIGIN || !env.ZOHO_OAUTH_CLIENT_ID || !env.ZOHO_OAUTH_CLIENT_SECRET) return null;
+    provider ??= createServiceTokenProvider({
+      job: "kam-pool-return", accountsOrigin: env.ZOHO_ACCOUNTS_ORIGIN, clientId: env.ZOHO_OAUTH_CLIENT_ID,
+      clientSecret: env.ZOHO_OAUTH_CLIENT_SECRET, refreshToken: env.ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN, log: o.log,
+    });
+    return provider.credential(signal);
+  };
+  const seats = createSeatChangeService({
+    users: createZohoUserDirectory({ seats: o.seats, gate: o.gate, log: o.log }),
+    seats: o.seats,
+    crm: createZohoClient({ gate: o.gate, log: o.log, recordIdPrefix: o.recordIdPrefix, maxAttempts: 1 }),
+    kamBook: kamBookOrgRead(createZohoServiceClient({ gate: o.gate, log: o.log, recordIdPrefix: o.recordIdPrefix, maxAttempts: 2 }), poolCredential),
+    events: authorityEvents(),
+    sessions: o.sessions,
+  });
+  G.__gzAccessRuntime = { grants, stepUp, seats };
   return G.__gzAccessRuntime;
 }
 
 export const grantService = (): GrantService => held().grants;
 export const stepUp = (): StepUp => held().stepUp;
+export const seatChanges = (): SeatChangeService => held().seats;
 
 const NO_STORE = { "Cache-Control": "no-store" };
 

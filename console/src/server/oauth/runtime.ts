@@ -35,6 +35,9 @@ export const DEFAULT_USER_SCOPES: readonly string[] = Object.freeze([
   "ZohoCRM.settings.READ",
   "ZohoCRM.coql.READ",
   "ZohoCRM.users.READ",
+  /* M03-S04-T02: a seat change writes Users role/profile (PUT /users/{id}) on the changer's own token. Zoho's
+     "Manage Users" profile permission still decides who may; the console's maySeat narrows it further. */
+  "ZohoCRM.users.UPDATE",
   "ZohoCRM.send_mail.all.CREATE",
   "ZohoCRM.Files.CREATE",
   "ZohoCRM.modules.attachments.CREATE",

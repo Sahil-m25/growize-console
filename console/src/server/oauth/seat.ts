@@ -110,6 +110,11 @@ export interface ZohoSeatDirectory {
    * doubles that only resolve the CurrentUser stay valid; absent = fail closed.
    */
   readonly resolveDirectoryUser?: (body: unknown) => SeatResolution;
+  /**
+   * M03-S04-T02: the pinned role and profile (ids and exact names) a seat change writes to Zoho Users.
+   * null for an Administrator-profile seat — nobody is ever moved INTO one by the console.
+   */
+  readonly seatWrite?: (seat: ZohoSeat) => { readonly roleId: string; readonly roleName: ZohoRoleName; readonly profileId: string; readonly profileName: ZohoProfileName } | null;
 }
 
 export interface ZohoSeatDirectoryConfig {
@@ -255,5 +260,11 @@ export function createZohoSeatDirectory(config: ZohoSeatDirectoryConfig): ZohoSe
   return Object.freeze({
     resolveCurrentUser: (body: unknown): SeatResolution => resolve(body, false),
     resolveDirectoryUser: (body: unknown): SeatResolution => resolve(body, true),
+    seatWrite: (seat: ZohoSeat) => {
+      const roleName = ROLE_NAMES.find((n) => ZOHO_SEAT_POLICIES[n].seat === seat);
+      if (!roleName || ZOHO_SEAT_POLICIES[roleName].administrator) return null;
+      const profileName = ZOHO_SEAT_POLICIES[roleName].profile;
+      return Object.freeze({ roleId: roleIds[roleName]!, roleName, profileId: profileIds[profileName]!, profileName });
+    },
   });
 }

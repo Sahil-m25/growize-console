@@ -1,0 +1,24 @@
+{
+ "users": [
+  {
+   "id": "554023000000300013",
+   "status": "active",
+   "confirm": true,
+   "type__s": "Regular User",
+   "role": {
+    "id": "554023000000100011",
+    "name": "Key Account Manager"
+   },
+   "profile": {
+    "id": "554023000000200010",
+    "name": "KAM"
+   },
+   "full_name": "Test User 13",
+   "email": "user13@example.invalid",
+   "Reporting_To": {
+    "id": "554023000000300010",
+    "name": "Manager"
+   }
+  }
+ ]
+}

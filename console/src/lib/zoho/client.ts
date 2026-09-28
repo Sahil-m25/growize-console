@@ -71,8 +71,9 @@ export const DEFAULT_BLUEPRINT_OWNED_FIELDS: Readonly<Record<string, readonly st
 
 /** The background work D53 allows a service token for. Nothing on this list serves a screen. */
 /* "handoff-share" (M03-S09-T03, D74): at hand-off, share the Contact, its allotments and receipts read-only with the originating IR. */
-export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share";
-const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share"]);
+/** "kam-pool-return" (M03-S04-T02): the org-scope read of a moved KAM's book; its writes stay on the person's own token. */
+export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share" | "kam-pool-return";
+const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share", "kam-pool-return"]);
 
 declare const apiDomainBrand: unique symbol;
 declare const userBrand: unique symbol;
@@ -187,6 +188,9 @@ export interface ZohoApi<C extends Credential> {
   deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
   /** PUT /users/{id} for the signed-in person's own user: only full name and mobile (M17-S05). */
   updateOwnUser(as: C, fields: { readonly first_name?: string; readonly last_name: string; readonly mobile?: string | null }, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
+  /** PUT /users/{id} (M03-S04-T02): another user's role and profile — a seat change, on the changer's own
+   *  user token only (D53; a service credential is refused). Never retried: a lost reply is re-read. */
+  updateUserSeat(as: C, userId: string, seat: UserSeatWrite, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
   /** A COQL aggregate query (must use COUNT/SUM/MIN/MAX/AVG). Rows carry only group keys and numbers. */
   aggregate(as: C, selectQuery: string, options?: CallOptions): Promise<ZohoResult<readonly AggregateRow[]>>;
   /** GET /{module}/{id}/__timeline — who changed which fields when, newest first; values dropped. */
@@ -197,6 +201,8 @@ export interface ZohoApi<C extends Credential> {
   /** GET /settings/emails/actions/from_addresses — the addresses the caller may send from. */
   fromAddresses(as: C, options?: CallOptions): Promise<ZohoResult<readonly FromAddress[]>>;
 }
+/** The role and profile a seat change writes; ids pinned from the settings export, names exactly as Zoho has them. */
+export interface UserSeatWrite { readonly roleId: string; readonly roleName: string; readonly profileId: string; readonly profileName: string }
 export interface MailAddress { readonly email: string; readonly userName?: string }
 export interface SendMailRequest {
   readonly from: MailAddress;
@@ -991,6 +997,27 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         op: "updateOwnUser", method: "PUT", path: `/users/${userId}`, endpoint: "/users/{id}",
         body: { users: [{ ...fields }] }, shape: { op: "write", records: 1 }, idempotent: false, perRecord: false,
         recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      const first = out.result.kind === "ok" ? obj((obj(out.result.body)?.users as unknown[] | undefined)?.[0]) : null;
+      if (!first || first.status !== "success") {
+        return { ok: false, error: { kind: "invalid-data", status: out.result.status, code: typeof first?.code === "string" ? first.code : "INVALID_DATA", field: null, records: null }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly updated: true }>;
+      }
+      return done({ updated: true } as const, out);
+    },
+
+    async updateUserSeat(as, userId, seat, opts = {}) {
+      if ((as as { kind?: unknown }).kind !== "user") throw new TypeError("A seat change is written on the changer's own user token (D53).");
+      if (typeof userId !== "string" || !RECORD.test(userId) || userId === (as as { userId?: unknown }).userId) throw new TypeError("updateUserSeat() takes another user's id.");
+      const ok = (v: unknown, n: number) => typeof v === "string" && v.length > 0 && v.length <= n && !/[\r\n\0]/.test(v);
+      if (!seat || !RECORD.test(seat.roleId) || !RECORD.test(seat.profileId) || !ok(seat.roleName, 200) || !ok(seat.profileName, 50)) {
+        throw new TypeError("updateUserSeat() writes a pinned role and profile id with their names.");
+      }
+      const out = await execute(as, {
+        op: "updateUserSeat", method: "PUT", path: `/users/${userId}`, endpoint: "/users/{id}",
+        body: { users: [{ id: userId, role: { id: seat.roleId, name: seat.roleName }, profile: { id: seat.profileId, name: seat.profileName } }] },
+        shape: { op: "write", records: 1 }, idempotent: false, perRecord: false,
+        recordIds: [userId], logReturnedIds: false, signal: opts.signal,
       });
       if (!out.ok) return out;
       const first = out.result.kind === "ok" ? obj((obj(out.result.body)?.users as unknown[] | undefined)?.[0]) : null;

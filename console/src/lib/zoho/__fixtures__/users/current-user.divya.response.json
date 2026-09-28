@@ -1,0 +1,30 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "users": [
+   {
+    "id": "554023000000300010",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100010",
+     "name": "Head of Account Management"
+    },
+    "profile": {
+     "id": "554023000000200009",
+     "name": "AM Head"
+    },
+    "full_name": "Test User 10",
+    "email": "user10@example.invalid",
+    "Reporting_To": {
+     "id": "554023000000300003",
+     "name": "Manager"
+    }
+   }
+  ]
+ }
+}
