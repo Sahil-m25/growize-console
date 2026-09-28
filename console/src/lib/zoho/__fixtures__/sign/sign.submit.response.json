@@ -1,0 +1,15 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "message": "Document submitted successfully",
+  "status": "success",
+  "requests": {
+   "request_id": "90071992547409981",
+   "request_status": "inprogress"
+  }
+ }
+}

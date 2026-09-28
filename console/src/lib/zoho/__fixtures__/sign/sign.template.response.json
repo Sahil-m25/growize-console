@@ -1,0 +1,23 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "status": "success",
+  "templates": {
+   "template_id": "90071992547409970",
+   "template_name": "Synthetic supplementary",
+   "actions": [
+    {
+     "action_id": "90071992547409991",
+     "action_type": "SIGN",
+     "role": "Investor",
+     "recipient_name": "",
+     "recipient_email": ""
+    }
+   ]
+  }
+ }
+}

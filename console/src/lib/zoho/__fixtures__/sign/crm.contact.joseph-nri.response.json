@@ -1,0 +1,21 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997209",
+    "First_Name": "Synthetic",
+    "Last_Name": "Joseph",
+    "Email": "joseph.fixture@example.invalid",
+    "Residency": "NRI",
+    "ARL_ID": "ARL-INV-0209",
+    "FEMA_Sign_Req_Id": "90071992547409982",
+    "FEMA_Verified_At": null,
+    "Modified_Time": "2026-09-27T09:30:00+05:30"
+   }
+  ]
+ }
+}

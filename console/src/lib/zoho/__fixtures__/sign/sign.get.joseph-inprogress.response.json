@@ -1,0 +1,33 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "message": "Request details retrieved successfully",
+  "status": "success",
+  "requests": {
+   "request_id": "90071992547409982",
+   "request_status": "inprogress",
+   "sign_submitted_time": 1790424000000,
+   "modified_time": 1790424060000,
+   "expire_by": 1791633600000,
+   "document_ids": [
+    {
+     "document_id": "90071992547409995"
+    }
+   ],
+   "actions": [
+    {
+     "action_id": "90071992547409991",
+     "action_type": "SIGN",
+     "action_status": "UNOPENED",
+     "recipient_email": "joseph.fixture@example.invalid",
+     "recipient_name": "Synthetic Kiran"
+    }
+   ],
+   "request_name": "Synthetic supplementary agreement"
+  }
+ }
+}

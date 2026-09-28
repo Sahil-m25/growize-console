@@ -1,0 +1,19 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997101",
+    "First_Name": "Synthetic",
+    "Last_Name": "Kiran",
+    "Email": "kiran.fixture@example.invalid",
+    "Residency": "Resident",
+    "ARL_ID": "ARL-INV-0109",
+    "FEMA_Sign_Req_Id": null
+   }
+  ]
+ }
+}

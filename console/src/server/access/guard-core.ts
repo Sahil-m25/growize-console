@@ -148,6 +148,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/errors": { kind: "open", why: "the client error beacon: carries no data and reports from the sign-in screen too" },
   "/api/webhooks/zoho-sign": { kind: "open", why: "a provider callback: no person, authenticated by its HMAC signature" },
   "/api/webhooks/investor-app": { kind: "open", why: "the investor app's signed events (M13-S01): no person, authenticated by the contract HMAC" },
+  "/api/sign/embed": { kind: "open", why: "the investor app's sign.embed request (M12-S08): no Zoho person, authenticated by the contract HMAC; the Contact must be the Sign recipient" },
   "/api/contracts": { kind: "session" },
   "/api/activity": { kind: "session" },
   "/api/investors": { kind: "session" },
@@ -167,6 +168,8 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/emails": { kind: "session" },   /* M12-S09-T01: a record's emails; server/emails/record-emails admits the record inside (ir-guard / lead book) */
   "/api/holds": { kind: "session" },   /* M08-S04 holds: server/holds decides inside (list: Money seats on the whole book; one: ir-guard scope; extend/release: the refund right) */
   "/api/numbers/investors-today": { kind: "session" },   /* M05-S06 headline figures: server/numbers/investors-today hides tiles a seat may not see */
+  "/api/queues": { kind: "session" },   /* M05-S07/S08 Investors side of Today: server/queues decides inside (AM seats: care day; money/paper/KYC seats: their rows; viewers: empty; IR refused) */
+  "/api/numbers/investors-side": { kind: "session" },   /* M16-S08/S09 Investors side of Numbers: server/numbers/investors-side refuses money sections to seats without Receipts read */
 });
 
 /** The rule for a route: the longest API_ROUTES prefix that matches ("/api/leads/123" → "/api/leads"). */

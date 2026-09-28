@@ -1,0 +1,30 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "message": "Document uploaded successfully",
+  "status": "success",
+  "requests": {
+   "request_id": "90071992547409981",
+   "request_status": "draft",
+   "actions": [
+    {
+     "action_id": "90071992547409991",
+     "action_type": "SIGN",
+     "action_status": "NOACTION",
+     "recipient_email": "kiran.fixture@example.invalid",
+     "recipient_name": "Synthetic Kiran"
+    }
+   ],
+   "document_ids": [
+    {
+     "document_id": "90071992547409995",
+     "total_pages": 3
+    }
+   ]
+  }
+ }
+}

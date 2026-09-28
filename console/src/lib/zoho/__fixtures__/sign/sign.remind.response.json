@@ -1,0 +1,11 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "message": "Reminder sent",
+  "status": "success"
+ }
+}

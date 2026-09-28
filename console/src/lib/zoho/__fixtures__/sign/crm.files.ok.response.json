@@ -1,0 +1,18 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "SUCCESS",
+    "details": {
+     "id": "b1f5c0ffee0000000000000000000000000000000000000000000000000001"
+    },
+    "message": "file uploaded",
+    "status": "success"
+   }
+  ]
+ }
+}

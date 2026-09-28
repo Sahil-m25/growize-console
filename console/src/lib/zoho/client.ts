@@ -48,6 +48,7 @@ import {
   type ZohoSuccess,
 } from "./errors";
 import { classOf, GateQueueFullError, type CallClass, type CallShape, type Gate, type GateLease } from "./gate";
+import { createFlights } from "./coalesce";
 import { RECORD_ID, type HttpMethod, type LogActor, type OpsLog } from "./log";
 
 export const API_VERSION = "v8";
@@ -178,6 +179,10 @@ export interface ZohoApi<C extends Credential> {
   update(as: C, module: string, id: string, fields: ZohoFields, options: UpdateOptions): Promise<ZohoResult<WriteAck>>;
   upsert(as: C, module: string, records: readonly ZohoFields[], duplicateCheckFields: readonly string[], options?: CallOptions): Promise<ZohoResult<readonly RecordOutcome[]>>;
   blueprintTransition(as: C, module: string, id: string, transitionId: string, data: ZohoFields, options?: CallOptions): Promise<ZohoResult<{ readonly transitioned: true }>>;
+  /** M11-S05: GET /{module}/{id}/actions/blueprint — the record's blueprint state and the transitions open to this
+   *  person now (id, name, target value, whether Zoho's conditions match). `null`: the record is in no blueprint
+   *  (204). Discovery only: the transition is then made with `blueprintTransition()`. Criteria text is never logged. */
+  blueprint(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<BlueprintState | null>>;
   wasDeleted(as: C, module: string, id: string, options?: CallOptions & { readonly maxPages?: number }): Promise<ZohoResult<DeletionCheck>>;
   /** Share Records API: a record-level share for one user (D44 cover windows). Related records are never shared. */
   share(as: C, module: string, id: string, userId: string, permission: "read" | "read_write", options?: CallOptions): Promise<ZohoResult<{ readonly shared: true }>>;
@@ -211,6 +216,8 @@ export interface ZohoApi<C extends Credential> {
   uploadAttachment(as: C, module: string, id: string, file: UploadFile, options?: CallOptions): Promise<ZohoResult<{ readonly attachmentId: string }>>;
   /** M12-S02: POST /files (ZFS) for a file-upload field; the returned id is then written to the field. */
   uploadFile(as: C, file: UploadFile, options?: CallOptions): Promise<ZohoResult<{ readonly fileId: string }>>;
+  /** M12-S06 (additive): DELETE /{module}/{id}/Attachments/{attachment_id} — the compensating step when a filing half-fails. */
+  deleteAttachment(as: C, module: string, id: string, attachmentId: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
   /** M12-S09: GET /{module}/{id}/Emails — metadata only (no body). `index` is Zoho's next_index. */
   listEmails(as: C, module: string, id: string, options?: CallOptions & { readonly index?: string }): Promise<ZohoResult<EmailPage>>;
   /** M12-S09: GET /{module}/{id}/Emails/{message_id} — one email with its content. `null` when Zoho returns nothing. */
@@ -221,6 +228,23 @@ export interface ZohoApi<C extends Credential> {
   /** M17-S02: PUT /users/{id} Reporting_To — another user's manager (null: nobody), on the changer's own user
    *  token only (D53). Never retried: a lost reply is re-read. PROVISIONAL body until the sandbox proves it. */
   updateUserManager(as: C, userId: string, managerId: string | null, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
+}
+/** M11-S05: one transition Zoho offers on a record now. `fields`: the api names the transition's During form asks for. */
+export interface BlueprintTransitionInfo {
+  readonly id: string;
+  readonly name: string;
+  readonly nextFieldValue: string | null;
+  /** false: Zoho says the transition's conditions are not met for this record now. */
+  readonly criteriaMatched: boolean;
+  readonly criteriaMessage: string | null;
+  readonly fields: readonly string[];
+}
+export interface BlueprintState {
+  readonly processName: string | null;
+  /** The blueprint field's api name (e.g. Allocation_Status) and its current value. */
+  readonly fieldApiName: string | null;
+  readonly fieldValue: string | null;
+  readonly transitions: readonly BlueprintTransitionInfo[];
 }
 export type UsersListType = "AllUsers" | "ActiveUsers" | "DeactiveUsers";
 export interface UsersPage { readonly users: readonly Readonly<Record<string, unknown>>[]; readonly moreRecords: boolean }
@@ -353,6 +377,8 @@ export interface ZohoClientOptions {
   /** A hard cap over every class's own policy. 1 disables retries. */
   readonly maxAttempts?: number;
   readonly blueprintOwnedFields?: Readonly<Record<string, readonly string[]>>;
+  /** M18-S01-T02: share one Zoho call among identical in-flight reads by the same person (default true). */
+  readonly coalesceReads?: boolean;
 }
 
 /* ===== CREDENTIALS ======================================================================== */
@@ -908,7 +934,7 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
     return ids.filter(visibleRecordId);
   };
 
-  const execute = async (as: Credential, spec: Spec): Promise<Outcome> => {
+  const executeOnce = async (as: Credential, spec: Spec): Promise<Outcome> => {
     assertConfiguredActor(as);
     const actor = actorOf(as);
     if (as.expiresAt !== null && clock() >= as.expiresAt) {
@@ -1010,6 +1036,25 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
         return { ok: false, error: { kind: "aborted", status: null }, creditsRemaining: lastCredits };
       }
     }
+  };
+
+  // M18-S01-T02: identical reads by the same person while one is in flight share it (./coalesce).
+  const coalesce = options.coalesceReads !== false;
+  const flights = createFlights<Outcome>();
+  const readShape = (spec: Spec) => !spec.raw && (spec.shape.op === "read" || spec.shape.op === "list" || spec.shape.op === "coql");
+  const flightKey = (as: Credential, spec: Spec): string => JSON.stringify([
+    as.kind === "user" ? `u:${as.userId}` : `s:${as.job}`, as.apiDomain, spec.op, spec.method, spec.path, spec.query ?? null, spec.body ?? null,
+    spec.headers ?? null, spec.responseShape ?? null, spec.maxRows ?? null, spec.perRecord, spec.recordIds, spec.logReturnedIds,
+  ]);
+  const execute = async (as: Credential, spec: Spec): Promise<Outcome> => {
+    assertConfiguredActor(as);
+    if (!coalesce || !readShape(spec)) return executeOnce(as, spec);
+    return flights.run(flightKey(as, spec), () => executeOnce(as, spec), {
+      signal: spec.signal,
+      wasAborted: (o) => !o.ok && o.error.kind === "aborted",
+      retryAlone: () => executeOnce(as, spec),
+      onJoinAborted: () => ({ ok: false, error: { kind: "aborted", status: null }, creditsRemaining: null }),
+    });
   };
 
   return { execute, refuse };
@@ -1235,6 +1280,36 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       return out.ok ? done({ transitioned: true } as const, out) : out;
     },
 
+    async blueprint(as, module, id, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      const out = await execute(as, {
+        op: "blueprint", method: "GET", path: `/${module}/${id}/actions/blueprint`, endpoint: `/${module}/{id}/actions/blueprint`,
+        shape: { op: "read" }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done(null as BlueprintState | null, out);
+      const bp = obj(obj(out.result.body)?.blueprint);
+      const rawT = bp?.transitions;
+      if (!bp || !Array.isArray(rawT)) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<BlueprintState | null>;
+      const text = (v: unknown, max = 200): string | null => (typeof v === "string" && v.length <= max ? v : null);
+      const pi = obj(bp.process_info);
+      const transitions: BlueprintTransitionInfo[] = [];
+      for (const t of rawT.slice(0, 50).map(obj)) {
+        if (!t || typeof t.id !== "string" || !RECORD.test(t.id) || typeof t.name !== "string" || t.name.length > 200) continue;
+        const fields = (Array.isArray(t.fields) ? t.fields : []).slice(0, 100).map(obj)
+          .map((f) => (f && typeof f.api_name === "string" && f.api_name.length <= 100 ? f.api_name : null)).filter((f): f is string => f !== null);
+        transitions.push(Object.freeze({
+          id: t.id, name: t.name, nextFieldValue: text(t.next_field_value), criteriaMatched: t.criteria_matched !== false,
+          criteriaMessage: text(t.criteria_message, 1_000), fields: Object.freeze(fields),
+        }));
+      }
+      return done(Object.freeze({
+        processName: text(pi?.name), fieldApiName: text(pi?.api_name ?? pi?.field_name, 100), fieldValue: text(pi?.field_value),
+        transitions: Object.freeze(transitions),
+      }) as BlueprintState | null, out);
+    },
+
     async share(as, module, id, userId, permission, opts = {}) {
       checkModule(module);
       checkScopedId(id);
@@ -1441,6 +1516,18 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly attachmentId: string }>;
       }
       return done({ attachmentId: first.id }, out);
+    },
+
+    async deleteAttachment(as, module, id, attachmentId, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      checkScopedId(attachmentId, "attachment id");
+      const out = await execute(as, {
+        op: "deleteAttachment", method: "DELETE", path: `/${module}/${id}/Attachments/${attachmentId}`, endpoint: `/${module}/{id}/Attachments/{id}`,
+        shape: { op: "write", records: 1 }, idempotent: false, perRecord: true, responseShape: "data", maxRows: 1,
+        recordIds: [id, attachmentId], logReturnedIds: false, signal: opts.signal,
+      });
+      return out.ok ? done({ deleted: true } as const, out) : out;
     },
 
     async uploadFile(as, file, opts = {}) {

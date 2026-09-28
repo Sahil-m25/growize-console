@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/sign.embed.json",
+  "title": "sign.embed",
+  "x-direction": "app → console",
+  "x-produced-by": "investor (the signed-in investor app user presses Sign)",
+  "x-consumed-by": "POST /api/sign/embed — answers in the same HTTP response, never through the outbox",
+  "x-rule": "M12-S08: the app maps its Supabase user to the Contact (actor.investor_contact_id = ids.investor_contact_id) and signs the body with the contract key. The console checks that Contact is the recipient of that Zoho Sign request, then calls embedtoken. 200 answers { sign_url, expires_at }: a one-time Zoho Sign URL valid for 2 minutes, never stored or logged by either side. A replayed event_id is refused (409): every Sign press mints a new event. 401 bad signature · 400 invalid · 403 not the recipient / host not allowed · 409 replayed or not out for signature · 503 Zoho down.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "sign.embed"
+    },
+    "actor": {
+      "type": "object",
+      "required": [
+        "kind",
+        "investor_contact_id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "investor"
+        },
+        "investor_contact_id": {
+          "type": "string",
+          "pattern": "^[0-9]{15,22}$"
+        }
+      }
+    },
+    "ids": {
+      "type": "object",
+      "required": [
+        "investor_contact_id"
+      ],
+      "properties": {
+        "investor_contact_id": {
+          "type": "string",
+          "pattern": "^[0-9]{15,22}$"
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "host",
+        "app_user_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "pattern": "^[0-9]{10,25}$",
+          "description": "The Zoho Sign request id the app shows on the paper row."
+        },
+        "host": {
+          "type": "string",
+          "pattern": "^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$",
+          "description": "The app origin that frames the signing page; must be on the console's allow-list."
+        },
+        "app_user_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-]{1,64}$",
+          "description": "The Supabase user id (opaque; for the app's own audit, never written to Zoho)."
+        }
+      }
+    }
+  }
+}

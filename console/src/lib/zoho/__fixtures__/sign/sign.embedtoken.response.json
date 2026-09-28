@@ -1,0 +1,12 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "message": "success",
+  "status": "success",
+  "sign_url": "https://sign.zoho.in/zsguest?locale=en&sign_id=SYNTHETIC-ONE-TIME-TOKEN"
+ }
+}
