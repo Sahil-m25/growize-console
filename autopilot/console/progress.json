@@ -1032,16 +1032,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "e4c3d05"
    ],
-   "at": "2026-09-27T22:56:09.155Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T11:38:39.672Z",
+   "note": "Search built and tested; waiting on the sandbox LIKE proof and the search box.",
    "notes": 3
   },
   "M09-S08": {
@@ -1318,16 +1320,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "e4c3d05"
    ],
-   "at": "2026-09-27T22:56:15.143Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
+   "at": "2026-09-28T11:38:39.823Z",
+   "note": "Shelf built and tested; waiting on LLP roll-ups (T01) and the Farms tiles.",
    "notes": 4
   },
   "M11-S04": {
@@ -3471,6 +3475,16 @@
   "M10-S03-T01": {
    "status": "done",
    "at": "2026-09-28T11:38:27.936Z",
+   "phase": "zoho"
+  },
+  "M09-S07-T01": {
+   "status": "done",
+   "at": "2026-09-28T11:38:39.672Z",
+   "phase": "zoho"
+  },
+  "M11-S03-T02": {
+   "status": "done",
+   "at": "2026-09-28T11:38:39.823Z",
    "phase": "zoho"
   }
  },
@@ -6158,6 +6172,22 @@
    "status": "waiting",
    "hours": 4,
    "note": "Claim answers built and tested; waiting on answer fields in Zoho and the claim drawer."
+  },
+  {
+   "at": "2026-09-28T11:38:39.672Z",
+   "story": "M09-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "Search built and tested; waiting on the sandbox LIKE proof and the search box."
+  },
+  {
+   "at": "2026-09-28T11:38:39.823Z",
+   "story": "M11-S03",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Shelf built and tested; waiting on LLP roll-ups (T01) and the Farms tiles."
   }
  ],
  "last_regression_round": 0,
