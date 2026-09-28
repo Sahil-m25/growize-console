@@ -1,0 +1,15 @@
+{
+  "_readme": "M18-S02-T02 route x role leak matrix. Copy to leak-matrix.config.json (or pass --config). STAGING_URL overrides baseUrl. One restricted sandbox test user holds each role in turn; sign it in once per role with jev-sessions.mjs and point storageState at the saved session (or give cookie directly). scope.ids = every Zoho record id this role may receive (export it from the staging seed); scope.userIds = user ids that may appear (owners, self); scopeKey = the value the server's cache scope must carry, checked only when cacheScopeHeader is set. revealAllowed: true only for a role allowed to see unmasked PAN/Aadhaar/UTR. Never point this at the front-end loop's port 3001.",
+  "baseUrl": "https://staging.example.invalid/",
+  "sessionsDir": "~/.growize-jev/sessions",
+  "timeoutMs": 20000,
+  "cacheScopeHeader": null,
+  "ignoreKeys": ["version", "at", "fetchedAt"],
+  "roles": {
+    "ir":          { "storageState": "restricted-ir.json",          "scope": { "ids": [], "userIds": [], "scopeKey": "" } },
+    "ir-manager":  { "storageState": "restricted-ir-manager.json",  "scope": { "ids": [], "userIds": [], "scopeKey": "" } },
+    "kam":         { "storageState": "restricted-kam.json",         "scope": { "ids": [], "userIds": [], "scopeKey": "" } },
+    "finance":     { "storageState": "restricted-finance.json",     "scope": { "ids": [], "userIds": [], "scopeKey": "" } },
+    "viewer":      { "storageState": "restricted-viewer.json",      "scope": { "ids": [], "userIds": [], "scopeKey": "" } }
+  }
+}

@@ -16,9 +16,9 @@
  * look like Zoho ids (15–22 digits), so a mobile number cannot pass for one. Actor ids refuse `@`, so
  * an email address is never the name a line is filed under.
  *
- * Where Plane B physically lives is D47's open question (S3 with Object Lock is the candidate). Until
- * it is answered it ships with an in-memory ring buffer; the sink is an interface, and a sink that
- * throws never takes a request down with it.
+ * Where Plane B physically lives: append-only daily JSONL files under LOG_DIR (M01-S04, PROVISIONAL,
+ * Jev 0.93), chosen by `server/logs/factory.ts`; memory stays the default in tests and fixture mode.
+ * The sink is an interface, and a sink that throws never takes a request down with it.
  */
 
 import type { ZohoFailureKind } from "./errors";
@@ -79,6 +79,45 @@ export const RECORD_ID = /^\d{15,22}$/;
 export const ACTOR_ID = /^[A-Za-z0-9_.-]{1,64}$/;
 export const MAX_IDS_PER_RECORD = 200;
 
+/**
+ * M18-S02-T03 — shapes that are an identity value or free text, never a code or an id. PAN, Aadhaar
+ * (12 digits, spaced or not), an Indian mobile (with or without +91), any 9–14 digit run (account
+ * numbers, IMPS/UPI UTRs), an alphanumeric NEFT/RTGS UTR or IFSC, an email, and whitespace (a body).
+ * Zoho record and user ids (15–22 digits) are not matched: the digit rules are bounded by non-digits.
+ */
+export const IDENTITY_SHAPES: readonly RegExp[] = Object.freeze([
+  /(?<![A-Za-z0-9])[A-Za-z]{5}[0-9]{4}[A-Za-z](?![A-Za-z0-9])/, // PAN
+  /(?<![0-9])[0-9]{4}[ -][0-9]{4}[ -][0-9]{4}(?![0-9])/, // Aadhaar, spaced
+  /(?<![0-9])[0-9]{9,14}(?![0-9])/, // Aadhaar, mobile, account number, numeric UTR
+  /\+[0-9]/, // +91…
+  /(?<![A-Za-z0-9])[A-Za-z]{4}[A-Za-z0-9][0-9]{6,}/, // NEFT/RTGS UTR, IFSC
+  /@/, // email
+  /\s/, // free text: a message, a note, a body
+]);
+
+/** True when a string could carry an identity value or a body. Codes, ids and templates never do. */
+export function looksLikeIdentity(value: string): boolean {
+  return IDENTITY_SHAPES.some((re) => re.test(value));
+}
+
+const TEMPLATE_SEGMENT = /^[A-Za-z_][A-Za-z_.-]{0,63}$|^\{[a-zA-Z]{1,20}\}$|^v[0-9]{1,2}$/;
+
+/**
+ * M18-S02-T03 — an endpoint reduced to a path template: no query, no fragment, and any segment that
+ * is not a plain word, a `{name}` placeholder or an API version becomes `{id}`. A caller who passes
+ * "/Leads/9876543210" or "/Payments/HDFCN52022092812345" files "/Leads/{id}".
+ */
+export function endpointTemplate(x: unknown): string {
+  if (typeof x !== "string" || !x.startsWith("/")) return "/unrecognised";
+  const path = x.split(/[?#]/)[0]!;
+  if (path !== x) return "/unrecognised";
+  const segments = path.split("/").filter(Boolean).slice(0, 12);
+  const t = "/" + segments.map((s) => (TEMPLATE_SEGMENT.test(s) && !looksLikeIdentity(s) ? s : "{id}")).join("/");
+  return ENDPOINT.test(t) ? t : "/unrecognised";
+}
+
+const safeCode = (x: unknown, re: RegExp): string | null => (typeof x === "string" && re.test(x) && !looksLikeIdentity(x) ? x : null);
+
 const METHODS: ReadonlySet<string> = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 const ENDPOINT = /^\/[A-Za-z0-9_{}/.-]{0,200}$/;
 const OP = /^[A-Za-z][A-Za-z0-9.-]{0,63}$/;
@@ -87,11 +126,16 @@ const ERROR_CLASS = /^[a-z][a-z-]{0,39}$/;
 
 const finite = (x: unknown): number => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const intOrNull = (x: unknown): number | null => (typeof x === "number" && Number.isInteger(x) && x >= 0 ? x : null);
+/** M18-S02-T03: no count or duration in a line reaches nine digits, so a mobile or Aadhaar cannot ride in one. */
+const MAX_COUNT = 100_000_000;
+const bounded = (x: unknown): number => { const v = finite(x); return v >= 0 && v < MAX_COUNT ? v : 0; };
+const countOrNull = (x: unknown): number | null => { const v = intOrNull(x); return v !== null && v < MAX_COUNT ? v : null; };
+const statusOrNull = (x: unknown): number | null => { const v = intOrNull(x); return v !== null && v >= 100 && v <= 599 ? v : null; };
 
 function actorOf(actor: unknown): LogActor {
   const a = typeof actor === "object" && actor !== null ? (actor as { kind?: unknown; userId?: unknown; job?: unknown }) : {};
-  if (a.kind === "user" && typeof a.userId === "string" && ACTOR_ID.test(a.userId)) return Object.freeze({ kind: "user", userId: a.userId });
-  if (a.kind === "service" && typeof a.job === "string" && ACTOR_ID.test(a.job)) return Object.freeze({ kind: "service", job: a.job });
+  if (a.kind === "user" && safeCode(a.userId, ACTOR_ID) !== null) return Object.freeze({ kind: "user", userId: a.userId as string });
+  if (a.kind === "service" && safeCode(a.job, ACTOR_ID) !== null) return Object.freeze({ kind: "service", job: a.job as string });
   return Object.freeze({ kind: "user", userId: "unrecognised" });
 }
 
@@ -107,15 +151,15 @@ function callRecord(e: ZohoCallEntry): OpsRecord {
     kind: "zoho-call",
     at: finite(e.at),
     actor: actorOf(e.actor),
-    op: typeof e.op === "string" && OP.test(e.op) ? e.op : "unrecognised",
+    op: safeCode(e.op, OP) ?? "unrecognised",
     method: typeof e.method === "string" && METHODS.has(e.method) ? e.method : "GET",
-    endpoint: typeof e.endpoint === "string" && ENDPOINT.test(e.endpoint) ? e.endpoint : "/unrecognised",
+    endpoint: endpointTemplate(e.endpoint),
     callClass: e.callClass === "complex" ? "complex" : "simple",
-    status: intOrNull(e.status),
-    durationMs: finite(e.durationMs),
-    gateWaitMs: finite(e.gateWaitMs),
-    attempt: intOrNull(e.attempt) ?? 0,
-    creditsRemaining: intOrNull(e.creditsRemaining),
+    status: statusOrNull(e.status),
+    durationMs: bounded(e.durationMs),
+    gateWaitMs: bounded(e.gateWaitMs),
+    attempt: countOrNull(e.attempt) ?? 0,
+    creditsRemaining: countOrNull(e.creditsRemaining),
     errorClass: typeof e.errorClass === "string" && ERROR_CLASS.test(e.errorClass) ? e.errorClass : null,
     recordIds: idsOf(e.recordIds),
   });
@@ -126,8 +170,8 @@ function refusalRecord(e: RefusalEntry): OpsRecord {
     kind: "refusal",
     at: finite(e.at),
     actor: actorOf(e.actor),
-    action: typeof e.action === "string" && CODE.test(e.action) ? e.action : typeof e.action === "string" && OP.test(e.action) ? e.action : "unrecognised",
-    reason: typeof e.reason === "string" && CODE.test(e.reason) ? e.reason : "unrecognised",
+    action: safeCode(e.action, CODE) ?? safeCode(e.action, OP) ?? "unrecognised",
+    reason: safeCode(e.reason, CODE) ?? "unrecognised",
     recordIds: idsOf(e.recordIds),
   });
 }

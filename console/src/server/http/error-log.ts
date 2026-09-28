@@ -14,7 +14,7 @@
  * throws never fails the request it describes.
  */
 
-import { ACTOR_ID } from "../../lib/zoho/log";
+import { ACTOR_ID, looksLikeIdentity } from "../../lib/zoho/log";
 import { BEACON_SOURCES, type BeaconSource } from "../../lib/zoho/error-beacon";
 
 export interface RouteErrorEntry {
@@ -72,13 +72,13 @@ const finite = (x: unknown): number => (typeof x === "number" && Number.isFinite
 const statusOrNull = (x: unknown): number | null => (typeof x === "number" && Number.isInteger(x) && x >= 100 && x <= 599 ? x : null);
 
 export const safeRequestId = (x: unknown): string | null =>
-  typeof x === "string" && REQUEST_ID.test(x) && !DIGITS_ONLY.test(x) && !x.includes("@") ? x : null;
+  typeof x === "string" && REQUEST_ID.test(x) && !DIGITS_ONLY.test(x) && !x.includes("@") && !looksLikeIdentity(x) ? x : null;
 
 export const safeUserId = (x: unknown): string | null =>
-  typeof x === "string" && ACTOR_ID.test(x) && !DIGITS_ONLY.test(x) ? x : null;
+  typeof x === "string" && ACTOR_ID.test(x) && !DIGITS_ONLY.test(x) && !looksLikeIdentity(x) ? x : null;
 
-export const safeZohoCode = (x: unknown): string | null => (typeof x === "string" && ZOHO_CODE.test(x) ? x : null);
-export const safeErrorName = (x: unknown): string | null => (typeof x === "string" && ERROR_NAME.test(x) ? x : null);
+export const safeZohoCode = (x: unknown): string | null => (typeof x === "string" && ZOHO_CODE.test(x) && !looksLikeIdentity(x) ? x : null);
+export const safeErrorName = (x: unknown): string | null => (typeof x === "string" && ERROR_NAME.test(x) && !looksLikeIdentity(x) ? x : null);
 
 /** A path reduced to a template: no query, no fragment, any segment with a digit or oddity → `{id}`. */
 export function routeTemplate(x: unknown): string {

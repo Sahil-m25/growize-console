@@ -15,8 +15,9 @@
 
 import { fixtureModeOn } from "../../lib/fixture-mode";
 import { createGate } from "../../lib/zoho/gate";
-import { createMemorySink, createOpsLog } from "../../lib/zoho/log";
-import { createPlaneCLog, createPlaneCMemorySink } from "../identity/plane-c";
+import { createOpsLog } from "../../lib/zoho/log";
+import { createPlaneCLog } from "../identity/plane-c";
+import { sharedOpsSink, sharedPlaneCSink } from "../logs/factory";
 import { createSealer } from "./crypto";
 import { createZohoSeatDirectory, type ZohoSeatDirectoryConfig } from "./seat";
 import { createMemorySessionStore, createUserSessions, NO_GRANTS, type UserSessions } from "./user-session";
@@ -50,7 +51,7 @@ const G = globalThis as typeof globalThis & { __gzUserSessions?: Held };
 export function userSessions(env: NodeJS.ProcessEnv = process.env): UserSessions {
   if (G.__gzUserSessions) return G.__gzUserSessions.sessions;
   if (!zohoSignInConfigured(env)) throw new Error("Zoho sign-in is not configured.");
-  const log = createOpsLog(alertingOpsSink(createMemorySink()));
+  const log = createOpsLog(alertingOpsSink(sharedOpsSink()));
   const seatIds = JSON.parse(env.ZOHO_SEAT_IDS!) as Pick<ZohoSeatDirectoryConfig, "roleIds" | "profileIds">;
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
   const sessions = createUserSessions({
@@ -66,7 +67,7 @@ export function userSessions(env: NodeJS.ProcessEnv = process.env): UserSessions
     store: createMemorySessionStore(),
     seats: createZohoSeatDirectory({ recordIdPrefix, roleIds: seatIds.roleIds, profileIds: seatIds.profileIds }),
     grants: NO_GRANTS,
-    planeC: createPlaneCLog(createPlaneCMemorySink()),
+    planeC: createPlaneCLog(sharedPlaneCSink()),
     gate: createGate(),
     log,
     recordIdPrefix,

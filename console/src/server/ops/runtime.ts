@@ -8,10 +8,11 @@
 
 import { createAlertEngine, createOutboxMailer, eventsFromErrors, tapOpsSink, type AlertEngine, type AlertMailer } from "./alerts";
 import type { OpsSink } from "../../lib/zoho/log";
-import { createErrorLog, createMemoryErrorSink } from "../http/error-log";
+import { createErrorLog } from "../http/error-log";
+import { sharedErrorSink } from "../logs/factory";
 import { createErrorCapture } from "../http/error-capture";
 
-export const errorLines = createMemoryErrorSink();
+export const errorLines = sharedErrorSink();
 export const alertOutbox = createOutboxMailer();
 
 let mailer: AlertMailer = alertOutbox;
