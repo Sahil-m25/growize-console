@@ -1134,7 +1134,7 @@
    ],
    "at": "2026-09-28T13:46:20.280Z",
    "note": "Queue built and tested; waiting on the Sign status reader for paper rows and the Today screen.",
-   "notes": 3
+   "notes": 4
   },
   "M08-S03": {
    "status": "pending",
@@ -1206,7 +1206,7 @@
    ],
    "at": "2026-09-28T12:31:32.607Z",
    "note": "Open-on-match verified and extended; waiting on App_Account_Mark/permanent fields (T01) and the app panel.",
-   "notes": 5
+   "notes": 6
   },
   "M10-S01": {
    "status": "pending",
@@ -1224,7 +1224,7 @@
    ],
    "at": "2026-09-28T06:14:40.205Z",
    "note": "Register read (T03) done; migration (T02) waiting on Sahil confirming legacy columns and completing Receipts (T01), plus the sandbox dry run.",
-   "notes": 5
+   "notes": 6
   },
   "M10-S02": {
    "status": "pending",
@@ -1476,7 +1476,7 @@
    ],
    "at": "2026-09-28T13:46:02.086Z",
    "note": "Webhook status, remind and recall built; waiting on a real webhook run and the status chips.",
-   "notes": 4
+   "notes": 6
   },
   "M12-S06": {
    "status": "pending",
@@ -1518,46 +1518,55 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "3db50dc"
    ],
-   "at": "2026-09-27T22:56:18.370Z",
-   "note": "Jev run 28 Sep: app 7/10 vs prototype 7/10"
+   "at": "2026-09-28T14:39:55.435Z",
+   "note": "Paperwork endpoint and hints built; waiting on the Lead round fields and sharing rule, the row UI and sandbox.",
+   "notes": 5
   },
   "M12-S12": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "3db50dc"
    ],
-   "at": "2026-09-27T22:56:18.686Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+   "at": "2026-09-28T14:39:55.559Z",
+   "note": "Draft loop built; waiting on the Supp_ fields and the send hand-over.",
+   "notes": 2
   },
   "M12-S13": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "3db50dc"
    ],
-   "at": "2026-09-27T22:56:19.023Z",
-   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+   "at": "2026-09-28T14:39:55.702Z",
+   "note": "NDA gate and deck stamp built; waiting on attachment support, the deck file and Pitch_Deck_Sent_At.",
+   "notes": 3
   },
   "M14-S01": {
    "status": "pending",
@@ -1629,7 +1638,7 @@
    ],
    "at": "2026-09-28T10:52:01.946Z",
    "note": "Money by allotment built and tested; waiting on the front-end blocks and Jev cases.",
-   "notes": 2
+   "notes": 3
   },
   "M10-S09": {
    "status": "pending",
@@ -1905,7 +1914,7 @@
    ],
    "at": "2026-09-28T09:15:57.245Z",
    "note": "Add-paid built and tested; waiting on the front-end drawer wiring and sandbox rollback proof.",
-   "notes": 3
+   "notes": 4
   },
   "M10-S20": {
    "status": "pending",
@@ -2272,6 +2281,11 @@
    "commits": [
     "9fa00b5"
    ]
+  },
+  "M18-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 1
   }
  },
  "subtasks": {
@@ -3785,6 +3799,26 @@
   "M11-S05-T04": {
    "status": "done",
    "at": "2026-09-28T13:47:17.645Z",
+   "phase": "zoho"
+  },
+  "M12-S11-T02": {
+   "status": "done",
+   "at": "2026-09-28T14:39:55.435Z",
+   "phase": "zoho"
+  },
+  "M12-S11-T03": {
+   "status": "done",
+   "at": "2026-09-28T14:39:55.435Z",
+   "phase": "zoho"
+  },
+  "M12-S12-T01": {
+   "status": "done",
+   "at": "2026-09-28T14:39:55.559Z",
+   "phase": "zoho"
+  },
+  "M12-S13-T01": {
+   "status": "done",
+   "at": "2026-09-28T14:39:55.702Z",
    "phase": "zoho"
   }
  },
@@ -6696,6 +6730,30 @@
    "status": "waiting",
    "hours": 6.5,
    "note": "Allot built and tested; waiting on the allotment blueprint in Zoho and the Verify control."
+  },
+  {
+   "at": "2026-09-28T14:39:55.435Z",
+   "story": "M12-S11",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 6.5,
+   "note": "Paperwork endpoint and hints built; waiting on the Lead round fields and sharing rule, the row UI and sandbox."
+  },
+  {
+   "at": "2026-09-28T14:39:55.559Z",
+   "story": "M12-S12",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2.5,
+   "note": "Draft loop built; waiting on the Supp_ fields and the send hand-over."
+  },
+  {
+   "at": "2026-09-28T14:39:55.702Z",
+   "story": "M12-S13",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 2,
+   "note": "NDA gate and deck stamp built; waiting on attachment support, the deck file and Pitch_Deck_Sent_At."
   }
  ],
  "last_regression_round": 0,
