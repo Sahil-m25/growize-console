@@ -4,7 +4,8 @@ The typed language between the two sides. Every event that crosses a seam is dec
 is emitted, and validated at both ends. Build Book §11 is the prose; these files are the check.
 
 `_envelope.json` is what every event carries: `event_id` (client-minted, the dedupe key, reused across
-retries), `type`, `schema_version` (an unknown one dead-letters rather than guessing), `occurred_at`,
+retries), `type`, `schema_version` (an unknown one dead-letters rather than guessing), `occurred_at`, `sent_at` (optional,
+stamped by the sender on each delivery attempt — M13-S01, PROVISIONAL),
 `actor`, the identifier pair, and the typed payload. Deliveries are HTTPS POSTs signed with HMAC-SHA256
 over the body, with two active keys during rotation. A receiver that cannot verify the signature logs and drops.
 

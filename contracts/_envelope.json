@@ -34,6 +34,11 @@
       "format": "date-time",
       "description": "ISO 8601 with the +05:30 offset. Computed from the fact, not from delivery."
     },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 with the +05:30 offset. Stamped by the sender on each delivery attempt (M13-S01, PROVISIONAL); occurred_at stays the fact's time."
+    },
     "actor": {
       "type": "object",
       "required": [

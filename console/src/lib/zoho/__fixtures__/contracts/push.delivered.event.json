@@ -1,0 +1,19 @@
+{
+ "event_id": "00000000-0000-4000-8000-00000000a002",
+ "type": "push.delivered",
+ "schema_version": 1,
+ "occurred_at": "2026-09-27T21:05:00+05:30",
+ "actor": {
+  "kind": "external",
+  "source": "fcm"
+ },
+ "ids": {
+  "investor_contact_id": "9007199254740994101"
+ },
+ "payload": {
+  "message_id": "REPLACED-IN-TEST",
+  "at": "2026-09-27T21:05:00+05:30",
+  "status": "delivered"
+ },
+ "origin": "app"
+}

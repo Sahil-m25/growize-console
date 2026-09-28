@@ -1,0 +1,12 @@
+{
+ "audit_log_export": [
+  {
+   "status": "success",
+   "code": "SCHEDULED",
+   "message": "Audit log export scheduled",
+   "details": {
+    "id": "9007199254740998001"
+   }
+  }
+ ]
+}

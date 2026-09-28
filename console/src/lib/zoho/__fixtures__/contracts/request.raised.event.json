@@ -1,0 +1,18 @@
+{
+ "event_id": "00000000-0000-4000-8000-00000000a001",
+ "type": "request.raised",
+ "schema_version": 1,
+ "occurred_at": "2026-09-27T21:00:00+05:30",
+ "sent_at": "2026-09-27T21:00:02+05:30",
+ "actor": {
+  "kind": "investor"
+ },
+ "ids": {
+  "investor_contact_id": "9007199254740994101"
+ },
+ "payload": {
+  "kind": "statement",
+  "app_request_id": "APP-REQ-SYN-1"
+ },
+ "origin": "app"
+}

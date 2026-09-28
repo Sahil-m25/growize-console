@@ -1,0 +1,32 @@
+{
+ "users": [
+  {
+   "id": "9007199254740995001",
+   "email": "rohit@example.invalid",
+   "full_name": "Synthetic Rohit"
+  },
+  {
+   "id": "9007199254740995002",
+   "email": "tasneem@example.invalid",
+   "full_name": "Synthetic Tasneem"
+  },
+  {
+   "id": "9007199254740995003",
+   "email": "kavya@example.invalid",
+   "full_name": "Synthetic Kavya"
+  },
+  {
+   "id": "9007199254740995010",
+   "email": "harsha@example.invalid",
+   "full_name": "Synthetic Harsha"
+  },
+  {
+   "id": "9007199254740995011",
+   "email": "meena@example.invalid",
+   "full_name": "Synthetic Meena"
+  }
+ ],
+ "info": {
+  "more_records": false
+ }
+}
