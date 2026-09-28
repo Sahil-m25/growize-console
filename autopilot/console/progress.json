@@ -761,7 +761,7 @@
    },
    "commits": [
     "3c6435a",
-    "aac9202"
+    "1f09598"
    ],
    "at": "2026-09-28T07:44:35.409Z",
    "note": "/api/data returns a fresh block with error past the 5-minute ceiling; waiting on the front-end store reading it and staging proof (TC-IM01-013).",
