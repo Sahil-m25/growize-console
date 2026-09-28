@@ -1,0 +1,18 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "MANDATORY_NOT_FOUND",
+    "details": {
+     "api_name": "Reserved_Units"
+    },
+    "message": "required field not found",
+    "status": "error"
+   }
+  ]
+ }
+}

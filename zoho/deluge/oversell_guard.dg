@@ -1,0 +1,149 @@
+/*
+ * oversell_guard — M11-S07 "No unit is sold twice" (D21, D54).
+ * Kind:    Validation Rule function (Setup > Customization > Modules > LLP Unit Allocation > Validation Rules)
+ * Module:  LLP_UnitAllocation_Module
+ * Attach:  three rules calling this one function — on Reserved_Units, on Issued_Units and on LLP — so a create
+ *          or an edit through ANY door (the console, the Zoho UI, import, API, another integration) is checked.
+ * Needs:   a Zoho CRM connection named "growize_crm" (scopes ZohoCRM.coql.READ, ZohoCRM.modules.READ); the
+ *          count is a COQL aggregate (real time — search indexes lag and would let two quick holds both pass).
+ * Rule:    units this allotment would hold  <=  LLP.Units_Released - SUM(units of the OTHER live allotments)
+ *          Reserved counts Reserved_Units, Issued counts Issued_Units, Cancelled counts nothing — the same
+ *          arithmetic as console/src/server/farms/occupancy.ts heldOn and oversell.ts. The LLP's own
+ *          Units_Reserved / Units_Issued / the allotment's Units_Available are typed integers and are NOT read.
+ * Fails closed: if the count cannot be read, the save is refused (a refused save can be retried; an oversold
+ *          block cannot be un-sold).
+ * The console names this refusal from the field Zoho blames (lib/zoho/client.ts guardRefusalOf → "oversell").
+ */
+rec = crmAPIRequest.toMap().get("record");
+response = Map();
+response.put("status","success");
+recId = "";
+if(rec.containKey("id") && rec.get("id") != null)
+{
+	recId = rec.get("id").toString();
+}
+old = Map();
+if(recId != "")
+{
+	old = zoho.crm.getRecordById("LLP_UnitAllocation_Module",recId.toLong());
+}
+// a value being saved wins; otherwise the record as it stands
+status = "";
+if(rec.containKey("Allocation_Status"))
+{
+	status = ifnull(rec.get("Allocation_Status"),"");
+}
+else
+{
+	status = ifnull(old.get("Allocation_Status"),"");
+}
+unitField = "";
+if(status == "Issued")
+{
+	unitField = "Issued_Units";
+}
+else if(status == "Reserved")
+{
+	unitField = "Reserved_Units";
+}
+if(unitField == "")
+{
+	// Cancelled, or no status: holds nothing
+	return response;
+}
+units = 0;
+if(rec.containKey(unitField))
+{
+	units = ifnull(rec.get(unitField),0).toLong();
+}
+else
+{
+	units = ifnull(old.get(unitField),0).toLong();
+}
+if(units <= 0)
+{
+	return response;
+}
+llpVal = null;
+if(rec.containKey("LLP"))
+{
+	llpVal = rec.get("LLP");
+}
+else
+{
+	llpVal = old.get("LLP");
+}
+if(llpVal == null)
+{
+	return response;
+}
+llpId = llpVal.toString();
+if(llpId.startsWith("{"))
+{
+	llpId = llpVal.toMap().get("id").toString();
+}
+llp = zoho.crm.getRecordById("LLP_Creation_Module",llpId.toLong());
+label = ifnull(llp.get("Name"),"This LLP");
+if(ifnull(llp.get("Block_Code"),"") != "")
+{
+	label = "Block " + llp.get("Block_Code");
+}
+released = ifnull(llp.get("Units_Released"),0).toLong();
+// every OTHER live allotment on the LLP
+coqlQuery = "select Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from LLP_UnitAllocation_Module where LLP = '" + llpId + "' and Allocation_Status in ('Reserved', 'Issued')";
+if(recId != "")
+{
+	coqlQuery = coqlQuery + " and id != '" + recId + "'";
+}
+coqlQuery = coqlQuery + " group by Allocation_Status";
+body = Map();
+body.put("select_query",coqlQuery);
+resp = invokeurl
+[
+	url :"https://www.zohoapis.in/crm/v8/coql"
+	type :POST
+	parameters:body.toString()
+	connection:"growize_crm"
+];
+if(resp.containKey("code") || ifnull(resp.get("status"),"") == "error")
+{
+	response.put("status","error");
+	response.put("message","The oversell check could not count the units on " + label + ". Nothing was saved; try again.");
+	return response;
+}
+held = 0;
+rows = ifnull(resp.get("data"),List());
+for each row in rows
+{
+	st = ifnull(row.get("Allocation_Status"),"");
+	if(st == "Issued")
+	{
+		held = held + ifnull(row.get("SUM(Issued_Units)"),0).toLong();
+	}
+	else if(st == "Reserved")
+	{
+		held = held + ifnull(row.get("SUM(Reserved_Units)"),0).toLong();
+	}
+}
+free = released - held;
+if(free < 0)
+{
+	free = 0;
+}
+if(units > free)
+{
+	response.put("status","error");
+	if(released == 0)
+	{
+		response.put("message",label + " is not released for sale, so it has no free units for " + units + " units.");
+	}
+	else if(free == 0)
+	{
+		response.put("message",label + " has no free units for " + units + " units.");
+	}
+	else
+	{
+		response.put("message",label + " has only " + free + " free units for " + units + " units.");
+	}
+}
+return response;

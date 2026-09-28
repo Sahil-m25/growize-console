@@ -1,0 +1,28 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "SUCCESS",
+    "details": {
+     "Modified_Time": "2026-09-28T11:31:00+05:30",
+     "Modified_By": {
+      "id": "9007199254740993000",
+      "name": "x"
+     },
+     "Created_Time": "2026-09-01T10:00:00+05:30",
+     "id": "9007199254740998301",
+     "Created_By": {
+      "id": "9007199254740993000",
+      "name": "x"
+     }
+    },
+    "message": "record updated",
+    "status": "success"
+   }
+  ]
+ }
+}

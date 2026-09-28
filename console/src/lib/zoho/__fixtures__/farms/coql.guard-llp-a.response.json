@@ -1,0 +1,22 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998301",
+    "Name": "Fixture Block A",
+    "Block_Code": "A",
+    "Total_Units": 62,
+    "Units_Released": 62,
+    "Modified_Time": "2026-09-27T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

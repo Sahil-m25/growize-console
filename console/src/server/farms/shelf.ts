@@ -29,7 +29,7 @@ export const LLP_MODULE = "LLP_Creation_Module";
 export const SHELF_FIELDS = checkProjection(LLP_MODULE, [
   "id", "Name", "Block_Code", "Acreage_Acres", "Total_Units", "Units_Reserved", "Units_Issued", "Units_Released",
   "Pet_Unit_Price", "LLP_Status", "Annual_Rental_Yield", "Crop_Stage",
-  "Insurance_Provider", "Insurance_Policy_No", "Insured_Amount", "Insurance_expiry_date",
+  "Insurance_Provider", "Insurance_Policy_No", "Insured_Amount", "Insurance_expiry_date", "Modified_Time",
 ]);
 /** The detail adds the LLP's company PAN/GST (masked on read) and its two SPOCs. */
 export const DETAIL_FIELDS = Object.freeze([...SHELF_FIELDS, "PAN", "GST", "SPOC_1_Full_Name", "SPOC_1_Contact_No", "SPOC_2_Full_Name", "SPOC_2_Contact_No", "Incorporation_No"]);
@@ -62,6 +62,8 @@ export interface FarmRow {
   readonly yieldPct: number | null;
   readonly cropStage: string | null;
   readonly insurance: { readonly provider: string | null; readonly policyNo: string | null; readonly amount: number | null; readonly till: string | null };
+  /** The LLP's Modified_Time as read: what a release / take-back sends back as its version (M11-S04, If-Unmodified-Since). */
+  readonly version: string | null;
 }
 
 export interface FarmDetail extends FarmRow {
@@ -105,6 +107,7 @@ export function farmOf(r: ZohoRecord): FarmRow | null {
       provider: str(r, "Insurance_Provider", 120), policyNo: str(r, "Insurance_Policy_No", 60),
       amount: num(r, "Insured_Amount"), till: day(str(r, "Insurance_expiry_date", 40)),
     }),
+    version: str(r, "Modified_Time", 40),
   });
 }
 

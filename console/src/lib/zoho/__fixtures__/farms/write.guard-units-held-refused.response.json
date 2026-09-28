@@ -1,0 +1,18 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "INVALID_DATA",
+    "details": {
+     "api_name": "Units_Released"
+    },
+    "message": "Fixture Block A has 29 units held by investors and cannot be taken back.",
+    "status": "error"
+   }
+  ]
+ }
+}

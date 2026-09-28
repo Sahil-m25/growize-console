@@ -26,14 +26,15 @@
  * WHERE carries the scope through the Customer lookup (an IR's Originating_IR + Origin_Lead, a KAM's KAM) and every
  * row is re-admitted with ../data/ir-guard admitContact; one that is not refuses the whole read (scope drift,
  * Plane B), never trimmed. A seat without an Investors book sees the shelf's numbers and no names.
- * This read is read-only: releasing land or taking it back is not offered here.
+ * This read is read-only: releasing land or taking it back is ./release.ts; the one-LLP fresh count those guards
+ * (and ./oversell.ts) read is `heldOn` below.
  */
 
 import type { UserCredential, ZohoRecord } from "../../lib/zoho/client";
 import { admitContact } from "../data/ir-guard";
 import { checkAmProjection, checkProjection, MODULES } from "../data/projections";
 import { scopedKey, scopesFor, type BookScope } from "../data/scope";
-import { idOf, num, pagedSelect, str } from "../cases/predicate";
+import { idOf, num, pagedSelect, RECORD_ID, str } from "../cases/predicate";
 import { sectionsFor } from "../investors/record";
 import { createFarmShelf, type FarmRow, type FarmsDeps, type FarmsPrincipal, type ShelfFailure, type ShelfRefusal } from "./shelf";
 
@@ -212,4 +213,36 @@ function occupantOf(x: ZohoRecord, money: boolean): Occupant | null {
     name: str(x, "Customer.Full_Name", 120), code: str(x, "Customer.ARL_ID", 40),
     paid: money ? st === "Reserved" && receivable === 0 && (received ?? 0) > 0 : null,
   });
+}
+
+/* ---- M11-S04 / M11-S07: the units held on ONE LLP, read fresh for a guard ---------------------------------------
+ * The same rule as the shelf (Reserved counts Reserved_Units, Issued counts Issued_Units, Cancelled nothing), but
+ * never through the cache: a guard that refuses or allows a write must read the count as Zoho has it now. One COQL
+ * aggregate on the person's own token (D53); `exceptAllotmentId` leaves out the allotment being edited, so an
+ * update is measured against everything else on the LLP. Counts only — no row, no name. */
+export const heldQuery = (llpId: string, exceptAllotmentId: string | null = null): string =>
+  `select Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from ${ALLOT} where LLP = '${llpId}' and ${LIVE}` +
+  (exceptAllotmentId ? ` and id != '${exceptAllotmentId}'` : "") + " group by Allocation_Status";
+
+export type HeldCount =
+  | { readonly ok: true; readonly allotted: number; readonly reserved: number; readonly held: number }
+  | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
+
+export async function heldOn(
+  crm: Pick<FarmsDeps["crm"], "aggregate">, cred: UserCredential, llpId: string,
+  opts: { readonly exceptAllotmentId?: string | null; readonly signal?: AbortSignal } = {},
+): Promise<HeldCount> {
+  const except = opts.exceptAllotmentId ?? null;
+  if (!RECORD_ID.test(llpId) || (except !== null && !RECORD_ID.test(except))) throw new TypeError("heldOn() takes record ids.");
+  let r: Awaited<ReturnType<FarmsDeps["crm"]["aggregate"]>>;
+  try { r = await crm.aggregate(cred, heldQuery(llpId, except), { signal: opts.signal }); }
+  catch { return { ok: false, kind: "source-error", errorKind: "unexpected", retryable: true }; }
+  if (!r.ok) return { ok: false, kind: "source-error", errorKind: r.error.kind, retryable: retryable(r.error.kind) };
+  let allotted = 0, reserved = 0;
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(0, v) : 0);
+  for (const row of r.value) {
+    if (row.Allocation_Status === "Issued") allotted += n(row["SUM(Issued_Units)"]);
+    else if (row.Allocation_Status === "Reserved") reserved += n(row["SUM(Reserved_Units)"]);
+  }
+  return { ok: true, allotted, reserved, held: allotted + reserved };
 }

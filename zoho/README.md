@@ -5,6 +5,7 @@ Every customisation is exported and committed here. Never a console-only change.
 ```
 leads/      the Leads org: modules, fields, layouts, blueprints, validation rules, workflows, profiles, roles
 investor/   the Investor org: the same, plus approval processes and custom functions (Enterprise-only)
+deluge/     Deluge validation-rule functions (source + how to attach them): the oversell and take-back guards
 ```
 
 Export before every commit that touches Zoho, and put the export in the same commit as the code that

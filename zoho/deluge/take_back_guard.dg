@@ -1,0 +1,67 @@
+/*
+ * take_back_guard — M11-S04 "Release a farm LLP's units or take them back" (D15, D48).
+ * Kind:    Validation Rule function (Setup > Customization > Modules > LLP Creation > Validation Rules)
+ * Module:  LLP_Creation_Module
+ * Attach:  one rule on Units_Released calling this function.
+ * Needs:   the same "growize_crm" connection as oversell_guard (ZohoCRM.coql.READ, ZohoCRM.modules.READ).
+ * Rule:    Units_Released may not go below the units investors hold on the LLP (Reserved allotments' Reserved_Units
+ *          + Issued allotments' Issued_Units). Taking land back (Units_Released = 0) is therefore refused while any
+ *          unit is held; raising it (a release) always passes. Fails closed when the count cannot be read.
+ * The console names this refusal from the field Zoho blames (lib/zoho/client.ts guardRefusalOf → "units-held").
+ */
+rec = crmAPIRequest.toMap().get("record");
+response = Map();
+response.put("status","success");
+if(!rec.containKey("Units_Released") || rec.get("id") == null)
+{
+	// a new LLP, or a save that does not touch the released figure
+	return response;
+}
+llpId = rec.get("id").toString();
+newReleased = ifnull(rec.get("Units_Released"),0).toLong();
+old = zoho.crm.getRecordById("LLP_Creation_Module",llpId.toLong());
+oldReleased = ifnull(old.get("Units_Released"),0).toLong();
+if(newReleased >= oldReleased)
+{
+	return response;
+}
+label = ifnull(old.get("Name"),"This LLP");
+if(ifnull(old.get("Block_Code"),"") != "")
+{
+	label = "Block " + old.get("Block_Code");
+}
+body = Map();
+body.put("select_query","select Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from LLP_UnitAllocation_Module where LLP = '" + llpId + "' and Allocation_Status in ('Reserved', 'Issued') group by Allocation_Status");
+resp = invokeurl
+[
+	url :"https://www.zohoapis.in/crm/v8/coql"
+	type :POST
+	parameters:body.toString()
+	connection:"growize_crm"
+];
+if(resp.containKey("code") || ifnull(resp.get("status"),"") == "error")
+{
+	response.put("status","error");
+	response.put("message","The take-back check could not count the units held on " + label + ". Nothing was saved; try again.");
+	return response;
+}
+held = 0;
+rows = ifnull(resp.get("data"),List());
+for each row in rows
+{
+	st = ifnull(row.get("Allocation_Status"),"");
+	if(st == "Issued")
+	{
+		held = held + ifnull(row.get("SUM(Issued_Units)"),0).toLong();
+	}
+	else if(st == "Reserved")
+	{
+		held = held + ifnull(row.get("SUM(Reserved_Units)"),0).toLong();
+	}
+}
+if(newReleased < held)
+{
+	response.put("status","error");
+	response.put("message",label + " has " + held + " units held by investors and cannot be taken back.");
+}
+return response;
