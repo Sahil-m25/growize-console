@@ -1149,16 +1149,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "58ae166"
    ],
-   "at": "2026-09-27T22:56:12.906Z",
-   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4",
+   "at": "2026-09-28T06:14:40.205Z",
+   "note": "Register read (T03) done; migration (T02) waiting on Sahil confirming legacy columns and completing Receipts (T01), plus the sandbox dry run.",
    "notes": 5
   },
   "M10-S02": {
@@ -2826,6 +2828,16 @@
   "M01-S02-T03": {
    "status": "done",
    "at": "2026-09-28T06:14:32.628Z",
+   "phase": "zoho"
+  },
+  "M10-S01-T02": {
+   "status": "done",
+   "at": "2026-09-28T06:14:40.205Z",
+   "phase": "zoho"
+  },
+  "M10-S01-T03": {
+   "status": "done",
+   "at": "2026-09-28T06:14:40.205Z",
    "phase": "zoho"
   }
  },
@@ -5121,6 +5133,14 @@
    "status": "waiting",
    "hours": 9,
    "note": "Server flow built and tested on fixtures; waiting on sandbox OAuth clients (M02-S10) for live proof and the front-end redirect/refusal wiring."
+  },
+  {
+   "at": "2026-09-28T06:14:40.205Z",
+   "story": "M10-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Register read (T03) done; migration (T02) waiting on Sahil confirming legacy columns and completing Receipts (T01), plus the sandbox dry run."
   }
  ],
  "last_regression_round": 0,
