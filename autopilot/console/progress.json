@@ -936,16 +936,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "a8085ba"
    ],
-   "at": "2026-09-27T22:56:07.596Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
+   "at": "2026-09-28T07:44:43.151Z",
+   "note": "Sender built and tested; waiting on secrets/scopes, the NDA stamp reader, the composer screen and staging proof TC-E07-024.",
    "notes": 5
   },
   "M09-S01": {
@@ -3027,6 +3029,11 @@
   "M01-S09-T02": {
    "status": "done",
    "at": "2026-09-28T07:44:35.409Z",
+   "phase": "zoho"
+  },
+  "M07-S05-T02": {
+   "status": "done",
+   "at": "2026-09-28T07:44:43.151Z",
    "phase": "zoho"
   }
  },
@@ -5418,6 +5425,14 @@
    "status": "waiting",
    "hours": 2,
    "note": "/api/data returns a fresh block with error past the 5-minute ceiling; waiting on the front-end store reading it and staging proof (TC-IM01-013)."
+  },
+  {
+   "at": "2026-09-28T07:44:43.151Z",
+   "story": "M07-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Sender built and tested; waiting on secrets/scopes, the NDA stamp reader, the composer screen and staging proof TC-E07-024."
   }
  ],
  "last_regression_round": 0,
