@@ -1,7 +1,7 @@
 "use client";
 
 /* ── EVENTS — compact upcoming agenda, planning reference below it ──────────────────────────────
-   Ports `ir-console-redesigned.html` 8628–8691 (`vEvents`).
+   Ports the merged prototype's `vEvents` (ir-merged.js "===== 6. EVENTS").
 
    The redesign turned this from one "what each one produced" table into two views: a short,
    date-ordered agenda for what is still to happen (what an IR opens every morning) and the old
@@ -21,6 +21,8 @@ import { useConsole } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { Icon } from "@/components/ui";
 import { evDateRange, evDraft, evISODate, uiEventsView } from "./eventDraft";
+import { EventPage } from "./EventPage";
+import { UxDetails } from "./UxDetails";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -49,12 +51,12 @@ export function EventsPage() {
   const router = useRouter();
   const view = uiEventsView(state.ui);
   const setView = (v: "upcoming" | "completed") => dispatch({ type: "setUi", patch: { EVENTVIEW: v } });
-  const openAdd = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: null, seed: { EVD: evDraft(null) } });
+  const openAdd = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: null, seed: { EVD: evDraft(null, state.NOW.getFullYear()) } });
 
   const need = perEventNeed(state.PLAN);
   const ran = state.EVENTS.filter((e) => e.state === "done");
   const planned = [...state.EVENTS.filter((e) => e.state === "planned")]
-    .sort((a, b) => (evDateRange(a.date).from || "9999").localeCompare(evDateRange(b.date).from || "9999"));
+    .sort((a, b) => (evDateRange(a.date, state.NOW.getFullYear()).from || "9999").localeCompare(evDateRange(b.date, state.NOW.getFullYear()).from || "9999"));
   /* short — the shortfall the plan's budget carries and the diary does not. eventCount() is the
      same divisor the Plan uses, so moving the event share moves this without re-typing it. */
   const short = Math.max(0, eventCount(state.PLAN) - state.EVENTS.length);
@@ -64,30 +66,50 @@ export function EventsPage() {
 
   const ready = state.EVENTS.filter((e) => state.SHEET[e.id]?.state === "ready");
 
-  const go = (id: string) => router.push(pathOf("event", id));
+  /* go('event',null,id) is synchronous in the prototype; a dev-server route to /events/[id] is not.
+     The press is remembered against this NAVSEQ (any later go() bumps it, so it can never go stale)
+     and the event is drawn at once, ahead of its route — the shell's own idiom for a lead. */
+  const go = (id: string) => {
+    dispatch({ type: "setUi", patch: { EVPEND: { id, seq: state.ui.NAVSEQ ?? 0 } } });
+    router.push(pathOf("event", id));
+  };
+  const pend = state.ui.EVPEND as { id: string; seq: unknown } | null | undefined;
+  if (pend && pend.seq === (state.ui.NAVSEQ ?? 0) && state.EVENTS.some((x) => x.id === pend.id)) {
+    return <EventPage id={pend.id} />;
+  }
+
+  /* D59 · cost per qualified shown only when at least one event can actually be costed */
+  const costable = (e: EventRec) => { const st = evStats(state, e); return st.tagged >= st.captured; };
+  const costCol = ran.some(costable);
+  const avg = Math.round(tot / Math.max(1, ran.length));
 
   const Row = ({ e }: { e: EventRec }) => {
     const st = evStats(state, e);
+    const pct = Math.round(st.captured / Math.max(1, need) * 100);
     return (
-      <tr className="k" onClick={() => go(e.id)} tabIndex={0}
-        onKeyDown={(ev) => { if (ev.key === "Enter") go(e.id); }}>
-        <th scope="row"><b>{e.n}</b><div className="sm">{e.type} · {e.ch}</div></th>
+      <tr className="g4-row" onClick={() => go(e.id)}>
+        <th scope="row">
+          <button type="button" className="g4-name" onClick={(ev) => { ev.stopPropagation(); go(e.id); }}><b>{e.n}</b></button>
+          <div className="sm">{e.type} · {e.ch}</div>
+        </th>
         <td className="sm mono">{e.date}</td>
         <td className="sm">{e.staff.map((k) => P(state.PEOPLE, k).i).join(" ")}</td>
         <td className="n">{st.captured}</td>
         <td style={{ width: "110px" }}>
           <div className="bar">
-            <i style={{ width: `${Math.round(st.captured / need * 100)}%`, background: "var(--late)" }} />
+            <i style={{ width: `${Math.min(100, pct)}%`, background: `var(${pct < 100 ? "--late" : "--go"})` }} />
           </div>
-          <span className="sm mono">{Math.round(st.captured / Math.max(1, need) * 100)}% of {need}</span>
+          <span className="sm mono">{pct}%</span>
         </td>
         <td className="n">{st.qual}</td>
         <td className="n">{st.res}</td>
-        <td className="n">
-          {st.tagged < st.captured
-            ? <span className="sm">untagged</span>
-            : <b>₹{Math.round(e.cost / Math.max(1, st.qual)).toLocaleString("en-IN")}</b>}
-        </td>
+        {costCol && (
+          <td className="n">
+            {costable(e)
+              ? <b>₹{Math.round(e.cost / Math.max(1, st.qual)).toLocaleString("en-IN")}</b>
+              : <span className="sm" title={`${st.captured - st.tagged} captured leads still untagged`}>—</span>}
+          </td>
+        )}
       </tr>
     );
   };
@@ -95,11 +117,7 @@ export function EventsPage() {
   return (
     <div className="rd-page rd-events">
       <div className="ph rd-page-heading">
-        <div>
-          <span className="rd-eyebrow">Investor connections</span>
-          <h1>Events</h1>
-          <p className="sub">Plan the next event. Bring its leads into the right hands.</p>
-        </div>
+        <div><h1>Events</h1></div>
         <div className="sp" />
         {canEdit && (
           <button type="button" className="act" onClick={openAdd}><PlusIcon /> Add event</button>
@@ -118,7 +136,6 @@ export function EventsPage() {
               Completed <span className="rd-count">{ran.length}</span>
             </button>
           </div>
-          <span className="sm rd-events-total">{tot} leads captured · {taggedTotal} tagged</span>
         </div>
 
         {ready.length > 0 && (
@@ -141,30 +158,33 @@ export function EventsPage() {
               <div className="tw"><table>
                 <thead><tr>
                   <th scope="col">Event</th><th scope="col">Dates</th><th scope="col">Staff</th>
-                  <th scope="col">Leads</th><th scope="col">vs need</th>
-                  <th scope="col">Qualified</th><th scope="col">Reserved</th><th scope="col">Cost / qual</th>
+                  <th scope="col">Leads</th><th scope="col">vs need {need}</th>
+                  <th scope="col">Qualified</th><th scope="col">Reserved</th>
+                  {costCol && <th scope="col">Cost / qual</th>}
                 </tr></thead>
                 <tbody>
                   {ran.length
                     ? ran.map((e) => <Row key={e.id} e={e} />)
                     : (
-                      <tr><td colSpan={8} className="empty">
-                        No event in the diary has run yet. This table fills in with what each one
-                        produced on the night, against what the plan needs one to produce.
+                      <tr><td colSpan={7} className="empty">
+                        No event in the diary has run yet. This table fills in with
+                        what each one produced, against what the plan needs one to produce.
                       </td></tr>
                     )}
                 </tbody>
               </table></div>
+              {ran.length > 0 && (
+                <p className="sm g4-foot">
+                  {tot} leads captured · {taggedTotal} tagged{costCol ? "" : ". Cost per qualified appears once an event's captured leads are all tagged."}
+                </p>
+              )}
             </div>
           ) : (
             <div className="card rd-event-agenda">
-              <div className="ch">
-                <h3>Upcoming events</h3><div className="sp" />
-                <span className="sm">{planned.length} planned</span>
-              </div>
+              <div className="ch"><h3>Upcoming events</h3></div>
               <div className="rd-agenda-list">
                 {planned.length ? planned.map((e) => {
-                  const date = evISODate(evDateRange(e.date).from);
+                  const date = evISODate(evDateRange(e.date, state.NOW.getFullYear()).from);
                   return (
                     <button key={e.id} type="button" className="rd-agenda-row" onClick={() => go(e.id)}
                       aria-label={`Open ${e.n}`}>
@@ -181,16 +201,14 @@ export function EventsPage() {
                         <span className="sm">Team</span>
                         <span>{e.staff.length ? e.staff.map((k) => P(state.PEOPLE, k).n.split(" ")[0]).join(", ") : "Not assigned"}</span>
                       </span>
-                      <span className="tag">Planned</span>
                       <span className="rd-row-next" aria-hidden="true"><Icon name="next" /></span>
                     </button>
                   );
                 }) : (
                   <div className="empty rd-event-empty">
                     <EventsIcon />
-                    <h3>Your next event starts here</h3>
-                    <p>No upcoming events.{canEdit ? " Add the date, location and team to start planning." : " Only somebody who may edit events can put one in the diary."}</p>
-                    {canEdit && <button type="button" className="act" onClick={openAdd}>Add event</button>}
+                    <h3>No upcoming events</h3>
+                    <p>{canEdit ? "Use Add event to put the next one in the diary." : "Only somebody who may edit events can put one in the diary."}</p>
                   </div>
                 )}
               </div>
@@ -198,37 +216,24 @@ export function EventsPage() {
           )}
         </div>
 
-        <details className="ux-disclosure rd-events-plan" data-ux-key="events-plan">
-          <summary>Plan targets{short ? ` · ${short} events still to book` : ""}</summary>
+        <UxDetails k="events-plan" className="rd-events-plan" summary={`Plan targets${short ? ` · ${short} events still to book` : ""}`}>
           <div className="stats" style={{ marginBottom: "8px", gridTemplateColumns: "repeat(4,1fr)" }}>
             <div className="stat"><b>{need}</b><span>leads the plan needs per event</span></div>
             <div className={`stat ${short ? "bad" : ""}`}>
               <b>{state.EVENTS.length} of {eventCount(state.PLAN)}</b>
-              <span>{short ? `in the diary — ${short} short of the plan` : "in the diary, the whole budget"}</span>
+              <span>{short ? "events in the diary" : "in the diary, the whole budget"}</span>
             </div>
-            <div className={`stat ${tot / Math.max(1, ran.length) < need ? "bad" : ""}`}>
-              <b>{Math.round(tot / Math.max(1, ran.length))}</b><span>these {ran.length} averaged</span>
+            <div className={`stat ${avg < need ? "bad" : ""}`}>
+              <b>{avg}</b><span>average from {ran.length} run</span>
             </div>
             <div className="stat"><b>{GOALS(state.PLAN).eventShare}%</b><span>share of the plan carried by events</span></div>
           </div>
-          <div className={`note ${tot / Math.max(1, ran.length) < need ? "bad" : ""}`} style={{ marginBottom: "8px" }}>
-            The need is derived from the Plan and never typed here: move the event share or the
-            funnel rates and it moves in front of you. At the goals set today the plan
-            needs <b>≈{need} leads an event</b>, and these {ran.length} averaged{" "}
-            <b>{Math.round(tot / Math.max(1, ran.length))}</b>.
-            {short ? (
-              <>
-                {" "}The same Plan budgets <b>{eventCount(state.PLAN)} events</b> and the diary
-                holds {state.EVENTS.length}, so <b>{short}</b> {short === 1 ? "is" : "are"} still
-                to be booked — about <b>{short * need} names</b> the plan is counting on that
-                nobody has a date for.
-                {canEdit
-                  ? <>{" "}<button type="button" className="chip" onClick={openAdd}>Add event</button></>
-                  : " Only somebody who may edit events can put one in the diary."}
-              </>
-            ) : null}
-          </div>
-        </details>
+          {short > 0 && (
+            <div className="note bad" style={{ marginBottom: "8px" }}>
+              About <b>{short * need} names</b> the plan counts on have no event date yet.
+            </div>
+          )}
+        </UxDetails>
       </section>
     </div>
   );

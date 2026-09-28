@@ -35,12 +35,12 @@ const baseOptions = {
 const format = (d) => ts.formatDiagnostics(d, { getCanonicalFileName: (f) => f, getCurrentDirectory: () => consoleRoot, getNewLine: () => '\n' });
 
 /* 1. Type-check (strict, the project's own settings) and emit. */
-const program = ts.createProgram(MODULES.map((m) => path.join(__dirname, m + '.ts')), { ...baseOptions, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot });
+const program = ts.createProgram(MODULES.map((m) => path.join(__dirname, m + '.ts')), { ...baseOptions, noEmit: false, noEmitOnError: true, outDir, rootDir: consoleRoot });
 const preEmit = ts.getPreEmitDiagnostics(program);
 if (preEmit.length) { console.error(format(preEmit)); process.exit(1); }
 const emitted = program.emit();
 if (emitted.diagnostics.length) { console.error(format(emitted.diagnostics)); process.exit(1); }
-const load = (m) => require(path.join(outDir, 'lib', 'zoho', m + '.js'));
+const load = (m) => require(path.join(outDir, 'src', 'lib', 'zoho', m + '.js'));
 
 const { cacheKey, createScopedCache, createMemoryStore, MAX_AGE_MS, DEFAULT_TTL_MS } = load('cache');
 const { createGate, classOf, GateQueueFullError } = load('gate');
@@ -1170,7 +1170,7 @@ test('adapter (fixture): writes are conditional on the loaded version, and never
   const lost = await kavya.closeLost('L1', 'Timing — not now', '', null);
   assert.ok(lost.ok && lost.value.lead.lost.why === 'Timing — not now');
   assert.equal((await kavya.moveRung('L1', { from: 2, to: 3 }, null)).error.kind, 'invalid', 'a closed lead does not move');
-  const { LEADS } = require(path.join(outDir, 'domain', 'leads.js'));
+  const { LEADS } = require(path.join(outDir, 'fixtures', 'book', 'leads.js'));
   const seedL1 = LEADS.find((l) => l.id === 'L1');
   assert.equal(seedL1.done, 1); assert.equal(seedL1.touch.msg.length, 0); assert.equal(seedL1.lost, undefined);
   const mutable = (await kavya.readLead('L3')).value;

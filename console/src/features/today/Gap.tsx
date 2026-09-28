@@ -7,7 +7,6 @@
    Both shortlists use openable records. */
 
 import {
-  canOperateLeads,
   capturedBy,
   closers,
   myWork,
@@ -75,7 +74,6 @@ export function Gap({ team: requestedTeam }: { team: boolean; onRefuse: (r: Refu
   const short = Math.max(0, q.perWeek - mine);
   const pct = q.perWeek ? Math.min(100, Math.round((mine / q.perWeek) * 100)) : 100;
   const tot = people.reduce((a, k) => a + capturedBy(state, k), 0);
-  const owe = team ? Math.max(0, q.teamWeek - tot) : short;
   const behind = people.filter((k) => capturedBy(state, k) < q.perWeek).length;
   const tp = q.teamWeek ? Math.min(100, Math.round((tot / q.teamWeek) * 100)) : 100;
 
@@ -114,9 +112,7 @@ export function Gap({ team: requestedTeam }: { team: boolean; onRefuse: (r: Refu
 
         <DoorRow
           items={[
-            canOperateLeads(state)
-              ? { k: "add.quick", t: "Add lead", i: "add", v: owe ? owe + " still to enter" : "met", cls: owe ? "bad" : "q" }
-              : null,
+            /* D59 (g1): the "Add lead" door repeated the top bar's Add lead button */
             team ? { k: "today.owed", t: "Who is short this week", i: "people", v: behind ? behind + " behind" : "all met", cls: behind ? "bad" : "q" } : null,
             { k: "today.closers", t: "Closest to closing", i: "leads", v: list.length ? list.length + (team ? " across the team" : " in your book") : "nothing open", cls: list.length ? "" : "q" },
             { k: "today.why", t: "Where the number comes from", i: "numbers", v: q.cap.toLocaleString("en-IN") + " captures" },

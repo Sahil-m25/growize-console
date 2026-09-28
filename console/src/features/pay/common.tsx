@@ -30,19 +30,6 @@ export function ProvL({ t }: { t?: string }) {
   );
 }
 
-/* imBanner() — redesigned prototype line 8837. One unconditional banner: Finance's history is a
-   read-only mirror for every reader, IR and Finance's own reflection alike — there is no branch
-   left to take, because there is no console session on the other side of it. */
-export function ImBanner() {
-  return (
-    <div className="note">
-      <b>Finance history · read only.</b> Payments and documents are maintained in the {IMP} and
-      mirrored here for eligible investors. <span className="sm">Local demo records; live portal
-      sync is not connected.</span>
-    </div>
-  );
-}
-
 /* go(v, id) — 03-app.js:7113. The URL is the router; VIEW is mirrored from it by the shell, so a
    screen only has to say where it is going. */
 export function useGo(): (v: View, id?: string) => void {

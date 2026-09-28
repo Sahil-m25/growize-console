@@ -1,4 +1,3 @@
-"use client";
 
 /* ── pages-d's reducer — money, paper, the shelf and the transfer ───────────────────────────
    Ports `ref/03-app.js` 668–737 (setReleased, askExt, decideExt, lapse), 1476–1477 (setPay),
@@ -19,7 +18,7 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import {
-  ARLSEQ, DCLS_EXTRA, DTPLS, FORFEIT, LADDER, RECOVACTS, ROUNDS, ST, UNIT,
+  DCLS_EXTRA, DTPLS, FORFEIT, LADDER, RECOVACTS, ROUNDS, ST, UNIT,
 } from "@/domain";
 import type {
   Account, ActKind, Claim, ClaimKind, DocClass, DocRec, ExtRec, Lead, LeadId, PayRec, PayReceipt,
@@ -151,7 +150,7 @@ function nextArl(s: ConsoleState): string {
   };
   const seen = Object.keys(s.ACCT).map(k => num(s.ACCT[k].code))
     .concat(s.XFER.map(x => num(x.code)));
-  return "ARL-INV-" + String(Math.max(ARLSEQ, ...seen) + 1).padStart(4, "0");
+  return "ARL-INV-" + String(Math.max(s.ARLSEQ, ...seen) + 1).padStart(4, "0");
 }
 
 /* ===== THE GROWIZE ACCOUNT — 03-app.js:1967 ==================================================

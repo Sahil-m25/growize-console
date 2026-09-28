@@ -1,58 +1,44 @@
 "use client";
 
-/* ── 2. LEADS — vLeads. ir-console-redesigned.html 7415–7454 ────────────────────────────────────
-   The redesign folds search, filters and the table into one workspace: a toolbar (search plus a
-   filter disclosure that only says "Filters · 2" when something is actually set), the active cuts
-   as removable chips, "Needs an owner" named once at the top instead of mixed into the table, a
-   five-column table that leads with the one thing to do next, and a closed "Book summary"
-   disclosure instead of always-open totals. `hl()` marks the search hits; it returns ReactNode
-   here, never dangerouslySetInnerHTML. The rail beside the table is gone — `vLeads` (7415-7450)
-   ends at the summary disclosure; the book's other cuts (forecast/source/owner) only ever open
-   from the "leads.more" panel door on `<BookRail part="main">` (`./drawer.tsx`).
-
-   `LeadFilters.LLOST` ("Include leads closed as lost", ir-console-redesigned.html:7362-7366,
-   7383) and `EXC.consent`'s "Permission missing" wording (7365, 7382) now live in
-   `src/lib/selectors/leads.ts`'s `passes`/`passesNoLost`/`EXC` directly — this page just sets
-   `f.LLOST` on the filters object it already builds.
+/* ── 2. LEADS — vLeads. growize-console-merged (ir-merged.js 4767–4900) ─────────────────────────
+   D59: one workspace — the count line (which names the lost leads it holds back, with a Show),
+   a toolbar (the list filter plus a Filters disclosure whose options carry their own counts), the
+   active cuts as removable chips, "Needs an owner" named once at the top, and a table whose row
+   opens the lead. The book rail, its "leads.more" panel and the Book summary grid were removed
+   in the merged prototype: every row in them cut the book a second time.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { LADDER, ST, UNIT } from "@/domain";
+import type { ReactNode } from "react";
+import { LADDER } from "@/domain";
 import type { Lead, PersonKey, SortKey } from "@/domain";
+import { UNIT } from "@/domain";
 import { money } from "@/lib/format";
 import {
   acting,
-  active,
   bookFor,
   canAssign,
   canReach,
   covOf,
   EXC,
-  hasNext,
   hl,
   isIR,
   knownUnitIntent,
   lost,
-  nextUp,
-  nxWhen,
   P,
   passes,
-  QUIET,
-  quietDays,
+  passesNoLost,
   scopeOf,
   seesTeam,
   sortOf,
   SORTS,
-  stageAtLeast,
   teamBook,
 } from "@/lib/selectors";
 import type { ExcKey, LeadFilters } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { Icon } from "@/components/ui";
-import "./drawer"; /* registers p:leads.more before BookRail's door can open it */
-import "./followupDrawer"; /* registers p:followup before WorkAction's "Record follow-up" can open it */
-import { WorkAction } from "./WorkAction";
-import "@/features/lead/drawers"; /* register the lead drawers before anything opens one */
-import "@/features/add"; /* registers p:add.quick before the empty-book state can open it */
+import { FUCHANNELS, fuLatest } from "@/features/today/work";
+/* p:add.quick is registered by the shell (components/shell/drawers); the lead drawers load on demand
+   in useGoLead. The list itself registers nothing, which keeps this route's chunk small. */
 
 import { LeadsIcon } from "./icons";
 import { useGoLead } from "./nav";
@@ -67,6 +53,7 @@ export function LeadsPage() {
   const LLOST = uiLlost(ui);
   const LSTAGEMODE = ui.LSTAGEMODE === "from" ? "from" : "at";
   const LQUIET = ui.LQUIET ?? null;
+  const q = LQ.trim();
 
   const team = scopeOf(state, "leads") === "team";
   const all = bookFor(state, "leads");
@@ -89,28 +76,26 @@ export function LeadsPage() {
   const owned = all.filter((l) => l.own);
   const canCapture = canReach(state, "add");
 
-  const stageOptions = LADDER.map((s, i) => ({
-    i: i + 1,
-    t: s.t,
-    n: owned.filter((l) => (LSTAGEMODE === "from" ? stageAtLeast(l, i + 1) : l.done === i + 1)).length,
-  })).filter((x) => x.n || f.LSTAGE === x.i);
+  const stageOptions = LADDER.map((s, i) => ({ i: i + 1, t: s.t, n: owned.filter((l) => l.done === i + 1).length }))
+    .filter((x) => x.n || f.LSTAGE === x.i);
   const ownerOptions = [...new Set(owned.map((l) => l.own as PersonKey))];
   const sourceOptions = [...new Set(all.map((l) => l.src).filter(Boolean))].sort();
   const sourceChoices = [...new Set([...sourceOptions, ...(f.LSRC ? [f.LSRC] : [])])];
+  /* "dormant" is a cut Numbers can land on; the merged prototype's own list does not offer it */
   const exceptions = (Object.entries(EXC) as [ExcKey, [string, (c: typeof state, l: Lead) => boolean]][])
+    .filter(([k]) => k !== "dormant" || f.LFILT === k)
     .map(([k, [t, fn]]) => ({ k, t, n: owned.filter((l) => fn(state, l)).length }))
     .filter((x) => x.n || f.LFILT === x.k);
-  const quietOptions = QUIET.map(([d, t]) => ({
-    d, t, n: owned.filter((l) => (quietDays(state, l) ?? -1) >= d).length,
-  }));
-  const advanced = [f.LFILT, f.LSRC, f.LSTAGE, f.LOWN, LLOST, LQUIET, LSORT !== "urgent"].filter(Boolean).length;
+  /* leadAdvancedCount() */
+  const advanced = [f.LFILT, f.LSRC, f.LSTAGE, f.LOWN, LLOST, LQUIET, LSORT !== "name"].filter(Boolean).length;
 
   const set = (patch: Record<string, unknown>) => dispatch({ type: "setUi", patch });
-  const resetAll = () =>
-    set({
-      LFILT: null, LSRC: null, LSTAGE: null, LSTAGEMODE: "at", LOWN: null, LLOST: false,
-      LQUIET: null, LSORT: "urgent",
-    });
+  const setLQ = (v: string) => dispatch({ type: "setLQ", v });
+  /* resetLeadCuts() */
+  const resetAll = () => {
+    set({ LFILT: null, LSRC: null, LSTAGE: null, LSTAGEMODE: "at", LOWN: null, LLOST: false, LQUIET: null });
+    dispatch({ type: "setSort", v: "name" });
+  };
 
   type Chip = { t: string; c: () => void };
   const chips: Chip[] = (
@@ -121,32 +106,66 @@ export function LeadsPage() {
       f.LFILT ? { t: EXC[f.LFILT][0], c: () => set({ LFILT: null }) } : null,
       f.LSRC ? { t: f.LSRC, c: () => set({ LSRC: null }) } : null,
       f.LOWN ? { t: P(state.PEOPLE, f.LOWN).n, c: () => set({ LOWN: null }) } : null,
-      LQUIET ? { t: (QUIET.find((x) => x[0] === LQUIET)?.[1] ?? LQUIET + " days +"), c: () => set({ LQUIET: null }) } : null,
-      LLOST ? { t: "Include closed leads", c: () => set({ LLOST: false }) } : null,
-      LSORT !== "urgent" ? { t: SORTS[LSORT].t, c: () => dispatch({ type: "setSort", v: "urgent" }) } : null,
+      LQUIET ? { t: LQUIET + " days +", c: () => set({ LQUIET: null }) } : null,
+      LLOST ? { t: "Lost leads shown", c: () => set({ LLOST: false }) } : null,
+      LSORT !== "name" ? { t: SORTS[LSORT].t, c: () => dispatch({ type: "setSort", v: "name" }) } : null,
     ] as (Chip | null)[]
   ).filter((x): x is Chip => !!x);
 
+  /* leadCuts(all) — every cut the list is under, named, with the way out of each */
+  const lostShown = !!(LLOST || f.LFILT === "lost" || f.LSTAGE || LQUIET || q);
+  const lostHeld = all.filter((l) => lost(l) && passesNoLost(state, l, f)).length;
+  type Cut = { t: ReactNode; b: string; c: () => void; lost?: true };
+  const cuts: Cut[] = [];
+  if (q) cuts.push({ t: <>the search <b>“{q}”</b></>, b: "Clear the search", c: () => setLQ("") });
+  if (f.LSTAGE) cuts.push({ t: <>the stage <b>{LADDER[f.LSTAGE - 1].t}</b></>, b: "Clear the stage", c: () => set({ LSTAGE: null }) });
+  if (f.LFILT) cuts.push({ t: <>the <b>{EXC[f.LFILT][0]}</b> cut</>, b: `Clear “${EXC[f.LFILT][0]}”`, c: () => set({ LFILT: null }) });
+  if (f.LSRC) cuts.push({ t: <>the source <b>{f.LSRC}</b></>, b: "Clear the source", c: () => set({ LSRC: null }) });
+  if (f.LOWN) cuts.push({ t: <>the owner <b>{P(state.PEOPLE, f.LOWN).n}</b></>, b: "Clear the owner", c: () => set({ LOWN: null }) });
+  if (!lostShown && lostHeld)
+    cuts.push({ t: <><b>{lostHeld}</b> closed as lost, held back</>, b: "Show the lost leads", c: () => set({ LLOST: true }), lost: true });
+  const lostCut = cuts.find((c) => c.lost);
+
+  const book = team ? "the team's book" : "your book";
   const heading = (
     <div className="ph">
       <div>
         <h1>Leads</h1>
         <p className="sub">
-          {all.length
-            ? `${list.length} shown · ${all.length} in ${team ? "your team's book" : "your book"}`
-            : team
-              ? "Your team's investor records"
-              : "Your assigned investor records"}
+          {all.length ? (
+            <>
+              {list.length === all.length ? `${all.length} in ${book}` : `${list.length} of ${all.length} in ${book}`}
+              {lostCut ? (
+                <>
+                  {" · "}
+                  {lostCut.t}{" "}
+                  <button type="button" className="lnk g2-lnk" onClick={lostCut.c}>
+                    Show
+                  </button>
+                </>
+              ) : null}
+            </>
+          ) : team ? (
+            "Your team's investor records"
+          ) : (
+            "Your assigned investor records"
+          )}
         </p>
       </div>
       <div className="sp" />
     </div>
   );
 
+  const page = (content: ReactNode) => (
+    <section className="rd-leads g2-leads" aria-label="Investor records">
+      {content}
+    </section>
+  );
+
   if (!all.length) {
     const canSeeTeamBook = !team && seesTeam(state) && teamBook(state).length > 0;
-    return (
-      <section className="rd-leads" aria-label="Investor records">
+    return page(
+      <>
         {heading}
         <section className="card ux-empty">
           <span className="rd-empty-icon" aria-hidden="true">
@@ -173,10 +192,83 @@ export function LeadsPage() {
             ) : null}
           </div>
         </section>
-      </section>
+      </>,
     );
   }
 
+  const filterPanel = (
+    <details className="ux-disclosure ux-inline-filter" data-ux-key="leads-filters">
+      <summary>Filters{advanced ? " · " + advanced : ""}</summary>
+      <div className="cb ux-filter-fields">
+        <label className="fi">
+          <span>Needs attention</span>
+          <select className="selw" id="lead-exception" value={f.LFILT ?? ""} onChange={(e) => set({ LFILT: e.target.value || null })}>
+            <option value="">Any status</option>
+            {exceptions.map((x) => (
+              <option value={x.k} key={x.k}>
+                {x.t} · {x.n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="fi">
+          <span>Journey stage</span>
+          <select
+            className="selw"
+            id="lead-stage"
+            value={f.LSTAGE ?? ""}
+            onChange={(e) => set({ LSTAGE: e.target.value ? +e.target.value : null, LSTAGEMODE: "at" })}
+          >
+            <option value="">Any stage</option>
+            {stageOptions.map((x) => (
+              <option value={x.i} key={x.i}>
+                {x.t} · {x.n}
+              </option>
+            ))}
+          </select>
+        </label>
+        {team ? (
+          <label className="fi">
+            <span>Owner</span>
+            <select className="selw" id="lead-owner" value={f.LOWN ?? ""} onChange={(e) => set({ LOWN: e.target.value || null })}>
+              <option value="">Any owner</option>
+              {ownerOptions.map((k) => (
+                <option value={k} key={k}>
+                  {P(state.PEOPLE, k).n} · {owned.filter((l) => l.own === k).length}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <label className="fi">
+          <span>Source</span>
+          <select className="selw" id="lead-source" value={f.LSRC ?? ""} onChange={(e) => set({ LSRC: e.target.value || null })}>
+            <option value="">Any source</option>
+            {sourceChoices.map((s) => (
+              <option value={s} key={s}>
+                {s} · {all.filter((l) => l.src === s).length}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="fi">
+          <span>Order</span>
+          <select className="selw" id="lead-sort" value={LSORT} onChange={(e) => dispatch({ type: "setSort", v: e.target.value })}>
+            {(Object.entries(SORTS) as [SortKey, { t: string }][]).map(([k, v]) => (
+              <option value={k} key={k}>
+                {k === "urgent" ? "Needs action first" : v.t}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="ux-secondary">
+          <input type="checkbox" checked={LLOST} onChange={(e) => set({ LLOST: e.target.checked })} /> Include leads closed as lost
+        </label>
+      </div>
+    </details>
+  );
+
+  /* D59 · on Leads this box is the finder; the top-bar Find investor is hidden here */
   const toolbar = (
     <div className="ux-toolbar rd-lead-toolbar">
       <div className="srch">
@@ -187,135 +279,23 @@ export function LeadsPage() {
           value={LQ}
           autoComplete="off"
           spellCheck={false}
-          placeholder="Search investors by name, phone, email or event"
-          aria-label="Find an investor"
-          onChange={(e) => dispatch({ type: "setLQ", v: e.target.value })}
+          placeholder="Filter this list — name, phone, email or event"
+          aria-label="Filter this list"
+          onChange={(e) => setLQ(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.stopPropagation();
-              dispatch({ type: "setLQ", v: "" });
+              setLQ("");
             }
           }}
         />
-        {LQ ? (
-          <button type="button" className="x" aria-label="Clear search" onClick={() => dispatch({ type: "setLQ", v: "" })}>
+        {q ? (
+          <button type="button" className="x" aria-label="Clear search" onClick={() => setLQ("")}>
             <Icon name="x" />
           </button>
         ) : null}
       </div>
-      <details className="ux-disclosure ux-inline-filter" data-ux-key="leads-filters">
-        <summary>Filters{advanced ? " · " + advanced : ""}</summary>
-        <div className="cb ux-filter-fields">
-          <label className="fi">
-            <span>Needs attention</span>
-            <select
-              className="selw"
-              value={f.LFILT ?? ""}
-              onChange={(e) => set({ LFILT: e.target.value || null })}
-            >
-              <option value="">Any status</option>
-              {exceptions.map((x) => (
-                <option value={x.k} key={x.k}>
-                  {x.t} · {x.n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="fi">
-            <span>Journey stage</span>
-            <select
-              className="selw"
-              value={f.LSTAGE ?? ""}
-              onChange={(e) => set({ LSTAGE: e.target.value ? +e.target.value : null })}
-            >
-              <option value="">Any stage</option>
-              {stageOptions.map((x) => (
-                <option value={x.i} key={x.i}>
-                  {x.t} · {x.n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <select
-            className="selw"
-            aria-label="Stage match"
-            value={LSTAGEMODE}
-            onChange={(e) => set({ LSTAGEMODE: e.target.value === "from" ? "from" : "at" })}
-          >
-            <option value="at">on this rung</option>
-            <option value="from">this rung or past it</option>
-          </select>
-          {team ? (
-            <label className="fi">
-              <span>Owner</span>
-              <select
-                className="selw"
-                value={f.LOWN ?? ""}
-                onChange={(e) => set({ LOWN: e.target.value || null })}
-              >
-                <option value="">Any owner</option>
-                {ownerOptions.map((k) => (
-                  <option value={k} key={k}>
-                    {P(state.PEOPLE, k).n}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          <label className="fi">
-            <span>Source</span>
-            <select
-              className="selw"
-              value={f.LSRC ?? ""}
-              onChange={(e) => set({ LSRC: e.target.value || null })}
-            >
-              <option value="">Any source</option>
-              {sourceChoices.map((s) => (
-                <option value={s} key={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="fi">
-            <span>Not contacted for</span>
-            <select
-              className="selw"
-              id="lead-quiet"
-              value={f.LQUIET ?? ""}
-              onChange={(e) => set({ LQUIET: e.target.value ? +e.target.value : null })}
-            >
-              <option value="">Any time</option>
-              {quietOptions.map((x) => (
-                <option value={x.d} key={x.d}>
-                  {x.t} · {x.n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="fi">
-            <span>Order</span>
-            <select
-              className="selw"
-              value={LSORT}
-              onChange={(e) => dispatch({ type: "setSort", v: e.target.value })}
-            >
-              {(Object.entries(SORTS) as [SortKey, { t: string }][]).map(([k, v]) => (
-                <option value={k} key={k}>
-                  {k === "urgent" ? "Needs action first" : v.t}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="ux-secondary">
-            <input type="checkbox" checked={LLOST} onChange={(e) => set({ LLOST: e.target.checked })} /> Include
-            leads closed as lost
-          </label>
-          <p className="ux-secondary">
-            Use these to find a specific group. The default list already puts urgent work first.
-          </p>
-        </div>
-      </details>
+      {filterPanel}
     </div>
   );
 
@@ -365,29 +345,34 @@ export function LeadsPage() {
   ) : null;
 
   const teamHasMatches = !team && seesTeam(state) && teamBook(state).some((l) => passes(state, l, f));
+  const hasInt = rows.some((l) => knownUnitIntent(l));
+  const otherCuts = cuts.filter((c) => c !== lostCut);
 
   const table = rows.length ? (
     <section className="card ux-overflow rd-lead-table-card">
-      <table className="ux-leads-table">
+      <table className="ux-leads-table g2-leads-table">
         <caption className="rd-sr-only">
-          {team ? "Team" : "Your"} investor records, ordered by {SORTS[LSORT].t.toLowerCase()}
+          {team ? "Team" : "Your"} investor records, ordered by {SORTS[LSORT].t.toLowerCase()}. Select a row to open the lead.
         </caption>
         <thead>
           <tr>
             <th scope="col">Investor</th>
             <th scope="col">Stage</th>
-            <th scope="col">Next action</th>
-            <th scope="col">Interest</th>
-            <th scope="col">Action</th>
+            <th scope="col">Last contact</th>
+            {hasInt ? <th scope="col">Interest</th> : null}
           </tr>
         </thead>
         <tbody>
           {rows.map((l) => {
-            const u = nextUp(state, l);
-            const known = knownUnitIntent(l);
-            const dated = hasNext(l) && !u.t.includes(l.nx!.by) && !u.t.includes("today");
+            const c = fuLatest(state, l);
             return (
-              <tr key={l.id}>
+              <tr
+                key={l.id}
+                className="g2-row"
+                onClick={(e) => {
+                  if (!(e.target as HTMLElement).closest("button,a,input,select,label")) goLead(l.id);
+                }}
+              >
                 <td>
                   <button type="button" className="work-name" onClick={() => goLead(l.id)}>
                     {hl(l.n, LQ)}
@@ -400,29 +385,30 @@ export function LeadsPage() {
                 <td data-label="Stage">
                   <span className="tag">{lost(l) ? "Closed as lost" : LADDER[Math.max(0, l.done - 1)].t}</span>
                 </td>
-                <td data-label="Next">
-                  <b>{hl(u.t, LQ)}</b>
-                  {dated ? <div className="ux-list-meta">{nxWhen(l)}</div> : null}
-                </td>
-                <td data-label="Interest">
-                  {known ? (
+                <td data-label="Last contact">
+                  {c ? (
                     <>
-                      <b>
-                        {l.units} unit{l.units === 1 ? "" : "s"}
-                      </b>
-                      <div className="ux-list-meta">{money(l.units * UNIT)}</div>
+                      {FUCHANNELS[c.channel] || c.channel}
+                      <div className="ux-list-meta">{c.at || ""}</div>
                     </>
                   ) : (
-                    <span className="ux-secondary">Not discussed</span>
+                    <span className="ux-secondary">None yet</span>
                   )}
                 </td>
-                <td>
-                  {lost(l) || l.done >= ST.ONBOARDED ? (
-                    <span className="ux-secondary">—</span>
-                  ) : (
-                    <WorkAction l={l} u={u} />
-                  )}
-                </td>
+                {hasInt ? (
+                  <td data-label="Interest">
+                    {knownUnitIntent(l) ? (
+                      <>
+                        <b>
+                          {l.units} unit{l.units === 1 ? "" : "s"}
+                        </b>
+                        <div className="ux-list-meta">{money(l.units * UNIT)}</div>
+                      </>
+                    ) : (
+                      <span className="ux-secondary">—</span>
+                    )}
+                  </td>
+                ) : null}
               </tr>
             );
           })}
@@ -432,16 +418,36 @@ export function LeadsPage() {
   ) : unowned.length ? null : (
     <section className="card ux-empty">
       <h2>No matching leads</h2>
-      <p>{LQ ? "Try a different search or clear the filters." : "Clear the filters to see your investor records."}</p>
+      <p>
+        {cuts.length ? (
+          <>
+            Nothing matches{" "}
+            {otherCuts.map((c, i) => (
+              <span key={i}>
+                {i ? ", " : ""}
+                {c.t}
+              </span>
+            ))}
+            .{lostCut ? <> {lostCut.t}.</> : null}
+          </>
+        ) : (
+          "Clear the filters to see your investor records."
+        )}
+      </p>
       <div className="ux-primary">
         {advanced ? (
           <button type="button" className="act" onClick={resetAll}>
             Clear filters
           </button>
         ) : null}
-        {LQ ? (
-          <button type="button" className="btn" onClick={() => dispatch({ type: "setLQ", v: "" })}>
+        {q ? (
+          <button type="button" className="btn" onClick={() => setLQ("")}>
             Clear search
+          </button>
+        ) : null}
+        {lostCut ? (
+          <button type="button" className="btn" onClick={lostCut.c}>
+            {lostCut.b}
           </button>
         ) : null}
         {teamHasMatches ? (
@@ -453,31 +459,8 @@ export function LeadsPage() {
     </section>
   );
 
-  const activeCount = all.filter(active).length;
-  const lostCount = all.filter((l) => lost(l)).length;
-  const onboardedCount = all.filter((l) => l.done >= ST.ONBOARDED).length;
-
-  const summary = (
-    <details className="ux-disclosure" data-ux-key="leads-summary">
-      <summary>Book summary</summary>
-      <div className="cb">
-        <p className="ux-secondary">
-          {activeCount} active · {lostCount} closed as lost · {onboardedCount} onboarded
-        </p>
-        <div className="ux-card-grid">
-          {stageOptions.map((x) => (
-            <div key={x.i}>
-              <b>{x.n}</b>
-              <div className="ux-secondary">{x.t}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </details>
-  );
-
-  return (
-    <section className="rd-leads" aria-label="Investor records">
+  return page(
+    <>
       {heading}
       <div className="rd-lead-workspace">
         {toolbar}
@@ -485,7 +468,6 @@ export function LeadsPage() {
         {unassigned}
         {table}
       </div>
-      {summary}
-    </section>
+    </>,
   );
 }

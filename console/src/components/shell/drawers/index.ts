@@ -21,6 +21,7 @@ import "./presence";
 import "./help";
 import "./absence";
 import "./account";
+import "./merge";
 import "@/features/add/drawer";
 import "@/features/updates/drawer";
 

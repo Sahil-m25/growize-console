@@ -4,14 +4,7 @@
    this file's own reimplementation used to be missing — re-exported here so every existing caller
    (`WORK_GROUPS`, `workList`, `TodayPage.tsx`) keeps importing it from `./work` unchanged. ─────── */
 
-import {
-  CALLS as CALLS_SEED,
-  CHECKS,
-  INTERACTIONS as INTERACTIONS_SEED,
-  NOTES as NOTES_SEED,
-  ST,
-  TOUCHCHANNELS,
-} from "@/domain";
+import { ST, TOUCHCHANNELS } from "@/domain";
 import type { Channel, Claim, InteractionRec, Lead, PersonKey, XferRow } from "@/domain";
 import { DAY, dISOtoDisp, money, when, whenT } from "@/lib/format";
 import type { Ctx, NextUp } from "@/lib/selectors";
@@ -112,10 +105,10 @@ export function xferRows(ctx: Ctx): XferRow[] {
   );
 }
 
-/** the "transfer" Check's own owner (`@/domain/system`'s `CHECKS`) — who an unacknowledged
- *  investor entry is chased to. 03-app.js:9170. */
-export function xOwner(): PersonKey {
-  return (CHECKS.find((c) => c.k === "transfer")?.own ?? "sahil") as PersonKey;
+/** the "transfer" Check's own owner (the dataset's `CHECKS`) — who an unacknowledged investor
+ *  entry is chased to. 03-app.js:9170. null when no such check is recorded (the empty book). */
+export function xOwner(ctx: { CHECKS: readonly { k: string; own: PersonKey }[] }): PersonKey | null {
+  return ctx.CHECKS.find((c) => c.k === "transfer")?.own ?? null;
 }
 
 /* waNum() — 03-app.js:3373. Also below: partnerLabel/primaryWorkChannel (workRow/investorWorkPanel,
@@ -234,12 +227,12 @@ export const FUOUTCOMES: Record<string, readonly string[]> = {
 export type FuEvent = { channel: string; outcome: string; at: string; who?: PersonKey; obj?: string[] };
 
 const interactionsOf = (ctx: Ctx, l: Lead): InteractionRec[] =>
-  (ctx.INTERACTIONS || INTERACTIONS_SEED)[l.id] || [];
+  (ctx.INTERACTIONS || {})[l.id] || [];
 
 /* fuLatest(l) — 6047 */
 export function fuLatest(ctx: Ctx, l: Lead): FuEvent | null {
   const a: FuEvent[] = [...interactionsOf(ctx, l)];
-  const c = (ctx.CALLS || CALLS_SEED)[l.id];
+  const c = (ctx.CALLS || {})[l.id];
   if (c && c.o) a.push({ channel: "call", outcome: c.o, at: c.at || "", who: c.who, obj: c.obj || [] });
   TOUCHCHANNELS.forEach((k) =>
     tList(l, k).forEach((at) =>
@@ -263,7 +256,7 @@ export function fuLatest(ctx: Ctx, l: Lead): FuEvent | null {
    from `CALLS` only once at module load (`seedInteractions`, `src/domain/notes.ts`). */
 export function fuHeard(ctx: Ctx, l: Lead): FuEvent | null {
   const a: FuEvent[] = [...interactionsOf(ctx, l)];
-  const c = (ctx.CALLS || CALLS_SEED)[l.id];
+  const c = (ctx.CALLS || {})[l.id];
   if (c && c.o) a.push({ channel: "call", outcome: c.o, at: c.at || "", who: c.who, obj: c.obj || [] });
   return (
     a
@@ -272,7 +265,7 @@ export function fuHeard(ctx: Ctx, l: Lead): FuEvent | null {
   );
 }
 
-export const latestNote = (ctx: Ctx, l: Lead): string | null => (ctx.NOTES || NOTES_SEED)[l.id]?.[0]?.t || null;
+export const latestNote = (ctx: Ctx, l: Lead): string | null => (ctx.NOTES || {})[l.id]?.[0]?.t || null;
 
 /* waNum() — 03-app.js:3373. The digits and only the digits, normalised to a WhatsApp-ready
    91-prefixed number; +91 98861 40277, 098861 40277 and 9886140277 are one person. */

@@ -13,7 +13,7 @@
    the source recorded at the point of capture, and consent recorded per channel.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { ASSIGNRULE, SHEETNAMES, SHEETNOTES, SRCNEEDS } from "@/domain";
+import { ASSIGNRULE, SRCNEEDS } from "@/domain";
 import type {
   ActKind, Channel, EventId, EventRec, Lead, LeadId, LogEntry, Note, PersonKey, Source,
 } from "@/domain";
@@ -209,7 +209,7 @@ export function pagesBReducer(state: ConsoleState, a: Action): ConsoleState | nu
       const id = ("E-0" + (state.EVENTS.length + 1)) as EventId;
       const ev: EventRec = {
         id, n: "New field event", type: "Society", ch: "MyGate", date: "10–11 Oct",
-        city: "Bengaluru", cost: 70000, staff: ["kavya" as PersonKey], state: "planned", off: 0,
+        city: "Bengaluru", cost: 70000, staff: [], state: "planned", off: 0,
       };
       return {
         ...state,
@@ -251,7 +251,7 @@ export function pagesBReducer(state: ConsoleState, a: Action): ConsoleState | nu
         /* the same rule the add form uses: one person, one lead, matched on the number and never merged */
         if (LEADS.some(l => last10(l.ph) === last10(phone))) { skipped++; continue; }
         LEADS.push({
-          id, n: SHEETNAMES[i % SHEETNAMES.length], ph: phone,
+          id, n: state.SHEETNAMES[i % state.SHEETNAMES.length] ?? "", ph: phone,
           em: "", city: e.city, own, sec: null, src: "Events", ev: a.ev as EventId, by: sh.by,
           units: 1, done: 1, at: [at], late: 0, nx: null, fc: null, nri: false,
           /* the intake form asks for WhatsApp and Call; a row without both is one the loader
@@ -260,7 +260,7 @@ export function pagesBReducer(state: ConsoleState, a: Action): ConsoleState | nu
           touch: { msg: [], email: [], call: [], visit: [] },
         });
         if (i % 5 === 0) {
-          NOTES[id] = [{ who: sh.by, at, d: iso(state.TODAY), t: SHEETNOTES[i % SHEETNOTES.length] }];
+          NOTES[id] = [{ who: sh.by, at, d: iso(state.TODAY), t: state.SHEETNOTES[i % state.SHEETNOTES.length] ?? "" }];
         }
       }
 

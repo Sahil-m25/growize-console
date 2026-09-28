@@ -12,7 +12,6 @@
    `ui.EVD` and validate it with `evGaps`, so what this module gets right about the fields is what
    the write gets right too. */
 
-import { NOW } from "@/domain";
 import type { EventChannel, EventId, EventRec, EventState, EventType, PersonKey } from "@/domain";
 import type { UiState } from "@/lib/store";
 
@@ -31,7 +30,8 @@ export function evISODate(value: string): Date | null {
 }
 
 /** The event's span as `{from,to}` ISO dates, parsed off its printed `date` text. */
-export function evDateRange(dateText: string): { from: string; to: string } {
+/** `year` is the book's own year (state.NOW) for a date text that names none. */
+export function evDateRange(dateText: string, year: number): { from: string; to: string } {
   const text = String(dateText || "").trim();
   const month = (x: string) => MONTHS.findIndex((m) => m.toLowerCase() === String(x).slice(0, 3).toLowerCase());
   const make = (y: number, m: number, d: number): string => {
@@ -41,13 +41,13 @@ export function evDateRange(dateText: string): { from: string; to: string } {
   if (evISODate(text)) return { from: text, to: text };
   let m = /^(\d{1,2})(?:\s*[–—-]\s*(\d{1,2}))?\s+([A-Za-z]+)(?:\s+(\d{4}))?$/.exec(text);
   if (m) {
-    const mo = month(m[3]!), y = +(m[4] || NOW.getFullYear());
+    const mo = month(m[3]!), y = +(m[4] || year);
     return mo < 0 ? { from: "", to: "" } : { from: make(y, mo, +m[1]!), to: make(y, mo, +(m[2] || m[1])!) };
   }
   m = /^(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?\s*[–—-]\s*(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?$/.exec(text);
   if (m) {
     const fm = month(m[2]!), tm = month(m[5]!);
-    const fy = +(m[3] || m[6] || NOW.getFullYear());
+    const fy = +(m[3] || m[6] || year);
     const ty = +(m[6] || (fm > tm ? fy + 1 : fy));
     return fm < 0 || tm < 0 ? { from: "", to: "" } : { from: make(fy, fm, +m[1]!), to: make(ty, tm, +m[4]!) };
   }
@@ -81,14 +81,14 @@ export type EventDraft = {
 };
 
 /** evDraft(e) — a blank form for "Add event", or a copy of the record for "Edit event". */
-export function evDraft(e: EventRec | null): EventDraft {
+export function evDraft(e: EventRec | null, year: number): EventDraft {
   if (!e) {
     return {
       id: null, n: "", type: EVTYPES[0]!, ch: EVCH[0]!, date: "", from: "", to: "",
       city: "Bengaluru", cost: 70000, state: "planned", off: 0, staff: [],
     };
   }
-  const range = evDateRange(e.date);
+  const range = evDateRange(e.date, year);
   return {
     id: e.id, n: e.n, type: e.type, ch: e.ch, date: e.date, from: range.from, to: range.to,
     city: e.city, cost: e.cost, state: e.state, off: e.off || 0, staff: e.staff.slice(),
@@ -138,7 +138,7 @@ export function evNextId(key: number): EventId {
     drawer registry — read and write the one draft between them. */
 export function uiEVD(ui: UiState): EventDraft {
   const v = ui.EVD as Partial<EventDraft> | undefined;
-  return v ? { ...evDraft(null), ...v } : evDraft(null);
+  return v ? { ...evDraft(null, 0), ...v } : evDraft(null, 0);
 }
 
 /** EVENTVIEW — the prototype's module-level global (ir-console-redesigned.html:8628), kept in the

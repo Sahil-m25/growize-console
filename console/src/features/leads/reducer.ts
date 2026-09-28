@@ -237,7 +237,8 @@ const dClsOf = (t: string): DocClass | null =>
 /* ============================================================================================== */
 
 export function pagesAReducer(state: ConsoleState, action: Action): ConsoleState | null {
-  if ("id" in action && action.id && !openable(state).some(l => l.id === action.id)) return state;
+  /* a duplicate flagged at capture is, by definition, a record the flagger may not open — it is add's write */
+  if ("id" in action && action.id && action.type !== "flagDupe" && !openable(state).some(l => l.id === action.id)) return state;
   const a = action;
   switch (a.type) {
     /* ===== TOUCHES ==========================================================================

@@ -84,6 +84,8 @@ import {
   P,
   planTotals,
   reachBase,
+  reachCeil,
+  seatShape,
   roleOf,
   seatClash,
   seatReach,
@@ -164,15 +166,7 @@ export const leaverDraft = (
    the same early refusal toggleCap (3026-3032) makes before ever opening the "cap" drawer — a tick
    for a cap the target's role can never hold is a silent no-op, not a failed save. */
 export function roleAllowsCap(state: ConsoleState, k: PersonKey, p: string, c: Cap): boolean {
-  if (!consoleAccount(state.PEOPLE, k)) return false;
-  const seat = roleOf(state.PEOPLE, k);
-  if (seat === "cp" && !["today", "leads", "updates", "add", "activity", "me"].includes(p)) return false;
-  if (p === "today" || p === "add") return canOperateLeads(state, k) && (c === "view" || c === "capture");
-  if (p === "leads") return c === "view" || (c === "edit" && canOperateLeads(state, k)) || (c === "assign" && seat === "conv");
-  if (p === "events") return c !== "load" || canOperateLeads(state, k);
-  if (p === "pay" || p === "docs") return c === "view";
-  if (seat === "cp" && p === "activity") return c === "view";
-  return true;
+  return seatShape(state.PEOPLE, k, p, [c]).includes(c);
 }
 
 /* ---- the audit line ---------------------------------------------------------------------------
@@ -311,7 +305,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const i = n.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
       const PEOPLE: Record<PersonKey, Person> = {
         ...state.PEOPLE,
-        [id]: { n, em, i, seat: NEWP.seat, mgr: NEWP.mgr, on: true, ...freeStyle() } as Person,
+        [id]: { n, em, i, seat: NEWP.seat, mgr: NEWP.mgr, on: true, ...freeStyle(state.PEOPLE) } as Person,
       };
       const d = draftOf(state);
       log({ ...state, PEOPLE }, d, "Added member", null,
@@ -392,7 +386,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const m = action.m || null;
       if (m && (!state.PEOPLE[m] || !state.PEOPLE[m].on)) return state;
       if (m === state.PEOPLE[k].mgr) return state;
-      const c = moveCost(state.PEOPLE, k, m);
+      const c = moveCost(state.PEOPLE, k, m, state.CAPS);
       if (c.cycle || !c.ok) return state;
       const was = state.PEOPLE[k].mgr;
       const PEOPLE = setPerson(state, k, { mgr: m });
@@ -461,7 +455,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
         if (Object.keys(grid).length) CAPS[k] = grid; else delete CAPS[k];
         const d = draftOf(state);
         log(state, d, "Put access back to the seat", null,
-          P(state.PEOPLE, k).n + " · " + PAGECAPS[p].t, "admin", k);
+          P(state.PEOPLE, k).n + " · " + PAGECAPS[p]!.t, "admin", k);
         return { ...state, CAPS, LOG: d.LOG, TEMP: d.TEMP };
       }
 
@@ -469,8 +463,9 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       /* the TARGET's role ceiling — never the actor's own capsBase — so a refused tick cannot
          write even when the acting admin holds the capability themselves. */
       if (!roleAllowsCap(state, k, p, c)) return state;
-      if (reachBase(state.PEOPLE, k).indexOf(p) < 0) return state;
+      if (reachCeil(state.PEOPLE, k).indexOf(p) < 0) return state;
       if (!capsBase(state, state.WHO, p).includes(c)) return state;
+      const was = consoleAccount(state.PEOPLE, k, state.CAPS);
       const cur = capsFor(state, k, p).slice();
       const i = cur.indexOf(c);
       if (i >= 0) cur.splice(i, 1); else cur.push(c);
@@ -479,8 +474,12 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const CAPS = { ...state.CAPS, [k]: { ...(state.CAPS[k] as CapGrid), [p]: cur } };
       const d = draftOf(state);
       log(state, d, "Changed access", null,
-        P(state.PEOPLE, k).n + " · " + PAGECAPS[p].t + " · " + (i >= 0 ? "removed " : "added ") + CAPT[c],
+        P(state.PEOPLE, k).n + " · " + PAGECAPS[p]!.t + " · " + (i >= 0 ? "removed " : "added ") + CAPT[c],
         "admin", k);
+      /* a granted-only seat crossing the line either way is its own fact, and the log says so */
+      if (was !== consoleAccount(state.PEOPLE, k, CAPS))
+        log(state, d, was ? "Console access ended" : "Console access granted", null,
+          P(state.PEOPLE, k).n + (was ? " · no page left granted" : " · first page granted: " + PAGECAPS[p]!.t), "admin", k);
       return { ...state, CAPS, LOG: d.LOG, TEMP: d.TEMP, DRW: { k: "person", id: k } };
     }
 
@@ -670,7 +669,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       if (!own(state, "people", "seats")) return state;
       const T = tgt(state);
       const { to, page, dur, why } = T;
-      if (!to || !consoleAccount(state.PEOPLE, to) || to === state.WHO ||
+      if (!to || !consoleAccount(state.PEOPLE, to, state.CAPS) || to === state.WHO ||
           !canManage(state, to)) return state;
       if (!page || !(PAGECAPS as Record<string, unknown>)[page]) return state;
       if (!chainOf(state.PEOPLE, to).every(k => seatReach(state.PEOPLE, k).includes(page))) return state;
@@ -690,7 +689,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       };
       const d: Draft = { LOG: state.LOG, TEMP: [g, ...state.TEMP] };
       log(state, d, "Granted temporary access", null,
-        P(state.PEOPLE, to).n + " · " + PAGECAPS[page as NavKey].t + " (" +
+        P(state.PEOPLE, to).n + " · " + PAGECAPS[page as NavKey]!.t + " (" +
           caps.map((c) => CAPT[c]).join(", ") + ") · " + TDUR[dur].t + " · " + why.trim(),
         "admin");
       return {
@@ -712,7 +711,7 @@ export function pagesCReducer(state: ConsoleState, action: Action): ConsoleState
       const TEMPON = state.TEMPON === action.id ? null : state.TEMPON;
       const d: Draft = { LOG: state.LOG, TEMP };
       log({ ...state, TEMPON }, d, "Revoked temporary access", null,
-        P(state.PEOPLE, g.to).n + " · " + PAGECAPS[g.page as NavKey].t + " · " + (g.acts || 0) +
+        P(state.PEOPLE, g.to).n + " · " + PAGECAPS[g.page as NavKey]!.t + " · " + (g.acts || 0) +
           " action" + ((g.acts || 0) === 1 ? "" : "s") +
           " recorded while it was on, and they stay recorded",
         "admin");

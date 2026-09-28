@@ -11,50 +11,71 @@
    never splits into two columns the eye has to choose between. Authority over people is never
    borrowed, so the controls follow `own` and never `may`. */
 
-import { avail, canManage, clashOf, manageable, own, tLive } from "@/lib/selectors";
+import { canManage, clashOf, manageable, own, teamsList, tLive } from "@/lib/selectors";
+import type { ConsoleState } from "@/lib/store";
 import { useConsole } from "@/lib/store";
+import type { DrawerKind } from "@/lib/store";
+import { registerDrawer } from "@/components/shell/drawers/registry";
+import { DoorRow } from "@/features/today/doors";
 import { Access } from "./Access";
 import { Members } from "./Members";
 import { Teams } from "./Teams";
-import { psel, ptab } from "./reducer";
+import { psel } from "./reducer";
 import { tSeen } from "./helpers";
 import "./drawers";
 
+/* D59 (g8): Members is the page. The org chart and what has been lent are rarer jobs, so they
+   sit behind ONE row of doors instead of three view chips. The panels render the same vTeams and
+   vAccess the tabs did. ir-merged.js:8407-8434 */
+const g8Scope = (s: ConsoleState) => [s.WHO].concat(manageable(s));
+
+function selOf(state: ConsoleState): string | null {
+  const scope = g8Scope(state);
+  const stored = psel(state);
+  return stored && canManage(state, stored) && state.PEOPLE[stored]?.on
+    ? stored
+    : (scope.filter((k) => state.PEOPLE[k].on && canManage(state, k))[0] ?? null);
+}
+
+function TeamsPanel() {
+  const { state } = useConsole();
+  return <Teams scope={g8Scope(state)} sel={selOf(state)} />;
+}
+
+registerDrawer("p:people.teams" as DrawerKind, {
+  w: 680,
+  title: () => "Teams",
+  sub: (state) => {
+    const n = g8Scope(state).filter((k) => state.PEOPLE[k].on && clashOf(state.PEOPLE, k).length).length;
+    return n ? n + " beyond their manager's reach" : "the org and access changes";
+  },
+  Body: TeamsPanel,
+});
+registerDrawer("p:people.access" as DrawerKind, {
+  w: 720,
+  title: () => "Temporary access",
+  sub: (state) => {
+    const n = tSeen(state).filter((g) => tLive(state, g)).length;
+    return n ? n + " live" : "none live";
+  },
+  Body: () => <Access />,
+});
+
 export function PeoplePage() {
   const { state, dispatch } = useConsole();
-  const edit = own(state, "people", "seats");
-  const scope = [state.WHO].concat(manageable(state));
-
-  /* the prototype corrects PSEL as it draws — a selection that has left your access, or left the
-     org, falls back to the first person you can manage. Derived rather than written: what the seat
-     control reads is set when the drawer opens, and this is only what the card highlights. */
-  const stored = psel(state);
-  const sel =
-    stored && canManage(state, stored) && state.PEOPLE[stored]?.on
-      ? stored
-      : (scope.filter((k) => state.PEOPLE[k].on && canManage(state, k))[0] ?? null);
-
+  const edit = own(state, "people", "seats");   /* authority over people is never borrowed */
+  const scope = g8Scope(state);
   const clashes = scope.filter((k) => state.PEOPLE[k].on && clashOf(state.PEOPLE, k).length).length;
-  const liveN = tSeen(state).filter((g) => tLive(state, g)).length;
-  const active = scope.filter((k) => state.PEOPLE[k].on).length;
-  const tabStored = ptab(state);
-  const tab = ["teams", "members", "access"].includes(tabStored) ? tabStored : "members";
-
-  /* changing tab closes the drawer — it was about something on the tab you just left */
-  const toTab = (k: string) => {
-    dispatch({ type: "setUi", patch: { PTAB: k } });
-    dispatch({ type: "closeDrawer" });
-  };
+  const live = tSeen(state).filter((g) => tLive(state, g)).length;
+  const inScope = (k: string) => scope.indexOf(k) >= 0;
+  const nTeams = teamsList(state.PEOPLE).filter((t) => inScope(t.mgr) || t.members.some(inScope)).length;
 
   return (
     <>
       <div className="ph rd-page-heading">
         <div>
           <h1>Teams</h1>
-          <p className="sub">
-            {active} active members ·{" "}
-            {edit ? "Manage people, roles and access." : "People and teams you can view."}
-          </p>
+          <p className="sub">{scope.filter((k) => state.PEOPLE[k].on).length} active members</p>
         </div>
         <div className="sp" />
         {edit ? (
@@ -65,40 +86,13 @@ export function PeoplePage() {
           <span className="tag">View only</span>
         )}
       </div>
-
-      <div className="ux-toolbar ux-team rd-team-views" role="group" aria-label="Team view">
-        <button
-          type="button"
-          className={`chip ${tab === "members" ? "on" : ""}`}
-          aria-pressed={tab === "members"}
-          id="pt-members"
-          onClick={() => toTab("members")}
-        >
-          Members
-        </button>
-        <button
-          type="button"
-          className={`chip ${tab === "teams" ? "on" : ""}`}
-          aria-pressed={tab === "teams"}
-          id="pt-teams"
-          onClick={() => toTab("teams")}
-        >
-          Teams
-          {clashes ? <> <b style={{ color: "var(--late)" }}>{clashes}</b></> : null}
-        </button>
-        <button
-          type="button"
-          className={`chip ${tab === "access" ? "on" : ""}`}
-          aria-pressed={tab === "access"}
-          id="pt-access"
-          onClick={() => toTab("access")}
-        >
-          Temporary access
-          {liveN ? <> <b>{liveN}</b></> : null}
-        </button>
-      </div>
-
-      {tab === "access" ? <Access /> : tab === "teams" ? <Teams scope={scope} sel={sel} /> : <Members scope={scope} />}
+      <DoorRow
+        items={[
+          { k: "people.teams", t: "Teams", i: "people", v: clashes ? clashes + " beyond reach" : nTeams + " team" + (nTeams === 1 ? "" : "s"), cls: clashes ? "bad" : "" },
+          { k: "people.access", t: "Temporary access", i: "lock", v: live ? live + " live" : "none live" },
+        ]}
+      />
+      <Members scope={scope} />
     </>
   );
 }

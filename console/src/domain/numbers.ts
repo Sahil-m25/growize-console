@@ -6,14 +6,8 @@
  * action is itself an exception.
  */
 
-import type { RecovAction, RecovRec } from "./types";
+import type { RecovAction } from "./types";
 
-export const RECOV: Record<string, RecovRec> = {
-  nonev:{who:"gokul",  act:"Stand up the paid-search and referral engine; weekly lead target agreed",
-         by:"05 Sep", at:"25 Aug 10:00", set:"arvind"},
-  l2q  :{who:"tasneem",act:"Qualification scorecard made mandatory before stage 3",
-         by:"08 Sep", at:"25 Aug 10:04", set:"arvind"}
-};
 export const RECOVACTS = ["Coach the owner and re-run next week","Change the process step",
   "Add the missing field to the console","Re-forecast the period","Escalate to the BU review",
   "Reassign the work","Bring in Corporate Operations"] as const satisfies readonly RecovAction[];

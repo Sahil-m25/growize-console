@@ -5,7 +5,7 @@
  * 18 rows, 33 units, 3 closed as lost.
  */
 
-import type { Lead } from "./types";
+import type { Lead } from "../../src/domain/types";
 
 /* done = steps completed; at = when each was ticked */
 export const LEADS: Lead[] = [

@@ -6,7 +6,7 @@
  * confirmed as deliverable; everything else is computed.
  */
 
-import type { Inventory } from "./types";
+import type { Inventory } from "../../src/domain/types";
 
 export const INV: Inventory = {total:208, released:96, by:"harsha", at:"21 Aug 10:40",
              src:"Farm interface — blocks A and B confirmed deliverable"};

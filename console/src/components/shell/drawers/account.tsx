@@ -2,14 +2,13 @@
 
 /* YOUR ACCOUNT — DRAWERS.account, redesigned prototype ~12043–12051. Opened from the top bar's
    `who` button. The only place Profile, Team availability, Help and appearance are one click from
-   every screen — and, in this stage of the port, the only place left to switch who is signed in:
-   see the note on the footer below. */
+   every screen, and the one door out: Sign out. */
 
-import type { PersonKey } from "@/domain";
-import { SEAT } from "@/domain";
-import { avail, consoleAccount, everyone, P, roleOf } from "@/lib/selectors";
-import { useConsole } from "@/lib/store";
-import { AppearanceControls, Field, Icon, Pav } from "@/components/ui";
+import type { NavKey } from "@/domain";
+import { avail, everyone, P } from "@/lib/selectors";
+import { titleOf } from "../SignIn";
+import { useConsole, useSession } from "@/lib/store";
+import { AppearanceControls, Icon, Pav } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { AvailabilityAction, availabilityStatus } from "../availability";
 import { pathOf, type View } from "../routes";
@@ -21,9 +20,9 @@ function Body(_: DrawerProps) {
   const me = state.WHO;
   const p = P(state.PEOPLE, me);
   const s = availabilityStatus(state, me);
-  const titleOf = (k: PersonKey) => SEAT[roleOf(state.PEOPLE, k)!] ?? "";
   const goAndClose = (view: View) => {
     dispatch({ type: "closeDrawer" });
+    dispatch({ type: "go", v: view as NavKey });   /* the shell draws the page at once, before the route lands */
     router.push(pathOf(view));
   };
   const openAndClose = (k: "presence" | "help") => {
@@ -37,7 +36,7 @@ function Body(_: DrawerProps) {
         <Pav k={me} size="lg" />
         <div>
           <b>{p.n}</b>
-          <span>{titleOf(me)}</span>
+          <span>{titleOf(state, me)}</span>
           {p.em ? <span>{p.em}</span> : null}
         </div>
       </div>
@@ -89,49 +88,22 @@ function Body(_: DrawerProps) {
 }
 
 /* THE FOOTER — the prototype's is one button, "Sign out" (`<button class="act ghost"
-   onclick="signOut('chose')">Sign out</button>`, 03-app.js:9647), the only place it lives. This
-   build has no sign-in yet (README: "no sign-in, no job") — `signOut()` ends a real session
-   (03-app.js:10977, `endSession()`) that this port never opens, so there is nothing behind the
-   label to port. What is added beside it is this port's own stand-in for the prototype's sign-in
-   screen — "pick a person below to see their console" — since that is the one thing a no-auth
-   demo would otherwise have no way to do once the top bar's old persona switcher is gone.
-
-   The button itself is kept, not dropped, because the task that owns this stage of the port asked
-   for it to stay next to the demo picker rather than be replaced by it. Lacking a session to end,
-   it does the nearest honest thing a demo can: closes the menu and returns the console to its
-   default seat (`WHO0`, 03-app.js:935 — `let WHO="rohit"`), the same seat this app opens on. */
-const DEFAULT_WHO = "rohit" as PersonKey;
-
+   onclick="signOut('chose')">Sign out</button>`, 03-app.js:9647), the only place it lives. It ends
+   the session (the cookie and everything the seat had open) and returns to the sign-in screen. */
 function Foot(_: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { signOut } = useSession();
+  const router = useRouter();
   return (
-    <>
-      <Field label="Viewing as · demo only">
-        <select
-          className="selw"
-          value={state.WHO}
-          onChange={(e) => dispatch({ type: "setPerson", k: e.target.value as PersonKey })}
-        >
-          {Object.keys(state.PEOPLE)
-            .filter((k) => consoleAccount(state.PEOPLE, k as PersonKey))
-            .map((k) => (
-              <option value={k} key={k}>
-                {`${P(state.PEOPLE, k as PersonKey).n} — ${SEAT[roleOf(state.PEOPLE, k as PersonKey)!] ?? ""}`}
-              </option>
-            ))}
-        </select>
-      </Field>
-      <button
-        type="button"
-        className="act ghost"
-        onClick={() => {
-          dispatch({ type: "setPerson", k: DEFAULT_WHO });
-          dispatch({ type: "closeDrawer" });
-        }}
-      >
-        Sign out
-      </button>
-    </>
+    <button
+      type="button"
+      className="act ghost"
+      onClick={() => {
+        signOut("chose");
+        router.replace("/");
+      }}
+    >
+      Sign out
+    </button>
   );
 }
 

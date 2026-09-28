@@ -26,6 +26,10 @@ export const PATHS: Record<NavKey, string> = {
   numbers: "/numbers",
   system: "/system",
   me: "/me",
+  inv: "/inv",
+  farms: "/farms",
+  tkt: "/tkt",
+  invupd: "/invupd",
 } as Record<NavKey, string>;
 
 /* a record screen is reachable when its list is — the rule landSafe and go both use */
@@ -58,4 +62,13 @@ export function viewOf(pathname: string): { view: View | null; id: string | null
   if (head === "events") return { view: id ? "event" : ("events" as View), id };
   const known = Object.prototype.hasOwnProperty.call(PATHS, head);
   return { view: known ? (head as View) : null, id: null };
+}
+
+/* A navigation the shell should draw at once, before its route lands (Shell.tsx pendingView). A
+   rail <Link> press is seen by the shell's own click listener; anything else that pushes a route —
+   a "try them" chip that signs in as somebody and opens a page — says so here. Needed because the
+   store's go() refuses an Investors-only seat (no lead-side account), so VIEW cannot say it. */
+export const NAV_EVT = "gz:nav";
+export function announceNav(to: string): void {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent<string>(NAV_EVT, { detail: to }));
 }

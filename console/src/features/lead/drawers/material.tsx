@@ -101,20 +101,6 @@ function MaterialBody({ lead }: DrawerProps) {
           {refusal}
         </div>
       ) : null}
-      {ndaOK(state, l) ? (
-        <details className="ux-disclosure">
-          <summary>Agreements</summary>
-          <div className="ux-section">
-            <button
-              type="button"
-              className="chip"
-              onClick={() => dispatch({ type: "openDrawer", k: "paper", id: l.id })}
-            >
-              Open paperwork
-            </button>
-          </div>
-        </details>
-      ) : null}
     </>
   );
 }

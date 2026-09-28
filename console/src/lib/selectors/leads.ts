@@ -15,12 +15,7 @@ import {
   CHAN, CHNAME, COLDAT, CUSTODY, FCAT, FORFEIT, FYEND, LADDER, RAGT, ROUNDS, SENDABLE, ST,
   TOUCHCHANNELS, TOUCHDONE, TOUCHSLA,
 } from "@/domain";
-/* the prototype read these as globals; PORT-GUIDE's ConsoleState does not carry them, so a
-   selector reads the store's copy when there is one and the fixture otherwise. */
-import {
-  ACCT as ACCT0, CALLS as CALLS0, INTERACTIONS as INTERACTIONS0, NOTES as NOTES0, PACK as PACK0,
-  PAY as PAY0, REQ as REQ0, SENT as SENT0,
-} from "@/domain";
+/* the prototype read these as globals; a selector reads the store's copy, and a missing map is empty. */
 import type {
   Channel, Cover, InteractionRec, Lead, LeadComparator, LeadId, LogEntry, PayRec, PersonKey,
   RagColour, SortKey, Stamp,
@@ -31,7 +26,7 @@ import {
 import type { Ctx } from "./ctx";
 import { me, P } from "./ctx";
 import {
-  canAssign, canDecideMove, canEdit, canOperateLeads, canReadFinance, canViewInvestorCopy, chainOf, consoleAccount, isFin, isIR, may, roleOf, seeMoney, seesTeam,
+  canAssign, canDecideMove, canWork, canEdit, canOperateLeads, canReadFinance, canViewInvestorCopy, chainOf, consoleAccount, isFin, isIR, may, roleOf, seeMoney, seesTeam,
 } from "./access";
 import { avail, absRec, absFrom, absTo, outFor, outTo, logReadable, supervisedActors } from "./activity";
 import { prDone, prMine, prNext, prAt, ndaOK, suppOK } from "./paper";
@@ -42,7 +37,7 @@ import { planTotals } from "./plan";
 
 /* the one reader for a receipt: the prototype indexed `PAY[l.id]` on a global that may not be on
    `Ctx` at all (see ctx.ts), and an id with no receipt has always answered undefined */
-export const payOf = (ctx: Ctx, id: LeadId): PayRec | null => (ctx.PAY || PAY0)[id] || null;
+export const payOf = (ctx: Ctx, id: LeadId): PayRec | null => (ctx.PAY || {})[id] || null;
 
 /* ===== TOUCHES ==============================================================================
    A channel is not one event. An IR emails once, then again, then a third time, and whether the
@@ -65,7 +60,7 @@ export const tCount = (l: Lead | null | undefined, k: string): number => tList(l
 export function lastTouchAt(ctx: Ctx, l: Lead | null | undefined): Date | null {
   if (!l) return null;
   const ds = TOUCHCHANNELS.map(k => whenT(tLast(l, k), ctx.NOW)).filter((x): x is Date => !!x);
-  const iv = ((ctx.INTERACTIONS || INTERACTIONS0)[l.id] || [])
+  const iv = ((ctx.INTERACTIONS || {})[l.id] || [])
     .map(x => whenT(x.at, ctx.NOW)).filter((x): x is Date => !!x);
   const all = [...ds, ...iv];
   return all.length ? all.reduce((a, b) => (b > a ? b : a)) : (whenT((l.at || [])[0], ctx.NOW) || null);
@@ -82,10 +77,10 @@ export const quietDays = (ctx: Ctx, l: Lead | null | undefined): number | null =
    has been worked (ir-console-redesigned.html:2648-2652). Read off `INTERACTIONS`, which the
    redesign's follow-up drawer writes and the seed starts empty, like the prototype's own. */
 export const failedCallAttempts = (ctx: Ctx, l: Lead | null | undefined): InteractionRec[] =>
-  ((ctx.INTERACTIONS || INTERACTIONS0)[(l || {} as Lead).id] || [])
+  ((ctx.INTERACTIONS || {})[(l || {} as Lead).id] || [])
     .filter(x => x.channel === "call" && ["No answer", "Wrong number"].includes(x.outcome));
 export const failedVisitAttempts = (ctx: Ctx, l: Lead | null | undefined): InteractionRec[] =>
-  ((ctx.INTERACTIONS || INTERACTIONS0)[(l || {} as Lead).id] || [])
+  ((ctx.INTERACTIONS || {})[(l || {} as Lead).id] || [])
     .filter(x => x.channel === "visit" && x.outcome === "Investor unavailable");
 
 export const touches = (ctx: Ctx, l: Lead): number =>
@@ -207,12 +202,12 @@ export const secondaryMayWork = (ctx: Ctx, l: Lead): boolean => secondaryHolds(c
 /* a secondary is only cover if they are somebody else, still here, and at their desk */
 export const secOK = (ctx: Ctx, lead: Lead | null | undefined): boolean => {
   const l = lead && ctx.LEADS.find(x=>x.id === lead.id);
-  return !!l?.sec && l.sec !== l.own && consoleAccount(ctx.PEOPLE,l.sec) && roleOf(ctx.PEOPLE,l.sec) === "ir" && avail(ctx,l.sec);
+  return !!l?.sec && l.sec !== l.own && consoleAccount(ctx.PEOPLE,l.sec,ctx.CAPS) && roleOf(ctx.PEOPLE,l.sec) === "ir" && avail(ctx,l.sec);
 };
 
 export const inBookOf = (ctx: Ctx, lead: Lead): boolean => {
   const l = ctx.LEADS.find(x=>x.id === lead.id);
-  return !!l?.own && consoleAccount(ctx.PEOPLE,me(ctx)) && (l.own === me(ctx)
+  return !!l?.own && consoleAccount(ctx.PEOPLE,me(ctx),ctx.CAPS) && (l.own === me(ctx)
     || (roleOf(ctx.PEOPLE,me(ctx)) !== "cp" && (acting(ctx,l) === me(ctx) || secondaryMayWork(ctx,l))));
 };
 
@@ -384,9 +379,9 @@ export const openable = (ctx: Ctx): Lead[] => {
 
 /* who can be handed a lead today — never a hard-coded list, never someone who has left */
 export const assignees = (ctx: Ctx): PersonKey[] =>
-  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k) && ["ir", "cp"].includes(roleOf(ctx.PEOPLE, k) as string));
+  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k, ctx.CAPS) && ["ir", "cp"].includes(roleOf(ctx.PEOPLE, k) as string));
 export const channelPartners = (ctx: Ctx): PersonKey[] =>
-  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k) && roleOf(ctx.PEOPLE, k) === "cp");
+  Object.keys(ctx.PEOPLE).filter(k => consoleAccount(ctx.PEOPLE, k, ctx.CAPS) && roleOf(ctx.PEOPLE, k) === "cp");
 export const sourceLabel = (ctx: Ctx, l: Lead): string => l.src === "Channel partner" && l.channelPartnerId
   ? l.src + " · " + P(ctx.PEOPLE, l.channelPartnerId).n : l.src;
 /* everyone() — ir-console-redesigned.html 4068: roleOf(me())==="cp"?[me()]:PEOPLE on && roleOf!=="mkt".
@@ -518,6 +513,18 @@ export function paperNow(ctx: Ctx, l: Lead): PaperNow {
     R: null, n: { k: all ? "done" : "wait" } as ReturnType<typeof prNext>, mine: false, label: lab,
     short: all ? "both signed" : lab, cls: all || ndaOK(ctx, l) ? "" : "q",
   };
+}
+
+/* PRSTEP / irPaperStep(l) — ir-merged.js:3290. The IR's one paperwork step on this lead right now,
+   or null — the "Your move · …" chip on Today and Documents (D61). */
+export const PRSTEP: Record<string, string> = {
+  told: "Tell them it's sent", said: "Chase the signature", draft: "Send the draft", agreed: "Get the final draft agreed",
+};
+export function irPaperStep(ctx: Ctx, l: Lead | null | undefined): { R: NonNullable<PaperNow["R"]>; k: string; t: string } | null {
+  const pn = l ? paperNow(ctx, l) : null;
+  const k = pn && pn.n && "k" in pn.n ? String(pn.n.k) : "";
+  const who = pn && pn.n && "who" in pn.n ? (pn.n as { who?: string | null }).who : undefined;
+  return pn && pn.R && who === "IR" && canWork(ctx, l) && PRSTEP[k] ? { R: pn.R, k, t: PRSTEP[k]! } : null;
 }
 
 /* ===== WHAT THIS LEAD NEEDS NEXT, in the person's own words ================================= */
@@ -693,8 +700,8 @@ export function todayList(ctx: Ctx, sc?: "mine" | "team"): Lead[] {
           const w = paperNow(ctx, l);                      /* paper has its own card */
           return !(w.mine && w.n.who === "Finance");
         })
-      : myWork(ctx).concat(isIR(roleOf(ctx.PEOPLE, me(ctx))!) ? unassigned(ctx) : [])
-  ).filter(l => !lost(l) && l.done < ST.ONBOARDED);   /* closed is closed: it leaves the queue, not the record */
+      : myWork(ctx)
+  ).filter(l => !lost(l) && l.done < ST.ONBOARDED && !!l.own);   /* closed is closed; unowned leads are the Leads page's (merged todayList) */
 
   const ids = new Set(openable(ctx).map(l => l.id));
   const unique = [...new Map(base.filter(l => ids.has(l.id)).map(l => [l.id, l] as const)).values()];
@@ -737,11 +744,11 @@ export function leadDoors(ctx: Ctx, l: Lead, packWeeks: number): Door[] {
   const canonical = openable(ctx).find(x=>x.id === l.id);
   if (!canonical) return [];
   l = canonical;
-  const sent = (ctx.SENT || SENT0)[l.id] || {};
+  const sent = (ctx.SENT || {})[l.id] || {};
   const nSent = SENDABLE.filter(d => (sent as Record<string, string>)[d]).length;
-  const nNotes = ((ctx.NOTES || NOTES0)[l.id] || []).length;
+  const nNotes = ((ctx.NOTES || {})[l.id] || []).length;
   const nLog = ctx.LOG.filter(e => e.lead === l.id && logReadable(ctx, e)).length;
-  const p = financePaySummary(ctx,l), c = (ctx.CALLS || CALLS0)[l.id];
+  const p = financePaySummary(ctx,l), c = (ctx.CALLS || {})[l.id];
   const D: Door[] = [];
   const add = (k: string, t: string, v: string | number, cls?: string) => D.push({ k, t, v, cls: cls || "" });
 
@@ -754,8 +761,8 @@ export function leadDoors(ctx: Ctx, l: Lead, packWeeks: number): Door[] {
   if (acct && (canReadFinance(ctx,l,"pay") || canReadFinance(ctx,l,"docs"))) add("acct", "Growize account", acct, "");
   else if (seeMoney(ctx, l) && p) add("acct", "Growize account", "the link has not delivered it", "bad");
   if (l.src === "Events")
-    add("pack", "Produce pack", ((ctx.PACK || PACK0)[l.id] || 0) + " of " + packWeeks,
-      ((ctx.PACK || PACK0)[l.id] || 0) ? "" : "q");
+    add("pack", "Produce pack", ((ctx.PACK || {})[l.id] || 0) + " of " + packWeeks,
+      ((ctx.PACK || {})[l.id] || 0) ? "" : "q");
   if (l.done >= ST.TOUCH && l.done < ST.RESERVED)
     add("call", "Last call", c && c.o ? c.o : "not recorded", c && c.o ? "" : "q");
   if (seeMoney(ctx, l))
@@ -835,7 +842,7 @@ export const canAskExt = (ctx: Ctx, l: Lead | null | undefined): boolean =>
 
 export const movesWaiting = (ctx: Ctx): Lead[] =>
   openable(ctx).filter(l => {
-    const r = (ctx.REQ || REQ0)[l.id];
+    const r = (ctx.REQ || {})[l.id];
     return !!r && r.state === "waiting" && canDecideMove(ctx, l);
   });
 
@@ -909,7 +916,9 @@ export const dormant = (ctx: Ctx, l: Lead | null | undefined): boolean => {
 export type ExcKey = "nonext" | "overdue" | "cold" | "fcgap" | "consent" | "due" | "hold7" | "lost" | "dormant";
 export const EXC: Record<ExcKey, [string, (ctx: Ctx, l: Lead) => boolean]> = {
   nonext:  ["No next action",          (_c, l) => noNext(l)],
-  overdue: ["Overdue",                 (c, l) => active(l) && nxDue(l, c.NOW) === "overdue"],
+  /* merged ir-merged.js:4809 — Today's rule: a dated next step decides; without one, a missed first touch */
+  overdue: ["Overdue",                 (c, l) => { if (!active(l)) return false; const d = hasNext(l) && nxDue(l, c.NOW);
+              return d ? d === "overdue" : missingTouch(c, l)?.state === "overdue"; }],
   cold:    ["Going cold",              (c, l) => cold(c, l, c.NOW)],
   fcgap:   ["Forecast with no date",   (c, l) => fcBad(l, c.NOW)],
   consent: ["Permission missing",      (_c, l) => active(l) && !anyConsent(l)],

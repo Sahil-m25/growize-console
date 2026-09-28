@@ -28,14 +28,32 @@ import {
   unread,
 } from "@/lib/selectors";
 import type { Action, ConsoleState } from "@/lib/store";
+import { sidesOf } from "@/lib/selectors/access";
+import { MERGE } from "@/domain/signin";
+import { imCount, imHot } from "@/lib/im";
 import { parentOf, pathOf, type View } from "./routes";
 import { investorCopyBook, investorCopyEligibility, investorCopyOf } from "@/lib/investor-copy";
 
 export { navFor, scopeCount };
 export type NavItem = ReturnType<typeof navFor>[number];
 
-/* count(k) — 03-app.js:7009 */
+/* count(k) — merge-glue.js:121. A two-sided entry counts each half the person holds. */
 export function count(state: ConsoleState, k: NavKey): number {
+  const s = sidesOf(state, k);
+  let c = 0;
+  if (s.ir || !MERGE[k]) c += countIR(state, k);
+  if (s.im) c += imCount({ data: state.IM, ui: state.IMUI }, MERGE[k]!, state.WHO);
+  return c;
+}
+
+/* imHot(k) — merge-glue.js:40: an Investors-only entry whose badge is a call to act */
+export function imHotRow(state: ConsoleState, k: NavKey): boolean {
+  const s = sidesOf(state, k);
+  return s.im && !s.ir && imHot(MERGE[k]!) && imCount({ data: state.IM, ui: state.IMUI }, MERGE[k]!, state.WHO) > 0;
+}
+
+/* count(k) — 03-app.js:7009 */
+function countIR(state: ConsoleState, k: NavKey): number {
   if (k === "today") return scopeCount(state, "today", scopeOf(state, "today"));
   if (k === "leads") return scopeCount(state, "leads", scopeOf(state, "leads"));
   if (k === "updates") return unread(state);
@@ -67,6 +85,7 @@ export function scopeBreach(state: ConsoleState, k: "today" | "leads", sc: Scope
 
 /** navHot(k,sc) — the badge's red half: owned, and breached. */
 export function navHot(state: ConsoleState, k: NavKey, sc?: Scope): boolean {
+  if (imHotRow(state, k)) return true;
   if (k !== "today" && k !== "leads") return false;
   const s = sc ?? scopeOf(state, k);
   return navOwns(state, k, s) && scopeBreach(state, k, s) > 0;
@@ -74,6 +93,8 @@ export function navHot(state: ConsoleState, k: NavKey, sc?: Scope): boolean {
 
 /* navTip(k,c,sc) — what the badge means when you hover it — 03-app.js:12986 */
 export function navTip(state: ConsoleState, k: NavKey, c: number, sc?: Scope): string {
+  const sd = sidesOf(state, k);   /* merge-glue.js:128 */
+  if (sd.im && !sd.ir) return k === "today" ? c + " waiting on you" : k === "tkt" ? c + " open" : k === "docs" ? c + " awaiting a signature" : String(c);
   const s = sc ?? scopeOf(state, k);
   const w = s === "team" ? " in the team's book" : "";
   if (k === "today") {
@@ -124,20 +145,16 @@ export function mayReach(state: ConsoleState, view: View): boolean {
   return canReach(state, parentOf(view));
 }
 
-/* findInvestor() — the redesigned prototype, ~13298. The header's search button and the Ctrl/Cmd+K
-   / "/" hotkey (Shell.tsx's global key handler) are the same act, so both call this rather than
-   keeping two slightly different copies of it: a seat that cannot reach Leads gets nothing, an
-   active filter never survives into a fresh search, and the query field is what ends up focused
-   and selected either way. */
+/* findInvestor() — merged prototype D60 b (ir-merged.js:10989). The header's box and the Ctrl/Cmd+K
+   hotkey (Shell.tsx) are the same act: a seat that cannot reach Leads gets nothing; otherwise the
+   top-bar box (#fq, features/leads/FindBox) is focused and selected. It never moves you. */
 export function findInvestor(
   state: ConsoleState,
-  dispatch: (a: Action) => unknown,
-  navigate: (href: string) => void,
+  _dispatch: (a: Action) => unknown,
+  _navigate: (href: string) => void,
 ): void {
   if (!navFor(state).some((n) => n.k === "leads")) return;
-  dispatch({ type: "clearLeadFilters" });
-  if (state.VIEW !== "leads") navigate(pathOf("leads" as View));
-  const n = document.getElementById("lq") as HTMLInputElement | null;
+  const n = document.getElementById("fq") as HTMLInputElement | null;
   if (n) {
     n.focus();
     n.select();

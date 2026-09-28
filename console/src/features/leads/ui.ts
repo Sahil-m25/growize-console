@@ -38,8 +38,8 @@ export const uiTchan = (ui: UiState): Channel | "other" | null =>
     ? ui.TCHAN
     : null;
 
-/* Leads: the sort. setSort() falls back to "urgent" — 03-app.js:1339 */
-export const uiSort = (ui: UiState): SortKey => (sn(ui.LSORT) || "urgent") as SortKey;
+/* Leads: the sort. The merged prototype opens on "name" (ir-merged.js:2757); setSort() falls back to "urgent" */
+export const uiSort = (ui: UiState): SortKey => (sn(ui.LSORT) || "name") as SortKey;
 
 /* Leads: "somebody asked for the lost ones back" — the redesigned prototype's own switch on top of
    the default hide, ir-console-redesigned.html:7362 (`let LLOST = false`). `LeadFilters` (in

@@ -16,6 +16,15 @@ We are porting `console/prototype/ir-console.html` (a 7,995-line vanilla-JS SPA)
 copy, thresholds or colours. Every string a user sees is already written; copy it exactly, including
 the em dashes, the `₹`, the lowercase, and the past-tense button wording.
 
+## Data and sign-in (phase 1 foundation, 27 Sep 2026)
+
+- **No record lives in `src/`.** Records come through `@/lib/data` (`Dataset`, `DataSource`, `getSource()`):
+  `GET /api/data` serves the empty book (real Asia/Kolkata clock) unless `FIXTURE_MODE=local`, when it
+  serves the demo book from `console/fixtures/book/` plus applied fixtures (`console/fixtures/apply.ts`).
+  `@/domain` keeps rules and copy only. Read records from `state`, never import them.
+- **Nobody is signed in by default.** `state.authed`/`state.WHO` come from the session (`/api/session`
+  cookie) or a press on the sign-in screen (`useSession().signIn(k)`); `useSession().signOut(why)` ends it.
+
 ## Non-negotiable rules (from `docs/stages/STAGE-1.md` §1.1 and `CLAUDE.md`)
 
 - **No UI kit, no component library, no state library, no CSS framework, no ORM, no date library.**

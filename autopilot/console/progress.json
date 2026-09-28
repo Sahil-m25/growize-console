@@ -104,18 +104,19 @@
   "M02-S04": {
    "status": "review",
    "attempts": 1,
-   "at": "2026-09-25T18:47:29.461Z",
-   "note": "identity.ts shaper/reveal/safeNote + field register + 5 tests pass; Jev 0/8: no Investors page or DEMO_PORTAL/DEMO_BOOK seed yet; T01-T04 Zoho setup with Sahil; T09 probes need sandbox users",
+   "at": "2026-09-27T22:56:00.056Z",
+   "note": "Jev run 28 Sep: app 6/7 vs prototype 6/7; TC-IM04-012 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour",
    "commits": [
-    "400a678"
+    "400a678",
+    "3c6435a"
    ],
    "phases": {
-    "fe": "review",
+    "fe": "done",
     "zoho": "review",
     "test": "pending"
    },
    "phase_attempts": {
-    "fe": 0,
+    "fe": 1,
     "zoho": 0,
     "test": 0
    }
@@ -183,18 +184,19 @@
   "M19-S03": {
    "status": "pending",
    "attempts": 1,
-   "at": "2026-09-25T19:00:02.267Z",
-   "note": "manifest+reset+local fixture endpoint built and tested; live sandbox run needs Test_Seed/Seed_Key fields and creds",
+   "at": "2026-09-27T13:42:46.892Z",
+   "note": "all 90 catalogue fixtures registered (data edits, reducer-run as a person, clock, client actions; staging ones explicit no-ops); fresh / resets",
    "commits": [
-    "0f325a3"
+    "0f325a3",
+    "936d1cd"
    ],
    "phases": {
-    "fe": "pending",
+    "fe": "done",
     "zoho": "done",
     "test": "pending"
    },
    "phase_attempts": {
-    "fe": 0,
+    "fe": 1,
     "zoho": 0,
     "test": 0
    }
@@ -237,16 +239,19 @@
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T14:39:52.519Z",
-   "note": "Built and offline-verified validate-before-replay receipt backend with 222 passing recorded-fixture tests and clean typecheck. Waiting on sandbox Idempotency_Key/atomicity proofs, authoritative OAuth session-seat wiring, refund/UTR decisions, and frontend queue integration. npm test is unavailable because console/package.json has no test script; explicit suites passed.",
+   "at": "2026-09-27T22:56:01.269Z",
+   "note": "Jev run 28 Sep: app 1/3 vs prototype 0/3",
    "commits": [
-    "e31dc2d"
+    "e31dc2d",
+    "3c6435a"
    ]
   },
   "M03-S05": {
@@ -286,102 +291,120 @@
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T15:53:12.391Z",
+   "at": "2026-09-27T22:56:03.510Z",
    "notes": 2,
-   "note": "createLead server boundary built with 10 recorded-fixture tests; waits on Leads picklist/field setup (Introduced_By, Consent_Visit, source and consent-how values), the unassigned-queue PROVISIONAL, and the session layer that supplies the capture access authority.",
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4",
    "commits": [
-    "f938534"
+    "f938534",
+    "3c6435a"
    ]
   },
   "M04-S02": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T15:57:43.556Z",
+   "at": "2026-09-27T22:56:03.813Z",
    "notes": 2,
-   "note": "Own-token duplicate lookup + Zoho DUPLICATE_DATA refusal built and tested; waits on Leads.Mobile duplicate check in Zoho and the FACT CHANGE on service-read wording.",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2",
    "commits": [
-    "9a18fed"
+    "9a18fed",
+    "3c6435a"
    ]
   },
   "M06-S01": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:01:35.684Z",
+   "at": "2026-09-27T22:56:05.736Z",
    "notes": 1,
-   "note": "Leads book server read built with 5 recorded-fixture tests; waits on Leads sharing (unassigned queue, secondary owner) and the front-end wiring.",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
    "commits": [
-    "a817cd6"
+    "a817cd6",
+    "3c6435a"
    ]
   },
   "M05-S01": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:05:05.827Z",
+   "at": "2026-09-27T22:56:04.437Z",
    "notes": 2,
-   "note": "Today server read built (open book + open activities) with 3 tests; waits on activity-module access (M02-S07) and staging proof of activity field names; nextUp/workGroup PROVISIONAL (b).",
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3",
    "commits": [
-    "d069836"
+    "d069836",
+    "3c6435a"
    ]
   },
   "M05-S02": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:09:02.973Z",
+   "at": "2026-09-27T22:56:04.741Z",
    "notes": 1,
-   "note": "Assign-to-me guarded write and focus-panel read built with 7 tests; waits on IR read/write sharing on unassigned-queue leads and the front-end wiring.",
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4",
    "commits": [
-    "48628f4"
+    "48628f4",
+    "3c6435a"
    ]
   },
   "M06-S03": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:12:54.729Z",
+   "at": "2026-09-27T22:56:06.350Z",
    "notes": 1,
-   "note": "Leads-only search cut to the book with last-4 masking, 5 tests; waits on staging proof of Zoho search/phone behaviour and the front-end box.",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
    "commits": [
-    "2c92b62"
+    "2c92b62",
+    "3c6435a"
    ]
   },
   "M07-S03": {
@@ -405,17 +428,20 @@
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:23:42.525Z",
+   "at": "2026-09-27T22:56:07.278Z",
    "notes": 1,
-   "note": "D58 next-step to Calls/Meetings/Tasks mapping with reminder and participants, 1 test; waits on activity-module access and staging proof of the reminder and participant fields.",
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5",
    "commits": [
-    "c5fcc0a"
+    "c5fcc0a",
+    "3c6435a"
    ]
   },
   "M07-S06": {
@@ -439,17 +465,20 @@
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:31:36.017Z",
+   "at": "2026-09-27T22:56:09.770Z",
    "notes": 1,
-   "note": "CSV import server with row verdicts, event tag, owner rules and duplicate-safe retry, 5 tests; waits on the Leads.Mobile duplicate check and an event staff source.",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
    "commits": [
-    "74f8d1d"
+    "74f8d1d",
+    "3c6435a"
    ]
   },
   "M05-S04": {
@@ -472,68 +501,80 @@
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:40:25.547Z",
+   "at": "2026-09-27T22:56:11.370Z",
    "notes": 1,
-   "note": "Journey tick/untick/skip on Lead stamps with gates and one-back 8 h undo, 6 tests; waits on two new Leads fields and the Finance gate reader (M08-S02).",
+   "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6",
    "commits": [
-    "105ba18"
+    "105ba18",
+    "3c6435a"
    ]
   },
   "M15-S01": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:45:05.525Z",
+   "at": "2026-09-27T22:56:22.799Z",
    "notes": 1,
-   "note": "Updates from Plane A timelines, value-free, grouped with unread, 2 tests; waits on the Plane B/C seen store, manager state sources and the grants store.",
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5",
    "commits": [
-    "ad93c95"
+    "ad93c95",
+    "3c6435a"
    ]
   },
   "M16-S01": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:50:56.317Z",
+   "at": "2026-09-27T22:56:23.718Z",
    "notes": 1,
-   "note": "Assignments by IR computed from Zoho Leads and Touches, counts-only in the scope-keyed cache, 4 tests; waits on the owner-change workflow and the session layer's IR lists.",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
    "commits": [
-    "45ce49e"
+    "45ce49e",
+    "3c6435a"
    ]
   },
   "M16-S03": {
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:55:41.794Z",
+   "at": "2026-09-27T22:56:24.021Z",
    "notes": 1,
-   "note": "Numbers sections as scoped COQL aggregates in the scope-keyed cache with money only for money seats, 4 tests; waits on staging proof of aggregate response keys and the front end.",
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3",
    "commits": [
-    "3261785"
+    "3261785",
+    "3c6435a"
    ]
   },
   "M16-S04": {
@@ -557,17 +598,20 @@
    "status": "pending",
    "attempts": 1,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "fe": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "fe": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T17:03:48.034Z",
+   "at": "2026-09-27T22:56:24.318Z",
    "notes": 1,
-   "note": "Transfers per yes-month with units/value from allotments and median days, 2 tests; waits on manager read access to Contacts/allotments and the Legacy_Record field.",
+   "note": "Jev run 28 Sep: app 5/5 vs prototype 5/5",
    "commits": [
-    "063bd68"
+    "063bd68",
+    "3c6435a"
    ]
   },
   "M17-S05": {
@@ -620,6 +664,1146 @@
    "commits": [
     "5995b1c"
    ]
+  },
+  "M03-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "62b38ea"
+   ],
+   "at": "2026-09-27T13:42:40.896Z",
+   "note": "sign-in screen (Continue with Zoho stub + fixture people), session, data interface, empty by default; app = prototype on M03-S01 (1/5 each; 3 fact changes proposed)"
+  },
+  "M19-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:55:59.733Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M01-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:00.364Z",
+   "note": "Jev run 28 Sep: app 2/10 vs prototype 2/10"
+  },
+  "M01-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:00.664Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M01-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:00.967Z",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  "M01-S09": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:01.564Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M03-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:01.910Z",
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  "M03-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:02.270Z",
+   "note": "Jev run 28 Sep: app 4/7 vs prototype 4/7"
+  },
+  "M03-S06": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:02.602Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M03-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:02.901Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M01-S06": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:03.215Z",
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  "M04-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:04.118Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M05-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:05.051Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M05-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:05.414Z",
+   "note": "Jev run 28 Sep: app 1/3 vs prototype 1/3"
+  },
+  "M06-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:06.046Z",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  "M07-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:06.676Z",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  "M07-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:06.978Z",
+   "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6"
+  },
+  "M07-S05": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:07.596Z",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  "M09-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:07.897Z",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  "M09-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:08.194Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M09-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:08.528Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M09-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:08.842Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M09-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:09.155Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M09-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:09.466Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M07-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:10.089Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M01-S10": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:10.411Z",
+   "note": "Jev run 28 Sep: app 2/4 vs prototype 2/4"
+  },
+  "M05-S06": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:10.714Z",
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  "M05-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:11.057Z",
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 0/3"
+  },
+  "M08-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:11.674Z",
+   "note": "Jev run 28 Sep: app 5/7 vs prototype 5/7"
+  },
+  "M08-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:11.977Z",
+   "note": "Jev run 28 Sep: app 4/6 vs prototype 4/6"
+  },
+  "M08-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:12.283Z",
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  "M08-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:12.600Z",
+   "note": "Jev run 28 Sep: app 1/2 vs prototype 1/2"
+  },
+  "M10-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:12.906Z",
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4"
+  },
+  "M10-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:13.216Z",
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  "M10-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:13.525Z",
+   "note": "Jev run 28 Sep: app 1/3 vs prototype 1/3"
+  },
+  "M10-S05": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:13.876Z",
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  "M10-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:14.198Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M11-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:14.511Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M11-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:14.827Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M11-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:15.143Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M11-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:15.456Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M11-S05": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:15.768Z",
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  "M11-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:16.088Z",
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  "M12-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:16.399Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M12-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:16.741Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M12-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:17.067Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M12-S05": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:17.372Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M12-S06": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:17.677Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 2/3"
+  },
+  "M12-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:18.054Z",
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  "M12-S11": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:18.370Z",
+   "note": "Jev run 28 Sep: app 7/10 vs prototype 7/10"
+  },
+  "M12-S12": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:18.686Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M12-S13": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:19.023Z",
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  "M14-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:19.327Z",
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  "M14-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:19.680Z",
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5"
+  },
+  "M14-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:19.984Z",
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5"
+  },
+  "M10-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:20.305Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M10-S09": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:20.602Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M12-S09": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:20.915Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M12-S14": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:21.218Z",
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4; TC-E09-019 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour"
+  },
+  "M13-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:21.515Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M13-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:21.811Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M13-S04": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:22.113Z",
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 3/3; TC-IM08-007 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour"
+  },
+  "M13-S06": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:22.463Z",
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  "M15-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:23.100Z",
+   "note": "Jev run 28 Sep: app 5/8 vs prototype 5/8"
+  },
+  "M15-S05": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:23.401Z",
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4"
+  },
+  "M17-S01": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:24.642Z",
+   "note": "Jev run 28 Sep: app 2/7 vs prototype 2/7"
+  },
+  "M13-S05": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:24.971Z",
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  "M16-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:25.285Z",
+   "note": "Jev run 28 Sep: app 1/1 vs prototype 1/1"
+  },
+  "M16-S07": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:25.595Z",
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  "M16-S08": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:25.898Z",
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  "M18-S03": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:26.244Z",
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  "M09-S09": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:26.548Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M10-S20": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:26.860Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M10-S21": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:27.170Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M10-S22": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:27.467Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M10-S23": {
+   "status": "pending",
+   "attempts": 0,
+   "phases": {
+    "fe": "done"
+   },
+   "phase_attempts": {
+    "fe": 1
+   },
+   "commits": [
+    "3c6435a"
+   ],
+   "at": "2026-09-27T22:56:27.777Z",
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
   }
  },
  "subtasks": {
@@ -761,8 +1945,9 @@
    "at": "2026-09-25T18:47:29.461Z"
   },
   "M02-S04-T07": {
-   "status": "review",
-   "at": "2026-09-25T18:47:29.461Z"
+   "status": "done",
+   "at": "2026-09-27T22:56:00.056Z",
+   "phase": "fe"
   },
   "M02-S04-T08": {
    "status": "pending",
@@ -855,9 +2040,9 @@
    "note": "D98: reset — the Jev run never executed (fixture errors)"
   },
   "M19-S03-T03": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reopened — fixture endpoint records the name only"
+   "status": "done",
+   "at": "2026-09-27T13:42:46.892Z",
+   "phase": "fe"
   },
   "M02-S10-T01": {
    "status": "done",
@@ -1058,6 +2243,531 @@
    "status": "blocked",
    "at": "2026-09-27T17:13:09.158Z",
    "note": "waiting on Autopilot (Jev)"
+  },
+  "M03-S01-T04": {
+   "status": "done",
+   "at": "2026-09-27T13:42:40.896Z",
+   "phase": "fe"
+  },
+  "M19-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:55:59.733Z",
+   "phase": "fe"
+  },
+  "M01-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.364Z",
+   "phase": "fe"
+  },
+  "M01-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.364Z",
+   "phase": "fe"
+  },
+  "M01-S01-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.364Z",
+   "phase": "fe"
+  },
+  "M01-S01-T05": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.364Z",
+   "phase": "fe"
+  },
+  "M01-S03-T04": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.664Z",
+   "phase": "fe"
+  },
+  "M01-S07-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.967Z",
+   "phase": "fe"
+  },
+  "M01-S07-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.967Z",
+   "phase": "fe"
+  },
+  "M01-S07-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.967Z",
+   "phase": "fe"
+  },
+  "M01-S07-T05": {
+   "status": "done",
+   "at": "2026-09-27T22:56:00.967Z",
+   "phase": "fe"
+  },
+  "M01-S08-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:01.269Z",
+   "phase": "fe"
+  },
+  "M01-S08-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:01.269Z",
+   "phase": "fe"
+  },
+  "M01-S08-T04": {
+   "status": "done",
+   "at": "2026-09-27T22:56:01.269Z",
+   "phase": "fe"
+  },
+  "M01-S09-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:01.564Z",
+   "phase": "fe"
+  },
+  "M03-S02-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:01.910Z",
+   "phase": "fe"
+  },
+  "M03-S04-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:02.270Z",
+   "phase": "fe"
+  },
+  "M03-S06-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:02.602Z",
+   "phase": "fe"
+  },
+  "M03-S08-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:02.901Z",
+   "phase": "fe"
+  },
+  "M01-S06-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:03.215Z",
+   "phase": "fe"
+  },
+  "M04-S01-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:03.510Z",
+   "phase": "fe"
+  },
+  "M04-S02-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:03.813Z",
+   "phase": "fe"
+  },
+  "M04-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:04.118Z",
+   "phase": "fe"
+  },
+  "M05-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:04.437Z",
+   "phase": "fe"
+  },
+  "M05-S02-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:04.741Z",
+   "phase": "fe"
+  },
+  "M05-S03-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:05.051Z",
+   "phase": "fe"
+  },
+  "M05-S08-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:05.414Z",
+   "phase": "fe"
+  },
+  "M06-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:05.736Z",
+   "phase": "fe"
+  },
+  "M06-S02-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:06.046Z",
+   "phase": "fe"
+  },
+  "M06-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:06.350Z",
+   "phase": "fe"
+  },
+  "M07-S01-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:06.676Z",
+   "phase": "fe"
+  },
+  "M07-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:06.676Z",
+   "phase": "fe"
+  },
+  "M07-S02-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:06.978Z",
+   "phase": "fe"
+  },
+  "M07-S04-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:07.278Z",
+   "phase": "fe"
+  },
+  "M07-S05-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:07.596Z",
+   "phase": "fe"
+  },
+  "M09-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:07.897Z",
+   "phase": "fe"
+  },
+  "M09-S02-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:08.194Z",
+   "phase": "fe"
+  },
+  "M09-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:08.528Z",
+   "phase": "fe"
+  },
+  "M09-S04-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:08.842Z",
+   "phase": "fe"
+  },
+  "M09-S07-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:09.155Z",
+   "phase": "fe"
+  },
+  "M09-S08-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:09.466Z",
+   "phase": "fe"
+  },
+  "M04-S04-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:09.770Z",
+   "phase": "fe"
+  },
+  "M07-S07-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:10.089Z",
+   "phase": "fe"
+  },
+  "M01-S10-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:10.411Z",
+   "phase": "fe"
+  },
+  "M05-S06-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:10.714Z",
+   "phase": "fe"
+  },
+  "M05-S07-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.057Z",
+   "phase": "fe"
+  },
+  "M08-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.370Z",
+   "phase": "fe"
+  },
+  "M08-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.674Z",
+   "phase": "fe"
+  },
+  "M08-S03-T05": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.674Z",
+   "phase": "fe"
+  },
+  "M08-S04-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.977Z",
+   "phase": "fe"
+  },
+  "M08-S04-T05": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.977Z",
+   "phase": "fe"
+  },
+  "M08-S04-T06": {
+   "status": "done",
+   "at": "2026-09-27T22:56:11.977Z",
+   "phase": "fe"
+  },
+  "M08-S07-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:12.283Z",
+   "phase": "fe"
+  },
+  "M08-S08-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:12.600Z",
+   "phase": "fe"
+  },
+  "M10-S01-T04": {
+   "status": "done",
+   "at": "2026-09-27T22:56:12.906Z",
+   "phase": "fe"
+  },
+  "M10-S02-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:13.216Z",
+   "phase": "fe"
+  },
+  "M10-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:13.525Z",
+   "phase": "fe"
+  },
+  "M10-S05-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:13.876Z",
+   "phase": "fe"
+  },
+  "M10-S07-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:14.198Z",
+   "phase": "fe"
+  },
+  "M11-S01-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:14.511Z",
+   "phase": "fe"
+  },
+  "M11-S02-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:14.827Z",
+   "phase": "fe"
+  },
+  "M11-S03-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:15.143Z",
+   "phase": "fe"
+  },
+  "M11-S04-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:15.456Z",
+   "phase": "fe"
+  },
+  "M11-S05-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:15.768Z",
+   "phase": "fe"
+  },
+  "M11-S07-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:16.088Z",
+   "phase": "fe"
+  },
+  "M12-S02-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:16.399Z",
+   "phase": "fe"
+  },
+  "M12-S03-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:16.741Z",
+   "phase": "fe"
+  },
+  "M12-S04-T05": {
+   "status": "done",
+   "at": "2026-09-27T22:56:17.067Z",
+   "phase": "fe"
+  },
+  "M12-S05-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:17.372Z",
+   "phase": "fe"
+  },
+  "M12-S06-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:17.677Z",
+   "phase": "fe"
+  },
+  "M12-S07-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:18.054Z",
+   "phase": "fe"
+  },
+  "M12-S11-T04": {
+   "status": "done",
+   "at": "2026-09-27T22:56:18.370Z",
+   "phase": "fe"
+  },
+  "M12-S12-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:18.686Z",
+   "phase": "fe"
+  },
+  "M12-S13-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:19.023Z",
+   "phase": "fe"
+  },
+  "M14-S01-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:19.327Z",
+   "phase": "fe"
+  },
+  "M14-S02-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:19.680Z",
+   "phase": "fe"
+  },
+  "M14-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:19.984Z",
+   "phase": "fe"
+  },
+  "M10-S08-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:20.305Z",
+   "phase": "fe"
+  },
+  "M10-S09-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:20.602Z",
+   "phase": "fe"
+  },
+  "M12-S09-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:20.915Z",
+   "phase": "fe"
+  },
+  "M12-S14-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:21.218Z",
+   "phase": "fe"
+  },
+  "M13-S02-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:21.515Z",
+   "phase": "fe"
+  },
+  "M13-S03-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:21.811Z",
+   "phase": "fe"
+  },
+  "M13-S04-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:22.113Z",
+   "phase": "fe"
+  },
+  "M13-S06-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:22.463Z",
+   "phase": "fe"
+  },
+  "M15-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:22.799Z",
+   "phase": "fe"
+  },
+  "M15-S03-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:23.100Z",
+   "phase": "fe"
+  },
+  "M15-S03-T06": {
+   "status": "done",
+   "at": "2026-09-27T22:56:23.100Z",
+   "phase": "fe"
+  },
+  "M15-S05-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:23.401Z",
+   "phase": "fe"
+  },
+  "M16-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:23.718Z",
+   "phase": "fe"
+  },
+  "M16-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:24.021Z",
+   "phase": "fe"
+  },
+  "M16-S06-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:24.318Z",
+   "phase": "fe"
+  },
+  "M17-S01-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:24.642Z",
+   "phase": "fe"
+  },
+  "M17-S01-T03": {
+   "status": "done",
+   "at": "2026-09-27T22:56:24.642Z",
+   "phase": "fe"
+  },
+  "M13-S05-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:24.971Z",
+   "phase": "fe"
+  },
+  "M16-S02-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:25.285Z",
+   "phase": "fe"
+  },
+  "M16-S07-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:25.595Z",
+   "phase": "fe"
+  },
+  "M16-S08-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:25.898Z",
+   "phase": "fe"
+  },
+  "M18-S03-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:26.244Z",
+   "phase": "fe"
+  },
+  "M18-S03-T02": {
+   "status": "done",
+   "at": "2026-09-27T22:56:26.244Z",
+   "phase": "fe"
+  },
+  "M09-S09-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:26.548Z",
+   "phase": "fe"
+  },
+  "M10-S20-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:26.860Z",
+   "phase": "fe"
+  },
+  "M10-S21-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:27.170Z",
+   "phase": "fe"
+  },
+  "M10-S22-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:27.467Z",
+   "phase": "fe"
+  },
+  "M10-S23-T01": {
+   "status": "done",
+   "at": "2026-09-27T22:56:27.777Z",
+   "phase": "fe"
   }
  },
  "rounds": [
@@ -1270,6 +2980,42 @@
    "attempt": 1,
    "hours": 5,
    "note": ""
+  },
+  {
+   "at": "2026-09-27T13:42:33.058Z",
+   "story": "M03-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T13:42:40.896Z",
+   "story": "M03-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "sign-in screen (Continue with Zoho stub + fixture people), session, data interface, empty by default; app = prototype on M03-S01 (1/5 each; 3 fact changes proposed)"
+  },
+  {
+   "at": "2026-09-27T13:42:46.831Z",
+   "story": "M19-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": "manifest+reset+local fixture endpoint built and tested; live sandbox run needs Test_Seed/Seed_Key fields and creds"
+  },
+  {
+   "at": "2026-09-27T13:42:46.892Z",
+   "story": "M19-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "all 90 catalogue fixtures registered (data edits, reducer-run as a person, clock, client actions; staging ones explicit no-ops); fresh / resets"
   },
   {
    "at": "2026-09-27T14:39:52.519Z",
@@ -1675,6 +3421,1631 @@
    "attempt": 1,
    "hours": 1,
    "note": "System checks computed from Plane B and held facts with owners and fixes, DI only, 3 tests; waits on a licence-expiry source and the Plane B/C store."
+  },
+  {
+   "at": "2026-09-27T22:55:59.673Z",
+   "story": "M19-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:55:59.733Z",
+   "story": "M19-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:55:59.995Z",
+   "story": "M02-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": "identity.ts shaper/reveal/safeNote + field register + 5 tests pass; Jev 0/8: no Investors page or DEMO_PORTAL/DEMO_BOOK seed yet; T01-T04 Zoho setup with Sahil; T09 probes need sandbox users"
+  },
+  {
+   "at": "2026-09-27T22:56:00.056Z",
+   "story": "M02-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 6/7 vs prototype 6/7; TC-IM04-012 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour"
+  },
+  {
+   "at": "2026-09-27T22:56:00.303Z",
+   "story": "M01-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 11,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:00.364Z",
+   "story": "M01-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 11,
+   "note": "Jev run 28 Sep: app 2/10 vs prototype 2/10"
+  },
+  {
+   "at": "2026-09-27T22:56:00.605Z",
+   "story": "M01-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:00.664Z",
+   "story": "M01-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:00.905Z",
+   "story": "M01-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 16,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:00.967Z",
+   "story": "M01-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 16,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:01.210Z",
+   "story": "M01-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 13,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:01.269Z",
+   "story": "M01-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 13,
+   "note": "Jev run 28 Sep: app 1/3 vs prototype 0/3"
+  },
+  {
+   "at": "2026-09-27T22:56:01.504Z",
+   "story": "M01-S09",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:01.564Z",
+   "story": "M01-S09",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:01.831Z",
+   "story": "M03-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:01.910Z",
+   "story": "M03-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  {
+   "at": "2026-09-27T22:56:02.204Z",
+   "story": "M03-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:02.270Z",
+   "story": "M03-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 4/7 vs prototype 4/7"
+  },
+  {
+   "at": "2026-09-27T22:56:02.532Z",
+   "story": "M03-S06",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:02.602Z",
+   "story": "M03-S06",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:02.843Z",
+   "story": "M03-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:02.901Z",
+   "story": "M03-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:03.150Z",
+   "story": "M01-S06",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:03.215Z",
+   "story": "M01-S06",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  {
+   "at": "2026-09-27T22:56:03.446Z",
+   "story": "M04-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:03.510Z",
+   "story": "M04-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  {
+   "at": "2026-09-27T22:56:03.753Z",
+   "story": "M04-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:03.813Z",
+   "story": "M04-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:04.053Z",
+   "story": "M04-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:04.118Z",
+   "story": "M04-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:04.376Z",
+   "story": "M05-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:04.437Z",
+   "story": "M05-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2.5,
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  {
+   "at": "2026-09-27T22:56:04.680Z",
+   "story": "M05-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:04.741Z",
+   "story": "M05-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4"
+  },
+  {
+   "at": "2026-09-27T22:56:04.989Z",
+   "story": "M05-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:05.051Z",
+   "story": "M05-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:05.329Z",
+   "story": "M05-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:05.414Z",
+   "story": "M05-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 1/3 vs prototype 1/3"
+  },
+  {
+   "at": "2026-09-27T22:56:05.674Z",
+   "story": "M06-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:05.736Z",
+   "story": "M06-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:05.984Z",
+   "story": "M06-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:06.046Z",
+   "story": "M06-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:06.281Z",
+   "story": "M06-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:06.350Z",
+   "story": "M06-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:06.600Z",
+   "story": "M07-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 9,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:06.676Z",
+   "story": "M07-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 9,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:06.921Z",
+   "story": "M07-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:06.978Z",
+   "story": "M07-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6"
+  },
+  {
+   "at": "2026-09-27T22:56:07.216Z",
+   "story": "M07-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:07.278Z",
+   "story": "M07-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5"
+  },
+  {
+   "at": "2026-09-27T22:56:07.530Z",
+   "story": "M07-S05",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:07.596Z",
+   "story": "M07-S05",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:07.833Z",
+   "story": "M09-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:07.897Z",
+   "story": "M09-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:08.137Z",
+   "story": "M09-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:08.194Z",
+   "story": "M09-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:08.464Z",
+   "story": "M09-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:08.528Z",
+   "story": "M09-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 5,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:08.777Z",
+   "story": "M09-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:08.842Z",
+   "story": "M09-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:09.088Z",
+   "story": "M09-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:09.155Z",
+   "story": "M09-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:09.403Z",
+   "story": "M09-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:09.466Z",
+   "story": "M09-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:09.709Z",
+   "story": "M04-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:09.770Z",
+   "story": "M04-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:10.023Z",
+   "story": "M07-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:10.089Z",
+   "story": "M07-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:10.348Z",
+   "story": "M01-S10",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:10.411Z",
+   "story": "M01-S10",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 2/4 vs prototype 2/4"
+  },
+  {
+   "at": "2026-09-27T22:56:10.655Z",
+   "story": "M05-S06",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:10.714Z",
+   "story": "M05-S06",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  {
+   "at": "2026-09-27T22:56:10.968Z",
+   "story": "M05-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:11.057Z",
+   "story": "M05-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 0/3"
+  },
+  {
+   "at": "2026-09-27T22:56:11.305Z",
+   "story": "M08-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:11.370Z",
+   "story": "M08-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6"
+  },
+  {
+   "at": "2026-09-27T22:56:11.614Z",
+   "story": "M08-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 6,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:11.674Z",
+   "story": "M08-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 6,
+   "note": "Jev run 28 Sep: app 5/7 vs prototype 5/7"
+  },
+  {
+   "at": "2026-09-27T22:56:11.905Z",
+   "story": "M08-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 8,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:11.977Z",
+   "story": "M08-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 8,
+   "note": "Jev run 28 Sep: app 4/6 vs prototype 4/6"
+  },
+  {
+   "at": "2026-09-27T22:56:12.220Z",
+   "story": "M08-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:12.283Z",
+   "story": "M08-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  {
+   "at": "2026-09-27T22:56:12.530Z",
+   "story": "M08-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:12.600Z",
+   "story": "M08-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 1/2 vs prototype 1/2"
+  },
+  {
+   "at": "2026-09-27T22:56:12.846Z",
+   "story": "M10-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:12.906Z",
+   "story": "M10-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4"
+  },
+  {
+   "at": "2026-09-27T22:56:13.150Z",
+   "story": "M10-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:13.216Z",
+   "story": "M10-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  {
+   "at": "2026-09-27T22:56:13.460Z",
+   "story": "M10-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:13.525Z",
+   "story": "M10-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 1/3 vs prototype 1/3"
+  },
+  {
+   "at": "2026-09-27T22:56:13.793Z",
+   "story": "M10-S05",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:13.876Z",
+   "story": "M10-S05",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  {
+   "at": "2026-09-27T22:56:14.135Z",
+   "story": "M10-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:14.198Z",
+   "story": "M10-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:14.449Z",
+   "story": "M11-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:14.511Z",
+   "story": "M11-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:14.746Z",
+   "story": "M11-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:14.827Z",
+   "story": "M11-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:15.075Z",
+   "story": "M11-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:15.143Z",
+   "story": "M11-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:15.392Z",
+   "story": "M11-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:15.456Z",
+   "story": "M11-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:15.705Z",
+   "story": "M11-S05",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:15.768Z",
+   "story": "M11-S05",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  {
+   "at": "2026-09-27T22:56:16.026Z",
+   "story": "M11-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:16.088Z",
+   "story": "M11-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  {
+   "at": "2026-09-27T22:56:16.336Z",
+   "story": "M12-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:16.399Z",
+   "story": "M12-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:16.679Z",
+   "story": "M12-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:16.741Z",
+   "story": "M12-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:16.991Z",
+   "story": "M12-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:17.067Z",
+   "story": "M12-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:17.312Z",
+   "story": "M12-S05",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:17.372Z",
+   "story": "M12-S05",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:17.609Z",
+   "story": "M12-S06",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:17.677Z",
+   "story": "M12-S06",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 2/3"
+  },
+  {
+   "at": "2026-09-27T22:56:17.972Z",
+   "story": "M12-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:18.054Z",
+   "story": "M12-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  {
+   "at": "2026-09-27T22:56:18.302Z",
+   "story": "M12-S11",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:18.370Z",
+   "story": "M12-S11",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 7/10 vs prototype 7/10"
+  },
+  {
+   "at": "2026-09-27T22:56:18.622Z",
+   "story": "M12-S12",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:18.686Z",
+   "story": "M12-S12",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:18.956Z",
+   "story": "M12-S13",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:19.023Z",
+   "story": "M12-S13",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4"
+  },
+  {
+   "at": "2026-09-27T22:56:19.265Z",
+   "story": "M14-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:19.327Z",
+   "story": "M14-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  {
+   "at": "2026-09-27T22:56:19.611Z",
+   "story": "M14-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:19.680Z",
+   "story": "M14-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5"
+  },
+  {
+   "at": "2026-09-27T22:56:19.921Z",
+   "story": "M14-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:19.984Z",
+   "story": "M14-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5"
+  },
+  {
+   "at": "2026-09-27T22:56:20.246Z",
+   "story": "M10-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:20.305Z",
+   "story": "M10-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:20.543Z",
+   "story": "M10-S09",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:20.602Z",
+   "story": "M10-S09",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1.5,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:20.854Z",
+   "story": "M12-S09",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:20.915Z",
+   "story": "M12-S09",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:21.157Z",
+   "story": "M12-S14",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:21.218Z",
+   "story": "M12-S14",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4; TC-E09-019 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour"
+  },
+  {
+   "at": "2026-09-27T22:56:21.454Z",
+   "story": "M13-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:21.515Z",
+   "story": "M13-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:21.750Z",
+   "story": "M13-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:21.811Z",
+   "story": "M13-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:22.050Z",
+   "story": "M13-S04",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:22.113Z",
+   "story": "M13-S04",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 3/3; TC-IM08-007 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour"
+  },
+  {
+   "at": "2026-09-27T22:56:22.400Z",
+   "story": "M13-S06",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:22.463Z",
+   "story": "M13-S06",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  {
+   "at": "2026-09-27T22:56:22.738Z",
+   "story": "M15-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:22.799Z",
+   "story": "M15-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5"
+  },
+  {
+   "at": "2026-09-27T22:56:23.030Z",
+   "story": "M15-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 5.5,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:23.100Z",
+   "story": "M15-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 5.5,
+   "note": "Jev run 28 Sep: app 5/8 vs prototype 5/8"
+  },
+  {
+   "at": "2026-09-27T22:56:23.337Z",
+   "story": "M15-S05",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 2,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:23.401Z",
+   "story": "M15-S05",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 2,
+   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4"
+  },
+  {
+   "at": "2026-09-27T22:56:23.655Z",
+   "story": "M16-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:23.718Z",
+   "story": "M16-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+  },
+  {
+   "at": "2026-09-27T22:56:23.958Z",
+   "story": "M16-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:24.021Z",
+   "story": "M16-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3"
+  },
+  {
+   "at": "2026-09-27T22:56:24.257Z",
+   "story": "M16-S06",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:24.318Z",
+   "story": "M16-S06",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 5/5 vs prototype 5/5"
+  },
+  {
+   "at": "2026-09-27T22:56:24.555Z",
+   "story": "M17-S01",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:24.642Z",
+   "story": "M17-S01",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 2/7 vs prototype 2/7"
+  },
+  {
+   "at": "2026-09-27T22:56:24.906Z",
+   "story": "M13-S05",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 3,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:24.971Z",
+   "story": "M13-S05",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 3,
+   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+  },
+  {
+   "at": "2026-09-27T22:56:25.221Z",
+   "story": "M16-S02",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:25.285Z",
+   "story": "M16-S02",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 1/1 vs prototype 1/1"
+  },
+  {
+   "at": "2026-09-27T22:56:25.527Z",
+   "story": "M16-S07",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 1,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:25.595Z",
+   "story": "M16-S07",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 1,
+   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
+  },
+  {
+   "at": "2026-09-27T22:56:25.832Z",
+   "story": "M16-S08",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:25.898Z",
+   "story": "M16-S08",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3"
+  },
+  {
+   "at": "2026-09-27T22:56:26.175Z",
+   "story": "M18-S03",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 6,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:26.244Z",
+   "story": "M18-S03",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 6,
+   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+  },
+  {
+   "at": "2026-09-27T22:56:26.487Z",
+   "story": "M09-S09",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:26.548Z",
+   "story": "M09-S09",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:26.798Z",
+   "story": "M10-S20",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:26.860Z",
+   "story": "M10-S20",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:27.106Z",
+   "story": "M10-S21",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:27.170Z",
+   "story": "M10-S21",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:27.403Z",
+   "story": "M10-S22",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:27.467Z",
+   "story": "M10-S22",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:27.714Z",
+   "story": "M10-S23",
+   "phase": "fe",
+   "status": "in_progress",
+   "attempt": 1,
+   "hours": 4,
+   "note": ""
+  },
+  {
+   "at": "2026-09-27T22:56:27.777Z",
+   "story": "M10-S23",
+   "phase": "fe",
+   "status": "done",
+   "attempt": 1,
+   "hours": 4,
+   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  {
+   "at": "2026-09-27T22:56:42.068Z",
+   "story": "REGRESSION",
+   "status": "done"
   }
  ],
  "last_regression_round": 0,

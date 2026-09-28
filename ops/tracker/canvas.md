@@ -1,24 +1,28 @@
 ::: {.callout}
-**Updated 27 Sep 2026 20:58 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 28 Sep 2026 11:14 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
 
 **Goal:** the whole Growize Console (lead side and Investors side, one app on Zoho), built in three phases: **front end first, then plug into Zoho, then test**. Owner's build target ![](slack_date:2026-10-03).
 
-**Now working on:** 1. Front end on demo data — The story's screens exist in console/ and its Jev UI cases pass on demo data (FIXTURE_MODE=local). No Zoho calls.
+**Now working on:** 2. Plug into Zoho — The same screens read and write Zoho through src/lib/zoho (as the signed-in person), unit and API tests pass, and the UI cases still pass on demo data.
+
+::: {.callout}
+:warning: The build loop has not run for 7 hours. Nothing moves until /build runs on the laptop again.
+:::
 
 |Phase|Done|Review|Left|Loop hours left|Forecast finish|Pace|
 |---|---|---|---|---|---|---|
-|**1. Front end on demo data** :arrow_left:|0 of 92 (0%)|1|92|70.8|![](slack_date:2026-10-02)|assumed until 5 rounds|
-|**2. Plug into Zoho**|15 of 119 (13%)|1|104|61.8|![](slack_date:2026-10-07)|35.7 min/unit measured|
-|**3. Test and harden**|0 of 145 (0%)|0|145|36.3|![](slack_date:2026-10-09)|assumed until 5 rounds|
+|**1. Front end on demo data**|92 of 92 (100%)|0|0|0|done|0 min/unit measured|
+|**2. Plug into Zoho** :arrow_left:|35 of 119 (29%)|1|84|14.6|![](slack_date:2026-09-29)|10.4 min/unit measured|
+|**3. Test and harden**|0 of 145 (0%)|0|145|36.3|![](slack_date:2026-10-02)|assumed until 5 rounds|
 
 |Forecast|Date|
 |---|---|
-|All three phases through the loop|![](slack_date:2026-10-09)|
-|People's testing and UAT finished (earliest go-live)|![](slack_date:2026-10-15)|
-|Status|:red_circle: Behind the target|
+|All three phases through the loop|![](slack_date:2026-10-02)|
+|People's testing and UAT finished (earliest go-live)|![](slack_date:2026-10-08)|
+|Status|:large_green_circle: On track|
 
 ::: {.callout}
 **What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be tested without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); the autopilot writes the code meanwhile. Phase 3 needs the tester's weekend reviews and UAT by the business users.
@@ -30,48 +34,48 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-10-07)|
-|S1|Foundations, access, test suite|23|0|![](slack_date:2026-10-07)|
-|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-09)|
-|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-09)|
-|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-09)|
-|S5|Hardening, UAT, migration, release|13|0|![](slack_date:2026-10-09)|
+|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-09-29)|
+|S1|Foundations, access, test suite|23|0|![](slack_date:2026-09-30)|
+|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-02)|
+|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-02)|
+|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-02)|
+|S5|Hardening, UAT, migration, release|13|0|![](slack_date:2026-10-02)|
 
 # :calendar: Month by month
 
 |Month|Stories finished|Forecast to finish|Cumulative forecast|
 |---|---|---|---|
-|September 2026|2|0|2 of 151|
-|October 2026|0|149|151 of 151|
+|September 2026|2|86|88 of 151|
+|October 2026|0|62|150 of 151|
 
 # :spiral_calendar_pad: Week by week
 
 |Week of|Finished|Forecast|Cumulative|Burn-up|
 |---|---|---|---|---|
-|![](slack_date:2026-09-21) **(this week)**|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
-|![](slack_date:2026-09-28)|0|4|6|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 4%|
-|![](slack_date:2026-10-05)|0|145|151|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square: 100%|
+|![](slack_date:2026-09-21)|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
+|![](slack_date:2026-09-28) **(this week)**|0|148|150|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square: 99%|
 
 ## This week
 
-**Finished (2):** M02-S13, M02-S14
+**Finished (0):** none yet
 
-**Planned by the forecast (0):** none
+**Planned by the forecast (148):** M19-S06, M19-S04, M19-S05, M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S03, M02-S04, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S11, M02-S12, M20-S01, M20-S05, M20-S06, M20-S08, M02-S07, M01-S01, M01-S02, M01-S03, M01-S04, M01-S05, M01-S07, M01-S08, M01-S09, M03-S02, M03-S03, M03-S04, M03-S05, M03-S06, M03-S07, M03-S08, M03-S09, M01-S06, M04-S01, M04-S02, M04-S03, M05-S01, M05-S02, M05-S03, M05-S08, M06-S01, M06-S02, M06-S03, M06-S05, M07-S01, M07-S02, M07-S03, M07-S04, M07-S05, M07-S06, M09-S01, M09-S02, M09-S03, M09-S04, M09-S07, M09-S08, M19-S10, M19-S11, M04-S04, M07-S07, M01-S10, M05-S06, M05-S07, M08-S01, M08-S02, M08-S03, M08-S04, M08-S05, M08-S07, M08-S08, M10-S01, M10-S02, M10-S03, M10-S05, M10-S07, M11-S01, M11-S02, M11-S03, M11-S04, M11-S05, M11-S07, M12-S01, M12-S02, M12-S03, M12-S04, M12-S05, M12-S06, M12-S07, M12-S10, M12-S11, M12-S12, M12-S13, M14-S01, M14-S02, M14-S03, M10-S08, M10-S09, M12-S08, M12-S09, M12-S14, M19-S08, M13-S01, M13-S02, M13-S03, M13-S04, M13-S06, M15-S01, M15-S03, M15-S05, M16-S01, M16-S03, M16-S04, M16-S06, M16-S09, M17-S01, M17-S02, M17-S05, M17-S06, M20-S07, M13-S05, M16-S02, M16-S07, M16-S08, M18-S01, M18-S02, M18-S03, M18-S04, M18-S05, M18-S06, M18-S08, M18-S09, M18-S12, M20-S03, M20-S04, M18-S10, M19-S07, M09-S09, M10-S20, M10-S21, M10-S22, M10-S23
 
-**Stuck: review or waiting on people (1):**
+**Stuck: review or waiting on people (2):**
 
 - **M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat (review)
+- **M05-S04** Call times and reschedule (waiting)
 
-# :mag: What exists today (audit 27 Sep, re-checked by the D98 test run)
+# :mag: What exists today (28 Sep, after phase 1)
 
 |Layer|State|
 |---|---|
-|Front end (screens)|24 stories built, 66 partly, 19 not started, 42 have no screen|
-|Lead side screens|Ported from the IR console prototype, but the port lost behaviour: with all 9 lead-side seats Jev passes 13% of their cases in the app against 72% on the prototype (27 Sep). No sign-in screen yet. Pages: Today, Leads, Lead page, Add/CSV, Events, Plan, Numbers, Activity, Teams, System, Profile, Updates, Payments (IR claims), Documents (paperwork), Transfers|
-|Investors side screens|Not started: Investors list and record, Farms and allotments, Tickets, Investor updates, Finance receipts and matching, payouts, app access|
-|Connected to Zoho|No screen reads or writes Zoho yet; every page runs on demo data (the Zoho adapter is a stub)|
+|Front end (screens)|94 stories built, 15 partly, 0 not started, 42 have no screen|
+|Lead side screens|Re-ported to the merged prototype, screen for screen: sign-in (Continue with Zoho stub), Today, Leads, lead page, Add lead/CSV, Find, Events, Activity, Updates, Teams and the D60 access model, Profile, System, Numbers, Plan, Transfers, Payments, Documents|
+|Investors side screens|Built from the prototype and merged into the one console: Today (Finance and Account Management), Investors list and record, Farms and allotments, Payments and receipts (Match it), monthly payouts, Documents (upload, signature status), Tickets, Investor updates, app access, app preview, test sign-in link, Numbers, Activity, Teams, System|
+|Connected to Zoho|No screen reads or writes Zoho yet (phase 2). Every page reads one data interface (console/src/lib/data): a normal run starts empty; demo data loads only with FIXTURE_MODE=local|
 |Zoho org|Modules and fields in place (M02 done items); still open: profiles per seat, field-level security (PAN not encrypted, only Administrator and Standard profiles exist), sharing rules, test user, sandbox and OAuth client|
-|Tested by Jev|Full suite as written: 1 of 241 pass (no sign-in screen yet, so every case stops at step 1). Lead side as Rohit with sign-in skipped: 15 of 67 pass (22%), 5 review; 7 of 36 stories fully pass. 78 cases can't run until fixtures load. Calibration 18/18 caught, so the judge is trusted.|
+|Tested by Jev|Full suite 28 Sep: app 221 of 319 pass (69%) vs the merged prototype 218 (68%), run the same evening; calibration 18/18 caught. Cases failing on both are mostly facts written for the old portal or the pre-merge console (fact changes proposed in BLOCKED.md). Per-epic table: docs/reports/phase1-jev-2026-09-28.md|
 
 # :dart: Epics
 
@@ -128,6 +132,43 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 - [ ] M03-S05-NOTE-4 (M03-S05) ENTERPRISE ENTITLEMENT PROOF: CurrentUser proves the authenticated user, active/confirmed state, user type and role/profile, but not that the org's paid Enterprise entitlement is current. Before enabling sign-in, capture sanitized Organization API evidence for the configured
 - [ ] M03-S07-T01 (M03-S07, Sahil, Before its story (do early)) Sharing for KAM books — Private default on Contacts; KAM access by owner/kam lookup sharing rule; Head of AM above KAMs in the hierarchy.
 - [ ] M03-S07-NOTE-1 (M03-S07) ZOHO SHARING PROOF (human, sandbox then production): the backend refuses foreign rows, but only Zoho sharing proves a KAM token cannot read them. With synthetic Contacts + Issued allotments: (1) signed in as a KAM (Imran), COQL 'select id from Contacts where id is not null' 
+- [ ] M04-S01-NOTE-1 (M04-S01) ZOHO SETUP FOR CAPTURE (M04-S01-T01; the super admin creates fields, so this waits for Sahil's approval — on approval Claude can apply it through the Zoho connector and export zoho/leads/fields.json). Live Leads metadata read 27 Sep: Lead_Event, City, Units_Interested, Conse
+- [ ] M04-S01-NOTE-2 (M04-S01) PROVISIONAL: How is an unassigned lead represented in Zoho, where every record must have an Owner? → built as (b) a dedicated 'Unassigned' queue user owns it (Jev 0.49 vs 0.49 for (a) the adding manager owns it with Owner_Assigned_At empty; LOW CONFIDENCE). Needs a seat for 
+- [ ] M04-S02-NOTE-1 (M04-S02) ZOHO DUPLICATE CHECK ON LEADS.MOBILE (M04-S02 hard stop; super admin): Setup > Modules and Fields > Leads > Standard layout > Mobile > Edit Properties > tick "Do not allow duplicate values". Zoho refuses this while duplicates exist, so first run the report Leads grouped by M
+- [ ] M04-S02-NOTE-2 (M04-S02) FACT CHANGE PROPOSED: M04-S02-T01 says the duplicate lookup uses a service read across the org; CLAUDE.md rule 2 (D53) says a service token never serves a screen, so it was built on the person's own token instead. Consequence for acceptance 3: a number held in a book the IR 
+- [ ] M06-S01-NOTE-1 (M06-S01) LEADS BOOK SHARING (M06-S01, super admin; with M02-S04's Private sharing): (1) Leads default sharing Private, IR Manager above her IRs in the role hierarchy so Team scope reads her IRs' leads; (2) a sharing rule giving the Investor Relations role Read on Leads owned by the u
+- [ ] M05-S01-NOTE-1 (M05-S01) PROVISIONAL: Where are nextUp/workGroup computed for Today in the Zoho phase? → built as (b): the server returns the Today read (open leads in scope plus their open Tasks, Calls and Meetings; lost and onboarded left out) and the existing ported rule in features/today/work.ts
+- [ ] M05-S01-NOTE-2 (M05-S01) TODAY ACTIVITY MODULES (M05-S01; needs M02-S07): the Zoho connector used for setup gets "permission denied" on Tasks, Calls and Events (Meetings), so the field names in console/src/server/leads/today.ts (ACTIVITY_QUERIES) are Zoho's standard ones and unproved in this org: Ta
+- [ ] M05-S02-NOTE-1 (M05-S02) ASSIGN TO ME NEEDS WRITE ON QUEUE LEADS (M05-S02, super admin; follows the unassigned-queue PROVISIONAL in M04-S01): the Leads sharing rule for records owned by the unassigned queue user must give the Investor Relations role Read/Write (not Read only), so an IR's own token c
+- [ ] M06-S03-NOTE-1 (M06-S03) LEAD SEARCH STAGING PROOF (M06-S03): with real tokens on staging — (1) an IR's GET /crm/v8/Leads/search?word=<another IR's lead name> returns nothing (Private sharing) and the console says "No lead matches in your book"; (2) Zoho's phone= search finds a lead from 3+ typed di
+- [ ] M07-S03-NOTE-1 (M07-S03) FOLLOW-UP SAVE AND UNDO — ZOHO AND SECRETS (M07-S03): (1) the IR, IR Manager and Digital Infrastructure profiles need Delete (single record, not mass delete) on Touches, Tasks, Calls and Meetings (Events), or Undo and the automatic take-back cannot remove what a save created
+- [ ] M07-S03-NOTE-2 (M07-S03) FACT CHANGE PROPOSED: M07-S03-T01 says a saved follow-up "writes Calls (completed)"; D76 (as applied, 25 Sep) made the shared Touches module the one log of every human contact, and D58 keeps Calls for scheduled callbacks. Built per D76/D58: the contact is one Touch (Channel,
+- [ ] M07-S04-NOTE-1 (M07-S04) ACTIVITY MAPPING STAGING PROOF (M07-S04; D58): after M02-S07 gives the console's profiles access to Calls and Meetings, confirm on staging that (1) a Call created with Reminder "15 mins" shows a 15-minute reminder (if Zoho's Calls reminder field or value differs in this org,
+- [ ] M07-S06-NOTE-1 (M07-S06) CLOSE AS LOST IN ZOHO (M07-S06): the console records a loss as Leads.Lost_At + Lost_Reason and clears Next_Step fields; it never writes Lead_Status, which the blueprint owns (D45). Needed from the super admin: (1) decide whether the Lead Nurturing blueprint should move Lead_
+- [ ] M04-S04-NOTE-1 (M04-S04) CSV IMPORT DEPENDENCIES (M04-S04): a retried import is safe only once Leads.Mobile has "Do not allow duplicate values" (M04-S02-NOTE-1) — until then a retry after a part-way failure could write a row twice, so do not enable the import on production before that setting is on.
+- [ ] M05-S04-T02 (M05-S04, Tester, Testing phase) Test call times (Sat–Sun) — Run TC-E05-010..011; manual check of the reminder in Zoho CRM calendar.
+- [ ] M08-S01-NOTE-1 (M08-S01) JOURNEY FIELDS (M08-S01, super admin): the rungs are the existing Leads date stamps (First_Touch_At, Qualified_At, Engaged_At, Said_Yes_At, Reserved_At, Fully_Paid_At, Allocated_At, Onboarded_At). Two new Leads fields are needed: a checkbox "Engagement Skipped" (API Engageme
+- [ ] M15-S01-NOTE-1 (M15-S01) UPDATES — WHAT STILL NEEDS A PERSON (M15-S01): (1) "last seen" per group is stored in Plane B/C, whose store is still the owner's open choice (D47); the server takes it as a SeenStore dependency; (2) the IR Manager's state groups ("moves waiting for approval", "breaches in m
+- [ ] M16-S01-NOTE-1 (M16-S01) ASSIGNMENTS REPORT — ZOHO SETUP (M16-S01, super admin): (1) a Leads workflow rule "On edit, when Owner is modified" with a field update setting Owner_Assigned_At to the rule's execution time, so owner changes made in Zoho itself (not only through the console, which already s
+- [ ] M16-S03-NOTE-1 (M16-S03) NUMBERS SECTIONS STAGING PROOF (M16-S03): the sections use COQL aggregates (select COUNT(id)[, SUM(Units_Interested)] … group by Lead_Source / Owner / Lost_Reason / Forecast). On staging confirm (1) this org's COQL returns aggregate rows keyed "COUNT(id)" and "SUM(Units_Inte
+- [ ] M16-S04-NOTE-1 (M16-S04) PLAN READ — WHAT IT NEEDS (M16-S04): (1) at least one Sales_Plans record per period with Plan_Scope "Team", Period_From/Period_To and Target_Units (Collection_Target optional) — the console reads, never writes, them; (2) the paid figure is worked out from Receipts (Match_Sta
+- [ ] M16-S06-NOTE-1 (M16-S06) TRANSFERS — ACCESS AND LEGACY (M16-S06): units and value come from the investor's Contact (Origin_Lead = the lead) and its allotments, read with the person's own token. The IR Manager therefore needs Read on Contacts and LLP_UnitAllocation_Module for her team's converted lea
+- [ ] M17-S05-NOTE-1 (M17-S05) OWN PROFILE IN ZOHO (M17-S05): the console changes a person's own display name and mobile with PUT /crm/v8/users/{their id} on their own token. Zoho may only allow that for profiles with "Manage Users" or with the users.UPDATE OAuth scope; on staging, sign in as a restricted
+- [ ] M20-S07-NOTE-1 (M20-S07) INVESTOR APP CONTRACTS — PEOPLE'S PART (M20-S07): (1) add the investor app codebase to the repo when ready (M20-S07-T04; the stub receiver in console/src/server/contracts/events.ts stands in until then); (2) put two random 32+ character contract signing keys in the server se
+- [ ] M17-S06-NOTE-1 (M17-S06) SYSTEM CHECKS — SOURCES (M17-S06): the checks are computed from Plane B (the Zoho call log) plus facts the server holds; two of those facts need a person: (1) the Enterprise licence expiry date (Organization API or entered once by Sahil after each renewal — the check shows "
+- [ ] M03-S01-NOTE-1 (M03-S01) FACT CHANGE PROPOSED: TC-E03-001 'offers exactly six people … does not offer Harsha Bhat / Arvind Menon or Pradeep Ram' → the merged console (D98, prototype growize-console-merged.html vSignin) offers every person either side admits: the four IRs, Tasneem, Harsha, Meena, Fah
+- [ ] M03-S01-NOTE-2 (M03-S01) FACT CHANGE PROPOSED: TC-E03-002 'does not offer Harsha Bhat' → Harsha Bhat (Head of Finance) signs in for the Investors side in the merged console (D98, merge notes 'Who sees what'). The prototype fails this fact too.
+- [ ] M03-S01-NOTE-3 (M03-S01) FACT CHANGE PROPOSED: TC-E03-004 'does not offer Pradeep Ram' → Pradeep Ram holds the Investors-side administrator seat (System, Activity, Team) in the merged console, so he is offered. The prototype fails this fact too.
+- [ ] M06-S02-NOTE-1 (M06-S02) FACT CHANGE PROPOSED: TC-E06-006 'A chip Name, A to Z × is shown' / 'offers Clear filters' → no chip: Name, A to Z is the default order and the merged prototype shows a chip only for a non-default sort. The prototype fails this case too.
+- [ ] M14-S03-NOTE-1 (M14-S03) FACT CHANGE PROPOSED: TC-E10-012 'Sahil cannot load / no Load 31 leads' → 'Sahil (super user, D68) is offered Load 31 leads'. In the merged prototype his seat can load the sheet; the prototype fails the case too.
+- [ ] M14-S02-NOTE-1 (M14-S02) FACT CHANGE PROPOSED: TC-E10-007 — the step that sets a run event back to Planned should be dropped: Planned is disabled for an event that has run (a run event cannot go back to planned). The facts can stay. The prototype fails the case too.
+- [ ] M15-S01-NOTE-1 (M15-S01) FACT CHANGE PROPOSED: TC-E11-004 '…Needs attention, listing Ritu Anand and Harish Kamath' / '…listing Sanjay Menon and Farida Contractor' → '…Needs attention, reading They are listed once, on Leads under Needs an owner.' / '…They are listed once, on Today in the team's queue
+- [ ] M10-S02-NOTE-1 (M10-S02) FACT CHANGE PROPOSED: TC-IM05-009 and TC-IM05-010 steps 'Press Transactions' → 'Press Payments'. In the merged console the Investors page Transactions is the rail entry Payments (merge-glue.js MT). The prototype fails both cases for this reason.
+- [ ] M12-S14-NOTE-1 (M12-S14) FACT CHANGE PROPOSED: TC-E09-019 'a Call back step due 28 Aug · 16:30' → a wording true both before and after 16:30 (e.g. 'a Call back step for 28 Aug at 16:30'), or add fixture CLOCK_28AUG_1000. The row reads 'Call back — today at 16:30' before 16:30 and 'Overdue · Call bac
+- [ ] M01-S01-NOTE-1 (M01-S01) FACT CHANGE PROPOSED: TC-IM01-001..004 and other Investors-portal cases still name the old portal's rail (Dashboard, Transactions, Insights, Activity log, Team, 'Toggle theme', 'Signed in as' dropdown). In the merged console (D98) these are Today, Payments, Numbers, Activity
+- [ ] M10-S02-NOTE-2 (M10-S02) PROVISIONAL: recording a receipt still marks it matched by the recorder, as the merged prototype does; D21/CLAUDE.md rule 3 (record freely, matching gated by a second person) would make recorded receipts pending until 'Match it'. Built as the prototype; 'Match it' exists for
+- [ ] M10-S08-NOTE-1 (M10-S08) PROVISIONAL: the two-farm investor, an app On hold and a locked app are shown only with the new fixture IM:MONEY_DEMO (added to pm/merge-audit/ui-sahil/fixtures-merged.json), because every demo investor in the prototype holds one block and changing the default book would cha
+- [ ] M19-S01-NOTE-1 (M19-S01) PROVISIONAL: the a11y lint (npm run lint:a11y) is in place but not wired into a pre-commit hook or CI yet; wire it when CI exists. Controls the prototype leaves unlabelled carry a title rather than an aria-label so the UI cases still find them by their row.
 
 # :clipboard: Stories
 
@@ -135,22 +176,22 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M01-S01** One Next.js shell with the rail built from the person's seat|To do|To do|To do|Partly built|S1|Must|0/9|
+|**M01-S01** One Next.js shell with the rail built from the person's seat|:white_check_mark: Done|To do|To do|Built (demo data)|S1|Must|4/9|
 |**M01-S02** Sign in with my own Zoho account; signing out or changing person clears everything|—|To do|To do|Partly built|S1|Must|0/5|
-|**M01-S03** Live reads and writes through one Zoho client, gate and scope-keyed cache|To do|To do|To do|Partly built|S1|Must|0/7|
+|**M01-S03** Live reads and writes through one Zoho client, gate and scope-keyed cache|:white_check_mark: Done|To do|To do|Built (demo data)|S1|Must|1/7|
 |**M01-S04** Operations and identity logs|—|To do|To do|Not a screen|S1|Must|0/2|
 |**M01-S05** Staging and production environments|—|To do|To do|Not a screen|S1|Must|0/2|
-|**M01-S06** Pending saves while offline|To do|—|To do|Built (demo data)|S2|Must|0/2|
-|**M01-S07** Refusals and confirmations said in the page, never in alert() or confirm()|To do|—|To do|Partly built|S1|Must|0/6|
-|**M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land|To do|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S1|Must|1/6|
-|**M01-S09** Honest connection and freshness line in the top bar|To do|To do|To do|Partly built|S1|Must|0/3|
-|**M01-S10** Step-up before a reveal, an export or money leaving, with a second hand on refunds|To do|To do|To do|Partly built|S3|Must|0/9|
+|**M01-S06** Pending saves while offline|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|1/2|
+|**M01-S07** Refusals and confirmations said in the page, never in alert() or confirm()|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|4/6|
+|**M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S1|Must|4/6|
+|**M01-S09** Honest connection and freshness line in the top bar|:white_check_mark: Done|To do|To do|Built (demo data)|S1|Must|1/3|
+|**M01-S10** Step-up before a reveal, an export or money leaving, with a second hand on refunds|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/9|
 
 ## M02 · Zoho org build-out
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat|:eyes: Review|:eyes: Review|To do|Not a screen|S0|Must|1/10|
+|**M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat|:white_check_mark: Done|:eyes: Review|To do|Not a screen|S0|Must|2/10|
 |**M02-S01** Enterprise renewed and seats ordered|—|—|To do|Not a screen|S0|Must|0/3|
 |**M02-S02** Lead fields, rungs and picklists per the mapping|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S0|Must|3/4|
 |**M02-S03** Custom modules for the lead side; LLP modules adopted|—|:white_check_mark: Done|To do|Not a screen|S0|Must|1/3|
@@ -169,176 +210,176 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M03-S01** Only people with a seat or a granted page sign in|To do|To do|To do|Partly built|S1|Must|0/4|
-|**M03-S02** Sahil grants pages to other people, read-only by default|To do|To do|To do|Built (demo data)|S1|Must|0/3|
+|**M03-S01** Only people with a seat or a granted page sign in|:white_check_mark: Done|To do|To do|Built (demo data)|S1|Must|1/4|
+|**M03-S02** Sahil grants pages to other people, read-only by default|:white_check_mark: Done|To do|To do|Built (demo data)|S1|Must|1/3|
 |**M03-S03** Extra pages for IRs, and the IR Manager's limits|—|To do|To do|Built (demo data)|S1|Must|0/2|
-|**M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged|To do|To do|To do|Partly built|S1|Must|0/5|
+|**M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged|:white_check_mark: Done|To do|To do|Built (demo data)|S1|Must|1/5|
 |**M03-S05** Zoho users provisioned seat by seat, both sides|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S1|Must|1/4|
-|**M03-S06** The Auditor (viewer) reads and never writes|To do|—|To do|Partly built|S1|Must|0/4|
+|**M03-S06** The Auditor (viewer) reads and never writes|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|1/4|
 |**M03-S07** Key account managers see and work only their own accounts|—|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S1|Must|1/4|
-|**M03-S08** Compliance owns KYC|To do|—|To do|Partly built|S1|Must|0/3|
+|**M03-S08** Compliance owns KYC|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|1/3|
 |**M03-S09** An IR sees investor data only for investors from their own leads, enforced at the data layer|—|To do|To do|Partly built|S1|Must|0/4|
 
 ## M04 · Lead capture
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M04-S01** Add a single lead|To do|To do|To do|Built (demo data)|S2|Must|0/4|
-|**M04-S02** Duplicate mobile refused|To do|To do|To do|Built (demo data)|S2|Must|0/3|
-|**M04-S03** Contact permission at capture|To do|—|To do|Built (demo data)|S2|Must|0/3|
-|**M04-S04** CSV import with preview|To do|To do|To do|Built (demo data)|S2|Should|0/3|
+|**M04-S01** Add a single lead|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|3/4|
+|**M04-S02** Duplicate mobile refused|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
+|**M04-S03** Contact permission at capture|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|1/3|
+|**M04-S04** CSV import with preview|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Should|2/3|
 
 ## M05 · Today (both sides)
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M05-S01** My day list (Lead side)|To do|To do|To do|Built (demo data)|S2|Must|0/3|
-|**M05-S02** One action per row and the focus panel|To do|To do|To do|Built (demo data)|S2|Must|0/3|
-|**M05-S03** Paperwork 'your move' on Today|To do|—|To do|Built (demo data)|S2|Must|0/2|
-|**M05-S04** Call times and reschedule|—|To do|—|Partly built|S2|Should|0/2|
-|**M05-S06** Headline figures on Today (Investors side)|To do|To do|To do|Partly built|S3|Must|0/3|
-|**M05-S07** Waiting on you: the Investors-side queue per seat, including IR payment claims|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M05-S08** Account Management's Today (Investors side)|To do|To do|To do|Partly built|S2|Must|0/4|
+|**M05-S04** Call times and reschedule|—|:hourglass_flowing_sand: Waiting on people|—|Partly built|S2|Should|1/2|
+|**M05-S01** My day list (Lead side)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
+|**M05-S02** One action per row and the focus panel|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
+|**M05-S03** Paperwork 'your move' on Today|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|1/2|
+|**M05-S06** Headline figures on Today (Investors side)|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M05-S07** Waiting on you: the Investors-side queue per seat, including IR payment claims|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M05-S08** Account Management's Today (Investors side)|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/4|
 
 ## M06 · Leads book & lead search
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M06-S01** Leads list with Personal and Team scope|To do|To do|To do|Built (demo data)|S2|Must|0/3|
-|**M06-S02** Filters, sort and the Overdue fix|To do|—|To do|Built (demo data)|S2|Must|0/2|
-|**M06-S03** Find a lead in the top bar (leads only, own book)|To do|To do|To do|Partly built|S2|Must|0/3|
+|**M06-S01** Leads list with Personal and Team scope|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
+|**M06-S02** Filters, sort and the Overdue fix|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|1/2|
+|**M06-S03** Find a lead in the top bar (leads only, own book)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
 |**M06-S05** Search wall: the lead search never reaches investor data|—|To do|To do|Built (demo data)|S2|Must|0/3|
 
 ## M07 · Lead page
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M07-S01** Lead page shell and Next step card|To do|—|To do|Built (demo data)|S2|Must|0/3|
-|**M07-S02** Logging flow — one question at a time|To do|—|To do|Partly built|S2|Must|0/2|
-|**M07-S03** Save on the last tap, recorded once, with 10-second Undo|—|To do|To do|Built (demo data)|S2|Must|0/3|
-|**M07-S04** Call time and Zoho activity mapping|To do|To do|To do|Partly built|S2|Must|0/3|
-|**M07-S05** Email composer sent through Zoho send_mail|To do|To do|To do|Partly built|S2|Must|0/3|
-|**M07-S06** Close as lost in one step, undo and re-open|—|To do|To do|Partly built|S2|Must|0/2|
-|**M07-S07** Latest note, all notes and inline note|To do|—|To do|Partly built|S2|Should|0/2|
+|**M07-S01** Lead page shell and Next step card|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|2/3|
+|**M07-S02** Logging flow — one question at a time|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|1/2|
+|**M07-S03** Save on the last tap, recorded once, with 10-second Undo|—|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
+|**M07-S04** Call time and Zoho activity mapping|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S2|Must|2/3|
+|**M07-S05** Email composer sent through Zoho send_mail|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/3|
+|**M07-S06** Close as lost in one step, undo and re-open|—|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S2|Must|1/2|
+|**M07-S07** Latest note, all notes and inline note|:white_check_mark: Done|—|To do|Built (demo data)|S2|Should|1/2|
 
 ## M08 · Journey, gates & hand-offs between the sides
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M08-S01** Journey bar, ticks, un-tick and skip|To do|To do|To do|Partly built|S3|Must|0/3|
+|**M08-S01** Journey bar, ticks, un-tick and skip|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S3|Must|2/3|
 |**M08-S02** Finance gates read live from Zoho|—|To do|To do|Built (demo data)|S3|Must|0/2|
-|**M08-S03** Money in: the IR reports a payment, Finance records the receipt|To do|To do|To do|Partly built|S3|Must|0/7|
-|**M08-S04** Reservation hold: clock, balance due, extend and release|To do|To do|To do|Partly built|S3|Must|0/7|
+|**M08-S03** Money in: the IR reports a payment, Finance records the receipt|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|2/7|
+|**M08-S04** Reservation hold: clock, balance due, extend and release|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|3/7|
 |**M08-S05** Owners and cover (D44)|—|To do|To do|Partly built|S3|Must|0/2|
-|**M08-S07** 'Said yes' becomes the investor record|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M08-S08** The first matched advance opens the investor app account|To do|To do|To do|Partly built|S3|Must|0/4|
+|**M08-S07** 'Said yes' becomes the investor record|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M08-S08** The first matched advance opens the investor app account|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
 
 ## M09 · Investors & the investor record
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M09-S01** Investors list for Finance|To do|To do|To do|Not started|S2|Must|0/3|
-|**M09-S02** KAM book and Head of AM book|To do|To do|To do|Not started|S2|Must|0/4|
-|**M09-S03** The investor record — header, banners and sections by seat|To do|To do|To do|Not started|S2|Must|0/4|
-|**M09-S04** Who looks after the account — KAM ownership|To do|To do|To do|Not started|S2|Must|0/4|
-|**M09-S07** Investor search on the Investors page|To do|To do|To do|Not started|S2|Must|0/3|
-|**M09-S08** An IR sees only investors from their own leads|To do|To do|To do|Not started|S2|Must|0/4|
-|**M09-S09** Add an investor who has already paid, straight from the console|To do|To do|To do|Not started|S2|Must|0/3|
+|**M09-S01** Investors list for Finance|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/3|
+|**M09-S02** KAM book and Head of AM book|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/4|
+|**M09-S03** The investor record — header, banners and sections by seat|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/4|
+|**M09-S04** Who looks after the account — KAM ownership|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/4|
+|**M09-S07** Investor search on the Investors page|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/3|
+|**M09-S08** An IR sees only investors from their own leads|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/4|
+|**M09-S09** Add an investor who has already paid, straight from the console|:white_check_mark: Done|To do|To do|Built (demo data)|S2|Must|1/3|
 
 ## M10 · Payments & receipts
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M10-S01** Payments register|To do|To do|To do|Partly built|S3|Must|0/5|
-|**M10-S02** Match a receipt — the second hand|To do|To do|To do|Partly built|S3|Must|0/5|
-|**M10-S03** Answer an IR's payment report|To do|To do|To do|Partly built|S3|Must|0/3|
-|**M10-S05** Weekly bank statement upload and reconciliation|To do|To do|To do|Partly built|S3|Must|0/6|
-|**M10-S07** Receipts belong to the allotment (investor × farm)|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M10-S08** Per-farm payment view for an investor with several allotments|To do|To do|To do|Not started|S3|Should|0/3|
-|**M10-S09** ARL holdings and transactions — read-only panel|To do|To do|To do|Not started|S3|Should|0/3|
-|**M10-S20** Monthly payouts: 60-month schedule per allotment, Finance due queue|To do|To do|To do|Partly built|S3|Must|0/3|
-|**M10-S21** Unlock the investor app and send the welcome from the console|To do|To do|To do|Not started|S3|Must|0/3|
-|**M10-S22** Preview the investor's app screens (mock-up with their data)|To do|To do|To do|Partly built|S4|Should|0/3|
-|**M10-S23** Test sign-in link to check the real app on another device|To do|To do|To do|Partly built|S4|Should|0/3|
+|**M10-S01** Payments register|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/5|
+|**M10-S02** Match a receipt — the second hand|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/5|
+|**M10-S03** Answer an IR's payment report|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M10-S05** Weekly bank statement upload and reconciliation|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/6|
+|**M10-S07** Receipts belong to the allotment (investor × farm)|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M10-S08** Per-farm payment view for an investor with several allotments|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Should|1/3|
+|**M10-S09** ARL holdings and transactions — read-only panel|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Should|1/3|
+|**M10-S20** Monthly payouts: 60-month schedule per allotment, Finance due queue|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M10-S21** Unlock the investor app and send the welcome from the console|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M10-S22** Preview the investor's app screens (mock-up with their data)|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Should|1/3|
+|**M10-S23** Test sign-in link to check the real app on another device|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Should|1/3|
 
 ## M11 · Farms (the LLP shelf) & allotments
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M11-S01** Farms are the LLP shelf|To do|To do|To do|Not started|S3|Must|0/4|
-|**M11-S02** An allotment links an investor to a farm LLP|To do|To do|To do|Not started|S3|Must|0/4|
-|**M11-S03** The shelf — released, held and free per farm LLP|To do|To do|To do|Not started|S3|Must|0/4|
-|**M11-S04** Release a farm LLP's units or take them back|To do|To do|To do|Not started|S3|Must|0/3|
-|**M11-S05** Allotment on the verified allocation letter|To do|To do|To do|Partly built|S3|Must|0/6|
-|**M11-S07** No unit is sold twice — the oversell guard|To do|To do|To do|Partly built|S3|Must|0/4|
+|**M11-S01** Farms are the LLP shelf|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M11-S02** An allotment links an investor to a farm LLP|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M11-S03** The shelf — released, held and free per farm LLP|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M11-S04** Release a farm LLP's units or take them back|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M11-S05** Allotment on the verified allocation letter|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/6|
+|**M11-S07** No unit is sold twice — the oversell guard|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
 
 ## M12 · Documents, upload & Zoho Sign
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
 |**M12-S01** Documents in three scopes, with who sees what|—|To do|To do|Partly built|S3|Must|0/4|
-|**M12-S02** Upload a document straight from the console to Zoho|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M12-S03** Documents page: out for signature and on file, scoped to the seat|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M12-S04** Send a document for signature through Zoho Sign|To do|To do|To do|Partly built|S3|Must|0/6|
-|**M12-S05** Live signature status from Zoho Sign webhooks, with reminders and recall|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M12-S06** Signed PDF filed to the allotment and Agreement_Signed set|To do|To do|To do|Partly built|S3|Must|0/4|
-|**M12-S07** Block or supersede a document|To do|To do|To do|Partly built|S3|Must|0/3|
+|**M12-S02** Upload a document straight from the console to Zoho|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M12-S03** Documents page: out for signature and on file, scoped to the seat|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M12-S04** Send a document for signature through Zoho Sign|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/6|
+|**M12-S05** Live signature status from Zoho Sign webhooks, with reminders and recall|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M12-S06** Signed PDF filed to the allotment and Agreement_Signed set|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M12-S07** Block or supersede a document|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
 |**M12-S08** The investor signs by email or inside the investor app|—|To do|To do|Partly built|S3|Should|0/3|
-|**M12-S09** See a record's emails in the console|To do|To do|To do|Partly built|S3|Should|0/3|
+|**M12-S09** See a record's emails in the console|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Should|1/3|
 |**M12-S10** Isolation suite: no user sees another user's leads, investors, documents, sign requests, emails or tickets|—|—|To do|Partly built|S3|Must|0/8|
-|**M12-S11** NDA loop on the lead page, and the IR's word beside Finance's queue|To do|To do|To do|Partly built|S3|Must|0/5|
-|**M12-S12** Supplementary agreement draft loop|To do|To do|To do|Partly built|S3|Must|0/3|
-|**M12-S13** Material follows the NDA; deck email marks the deck sent|To do|To do|To do|Partly built|S3|Must|0/3|
-|**M12-S14** 'Your move' on Today and Documents|To do|—|To do|Built (demo data)|S3|Should|0/2|
+|**M12-S11** NDA loop on the lead page, and the IR's word beside Finance's queue|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/5|
+|**M12-S12** Supplementary agreement draft loop|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M12-S13** Material follows the NDA; deck email marks the deck sent|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M12-S14** 'Your move' on Today and Documents|:white_check_mark: Done|—|To do|Built (demo data)|S3|Should|1/2|
 
 ## M13 · Tickets & investor updates (pushed to the investor app)
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
 |**M13-S01** Push to the investor app through the signed contracts, with a stub receiver|—|To do|To do|Partly built|S4|Must|0/4|
-|**M13-S02** Tickets register scoped by seat|To do|To do|To do|Not started|S4|Must|0/4|
-|**M13-S03** Open, wait and close a ticket|To do|To do|To do|Not started|S4|Must|0/4|
-|**M13-S04** A KAM hands a bank or compliance ticket to Finance and keeps watching|To do|To do|To do|Not started|S4|Must|0/4|
-|**M13-S05** Investor requests arrive as tickets and replies go back to the app|To do|To do|To do|Not started|S4|Should|0/4|
-|**M13-S06** Publish an investor update to a reconstructable segment|To do|To do|To do|Not started|S4|Must|0/4|
+|**M13-S02** Tickets register scoped by seat|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|1/4|
+|**M13-S03** Open, wait and close a ticket|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|1/4|
+|**M13-S04** A KAM hands a bank or compliance ticket to Finance and keeps watching|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|1/4|
+|**M13-S05** Investor requests arrive as tickets and replies go back to the app|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Should|1/4|
+|**M13-S06** Publish an investor update to a reconstructable segment|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|1/4|
 
 ## M14 · Events
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M14-S01** Events list and event page|To do|To do|To do|Built (demo data)|S3|Must|0/4|
-|**M14-S02** Add, correct and remove an event|To do|To do|To do|Built (demo data)|S3|Must|0/3|
-|**M14-S03** Capture and sheet load tie leads to the event|To do|To do|To do|Built (demo data)|S3|Must|0/3|
+|**M14-S01** Events list and event page|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/4|
+|**M14-S02** Add, correct and remove an event|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
+|**M14-S03** Capture and sheet load tie leads to the event|:white_check_mark: Done|To do|To do|Built (demo data)|S3|Must|1/3|
 
 ## M15 · Updates & Activity
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M15-S01** Updates: what others changed on my book|To do|To do|To do|Built (demo data)|S4|Must|0/3|
-|**M15-S03** Activity page: who did what, each seat its own scope, Lead side / Investors side|To do|To do|To do|Partly built|S4|Must|0/8|
-|**M15-S05** Console logs for refusals, reveals and API headroom (Planes B and C), filterable|To do|To do|To do|Partly built|S4|Must|0/4|
+|**M15-S01** Updates: what others changed on my book|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S4|Must|2/3|
+|**M15-S03** Activity page: who did what, each seat its own scope, Lead side / Investors side|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|2/8|
+|**M15-S05** Console logs for refusals, reveals and API headroom (Planes B and C), filterable|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|1/4|
 
 ## M16 · Numbers, Plan & Transfers
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M16-S01** Assignments by IR report|To do|To do|To do|Partly built|S4|Must|0/3|
-|**M16-S02** Open one IR's row and list the leads behind a count|To do|—|To do|Partly built|S4|Should|0/2|
-|**M16-S03** Lead-side Numbers sections computed live, one scope at a time|To do|To do|To do|Built (demo data)|S4|Must|0/3|
-|**M16-S04** Read the plan|—|To do|To do|Partly built|S4|Must|0/2|
-|**M16-S06** Transfers per month: leads that became investors|To do|To do|To do|Partly built|S4|Must|0/3|
-|**M16-S07** Open a month to its investors|To do|—|To do|Partly built|S4|Should|0/2|
-|**M16-S08** Investors side of Numbers: collection, paper and compliance|To do|To do|To do|Partly built|S4|Should|0/3|
+|**M16-S01** Assignments by IR report|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S4|Must|2/3|
+|**M16-S02** Open one IR's row and list the leads behind a count|:white_check_mark: Done|—|To do|Built (demo data)|S4|Should|1/2|
+|**M16-S03** Lead-side Numbers sections computed live, one scope at a time|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S4|Must|2/3|
+|**M16-S04** Read the plan|—|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S4|Must|1/2|
+|**M16-S06** Transfers per month: leads that became investors|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S4|Must|2/3|
+|**M16-S07** Open a month to its investors|:white_check_mark: Done|—|To do|Built (demo data)|S4|Should|1/2|
+|**M16-S08** Investors side of Numbers: collection, paper and compliance|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Should|1/3|
 |**M16-S09** Money figures only to seats that may see them|—|To do|To do|Partly built|S4|Must|0/2|
 
 ## M17 · Teams, Profile & System
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M17-S01** Teams: members, seats and what each seat may do, from Zoho|To do|To do|To do|Partly built|S4|Must|0/4|
+|**M17-S01** Teams: members, seats and what each seat may do, from Zoho|:white_check_mark: Done|To do|To do|Built (demo data)|S4|Must|2/4|
 |**M17-S02** Grant pages and change seats|—|To do|To do|Built (demo data)|S4|Must|0/2|
-|**M17-S05** My profile|—|To do|To do|Built (demo data)|S4|Must|0/2|
-|**M17-S06** System health and administration|—|To do|To do|Partly built|S4|Must|0/2|
+|**M17-S05** My profile|—|:hourglass_flowing_sand: Waiting on people|To do|Built (demo data)|S4|Must|1/2|
+|**M17-S06** System health and administration|—|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S4|Must|1/2|
 
 ## M18 · Hardening, security & release
 
@@ -346,7 +387,7 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 |---|---|---|---|---|---|---|---|
 |**M18-S01** The app stays fast inside Zoho's API limits|—|To do|To do|Not a screen|S5|Must|0/6|
 |**M18-S02** Nothing leaks outside a seat's scope: seat x page x action x field matrix|—|To do|To do|Not a screen|S5|Must|0/6|
-|**M18-S03** Every page works on a phone and by keyboard|To do|—|To do|Not a screen|S5|Must|0/4|
+|**M18-S03** Every page works on a phone and by keyboard|:white_check_mark: Done|—|To do|Not a screen|S5|Must|2/4|
 |**M18-S04** Errors are captured, visible and alerted|—|To do|To do|Not a screen|S5|Must|0/3|
 |**M18-S05** Data and logs are backed up and restorable|—|—|To do|Not a screen|S5|Must|0/3|
 |**M18-S06** Legacy records carried across without new Deals|—|—|To do|Not a screen|S5|Must|0/3|
@@ -359,9 +400,9 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Story|1 Front end|2 Zoho|3 Test|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|
-|**M19-S01** UI test contract|To do|—|To do|Not a screen|S1|Must|0/3|
+|**M19-S01** UI test contract|:white_check_mark: Done|—|To do|Not a screen|S1|Must|1/3|
 |**M19-S02** Jev UI runner on staging|—|To do|To do|Not a screen|S1|Must|0/5|
-|**M19-S03** Zoho sandbox seed and reset|To do|:white_check_mark: Done|To do|Not a screen|S1|Must|1/3|
+|**M19-S03** Zoho sandbox seed and reset|:white_check_mark: Done|:white_check_mark: Done|To do|Not a screen|S1|Must|2/3|
 |**M19-S04** Judge calibration gate|—|To do|—|Not a screen|S1|Must|0/1|
 |**M19-S05** CI pipeline|—|To do|—|Not a screen|S1|Must|0/1|
 |**M19-S06** Unit tests for business rules|—|To do|—|Not a screen|S1|Must|0/1|
@@ -379,5 +420,5 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 |**M20-S04** Support model and issue intake|—|—|To do|Not a screen|S5|Must|0/1|
 |**M20-S05** Stage reviews, status and retrospectives|—|—|To do|Not a screen|S0|Must|0/6|
 |**M20-S06** Change control|—|—|To do|Not a screen|S0|Must|0/1|
-|**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|To do|To do|Partly built|S4|Must|0/5|
+|**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|:hourglass_flowing_sand: Waiting on people|To do|Partly built|S4|Must|4/5|
 |**M20-S08** Buy the Zoho Sign plan and set up its webhooks|—|:hourglass_flowing_sand: Waiting on people|To do|Not a screen|S0|Must|1/4|

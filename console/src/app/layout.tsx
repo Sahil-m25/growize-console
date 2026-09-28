@@ -5,8 +5,11 @@
    the same here as it does there and nothing is fetched at build time. */
 
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { ConsoleProvider } from "@/lib/store";
-import { Shell } from "@/components/shell/Shell";
+import { loadPayload } from "@/lib/data/source";
+import { currentLane, fixtureModeOn, resetFixtures } from "@/lib/fixture-mode";
+import { Door } from "@/components/shell/SignIn";
 import "./console.css";
 import { ReticleDev } from "./reticle-dev";
 
@@ -19,7 +22,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  /* FIXTURE_MODE=local: a fresh load of "/" (a document request, not a client-side navigation)
+     starts a test case, so the applied fixtures are cleared first — exactly as a fresh prototype page
+     starts from its own demo book. */
+  if (fixtureModeOn()) {
+    const h = await headers();
+    if (h.get("x-gz-path") === "/" && h.get("rsc") !== "1" && h.get("next-router-prefetch") == null) resetFixtures(await currentLane());
+  }
+  /* the records are in the first paint: the same payload GET /api/data serves */
+  const initial = await loadPayload();
   return (
     /* the redesigned markup's own attributes, line 2: en-IN, and light unless Dark was saved —
        see useThemeSync, which never removes this attribute, only overwrites it */
@@ -38,8 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="ux-refined ux-redesign">
         {/* Reticle: dev-only runtime checks for the agent (tools/PLUGINS.md) */}
         {process.env.NODE_ENV === "development" ? <ReticleDev /> : null}
-        <ConsoleProvider>
-          <Shell>{children}</Shell>
+        <ConsoleProvider initial={initial}>
+          <Door>{children}</Door>
         </ConsoleProvider>
       </body>
     </html>

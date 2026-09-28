@@ -17,7 +17,7 @@
  * The IR sees the draft, because they wrote it. They never see an executed original.
  */
 
-import type { LeadId, PaperRoundDef, PaperRow, SlaChannel } from "./types";
+import type { PaperRoundDef, SlaChannel } from "./types";
 
 export const ROUNDS: readonly PaperRoundDef[] = [
   {k:"nda",  t:"NDA", sub:"before any material goes out", tpl:"Non-disclosure agreement",
@@ -28,18 +28,12 @@ export const ROUNDS: readonly PaperRoundDef[] = [
 ];
 
 /**
- * `leadId -> {nda:{…}, supp:{…}}`. The prototype starts this empty and fills a round in the first
- * time a beat is recorded against it; nothing in the fixture data has paper on it yet.
- */
-export const PAPER: Record<LeadId, PaperRow> = {};
-
-/**
  * WHERE EACH BEAT IS PERFORMED. Finance does not work in this console. The document is uploaded,
  * sent and verified in the Investor Management portal, because that is where the file and the
  * signing account live. If Finance also had to come back here and record that they had done it,
  * that is two entries for one fact — the exact thing this product exists to stop.
  */
-export const IMP = "Investor Management portal";
+export const IMP = "Investors pages";
 
 /** "told them by …" */
 export const PCH: Record<SlaChannel, string>  = {msg:"WhatsApp", call:"a call",  email:"email"};

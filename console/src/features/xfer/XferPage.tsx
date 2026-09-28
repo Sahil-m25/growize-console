@@ -1,87 +1,77 @@
 "use client";
 
-/* ── Investor copies — `vXfer()`, redesigned prototype line 9219 ───────────────────────────
-   Copy status and the manual fallback, D43's local demo tracking of the three accounts the
-   Investor Management portal already links by `INV.lead`. Below it, read-only, the legacy transfer
-   register that predates the copy model — kept for history, never a second writer.
-   ────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Transfers — the merged prototype's `vXfer()` (ir-merged.js 6907–6932).
+   Leads that became investors, by the month they said yes. The page leads with transfers per
+   month; a month opens in place into who, when, how they came in, whose they are, how long it took
+   and what has happened since. Read only: nothing here writes. Rules: `@/lib/selectors/xfer`. ── */
 
-import type { Lead, XferRow } from "@/domain";
-import { canViewInvestorCopy, may, openable, own, P, roleOf } from "@/lib/selectors";
-import { canRecordInvestorCopy, investorCopyBook, investorCopyEligibility, investorCopyOf } from "@/lib/investor-copy";
-import { xName } from "@/features/pay/reducer";
-import { useConsole, type ConsoleState } from "@/lib/store";
+import { UNIT } from "@/domain";
+import { P, median, may, seeMoney } from "@/lib/selectors";
+import { xfAfter, xfHow, xfMonths } from "@/lib/selectors/xfer";
+import type { XfMonth, XfRow } from "@/lib/selectors/xfer";
+import { useConsole } from "@/lib/store";
 import { useGo } from "@/features/pay/common";
+/* the lead page's "Investor copy" door drawer was registered from here; keep it registered */
 import "@/features/lead/drawers/investor-copy";
-import "./drawer";
 
-/* xferRows() — redesigned prototype line ~9202. Historical rows carry no live ownership record to
-   check; only an explicitly held elevated transfer scope (never a borrowed one) may read them. */
-function xferRows(state: ConsoleState): XferRow[] {
-  if (!may(state, "xfer", "view")) return [];
-  const ids = new Set(openable(state).map(l => l.id));
-  const history = ["exec","ops","corp","bu"].includes(roleOf(state.PEOPLE, state.WHO) || "") && own(state, "xfer", "view");
-  return state.XFER.filter(x => x.state === "done" && (state.LEADS.some(l => l.id === x.lead)
-    ? ids.has(x.lead) && canViewInvestorCopy(state, state.LEADS.find(l => l.id === x.lead) as Lead)
-    : history));
+declare module "@/lib/store" {
+  interface UiState {
+    /** the month opened in place, "2026-7". ir-merged.js 6879 */
+    XFMON?: string | null;
+  }
 }
 
-export function XferPage() {
-  const { state, dispatch, saves, retrySave } = useConsole();
-  const go = useGo();
-  if (!may(state,"xfer","view")) return <div className="empty">Investor copies are unavailable.</div>;
+const mName = (d: Date): string => d.toLocaleString("en-GB", { month: "long", year: "numeric" });
+const inr = (v: number): string => v >= 1e7 ? "₹" + String(+(v / 1e7).toFixed(2)) + " Cr" : "₹" + String(+(v / 1e5).toFixed(2)) + " L";
 
-  const rows = investorCopyBook(state).map(l => ({l, c: investorCopyOf(state,l), e: investorCopyEligibility(state,l)}));
-  const legacy = xferRows(state);
+export function XferPage() {
+  const { state, dispatch } = useConsole();
+  const go = useGo();
+  if (!may(state, "xfer", "view")) return null;
+  const months = xfMonths(state), all = months.flatMap(m => m.rows), cash = seeMoney(state);
+  const XFMON = state.ui.XFMON ?? null;
+  const units = (rs: XfRow[]) => rs.reduce((a, r) => a + (Number(r.l.units) || 0), 0);
+  const size = (rs: XfRow[]) => { const u = units(rs); return u + " unit" + (u === 1 ? "" : "s") + (cash ? " · " + inr(u * UNIT) : ""); };
+  const med = median(all.map(r => r.days));
+  const medT = med == null ? "" : " · median " + (Math.round(med * 10) / 10) + " day" + (med === 1 ? "" : "s") + " from capture";
+  const xfToggle = (k: string) => dispatch({ type: "setUi", patch: { XFMON: XFMON === k ? null : k } });
+
+  const list = (m: XfMonth) => (
+    <div className="tw d60c-tw"><table className="d60c-t"><thead><tr><th>Investor</th><th>Transferred</th><th>How they came in</th><th>Owner</th><th className="d60c-n">Days</th><th>Since</th></tr></thead><tbody>
+      {m.rows.map(({ l, yes, days }) => {
+        const a = xfAfter(l);
+        return (
+          <tr key={l.id}>
+            <td><button type="button" className="chip" onClick={() => go("lead", l.id)}>{l.n}</button></td>
+            <td className="mono">{yes.getDate() + " " + yes.toLocaleString("en-GB", { month: "short" })}</td>
+            <td>{xfHow(state, l)}</td>
+            <td>{l.own ? P(state.PEOPLE, l.own).n : "Unassigned"}</td>
+            <td className="mono d60c-n">{days == null ? "—" : days}</td>
+            <td><span className={`tag ${a.c}`}>{a.t}</span></td></tr>
+        );
+      })}</tbody></table></div>
+  );
 
   return (
     <>
-      <div className="ph"><h1>Investor copies</h1><span className="sub">Copy status and manual fallback</span>
-        <button type="button" className="chip" onClick={() => dispatch({ type: "openDrawer", k: "p:xfer.how" })}>
-          How copying works</button></div>
-      <section className="ux-xfer ux-section">
-        <div className="note">Signed agreements and Finance-confirmed payment of at least 10% trigger the
-          copy. The lead remains with its IR. <span className="sm">Local demo; live intake is not connected.</span></div>
-        <div className="card fill"><div className="ch"><h3>Investor copy status</h3></div>
-          <div className="tw"><table>
-            <thead><tr><th>Investor</th><th>Account link</th><th>Copy status</th><th>Manual fallback</th></tr></thead>
-            <tbody>{rows.map(({l,c,e}) => {
-              /* investorCopyStatus(l) — redesigned prototype 9131-9140: the label reads whether a
-                 Finance source account is linked (e.accountId), never full eligibility, so a
-                 linked-but-ineligible lead reads "Already present in portal" like the prototype,
-                 not the eligibility-refusal reason. */
-              const label = c ? "Local demo copy recorded" : e.accountId ? "Already present in portal · demo source" : "Waiting for Finance verification";
-              const accountId = c?.accountId || e.accountId || null;
-              const queued = saves?.find(sv => sv.actor === state.WHO && sv.id === l.id && sv.label === "Investor copy (demo)");
-              const canManual = canRecordInvestorCopy(state,l);
-              return (
-                <tr key={l.id}>
-                  <td><button type="button" className="chip" onClick={() => go("lead", l.id)}>{l.n}</button>
-                    <div className="sm">{P(state.PEOPLE, l.own).n}</div></td>
-                  <td className="sm mono">{accountId || "Not linked"}</td>
-                  <td><b>{label}</b><div className="sm">{c ? `${c.mode} · ${c.copiedAt}` : e.reason}</div></td>
-                  <td>{!canManual ? <span className="sm">View only</span>
-                    : c ? (
-                      <button type="button" className="chip" disabled title="This account is already recorded locally">
-                        Copy already recorded</button>
-                    ) : (
-                      <button type="button" className="chip" disabled={!!queued && queued.status !== "failed"}
-                        onClick={() => queued?.status === "failed" ? retrySave(queued.key) : dispatch({type:"copyInvestor",id:l.id})}>
-                        {queued?.status === "failed" ? "Retry copy (demo)" : "Copy to investor demo"}</button>
-                    )}</td>
-                </tr>
-              );
-            })}{!rows.length ? <tr><td colSpan={4} className="empty">No readable lead copy status.</td></tr> : null}</tbody></table></div></div>
-        <details className="ux-disclosure" data-ux-key="xfer-register">
-          <summary>Legacy investor register · {legacy.length}</summary>
-          <div className="tw"><table>
-            <thead><tr><th>Investor</th><th>Account link</th><th>Legacy date</th></tr></thead>
-            <tbody>{legacy.map(x => (
-              <tr key={x.lead}><td>{xName(state,x)}</td><td className="mono">{x.code || "—"}</td>
-                <td className="sm">{x.on || "—"}</td></tr>
-            ))}</tbody></table></div>
-        </details>
-      </section>
+      <div className="ph"><h1>Transfers</h1><span className="sub">Leads that became investors, by the month they said yes · read only</span></div>
+      <section className="d60c-xfer">{months.length ? (<>
+        <p className="d60c-sum">{all.length} transferred since {mName(months[months.length - 1].d)}{medT}</p>
+        <div className="card d60c-card">{months.map(m => {
+          const open = XFMON === m.k;
+          return (
+            <div className="d60c-m" key={m.k}>
+              <button type="button" className="d60c-mb" id={`d60c-m-${m.k}`} aria-expanded={open} aria-controls={`d60c-l-${m.k}`}
+                onClick={() => xfToggle(m.k)}>
+                <span className="d60c-mn">{mName(m.d)}</span><span className="d60c-mc"><b>{m.rows.length}</b> transferred</span>
+                <span className="d60c-mu">{size(m.rows)}</span><span className="d60c-cv" aria-hidden="true">{open ? "−" : "+"}</span></button>
+              {open ? <div id={`d60c-l-${m.k}`}>{list(m)}</div> : null}</div>
+          );
+        })}</div>
+        <p className="sm d60c-foot">A lead is transferred on the day it reaches “Investor said yes” — that is when its investor record is created. A lead lost afterwards still counts, on that date.{cash ? " Value is units × " + inr(UNIT) + "." : ""}</p>
+      </>) : (
+        <div className="card"><div className="empty">No transfers yet. A lead appears here the day it reaches “Investor said yes”.</div></div>
+      )}</section>
     </>
   );
 }

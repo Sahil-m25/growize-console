@@ -40,7 +40,7 @@ import type { Action, ConsoleState } from "@/lib/store";
 export const tCanLend = (s: ConsoleState): boolean => own(s, "people", "seats");
 
 export const tPages = (s: ConsoleState): string[] =>
-  reachBase(s.PEOPLE, s.WHO).filter((x) => x !== "me" && !!(PAGECAPS as Record<string, unknown>)[x]);
+  reachBase(s.PEOPLE, s.WHO, s.CAPS).filter((x) => x !== "me" && !!(PAGECAPS as Record<string, unknown>)[x]);
 
 export const tMine = (s: ConsoleState): TempGrant[] => s.TEMP.filter((g) => g.to === s.WHO);
 
@@ -89,7 +89,7 @@ export function screensOf(s: ConsoleState, k: PersonKey): NavKey[] {
   ) as NavKey[];
 }
 export const screenCount = (): number =>
-  (Object.keys(PAGECAPS) as NavKey[]).filter((p) => !PAGECAPS[p].nopage).length;
+  (Object.keys(PAGECAPS) as NavKey[]).filter((p) => !PAGECAPS[p]!.nopage).length;
 
 /** the part of somebody's access that nobody's seat gave them. 03-app.js (redesigned):2944 */
 export type CapDeviation = { p: NavKey; off: Cap[]; on: Cap[]; gone: boolean };
@@ -97,7 +97,7 @@ export function capDev(s: ConsoleState, k: PersonKey): CapDeviation[] {
   const grant = s.CAPS[k] || {};
   const out: CapDeviation[] = [];
   (Object.keys(grant) as NavKey[]).forEach((p) => {
-    if (!(PAGECAPS as Record<string, unknown>)[p] || reachBase(s.PEOPLE, k).indexOf(p) < 0) return;
+    if (!(PAGECAPS as Record<string, unknown>)[p] || reachBase(s.PEOPLE, k, s.CAPS).indexOf(p) < 0) return;
     const seat = ((SEATCAPS as Record<string, Record<string, Cap[]>>)[roleOf(s.PEOPLE, k) || ""] || {})[p] || [];
     const now = grant[p] || [];
     const off = seat.filter((c) => now.indexOf(c) < 0);

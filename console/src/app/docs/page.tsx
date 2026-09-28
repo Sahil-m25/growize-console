@@ -1,9 +1,11 @@
 "use client";
 
-/* /docs — Documents. Sent and verified in the Investor Management portal; told and chased here. */
+/* /docs — one rail entry for a page both sides have (merge-glue.js MERGE): the lead half, the
+   Investors half, or a switch between them, decided by which halves the person holds. */
 
 import { DocsPage } from "@/features/docs/DocsPage";
+import { Sided } from "@/features/im/host";
 
 export default function Page() {
-  return <DocsPage />;
+  return <Sided k="docs" lead={<DocsPage />} />;
 }

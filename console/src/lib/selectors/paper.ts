@@ -26,7 +26,7 @@ import type {
   Beat, ChaseBeat, Lead, LeadId, PaperBeat, PaperNext, PaperRound, PaperWho, RoundKey, Stamp,
 } from "@/domain";
 import type { Ctx } from "./ctx";
-import { isFin, may } from "./access";
+import { canWork } from "./access";
 import { custodian, inBookOf, lost } from "./leads";
 
 export type Round = (typeof ROUNDS)[number];
@@ -100,10 +100,11 @@ export function prNext(ctx: Ctx, l: Lead | null | undefined, rk: string): PrNext
    ordinary lead contacts and reported payment claims remain separate console operations. */
 export const prIR = (_ctx: Ctx, _l: Lead | null | undefined): boolean => false;
 
+/* D61 (ir-merged.js 3289): shown as the IR's move wherever paperwork appears (Today, Documents, the
+   lead page); the write itself still happens only from the lead page's row — the root reducer
+   refuses every pr* action, and only the lead page's `lpPaper` (PRLP) reaches the beats. */
 export const prMine = (ctx: Ctx, l: Lead | null | undefined, who: Who): boolean =>
-  who === "Finance" ? (isFin(ctx.ROLE) && may(ctx, "docs", "send"))
-    : who === "IR" ? prIR(ctx, l)
-    : false;
+  who === "IR" && !!l && canWork(ctx, l);
 
 /* a round is only workable at all while the lead is open and has reached the rung it starts on —
    the two ungated writes (chasing, and re-drafting) have to check it for themselves */

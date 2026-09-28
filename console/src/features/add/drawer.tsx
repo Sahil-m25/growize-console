@@ -17,6 +17,5 @@ function Body(_: DrawerProps) {
 registerDrawer("p:add.quick", {
   w: 560,
   title: () => "Add lead",
-  sub: () => "entered once, here — nowhere else",
   Body,
 });

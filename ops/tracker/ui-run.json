@@ -1,10 +1,11 @@
 {
- "at": "2026-09-27",
- "by": "D98 run (copy of the laptop repo, npm run dev:local, Jev runner)",
+ "at": "2026-09-28",
+ "by": "Phase 1 close: full suite on the local test build (npm run build:local / start:local, FIXTURE_MODE=local) and on the merged prototype, same evening",
  "full_suite": {
-  "cases": 241,
-  "pass": 1,
-  "why": "every case starts by signing in; the app has no sign-in screen (it opens as Rohit), so each stops at step 1"
+  "cases": 319,
+  "pass": 221,
+  "prototype_pass": 218,
+  "why": "phase 1 gate: every case the prototype passes, the app passes (two borderline cases at the 0.80 line)"
  },
  "lead_side_as_rohit": {
   "cases": 67,
@@ -176,5 +177,5 @@
    "pass": 0
   }
  },
- "summary": "Full suite as written: 1 of 241 pass (no sign-in screen yet, so every case stops at step 1). Lead side as Rohit with sign-in skipped: 15 of 67 pass (22%), 5 review; 7 of 36 stories fully pass. 78 cases can't run until fixtures load. Calibration 18/18 caught, so the judge is trusted."
+ "summary": "Full suite 28 Sep: app 221 of 319 pass (69%) vs the merged prototype 218 (68%), run the same evening; calibration 18/18 caught. Cases failing on both are mostly facts written for the old portal or the pre-merge console (fact changes proposed in BLOCKED.md). Per-epic table: docs/reports/phase1-jev-2026-09-28.md"
 }

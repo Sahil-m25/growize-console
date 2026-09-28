@@ -194,9 +194,19 @@ export const dayGap = (a: Date | null | undefined, b: Date | null | undefined): 
    pass the result down (which is what `stamp` below expects). */
 export const nowT = (NOW: Date): Date => {
   const n = new Date(), d = new Date(NOW.getTime());
-  d.setHours(n.getHours(), n.getMinutes(), 0, 0);
+  const pin = CLOCKPIN && /^(\d{2}):(\d{2})$/.exec(CLOCKPIN);
+  if (pin) d.setHours(+pin[1]!, +pin[2]!, 0, 0);
+  else d.setHours(n.getHours(), n.getMinutes(), 0, 0);
   return d;
 };
+
+/* THE FIXTURE CLOCK (FIXTURE_MODE=local only). A clock fixture (CLOCK_28AUG_1000 …) pins the hour
+   the prototype's Date override froze: the dataset carries it as `CLOCKPIN` ("HH:mm") and the
+   store pins it here when the data arrives, so `nowT` — the one reader of the hour — reads it.
+   null (every real book) is the wall clock's hour, as before. */
+let CLOCKPIN: string | null = null;
+export const pinClock = (hm: string | null | undefined): void => { CLOCKPIN = hm || null; };
+export const clockPin = (): string | null => CLOCKPIN;
 
 /* every write stamps a time: the console's own day, the real hour. The prototype's `stamp()`
    resolved the wall clock itself; here the resolved instant is handed in — call

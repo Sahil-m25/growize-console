@@ -33,9 +33,11 @@ const RAIL_HIDDEN: readonly string[] = ["add"];
 const LABEL_OVERRIDE: Partial<Record<string, string>> = { today: "Today", people: "Teams" };
 
 /* NAVSEC/NAVSECT/NAVSECOF — ir-console-redesigned.html:12999-13005 */
-const NAVSEC = ["work", "money", "measure", "admin"] as const;
+/* merge-glue.js:74-77 — the Investors band sits second */
+const NAVSEC = ["work", "invest", "money", "measure", "admin"] as const;
 const NAVSECT: Record<(typeof NAVSEC)[number], string> = {
   work: "Work",
+  invest: "Investors",
   money: "Money and paper",
   measure: "Measure",
   admin: "Admin",
@@ -45,6 +47,7 @@ const NAVSECOF: Partial<Record<string, (typeof NAVSEC)[number]>> = {
   pay: "money", docs: "money", xfer: "money",
   goals: "measure", numbers: "measure",
   people: "admin", system: "admin", me: "admin",
+  inv: "invest", farms: "invest", tkt: "invest", invupd: "invest",
 };
 const navSec = (k: string) => NAVSECOF[k] ?? "work";
 
@@ -72,8 +75,8 @@ export function Rail({ view }: { view: View | null }) {
       <div className="brand">
         <div className="mark">GZ</div>
         <div>
-          <b>IR Console</b>
-          <span>Growize</span>
+          <b>Growize Console</b>
+          <span>Leads · Investors</span>
         </div>
         <button
           type="button"
@@ -167,7 +170,22 @@ export function Rail({ view }: { view: View | null }) {
          port's own "leads-db not built" note was never in the redesign; dropped rather than kept
          beside a string the prototype does show. */}
       <div className="foot" id="foot">
-        <span>{`Sample data · ${dLabel(state.NOW)}`}</span>
+        {/* the demo book is "Sample data" only in fixture mode; the product's own book is not */}
+        <span>{state.FIXTURES ? `Sample data · ${dLabel(state.NOW)}` : dLabel(state.NOW)}</span>
+        {/* merge-glue.js:150 — prototype documentation, shown only beside the demo book */}
+        {state.FIXTURES ? (
+        <a
+          className="mnlink"
+          role="button"
+          tabIndex={0}
+          onClick={() => dispatch({ type: "openDrawer", k: "p:merge.notes" })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") dispatch({ type: "openDrawer", k: "p:merge.notes" });
+          }}
+        >
+          How the merge works
+        </a>
+        ) : null}
       </div>
     </aside>
   );

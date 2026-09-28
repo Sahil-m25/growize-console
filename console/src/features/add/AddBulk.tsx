@@ -132,10 +132,7 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
 
           {!csv
             ? (
-              <p className="sm" style={{ margin: "8px 0 0" }}>
-                Choose a CSV, review the rows, then select its source event. The file is read locally
-                before you add its leads.
-              </p>
+              <p className="sm" style={{ margin: "8px 0 0" }}>Read on this device; nothing is written until you add.</p>
             )
             : csv.err
               ? (
@@ -200,7 +197,6 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                           ))}
                         </tbody>
                       </table></div>
-                      <p className="sm">Duplicates are skipped. Correct unusable rows in the file and choose it again.</p>
                     </details>
                   )}
 
@@ -214,18 +210,7 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                       {ran.map(e => <option key={e.id} value={e.id}>{e.n} — {e.date}</option>)}
                     </select>
                   </label>
-                  <p className="sm" style={{ margin: "8px 0 0" }}>
-                    {csvEv && cev
-                      ? (
-                        <>
-                          Source: {cev.n}.{" "}
-                          {dealt
-                            ? <b id="csvsplit">{splitLine(state, good.length, csvOwn)}</b>
-                            : own ? <>Owner: {P(state.PEOPLE, own).n}.</> : "These leads will need an owner."}
-                        </>
-                      )
-                      : "Choose the event these contacts came from. It is required before adding the file."}
-                  </p>
+                  {csvEv && dealt ? <p className="sm" style={{ margin: "8px 0 0" }}><b id="csvsplit">{splitLine(state, good.length, csvOwn)}</b></p> : null}
                   {why && <p className="sm" style={{ margin: "11px 0 0" }}>{why}</p>}
                   <button
                     type="button" className="act" style={{ width: "100%", textAlign: "center", padding: 12, marginTop: 11 }}
@@ -238,8 +223,7 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                     {dealt
                       ? <>Assigned to the event&#8217;s IRs: {splitNames(state, good.length, csvOwn)}.</>
                       : own ? <>Assigned to {P(state.PEOPLE, own).n}.</> : "Added to the unassigned queue."}
-                    {" "}New leads start at capture with <b>no contact permission recorded</b>. Missing city
-                    uses the event&#8217;s city; missing units stay unspecified.
+                    {" "}New leads start at capture with <b>no contact permission recorded</b>.{" "}
                   </p>
                 </>
               )}

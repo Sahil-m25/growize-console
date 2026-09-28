@@ -10,9 +10,9 @@
  * drawer has to turn them into JSX rather than reach for `dangerouslySetInnerHTML`.
  */
 
-import type { FaqItem, HelpTopic, ViewKey } from "./types";
+import type { FaqItem, HelpTopic, ImNavKey, ViewKey } from "./types";
 
-export const HELP: Record<ViewKey, HelpTopic> = {
+export const HELP: Record<Exclude<ViewKey, ImNavKey>, HelpTopic> & Partial<Record<ImNavKey, HelpTopic>> = {
   today:{t:"My day", p:`Everything that needs you today, in the order it needs you — overdue first,
     then due, then the rest. It is not a list of your leads; it is a list of the ones with a clock on
     them. Empty is the correct end state.`,

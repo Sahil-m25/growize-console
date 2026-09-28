@@ -1,55 +1,28 @@
 "use client";
 
-/* SYSTEM — what the machine is doing. vSystem, redesigned prototype `ir-console-redesigned.html`
-   10643–10768.
+/* SYSTEM — what the machine is doing. vSystem, ir-merged.js:8059-8294.
 
-   Every check is here — the ones that pass first, because they are the majority — each with WHO
-   owns it, WHAT breaks if it stops, and the last three weeks drawn out. A health page that opens on
-   the good news is not a health page, so this one opens on whatever is amber or red and lands on
-   Working only when there is nothing else to land on. "Who can do what" is no longer a hand-kept
-   grid: it reads the same SEATCAPS preset every seat is actually built from, one role at a time, so
-   the page and the access model can never drift apart. Reached by Digital Infrastructure and
-   Corporate Operations, and nobody else. */
+   D59 (g8): System opens on what is broken and who owns the fix — the Not working and Needs
+   attention cards appear only while they have something in them. Everything else is ONE row of
+   doors, directly under the counts: the working checks, the role presets, the activity log (which
+   carries the logged-action count that used to be a tile you could not click) and, for the page
+   owner, the failed-write test. */
 
-import { CAPT, CHECKS, CKDAYS, CKS, IMP, PAGECAPS, SEAT, SEATCAPS } from "@/domain";
+import { CAPT, CKDAYS, CKS, DEFSEATS, NOSIGN, PAGECAPS, SEAT, SEATCAPS } from "@/domain";
 import type { Check, PersonKey, SeatKey } from "@/domain";
 import { useRouter } from "next/navigation";
-import { ActLegend, Ag, Card, Empty, Pname } from "@/components/ui";
+import { ActLegend, Ag, Pname } from "@/components/ui";
 import { pathOf } from "@/components/shell/routes";
+import { registerDrawer } from "@/components/shell/drawers/registry";
+import type { DrawerKind } from "@/lib/store";
 import { logNote, may, openable, own, P, systemRows } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import { DoorRow } from "@/features/today/doors";
 import { ckDays, ckFromT } from "./checks";
 import "./drawers";
 
-type SC = "ok" | "bad" | "grid" | "log";
-
-export function SystemPage() {
+function Row({ c }: { c: Check }) {
   const { state, dispatch } = useConsole();
-  const router = useRouter();
-  const okC = CHECKS.filter((c) => c.st === "ok");
-  const warnC = CHECKS.filter((c) => c.st === "warn");
-  const failC = CHECKS.filter((c) => c.st === "fail");
-  const SECS: { k: SC; t: string; n: number }[] = [
-    { k: "ok", t: "Working", n: okC.length },
-    { k: "bad", t: "Findings", n: warnC.length + failC.length },
-    { k: "grid", t: "Who can do what", n: 0 },
-    { k: "log", t: "Activity", n: 0 },
-  ];
-  /* A health page that opens on the good news is not a health page: until somebody has picked a
-     section for themselves this one opens on whatever is amber or red. 10648–10653. */
-  const raw = state.SEC.system;
-  const SC: SC = SECS.some((s) => s.k === raw)
-    ? (raw as SC)
-    : warnC.length + failC.length
-      ? "bad"
-      : "ok";
-  const logs = systemRows(state);
-  const book = openable(state);
-  const LOGWHO = state.ui.LOGWHO as PersonKey | null;
-  const actors = Array.from(new Set(logs.map((e) => e.who)));
-  const rows = logs.filter((e) => !LOGWHO || e.who === LOGWHO);
-
-  const Row = ({ c }: { c: Check }) => {
     const d = ckDays(c, state.NOW);
     const tip =
       c.st === "ok"
@@ -83,212 +56,95 @@ export function SystemPage() {
         </button>
       </div>
     );
-  };
+  }
 
+const G8Demo = () => (
+  <span className="prov demo" title="Prototype status data — the states and dates are the prototype's own record, not a live poll">
+    demo
+  </span>
+);
+
+function OkBody() {
+  const { state } = useConsole();
+  return (
+    <div className="cb" style={{ padding: 0 }}>
+      {state.CHECKS.filter((c) => c.st === "ok").map((c) => <Row c={c} key={c.k} />)}
+      <p className="sm" style={{ margin: "12px 0 0" }}>
+        Prototype status data, not a live poll. Open a check for its history and owner.
+      </p>
+    </div>
+  );
+}
+
+function GridBody() {
+  const seats = Object.keys(SEAT) as SeatKey[];
+  const def = DEFSEATS as readonly string[], nos = NOSIGN as readonly string[];
   return (
     <>
-      <div className="ph">
-        <h1>System</h1>
-        <span className="sub">{may(state, "system", "edit") ? "you own this page" : "read only"}</span>
-      </div>
-
-      <div className="stats" style={{ marginBottom: "8px", gridTemplateColumns: "repeat(4,1fr)" }}>
-        <div className="stat">
-          <b style={{ color: "var(--go)" }}>{okC.length}</b>
-          <span>working</span>
-        </div>
-        <div className={`stat ${warnC.length ? "bad" : ""}`}>
-          <b>{warnC.length}</b>
-          <span>need attention</span>
-        </div>
-        <div className={`stat ${failC.length ? "bad" : ""}`}>
-          <b>{failC.length}</b>
-          <span>not working</span>
-        </div>
-        <div className="stat">
-          <b>{logs.length}</b>
-          <span>logged actions</span>
-        </div>
-      </div>
-
-      <div className="ux-toolbar ux-system" role="group" aria-label="System view">
-        {SECS.slice(0, 2)
-          .slice()
-          .reverse()
-          .map((s) => (
-            <button
-              type="button"
-              key={s.k}
-              className={`chip ${SC === s.k ? "on" : ""}`}
-              aria-pressed={SC === s.k ? "true" : "false"}
-              onClick={() => dispatch({ type: "setSec", view: "system", k: s.k })}
-            >
-              {s.t} · {s.n}
-            </button>
-          ))}
-        <span className="sm">Prototype status data · no live polling</span>
-      </div>
-
-      <details className="ux-disclosure ux-system" data-ux-key="system-reference" open={SC === "grid" || SC === "log"}>
-        <summary>Reference and admin tools</summary>
-        <div className="ux-toolbar">
-          <button
-            type="button"
-            className={`chip ${SC === "grid" ? "on" : ""}`}
-            onClick={() => dispatch({ type: "setSec", view: "system", k: "grid" })}
-          >
-            Role permissions
-          </button>
-          <button
-            type="button"
-            className={`chip ${SC === "log" ? "on" : ""}`}
-            onClick={() => dispatch({ type: "setSec", view: "system", k: "log" })}
-          >
-            System activity
-          </button>
-        </div>
-        {own(state, "system", "edit") ? (
-          <div className="ux-toolbar">
-            <span className="sm">Prototype test: reject one write and show its retry state.</span>
-            <button
-              type="button"
-              className={`chip ${state.FAILNEXT ? "on" : ""}`}
-              id="failnext"
-              role="switch"
-              aria-checked={state.FAILNEXT}
-              onClick={() => dispatch({ type: "armFail", v: !state.FAILNEXT })}
-            >
-              {state.FAILNEXT ? "Cancel failed-write test" : "Test a failed write"}
-            </button>
-          </div>
-        ) : null}
-      </details>
-
-      <div className="secw ux-system">
-        {SC === "ok" ? (
-          <Card
-            className="fill"
-            title="Working"
-            head={
-              <>
-                <span className="prov demo" title="The states and dates are the prototype's own record, not a live poll">
-                  demo
-                </span>
-                <div className="sp" />
-                <span className="sm">last {CKDAYS} days · oldest on the left</span>
-              </>
-            }
-          >
-            {okC.map((c) => (
-              <Row c={c} key={c.k} />
-            ))}
-            <p className="sm" style={{ margin: "12px 0 0" }}>
-              Open a check for its recorded history and owner.
-            </p>
-          </Card>
-        ) : null}
-
-        {SC === "bad" ? (
-          <Card
-            title="Not working"
-            head={
-              <>
-                <div className="sp" />
-                <span className="tag late">{failC.length}</span>
-              </>
-            }
-          >
-            {failC.length ? (
-              failC.map((c) => <Row c={c} key={c.k} />)
-            ) : (
-              <div className="empty">
-                No recorded check is failing.
-                <br />
-                <button
-                  type="button"
-                  className="chip"
-                  style={{ marginTop: "10px" }}
-                  onClick={() => dispatch({ type: "setSec", view: "system", k: "ok" })}
-                >
-                  Show the checks that work
-                </button>
-              </div>
-            )}
-          </Card>
-        ) : null}
-
-        {SC === "bad" ? (
-          <Card
-            className="fill"
-            title="Needs attention"
-            head={
-              <>
-                <div className="sp" />
-                <span className="tag due">{warnC.length}</span>
-              </>
-            }
-          >
-            {warnC.length ? warnC.map((c) => <Row c={c} key={c.k} />) : <Empty>No recorded check needs attention.</Empty>}
-          </Card>
-        ) : null}
-
-        {SC === "grid" ? (
-          <Card className="fill" title="Role permissions">
-            <p className="sm" style={{ margin: "0 0 12px" }}>
-              Expand a role to see its preset. Member access also depends on their manager and individual
-              grants. Finance works in the {IMP}.
-            </p>
-            {(Object.keys(SEAT) as SeatKey[]).map((seat) => {
-              const caps = SEATCAPS[seat] || {};
-              const pages = Object.keys(caps).filter((pg) => (caps[pg as keyof typeof caps] || []).length);
-              return (
-                <details className="ux-disclosure" data-ux-key={`system-role-${seat}`} key={seat}>
-                  <summary>{SEAT[seat]}</summary>
-                  <div className="tw">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Page or capability group</th>
-                          <th>Allowed actions</th>
+      <p className="sm" style={{ margin: "0 0 12px" }}>
+        Each role&apos;s default. Only IR, IR Manager and Digital Infrastructure sign in by default; anybody
+        else has no access until Digital Infrastructure grants them pages, person by person. Finance,
+        Account Management and the Auditor sign in to the Investors pages and hold no lead pages.
+      </p>
+      {seats.map((seat) => {
+        const caps = (SEATCAPS[seat] || {}) as Record<string, string[]>;
+        return (
+          <details className="ux-disclosure" data-ux-key={`system-role-${seat}`} key={seat}>
+            <summary>
+              {SEAT[seat]}
+              {def.includes(seat) ? "" : nos.includes(seat) ? " · Investors pages only" : " · by grant only"}
+            </summary>
+            {def.includes(seat) ? (
+              <div className="tw">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Page or capability group</th>
+                      <th>Allowed actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.keys(caps)
+                      .filter((pg) => (caps[pg] || []).length)
+                      .map((pg) => (
+                        <tr key={pg}>
+                          <td>{(PAGECAPS as Record<string, { t: string } | undefined>)[pg]?.t ?? pg}</td>
+                          <td className="sm">{caps[pg]!.map((c) => CAPT[c as keyof typeof CAPT] || c).join(" · ")}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {pages.map((pg) => (
-                          <tr key={pg}>
-                            <td>{(PAGECAPS as Record<string, { t: string } | undefined>)[pg]?.t ?? pg}</td>
-                            <td className="sm">
-                              {(caps[pg as keyof typeof caps] || []).map((c) => CAPT[c] || c).join(" · ")}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </details>
-              );
-            })}
-          </Card>
-        ) : null}
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="sm" style={{ margin: "8px 0" }}>
+                {nos.includes(seat)
+                  ? "No lead pages. They sign in to the Investors pages; their seat there is set on the Investors side of Teams."
+                  : "No access by default. Digital Infrastructure grants pages to a named person; they reach only those, plus their Profile."}
+              </p>
+            )}
+          </details>
+        );
+      })}
+    </>
+  );
+}
 
-        {SC === "log" ? (
-          <Card
-            className="fill"
-            plain
-            title="Activity — who did what"
-            head={
-              <>
-                <div className="sp" />
-                <span className="sm mono">
-                  {LOGWHO ? `${rows.length} of ${logs.length} entries` : `${logs.length} entries`}
-                </span>
-              </>
-            }
-          >
-            <div className="cb" style={{ paddingBottom: "6px" }}>
-              <label className="fi" style={{ maxWidth: "300px" }}>
+function LogBody() {
+  const { state, dispatch } = useConsole();
+  const router = useRouter();
+  const logs = systemRows(state);
+  const book = openable(state);
+  const LOGWHO = state.ui.LOGWHO as PersonKey | null;
+  const actors = Array.from(new Set(logs.map((e) => e.who)));
+  const rows = logs.filter((e) => !LOGWHO || e.who === LOGWHO);
+  return (
+    <>
+            <div>
+              <label className="fi" style={{ maxWidth: "300px", margin: "0 0 10px" }}>
                 <span>Activity by</span>
                 <select
                   className="selw"
+                  id="g8-logwho"
                   value={LOGWHO ?? ""}
                   onChange={(e) => dispatch({ type: "setUi", patch: { LOGWHO: e.target.value || null } })}
                 >
@@ -367,10 +223,132 @@ export function SystemPage() {
                 </tbody>
               </table>
             </div>
-            <div className="cb" style={{ paddingTop: "8px" }}>
-              <ActLegend />
+      {rows.length ? (
+        <div style={{ paddingTop: "8px" }}>
+          <ActLegend />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function TestBody() {
+  const { state, dispatch } = useConsole();
+  return own(state, "system", "edit") ? (
+    <>
+      <p className="sm" style={{ margin: "0 0 10px" }}>
+        Prototype test: the next write is refused once, so its retry state can be seen. Nothing is logged.
+      </p>
+      <button
+        type="button"
+        className={`chip ${state.FAILNEXT ? "on" : ""}`}
+        id="failnext"
+        role="switch"
+        aria-checked={state.FAILNEXT}
+        onClick={() => dispatch({ type: "armFail", v: !state.FAILNEXT })}
+      >
+        {state.FAILNEXT ? "Cancel failed-write test" : "Test a failed write"}
+      </button>
+    </>
+  ) : (
+    <p className="sm">Only the owner of this page can run it.</p>
+  );
+}
+
+registerDrawer("p:system.ok" as DrawerKind, {
+  w: 640,
+  title: () => "Working checks",
+  sub: (state) => state.CHECKS.filter((c) => c.st === "ok").length + " checks · last " + CKDAYS + " days",
+  Body: OkBody,
+});
+registerDrawer("p:system.grid" as DrawerKind, {
+  w: 560,
+  title: () => "Role permissions",
+  sub: () => Object.keys(SEAT).length + " roles",
+  Body: GridBody,
+});
+registerDrawer("p:system.log" as DrawerKind, {
+  w: 720,
+  title: () => "System activity",
+  sub: (state) => {
+    const base = systemRows(state), who = state.ui.LOGWHO as PersonKey | null;
+    return who ? base.filter((e) => e.who === who).length + " of " + base.length + " entries" : base.length + " entries";
+  },
+  Body: LogBody,
+});
+registerDrawer("p:system.test" as DrawerKind, {
+  w: 440,
+  title: () => "Failed-write test",
+  sub: (state) => (state.FAILNEXT ? "armed" : "off"),
+  Body: TestBody,
+});
+
+export function SystemPage() {
+  const { state } = useConsole();
+  const okC = state.CHECKS.filter((c) => c.st === "ok");
+  const warnC = state.CHECKS.filter((c) => c.st === "warn");
+  const failC = state.CHECKS.filter((c) => c.st === "fail");
+  return (
+    <>
+      <div className="ph">
+        <h1>System</h1>
+        <span className="sub">{may(state, "system", "edit") ? "you own this page" : "read only"}</span>
+      </div>
+
+      <div className="stats" style={{ marginBottom: "8px", gridTemplateColumns: "repeat(3,1fr)" }}>
+        <div className="stat">
+          <b style={{ color: "var(--go)" }}>{okC.length}</b>
+          <span>working</span>
+        </div>
+        <div className={`stat ${warnC.length ? "bad" : ""}`}>
+          <b>{warnC.length}</b>
+          <span>need attention</span>
+        </div>
+        <div className={`stat ${failC.length ? "bad" : ""}`}>
+          <b>{failC.length}</b>
+          <span>not working</span>
+        </div>
+      </div>
+      <DoorRow
+        items={[
+          { k: "system.ok", t: "Working checks", i: "today", v: "last " + CKDAYS + " days" },
+          { k: "system.grid", t: "Role permissions", i: "people", v: Object.keys(SEAT).length + " roles" },
+          { k: "system.log", t: "System activity", i: "activity", v: systemRows(state).length + " logged" },
+          own(state, "system", "edit")
+            ? { k: "system.test", t: "Failed-write test", i: "system", v: state.FAILNEXT ? "armed" : "off", cls: state.FAILNEXT ? "bad" : "" }
+            : null,
+        ]}
+      />
+
+      <div className="secw ux-system">
+        {failC.length ? (
+          <div className="card">
+            <div className="ch">
+              <h3>Not working</h3>
+              <G8Demo />
             </div>
-          </Card>
+            <div className="cb">
+              {failC.map((c) => <Row c={c} key={c.k} />)}
+            </div>
+          </div>
+        ) : null}
+        {warnC.length ? (
+          <div className="card">
+            <div className="ch">
+              <h3>Needs attention</h3>
+              <G8Demo />
+            </div>
+            <div className="cb">
+              {warnC.map((c) => <Row c={c} key={c.k} />)}
+            </div>
+          </div>
+        ) : null}
+        {!failC.length && !warnC.length ? (
+          <div className="card">
+            <div className="cb">
+              <div className="empty">Every recorded check is working.</div>
+            </div>
+          </div>
         ) : null}
       </div>
     </>

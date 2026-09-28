@@ -1,6 +1,7 @@
 "use client";
 
-/* THE SAME PEOPLE AS A LIST — vMembers, ir-console-redesigned.html:10849-10880. Everything about
+/* THE SAME PEOPLE AS A LIST — vMembers, ir-merged.js:8372-8406. D59 (g8): one way to open a
+   member — the name is the button (keyboard and screen reader), the row is the same target for a mouse. Everything about
    ONE of them opens in the drawer, so this screen never splits into two columns the eye has to
    choose between. */
 
@@ -40,7 +41,9 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                 <th>Team</th>
                 <th>Reaches</th>
                 <th className="n">Leads</th>
-                <th />
+                <th>
+                  <span className="vh">Access</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -56,18 +59,25 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                     key={k}
                     style={pp.on ? undefined : { opacity: 0.5 }}
                     className={open ? "k" : ""}
-                    {...(open
-                      ? {
-                          tabIndex: 0,
-                          onClick: () => dispatch(openPerson(k)),
-                          onKeyDown: (e: React.KeyboardEvent) => {
-                            if (e.key === "Enter") dispatch(openPerson(k));
-                          },
-                        }
-                      : {})}
+                    {...(open ? { onClick: () => dispatch(openPerson(k)) } : {})}
                   >
                     <td>
-                      <Pname k={k} b nw />
+                      {open ? (
+                        <button
+                          type="button"
+                          className="row-open g8-open"
+                          id={`pm-${k}`}
+                          aria-label={`Open ${P(state.PEOPLE, k).n}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(openPerson(k));
+                          }}
+                        >
+                          <Pname k={k} b nw />
+                        </button>
+                      ) : (
+                        <Pname k={k} b nw />
+                      )}
                       {pp.on ? null : <> <span className="tag">left</span></>}
                       {k === state.WHO ? <> <span className="tag br">you</span></> : null}
                       {!avail(state, k) && pp.on ? <> <span className="tag cov">out</span></> : null}
@@ -76,9 +86,9 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                           {" "}
                           <span
                             className="tag"
-                            title={`No account on this console — they work in ${pp.ext} and their work arrives here over the link`}
+                            title="Works the Investors pages of this console and holds no lead pages"
                           >
-                            no login here
+                            Investors side
                           </span>
                         </>
                       ) : null}
@@ -120,19 +130,11 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                     </td>
                     <td className="n">{state.LEADS.filter((l) => l.own === k).length}</td>
                     <td style={{ textAlign: "right" }}>
-                      {!pp.on ? (
-                        <span className="sm">—</span>
-                      ) : canManage(state, k) ? (
-                        <span className="sm" style={{ color: "var(--brand)" }}>
-                          Open ›
-                        </span>
-                      ) : k === state.WHO ? (
-                        <span className="sm">you</span>
-                      ) : (
+                      {pp.on && !canManage(state, k) && k !== state.WHO ? (
                         <span className="tag" title="Above your own access" aria-label="Above your own access">
                           <LockIcon />
                         </span>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 );
