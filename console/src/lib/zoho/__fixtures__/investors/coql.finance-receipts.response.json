@@ -1,0 +1,122 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740999401",
+        "Allotment": {
+          "id": "9007199254740998301",
+          "name": "x"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR9401",
+        "Received_On": "2026-09-01",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      },
+      {
+        "id": "9007199254740999402",
+        "Allotment": {
+          "id": "9007199254740998302",
+          "name": "x"
+        },
+        "Kind": "Advance",
+        "Amount": 1000000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR9402",
+        "Received_On": "2026-09-01",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      },
+      {
+        "id": "9007199254740999403",
+        "Allotment": {
+          "id": "9007199254740998302",
+          "name": "x"
+        },
+        "Kind": "Balance",
+        "Amount": 5000000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR9403",
+        "Received_On": "2026-09-01",
+        "Match_State": "Reversed",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      },
+      {
+        "id": "9007199254740999404",
+        "Allotment": {
+          "id": "9007199254740998303",
+          "name": "x"
+        },
+        "Kind": "Full",
+        "Amount": 5000000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR9404",
+        "Received_On": "2026-09-01",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      },
+      {
+        "id": "9007199254740999405",
+        "Allotment": {
+          "id": "9007199254740998304",
+          "name": "x"
+        },
+        "Kind": "Full",
+        "Amount": 7500000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR9405",
+        "Received_On": "2026-09-01",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      },
+      {
+        "id": "9007199254740999406",
+        "Allotment": {
+          "id": "9007199254740998305",
+          "name": "x"
+        },
+        "Kind": "Full",
+        "Amount": 5000000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR9406",
+        "Received_On": "2026-09-01",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      }
+    ],
+    "info": {
+      "count": 6,
+      "more_records": false
+    }
+  }
+}

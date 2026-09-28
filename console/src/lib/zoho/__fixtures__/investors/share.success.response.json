@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "share": [
+      {
+        "code": "SUCCESS",
+        "details": {},
+        "message": "shared successfully",
+        "status": "success"
+      }
+    ]
+  }
+}

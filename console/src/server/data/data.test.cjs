@@ -204,7 +204,7 @@ test('a signed-in IR\'s Leads come from COQL with the IR\'s own credential throu
   assert.match(r.queries[1], /from Leads where \(id in|from Leads where id in/);
   // the IR's own-lead investors (D69)
   assert.deepEqual(ds.im.INV.map((i) => i.id), [`${P}740997101`]);
-  assert.ok(r.queries.some((q) => new RegExp(`from Contacts where \\(Originating_IR = '${IR}'\\)`).test(q)));
+  assert.ok(r.queries.some((q) => new RegExp(`from Contacts where \\(Originating_IR = '${IR}' and Origin_Lead is not null\\)`).test(q)));
   const snap = gate.snapshot();
   assert.ok(snap.peakInFlight >= 1 && snap.peakInFlight <= 12 && snap.maxInFlight === 12 && snap.maxComplex === 8, JSON.stringify(snap));
   // every Plane B call line is the IR's, with ids and status only

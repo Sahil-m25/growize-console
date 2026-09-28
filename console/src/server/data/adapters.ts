@@ -18,6 +18,10 @@ import type { ImAllot, ImArlTxn, ImArlTxnType, ImHolding, ImLlp, ImLlpStatus, Im
 import type { InvestorEvents } from "./events";
 import { MODULES, PROJECTIONS, type ModuleKey } from "./projections";
 import type { BookScope } from "./scope";
+import { parseContact, type ContactRow } from "./contact-row";
+import { admitContact, contactsWhere, type IrRefusal } from "./ir-guard";
+
+export { parseContact };
 
 export const PAGE = 200;
 export const DEFAULT_MAX_PAGES = 10;
@@ -26,28 +30,10 @@ const RECORD_ID = /^\d{15,22}$/;
 
 export type ReadResult<T> =
   | { readonly ok: true; readonly rows: readonly T[]; readonly truncated: boolean }
-  | { readonly ok: false; readonly kind: "refused"; readonly reason: "scope-drift" | "source-invalid" }
+  | { readonly ok: false; readonly kind: "refused"; readonly reason: "scope-drift" | "source-invalid" | IrRefusal }
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
 
-export interface ContactRow {
-  readonly id: string;
-  readonly code: string;
-  readonly firstName: string | null;
-  readonly lastName: string;
-  readonly mobile: string | null;
-  readonly email: string | null;
-  readonly city: string | null;
-  readonly address: string;
-  readonly residency: string | null;
-  readonly nominee: string | null;
-  readonly kamId: string | null;
-  readonly kamSince: string | null;
-  readonly introAt: string | null;
-  readonly originLeadId: string | null;
-  readonly originatingIrId: string | null;
-  readonly saidYesAt: string | null;
-  readonly createdAt: string | null;
-}
+export type { ContactRow } from "./contact-row";
 
 export interface ReceiptRow {
   readonly id: string;
@@ -59,6 +45,8 @@ export interface ReceiptRow {
   readonly on: string | null;
   readonly byId: string | null;
   readonly matched: boolean;
+  /** Zoho's Match_State as read (Pending / Matched / Not found / Reversed / Claimed), or null. */
+  readonly matchState: string | null;
   readonly reversalOf: string | null;
 }
 
@@ -155,34 +143,20 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
   };
   const EMPTY = Object.freeze({ ok: true as const, rows: Object.freeze([]) as readonly never[], truncated: false });
 
-  const parseContact = (r: ZohoRecord): ContactRow | null => {
-    if (!idOf(r.id)) return null;
-    const lastName = s(r, "Last_Name", 80);
-    if (!lastName) return null;
-    const addr = [s(r, "Mailing_Flat_House_No_Building_Apartment_Name"), s(r, "Mailing_Street"), s(r, "Mailing_City", 120),
-      s(r, "Mailing_State", 120), s(r, "Mailing_Zip", 30), s(r, "Mailing_Country", 120)].filter(Boolean).join(", ");
-    const nominee = s(r, "Nominee_Name", 120);
-    const rel = s(r, "Nominee_Relation", 40);
-    return Object.freeze({
-      id: r.id, code: s(r, "ARL_ID", 40) ?? "", firstName: s(r, "First_Name", 40), lastName,
-      mobile: s(r, "Mobile", 30), email: s(r, "Email", 100), city: s(r, "Mailing_City", 120), address: addr,
-      residency: s(r, "Residency", 40), nominee: nominee ? (rel ? `${nominee} (${rel})` : nominee) : null,
-      kamId: idOf(r.KAM), kamSince: stamp(s(r, "KAM_Since", 40)), introAt: stamp(s(r, "KAM_Intro_At", 40)),
-      originLeadId: idOf(r.Origin_Lead), originatingIrId: idOf(r.Originating_IR), saidYesAt: stamp(s(r, "Said_Yes_At", 40)),
-      createdAt: stamp(s(r, "Created_Time", 40)),
-    });
-  };
 
   return Object.freeze({
-    /** Contacts in the scope: own-lead by Originating_IR (D69), own-book by KAM; wider scopes as the token allows. */
+    /**
+     * Contacts in the scope — the WHERE clause and the per-row admission both come from ./ir-guard, the one
+     * choke point: an IR's own-lead read asks for Originating_IR = me AND Origin_Lead present (D69, default
+     * deny), and any row the guard does not admit refuses the whole read (Plane B), never passes through.
+     */
     async contacts(cred: UserCredential, scope: BookScope, signal?: AbortSignal): Promise<ReadResult<ContactRow>> {
-      if (scope.kind === "none" || scope.kind === "user") return EMPTY;
-      const me = cred.userId;
-      const where = scope.kind === "own-lead" ? `Originating_IR = '${scope.userId}'` : scope.kind === "own-book" ? `KAM = '${scope.userId}'` : "id is not null";
+      const where = contactsWhere(scope);
+      if (!where || scope.kind === "user") return EMPTY;
       const r = mapRows(await selectAll(cred, "contacts", where, signal), parseContact);
       if (!r.ok) return r;
-      const foreign = r.rows.filter((c) => (scope.kind === "own-lead" && c.originatingIrId !== scope.userId) || (scope.kind === "own-book" && c.kamId !== scope.userId));
-      if (foreign.length) return drift(me, "investors-book", foreign.map((c) => c.id));
+      const foreign = r.rows.filter((c) => !admitContact(scope, c).ok);
+      if (foreign.length) return drift(cred.userId, "investors-book", foreign.map((c) => c.id));
       return r;
     },
 
@@ -205,9 +179,10 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
     },
 
     /** Allotments of the given contacts (own scopes), or every allotment the token sees (wider scopes). */
-    async allotments(cred: UserCredential, scope: BookScope, contactIds: readonly string[], signal?: AbortSignal): Promise<ReadResult<AllotmentRow>> {
+    async allotments(cred: UserCredential, scope: BookScope, contactIds: readonly string[], signal?: AbortSignal, only = false): Promise<ReadResult<AllotmentRow>> {
       if (scope.kind === "none" || scope.kind === "user") return EMPTY;
-      const own = scope.kind === "own-lead" || scope.kind === "own-book";
+      // `only`: read just these ids even for a wider scope (one investor opened by id).
+      const own = only || scope.kind === "own-lead" || scope.kind === "own-book";
       const raw = own ? await selectIn(cred, "allotments", "Customer", contactIds, signal) : await selectAll(cred, "allotments", "id is not null", signal);
       const r = mapRows(raw, (x): AllotmentRow | null => {
         const customer = idOf(x.Customer);
@@ -230,16 +205,17 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
     },
 
     /** Receipts against the given allotments (own scopes) or every receipt the token sees. */
-    async receipts(cred: UserCredential, scope: BookScope, allotmentIds: readonly string[], signal?: AbortSignal): Promise<ReadResult<ReceiptRow>> {
+    async receipts(cred: UserCredential, scope: BookScope, allotmentIds: readonly string[], signal?: AbortSignal, only = false): Promise<ReadResult<ReceiptRow>> {
       if (scope.kind === "none" || scope.kind === "user") return EMPTY;
-      const own = scope.kind === "own-lead" || scope.kind === "own-book";
+      // `only`: read just these ids even for a wider scope (one investor opened by id).
+      const own = only || scope.kind === "own-lead" || scope.kind === "own-book";
       const raw = own ? await selectIn(cred, "receipts", "Allotment", allotmentIds, signal) : await selectAll(cred, "receipts", "id is not null", signal);
       const r = mapRows(raw, (x): ReceiptRow | null => {
         if (!idOf(x.id)) return null;
         return Object.freeze({
           id: x.id, allotmentId: idOf(x.Allotment), kind: s(x, "Kind", 40), amount: n(x, "Amount") ?? 0, mode: s(x, "Mode", 20),
           utr: s(x, "UTR", 40), on: day(s(x, "Received_On", 40)), byId: idOf(x.Created_By),
-          matched: s(x, "Match_State", 20) === "Matched", reversalOf: idOf(x.Reversal_Of),
+          matched: s(x, "Match_State", 20) === "Matched", matchState: s(x, "Match_State", 20), reversalOf: idOf(x.Reversal_Of),
         });
       });
       if (!r.ok || !own) return r;

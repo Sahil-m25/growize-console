@@ -1,0 +1,90 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997201",
+        "ARL_ID": "ARL-INV-7201",
+        "First_Name": "Prakash",
+        "Last_Name": "Bhat",
+        "Email": "prakash@example.invalid",
+        "Mailing_City": "Mysuru",
+        "Residency": "Resident",
+        "KYC": "Completed",
+        "KYC_Completed_On": "2026-08-01",
+        "FEMA_Applicable": false,
+        "FEMA_Verified_At": null,
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "PAN_Number": "FXPAN9999Z",
+        "Bank_Account_Number": "FXBANK123456"
+      },
+      {
+        "id": "9007199254740997202",
+        "ARL_ID": "ARL-INV-7202",
+        "First_Name": "Joseph",
+        "Last_Name": "Mathew",
+        "Email": "joseph@example.invalid",
+        "Mailing_City": "Kochi",
+        "Residency": "NRI",
+        "KYC": "In Progress",
+        "KYC_Completed_On": null,
+        "FEMA_Applicable": true,
+        "FEMA_Verified_At": null,
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "PAN_Number": "FXPAN9999Z",
+        "Bank_Account_Number": "FXBANK123456"
+      },
+      {
+        "id": "9007199254740997203",
+        "ARL_ID": "ARL-INV-7203",
+        "First_Name": "Harish",
+        "Last_Name": "Gowda",
+        "Email": "harish@example.invalid",
+        "Mailing_City": "Mysuru",
+        "Residency": "Resident",
+        "KYC": "Completed",
+        "KYC_Completed_On": "2026-08-01",
+        "FEMA_Applicable": false,
+        "FEMA_Verified_At": null,
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "PAN_Number": "FXPAN9999Z",
+        "Bank_Account_Number": "FXBANK123456"
+      },
+      {
+        "id": "9007199254740997204",
+        "ARL_ID": "ARL-INV-7204",
+        "First_Name": "Asha",
+        "Last_Name": "Rao",
+        "Email": "asha@example.invalid",
+        "Mailing_City": "Bengaluru",
+        "Residency": "OCI",
+        "KYC": "NA",
+        "KYC_Completed_On": null,
+        "FEMA_Applicable": true,
+        "FEMA_Verified_At": "2026-09-01T10:00:00+05:30",
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "PAN_Number": "FXPAN9999Z",
+        "Bank_Account_Number": "FXBANK123456"
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}

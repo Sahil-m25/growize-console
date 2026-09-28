@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998101",
+        "Name": "EKA LLP",
+        "Block_Code": "A",
+        "Acreage_Acres": 10,
+        "Total_Units": 22,
+        "Unit_Price": 2500000,
+        "LLP_Status": "Open for Reservation",
+        "Insurer": null,
+        "Insurance_Policy_No": null,
+        "Insured_Till": null,
+        "Annual_Rental_Yield": 8
+      },
+      {
+        "id": "9007199254740998102",
+        "Name": "Fixture Two LLP",
+        "Block_Code": "B",
+        "Acreage_Acres": 8,
+        "Total_Units": 20,
+        "Unit_Price": 2500000,
+        "LLP_Status": "Active",
+        "Insurer": null,
+        "Insurance_Policy_No": null,
+        "Insured_Till": null,
+        "Annual_Rental_Yield": 8
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

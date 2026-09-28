@@ -28,8 +28,9 @@ import { LOST_REASONS } from "../leads/followup";
 import { RUNGS } from "../leads/journey";
 import type { ZohoProfileName, ZohoRoleName, ZohoSeat } from "../oauth/seat";
 import { CONSOLE_SEAT, type ConsoleSession } from "../oauth/user-session";
-import { createInvestorsAdapters, type AllotmentRow, type ContactRow, type ReadResult } from "./adapters";
+import { createInvestorsAdapters, type AllotmentRow, type ContactRow, type ReadResult, type ReceiptRow } from "./adapters";
 import type { InvestorEvents } from "./events";
+import { contactsWhere, createInvestorGuard, investorsKey, type GuardRefusal, type PlaneCRefusal } from "./ir-guard";
 import { MODULES } from "./projections";
 import { scopedKey, scopesFor, type BookScope, type SeatScopes } from "./scope";
 
@@ -59,7 +60,15 @@ export interface LiveDeps {
   readonly subtreeOf?: (managerId: string, signal?: AbortSignal) => Promise<readonly string[] | null>;
   readonly unassignedQueueUserId?: string | null;
   readonly clock?: () => number;
+  /** Plane C's half of an Investors-side refusal (PROVISIONAL, ./ir-guard). */
+  readonly planeCRefusal?: (e: PlaneCRefusal) => void;
 }
+
+/** One investor opened by URL or API: the Contact, its allotments and receipts — or a logged refusal. */
+export type OneInvestor =
+  | { readonly ok: true; readonly investor: ImInvestor; readonly allotments: Dataset["im"]["ALLOT"]; readonly receipts: readonly ReceiptRow[] }
+  | GuardRefusal
+  | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string };
 
 export interface LiveLoad {
   readonly ds: Dataset;
@@ -169,6 +178,7 @@ export type CountRead = CacheFresh<number> | CacheStale<number> | CacheError<num
 export function createLiveDataLayer(deps: LiveDeps) {
   const clock = deps.clock ?? Date.now;
   const adapters = createInvestorsAdapters({ crm: deps.crm, events: deps.events });
+  const guard = createInvestorGuard({ events: deps.events, planeCRefusal: deps.planeCRefusal });
 
   /** The leads book's access, re-derived from the live session on every recheck (never from the request). */
   const leadsAccess = (start: ConsoleSession) => ({
@@ -286,6 +296,28 @@ export function createLiveDataLayer(deps: LiveDeps) {
       return { ds, scopes, problems: Object.freeze(problems) };
     },
 
+    /**
+     * One investor by id (an IR opening it from their lead page, or any seat by URL/API). The guard decides
+     * first (M03-S09); allotments and receipts are then read for that Contact alone. Identity fields are
+     * never read (investorOf leaves pan/bank blank), so PII is masked by construction.
+     */
+    async investor(p: LivePrincipal, contactId: string, signal?: AbortSignal): Promise<OneInvestor> {
+      const one = await guard.one(deps.crm, p.credential, p.session.seat, contactId, signal);
+      if (!one.ok) return one;
+      const scopes = scopesFor(p.session.seat, p.credential.userId);
+      const al = await adapters.allotments(p.credential, scopes.money, [one.contact.id], signal, true);
+      if (!al.ok) return al.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: al.errorKind };
+      const own = al.rows.filter((a) => a.Customer === one.contact.id);
+      const rc = await adapters.receipts(p.credential, scopes.money, own.map((a) => a.id), signal, true);
+      if (!rc.ok) return rc.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: rc.errorKind };
+      return {
+        ok: true,
+        investor: investorOf(one.contact, own, () => ""),
+        allotments: own.map(({ received: _r, receivable: _v, token: _t, ...a }) => a),
+        receipts: rc.rows,
+      };
+    },
+
     /** A badge count for one book, cached under this person's scope for that book — never another's (D53). */
     async count(p: LivePrincipal, book: "leads" | "investors", signal?: AbortSignal): Promise<CountRead | null> {
       const scopes = scopesFor(p.session.seat, p.credential.userId);
@@ -294,9 +326,11 @@ export function createLiveDataLayer(deps: LiveDeps) {
       const me = p.credential.userId;
       const where = book === "leads"
         ? s.kind === "user" ? `Owner = '${me}' or Secondary_Owner = '${me}'` : "id is not null"
-        : s.kind === "own-lead" ? `Originating_IR = '${me}'` : s.kind === "own-book" ? `KAM = '${me}'` : "id is not null";
+        : contactsWhere(s) ?? "id is null";
       const module = book === "leads" ? "Leads" : MODULES.contacts;
-      return deps.cache.readSettled<number>(scopedKey<number>(s, `${book}.count`), async () => {
+      // An IR's investor count is keyed by that IR's user id (./ir-guard investorsKey, D53).
+      const key = book === "investors" ? investorsKey<number>(s, "count") : scopedKey<number>(s, `${book}.count`);
+      return deps.cache.readSettled<number>(key, async () => {
         const r = await deps.crm.aggregate(p.credential, `select COUNT(id) from ${module} where (${where})`, { signal });
         if (!r.ok) throw Object.assign(new Error("zoho"), { kind: r.error.kind });
         const v = r.value[0]?.["COUNT(id)"];

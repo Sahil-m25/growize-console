@@ -1,0 +1,134 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998301",
+        "Customer": {
+          "id": "9007199254740997201",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Reserved",
+        "Issued_Units": 0,
+        "Reserved_Units": 1,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8
+      },
+      {
+        "id": "9007199254740998302",
+        "Customer": {
+          "id": "9007199254740997202",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Reserved",
+        "Issued_Units": 0,
+        "Reserved_Units": 4,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8
+      },
+      {
+        "id": "9007199254740998303",
+        "Customer": {
+          "id": "9007199254740997203",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8
+      },
+      {
+        "id": "9007199254740998304",
+        "Customer": {
+          "id": "9007199254740997204",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 3,
+        "Reserved_Units": 3,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8
+      },
+      {
+        "id": "9007199254740998305",
+        "Customer": {
+          "id": "9007199254740997204",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998102",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8
+      },
+      {
+        "id": "9007199254740998306",
+        "Customer": {
+          "id": "9007199254740997203",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998102",
+          "name": "x"
+        },
+        "Allocation_Status": "Cancelled",
+        "Issued_Units": 0,
+        "Reserved_Units": 5,
+        "Unit_Price": 2500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": null,
+        "Total_Amount_Receivable": null,
+        "Issued_On": null,
+        "Annual_Rental_Yield": 8
+      }
+    ],
+    "info": {
+      "count": 6,
+      "more_records": false
+    }
+  }
+}

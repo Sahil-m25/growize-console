@@ -15,13 +15,15 @@ import type { Dataset } from "../../lib/data/types";
 import { createScopedCache, type ScopedCache } from "../../lib/zoho/cache";
 import { createZohoClient } from "../../lib/zoho/client";
 import { createGate, type Gate } from "../../lib/zoho/gate";
-import { createMemorySink, createOpsLog, type OpsLog } from "../../lib/zoho/log";
-import { createPlaneCLog, createPlaneCMemorySink, type PlaneCLog } from "../identity/plane-c";
+import { createOpsLog, type OpsLog } from "../../lib/zoho/log";
+import { createPlaneCLog, type PlaneCLog } from "../identity/plane-c";
+import { sharedOpsSink, sharedPlaneCSink } from "../logs/factory";
 import { alertingOpsSink } from "../ops/runtime";
 import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
 import { SID_COOKIE } from "../oauth/user-session";
 import { createInvestorEvents, type InvestorEvents } from "./events";
 import { createLiveDataLayer, type LiveLoad, type SeatIds } from "./live";
+import { noteLiveFailure, noteLiveRead } from "./freshness";
 
 export interface DataRuntime {
   readonly gate: Gate;
@@ -36,8 +38,8 @@ const G = globalThis as typeof globalThis & { __gzDataRuntime?: DataRuntime };
 /** The one gate, cache and log pair of this process (kept across dev reloads). */
 export function dataRuntime(): DataRuntime {
   if (G.__gzDataRuntime) return G.__gzDataRuntime;
-  const log = createOpsLog(alertingOpsSink(createMemorySink()));
-  const planeC = createPlaneCLog(createPlaneCMemorySink());
+  const log = createOpsLog(alertingOpsSink(sharedOpsSink()));
+  const planeC = createPlaneCLog(sharedPlaneCSink());
   const rt: DataRuntime = Object.freeze({ gate: createGate(), cache: createScopedCache(), log, planeC, events: createInvestorEvents({ log, planeC }) });
   G.__gzDataRuntime = rt;
   return rt;
@@ -80,7 +82,18 @@ export async function loadLiveDataset(env: NodeJS.ProcessEnv = process.env): Pro
       return r.ok ? { credential: r.credential, session: r.session } : null;
     },
   });
-  const load = await layer.load({ credential: first.credential, session: first.session, sessionId: sid });
-  if (mustFail(load)) throw new LiveReadError(load.problems);
+  // M01-S09-T02: every outcome is reported to ./freshness, so /api/data says how current it is.
+  let load: LiveLoad;
+  try {
+    load = await layer.load({ credential: first.credential, session: first.session, sessionId: sid });
+  } catch {
+    noteLiveFailure(first.credential.userId, ["load:unexpected"]);
+    throw new LiveReadError(["load:unexpected"]);
+  }
+  if (mustFail(load)) {
+    noteLiveFailure(first.credential.userId, load.problems);
+    throw new LiveReadError(load.problems);
+  }
+  noteLiveRead(first.credential.userId, load.problems);
   return load.ds;
 }

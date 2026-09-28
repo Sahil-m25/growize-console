@@ -70,8 +70,9 @@ export const DEFAULT_BLUEPRINT_OWNED_FIELDS: Readonly<Record<string, readonly st
 });
 
 /** The background work D53 allows a service token for. Nothing on this list serves a screen. */
-export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback";
-const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback"]);
+/* "handoff-share" (M03-S09-T03, D74): at hand-off, share the Contact, its allotments and receipts read-only with the originating IR. */
+export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share";
+const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share"]);
 
 declare const apiDomainBrand: unique symbol;
 declare const userBrand: unique symbol;
@@ -190,7 +191,26 @@ export interface ZohoApi<C extends Credential> {
   aggregate(as: C, selectQuery: string, options?: CallOptions): Promise<ZohoResult<readonly AggregateRow[]>>;
   /** GET /{module}/{id}/__timeline — who changed which fields when, newest first; values dropped. */
   timeline(as: C, module: string, id: string, options?: CallOptions & { readonly perPage?: number }): Promise<ZohoResult<TimelinePage>>;
+  /** POST /{module}/{id}/actions/send_mail (M07-S05) — sent from the caller's own mailbox, filed on the
+   *  record's Emails list. To addresses only (no cc/bcc), plain text or HTML. Never retried: a mail may have left. */
+  sendMail(as: C, module: string, id: string, mail: SendMailRequest, options?: CallOptions): Promise<ZohoResult<{ readonly sent: true; readonly messageId: string | null }>>;
+  /** GET /settings/emails/actions/from_addresses — the addresses the caller may send from. */
+  fromAddresses(as: C, options?: CallOptions): Promise<ZohoResult<readonly FromAddress[]>>;
 }
+export interface MailAddress { readonly email: string; readonly userName?: string }
+export interface SendMailRequest {
+  readonly from: MailAddress;
+  readonly to: readonly MailAddress[];
+  readonly subject: string;
+  readonly content: string;
+  readonly format: "text" | "html";
+}
+export interface FromAddress { readonly email: string; readonly type: string; readonly userName: string | null; readonly isDefault: boolean }
+/** send_mail's own ceilings, below Zoho's; the product's tighter limits live with the caller. */
+export const SEND_MAIL_MAX_TO = 10;
+export const SEND_MAIL_MAX_SUBJECT = 500;
+export const SEND_MAIL_MAX_CONTENT = 100_000;
+const MAIL_ADDRESS = /^[A-Za-z0-9._%+'-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}$/;
 export type ZohoClient = ZohoApi<UserCredential>;
 export type ZohoServiceClient = ZohoApi<ServiceCredential>;
 
@@ -1138,6 +1158,52 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         entries.push(Object.freeze({ at, action, byId, fields: Object.freeze(fields) }));
       }
       return done({ entries: Object.freeze(entries), moreRecords: obj(root?.info)?.more_records === true }, out);
+    },
+
+    // ponytail: body and response per the v8 send_mail docs; unproven until TC-E07-024 runs on the sandbox.
+    async sendMail(as, module, id, mail, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      const addr = (a: MailAddress | undefined): { email: string; user_name?: string } => {
+        if (!a || typeof a.email !== "string" || !MAIL_ADDRESS.test(a.email)) throw new TypeError("sendMail() needs valid email addresses.");
+        if (a.userName !== undefined && (typeof a.userName !== "string" || a.userName.length > 200)) throw new TypeError("sendMail() user names are text up to 200.");
+        return a.userName ? { user_name: a.userName, email: a.email } : { email: a.email };
+      };
+      if (!mail || !Array.isArray(mail.to) || mail.to.length < 1 || mail.to.length > SEND_MAIL_MAX_TO) throw new TypeError(`sendMail() sends to 1–${SEND_MAIL_MAX_TO} addresses.`);
+      if (typeof mail.subject !== "string" || !mail.subject.trim() || mail.subject.length > SEND_MAIL_MAX_SUBJECT) throw new TypeError("sendMail() needs a subject.");
+      if (typeof mail.content !== "string" || !mail.content.trim() || mail.content.length > SEND_MAIL_MAX_CONTENT) throw new TypeError("sendMail() needs content.");
+      if (mail.format !== "text" && mail.format !== "html") throw new TypeError('sendMail() format is "text" or "html".');
+      const out = await execute(as, {
+        op: "sendMail", method: "POST", path: `/${module}/${id}/actions/send_mail`, endpoint: `/${module}/{id}/actions/send_mail`,
+        body: { data: [{ from: addr(mail.from), to: mail.to.map(addr), subject: mail.subject, content: mail.content, mail_format: mail.format, consent_email: false }] },
+        shape: { op: "send-mail" }, idempotent: false, perRecord: true, responseShape: "data", maxRows: 1,
+        recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      const first = out.result.kind === "ok" ? obj((obj(out.result.body)?.data as unknown[] | undefined)?.[0]) : null;
+      if (!first || (first.status !== "success" && first.code !== "SUCCESS")) {
+        return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly sent: true; readonly messageId: string | null }>;
+      }
+      const mid = obj(first.details)?.message_id;
+      return done({ sent: true as const, messageId: typeof mid === "string" && mid.length <= 200 ? mid : null }, out);
+    },
+
+    async fromAddresses(as, opts = {}) {
+      const out = await execute(as, {
+        op: "fromAddresses", method: "GET", path: "/settings/emails/actions/from_addresses", endpoint: "/settings/emails/actions/from_addresses",
+        shape: { op: "read" }, idempotent: true, perRecord: false, recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done([] as readonly FromAddress[], out);
+      const raw = obj(out.result.body)?.from_addresses;
+      if (!Array.isArray(raw)) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<readonly FromAddress[]>;
+      const list: FromAddress[] = [];
+      for (const r of raw.slice(0, 100).map(obj)) {
+        if (!r || typeof r.email !== "string" || !MAIL_ADDRESS.test(r.email)) continue;
+        list.push(Object.freeze({ email: r.email, type: typeof r.type === "string" ? r.type.slice(0, 40) : "",
+          userName: typeof r.user_name === "string" ? r.user_name.slice(0, 200) : null, isDefault: r.default === true }));
+      }
+      return done(Object.freeze(list) as readonly FromAddress[], out);
     },
 
     async deleteRecord(as, module, id, opts = {}) {
