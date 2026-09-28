@@ -1804,6 +1804,11 @@
    ],
    "at": "2026-09-27T22:56:27.777Z",
    "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+  },
+  "M01-S02": {
+   "status": "pending",
+   "attempts": 0,
+   "notes": 1
   }
  },
  "subtasks": {

@@ -3166,7 +3166,6 @@
    "stage": "S1",
    "day": 2,
    "depends_on": [
-    "M01-S01",
     "M02-S10"
    ],
    "as_a": "any person with a seat",
@@ -10846,7 +10845,6 @@
    "day": 4,
    "depends_on": [
     "M08-S01",
-    "M10-S02",
     "M01-S04"
    ],
    "as_a": "IR",
@@ -12137,8 +12135,7 @@
    "stage": "S3",
    "day": 4,
    "depends_on": [
-    "M02-S03",
-    "M10-S07"
+    "M02-S03"
    ],
    "as_a": "Head of Finance",
    "i_want": "every receipt, refund and forfeit in one register on Payments with received, refunded, net banked and still due, and filters by kind, by farm and by reconciliation",

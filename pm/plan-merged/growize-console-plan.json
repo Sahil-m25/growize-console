@@ -692,7 +692,6 @@
     "Users API (current user)"
    ],
    "depends_on": [
-    "M01-S01",
     "M02-S10"
    ],
    "plan": "In plan",
@@ -3394,7 +3393,6 @@
    ],
    "depends_on": [
     "M08-S01",
-    "M10-S02",
     "M01-S04"
    ],
    "plan": "In plan",
@@ -4258,8 +4256,7 @@
     "Receipts (lookups to allotment, Contact, LLP)"
    ],
    "depends_on": [
-    "M02-S03",
-    "M10-S07"
+    "M02-S03"
    ],
    "plan": "In plan",
    "change": "kept",
