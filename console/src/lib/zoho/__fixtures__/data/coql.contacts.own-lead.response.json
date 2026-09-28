@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997101",
+        "ARL_ID": "ARL-FX-7101",
+        "First_Name": "Synthetic",
+        "Last_Name": "Investor 101",
+        "Mobile": "+91 90000 07101",
+        "Email": "fixture.101@example.invalid",
+        "Mailing_City": "Fixture City",
+        "Mailing_Street": "1 Fixture Road",
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": "560001",
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": "Fixture Nominee",
+        "Nominee_Relation": "Spouse",
+        "KAM": null,
+        "KAM_Since": null,
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740996201",
+          "name": "x"
+        },
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Said_Yes_At": "2026-09-01T10:00:00+05:30",
+        "Created_Time": "2026-09-01T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "PAN_Number": "FXPAN9999Z",
+        "Bank_Account_Number": "FXBANK123456"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

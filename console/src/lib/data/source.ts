@@ -9,9 +9,12 @@ import { decodeSession, SESSION_COOKIE } from "./session";
 import { stubUser, withStubUser } from "./stub-user";
 import type { DataPayload, DataSource, Dataset } from "./types";
 
-/** Phase 2 replaces this with the live read on the signed-in person's own Zoho token (D53). */
+/** The live read on the signed-in person's own Zoho token (D53, M01-S03); the empty book when Zoho
+ *  sign-in is not configured or nobody is signed in. */
 export const zohoSource: DataSource = {
   async load(): Promise<Dataset> {
+    const live = await (await import("@/server/data/zoho-source")).loadLiveDataset();
+    if (live) return live;
     const now = kolkataNow();
     return emptyDataset(clockDay(now), now);
   },

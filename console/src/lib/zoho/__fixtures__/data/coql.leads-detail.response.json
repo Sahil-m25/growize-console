@@ -1,0 +1,52 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996201",
+        "First_Touch_At": "2026-09-20T12:00:00+05:30",
+        "Qualified_At": "2026-09-22T12:00:00+05:30",
+        "Engaged_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Fully_Paid_At": null,
+        "Allocated_At": null,
+        "Onboarded_At": null,
+        "Lost_Reason": null,
+        "Next_Step": "Call back",
+        "Consent_WhatsApp": true,
+        "Consent_Email": false,
+        "Consent_Call": true,
+        "Consent_Visit": null
+      },
+      {
+        "id": "9007199254740996202",
+        "First_Touch_At": "2026-09-11T12:00:00+05:30",
+        "Qualified_At": null,
+        "Engaged_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Fully_Paid_At": null,
+        "Allocated_At": null,
+        "Onboarded_At": null,
+        "Lost_Reason": "Went cold - no reply",
+        "Next_Step": null,
+        "Consent_WhatsApp": null,
+        "Consent_Email": null,
+        "Consent_Call": null,
+        "Consent_Visit": null
+      },
+      {
+        "id": "9007199254740996203",
+        "First_Touch_At": null
+      }
+    ],
+    "info": {
+      "count": 3,
+      "more_records": false
+    }
+  }
+}

@@ -9,7 +9,9 @@
  * throws never takes a sign-in down with it.
  */
 
-export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session-expired" | "session-revoked";
+export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session-expired" | "session-revoked"
+  /* M01-S03-T05: the Investors side's authority events — an identity reveal, a step-up, a seat change */
+  | "reveal" | "step-up" | "seat-change";
 export type PlaneCOutcome = "ok" | "refused" | "ended";
 
 export interface PlaneCEvent {
@@ -22,6 +24,8 @@ export interface PlaneCEvent {
   readonly reason: string;
   /** The console seat token, when one was resolved. */
   readonly seat: string | null;
+  /** M01-S03-T05: the Zoho record ids the event concerns (a reveal's Contact); ids only, never values. */
+  readonly recordIds?: readonly string[];
 }
 
 export interface PlaneCSink {
@@ -32,7 +36,8 @@ export interface PlaneCLog {
   record(event: PlaneCEvent): void;
 }
 
-const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked"]);
+const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change"]);
+const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;
 const CODE = /^[a-z][a-z0-9-]{0,47}$/;
@@ -46,6 +51,9 @@ function clean(e: PlaneCEvent): PlaneCEvent {
     outcome: (typeof x.outcome === "string" && OUTCOMES.has(x.outcome) ? x.outcome : "refused") as PlaneCOutcome,
     reason: typeof x.reason === "string" && CODE.test(x.reason) ? x.reason : "unrecognised",
     seat: typeof x.seat === "string" && CODE.test(x.seat) ? x.seat : null,
+    ...(Array.isArray(x.recordIds)
+      ? { recordIds: Object.freeze([...new Set((x.recordIds as unknown[]).filter((v): v is string => typeof v === "string" && RECORD_ID.test(v)))].slice(0, 50)) }
+      : {}),
   });
 }
 

@@ -1,0 +1,73 @@
+/**
+ * M01-S03-T05 — THE INVESTORS SIDE'S PLANE B / PLANE C EVENTS (D47). Ids and status only.
+ *
+ *  Plane B (lib/zoho/log OpsLog.refusal): our layer said no — a scope drift, a seat without the book,
+ *    and a 412 ALREADY_MODIFIED on a write (reason "already-modified"). The Zoho call line itself is
+ *    written by the client; this adds the refusal the person saw.
+ *  Plane C (identity/plane-c): authority — an identity reveal (pan / bank_account), a step-up, a seat change.
+ *
+ * Nothing here takes a value: the arguments are a Zoho user id, short codes, a seat token and record
+ * ids. Both writers rebuild every line from an allow-list, so even a caller who passes more keeps nothing.
+ */
+
+import type { ZohoFailure } from "../../lib/zoho/errors";
+import type { OpsLog } from "../../lib/zoho/log";
+import type { PlaneCLog } from "../identity/plane-c";
+
+const RECORD_ID = /^\d{15,22}$/;
+const ids = (xs: readonly (string | null | undefined)[]): string[] => xs.filter((x): x is string => typeof x === "string" && RECORD_ID.test(x));
+
+export type RevealField = "pan" | "bank_account";
+
+export interface InvestorEvents {
+  /** Plane B: a read or write this layer refused. */
+  refusal(userId: string, action: string, reason: string, recordIds?: readonly string[]): void;
+  /** Plane B: Zoho answered 412 ALREADY_MODIFIED to a conditional write. */
+  conflict(userId: string, action: string, recordId: string | null): void;
+  /** Plane C: an identity field shown in full (or refused). The field is a code; the value never travels. */
+  reveal(userId: string, seat: string | null, field: RevealField, contactId: string, outcome: "ok" | "refused"): void;
+  /** Plane C: a step-up (re-authentication before a sensitive act). */
+  stepUp(userId: string, seat: string | null, outcome: "ok" | "refused", reason: string): void;
+  /** Plane C: the session's seat changed between two reads (Zoho role moved). */
+  seatChange(userId: string, from: string | null, to: string | null): void;
+}
+
+/** What the person is told on a 412: an in-page refusal naming the newer change, never a silent overwrite. */
+export interface ConflictRefusal {
+  readonly kind: "conflict";
+  readonly recordId: string | null;
+  readonly reason: string;
+}
+
+export function createInvestorEvents(deps: { readonly log: OpsLog; readonly planeC: PlaneCLog; readonly clock?: () => number }): InvestorEvents {
+  const clock = deps.clock ?? Date.now;
+  const user = (userId: string) => ({ kind: "user" as const, userId });
+  return Object.freeze({
+    refusal(userId: string, action: string, reason: string, recordIds: readonly string[] = []) {
+      deps.log.refusal({ at: clock(), actor: user(userId), action, reason, recordIds: ids(recordIds) });
+    },
+    conflict(userId: string, action: string, recordId: string | null) {
+      deps.log.refusal({ at: clock(), actor: user(userId), action, reason: "already-modified", recordIds: ids([recordId]) });
+    },
+    reveal(userId: string, seat: string | null, field: RevealField, contactId: string, outcome: "ok" | "refused") {
+      deps.planeC.record({ at: clock(), who: userId, action: "reveal", outcome, reason: field === "pan" ? "pan" : "bank-account", seat, recordIds: ids([contactId]) });
+    },
+    stepUp(userId: string, seat: string | null, outcome: "ok" | "refused", reason: string) {
+      deps.planeC.record({ at: clock(), who: userId, action: "step-up", outcome, reason, seat });
+    },
+    seatChange(userId: string, from: string | null, to: string | null) {
+      deps.planeC.record({ at: clock(), who: userId, action: "seat-change", outcome: "ok", reason: from ? `from-${from}` : "from-none", seat: to });
+    },
+  });
+}
+
+/** Turns a write's 412 into the refusal the page shows, logging it once. Other failures pass through as null. */
+export function conflictOf(events: InvestorEvents, userId: string, action: string, failure: ZohoFailure): ConflictRefusal | null {
+  if (failure.kind !== "conflict") return null;
+  events.conflict(userId, action, failure.recordId);
+  return Object.freeze({
+    kind: "conflict",
+    recordId: failure.recordId,
+    reason: "Someone else changed this record after you opened it. Their change is kept; reload to see it, then make yours again.",
+  });
+}

@@ -1,0 +1,94 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996201",
+        "Customer": {
+          "id": "9007199254740994101",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 250000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": 500000,
+        "Total_Amount_Receivable": 0,
+        "Issued_On": "2026-08-01",
+        "Annual_Rental_Yield": 12
+      },
+      {
+        "id": "9007199254740996202",
+        "Customer": {
+          "id": "9007199254740994102",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 250000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": 500000,
+        "Total_Amount_Receivable": 0,
+        "Issued_On": "2026-08-01",
+        "Annual_Rental_Yield": 12
+      },
+      {
+        "id": "9007199254740996203",
+        "Customer": {
+          "id": "9007199254740994103",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 250000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": 500000,
+        "Total_Amount_Receivable": 0,
+        "Issued_On": "2026-08-01",
+        "Annual_Rental_Yield": 12
+      },
+      {
+        "id": "9007199254740996204",
+        "Customer": {
+          "id": "9007199254740994104",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 250000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": 500000,
+        "Total_Amount_Receivable": 0,
+        "Issued_On": "2026-08-01",
+        "Annual_Rental_Yield": 12
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}

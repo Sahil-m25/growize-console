@@ -1,0 +1,35 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996203",
+        "First_Name": "Synthetic",
+        "Last_Name": "Lead C",
+        "Mobile": "+919000000103",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "Synthetic Owner"
+        },
+        "Secondary_Owner": null,
+        "Cover_By": null,
+        "Cover_Until": null,
+        "Lead_Source": "Website",
+        "Lead_Status": "Lead captured",
+        "Created_Time": "2026-09-21T10:00:00+05:30",
+        "Lost_At": null,
+        "Onboarded_At": null,
+        "Units_Interested": 1,
+        "Next_Step_At": null,
+        "Last_Reply_At": null
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

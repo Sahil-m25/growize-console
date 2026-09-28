@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998501",
+        "Contact": {
+          "id": "9007199254740997101",
+          "name": "x"
+        },
+        "Instrument_Type": "CCD",
+        "Amount_Invested": 1000000,
+        "Invested_On": "2025-04-01",
+        "Interest_Rate": 9,
+        "Maturity_On": "2028-04-01"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

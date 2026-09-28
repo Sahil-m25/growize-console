@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998201",
+        "Customer": {
+          "id": "9007199254740997101",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Unit_Price": 250000,
+        "Token_Advance_Amount": 50000,
+        "Total_Amount_Received": 500000,
+        "Total_Amount_Receivable": 0,
+        "Issued_On": "2026-09-05",
+        "Annual_Rental_Yield": 12
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

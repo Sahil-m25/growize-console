@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998301",
+        "Allotment": {
+          "id": "9007199254740998201",
+          "name": "x"
+        },
+        "Kind": "Advance",
+        "Amount": 50000,
+        "Mode": "NEFT",
+        "UTR": "FXUTR0001",
+        "Received_On": "2026-09-02",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740993001",
+          "name": "x"
+        }
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

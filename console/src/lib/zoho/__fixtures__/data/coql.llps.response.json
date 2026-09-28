@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998101",
+        "Name": "Growize Farm LLP A",
+        "Block_Code": "A",
+        "Acreage_Acres": 2,
+        "Total_Units": 100,
+        "Unit_Price": 250000,
+        "LLP_Status": "Darft",
+        "Insurer": "Fixture Insurer",
+        "Insurance_Policy_No": "FX-1",
+        "Insured_Till": "2027-03-31",
+        "Annual_Rental_Yield": 12
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

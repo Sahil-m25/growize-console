@@ -1,0 +1,11 @@
+{
+  "status": 500,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INTERNAL_ERROR",
+    "message": "synthetic",
+    "status": "error"
+  }
+}

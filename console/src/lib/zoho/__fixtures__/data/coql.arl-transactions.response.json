@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998601",
+        "Holding": {
+          "id": "9007199254740998501",
+          "name": "x"
+        },
+        "Type": "Interest",
+        "Date": "2026-04-01",
+        "Amount": 90000
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}
