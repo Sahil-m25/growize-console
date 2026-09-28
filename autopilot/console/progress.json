@@ -2285,7 +2285,16 @@
   "M18-S08": {
    "status": "pending",
    "attempts": 0,
-   "notes": 1
+   "notes": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T14:40:19.377Z",
+   "note": "UAT defect fixes wait for UAT on staging; integration follow-ups committed.",
+   "commits": [
+    "41100de"
+   ]
   }
  },
  "subtasks": {
@@ -3819,6 +3828,11 @@
   "M12-S13-T01": {
    "status": "done",
    "at": "2026-09-28T14:39:55.702Z",
+   "phase": "zoho"
+  },
+  "M18-S08-T08": {
+   "status": "done",
+   "at": "2026-09-28T14:40:19.377Z",
    "phase": "zoho"
   }
  },
@@ -6754,6 +6768,14 @@
    "status": "waiting",
    "hours": 2,
    "note": "NDA gate and deck stamp built; waiting on attachment support, the deck file and Pitch_Deck_Sent_At."
+  },
+  {
+   "at": "2026-09-28T14:40:19.377Z",
+   "story": "M18-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 8,
+   "note": "UAT defect fixes wait for UAT on staging; integration follow-ups committed."
   }
  ],
  "last_regression_round": 0,
