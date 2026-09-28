@@ -2031,19 +2031,46 @@
    ]
   },
   "M19-S06": {
-   "status": "pending",
+   "status": "done",
    "attempts": 0,
-   "notes": 1
+   "notes": 1,
+   "phases": {
+    "zoho": "done"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:54.828Z",
+   "note": "33 rule tests pass on the real modules; reporting on every push waits on CI (M19-S05).",
+   "commits": [
+    "c0ab903"
+   ]
   },
   "M01-S05": {
    "status": "pending",
    "attempts": 0,
-   "notes": 3
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:55.031Z",
+   "note": "Env matrix and pipeline written; waiting on the hosting account (AP4), GitHub environments and the repo push.",
+   "commits": [
+    "c0ab903"
+   ]
   },
   "M19-S05": {
-   "status": "pending",
+   "status": "done",
    "attempts": 0,
-   "notes": 3
+   "notes": 3,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T09:16:55.253Z",
+   "note": "Pipeline written; waiting on hosting, secrets, branch protection and pm/jev-calibrate.mjs.",
+   "commits": [
+    "c0ab903"
+   ]
   }
  },
  "subtasks": {
@@ -3257,6 +3284,21 @@
   "M15-S03-T05": {
    "status": "done",
    "at": "2026-09-28T09:16:43.126Z",
+   "phase": "zoho"
+  },
+  "M19-S06-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:54.828Z",
+   "phase": "zoho"
+  },
+  "M01-S05-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:55.031Z",
+   "phase": "zoho"
+  },
+  "M19-S05-T01": {
+   "status": "done",
+   "at": "2026-09-28T09:16:55.253Z",
    "phase": "zoho"
   }
  },
@@ -5784,6 +5826,30 @@
    "status": "waiting",
    "hours": 13.5,
    "note": "Archive, export job and query built and tested; waiting on the S3 account, audit service token, sandbox export shapes and the Activity page."
+  },
+  {
+   "at": "2026-09-28T09:16:54.828Z",
+   "story": "M19-S06",
+   "phase": "zoho",
+   "status": "done",
+   "hours": 3,
+   "note": "33 rule tests pass on the real modules; reporting on every push waits on CI (M19-S05)."
+  },
+  {
+   "at": "2026-09-28T09:16:55.031Z",
+   "story": "M01-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Env matrix and pipeline written; waiting on the hosting account (AP4), GitHub environments and the repo push."
+  },
+  {
+   "at": "2026-09-28T09:16:55.253Z",
+   "story": "M19-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Pipeline written; waiting on hosting, secrets, branch protection and pm/jev-calibrate.mjs."
   }
  ],
  "last_regression_round": 0,
