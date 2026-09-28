@@ -18,7 +18,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -34,7 +34,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -50,7 +50,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -66,7 +66,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -82,7 +82,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -98,7 +98,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -114,7 +114,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -130,7 +130,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -146,7 +146,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       },
       {
@@ -162,7 +162,7 @@
         "Allocation_Status": "Issued",
         "Issued_Units": 2,
         "Reserved_Units": 2,
-        "Issued_On": "2026-09-05",
+        "Investment_Date": "2026-09-05",
         "Hold_Until": null
       }
     ],

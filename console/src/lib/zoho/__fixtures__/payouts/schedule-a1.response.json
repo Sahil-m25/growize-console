@@ -1,0 +1,78 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "X-API-CREDITS-REMAINING": "4100"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254741000202",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 2,
+    "Period_Month": "2026-10-01",
+    "Due_On": "2026-10-10",
+    "Gross_Amount": 66667,
+    "TDS_Amount": 0,
+    "Net_Amount": 66667,
+    "Payout_State": "Scheduled",
+    "Paid_On": null,
+    "Payout_Mode": null,
+    "Payout_UTR": null,
+    "Paid_By": null,
+    "Modified_Time": "2026-09-20T10:00:00+05:30"
+   },
+   {
+    "id": "9007199254741000201",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-09-01",
+    "Due_On": "2026-09-10",
+    "Gross_Amount": 66667,
+    "TDS_Amount": 6667,
+    "Net_Amount": 60000,
+    "Payout_State": "Paid",
+    "Paid_On": "2026-09-10",
+    "Payout_Mode": "NEFT",
+    "Payout_UTR": "HDFCN52026091012345",
+    "Paid_By": {
+     "id": "9007199254740993002",
+     "name": "Harsha Iyer"
+    },
+    "Modified_Time": "2026-09-20T10:00:00+05:30"
+   },
+   {
+    "id": "9007199254741000203",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 3,
+    "Period_Month": "2026-11-01",
+    "Due_On": "2026-11-10",
+    "Gross_Amount": 66667,
+    "TDS_Amount": 0,
+    "Net_Amount": 66667,
+    "Payout_State": "Held",
+    "Paid_On": null,
+    "Payout_Mode": null,
+    "Payout_UTR": null,
+    "Paid_By": null,
+    "Modified_Time": "2026-09-20T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 3,
+   "more_records": false
+  }
+ }
+}

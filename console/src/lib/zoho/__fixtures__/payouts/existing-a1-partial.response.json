@@ -1,0 +1,60 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "X-API-CREDITS-REMAINING": "4100"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254741000201",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1
+   },
+   {
+    "id": "9007199254741000202",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 2
+   },
+   {
+    "id": "9007199254741000203",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 3
+   },
+   {
+    "id": "9007199254741000204",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 2
+   },
+   {
+    "id": "9007199254741000205",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_Kind": "Exit",
+    "Instalment_No": 4
+   }
+  ],
+  "info": {
+   "count": 5,
+   "more_records": false
+  }
+ }
+}

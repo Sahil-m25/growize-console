@@ -1,0 +1,35 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "X-API-CREDITS-REMAINING": "4100"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254741000299",
+    "Allotment": {
+     "id": "9007199254740999102",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-10-01",
+    "Due_On": "2026-10-10",
+    "Gross_Amount": 66667,
+    "TDS_Amount": 0,
+    "Net_Amount": 66667,
+    "Payout_State": "Scheduled",
+    "Paid_On": null,
+    "Payout_Mode": null,
+    "Payout_UTR": null,
+    "Paid_By": null,
+    "Modified_Time": "2026-09-20T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

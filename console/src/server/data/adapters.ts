@@ -221,7 +221,7 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
         return Object.freeze({
           id: x.id, Customer: customer, LLP_Lookup: idOf(x.LLP) ?? "", Committed_Units: committed, Issued_Units: issued,
           Unit_Price: price, Ticket_Snapshot: committed * price, Allocation_Status: status,
-          Issued_On: day(s(x, "Issued_On", 40)), Annual_Rental_Yield: money ? n(x, "Annual_Rental_Yield") ?? 0 : 0,
+          Issued_On: day(s(x, "Investment_Date", 40)), Annual_Rental_Yield: money ? n(x, "Annual_Rental_Yield") ?? 0 : 0,
           received: money ? n(x, "Total_Amount_Received") : null, receivable: money ? n(x, "Total_Amount_Receivable") : null,
           token: money ? n(x, "Token_Advance_Amount") : null,
           holdUntil: day(s(x, "Hold_Until", 40)), holdExtension: s(x, "Hold_Extension_State", 20),

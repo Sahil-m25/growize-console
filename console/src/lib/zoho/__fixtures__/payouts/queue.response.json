@@ -1,0 +1,105 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "X-API-CREDITS-REMAINING": "4100"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254741000301",
+    "Allotment": {
+     "id": "9007199254740999102",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-08-01",
+    "Due_On": "2026-08-10",
+    "Gross_Amount": 45833,
+    "TDS_Amount": 0,
+    "Net_Amount": 45833,
+    "Payout_State": "Scheduled"
+   },
+   {
+    "id": "9007199254741000302",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-09-01",
+    "Due_On": "2026-09-10",
+    "Gross_Amount": 45833,
+    "TDS_Amount": 0,
+    "Net_Amount": 45833,
+    "Payout_State": "Scheduled"
+   },
+   {
+    "id": "9007199254741000303",
+    "Allotment": {
+     "id": "9007199254740999103",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-09-01",
+    "Due_On": "2026-09-10",
+    "Gross_Amount": 45833,
+    "TDS_Amount": 0,
+    "Net_Amount": 45833,
+    "Payout_State": "Scheduled"
+   },
+   {
+    "id": "9007199254741000304",
+    "Allotment": {
+     "id": "9007199254740999109",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-09-01",
+    "Due_On": "2026-09-10",
+    "Gross_Amount": 45833,
+    "TDS_Amount": 0,
+    "Net_Amount": 45833,
+    "Payout_State": "Scheduled"
+   },
+   {
+    "id": "9007199254741000305",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-09-01",
+    "Due_On": "2026-09-05",
+    "Gross_Amount": 45833,
+    "TDS_Amount": 0,
+    "Net_Amount": 45833,
+    "Payout_State": "Paid"
+   },
+   {
+    "id": "9007199254741000306",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "x"
+    },
+    "Payout_Kind": "Rental yield",
+    "Instalment_No": 1,
+    "Period_Month": "2026-10-01",
+    "Due_On": "2026-10-10",
+    "Gross_Amount": 45833,
+    "TDS_Amount": 0,
+    "Net_Amount": 45833,
+    "Payout_State": "Scheduled"
+   }
+  ],
+  "info": {
+   "count": 6,
+   "more_records": false
+  }
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "X-API-CREDITS-REMAINING": "4100"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254741000202",
+    "Allotment": {
+     "id": "9007199254740999101",
+     "name": "AL-EKA-0007"
+    },
+    "Payout_State": "Paid",
+    "Gross_Amount": 66667,
+    "Payout_UTR": "UTR2026092800777",
+    "Paid_On": "2026-09-28",
+    "Modified_Time": "2026-09-28T11:31:00+05:30"
+   }
+  ]
+ }
+}

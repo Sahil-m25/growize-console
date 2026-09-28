@@ -1,0 +1,12 @@
+{
+ "status": 412,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": "ALREADY_MODIFIED",
+  "details": {},
+  "message": "Record updated time has already passed if-unmodified-since time",
+  "status": "error"
+ }
+}

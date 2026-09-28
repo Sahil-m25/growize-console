@@ -1,0 +1,48 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json",
+  "X-API-CREDITS-REMAINING": "4100"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740999101",
+    "Customer": {
+     "id": "9007199254740997401",
+     "name": "Kiran Rao"
+    },
+    "LLP": {
+     "id": "9007199254740998101",
+     "name": "EKA LLP"
+    }
+   },
+   {
+    "id": "9007199254740999102",
+    "Customer": {
+     "id": "9007199254740997402",
+     "name": "Joseph Mathew"
+    },
+    "LLP": {
+     "id": "9007199254740998101",
+     "name": "EKA LLP"
+    }
+   },
+   {
+    "id": "9007199254740999103",
+    "Customer": {
+     "id": "9007199254740997402",
+     "name": "Joseph Mathew"
+    },
+    "LLP": {
+     "id": "9007199254740998101",
+     "name": "EKA LLP"
+    }
+   }
+  ],
+  "info": {
+   "count": 3,
+   "more_records": false
+  }
+ }
+}
