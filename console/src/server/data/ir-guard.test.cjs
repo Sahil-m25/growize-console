@@ -117,7 +117,7 @@ test('the IR list read names its own filter in COQL and a Contact with no Origin
   assert.deepEqual(line.recordIds, [NO_ORIGIN], 'the refused id only');
 });
 
-test('Rohit opens his own investor: status, allotments and receipts, PII masked', async () => {
+test('Rohit opens his own investor: status and allotments, no money, no receipts, PII masked (M09-S08 AC4)', async () => {
   const r = rig((q) => {
     if (/from Contacts/.test(q)) return recorded('coql.contact.one-own');
     if (/from LLP_UnitAllocation_Module/.test(q)) return recorded('coql.allotments.own-lead');
@@ -136,6 +136,12 @@ test('Rohit opens his own investor: status, allotments and receipts, PII masked'
   assert.ok(!/FXPAN|FXBANK/.test(text), 'the fixture carries PAN/bank; none of it comes out');
   assert.ok(r.queries.every((q) => !/PAN|Bank|Aadhaar/i.test(q.split(' from ')[0])), 'no query selects an identity field');
   assert.ok(r.queries.filter((q) => /LLP_UnitAllocation_Module/.test(q)).every((q) => q.includes(`Customer in ('${OWN}')`)));
+  assert.deepEqual(res.receipts, [], 'an IR is never handed a Receipt');
+  assert.equal(r.queries.some((q) => /from Receipts/.test(q)), false, 'no Receipt is even read for an IR');
+  assert.ok(res.allotments.every((a) => a.Unit_Price === 0 && a.Ticket_Snapshot === 0 && a.Annual_Rental_Yield === 0), 'no price, ticket or yield, though the recorded row carried one');
+  for (const q of r.queries.filter((x) => /from (Contacts|LLP_UnitAllocation_Module)/.test(x))) {
+    assert.equal(/Unit_Price|Amount|Token|Capital|Yield|Mailing_Street|Nominee/.test(q.split(' from ')[0]), false, q);
+  }
 });
 
 test('Rohit asks for Kavya\'s investor by URL/API: refused, Plane B and the Plane C hook log the id', async () => {
@@ -261,4 +267,63 @@ test('/api/data: a good read carries fresh.at; a primary failure later is a 503 
   assert.equal(fx.body.fresh.source, 'fixtures');
   const none = await serveWithFreshness(async () => ({ ds: {}, actions: [], version: 0, fixtures: false }), isLive, () => clock);
   assert.deepEqual([none.body.fresh.source, none.body.fresh.at], ['none', null]);
+});
+
+/* ---------------- M09-S08-T02 — an IR sees only investors from their own leads ---------------- */
+
+const { contactsKeyFor, oneContactWhere } = load('server/data/ir-guard.js');
+const { PROJECTIONS, isAmForbiddenField } = load('server/data/projections.js');
+
+test('M09-S08 AC1: Rohit\'s Investors list asks Zoho only for Contacts whose Originating_IR is Rohit, on the IR projection', async () => {
+  const r = rig((q) => (/from Contacts/.test(q) ? recorded('coql.contacts.own-lead') : /from LLP_UnitAllocation_Module/.test(q) ? recorded('coql.allotments.own-lead') : recorded('coql.none')));
+  const res = await r.layer.load(principal(ROHIT, 'ir'));
+  assert.deepEqual(res.ds.im.INV.map((i) => [i.id, i.ir]), [[OWN, ROHIT]]);
+  const cq = r.queries.filter((q) => /from Contacts/.test(q));
+  assert.equal(cq.length, 1);
+  assert.match(cq[0], new RegExp(`where \\(Originating_IR = '${ROHIT}' and Origin_Lead is not null\\)`));
+  assert.equal(cq[0].split(' from ')[0], `select ${PROJECTIONS.irContacts.join(', ')}`);
+  assert.equal(contactsKeyFor(scopesFor('ir', ROHIT).investors), 'irContacts');
+  assert.equal(contactsKeyFor(scopesFor('fin', FIN).investors), 'contacts');
+  for (const f of PROJECTIONS.irContacts) assert.equal(isAmForbiddenField(f), false, `${f} is neither money nor identity`);
+});
+
+test('M09-S08 AC4: an IR\'s investor list carries no Paid, Due, PAN, Aadhaar or bank — and no Receipt is read', async () => {
+  const r = rig((q) => (/from Contacts/.test(q) ? recorded('coql.contacts.own-lead') : /from LLP_UnitAllocation_Module/.test(q) ? recorded('coql.allotments.own-lead')
+    : /from Receipts/.test(q) ? recorded('coql.receipts.own-lead') : recorded('coql.none')));
+  const res = await r.layer.load(principal(ROHIT, 'ir'));
+  const im = res.ds.im;
+  assert.equal(r.queries.some((q) => /from Receipts/.test(q)), false);
+  assert.deepEqual(im.TXN, []);
+  assert.ok(im.ALLOT.length >= 1 && im.ALLOT.every((a) => a.Unit_Price === 0 && a.Ticket_Snapshot === 0));
+  const inv = im.INV[0];
+  assert.equal(inv.units > 0, true, 'farms and units still show');
+  assert.deepEqual([inv.pan, inv.aadh, inv.bank.acct, inv.bank.ifsc, inv.bank.name], [null, null, '', '', '']);
+  assert.notEqual(inv.st, 'paid', 'no paid state derived without money');
+  const text = JSON.stringify(res.ds);
+  assert.ok(!/FXPAN|FXBANK|250000/.test(text), 'no identity value and no price reaches the IR');
+  for (const q of r.queries.filter((x) => /from LLP_UnitAllocation_Module/.test(x))) assert.equal(/Unit_Price|Amount|Token|Yield/.test(q.split(' from ')[0]), false, q);
+});
+
+test('M09-S08 AC2: another IR\'s investor by address — Zoho is asked with Rohit\'s filter, returns nothing, nothing further is read', async () => {
+  const r = rig(() => recorded('coql.none'));
+  const res = await r.layer.investor(principal(ROHIT, 'ir'), KAVYAS);
+  assert.deepEqual({ ...res }, { ok: false, kind: 'refused', reason: 'not-visible' });
+  assert.equal(r.queries.length, 1, 'one scoped Contact query, then nothing');
+  assert.equal(r.queries[0], `select ${PROJECTIONS.irContacts.join(', ')} from Contacts where (id = '${KAVYAS}') and (Originating_IR = '${ROHIT}' and Origin_Lead is not null) limit 0, 1`);
+  assert.equal(oneContactWhere(scopesFor('fin', FIN).investors, KAVYAS), `(id = '${KAVYAS}')`, 'Finance keeps the plain id read');
+  assert.equal(oneContactWhere(scopesFor('ir', ROHIT).investors, "1' or 1=1"), null);
+  const b = r.sink.records().find((x) => x.action === 'investor-open');
+  assert.deepEqual([b.reason, b.recordIds], ['not-visible', [KAVYAS]]);
+});
+
+test('M09-S08 AC3: the investor belongs to the IR who owned the lead at Said yes (Originating_IR), not the lead\'s owner now', async () => {
+  // coql.contact.one-own: Originating_IR = Rohit (stamped at Said yes). Whoever owns the lead today, the guard
+  // reads only the Contact's stamp — it never looks the lead's current owner up.
+  for (const [who, ok] of [[ROHIT, true], [KAVYA, false]]) {
+    const r = rig((q) => (/from Contacts/.test(q) ? recorded('coql.contact.one-own') : recorded('coql.none')));
+    const res = await r.layer.investor(principal(who, 'ir'), OWN);
+    assert.equal(res.ok, ok, who);
+    if (!ok) assert.equal(res.reason, 'not-own-lead');
+    assert.equal(r.queries.some((q) => /from Leads/.test(q)), false, 'no lead-owner lookup decides the IR');
+  }
 });

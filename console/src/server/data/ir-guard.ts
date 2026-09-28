@@ -16,13 +16,19 @@
  * `planeCRefusal` hook — PROVISIONAL (jev "b", 0.71): Plane C has no read-refusal action yet, so the
  * identity owner wires the hook once it does. Rows are never cached; an IR's investor aggregates are keyed
  * by `investorsKey`, which carries the IR's user id, and `mayServeKey` refuses any other scope's key.
+ *
+ * M09-S08-T02 adds: an IR reads the `irContacts` projection (no money, no identity) and allotments without price
+ * or amount, never a Receipt (./live, ../investors/record); a one-investor read carries the IR's own filter in its
+ * WHERE, so another IR's investor is not returned by Zoho at all. Who "owns" an investor is Originating_IR —
+ * the lead's owner at Said yes, stamped by Zoho (M09-S08-T01) — never the lead's current owner, so a lead
+ * reassigned before Said yes belongs to whoever held it then, and one reassigned after stays with that IR.
  */
 
 import type { AggregateValue, CacheKey } from "../../lib/zoho/cache";
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
 import { parseContact, type ContactRow } from "./contact-row";
 import type { InvestorEvents } from "./events";
-import { MODULES, PROJECTIONS } from "./projections";
+import { MODULES, PROJECTIONS, type ModuleKey } from "./projections";
 import { scopedKey, scopesFor, type BookScope } from "./scope";
 
 const RECORD_ID = /^\d{15,22}$/;
@@ -45,6 +51,25 @@ export function contactsWhere(scope: BookScope): string | null {
     default:
       return null;
   }
+}
+
+/**
+ * M09-S08-T02: the Contacts projection a scope reads. An IR's own-lead read takes `irContacts` — no money, no
+ * identity, no street address or nominee (D69); every other scope the Investors-side `contacts` projection.
+ */
+export function contactsKeyFor(scope: BookScope): Extract<ModuleKey, "contacts" | "irContacts"> {
+  return scope.kind === "own-lead" ? "irContacts" : "contacts";
+}
+
+/**
+ * M09-S08-T02: the WHERE of a one-investor read. A person-bound scope (IR, KAM) asks Zoho for the id AND the
+ * scope's own filter, so a Contact from another IR's lead is not even returned — nothing of it is read (AC2);
+ * the row that does come back is still admitted by `admitContact`. Null when the id or the scope is unusable.
+ */
+export function oneContactWhere(scope: BookScope, contactId: string): string | null {
+  const w = contactsWhere(scope);
+  if (!w || !RECORD_ID.test(contactId)) return null;
+  return scope.kind === "own-lead" || scope.kind === "own-book" ? `(id = '${contactId}') and (${w})` : `(id = '${contactId}')`;
 }
 
 /** May this scope see this Contact? For an IR: Origin_Lead present and Originating_IR = me; else deny. */
@@ -136,23 +161,25 @@ export function createInvestorGuard(deps: GuardDeps) {
      * that sharing lets through is seen and refused with its real reason. A record the person may not see
      * is refused, never "not found", so the answer does not reveal whether it exists.
      */
-    async one(crm: Pick<ZohoClient, "coql">, cred: UserCredential, seat: string, contactId: string, signal?: AbortSignal): Promise<OneResult> {
+    async one(crm: Pick<ZohoClient, "coql">, cred: UserCredential, seat: string, contactId: string, signal?: AbortSignal, action = "investor-open"): Promise<OneResult> {
       const me = cred.userId;
-      if (typeof contactId !== "string" || !RECORD_ID.test(contactId)) return refuse(me, seat, "investor-open", "invalid-request", []);
+      if (typeof contactId !== "string" || !RECORD_ID.test(contactId)) return refuse(me, seat, action, "invalid-request", []);
       const scope = scopesFor(seat, me).investors;
-      if (!contactsWhere(scope)) return refuse(me, seat, "investor-open", "seat-denied", [contactId]);
+      const where = oneContactWhere(scope, contactId);
+      if (!where) return refuse(me, seat, action, "seat-denied", [contactId]);
+      const key = contactsKeyFor(scope);
       let r: Awaited<ReturnType<typeof crm.coql>>;
       try {
-        r = await crm.coql(cred, `select ${PROJECTIONS.contacts.join(", ")} from ${MODULES.contacts} where (id = '${contactId}') limit 0, 1`, { signal });
+        r = await crm.coql(cred, `select ${PROJECTIONS[key].join(", ")} from ${MODULES[key]} where ${where} limit 0, 1`, { signal });
       } catch {
         return { ok: false, kind: "source-error", errorKind: "unexpected" };
       }
       if (!r.ok) return { ok: false, kind: "source-error", errorKind: r.error.kind };
       const raw = r.value.records.find((x) => x.id === contactId);
       const c = raw ? parseContact(raw) : null;
-      if (!c) return refuse(me, seat, "investor-open", "not-visible", [contactId]);
+      if (!c) return refuse(me, seat, action, "not-visible", [contactId]);
       const a = admitContact(scope, c);
-      return a.ok ? { ok: true, contact: c } : refuse(me, seat, "investor-open", a.reason, [contactId]);
+      return a.ok ? { ok: true, contact: c } : refuse(me, seat, action, a.reason, [contactId]);
     },
   });
 }

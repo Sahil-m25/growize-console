@@ -7,9 +7,10 @@
     "data": [
       {
         "id": "9007199254740998401",
+        "Case_Number": "1001",
         "Subject": "Bank change",
         "Description": "Please update",
-        "Contact_Name": {
+        "Related_To": {
           "id": "9007199254740997101",
           "name": "x"
         },
@@ -18,10 +19,10 @@
           "name": "x"
         },
         "Priority": "High",
-        "Status": "Open",
-        "Case_Origin": "Investor",
+        "Status": "On Hold",
+        "Case_Origin": "Web",
         "Created_Time": "2026-09-10T10:00:00+05:30",
-        "Category": "Bank",
+        "Ticket_Category": "Bank",
         "SLA_Due": "2026-09-12T10:00:00+05:30",
         "Closed_At": null
       }

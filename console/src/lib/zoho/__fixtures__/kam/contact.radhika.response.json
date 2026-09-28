@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "554023000000400002",
+        "KAM": {
+          "id": "554023000000300013",
+          "name": "x"
+        },
+        "KAM_Since": "2026-07-25",
+        "KAM_Intro_At": "2026-07-28T11:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30"
+      }
+    ]
+  }
+}

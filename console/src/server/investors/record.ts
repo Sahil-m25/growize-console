@@ -26,7 +26,7 @@ import { createInvestorsAdapters, type AllotmentRow, type ReceiptRow } from "../
 import { isAmSeat } from "../data/am-scope";
 import { parseContact, str } from "../data/contact-row";
 import type { InvestorEvents } from "../data/events";
-import { admitContact, createInvestorGuard, type GuardRefusal, type PlaneCRefusal } from "../data/ir-guard";
+import { admitContact, contactsKeyFor, createInvestorGuard, type GuardRefusal, type PlaneCRefusal } from "../data/ir-guard";
 import { holdOf, investorOf } from "../data/live";
 import { MODULES, PROJECTIONS } from "../data/projections";
 import { scopesFor } from "../data/scope";
@@ -146,8 +146,15 @@ export function createInvestorRecordReader(deps: RecordDeps) {
     const scope = scopesFor(seat, me).investors;
     const money = sections.includes("money"), paper = sections.includes("paper");
 
-    // One GET per Contact. Finance's status fields only where Money shows; never an identity field.
-    const fields = [...PROJECTIONS.contacts, ...(money ? FINANCE_STATUS : []), ...(LIFECYCLE_FIELD ? [LIFECYCLE_FIELD] : [])];
+    // M09-S08-T02: an IR first asks Zoho for the id under their own filter (ir-guard oneContactWhere): another
+    // IR's investor is not returned, so nothing of it is read — refused before the record GET.
+    if (scope.kind === "own-lead") {
+      const pre = await guard.one(deps.crm, cred, seat, contactId, signal, "investor-record");
+      if (!pre.ok) return pre;
+    }
+    // One GET per Contact. Finance's status fields only where Money shows; never an identity field; an IR's
+    // projection carries no money and no address (irContacts).
+    const fields = [...PROJECTIONS[contactsKeyFor(scope)], ...(money ? FINANCE_STATUS : []), ...(LIFECYCLE_FIELD ? [LIFECYCLE_FIELD] : [])];
     let got: Awaited<ReturnType<typeof deps.crm.getRecord>>;
     try { got = await deps.crm.getRecord(cred, MODULES.contacts, contactId, { fields, signal }); } catch { return { ok: false, kind: "source-error", errorKind: "unexpected" }; }
     if (!got.ok) {

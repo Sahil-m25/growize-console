@@ -15,11 +15,14 @@
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { ImAllot, ImArlTxn, ImArlTxnType, ImHolding, ImLlp, ImLlpStatus, ImTicket } from "../../lib/im/types";
+import { num } from "../cases/predicate";
+import { caseOf } from "../cases/register";
+import { farmOf, type FarmStatus } from "../farms/shelf";
 import type { InvestorEvents } from "./events";
 import { MODULES, PROJECTIONS, type ModuleKey } from "./projections";
 import type { BookScope } from "./scope";
 import { parseContact, type ContactRow } from "./contact-row";
-import { admitContact, contactsWhere, type IrRefusal } from "./ir-guard";
+import { admitContact, contactsKeyFor, contactsWhere, type IrRefusal } from "./ir-guard";
 
 export { parseContact };
 
@@ -66,6 +69,11 @@ export interface CaseRow extends ImTicket {
   readonly contactId: string | null;
 }
 
+/** An LLP as the Investors side carries it, plus the org's own status (On Hold / Unknown do not fit ImLlpStatus). */
+export interface LlpRow extends ImLlp {
+  readonly farmStatus: FarmStatus;
+}
+
 export interface AdapterDeps {
   readonly crm: Pick<ZohoClient, "coql">;
   readonly events: InvestorEvents;
@@ -78,20 +86,22 @@ const idOf = (v: unknown): string | null => {
   const id = v && typeof v === "object" && !Array.isArray(v) ? (v as { id?: unknown }).id : undefined;
   return typeof id === "string" && RECORD_ID.test(id) ? id : null;
 };
+/** A picklist's "-None-" is no value. */
 const s = (r: ZohoRecord, k: string, max = 250): string | null => {
   const v = r[k];
-  return typeof v === "string" && v !== "" ? v.slice(0, max) : null;
+  return typeof v === "string" && v !== "" && v !== "-None-" ? v.slice(0, max) : null;
 };
-const n = (r: ZohoRecord, k: string): number | null => {
-  const v = r[k];
-  const x = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
-  return Number.isFinite(x) ? x : null;
-};
+/** A number, or a picklist of numbers such as Annual_Rental_Yield "20%" (server/cases/predicate num). */
+const n = num;
 const day = (v: string | null): string | null => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null);
 const stamp = (v: string | null): string | null => (v && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v) ? v.slice(0, 16) : day(v));
 const quote = (ids: readonly string[]) => ids.map((x) => `'${x}'`).join(", ");
 
-const LLP_STATUS: ReadonlySet<string> = new Set(["Draft", "Open for Reservation", "Open for Issuance", "Fully Subscribed", "Active"]);
+/** The shelf's status (server/farms/shelf farmStatusOf) as ImLlpStatus: On Hold and unknown values are not on sale → Draft. */
+const IM_LLP_STATUS: Readonly<Record<FarmStatus, ImLlpStatus>> = Object.freeze({
+  Draft: "Draft", "Open for Reservation": "Open for Reservation", "Open for Issuance": "Open for Issuance",
+  "Fully Subscribed": "Fully Subscribed", Active: "Active", "On Hold": "Draft", Unknown: "Draft",
+});
 const ARL_TYPES: ReadonlySet<string> = new Set(["Capital Call", "Interest", "Distribution", "Conversion", "Fee"]);
 const INSTRUMENTS: ReadonlySet<string> = new Set(["CCD", "Equity", "Preference"]);
 
@@ -159,27 +169,31 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
     async contacts(cred: UserCredential, scope: BookScope, signal?: AbortSignal): Promise<ReadResult<ContactRow>> {
       const where = contactsWhere(scope);
       if (!where || scope.kind === "user") return EMPTY;
-      const r = mapRows(await selectAll(cred, "contacts", where, signal), parseContact);
+      const r = mapRows(await selectAll(cred, contactsKeyFor(scope), where, signal), parseContact);
       if (!r.ok) return r;
       const foreign = r.rows.filter((c) => !admitContact(scope, c).ok);
       if (foreign.length) return drift(cred.userId, "investors-book", foreign.map((c) => c.id));
       return r;
     },
 
-    async llps(cred: UserCredential, signal?: AbortSignal): Promise<ReadResult<ImLlp>> {
-      return mapRows(await selectAll(cred, "llps", "id is not null", signal), (r): ImLlp | null => {
-        if (!idOf(r.id)) return null;
-        const status = s(r, "LLP_Status", 40);
+    /**
+     * Every LLP the token sees, parsed by the Farms shelf's own reader (server/farms/shelf farmOf): Pet_Unit_Price,
+     * the "NN%" yield picklist, Insurance_Provider / Insurance_expiry_date and the org's status picklist
+     * ("Darft", "Fully Subscribed / Closed", "On Hold") mapped in one place.
+     */
+    async llps(cred: UserCredential, signal?: AbortSignal): Promise<ReadResult<LlpRow>> {
+      return mapRows(await selectAll(cred, "llps", "id is not null", signal), (r): LlpRow | null => {
+        const f = farmOf(r);
+        if (!f) return null;
         return Object.freeze({
-          id: r.id, Name: s(r, "Name", 120) ?? "", Block_Code: s(r, "Block_Code", 20) ?? "",
-          ...(n(r, "Acreage_Acres") !== null ? { Acreage_Acres: n(r, "Acreage_Acres")! } : {}),
-          ...(n(r, "Total_Units") !== null ? { Total_Units: n(r, "Total_Units")! } : {}),
-          Unit_Price: n(r, "Unit_Price") ?? 0,
-          // The org holds the value "Darft" (CARRY-FORWARD C-12): it reads as Draft.
-          LLP_Status: (status === "Darft" ? "Draft" : status && LLP_STATUS.has(status) ? status : "Draft") as ImLlpStatus,
+          id: f.id, Name: f.name, Block_Code: f.block ?? "",
+          ...(f.acres !== null ? { Acreage_Acres: f.acres } : {}),
+          ...(f.totalUnits !== null ? { Total_Units: f.totalUnits } : {}),
+          Unit_Price: f.unitPrice ?? 0,
+          LLP_Status: IM_LLP_STATUS[f.status], farmStatus: f.status,
           PAN: "", GST: "", SPOCs: [],
-          Insurer: s(r, "Insurer", 120) ?? "", Insurance_Policy_No: s(r, "Insurance_Policy_No", 60) ?? "",
-          Insured_Till: day(s(r, "Insured_Till", 40)) ?? "", Annual_Rental_Yield: n(r, "Annual_Rental_Yield") ?? 0,
+          Insurer: f.insurance.provider ?? "", Insurance_Policy_No: f.insurance.policyNo ?? "",
+          Insured_Till: f.insurance.till ?? "", Annual_Rental_Yield: f.yieldPct ?? 0,
         });
       });
     },
@@ -200,13 +214,16 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
         if (!idOf(x.id) || !customer) return null;
         const st = s(x, "Allocation_Status", 40);
         const status = st === "Issued" || st === "Cancelled" ? st : "Reserved";
-        const issued = n(x, "Issued_Units") ?? 0, reserved = n(x, "Reserved_Units") ?? 0, price = n(x, "Unit_Price") ?? 0;
+        const issued = n(x, "Issued_Units") ?? 0, reserved = n(x, "Reserved_Units") ?? 0;
+        // Without money (AM seat, IR) a price or amount is never passed on, even if a row carried one.
+        const price = money ? n(x, "Unit_Price") ?? 0 : 0;
         const committed = Math.max(issued, reserved);
         return Object.freeze({
           id: x.id, Customer: customer, LLP_Lookup: idOf(x.LLP) ?? "", Committed_Units: committed, Issued_Units: issued,
           Unit_Price: price, Ticket_Snapshot: committed * price, Allocation_Status: status,
-          Issued_On: day(s(x, "Issued_On", 40)), Annual_Rental_Yield: n(x, "Annual_Rental_Yield") ?? 0,
-          received: n(x, "Total_Amount_Received"), receivable: n(x, "Total_Amount_Receivable"), token: n(x, "Token_Advance_Amount"),
+          Issued_On: day(s(x, "Issued_On", 40)), Annual_Rental_Yield: money ? n(x, "Annual_Rental_Yield") ?? 0 : 0,
+          received: money ? n(x, "Total_Amount_Received") : null, receivable: money ? n(x, "Total_Amount_Receivable") : null,
+          token: money ? n(x, "Token_Advance_Amount") : null,
           holdUntil: day(s(x, "Hold_Until", 40)), holdExtension: s(x, "Hold_Extension_State", 20),
           agreementSignedAt: stamp(s(x, "Supplementary_Verified_At", 40)),
         });
@@ -241,20 +258,11 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
     async cases(cred: UserCredential, scope: BookScope, contactIds: readonly string[], signal?: AbortSignal): Promise<ReadResult<CaseRow>> {
       if (scope.kind === "none" || scope.kind === "user") return EMPTY;
       const own = scope.kind === "own-lead" || scope.kind === "own-book";
-      const raw = own ? await selectIn(cred, "cases", "Contact_Name", contactIds, signal) : await selectAll(cred, "cases", "id is not null", signal);
+      const raw = own ? await selectIn(cred, "cases", "Related_To", contactIds, signal) : await selectAll(cred, "cases", "id is not null", signal);
+      // One parser for a Case (server/cases/register caseOf): Related_To is the investor, Ticket_Category the category.
       const r = mapRows(raw, (x): CaseRow | null => {
-        if (!idOf(x.id)) return null;
-        const status = (s(x, "Status", 40) ?? "").toLowerCase();
-        const closed = stamp(s(x, "Closed_At", 40));
-        const contactId = idOf(x.Contact_Name);
-        return Object.freeze({
-          id: x.id, contactId, inv: contactId ?? "", t: s(x, "Subject", 255) ?? "", cat: s(x, "Category", 40) ?? "",
-          opened: stamp(s(x, "Created_Time", 40)) ?? "", by: (s(x, "Case_Origin", 40) ?? "").toLowerCase() === "investor" ? "investor" : "staff",
-          own: idOf(x.Owner) ?? "", pri: (s(x, "Priority", 20) ?? "").toLowerCase() === "high" ? "high" : "normal",
-          state: status === "closed" ? "closed" : status.includes("wait") || status.includes("hold") ? "waiting" : "open",
-          d: s(x, "Description", 2000) ?? "", sla: stamp(s(x, "SLA_Due", 40)) ?? "",
-          ...(closed ? { closed } : {}),
-        });
+        const c = caseOf(x);
+        return c ? Object.freeze({ ...c, contactId: idOf(x.Related_To) }) : null;
       });
       if (!r.ok || !own) return r;
       const allowed = new Set(contactIds);

@@ -30,6 +30,12 @@ export interface InvestorEvents {
   stepUp(userId: string, seat: string | null, outcome: "ok" | "refused", reason: string): void;
   /** Plane C: the session's seat changed between two reads (Zoho role moved). */
   seatChange(userId: string, from: string | null, to: string | null): void;
+  /**
+   * M09-S04-T02: a key account manager named, moved or returned to the pool. Plane C authority line (grant-change):
+   * who = the person who moved it, whom = the new KAM (the previous one when returned), recordIds = [Contact,
+   * previous KAM] — user ids only, never a name (CLAUDE.md). Names are read in Zoho's field history on KAM.
+   */
+  kamMove(userId: string, seat: string | null, contactId: string, fromKam: string | null, toKam: string | null): void;
 }
 
 /** What the person is told on a 412: an in-page refusal naming the newer change, never a silent overwrite. */
@@ -57,6 +63,14 @@ export function createInvestorEvents(deps: { readonly log: OpsLog; readonly plan
     },
     seatChange(userId: string, from: string | null, to: string | null) {
       deps.planeC.record({ at: clock(), who: userId, action: "seat-change", outcome: "ok", reason: from ? `from-${from}` : "from-none", seat: to });
+    },
+    kamMove(userId: string, seat: string | null, contactId: string, fromKam: string | null, toKam: string | null) {
+      const reason = toKam === null ? "kam-returned" : fromKam === null ? "kam-named" : "kam-moved";
+      const whom = toKam ?? fromKam;
+      deps.planeC.record({
+        at: clock(), who: userId, action: "grant-change", outcome: "ok", reason, seat,
+        ...(whom ? { whom } : {}), recordIds: ids([contactId, fromKam]),
+      });
     },
   });
 }

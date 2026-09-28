@@ -295,8 +295,10 @@ export function createLiveDataLayer(deps: LiveDeps) {
     const llps = scopes.farms.kind === "none" ? [] : ok("farms", await adapters.llps(p.credential, signal));
     const contactIds = contacts.map((c) => c.id);
     // An AM seat reads only its own accounts' allotments, on the AM projection (no price, no amount).
-    const allots = ok("allotments", await adapters.allotments(p.credential, scopes.money, contactIds, signal, am, !am));
-    const receipts = am ? [] : ok("receipts", await adapters.receipts(p.credential, scopes.money, allots.map((a) => a.id), signal));
+    // M09-S08-T02: so does an IR — farms and units of their own-lead investors, never Paid, Due or a Receipt (D69).
+    const noMoney = am || scopes.investors.kind === "own-lead";
+    const allots = ok("allotments", await adapters.allotments(p.credential, scopes.money, contactIds, signal, am, !noMoney));
+    const receipts = noMoney ? [] : ok("receipts", await adapters.receipts(p.credential, scopes.money, allots.map((a) => a.id), signal));
     const cases = am
       ? ok("cases", await adapters.cases(p.credential, { kind: "own-book", userId: me }, contactIds, signal))
       : ok("cases", await adapters.cases(p.credential, scopes.cases, contactIds, signal));
@@ -343,10 +345,12 @@ export function createLiveDataLayer(deps: LiveDeps) {
       if (!one.ok) return one;
       const scopes = scopesFor(p.session.seat, p.credential.userId);
       const am = isAmSeat(p.session.seat);
-      const al = await adapters.allotments(p.credential, scopes.money, [one.contact.id], signal, true, !am);
+      // M09-S08-T02: an IR's investor carries no money either — no price, no amount, no Receipt.
+      const noMoney = am || scopes.investors.kind === "own-lead";
+      const al = await adapters.allotments(p.credential, scopes.money, [one.contact.id], signal, true, !noMoney);
       if (!al.ok) return al.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: al.errorKind };
       const own = al.rows.filter((a) => a.Customer === one.contact.id);
-      if (am) return { ok: true, investor: investorOf(one.contact, own, () => ""), allotments: own.map(toImAllot), receipts: [] };
+      if (noMoney) return { ok: true, investor: investorOf(one.contact, own, () => ""), allotments: own.map(toImAllot), receipts: [] };
       const rc = await adapters.receipts(p.credential, scopes.money, own.map((a) => a.id), signal, true);
       if (!rc.ok) return rc.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: rc.errorKind };
       return {

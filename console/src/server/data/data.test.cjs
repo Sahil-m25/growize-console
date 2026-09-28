@@ -90,7 +90,7 @@ function route(q, over = {}) {
   if (/from LLP_Creation_Module/.test(q)) return recorded('data', 'coql.llps');
   if (/from Receipts where \(Allotment in \('9007199254740996/.test(q)) return recorded('data', 'coql.none');
   if (/from Receipts/.test(q)) return recorded('data', /Allotment in/.test(q) ? 'coql.receipts.own-lead' : 'coql.receipts');
-  if (/from Cases where \(Contact_Name in \('9007199254740994/.test(q)) return recorded('data', 'coql.none');
+  if (/from Cases where \(Related_To in \('9007199254740994/.test(q)) return recorded('data', 'coql.none');
   if (/from Cases/.test(q)) return recorded('data', 'coql.cases');
   if (/from ARL_Holdings/.test(q)) return recorded('data', 'coql.holdings');
   if (/from ARL_Transactions/.test(q)) return recorded('data', 'coql.arl-transactions');
@@ -241,11 +241,20 @@ test('Finance reads the org book: investors, LLPs, allotments, receipts, cases, 
   assert.deepEqual(one.bank, { acct: '', ifsc: '', name: '', drop: '' });
   assert.equal(im.INV.find((i) => i.id === `${P}740997102`).nri, true);
   assert.equal(im.LLP[0].LLP_Status, 'Draft', 'the org\'s "Darft" reads as Draft');
+  // Field names as the org holds them (getFields, 28 Sep 2026): Pet_Unit_Price, Insurance_Provider,
+  // Insurance_expiry_date, the "NN%" yield picklist, and the status picklist mapped as the Farms shelf maps it.
+  assert.deepEqual([im.LLP[0].Unit_Price, im.LLP[0].Insurer, im.LLP[0].Insured_Till, im.LLP[0].Annual_Rental_Yield], [250000, 'Fixture Insurer', '2027-03-31', 20]);
+  assert.deepEqual(im.LLP.map((l) => [l.LLP_Status, l.farmStatus]), [['Draft', 'Draft'], ['Draft', 'On Hold'], ['Fully Subscribed', 'Fully Subscribed']], 'On Hold is not on sale; "Fully Subscribed / Closed" is Fully Subscribed');
+  assert.equal(im.LLP[1].Annual_Rental_Yield, 0, '"-None-" is no yield');
+  assert.equal(im.ALLOT.find((a) => a.id === `${P}740998201`).Annual_Rental_Yield, 22, 'the allotment\'s yield picklist "22%" reads as 22');
   assert.equal(im.ALLOT.length, 2);
   assert.ok(!('received' in im.ALLOT[0]));
   assert.deepEqual(im.TXN.map((t) => [t.inv, t.kind, t.rec]), [[`${P}740997101`, 'advance', 'matched'], [`${P}740997102`, 'advance', 'pending']]);
   assert.equal(im.TKT[0].pri, 'high');
-  assert.equal(im.TKT[0].by, 'investor');
+  assert.equal(im.TKT[0].by, 'investor', 'Case_Origin Web is the investor\'s app (server/cases/register caseOf)');
+  assert.deepEqual([im.TKT[0].inv, im.TKT[0].cat, im.TKT[0].state], [`${P}740997101`, 'Bank', 'waiting'], 'the investor is Related_To, the category Ticket_Category');
+  assert.ok(r.queries.filter((q) => /from Cases/.test(q)).every((q) => !/Contact_Name|\bCategory\b/.test(q)), 'no field the org does not have');
+  assert.ok(r.queries.filter((q) => /from LLP_Creation_Module/.test(q)).every((q) => /Pet_Unit_Price/.test(q) && !/\bUnit_Price|Insurer|Insured_Till/.test(q)));
   assert.equal(im.HOLDING.length, 1);
   assert.equal(im.ARLTXN[0].Type, 'Interest');
   const text = JSON.stringify(res.ds);
@@ -259,7 +268,7 @@ test('a KAM\'s own book is the existing KAM book service, identity values droppe
   assert.deepEqual(res.problems, []);
   assert.equal(res.ds.im.INV.length, 4);
   assert.equal(res.ds.im.ALLOT.length, 4);
-  assert.ok(r.queries.some((q) => /from Cases where \(Contact_Name in/.test(q)), 'a KAM\'s tickets are their own book\'s');
+  assert.ok(r.queries.some((q) => /from Cases where \(Related_To in/.test(q)), 'a KAM\'s tickets are their own book\'s (Cases.Related_To)');
   assert.ok(res.ds.im.INV.every((i) => i.kam === KAM && i.pan === null));
   assert.ok(!JSON.stringify(res.ds).includes('FXPAN1234F'));
   assert.ok(r.queries.some((q) => new RegExp(`where KAM = '${KAM}'`).test(q)));
