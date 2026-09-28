@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { handleZohoSignWebhook, MAX_WEBHOOK_BYTES, ZOHO_SIGN_SIGNATURE_HEADER } from "../../../../server/zoho-sign/webhook";
 import { logProviderCallbackBoundary, zohoSignWebhookDeps } from "../../../../server/zoho-sign/runtime";
 import { readLimitedUtf8Body } from "../../../../server/http/limited-body";
+import { withErrorCapture } from "../../../../server/ops/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const CALLBACK_DEADLINE_MS = 4_000;
 
-export async function POST(request: Request): Promise<NextResponse> {
+async function post(request: Request): Promise<NextResponse> {
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), CALLBACK_DEADLINE_MS);
   const declared = Number(request.headers.get("content-length"));
@@ -55,3 +56,5 @@ export async function POST(request: Request): Promise<NextResponse> {
     clearTimeout(deadline);
   }
 }
+
+export const POST = withErrorCapture(post, "/api/webhooks/zoho-sign");

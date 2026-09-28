@@ -6,10 +6,12 @@ import { createZohoServiceClient } from "../../lib/zoho/client";
 import { createZohoSignClient } from "../../lib/zoho/sign";
 import { createServiceTokenProvider, type ServiceTokenProvider } from "../oauth/service-token";
 import type { ZohoSignWebhookDeps } from "./webhook";
+import { alertingOpsSink } from "../ops/runtime";
 
 const gate = createGate();
 export const providerCallbackOps = createMemorySink();
-const log = createOpsLog(providerCallbackOps);
+// M18-S04: the same Plane B lines also feed the alerts (token refresh, webhook failure, credits header).
+const log = createOpsLog(alertingOpsSink(providerCallbackOps));
 const INDIA_ACCOUNTS_ORIGIN = "https://accounts.zoho.in";
 const INDIA_SIGN_ORIGIN = "https://sign.zoho.in";
 const INDIA_API_DOMAIN = "https://www.zohoapis.in";
