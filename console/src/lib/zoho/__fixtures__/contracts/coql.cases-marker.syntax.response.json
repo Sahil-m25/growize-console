@@ -1,0 +1,12 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": "SYNTAX_ERROR",
+  "details": {},
+  "message": "error occured while parsing the query",
+  "status": "error"
+ }
+}

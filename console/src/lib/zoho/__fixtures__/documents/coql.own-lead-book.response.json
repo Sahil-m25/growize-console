@@ -1,0 +1,76 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Mobile": null,
+        "Email": null,
+        "Mailing_City": "Mysuru",
+        "Mailing_Street": null,
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": null,
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": null,
+        "KAM_Since": null,
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740996401",
+          "name": "x"
+        },
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Said_Yes_At": "2026-08-20T11:00:00+05:30",
+        "Created_Time": "2026-08-01T10:00:00+05:30",
+        "Modified_Time": "2026-09-21T09:30:00+05:30",
+        "id": "9007199254740997301",
+        "ARL_ID": "ARL-INV-0208",
+        "First_Name": "Prakash",
+        "Last_Name": "Bhat"
+      },
+      {
+        "Mobile": null,
+        "Email": null,
+        "Mailing_City": null,
+        "Mailing_Street": null,
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": null,
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": null,
+        "KAM_Since": null,
+        "KAM_Intro_At": null,
+        "Origin_Lead": {
+          "id": "9007199254740996421",
+          "name": "x"
+        },
+        "Originating_IR": {
+          "id": "9007199254740995001",
+          "name": "x"
+        },
+        "Said_Yes_At": "2026-09-27T16:00:00+05:30",
+        "Created_Time": "2026-08-01T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "id": "9007199254740997320",
+        "ARL_ID": "ARL-INV-0220",
+        "First_Name": "Kiran",
+        "Last_Name": "Joshi"
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

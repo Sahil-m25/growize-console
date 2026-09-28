@@ -1,0 +1,219 @@
+{
+ "status": 200,
+ "body": {
+  "users": [
+   {
+    "id": "554023000000300001",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100001",
+     "name": "CEO"
+    },
+    "profile": {
+     "id": "554023000000200001",
+     "name": "Administrator"
+    },
+    "full_name": "Test User 01",
+    "email": "user01@example.invalid",
+    "mobile": "+91000000001"
+   },
+   {
+    "id": "554023000000300002",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100002",
+     "name": "BU Owner"
+    },
+    "profile": {
+     "id": "554023000000200002",
+     "name": "Leadership"
+    },
+    "full_name": "Test User 02",
+    "email": "user02@example.invalid",
+    "mobile": "+91000000002",
+    "Reporting_To": {
+     "id": "554023000000300001",
+     "name": "Test User 01"
+    }
+   },
+   {
+    "id": "554023000000300003",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100003",
+     "name": "Digital Infrastructure"
+    },
+    "profile": {
+     "id": "554023000000200001",
+     "name": "Administrator"
+    },
+    "full_name": "Test User 03",
+    "email": "user03@example.invalid",
+    "mobile": "+91000000003",
+    "Reporting_To": {
+     "id": "554023000000300001",
+     "name": "Test User 01"
+    }
+   },
+   {
+    "id": "554023000000300004",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100004",
+     "name": "IR Manager"
+    },
+    "profile": {
+     "id": "554023000000200003",
+     "name": "IR Manager"
+    },
+    "full_name": "Test User 04",
+    "email": "user04@example.invalid",
+    "mobile": "+91000000004",
+    "Reporting_To": {
+     "id": "554023000000300002",
+     "name": "Test User 02"
+    }
+   },
+   {
+    "id": "554023000000300005",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100005",
+     "name": "Investor Relations"
+    },
+    "profile": {
+     "id": "554023000000200004",
+     "name": "IR"
+    },
+    "full_name": "Test User 05",
+    "email": "user05@example.invalid",
+    "mobile": "+91000000005",
+    "Reporting_To": {
+     "id": "554023000000300004",
+     "name": "Test User 04"
+    }
+   },
+   {
+    "id": "554023000000300014",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100005",
+     "name": "Investor Relations"
+    },
+    "profile": {
+     "id": "554023000000200004",
+     "name": "IR"
+    },
+    "full_name": "Test User 14",
+    "email": "user14@example.invalid",
+    "mobile": "+91000000014",
+    "Reporting_To": {
+     "id": "554023000000300004",
+     "name": "Test User 04"
+    }
+   },
+   {
+    "id": "554023000000300015",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100005",
+     "name": "Investor Relations"
+    },
+    "profile": {
+     "id": "554023000000200004",
+     "name": "IR"
+    },
+    "full_name": "Test User 15",
+    "email": "user15@example.invalid",
+    "mobile": "+91000000015",
+    "Reporting_To": {
+     "id": "554023000000300004",
+     "name": "Test User 04"
+    }
+   },
+   {
+    "id": "554023000000300016",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100005",
+     "name": "Investor Relations"
+    },
+    "profile": {
+     "id": "554023000000200004",
+     "name": "IR"
+    },
+    "full_name": "Test User 16",
+    "email": "user16@example.invalid",
+    "mobile": "+91000000016",
+    "Reporting_To": {
+     "id": "554023000000300004",
+     "name": "Test User 04"
+    }
+   },
+   {
+    "id": "554023000000300017",
+    "status": "disabled",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100005",
+     "name": "Investor Relations"
+    },
+    "profile": {
+     "id": "554023000000200004",
+     "name": "IR"
+    },
+    "full_name": "Test User 17",
+    "email": "user17@example.invalid",
+    "mobile": "+91000000017",
+    "Reporting_To": {
+     "id": "554023000000300004",
+     "name": "Test User 04"
+    }
+   },
+   {
+    "id": "554023000000300006",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100006",
+     "name": "Channel Partner"
+    },
+    "profile": {
+     "id": "554023000000200005",
+     "name": "Channel Partner"
+    },
+    "full_name": "Test User 06",
+    "email": "user06@example.invalid",
+    "mobile": "+91000000006",
+    "Reporting_To": {
+     "id": "554023000000300002",
+     "name": "Test User 02"
+    }
+   }
+  ],
+  "info": {
+   "per_page": 200,
+   "count": 10,
+   "page": 1,
+   "more_records": true
+  }
+ }
+}

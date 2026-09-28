@@ -1,0 +1,13 @@
+{
+ "status": 403,
+ "body": {
+  "code": "NO_PERMISSION",
+  "details": {
+   "permissions": [
+    "Crm_Implied_View_Roles"
+   ]
+  },
+  "message": "permission denied",
+  "status": "error"
+ }
+}

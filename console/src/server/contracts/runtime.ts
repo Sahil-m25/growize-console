@@ -14,9 +14,10 @@ import { createServiceTokenProvider, type ServiceTokenProvider } from "../oauth/
 import { logSinks, sharedOpsSink } from "../logs/factory";
 import { createJsonlStore } from "../logs/jsonl";
 import { alertingOpsSink, reportOpsFailure } from "../ops/runtime";
-import { requestToCase, type JsonSchema } from "./events";
+import type { JsonSchema } from "./events";
 import { createInboundEndpoint, createSeenEvents } from "./inbound";
-import { createOutbox, type Outbox, type PushFetch } from "./outbox";
+import { createOutbox, deliveriesForRecord, type DeliveryState, type Outbox, type PushFetch } from "./outbox";
+import { createRequestIndex, createRequestIntake } from "./requests";
 import { contractKeys, createInProcessStub, investorAppMode, loadSchemas } from "./stub";
 
 const log = createOpsLog(alertingOpsSink(sharedOpsSink()));
@@ -59,6 +60,17 @@ function held(): Held {
 }
 
 export const investorAppOutbox = (): Outbox => held().outbox;
+
+/**
+ * M13-S05-T03 — the delivery states for one Zoho record (a Case), optionally of one event type: the live
+ * outbox, and the push ledger for events sent before a restart (the last 14 days). Ids and status only.
+ */
+export function investorAppDeliveries(recordId: string, type?: string): DeliveryState[] {
+  const ledger = planeStore("push");
+  const lines: unknown[] = [];
+  if (ledger) for (const day of ledger.days().slice(-14)) lines.push(...ledger.read(day));
+  return deliveriesForRecord(held().outbox.forRecord(recordId), lines, recordId, type);
+}
 /** Tests and the fixture demo only: what the stub received. Null when the real app is configured. */
 export const investorAppStub = () => held().stub;
 
@@ -104,13 +116,20 @@ export function investorAppInbound() {
     clientSecret: required("ZOHO_OAUTH_CLIENT_SECRET"), refreshToken: required("ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN"),
     expectedApiDomain: "https://www.zohoapis.in", refreshTimeoutMs: 2_500, log,
   }));
+  const intake = createRequestIntake({
+    crm, log, credential: () => provider().credential(), index: createRequestIndex(planeStore("requests")),
+    contactIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"), publish: publishToInvestorApp,
+  });
   h.inbound = createInboundEndpoint({
-    schemas: h.schemas, keys: keys.all, seen, log, newId: randomUUID,
+    schemas: h.schemas, keys: keys.all, seen, log, newId: randomUUID, caseFor: intake.caseFor,
     async onRequest(event) {
-      const credential = await provider().credential();
-      // requestToCase keeps its own once-per-event memory; the endpoint's `seen` is the durable one.
-      const r = await requestToCase(event, { crm, credential, seen: { has: async () => false, add: async () => {} }, contactIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX") });
-      if (!r.ok) { reportOpsFailure("push-failed", `case-${r.reason}`); throw new Error("request.raised was not filed"); }
+      try {
+        const r = await intake.handle(event);
+        return r.ok ? { caseId: r.caseId } : { refused: r.refused };
+      } catch (e) {
+        reportOpsFailure("push-failed", "case-unavailable");
+        throw e;
+      }
     },
     onDelivered(event) {
       const p = event.payload as { message_id: string; status?: "delivered" | "bounced" | "deferred" };

@@ -6,6 +6,8 @@
  * invalid body is refused and written to Plane B as a refusal with a short code (AC4) — the body is
  * never logged. An event_id already applied answers 200 and does nothing (AC5). If handling fails (Zoho
  * down) the event is not marked seen and the error propagates, so the app redelivers.
+ * M13-S05: a request.raised the handler refuses (the Contact check) answers 422 with a short code and a
+ * Plane B line, and is not marked applied; a request.raised answers with its Case id, the replay too.
  */
 
 import type { OpsLog } from "../../lib/zoho/log";
@@ -21,21 +23,33 @@ export interface InboundDeps {
   readonly keys: readonly string[];
   readonly seen: SeenEvents;
   readonly log: OpsLog;
-  /** request.raised → a Case (events.ts requestToCase). Throw to have the app redeliver. */
-  readonly onRequest: (event: Record<string, unknown>) => Promise<void>;
+  /** request.raised → a Case (requests.ts). Throw to have the app redeliver; `refused` answers 422. */
+  readonly onRequest: (event: Record<string, unknown>) => Promise<void | { readonly caseId?: string | null; readonly refused?: string }>;
+  /** The Case already filed for an app_request_id, for the answer to a replayed event. */
+  readonly caseFor?: (appRequestId: string) => Promise<string | null>;
   /** push.delivered → the outbox marks that event delivered. */
   readonly onDelivered: (event: Record<string, unknown>) => void | Promise<void>;
   readonly newId: () => string;
   readonly clock?: () => number;
 }
 
+export type InboundResult =
+  | { readonly status: 200; readonly applied: boolean; readonly ack: Record<string, unknown> | null; readonly caseId?: string | null }
+  | { readonly status: 400 | 401 | 422; readonly reason: string };
+
+class Refused extends Error { constructor(readonly code: string) { super(code); } }
+
 export function createInboundEndpoint(deps: InboundDeps) {
   const clock = deps.clock ?? Date.now;
-  const receiver = createStubReceiver({
+  // One receiver per call, so the Case id of one request never answers another running beside it.
+  const receiverFor = (out: { caseId?: string | null }) => createStubReceiver({
     schemas: deps.schemas, keys: deps.keys, seen: deps.seen, accepts: INBOUND_TYPES, newId: deps.newId, clock,
     async record(event) {
-      if (event.type === "request.raised") await deps.onRequest(event);
-      else await deps.onDelivered(event);
+      if (event.type === "request.raised") {
+        const r = await deps.onRequest(event);
+        if (r && typeof r.refused === "string") throw new Refused(r.refused);
+        if (r) out.caseId = r.caseId ?? null;
+      } else await deps.onDelivered(event);
     },
   });
   const refuse = (reason: string): void => {
@@ -44,9 +58,20 @@ export function createInboundEndpoint(deps: InboundDeps) {
     } catch { /* logging never takes the callback down */ }
   };
   return Object.freeze({
-    async handle(rawBody: string, signature: unknown): Promise<ReceiveResult> {
-      const r = await receiver.receive(rawBody, signature);
-      if (r.status !== 200) refuse(r.reason);
+    async handle(rawBody: string, signature: unknown): Promise<InboundResult> {
+      const out: { caseId?: string | null } = {};
+      let r: ReceiveResult;
+      try { r = await receiverFor(out).receive(rawBody, signature); } catch (e) {
+        if (e instanceof Refused) { refuse(e.code); return { status: 422, reason: e.code }; }
+        throw e;
+      }
+      if (r.status !== 200) { refuse(r.reason); return r; }
+      if (out.caseId !== undefined) return { ...r, caseId: out.caseId };
+      if (!r.applied && deps.caseFor) {
+        // A replay: answer with the Case filed the first time (the body verified and validated above).
+        const e = JSON.parse(rawBody) as { type?: unknown; payload?: { app_request_id?: unknown } };
+        if (e.type === "request.raised" && typeof e.payload?.app_request_id === "string") return { ...r, caseId: await deps.caseFor(e.payload.app_request_id) };
+      }
       return r;
     },
   });

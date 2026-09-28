@@ -1,0 +1,95 @@
+{
+ "status": 200,
+ "body": {
+  "profiles": [
+   {
+    "display_label": "Administrator",
+    "name": "Administrator",
+    "id": "554023000000200001",
+    "default": true,
+    "custom": false,
+    "description": null
+   },
+   {
+    "display_label": "Leadership",
+    "name": "Leadership",
+    "id": "554023000000200002",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "IR Manager",
+    "name": "IR Manager",
+    "id": "554023000000200003",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "IR",
+    "name": "IR",
+    "id": "554023000000200004",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "Channel Partner",
+    "name": "Channel Partner",
+    "id": "554023000000200005",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "Finance Head",
+    "name": "Finance Head",
+    "id": "554023000000200006",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "Finance Ops",
+    "name": "Finance Ops",
+    "id": "554023000000200007",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "Compliance & Audit",
+    "name": "Compliance & Audit",
+    "id": "554023000000200008",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "AM Head",
+    "name": "AM Head",
+    "id": "554023000000200009",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "KAM",
+    "name": "KAM",
+    "id": "554023000000200010",
+    "default": false,
+    "custom": true,
+    "description": null
+   },
+   {
+    "display_label": "Viewer",
+    "name": "Viewer",
+    "id": "554023000000200011",
+    "default": false,
+    "custom": true,
+    "description": null
+   }
+  ]
+ }
+}

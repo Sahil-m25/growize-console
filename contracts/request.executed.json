@@ -5,7 +5,7 @@
   "x-direction": "app \u2194 investor",
   "x-produced-by": "Finance, Compliance or the owner",
   "x-consumed-by": "The app's request row and notifications",
-  "x-rule": "The app is told what happened. It never infers a result from silence.",
+  "x-rule": "The app is told what happened. It never infers a result from silence. 'received' (M13-S05, PROVISIONAL) says a Case now exists for the request; it is not an outcome.",
   "allOf": [
     {
       "$ref": "_envelope.json"
@@ -29,10 +29,15 @@
         },
         "state": {
           "enum": [
+            "received",
             "executed",
             "refused",
             "withdrawn"
           ]
+        },
+        "case_id": {
+          "type": "string",
+          "description": "The console's Case for this request (M13-S05, PROVISIONAL): sent with state received so the app can thread case.replied, which carries the same case_id."
         },
         "message": {
           "type": "string"

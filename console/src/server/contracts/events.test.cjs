@@ -3,7 +3,7 @@
  * Run from console/: node src/server/contracts/events.test.cjs
  *
  * Validates synthetic events against the real schemas in contracts/, signs and verifies them, and
- * drives the stub receiver, the signed push and request.raised → Case with no network at all.
+ * drives the stub receiver and the signed push with no network at all (request.raised → Case: requests.test.cjs).
  */
 'use strict';
 
@@ -27,8 +27,7 @@ const program = ts.createProgram(['lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib
 const diags = ts.getPreEmitDiagnostics(program);
 if (diags.length) { console.error(ts.formatDiagnostics(diags, { getCanonicalFileName: (f) => f, getCurrentDirectory: () => consoleRoot, getNewLine: () => '\n' })); process.exit(1); }
 program.emit();
-const { createStubReceiver, pushEvent, requestToCase, sign, validateEvent, verify } = require(path.join(outDir, 'server', 'contracts', 'events.js'));
-const { serviceCredential } = require(path.join(outDir, 'lib', 'zoho', 'client.js'));
+const { createStubReceiver, pushEvent, sign, validateEvent, verify } = require(path.join(outDir, 'server', 'contracts', 'events.js'));
 
 const schemas = Object.fromEntries(fs.readdirSync(contractsRoot).filter((f) => f.endsWith('.json')).map((f) => [f, JSON.parse(fs.readFileSync(path.join(contractsRoot, f), 'utf8'))]));
 const KEY = 'synthetic-contract-key-never-live-000000000001';
@@ -99,21 +98,4 @@ test('the console\'s push signs, uses the event id as idempotency key, retries 5
   assert.ok(seenHeaders.every((h) => h['Idempotency-Key'] === seenHeaders[0]['Idempotency-Key']), 'the same key on every retry');
   const invalid = REPLY(); invalid.payload.extra = true;
   assert.deepEqual(await pushEvent(invalid, { url: 'x', key: KEY, schemas, fetch: async () => { throw new Error('never sent'); } }), { delivered: false, attempts: 0, reason: 'invalid:invalid' });
-});
-
-test('request.raised becomes one Case on the Contact, with the provider-callback identity only', async () => {
-  const inserts = [];
-  const crm = { async insert(as, module, rows) { inserts.push({ as, module, rows }); return { ok: true, value: [{ ok: true, id: '9007199254740999100', code: 'SUCCESS' }] }; } };
-  const seen = new Set();
-  const store = { async has(id) { return seen.has(id); }, async add(id) { seen.add(id); } };
-  const cred = serviceCredential('provider-callback', { access_token: 'synthetic-service', api_domain: 'https://www.zohoapis.in', expires_in: 3600 }, NOW);
-  const e = event('request.raised', { kind: 'bank_change', app_request_id: 'APP-REQ-1' }, { actor: { kind: 'investor' }, origin: 'app' });
-  assert.equal(validateEvent(schemas, e).ok, true);
-  const res = await requestToCase(e, { crm, credential: cred, seen: store, contactIdPrefix: '9007199254' });
-  assert.deepEqual(res, { ok: true, caseId: '9007199254740999100' });
-  assert.deepEqual(inserts[0].rows[0].Related_To, { id: '9007199254740994101' });
-  assert.deepEqual(await requestToCase(e, { crm, credential: cred, seen: store, contactIdPrefix: '9007199254' }), { ok: true, caseId: null });
-  assert.equal(inserts.length, 1, 'once per event id');
-  const other = serviceCredential('audit-archive', { access_token: 'synthetic-service-2', api_domain: 'https://www.zohoapis.in', expires_in: 3600 }, NOW);
-  assert.equal((await requestToCase(event('request.raised', { kind: 'other', app_request_id: 'APP-2' }), { crm, credential: other, seen: store, contactIdPrefix: '9007199254' })).reason, 'wrong-identity');
 });

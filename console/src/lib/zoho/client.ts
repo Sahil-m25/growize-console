@@ -200,7 +200,18 @@ export interface ZohoApi<C extends Credential> {
   sendMail(as: C, module: string, id: string, mail: SendMailRequest, options?: CallOptions): Promise<ZohoResult<{ readonly sent: true; readonly messageId: string | null }>>;
   /** GET /settings/emails/actions/from_addresses — the addresses the caller may send from. */
   fromAddresses(as: C, options?: CallOptions): Promise<ZohoResult<readonly FromAddress[]>>;
+  /** GET /users?type=… (M17-S01): one page of Zoho users as Zoho returns them (the caller projects; nothing
+   *  here is logged but the call line). `AllUsers` includes deactivated users, so a leaver can be shown as left. */
+  listUsers(as: C, options?: CallOptions & { readonly type?: UsersListType; readonly page?: number; readonly perPage?: number }): Promise<ZohoResult<UsersPage>>;
+  /** GET /settings/roles (M17-S01): the org's roles — id, name, reporting_to id only. */
+  settingsRoles(as: C, options?: CallOptions): Promise<ZohoResult<readonly ZohoRoleRow[]>>;
+  /** GET /settings/profiles (M17-S01): the org's profiles — id and name only. */
+  settingsProfiles(as: C, options?: CallOptions): Promise<ZohoResult<readonly ZohoProfileRow[]>>;
 }
+export type UsersListType = "AllUsers" | "ActiveUsers" | "DeactiveUsers";
+export interface UsersPage { readonly users: readonly Readonly<Record<string, unknown>>[]; readonly moreRecords: boolean }
+export interface ZohoRoleRow { readonly id: string; readonly name: string; readonly reportingTo: string | null }
+export interface ZohoProfileRow { readonly id: string; readonly name: string }
 /** The role and profile a seat change writes; ids pinned from the settings export, names exactly as Zoho has them. */
 export interface UserSeatWrite { readonly roleId: string; readonly roleName: string; readonly profileId: string; readonly profileName: string }
 export interface MailAddress { readonly email: string; readonly userName?: string }
@@ -1231,6 +1242,62 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
           userName: typeof r.user_name === "string" ? r.user_name.slice(0, 200) : null, isDefault: r.default === true }));
       }
       return done(Object.freeze(list) as readonly FromAddress[], out);
+    },
+
+    async listUsers(as, opts = {}) {
+      const type = opts.type ?? "AllUsers";
+      if (!["AllUsers", "ActiveUsers", "DeactiveUsers"].includes(type)) throw new TypeError("listUsers() type is AllUsers, ActiveUsers or DeactiveUsers.");
+      const page = opts.page ?? 1;
+      const perPage = opts.perPage ?? 200;
+      if (!Number.isInteger(page) || page < 1 || page > 50) throw new RangeError("listUsers() page is 1–50.");
+      if (!Number.isInteger(perPage) || perPage < 1 || perPage > 200) throw new RangeError("listUsers() perPage is 1–200.");
+      const out = await execute(as, {
+        op: "listUsers", method: "GET", path: "/users", endpoint: "/users",
+        query: [["type", type], ["page", String(page)], ["per_page", String(perPage)]], shape: { op: "read" }, idempotent: true, perRecord: false,
+        recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done({ users: [], moreRecords: false } as UsersPage, out);
+      const root = obj(out.result.body);
+      const raw = root?.users;
+      if (!Array.isArray(raw) || raw.length > perPage) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<UsersPage>;
+      const users = raw.map(obj).filter((u): u is Obj => u !== null && typeof u.id === "string" && RECORD.test(u.id)).map((u) => Object.freeze({ ...u }));
+      return done(Object.freeze({ users: Object.freeze(users), moreRecords: obj(root?.info)?.more_records === true }) as UsersPage, out);
+    },
+
+    async settingsRoles(as, opts = {}) {
+      const out = await execute(as, {
+        op: "settingsRoles", method: "GET", path: "/settings/roles", endpoint: "/settings/roles",
+        shape: { op: "read" }, idempotent: true, perRecord: false, recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done([] as readonly ZohoRoleRow[], out);
+      const raw = obj(out.result.body)?.roles;
+      if (!Array.isArray(raw)) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<readonly ZohoRoleRow[]>;
+      const list: ZohoRoleRow[] = [];
+      for (const r of raw.slice(0, 500).map(obj)) {
+        if (!r || typeof r.id !== "string" || !RECORD.test(r.id) || typeof r.name !== "string" || r.name.length > 200) continue;
+        const up = obj(r.reporting_to)?.id;
+        list.push(Object.freeze({ id: r.id, name: r.name, reportingTo: typeof up === "string" && RECORD.test(up) ? up : null }));
+      }
+      return done(Object.freeze(list) as readonly ZohoRoleRow[], out);
+    },
+
+    async settingsProfiles(as, opts = {}) {
+      const out = await execute(as, {
+        op: "settingsProfiles", method: "GET", path: "/settings/profiles", endpoint: "/settings/profiles",
+        shape: { op: "read" }, idempotent: true, perRecord: false, recordIds: [], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done([] as readonly ZohoProfileRow[], out);
+      const raw = obj(out.result.body)?.profiles;
+      if (!Array.isArray(raw)) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<readonly ZohoProfileRow[]>;
+      const list: ZohoProfileRow[] = [];
+      for (const r of raw.slice(0, 500).map(obj)) {
+        if (!r || typeof r.id !== "string" || !RECORD.test(r.id) || typeof r.name !== "string" || r.name.length > 200) continue;
+        list.push(Object.freeze({ id: r.id, name: r.name }));
+      }
+      return done(Object.freeze(list) as readonly ZohoProfileRow[], out);
     },
 
     async deleteRecord(as, module, id, opts = {}) {

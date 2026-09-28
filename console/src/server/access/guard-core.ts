@@ -151,6 +151,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/contracts": { kind: "session" },
   "/api/activity": { kind: "session" },
   "/api/investors": { kind: "session" },
+  "/api/investors/search": { kind: "page", page: "inv" },   /* M09-S07 Investors search: scope decided inside (ir-guard contactsWhere) */
   "/api/investors/add-paid": { kind: "page", page: "inv" },
   "/api/investors/[id]/unlock": { kind: "page", page: "inv" },
   "/api/investors/[id]/preview": { kind: "page", page: "inv" },   /* M10-S22 app preview: the record's own admission decides inside */
@@ -158,6 +159,10 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
   "/api/investors/[id]/kam": { kind: "page", page: "inv" },
   "/api/receipts": { kind: "page", page: "pay" },
+  "/api/claims": { kind: "page", page: "pay" },          /* M10-S03 claim answers: Finance ("pay") decided inside too */
+  "/api/teams": { kind: "session" },   /* M17-S01 Teams from Zoho: server/teams teamsAccess decides inside (IR refused, lead vs Investors side) */
+  "/api/payouts": { kind: "page", page: "pay" },   /* M10-S20-T02 payouts: Finance pay/bank read, pay writes — server/payouts/authority decides inside */
+  "/api/documents": { kind: "session" },   /* M12-S01-T03: not page "docs" — KAM/Head of AM (AC5) do not reach it; server/documents/scope + ir-guard decide inside */
 });
 
 /** The rule for a route: the longest API_ROUTES prefix that matches ("/api/leads/123" → "/api/leads"). */

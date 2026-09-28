@@ -1,0 +1,18 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740994101",
+    "KAM": {
+     "id": "9007199254740995020",
+     "name": "x"
+    },
+    "ARL_ID": "ARL-INV-0205"
+   }
+  ]
+ }
+}

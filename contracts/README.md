@@ -39,7 +39,7 @@ over the body, with two active keys during rotation. A receiver that cannot veri
 | `paper.told` | leads → investor | IR | Finance queue ordering | — |
 | `paper.verified` | investor → leads | Finance | Lead gate columns; opens supp_verified_at | — |
 | `push.delivered` | outside → investor | FCM | Contact; update rows | — |
-| `request.executed` | app ↔ investor | Finance, Compliance or the owner | The app's request row and notifications | — |
+| `request.executed` | app ↔ investor | Finance, Compliance or the owner; the console with state `received` + `case_id` once the Case exists (M13-S05, PROVISIONAL) | The app's request row and notifications | — |
 | `request.raised` | app ↔ investor | investor | Requests / Cases; the KAM's queue | — |
 | `update.published` | app ↔ investor | Finance or Account Management (M13-S06) | The app's updates feed; one event per investor in the segment | — |
 | `welcome.delivered` | investor → leads | The mailer | The console display | — |

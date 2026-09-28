@@ -1,0 +1,201 @@
+{
+ "status": 200,
+ "body": {
+  "users": [
+   {
+    "id": "554023000000300007",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100007",
+     "name": "Head of Finance"
+    },
+    "profile": {
+     "id": "554023000000200006",
+     "name": "Finance Head"
+    },
+    "full_name": "Test User 07",
+    "email": "user07@example.invalid",
+    "mobile": "+91000000007",
+    "Reporting_To": {
+     "id": "554023000000300001",
+     "name": "Test User 01"
+    }
+   },
+   {
+    "id": "554023000000300008",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100008",
+     "name": "Finance Operations"
+    },
+    "profile": {
+     "id": "554023000000200007",
+     "name": "Finance Ops"
+    },
+    "full_name": "Test User 08",
+    "email": "user08@example.invalid",
+    "mobile": "+91000000008",
+    "Reporting_To": {
+     "id": "554023000000300007",
+     "name": "Test User 07"
+    }
+   },
+   {
+    "id": "554023000000300009",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100009",
+     "name": "Compliance and Audit"
+    },
+    "profile": {
+     "id": "554023000000200008",
+     "name": "Compliance & Audit"
+    },
+    "full_name": "Test User 09",
+    "email": "user09@example.invalid",
+    "mobile": "+91000000009",
+    "Reporting_To": {
+     "id": "554023000000300007",
+     "name": "Test User 07"
+    }
+   },
+   {
+    "id": "554023000000300010",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100010",
+     "name": "Head of Account Management"
+    },
+    "profile": {
+     "id": "554023000000200009",
+     "name": "AM Head"
+    },
+    "full_name": "Test User 10",
+    "email": "user10@example.invalid",
+    "mobile": "+91000000010",
+    "Reporting_To": {
+     "id": "554023000000300003",
+     "name": "Test User 03"
+    }
+   },
+   {
+    "id": "554023000000300011",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100011",
+     "name": "Key Account Manager"
+    },
+    "profile": {
+     "id": "554023000000200010",
+     "name": "KAM"
+    },
+    "full_name": "Test User 11",
+    "email": "user11@example.invalid",
+    "mobile": "+91000000011",
+    "Reporting_To": {
+     "id": "554023000000300010",
+     "name": "Test User 10"
+    }
+   },
+   {
+    "id": "554023000000300013",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100011",
+     "name": "Key Account Manager"
+    },
+    "profile": {
+     "id": "554023000000200010",
+     "name": "KAM"
+    },
+    "full_name": "Test User 13",
+    "email": "user13@example.invalid",
+    "mobile": "+91000000013",
+    "Reporting_To": {
+     "id": "554023000000300010",
+     "name": "Test User 10"
+    }
+   },
+   {
+    "id": "554023000000300018",
+    "status": "disabled",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100011",
+     "name": "Key Account Manager"
+    },
+    "profile": {
+     "id": "554023000000200010",
+     "name": "KAM"
+    },
+    "full_name": "Test User 18",
+    "email": "user18@example.invalid",
+    "mobile": "+91000000018",
+    "Reporting_To": {
+     "id": "554023000000300010",
+     "name": "Test User 10"
+    }
+   },
+   {
+    "id": "554023000000300012",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100012",
+     "name": "Exec"
+    },
+    "profile": {
+     "id": "554023000000200011",
+     "name": "Viewer"
+    },
+    "full_name": "Test User 12",
+    "email": "user12@example.invalid",
+    "mobile": "+91000000012",
+    "Reporting_To": {
+     "id": "554023000000300001",
+     "name": "Test User 01"
+    }
+   },
+   {
+    "id": "554023000000300020",
+    "status": "active",
+    "confirm": true,
+    "type__s": "Regular User",
+    "role": {
+     "id": "554023000000100020",
+     "name": "Marketing"
+    },
+    "profile": {
+     "id": "554023000000200020",
+     "name": "Marketing"
+    },
+    "full_name": "Test User 20",
+    "email": "user20@example.invalid",
+    "Reporting_To": {
+     "id": "554023000000300002",
+     "name": "Test User 02"
+    }
+   }
+  ],
+  "info": {
+   "per_page": 200,
+   "count": 9,
+   "page": 2,
+   "more_records": false
+  }
+ }
+}

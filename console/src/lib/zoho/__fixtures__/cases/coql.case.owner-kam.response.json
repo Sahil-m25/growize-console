@@ -1,0 +1,36 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740998410",
+    "Case_Number": "C-410",
+    "Subject": "App request \u00b7 statement \u00b7 ref R-1",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "9007199254740994101",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "9007199254740995020",
+     "name": "x"
+    },
+    "Priority": "Medium",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-28T10:00:02+05:30",
+    "Ticket_Category": "Records",
+    "SLA_Due": "2026-10-05T10:00:00+05:30",
+    "Closed_At": null,
+    "Modified_Time": "2026-09-28T10:00:02+05:30"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}

@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740998301",
+        "Customer": {
+          "id": "9007199254740997301",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Reserved",
+        "Issued_Units": 0,
+        "Reserved_Units": 1,
+        "Issued_On": null,
+        "Hold_Until": null
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

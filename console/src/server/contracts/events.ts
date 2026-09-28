@@ -10,12 +10,10 @@
  *   validates, applies each event_id once, records it, and answers push.delivered.
  * - `pushEvent` is the console's side: sign, send with the event_id as the idempotency key, retry
  *   with backoff, and report delivered only on a push.delivered answer for that event.
- * - `requestToCase` turns a verified request.raised into a Case on the investor's Contact with the
- *   provider-callback service identity (D53: background work, never a screen), once per event_id.
+ * - request.raised → Case lives in ./requests.ts (M13-S05: the Contact check, idempotent on app_request_id).
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { ServiceCredential, ZohoServiceClient } from "../../lib/zoho/client";
 
 export type JsonSchema = Readonly<Record<string, unknown>>;
 export const SCHEMA_VERSION = 1;
@@ -154,28 +152,4 @@ export async function pushEvent(event: Record<string, unknown>, opts: {
     if (attempt < max) await sleep(Math.min(30_000, 500 * 2 ** (attempt - 1)));
   }
   return { delivered: false, attempts: max, reason: "unreachable" };
-}
-
-/** request.raised → a Case on the investor's Contact, with the provider-callback service identity. */
-export async function requestToCase(event: Record<string, unknown>, deps: {
-  readonly crm: Pick<ZohoServiceClient, "insert">; readonly credential: ServiceCredential; readonly seen: SeenEvents; readonly contactIdPrefix: string;
-}): Promise<{ ok: true; caseId: string | null } | { ok: false; reason: string }> {
-  if (deps.credential?.kind !== "service" || deps.credential.job !== "provider-callback") return { ok: false, reason: "wrong-identity" };
-  if (event.type !== "request.raised") return { ok: false, reason: "not-a-request" };
-  const id = event.event_id as string;
-  if (await deps.seen.has(id)) return { ok: true, caseId: null };
-  const contact = (event.ids as Record<string, unknown> | undefined)?.investor_contact_id;
-  const p = event.payload as { kind: string; app_request_id: string };
-  if (typeof contact !== "string" || !/^\d{15,22}$/.test(contact) || !contact.startsWith(deps.contactIdPrefix)) return { ok: false, reason: "no-contact" };
-  const r = await deps.crm.insert(deps.credential, "Cases", [{
-    Subject: `App request: ${p.kind.replace(/_/g, " ")}`.slice(0, 120),
-    // The org's Cases name the investor Related_To and the origin Case_Origin (getFields, 28 Sep 2026);
-    // Contact_Name / Origin do not exist there. Web is the app until an "App" origin value exists (M13-S02 GAP).
-    Related_To: { id: contact }, Case_Origin: "Web", Status: "New",
-    Description: `From the investor app, request ${p.app_request_id} (event ${id}).`,
-  }]);
-  const o = r.ok && r.value.length === 1 ? r.value[0] : null;
-  if (!o || !o.ok || !o.id) return { ok: false, reason: r.ok ? "case-refused" : r.error.kind };
-  await deps.seen.add(id);
-  return { ok: true, caseId: o.id };
 }

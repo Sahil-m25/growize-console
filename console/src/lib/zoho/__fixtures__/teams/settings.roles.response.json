@@ -1,0 +1,124 @@
+{
+ "status": 200,
+ "body": {
+  "roles": [
+   {
+    "display_label": "CEO",
+    "name": "CEO",
+    "id": "554023000000100001",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "BU Owner",
+    "name": "BU Owner",
+    "id": "554023000000100002",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Digital Infrastructure",
+    "name": "Digital Infrastructure",
+    "id": "554023000000100003",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "IR Manager",
+    "name": "IR Manager",
+    "id": "554023000000100004",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Investor Relations",
+    "name": "Investor Relations",
+    "id": "554023000000100005",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Channel Partner",
+    "name": "Channel Partner",
+    "id": "554023000000100006",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Head of Finance",
+    "name": "Head of Finance",
+    "id": "554023000000100007",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Finance Operations",
+    "name": "Finance Operations",
+    "id": "554023000000100008",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Compliance and Audit",
+    "name": "Compliance and Audit",
+    "id": "554023000000100009",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Head of Account Management",
+    "name": "Head of Account Management",
+    "id": "554023000000100010",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Key Account Manager",
+    "name": "Key Account Manager",
+    "id": "554023000000100011",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Exec",
+    "name": "Exec",
+    "id": "554023000000100012",
+    "reporting_to": null,
+    "admin_user": false,
+    "share_with_peers": true,
+    "description": null
+   },
+   {
+    "display_label": "Marketing",
+    "name": "Marketing",
+    "id": "554023000000100020",
+    "reporting_to": {
+     "id": "554023000000100002",
+     "name": "BU Owner"
+    }
+   }
+  ]
+ }
+}

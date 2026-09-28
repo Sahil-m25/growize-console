@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "Mobile": null,
+        "Email": null,
+        "Mailing_City": null,
+        "Mailing_Street": null,
+        "Mailing_Flat_House_No_Building_Apartment_Name": null,
+        "Mailing_Zip": null,
+        "Mailing_State": null,
+        "Mailing_Country": "India",
+        "Residency": "Resident",
+        "Nominee_Name": null,
+        "Nominee_Relation": null,
+        "KAM": {
+          "id": "9007199254740994001",
+          "name": "x"
+        },
+        "KAM_Since": "2026-06-01",
+        "KAM_Intro_At": null,
+        "Origin_Lead": null,
+        "Originating_IR": null,
+        "Said_Yes_At": null,
+        "Created_Time": "2026-08-01T10:00:00+05:30",
+        "Modified_Time": "2026-09-20T10:00:00+05:30",
+        "id": "9007199254740994101",
+        "ARL_ID": "ARL-INV-0201",
+        "First_Name": "Radhika",
+        "Last_Name": "Menon"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

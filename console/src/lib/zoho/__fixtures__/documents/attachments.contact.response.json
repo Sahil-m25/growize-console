@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740999501",
+        "File_Name": "Signed NDA.pdf",
+        "Size": 120000,
+        "Created_Time": "2026-08-20T11:05:00+05:30"
+      },
+      {
+        "id": "9007199254740999504",
+        "File_Name": "PAN proof ABCDE1234F.pdf",
+        "Size": 80000,
+        "Created_Time": "2026-08-21T10:00:00+05:30"
+      },
+      {
+        "id": "9007199254740999505",
+        "File_Name": "Bank letter 50100123456789.pdf",
+        "Size": 90000,
+        "Created_Time": "2026-08-21T10:05:00+05:30"
+      },
+      {
+        "id": "9007199254740999506",
+        "File_Name": "Aadhaar 1234 5678 9012.pdf",
+        "Size": 70000,
+        "Created_Time": "2026-08-21T10:06:00+05:30"
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}

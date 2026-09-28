@@ -1,0 +1,46 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Customer": {
+          "id": "9007199254740994101",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998101",
+          "name": "x"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 2,
+        "Issued_On": null,
+        "Hold_Until": null
+      },
+      {
+        "id": "9007199254740996102",
+        "Customer": {
+          "id": "9007199254740994101",
+          "name": "x"
+        },
+        "LLP": {
+          "id": "9007199254740998102",
+          "name": "x"
+        },
+        "Allocation_Status": "Cancelled",
+        "Issued_Units": 0,
+        "Reserved_Units": 1,
+        "Issued_On": null,
+        "Hold_Until": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

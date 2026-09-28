@@ -96,6 +96,13 @@ export const caseReplied = (a: { caseId: string; contactId: string; message: str
   newEvent("case.replied", { actor: { kind: "user", zoho_user_id: a.byUserId }, ids: { investor_contact_id: a.contactId },
     payload: { case_id: a.caseId, message: a.message, at: istIso(a.at ?? clock()) }, occurredAt: a.at }, clock);
 
+/** The console's answer to request.raised (M13-S05): state "received" with the Case once it exists; the outcome later. */
+export const requestExecuted = (a: {
+  appRequestId: string; contactId: string; state: "received" | "executed" | "refused" | "withdrawn"; caseId?: string; byUserId?: string; at?: number;
+}, clock: () => number = Date.now) =>
+  newEvent("request.executed", { actor: a.byUserId ? { kind: "user", zoho_user_id: a.byUserId } : { kind: "system" }, ids: { investor_contact_id: a.contactId },
+    payload: { app_request_id: a.appRequestId, state: a.state, ...(a.caseId ? { case_id: a.caseId } : {}), at: istIso(a.at ?? clock()) }, occurredAt: a.at }, clock);
+
 /** A farm progress note for one investor's project. */
 export const farmProgress = (a: { contactId: string; project: string; phase: string; note?: string; at?: number }, clock: () => number = Date.now) =>
   newEvent("farm.progress", { actor: { kind: "system" }, ids: { investor_contact_id: a.contactId },
@@ -247,3 +254,28 @@ export function createOutbox(deps: OutboxDeps) {
   });
 }
 export type Outbox = ReturnType<typeof createOutbox>;
+
+/**
+ * M13-S05-T03 — delivery states for one record that survive a restart: the live outbox first, then the
+ * ledger's last line per event for events this process no longer holds. The payload never outlives the
+ * process, so a ledger-only event that was still queued or retrying cannot be delivered any more: it
+ * reads as dead ("restarted"), never as delivered. Delivered only ever comes from a push.delivered line.
+ */
+export function deliveriesForRecord(live: readonly DeliveryState[], ledgerLines: readonly unknown[], recordId: string, type?: string): DeliveryState[] {
+  const out = new Map<string, DeliveryState>();
+  for (const l of ledgerLines) {
+    const x = l as Partial<{ eventId: unknown; type: unknown; status: unknown; attempts: unknown; reason: unknown; recordIds: unknown; at: unknown }> | null;
+    if (!x || typeof x.eventId !== "string" || typeof x.type !== "string" || !Array.isArray(x.recordIds) || !x.recordIds.includes(recordId)) continue;
+    if (type && x.type !== type) continue;
+    const status = x.status === "delivered" ? "delivered" : x.status === "dead" ? "dead" : x.status === "queued" || x.status === "retrying" ? "dead" : null;
+    if (!status) continue;
+    const reason = x.status === "queued" || x.status === "retrying" ? "restarted" : typeof x.reason === "string" ? x.reason : null;
+    out.set(x.eventId, Object.freeze({
+      eventId: x.eventId, type: x.type, status, label: DELIVERY_LABEL[status], attempts: typeof x.attempts === "number" ? x.attempts : 0,
+      lastReason: status === "delivered" ? null : reason, nextAt: null, deliveredAt: status === "delivered" && typeof x.at === "number" ? x.at : null,
+      recordIds: Object.freeze(x.recordIds.filter((v): v is string => typeof v === "string" && RECORD_ID.test(v)).slice(0, 10)),
+    }));
+  }
+  for (const d of live) if (d.recordIds.includes(recordId) && (!type || d.type === type)) out.set(d.eventId, d);
+  return [...out.values()];
+}
