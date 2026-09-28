@@ -950,16 +950,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "1f09598"
    ],
-   "at": "2026-09-27T22:56:07.897Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
+   "at": "2026-09-28T07:44:32.286Z",
+   "note": "Finance list read (T01) built and tested; waiting on an API route, the front-end table (T02) and Jev UI cases.",
    "notes": 2
   },
   "M09-S02": {
@@ -3013,6 +3015,11 @@
   "M03-S09-T03": {
    "status": "done",
    "at": "2026-09-28T07:44:26.546Z",
+   "phase": "zoho"
+  },
+  "M09-S01-T01": {
+   "status": "done",
+   "at": "2026-09-28T07:44:32.286Z",
    "phase": "zoho"
   }
  },
@@ -5388,6 +5395,14 @@
    "status": "waiting",
    "hours": 6,
    "note": "Guard and record share built and tested; waiting on the handoff-share credential, a hand-off caller, Plane C scope-refused action and two sandbox IR users."
+  },
+  {
+   "at": "2026-09-28T07:44:32.286Z",
+   "story": "M09-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Finance list read (T01) built and tested; waiting on an API route, the front-end table (T02) and Jev UI cases."
   }
  ],
  "last_regression_round": 0,
