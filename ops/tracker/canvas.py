@@ -98,12 +98,12 @@ time += [f"- **{k}** {title[k][:90]} ({st.get(k)})" for k in sorted(stuck)] or [
 time.append("")
 out += time
 fec = collections.Counter(AU.get(s['id'], {}).get('front_end') for s in stories)
-out.append("# :mag: What exists today (audit 27 Sep, re-checked by the D98 test run)\n")
+out.append("# :mag: What exists today (28 Sep, after phase 1)\n")
 out.append("|Layer|State|\n|---|---|")
 out.append(f"|Front end (screens)|{fec['built']} stories built, {fec['partly']} partly, {fec['not started']} not started, {fec['n/a']} have no screen|")
-out.append("|Lead side screens|Ported from the IR console prototype, but the port lost behaviour: with all 9 lead-side seats Jev passes 13% of their cases in the app against 72% on the prototype (27 Sep). No sign-in screen yet. Pages: Today, Leads, Lead page, Add/CSV, Events, Plan, Numbers, Activity, Teams, System, Profile, Updates, Payments (IR claims), Documents (paperwork), Transfers|")
-out.append("|Investors side screens|Not started: Investors list and record, Farms and allotments, Tickets, Investor updates, Finance receipts and matching, payouts, app access|")
-out.append("|Connected to Zoho|No screen reads or writes Zoho yet; every page runs on demo data (the Zoho adapter is a stub)|")
+out.append("|Lead side screens|Re-ported to the merged prototype, screen for screen: sign-in (Continue with Zoho stub), Today, Leads, lead page, Add lead/CSV, Find, Events, Activity, Updates, Teams and the D60 access model, Profile, System, Numbers, Plan, Transfers, Payments, Documents|")
+out.append("|Investors side screens|Built from the prototype and merged into the one console: Today (Finance and Account Management), Investors list and record, Farms and allotments, Payments and receipts (Match it), monthly payouts, Documents (upload, signature status), Tickets, Investor updates, app access, app preview, test sign-in link, Numbers, Activity, Teams, System|")
+out.append("|Connected to Zoho|No screen reads or writes Zoho yet (phase 2). Every page reads one data interface (console/src/lib/data): a normal run starts empty; demo data loads only with FIXTURE_MODE=local|")
 out.append("|Zoho org|Modules and fields in place (M02 done items); still open: profiles per seat, field-level security (PAN not encrypted, only Administrator and Standard profiles exist), sharing rules, test user, sandbox and OAuth client|")
 try:
     RUN = json.load(open('ops/tracker/ui-run.json', encoding='utf-8'))

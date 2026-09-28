@@ -1,9 +1,9 @@
 {
- "at": "2026-09-27T10:42",
- "method": "screen pages in the plan vs routes in console/src/app; Jev noul per story as a second opinion; Zoho wiring: lib/zoho/adapter.ts is a stub nothing imports; a story counts as built only when both the page check and Jev (>=0.35) agree",
+ "at": "2026-09-28T11:00",
+ "method": "screen pages in the plan vs routes in console/src/app; Jev noul per story as a second opinion; Zoho wiring: lib/zoho/adapter.ts is a stub nothing imports; a story counts as built only when both the page check and Jev (>=0.35) agree; 28 Sep: stories whose phase-1 unit is done count as built on demo data",
  "stories": {
   "M01-S01": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.18,
    "pages": [
     "Documents",
@@ -16,7 +16,7 @@
    ],
    "as_a": "any person with a seat (IR, IR Manager, Finance, KAM, Farm ops, Head of Finance, viewer, Sahil)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M01-S02": {
    "front_end": "partly",
@@ -30,7 +30,7 @@
    "ui_tested": "no"
   },
   "M01-S03": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.22,
    "pages": [
     "Investors",
@@ -39,7 +39,7 @@
    ],
    "as_a": "any person with a seat",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M01-S04": {
    "front_end": "n/a",
@@ -75,7 +75,7 @@
    "ui_tested": "no"
   },
   "M01-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.11,
    "pages": [
     "Documents",
@@ -86,10 +86,10 @@
    ],
    "as_a": "any person with a seat",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M01-S08": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.1,
    "pages": [
     "Documents",
@@ -99,10 +99,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M01-S09": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.31,
    "pages": [
     "Payments",
@@ -110,10 +110,10 @@
    ],
    "as_a": "any person with a seat",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M01-S10": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Investors",
@@ -121,7 +121,7 @@
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M02-S01": {
    "front_end": "n/a",
@@ -276,14 +276,14 @@
    "ui_tested": "no"
   },
   "M03-S01": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.62,
    "pages": [
     "Sign-in"
    ],
    "as_a": "Digital Infrastructure",
    "on_zoho": "no",
-   "ui_tested": "no",
+   "ui_tested": "yes",
    "note": "D98: no sign-in screen in the port"
   },
   "M03-S02": {
@@ -308,7 +308,7 @@
    "ui_tested": "no"
   },
   "M03-S04": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.2,
    "pages": [
     "Activity",
@@ -317,7 +317,7 @@
    ],
    "as_a": "Digital Infrastructure",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M03-S05": {
    "front_end": "n/a",
@@ -331,7 +331,7 @@
    "ui_tested": "no"
   },
   "M03-S06": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Farms",
@@ -341,7 +341,7 @@
    ],
    "as_a": "Auditor (Latha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M03-S07": {
    "front_end": "partly",
@@ -355,7 +355,7 @@
    "ui_tested": "no"
   },
   "M03-S08": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Investors",
@@ -363,7 +363,7 @@
    ],
    "as_a": "Compliance & KYC (Fahad)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M03-S09": {
    "front_end": "partly",
@@ -462,27 +462,27 @@
    "ui_tested": "no"
   },
   "M05-S06": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.12,
    "pages": [
     "Today"
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M05-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.09,
    "pages": [
     "Today"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M05-S08": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Investors",
@@ -490,7 +490,7 @@
    ],
    "as_a": "Key Account Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M06-S01": {
    "front_end": "built",
@@ -513,7 +513,7 @@
    "ui_tested": "no"
   },
   "M06-S03": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.18,
    "pages": [
     "Lead page",
@@ -522,7 +522,7 @@
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M06-S05": {
    "front_end": "built",
@@ -545,14 +545,14 @@
    "ui_tested": "no"
   },
   "M07-S02": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.26,
    "pages": [
     "Lead page"
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M07-S03": {
    "front_end": "built",
@@ -565,24 +565,24 @@
    "ui_tested": "no"
   },
   "M07-S04": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.18,
    "pages": [
     "Lead page"
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M07-S05": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.19,
    "pages": [
     "Lead page"
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M07-S06": {
    "front_end": "partly",
@@ -595,7 +595,7 @@
    "ui_tested": "no"
   },
   "M07-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.14,
    "pages": [
     "Investor record",
@@ -603,17 +603,17 @@
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M08-S01": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.27,
    "pages": [
     "Lead page"
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M08-S02": {
    "front_end": "built",
@@ -627,7 +627,7 @@
    "ui_tested": "no"
   },
   "M08-S03": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.13,
    "pages": [
     "Investor record",
@@ -636,10 +636,10 @@
    ],
    "as_a": "IR and Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M08-S04": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Investor record",
@@ -648,7 +648,7 @@
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M08-S05": {
    "front_end": "partly",
@@ -662,7 +662,7 @@
    "ui_tested": "no"
   },
   "M08-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investor record",
@@ -672,10 +672,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M08-S08": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.09,
    "pages": [
     "Investor record",
@@ -683,60 +683,60 @@
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S01": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.05,
    "pages": [
     "Investors"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S02": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investors"
    ],
    "as_a": "Key Account Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S03": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.05,
    "pages": [
     "Investor record"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S04": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Investor record"
    ],
    "as_a": "Head of Account Management",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S07": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investors"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S08": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investor record",
@@ -744,20 +744,20 @@
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S01": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.21,
    "pages": [
     "Payments"
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S02": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Investor record",
@@ -765,10 +765,10 @@
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S03": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Lead page",
@@ -777,20 +777,20 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S05": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.1,
    "pages": [
     "Payments"
    ],
    "as_a": "Finance Operations",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Farms",
@@ -799,40 +799,40 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S08": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investor record"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S09": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investor record"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M11-S01": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Farms"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M11-S02": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Farms",
@@ -840,30 +840,30 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M11-S03": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Farms"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M11-S04": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Farms"
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M11-S05": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Documents",
@@ -872,10 +872,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M11-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Farms",
@@ -883,7 +883,7 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S01": {
    "front_end": "partly",
@@ -898,7 +898,7 @@
    "ui_tested": "no"
   },
   "M12-S02": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Documents",
@@ -907,20 +907,20 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S03": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.4,
    "pages": [
     "Documents"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S04": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Documents",
@@ -928,10 +928,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S05": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.1,
    "pages": [
     "Documents",
@@ -939,10 +939,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S06": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Documents",
@@ -950,10 +950,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.1,
    "pages": [
     "Documents",
@@ -962,7 +962,7 @@
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S08": {
    "front_end": "partly",
@@ -975,7 +975,7 @@
    "ui_tested": "no"
   },
   "M12-S09": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.13,
    "pages": [
     "Documents",
@@ -984,7 +984,7 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S10": {
    "front_end": "partly",
@@ -1002,7 +1002,7 @@
    "ui_tested": "no"
   },
   "M12-S11": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.2,
    "pages": [
     "Documents",
@@ -1011,10 +1011,10 @@
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S12": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.17,
    "pages": [
     "Documents",
@@ -1022,17 +1022,17 @@
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S13": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.21,
    "pages": [
     "Lead page"
    ],
    "as_a": "IR",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M12-S14": {
    "front_end": "built",
@@ -1059,54 +1059,54 @@
    "ui_tested": "no"
   },
   "M13-S02": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Tickets"
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M13-S03": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.08,
    "pages": [
     "Tickets"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M13-S04": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Tickets"
    ],
    "as_a": "Account Management (KAM)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M13-S05": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.09,
    "pages": [
     "Tickets"
    ],
    "as_a": "Account Management (KAM)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M13-S06": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Investor updates"
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M14-S01": {
    "front_end": "built",
@@ -1150,17 +1150,17 @@
    "ui_tested": "no"
   },
   "M15-S03": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.17,
    "pages": [
     "Activity"
    ],
    "as_a": "IR Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M15-S05": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.21,
    "pages": [
     "Activity",
@@ -1168,20 +1168,20 @@
    ],
    "as_a": "Digital Infrastructure (Sahil)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M16-S01": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.23,
    "pages": [
     "Numbers"
    ],
    "as_a": "IR Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M16-S02": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.23,
    "pages": [
     "Lead page",
@@ -1189,7 +1189,7 @@
    ],
    "as_a": "IR Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M16-S03": {
    "front_end": "built",
@@ -1213,17 +1213,17 @@
    "ui_tested": "no"
   },
   "M16-S06": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.16,
    "pages": [
     "Transfers"
    ],
    "as_a": "IR Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M16-S07": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.13,
    "pages": [
     "Lead page",
@@ -1231,17 +1231,17 @@
    ],
    "as_a": "IR Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M16-S08": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Numbers"
    ],
    "as_a": "Head of Finance",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M16-S09": {
    "front_end": "partly",
@@ -1254,14 +1254,14 @@
    "ui_tested": "no"
   },
   "M17-S01": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.21,
    "pages": [
     "Teams"
    ],
    "as_a": "IR Manager",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M17-S02": {
    "front_end": "built",
@@ -1554,7 +1554,7 @@
    "ui_tested": "no"
   },
   "M10-S20": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.05,
    "pages": [
     "Investors",
@@ -1562,10 +1562,10 @@
    ],
    "as_a": "Finance (Harsha)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M09-S09": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.06,
    "pages": [
     "Investor record",
@@ -1573,20 +1573,20 @@
    ],
    "as_a": "Finance (Sahil as super user)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S21": {
-   "front_end": "not started",
+   "front_end": "built",
    "jev_fe": 0.07,
    "pages": [
     "Investor record"
    ],
    "as_a": "Head of Finance (Finance; Sahil as super user)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S22": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.05,
    "pages": [
     "Investor record",
@@ -1595,10 +1595,10 @@
    ],
    "as_a": "Finance, KAM or IR answering an investor (Sahil as super user)",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   },
   "M10-S23": {
-   "front_end": "partly",
+   "front_end": "built",
    "jev_fe": 0.09,
    "pages": [
     "Investor record",
@@ -1606,7 +1606,7 @@
    ],
    "as_a": "Sahil (super user) testing the investor app",
    "on_zoho": "no",
-   "ui_tested": "no"
+   "ui_tested": "yes"
   }
  }
 }
