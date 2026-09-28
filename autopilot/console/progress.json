@@ -1188,16 +1188,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "13062e9"
    ],
-   "at": "2026-09-27T22:56:12.600Z",
-   "note": "Jev run 28 Sep: app 1/2 vs prototype 1/2",
+   "at": "2026-09-28T12:31:32.607Z",
+   "note": "Open-on-match verified and extended; waiting on App_Account_Mark/permanent fields (T01) and the app panel.",
    "notes": 5
   },
   "M10-S01": {
@@ -1258,16 +1260,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "13062e9"
    ],
-   "at": "2026-09-27T22:56:13.876Z",
-   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1",
+   "at": "2026-09-28T12:31:32.838Z",
+   "note": "Parser and matcher built; waiting on a Statements module and the upload screen.",
    "notes": 4
   },
   "M10-S07": {
@@ -3559,6 +3563,16 @@
   "M08-S04-T04": {
    "status": "done",
    "at": "2026-09-28T12:31:16.148Z",
+   "phase": "zoho"
+  },
+  "M08-S08-T02": {
+   "status": "done",
+   "at": "2026-09-28T12:31:32.607Z",
+   "phase": "zoho"
+  },
+  "M10-S05-T02": {
+   "status": "done",
+   "at": "2026-09-28T12:31:32.838Z",
    "phase": "zoho"
   }
  },
@@ -6310,6 +6324,22 @@
    "status": "waiting",
    "hours": 8,
    "note": "Hold clock, extend and lapse built and tested; waiting on Zoho approval processes and the hold screens."
+  },
+  {
+   "at": "2026-09-28T12:31:32.607Z",
+   "story": "M08-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Open-on-match verified and extended; waiting on App_Account_Mark/permanent fields (T01) and the app panel."
+  },
+  {
+   "at": "2026-09-28T12:31:32.838Z",
+   "story": "M10-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 7,
+   "note": "Parser and matcher built; waiting on a Statements module and the upload screen."
   }
  ],
  "last_regression_round": 0,
