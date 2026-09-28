@@ -1777,16 +1777,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "33a7028"
    ],
-   "at": "2026-09-27T22:56:26.548Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T09:15:57.245Z",
+   "note": "Add-paid built and tested; waiting on the front-end drawer wiring and sandbox rollback proof.",
    "notes": 3
   },
   "M10-S20": {
@@ -1808,16 +1810,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "33a7028"
    ],
-   "at": "2026-09-27T22:56:27.170Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T09:15:57.540Z",
+   "note": "Unlock/lock built and tested; waiting on App_Access history tracking, front-end card wiring and the app's staging webhook (MA1).",
    "notes": 4
   },
   "M10-S22": {
@@ -3134,6 +3138,16 @@
   "M08-S07-T02": {
    "status": "done",
    "at": "2026-09-28T09:15:34.899Z",
+   "phase": "zoho"
+  },
+  "M09-S09-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:15:57.245Z",
+   "phase": "zoho"
+  },
+  "M10-S21-T02": {
+   "status": "done",
+   "at": "2026-09-28T09:15:57.540Z",
    "phase": "zoho"
   }
  },
@@ -5581,6 +5595,22 @@
    "status": "waiting",
    "hours": 4,
    "note": "Said-yes Contacts read built; waiting on the lifecycle blueprint (T01) and front-end state."
+  },
+  {
+   "at": "2026-09-28T09:15:57.245Z",
+   "story": "M09-S09",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Add-paid built and tested; waiting on the front-end drawer wiring and sandbox rollback proof."
+  },
+  {
+   "at": "2026-09-28T09:15:57.540Z",
+   "story": "M10-S21",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Unlock/lock built and tested; waiting on App_Access history tracking, front-end card wiring and the app's staging webhook (MA1)."
   }
  ],
  "last_regression_round": 0,
