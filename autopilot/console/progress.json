@@ -1857,16 +1857,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "27706c1"
    ],
-   "at": "2026-09-27T22:56:26.860Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T11:39:06.834Z",
+   "note": "Payouts built and tested; waiting on the issue-date anchor decision, a unique Name, the screens and sandbox proof.",
    "notes": 4
   },
   "M10-S21": {
@@ -3518,6 +3520,11 @@
   "M13-S05-T03": {
    "status": "done",
    "at": "2026-09-28T11:38:53.997Z",
+   "phase": "zoho"
+  },
+  "M10-S20-T02": {
+   "status": "done",
+   "at": "2026-09-28T11:39:06.834Z",
    "phase": "zoho"
   }
  },
@@ -6245,6 +6252,14 @@
    "status": "waiting",
    "hours": 6,
    "note": "Request-to-Case and reply delivery built; waiting on the app sending investor_contact_id, MA1 and the reply thread UI."
+  },
+  {
+   "at": "2026-09-28T11:39:06.834Z",
+   "story": "M10-S20",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Payouts built and tested; waiting on the issue-date anchor decision, a unique Name, the screens and sandbox proof."
   }
  ],
  "last_regression_round": 0,
