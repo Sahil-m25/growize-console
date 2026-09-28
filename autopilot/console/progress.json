@@ -1374,16 +1374,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "b2f2527"
    ],
-   "at": "2026-09-27T22:56:15.768Z",
-   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4",
+   "at": "2026-09-28T13:47:17.645Z",
+   "note": "Allot built and tested; waiting on the allotment blueprint in Zoho and the Verify control.",
    "notes": 6
   },
   "M11-S07": {
@@ -3773,6 +3775,16 @@
   "M18-S01-T03": {
    "status": "done",
    "at": "2026-09-28T13:47:00.608Z",
+   "phase": "zoho"
+  },
+  "M11-S05-T02": {
+   "status": "done",
+   "at": "2026-09-28T13:47:17.645Z",
+   "phase": "zoho"
+  },
+  "M11-S05-T04": {
+   "status": "done",
+   "at": "2026-09-28T13:47:17.645Z",
    "phase": "zoho"
   }
  },
@@ -6676,6 +6688,14 @@
    "status": "waiting",
    "hours": 7,
    "note": "Harness and tuning built; waiting on a staging load run and real mail."
+  },
+  {
+   "at": "2026-09-28T13:47:17.645Z",
+   "story": "M11-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 6.5,
+   "note": "Allot built and tested; waiting on the allotment blueprint in Zoho and the Verify control."
   }
  ],
  "last_regression_round": 0,
