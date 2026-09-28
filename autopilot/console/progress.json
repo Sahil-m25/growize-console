@@ -1350,16 +1350,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "7242913"
    ],
-   "at": "2026-09-27T22:56:15.456Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
+   "at": "2026-09-28T12:31:49.561Z",
+   "note": "Release/take-back built; waiting on the Deluge guard install and the Farms buttons.",
    "notes": 4
   },
   "M11-S05": {
@@ -1381,16 +1383,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "7242913"
    ],
-   "at": "2026-09-27T22:56:16.088Z",
-   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1",
+   "at": "2026-09-28T12:31:49.764Z",
+   "note": "Oversell guard built; waiting on the Deluge install, writer wiring and drawers.",
    "notes": 4
   },
   "M12-S02": {
@@ -3573,6 +3577,16 @@
   "M10-S05-T02": {
    "status": "done",
    "at": "2026-09-28T12:31:32.838Z",
+   "phase": "zoho"
+  },
+  "M11-S04-T01": {
+   "status": "done",
+   "at": "2026-09-28T12:31:49.561Z",
+   "phase": "zoho"
+  },
+  "M11-S07-T01": {
+   "status": "done",
+   "at": "2026-09-28T12:31:49.764Z",
    "phase": "zoho"
   }
  },
@@ -6340,6 +6354,22 @@
    "status": "waiting",
    "hours": 7,
    "note": "Parser and matcher built; waiting on a Statements module and the upload screen."
+  },
+  {
+   "at": "2026-09-28T12:31:49.561Z",
+   "story": "M11-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Release/take-back built; waiting on the Deluge guard install and the Farms buttons."
+  },
+  {
+   "at": "2026-09-28T12:31:49.764Z",
+   "story": "M11-S07",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Oversell guard built; waiting on the Deluge install, writer wiring and drawers."
   }
  ],
  "last_regression_round": 0,
