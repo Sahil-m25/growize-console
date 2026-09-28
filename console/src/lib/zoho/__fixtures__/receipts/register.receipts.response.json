@@ -1,0 +1,122 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996306",
+        "Allotment": {
+          "id": "9007199254740996002",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Part",
+        "Amount": 200000,
+        "Mode": "UPI",
+        "UTR": "SYNTHCLAIM06",
+        "Received_On": "2026-09-10T10:00:00+05:30",
+        "Match_State": "Claimed",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740996900",
+          "name": "Synthetic Finance Maker"
+        }
+      },
+      {
+        "id": "9007199254740996305",
+        "Allotment": {
+          "id": "9007199254740996003",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Refund",
+        "Amount": 100000,
+        "Mode": "NEFT",
+        "UTR": "SYNTHREF0005",
+        "Received_On": "2026-09-01T10:00:00+05:30",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740996900",
+          "name": "Synthetic Finance Maker"
+        }
+      },
+      {
+        "id": "9007199254740996304",
+        "Allotment": {
+          "id": "9007199254740996002",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 500000,
+        "Mode": "NEFT",
+        "UTR": "SYNTHADV0004",
+        "Received_On": "2026-08-22T10:00:00+05:30",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740996900",
+          "name": "Synthetic Finance Maker"
+        }
+      },
+      {
+        "id": "9007199254740996303",
+        "Allotment": {
+          "id": "9007199254740996003",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Full",
+        "Amount": 1500000,
+        "Mode": "SWIFT",
+        "UTR": "SYNTHSWF0003",
+        "Received_On": "2026-07-05T10:00:00+05:30",
+        "Match_State": "Pending",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740996900",
+          "name": "Synthetic Finance Maker"
+        }
+      },
+      {
+        "id": "9007199254740996302",
+        "Allotment": {
+          "id": "9007199254740996001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Full",
+        "Amount": 750000,
+        "Mode": "RTGS",
+        "UTR": "SYNTHRTG0002",
+        "Received_On": "2026-06-20T10:00:00+05:30",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740996900",
+          "name": "Synthetic Finance Maker"
+        }
+      },
+      {
+        "id": "9007199254740996301",
+        "Allotment": {
+          "id": "9007199254740996001",
+          "name": "Synthetic allotment"
+        },
+        "Kind": "Advance",
+        "Amount": 250000,
+        "Mode": "NEFT",
+        "UTR": "SYNTHNEF0001",
+        "Received_On": "2026-06-01T10:00:00+05:30",
+        "Match_State": "Matched",
+        "Reversal_Of": null,
+        "Created_By": {
+          "id": "9007199254740996900",
+          "name": "Synthetic Finance Maker"
+        }
+      }
+    ],
+    "info": {
+      "count": 6,
+      "more_records": false
+    }
+  }
+}

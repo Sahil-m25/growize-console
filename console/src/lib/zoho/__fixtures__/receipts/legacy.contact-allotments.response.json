@@ -1,0 +1,65 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996001",
+        "Customer": {
+          "id": "9007199254740996101",
+          "name": "Synthetic Investor One"
+        },
+        "LLP": {
+          "id": "9007199254740996201",
+          "name": "Synthetic Farm A LLP"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 2,
+        "Reserved_Units": 0,
+        "Unit_Price": 500000,
+        "Token_Advance_Amount": 250000,
+        "Total_Amount_Received": 1000000
+      },
+      {
+        "id": "9007199254740996003",
+        "Customer": {
+          "id": "9007199254740996102",
+          "name": "Synthetic Investor Two"
+        },
+        "LLP": {
+          "id": "9007199254740996202",
+          "name": "Synthetic Farm B LLP"
+        },
+        "Allocation_Status": "Issued",
+        "Issued_Units": 1,
+        "Reserved_Units": 0,
+        "Unit_Price": 1500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": 1500000
+      },
+      {
+        "id": "9007199254740996009",
+        "Customer": {
+          "id": "9007199254740996102",
+          "name": "Synthetic Investor Two"
+        },
+        "LLP": {
+          "id": "9007199254740996201",
+          "name": "Synthetic Farm A LLP"
+        },
+        "Allocation_Status": "Cancelled",
+        "Issued_Units": 0,
+        "Reserved_Units": 1,
+        "Unit_Price": 500000,
+        "Token_Advance_Amount": null,
+        "Total_Amount_Received": 0
+      }
+    ],
+    "info": {
+      "count": 3,
+      "more_records": false
+    }
+  }
+}

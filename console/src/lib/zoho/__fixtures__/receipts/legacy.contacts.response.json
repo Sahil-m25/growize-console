@@ -1,0 +1,80 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Amount_1": 250000,
+        "UTR": "HDFC0000000001",
+        "Date_1": "2026-06-01",
+        "Amount_2": 750000,
+        "UTR_2": "hdfc0000000002 ",
+        "Date_2": "2026-06-20",
+        "Amount_3": null,
+        "UTR_3": null,
+        "Date_3": null,
+        "Amount_4": null,
+        "UTR_4": null,
+        "Date_4": null,
+        "Amount_5": null,
+        "UTR_5": null,
+        "Date_5": null,
+        "Amount_6": null,
+        "UTR_6": null,
+        "Date_6": null,
+        "Amount_7": null,
+        "UTR_7": null,
+        "Date_7": null,
+        "Amount_8": null,
+        "UTR_8": null,
+        "Date_8": null,
+        "Amount_9": null,
+        "UTR_9": null,
+        "Date_9": null,
+        "Amount_10": null,
+        "UTR_10": null,
+        "Date_10": null
+      },
+      {
+        "id": "9007199254740996102",
+        "Amount_1": 1500000,
+        "UTR": "SBIN0000000003",
+        "Date_1": "2026-07-05",
+        "Amount_2": null,
+        "UTR_2": null,
+        "Date_2": null,
+        "Amount_3": null,
+        "UTR_3": null,
+        "Date_3": null,
+        "Amount_4": null,
+        "UTR_4": null,
+        "Date_4": null,
+        "Amount_5": null,
+        "UTR_5": null,
+        "Date_5": null,
+        "Amount_6": null,
+        "UTR_6": null,
+        "Date_6": null,
+        "Amount_7": null,
+        "UTR_7": null,
+        "Date_7": null,
+        "Amount_8": null,
+        "UTR_8": null,
+        "Date_8": null,
+        "Amount_9": null,
+        "UTR_9": null,
+        "Date_9": null,
+        "Amount_10": null,
+        "UTR_10": null,
+        "Date_10": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}
