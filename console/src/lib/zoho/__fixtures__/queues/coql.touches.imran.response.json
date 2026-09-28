@@ -1,0 +1,154 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740999001",
+        "Lead": {
+          "id": "9007199254740998101",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-08-19T11:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Warm"
+      },
+      {
+        "id": "9007199254740999002",
+        "Lead": {
+          "id": "9007199254740998101",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-07-20T11:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Fine"
+      },
+      {
+        "id": "9007199254740999003",
+        "Lead": {
+          "id": "9007199254740998101",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-06-18T11:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Fine"
+      },
+      {
+        "id": "9007199254740999004",
+        "Lead": {
+          "id": "9007199254740998101",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-05-01T11:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994003",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Fine"
+      },
+      {
+        "id": "9007199254740999005",
+        "Lead": {
+          "id": "9007199254740998102",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-06-20T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "A concern"
+      },
+      {
+        "id": "9007199254740999006",
+        "Lead": {
+          "id": "9007199254740998102",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-03-20T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Fine"
+      },
+      {
+        "id": "9007199254740999007",
+        "Lead": {
+          "id": "9007199254740998103",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-04-11T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Warm"
+      },
+      {
+        "id": "9007199254740999008",
+        "Lead": {
+          "id": "9007199254740998103",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-01-10T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Warm"
+      },
+      {
+        "id": "9007199254740999009",
+        "Lead": {
+          "id": "9007199254740998104",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-09-01T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Warm"
+      },
+      {
+        "id": "9007199254740999010",
+        "Lead": {
+          "id": "9007199254740998104",
+          "name": "Synthetic lead"
+        },
+        "Occurred_At": "2026-08-01T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740994002",
+          "name": "Synthetic owner",
+          "email": "synthetic.user@example.invalid"
+        },
+        "Mood": "Fine"
+      }
+    ],
+    "info": {
+      "count": 10,
+      "more_records": false
+    }
+  }
+}

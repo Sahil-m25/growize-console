@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997101",
+        "First_Name": "Joseph",
+        "Last_Name": "Mathew",
+        "KYC": "In Progress",
+        "FEMA_Applicable": true,
+        "FEMA_Verified_At": null
+      },
+      {
+        "id": "9007199254740997109",
+        "First_Name": "Ravi",
+        "Last_Name": "Lapsed",
+        "KYC": "Failed",
+        "FEMA_Applicable": false,
+        "FEMA_Verified_At": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

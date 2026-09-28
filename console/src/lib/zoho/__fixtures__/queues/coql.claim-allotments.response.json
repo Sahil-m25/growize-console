@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996205",
+        "Customer": {
+          "id": "9007199254740997102",
+          "name": "x"
+        },
+        "Customer.Full_Name": "Prakash Bhat",
+        "Allocation_Status": "Reserved"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}
