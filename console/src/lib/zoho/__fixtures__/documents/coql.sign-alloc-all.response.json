@@ -1,0 +1,29 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740999401",
+        "Supplementary_Sign_Req_Id": "41250000000124001",
+        "Supplementary_Signed_Via": "Zoho Sign",
+        "Supplementary_Verified_At": "2026-09-10T10:00:00+05:30",
+        "Name": "ALT-0101",
+        "Customer": {
+          "name": "x",
+          "id": "9007199254740997320"
+        },
+        "LLP": {
+          "name": "x",
+          "id": "9007199254740998101"
+        }
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": false
+    }
+  }
+}

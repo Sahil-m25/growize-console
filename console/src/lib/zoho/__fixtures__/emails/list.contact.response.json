@@ -1,0 +1,89 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "email_related_list": [
+      {
+        "cc": [],
+        "summary": null,
+        "owner": {
+          "name": "x",
+          "id": "9007199254740993002"
+        },
+        "read": true,
+        "sent": true,
+        "subject": "Your FEMA declaration",
+        "intent": null,
+        "sentiment_info": null,
+        "message_id": "c6085fae06cbd7b75001fe70000000000000000000000000000000000001",
+        "status": [
+          {
+            "type": "sent"
+          }
+        ],
+        "source": "crm_mail",
+        "linked_record": null,
+        "sent_time": "2026-08-26T10:00:00+05:30",
+        "emotion": null,
+        "from": {
+          "user_name": "Harsha Bhat",
+          "email": "harsha@example.invalid"
+        },
+        "to": [
+          {
+            "user_name": "Joseph Mathew",
+            "email": "joseph@example.invalid"
+          }
+        ],
+        "time": "2026-08-26T10:00:00+05:30",
+        "thread_id": null,
+        "has_thread_attachment": false,
+        "has_attachment": true,
+        "editable": false,
+        "mail_format": "html",
+        "reply_to": null
+      },
+      {
+        "cc": [],
+        "owner": {
+          "name": "x",
+          "id": "9007199254740993002"
+        },
+        "read": true,
+        "sent": false,
+        "subject": "Re: Your FEMA declaration",
+        "message_id": "c6085fae06cbd7b75001fe70000000000000000000000000000000000002",
+        "status": [
+          {
+            "type": "received"
+          }
+        ],
+        "sent_time": "2026-08-27T09:00:00+05:30",
+        "from": {
+          "user_name": "Joseph Mathew",
+          "email": "joseph@example.invalid"
+        },
+        "to": [
+          {
+            "user_name": "Harsha Bhat",
+            "email": "harsha@example.invalid"
+          }
+        ],
+        "has_attachment": false,
+        "mail_format": "html"
+      },
+      {
+        "message_id": "../../bad id",
+        "subject": "malformed row dropped"
+      }
+    ],
+    "info": {
+      "per_page": 200,
+      "next_index": null,
+      "prev_index": null,
+      "count": 3
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "Emails": [
+      {
+        "cc": [],
+        "summary": null,
+        "attachments": [
+          {
+            "service_name": "ZOHO_CRM",
+            "size": "53422",
+            "id": "attach-1",
+            "name": "FEMA declaration.pdf"
+          }
+        ],
+        "owner": {
+          "name": "x",
+          "id": "9007199254740993002"
+        },
+        "subject": "Your FEMA declaration",
+        "message_id": "c6085fae06cbd7b75001fe70000000000000000000000000000000000001",
+        "content": "<p>Dear Joseph, please sign the FEMA declaration. SECRET-BODY-MARKER</p>",
+        "sent_time": "2026-08-26T10:00:00+05:30",
+        "from": {
+          "user_name": "Harsha Bhat",
+          "email": "harsha@example.invalid"
+        },
+        "to": [
+          {
+            "user_name": "Joseph Mathew",
+            "email": "joseph@example.invalid"
+          }
+        ],
+        "sent": true,
+        "has_attachment": true,
+        "mail_format": "html"
+      }
+    ]
+  }
+}
