@@ -62,7 +62,23 @@ export interface RefusalEntry {
   readonly recordIds: readonly string[];
 }
 
-export type OpsRecord = ({ readonly kind: "zoho-call" } & ZohoCallEntry) | ({ readonly kind: "refusal" } & RefusalEntry);
+/**
+ * M15-S05-T01 — something our layer did and that went through (a search answered, a test link made):
+ * who, a short action code, a short result code, the record ids. Same fields as a refusal, its own kind,
+ * so a success is never filed as a refusal. No count or text rides in it beyond a short code.
+ */
+export interface EventEntry {
+  readonly at: number;
+  readonly actor: LogActor;
+  /** A short code: "lead-search", "test-link-created"… */
+  readonly action: string;
+  /** A short result code: "done", "scope-all.count-12"… */
+  readonly reason: string;
+  readonly recordIds: readonly string[];
+}
+
+export type OpsRecord = ({ readonly kind: "zoho-call" } & ZohoCallEntry) | ({ readonly kind: "refusal" } & RefusalEntry)
+  | ({ readonly kind: "event" } & EventEntry);
 
 export interface OpsSink {
   write(record: OpsRecord): void;
@@ -71,6 +87,13 @@ export interface OpsSink {
 export interface OpsLog {
   call(entry: ZohoCallEntry): void;
   refusal(entry: RefusalEntry): void;
+  /** M15-S05-T01: optional on the interface so existing fakes stay valid; createOpsLog always has it. */
+  event?(entry: EventEntry): void;
+}
+
+/** What createOpsLog returns: the three kinds, `event` guaranteed. */
+export interface OpsEventLog extends OpsLog {
+  event(entry: EventEntry): void;
 }
 
 /** A Zoho record id: 18–19 digits in practice. A 10–12 digit mobile number does not qualify. */
@@ -176,9 +199,20 @@ function refusalRecord(e: RefusalEntry): OpsRecord {
   });
 }
 
+function eventRecord(e: EventEntry): OpsRecord {
+  return Object.freeze({
+    kind: "event",
+    at: finite(e.at),
+    actor: actorOf(e.actor),
+    action: safeCode(e.action, CODE) ?? safeCode(e.action, OP) ?? "unrecognised",
+    reason: safeCode(e.reason, CODE) ?? "unrecognised",
+    recordIds: idsOf(e.recordIds),
+  });
+}
+
 export type OpsLogOptions = { readonly onSinkError?: (error: unknown) => void };
 
-export function createOpsLog(sink: OpsSink, options: OpsLogOptions = {}): OpsLog {
+export function createOpsLog(sink: OpsSink, options: OpsLogOptions = {}): OpsEventLog {
   const write = (record: OpsRecord) => {
     try {
       sink.write(record);
@@ -193,6 +227,7 @@ export function createOpsLog(sink: OpsSink, options: OpsLogOptions = {}): OpsLog
   return {
     call: (entry) => write(callRecord(entry)),
     refusal: (entry) => write(refusalRecord(entry)),
+    event: (entry) => write(eventRecord(entry)),
   };
 }
 
@@ -237,6 +272,7 @@ export function createMemorySink(options: { readonly capacity?: number } = {}): 
           refusals++;
           continue;
         }
+        if (r.kind !== "zoho-call") continue;
         calls++;
         if (r.errorClass) failures[r.errorClass] = (failures[r.errorClass] ?? 0) + 1;
         if (r.creditsRemaining !== null) {

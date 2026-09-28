@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "headers": { "content-type": "application/json" },
+  "body": {
+    "data": [
+      { "id": "9007199254741000201", "Allotment": { "id": "9007199254740996101", "name": "x" }, "Payout_Kind": "Rental yield", "Instalment_No": 1,
+        "Period_Month": "2026-08-01", "Due_On": "2026-09-05", "Payout_State": "Paid", "Paid_On": "2026-09-05" },
+      { "id": "9007199254741000202", "Allotment": { "id": "9007199254740996101", "name": "x" }, "Payout_Kind": "Rental yield", "Instalment_No": 2,
+        "Period_Month": "2026-09-01", "Due_On": "2026-10-05", "Payout_State": "Scheduled", "Paid_On": null }
+    ],
+    "info": { "count": 2, "more_records": false }
+  }
+}

@@ -1,0 +1,9 @@
+{"kind":"zoho-call","at":1790568001000,"actor":{"kind":"user","userId":"9007199254740996001"},"op":"coql","method":"POST","endpoint":"/coql","callClass":"complex","status":200,"durationMs":312,"gateWaitMs":0,"attempt":1,"creditsRemaining":4800,"errorClass":null,"recordIds":[]}
+{"kind":"zoho-call","at":1790568002000,"actor":{"kind":"user","userId":"9007199254740996001"},"op":"getRecord","method":"GET","endpoint":"/Leads/{id}","callClass":"simple","status":200,"durationMs":120,"gateWaitMs":0,"attempt":1,"creditsRemaining":null,"errorClass":null,"recordIds":["9007199254740996401"]}
+{"kind":"zoho-call","at":1790568003000,"actor":{"kind":"user","userId":"9007199254740996001"},"op":"coql","method":"POST","endpoint":"/coql","callClass":"complex","status":429,"durationMs":80,"gateWaitMs":10,"attempt":1,"creditsRemaining":4200,"errorClass":"rate-limited","recordIds":[]}
+{"kind":"event","at":1790568004000,"actor":{"kind":"user","userId":"9007199254740996001"},"action":"lead-search","reason":"scope-user.count-3","recordIds":[]}
+{"kind":"refusal","at":1790568005000,"actor":{"kind":"user","userId":"9007199254740995001"},"action":"events-edit","reason":"seat-denied","recordIds":[]}
+{"kind":"zoho-call","at":1790568006000,"actor":{"kind":"service","job":"audit-archive"},"op":"getRecords","method":"GET","endpoint":"/Users","callClass":"simple","status":200,"durationMs":90,"gateWaitMs":0,"attempt":1,"creditsRemaining":4500,"errorClass":null,"recordIds":[]}
+{"kind":"refusal","at":1790568007000,"actor":{"kind":"user","userId":"9007199254740996001"},"action":"lead-gate","reason":"not-own-lead","recordIds":["9007199254740996402"]}
+{"kind":"body","at":1790568007500,"text":"a line of another shape is skipped"}
+{"kind":"refusal","at":1790568008000,"actor":{"kind":"user","userId":"9007199254740996001"},"acti
