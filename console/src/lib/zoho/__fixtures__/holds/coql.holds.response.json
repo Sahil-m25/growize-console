@@ -1,0 +1,62 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740996204",
+    "Customer": {
+     "id": "9007199254740997101",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Joseph Mathew",
+    "Customer.Origin_Lead": null,
+    "Customer.Originating_IR": null,
+    "Customer.KAM": null,
+    "LLP": {
+     "id": "9007199254740998302"
+    },
+    "LLP.Name": "Growize Block B LLP",
+    "Allocation_Status": "Reserved",
+    "Reserved_Units": 4,
+    "Unit_Price": 2500000,
+    "Hold_Until": "2026-09-21",
+    "Hold_Extension_State": null,
+    "Hold_Extension_Days": null,
+    "Modified_Time": "2026-09-01T10:00:00+05:30"
+   },
+   {
+    "id": "9007199254740996205",
+    "Customer": {
+     "id": "9007199254740997102",
+     "name": "x"
+    },
+    "Customer.Full_Name": "Prakash Bhat",
+    "Customer.Origin_Lead": {
+     "id": "9007199254740991006"
+    },
+    "Customer.Originating_IR": {
+     "id": "9007199254740995001"
+    },
+    "Customer.KAM": null,
+    "LLP": {
+     "id": "9007199254740998302"
+    },
+    "LLP.Name": "Growize Block B LLP",
+    "Allocation_Status": "Reserved",
+    "Reserved_Units": 1,
+    "Unit_Price": 2500000,
+    "Hold_Until": "2026-09-23",
+    "Hold_Extension_State": null,
+    "Hold_Extension_Days": null,
+    "Modified_Time": "2026-09-01T10:00:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 2,
+   "more_records": false
+  }
+ }
+}

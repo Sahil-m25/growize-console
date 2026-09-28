@@ -1,0 +1,158 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740995401",
+    "Allotment": {
+     "id": "9007199254740996201",
+     "name": "x"
+    },
+    "Kind": "Full",
+    "Amount": 72500000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0001",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995402",
+    "Allotment": {
+     "id": "9007199254740996202",
+     "name": "x"
+    },
+    "Kind": "Advance",
+    "Amount": 1500000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0002",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995403",
+    "Allotment": {
+     "id": "9007199254740996202",
+     "name": "x"
+    },
+    "Kind": "Part",
+    "Amount": 13500000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0003",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995404",
+    "Allotment": {
+     "id": "9007199254740996204",
+     "name": "x"
+    },
+    "Kind": "Advance",
+    "Amount": 1000000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0004",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995405",
+    "Allotment": {
+     "id": "9007199254740996205",
+     "name": "x"
+    },
+    "Kind": "Advance",
+    "Amount": 250000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0005",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995406",
+    "Allotment": {
+     "id": "9007199254740996203",
+     "name": "x"
+    },
+    "Kind": "Advance",
+    "Amount": 500000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0006",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995407",
+    "Allotment": {
+     "id": "9007199254740996203",
+     "name": "x"
+    },
+    "Kind": "Refund",
+    "Amount": 500000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0007",
+    "Received_On": "2026-08-24T10:00:00+05:30",
+    "Match_State": "Matched",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   },
+   {
+    "id": "9007199254740995408",
+    "Allotment": {
+     "id": "9007199254740996205",
+     "name": "x"
+    },
+    "Kind": "Part",
+    "Amount": 2250000,
+    "Mode": "NEFT",
+    "UTR": "SYNTHUTR0008",
+    "Received_On": "2026-09-01T11:00:00+05:30",
+    "Match_State": "Pending",
+    "Reversal_Of": null,
+    "Created_By": {
+     "id": "9007199254740993001",
+     "name": "x"
+    }
+   }
+  ],
+  "info": {
+   "count": 8,
+   "more_records": false
+  }
+ }
+}

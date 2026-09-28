@@ -1,0 +1,32 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740996205",
+    "Allocation_Status": "Cancelled",
+    "Hold_Until": "2026-09-23",
+    "Reserved_Units": 1,
+    "Unit_Price": 2500000,
+    "Customer": {
+     "id": "9007199254740997102",
+     "name": "x"
+    },
+    "Hold_Extension_State": null,
+    "Modified_Time": "2026-09-01T10:00:00+05:30",
+    "$approval_state": "approved",
+    "LLP": {
+     "id": "9007199254740998302",
+     "name": "Growize Block B LLP"
+    }
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}
