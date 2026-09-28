@@ -1291,16 +1291,18 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "31fa384"
    ],
-   "at": "2026-09-27T22:56:14.827Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T10:52:01.620Z",
+   "note": "Allotment reads built and tested; waiting on the front-end rows and an allotment write path for AC1.",
    "notes": 4
   },
   "M11-S03": {
@@ -1552,32 +1554,36 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "31fa384"
    ],
-   "at": "2026-09-27T22:56:20.305Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T10:52:01.946Z",
+   "note": "Money by allotment built and tested; waiting on the front-end blocks and Jev cases.",
    "notes": 2
   },
   "M10-S09": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "31fa384"
    ],
-   "at": "2026-09-27T22:56:20.602Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "at": "2026-09-28T10:52:02.218Z",
+   "note": "Holdings read built and tested; waiting on the front-end panel and Jev cases.",
    "notes": 2
   },
   "M12-S09": {
@@ -3358,6 +3364,21 @@
   "M09-S08-T02": {
    "status": "done",
    "at": "2026-09-28T10:51:43.709Z",
+   "phase": "zoho"
+  },
+  "M11-S02-T02": {
+   "status": "done",
+   "at": "2026-09-28T10:52:01.620Z",
+   "phase": "zoho"
+  },
+  "M10-S08-T01": {
+   "status": "done",
+   "at": "2026-09-28T10:52:01.946Z",
+   "phase": "zoho"
+  },
+  "M10-S09-T01": {
+   "status": "done",
+   "at": "2026-09-28T10:52:02.218Z",
    "phase": "zoho"
   }
  },
@@ -5941,6 +5962,30 @@
    "status": "waiting",
    "hours": 2,
    "note": "IR scope built and tested; waiting on Originating_IR stamping and sharing in Zoho and staging proof."
+  },
+  {
+   "at": "2026-09-28T10:52:01.620Z",
+   "story": "M11-S02",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Allotment reads built and tested; waiting on the front-end rows and an allotment write path for AC1."
+  },
+  {
+   "at": "2026-09-28T10:52:01.946Z",
+   "story": "M10-S08",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 1.5,
+   "note": "Money by allotment built and tested; waiting on the front-end blocks and Jev cases."
+  },
+  {
+   "at": "2026-09-28T10:52:02.218Z",
+   "story": "M10-S09",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 1.5,
+   "note": "Holdings read built and tested; waiting on the front-end panel and Jev cases."
   }
  ],
  "last_regression_round": 0,
