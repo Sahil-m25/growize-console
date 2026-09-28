@@ -1839,7 +1839,16 @@
   "M18-S12": {
    "status": "pending",
    "attempts": 0,
-   "notes": 1
+   "notes": 1,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T06:14:46.398Z",
+   "note": "Migration script (T01) shared with M10-S01 and tested; waiting on Sahil's sandbox dry run (T02) and legacy column confirmation.",
+   "commits": [
+    "58ae166"
+   ]
   }
  },
  "subtasks": {
@@ -2838,6 +2847,11 @@
   "M10-S01-T03": {
    "status": "done",
    "at": "2026-09-28T06:14:40.205Z",
+   "phase": "zoho"
+  },
+  "M18-S12-T01": {
+   "status": "done",
+   "at": "2026-09-28T06:14:46.398Z",
    "phase": "zoho"
   }
  },
@@ -5141,6 +5155,14 @@
    "status": "waiting",
    "hours": 5,
    "note": "Register read (T03) done; migration (T02) waiting on Sahil confirming legacy columns and completing Receipts (T01), plus the sandbox dry run."
+  },
+  {
+   "at": "2026-09-28T06:14:46.398Z",
+   "story": "M18-S12",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 5,
+   "note": "Migration script (T01) shared with M10-S01 and tested; waiting on Sahil's sandbox dry run (T02) and legacy column confirmation."
   }
  ],
  "last_regression_round": 0,
