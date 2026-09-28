@@ -229,8 +229,12 @@ test('deck and webinar are refused before the NDA is back, and sent once it is',
     assert.equal(shut.sends().length, 0);
   }
   const open = rig({}, { nda: { async signed(c, id) { return id === LEAD; } } });
-  assert.equal((await open.svc.send(principal(), { ...CMD, template: 'deck' })).ok, true);
+  assert.equal((await open.svc.send(principal(), { ...CMD, template: 'webinar' })).ok, true);
   assert.equal(open.sends().length, 1);
+  // M12-S13: the deck goes only with the deck attached — no deck mailer wired, so it is refused, never sent bare
+  const noDeck = rig({}, { nda: { async signed(c, id) { return id === LEAD; } } });
+  assert.equal((await noDeck.svc.send(principal(), { ...CMD, template: 'deck' })).reasonCode, 'deck-not-ready');
+  assert.equal(noDeck.sends().length, 0);
 });
 
 test('a sender whose own mailbox is not on the org domain is refused before sending (never the shared org address)', async () => {

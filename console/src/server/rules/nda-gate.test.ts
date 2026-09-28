@@ -28,11 +28,14 @@ function rig(nda: NdaReader | null) {
     },
     async fromAddresses() { return { ok: true, value: [{ email: "synthetic.ir@agresearchlabs.com", type: "primary", userName: null, isDefault: true }] }; },
     async sendMail(_c: unknown, _m: string, id: string) { sent.push(id); return { ok: true, value: { sent: true, messageId: "m1" } }; },
+    async update() { return { ok: true, value: { id: LEAD } }; },
   };
+  // M12-S13: the deck goes out only through the deck mailer (the approved deck attached).
+  const deck = { async send(_c: unknown, id: string) { sent.push(id); return { ok: true, value: { sent: true, messageId: "d1" } }; } };
   const access = { async recheck(c: UserCredential) { return { actor: { userId: c.userId }, mayRecordFollowup: true, teamOwnerIds: [] }; } };
   const followups = { async save() { return { ok: true, value: { touchId: `${P}740997701` } }; } };
   const svc = createEmailSender({ crm, followups, access, log: createOpsLog(createMemorySink()), recordIdPrefix: P,
-    orgDomains: ["agresearchlabs.com"], nda, clock: () => now } as never);
+    orgDomains: ["agresearchlabs.com"], nda, deck, clock: () => now } as never);
   const send = (template: string) => svc.send({ credential, sessionId: "session_fixture_rules_0001" },
     { leadId: LEAD, expectedModifiedTime: LOADED, template, subject: "Growize", message: "Hello" });
   return { send, sent };

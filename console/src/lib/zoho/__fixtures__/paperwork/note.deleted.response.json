@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "code": "SUCCESS",
+        "details": {
+          "id": "9007199254740997801"
+        },
+        "message": "record deleted",
+        "status": "success"
+      }
+    ]
+  }
+}

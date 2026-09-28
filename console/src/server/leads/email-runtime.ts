@@ -7,8 +7,13 @@
  *
  * Access is re-derived from the live session on every recheck: only a seat whose leads scope is its own
  * book (IR, channel partner) or a team (IR Manager) may send. PROVISIONAL: with no subtree reader yet a
- * manager sends only on leads they own or cover (teamOwnerIds empty). The NDA reader is not wired until
- * the Zoho Sign completion is stamped on the Lead, so deck and webinar templates stay shut.
+ * manager sends only on leads they own or cover (teamOwnerIds empty). The NDA reader is the Lead's own
+ * NDA_Verified_At (M12-S13: Zoho Sign's completion filing and Finance's verification stamp it). No deck mailer is
+ * wired until the client's send_mail carries an attachment and the approved deck is on file (MA4), so Deck
+ * follow-up answers "deck-not-ready" rather than going out bare.
+ *
+ * Also composes the lead page's paperwork row (M12-S11/S12, POST|GET /api/leads/[id]/paperwork) on the same
+ * access and FOLLOWUP_UNDO_SECRET, and the IR-hint reader (GET /api/leads/[id]/hints).
  */
 
 import { createZohoClient, type UserCredential } from "../../lib/zoho/client";
@@ -16,7 +21,9 @@ import { dataRuntime } from "../data/zoho-source";
 import { zohoSeatOf } from "../data/live";
 import { scopesFor } from "../data/scope";
 import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
-import { createEmailSender, type NdaReader } from "./email";
+import { createEmailSender, createLeadNdaReader, type NdaReader } from "./email";
+import { createHintReader } from "./hints";
+import { createPaperwork } from "./paperwork";
 import { createFollowups, type FollowupAccessAuthority } from "./followup";
 
 export const emailConfigured = (env: NodeJS.ProcessEnv = process.env): boolean =>
@@ -56,7 +63,37 @@ export function emailSender(env: NodeJS.ProcessEnv = process.env, nda: NdaReader
     return r.ok ? { credential: r.credential, session: r.session } : null;
   });
   const followups = createFollowups({ crm, access, log: rt.log, recordIdPrefix, undoSecret: env.FOLLOWUP_UNDO_SECRET! });
-  const sender = createEmailSender({ crm, followups, access, log: rt.log, recordIdPrefix, orgDomains: orgDomainsOf(env.ORG_EMAIL_DOMAINS), nda });
+  const sender = createEmailSender({ crm, followups, access, log: rt.log, recordIdPrefix, orgDomains: orgDomainsOf(env.ORG_EMAIL_DOMAINS),
+    nda: nda ?? createLeadNdaReader(crm), deck: null });
   G.__gzEmailSender = sender;
   return sender;
+}
+
+type PaperworkSvc = ReturnType<typeof createPaperwork>;
+type Hints = ReturnType<typeof createHintReader>;
+const P = globalThis as typeof globalThis & { __gzPaperwork?: PaperworkSvc; __gzHints?: Hints };
+
+/** The lead page's paperwork row writer (M12-S11/S12). Needs the same configuration as email. */
+export function paperworkService(env: NodeJS.ProcessEnv = process.env): PaperworkSvc {
+  if (P.__gzPaperwork) return P.__gzPaperwork;
+  if (!emailConfigured(env)) throw new Error("Paperwork is not configured.");
+  const rt = dataRuntime();
+  const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
+  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  const sessions = userSessions(env);
+  const access = sessionAccess(async (sid) => {
+    const r = await sessions.credential(sid);
+    return r.ok ? { credential: r.credential, session: r.session } : null;
+  });
+  return (P.__gzPaperwork = createPaperwork({ crm, access, log: rt.log, recordIdPrefix, undoSecret: env.FOLLOWUP_UNDO_SECRET! }));
+}
+
+/** The IR-hint reader (M12-S11-T03), on the reader's own token. */
+export function hintReader(env: NodeJS.ProcessEnv = process.env): Hints {
+  if (P.__gzHints) return P.__gzHints;
+  if (!zohoSignInConfigured(env) || !/^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "")) throw new Error("Hints are not configured.");
+  const rt = dataRuntime();
+  const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
+  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  return (P.__gzHints = createHintReader({ crm, log: rt.log, recordIdPrefix }));
 }

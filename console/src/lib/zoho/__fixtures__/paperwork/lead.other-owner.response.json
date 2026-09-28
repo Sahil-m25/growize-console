@@ -1,0 +1,62 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996101",
+        "Modified_Time": "2026-09-27T09:00:00+05:30",
+        "Created_Time": "2026-09-01T10:00:00+05:30",
+        "Owner": {
+          "id": "9007199254740995009",
+          "name": "Other IR"
+        },
+        "Cover_By": null,
+        "Cover_Until": null,
+        "Lost_At": null,
+        "Consent_Call": true,
+        "Consent_WhatsApp": true,
+        "Consent_Email": true,
+        "NDA_Sign_Req_Id": "5550001000001",
+        "NDA_Verified_At": null,
+        "First_Touch_At": "2026-09-03T10:00:00+05:30",
+        "Qualified_At": null,
+        "Engaged_At": null,
+        "Said_Yes_At": null,
+        "Reserved_At": null,
+        "Fully_Paid_At": null,
+        "Allocated_At": null,
+        "Onboarded_At": null,
+        "NDA_Told_Via": "WhatsApp",
+        "NDA_Told_At": "2026-09-26T11:00:00+05:30",
+        "NDA_Told_By": {
+          "id": "9007199254740995001",
+          "name": "Synthetic IR"
+        },
+        "NDA_Chase_Count": null,
+        "NDA_Last_Chase_At": null,
+        "NDA_Last_Chase_Via": null,
+        "NDA_Said_At": null,
+        "NDA_Said_By": null,
+        "Supp_Told_Via": null,
+        "Supp_Told_At": null,
+        "Supp_Told_By": null,
+        "Supp_Chase_Count": null,
+        "Supp_Last_Chase_At": null,
+        "Supp_Last_Chase_Via": null,
+        "Supp_Said_At": null,
+        "Supp_Said_By": null,
+        "Supp_Draft_Version": null,
+        "Supp_Draft_Ref": null,
+        "Supp_Draft_At": null,
+        "Supp_Draft_By": null,
+        "Supp_Agreed_Ref": null,
+        "Supp_Agreed_Version": null,
+        "Supp_Agreed_At": null,
+        "Supp_Agreed_By": null
+      }
+    ]
+  }
+}

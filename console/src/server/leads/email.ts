@@ -14,9 +14,15 @@
  * notice to log the contact by hand (jev decide: a, 0.94 — PROVISIONAL).
  *
  * Plane B (the ops log) gets ids and reason codes only: never the subject, message, or any address.
+ *
+ * M12-S13-T01 — material follows the NDA. The NDA reader is the Lead's own stamp (NDA_Verified_At, set by Zoho
+ * Sign's completion filing or Finance's verification — createLeadNdaReader). Deck follow-up goes only through the
+ * deck mailer (send_mail with the approved deck attached); with none configured it is refused, never sent bare.
+ * After Zoho accepts a Deck follow-up, the Lead's Pitch_Deck_Sent_At (PROPOSED field) is set in the same request —
+ * only when empty, so a second deck email never makes a second material record — with one "material-sent" line.
  */
 
-import type { FromAddress, UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
+import type { FromAddress, SendMailRequest, UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailure, ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
@@ -53,6 +59,25 @@ export interface NdaReader {
   signed(credential: UserCredential, leadId: string, signal?: AbortSignal): Promise<boolean>;
 }
 
+/** The NDA reader over the Lead's own stamp, on the sender's token. A failed read is "not signed" (shut). */
+export function createLeadNdaReader(crm: Pick<ZohoClient, "getRecord">): NdaReader {
+  return {
+    async signed(credential, leadId, signal) {
+      const r = await crm.getRecord(credential, LEADS_MODULE, leadId, { fields: ["NDA_Verified_At"], signal });
+      return r.ok && !!r.value && typeof r.value.NDA_Verified_At === "string" && DATETIME.test(r.value.NDA_Verified_At);
+    },
+  };
+}
+
+/** The Deck follow-up template key, and the Lead stamp its send sets (PROPOSED field — M12-S13 Zoho config). */
+export const DECK_TEMPLATE = "deck";
+export const PITCH_DECK_FIELD = "Pitch_Deck_Sent_At";
+
+/** send_mail with the approved pitch deck attached (MA4 deck file; the client's attachment support). */
+export interface DeckMailer {
+  send(credential: UserCredential, leadId: string, mail: SendMailRequest, signal?: AbortSignal): ReturnType<ZohoClient["sendMail"]>;
+}
+
 export interface EmailCommand {
   readonly leadId: string;
   /** The lead's Modified_Time as the composer loaded it. */
@@ -68,11 +93,13 @@ export interface EmailCommand {
 
 export type EmailRefusal = "invalid-request" | "empty" | "too-long" | "unknown-template" | "nda-not-back" | "session-changed"
   | "capability-missing" | "not-visible" | "not-in-book" | "lead-changed" | "lead-lost" | "no-email" | "no-consent"
-  | "recipient-changed" | "no-org-address" | "sending" | "daily-limit" | "zoho-consent" | "not-sent" | "send-unconfirmed";
+  | "recipient-changed" | "no-org-address" | "sending" | "daily-limit" | "zoho-consent" | "not-sent" | "send-unconfirmed" | "deck-not-ready";
 
 export type EmailResult =
   | { readonly ok: true; readonly value: { readonly sent: true; readonly messageId: string | null; readonly from: string;
-      readonly touchRecorded: boolean; readonly touchId: string | null; readonly notice: string } }
+      readonly touchRecorded: boolean; readonly touchId: string | null; readonly notice: string;
+      /** Deck follow-up only: true when this send set Pitch deck sent, false when it was already set or could not be. */
+      readonly materialMarked?: boolean } }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: EmailRefusal; readonly reason: string }
   | { readonly ok: false; readonly kind: "source-error"; readonly source: "access" | "zoho"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
 
@@ -97,10 +124,11 @@ export const EMAIL_REASON: Readonly<Record<EmailRefusal, string>> = Object.freez
   "zoho-consent": "Not sent — Zoho refused: this address has opted out or has no email consent in Zoho.",
   "not-sent": "Not sent — Zoho refused the email.",
   "send-unconfirmed": "Zoho did not confirm the send. Check the lead's Emails list in Zoho before sending again.",
+  "deck-not-ready": "Not sent — the approved pitch deck is not on file to attach yet. Ask Digital Infrastructure.",
 });
 
 export interface EmailDependencies {
-  readonly crm: Pick<ZohoClient, "getRecord" | "sendMail" | "fromAddresses">;
+  readonly crm: Pick<ZohoClient, "getRecord" | "sendMail" | "fromAddresses"> & Partial<Pick<ZohoClient, "update">>;
   readonly followups: Pick<ReturnType<typeof createFollowups>, "save">;
   readonly access: FollowupAccessAuthority;
   readonly log: OpsLog;
@@ -108,6 +136,8 @@ export interface EmailDependencies {
   /** The org's mail domains (lower case), e.g. ["agresearchlabs.com"]. The sender's address must be on one. */
   readonly orgDomains: readonly string[];
   readonly nda?: NdaReader | null;
+  /** Deck follow-up sends only through this (the deck attached); absent → refused "deck-not-ready". */
+  readonly deck?: DeckMailer | null;
   readonly clock?: () => number;
 }
 
@@ -188,6 +218,8 @@ export function createEmailSender(deps: EmailDependencies) {
         try { signed = deps.nda ? (await deps.nda.signed(cred, lead, signal)) === true : false; } catch { signed = false; }
         if (!signed) return refuse(me, "nda-not-back", [lead]);
       }
+      const isDeck = c.template === DECK_TEMPLATE;
+      if (isDeck && (!deps.deck || typeof deps.deck.send !== "function")) return refuse(me, "deck-not-ready", [lead]);
 
       // ---- from: the sender's own primary mailbox on the org's domain
       let addrs: Awaited<ReturnType<typeof crm.fromAddresses>>;
@@ -200,11 +232,12 @@ export function createEmailSender(deps: EmailDependencies) {
       // ---- send (never retried: a mail may have left)
       let sent: Awaited<ReturnType<typeof crm.sendMail>>;
       try {
-        sent = await crm.sendMail(cred, LEADS_MODULE, lead, {
+        const mail: SendMailRequest = {
           from: from.userName ? { email: from.email, userName: from.userName } : { email: from.email },
           to: [typeof L.Full_Name === "string" && L.Full_Name.trim() && L.Full_Name.length <= 200 ? { email: to, userName: L.Full_Name.trim() } : { email: to }],
           subject, content: message, format: "text",
-        }, { signal });
+        };
+        sent = isDeck ? await deps.deck!.send(cred, lead, mail, signal) : await crm.sendMail(cred, LEADS_MODULE, lead, mail, { signal });
       } catch { return refuse(me, "send-unconfirmed", [lead]); }
       if (!sent.ok) {
         const f = sent.error, code = codeOf(f);
@@ -220,10 +253,32 @@ export function createEmailSender(deps: EmailDependencies) {
       // ---- the touch, once, through the follow-up writer
       const now = clock();
       let modified = c.expectedModifiedTime;
+      let deckAlready: boolean | null = null;
       try {
-        const again = await crm.getRecord(cred, LEADS_MODULE, lead, { fields: ["Modified_Time"], signal });
-        if (again.ok && again.value && typeof again.value.Modified_Time === "string" && DATETIME.test(again.value.Modified_Time)) modified = again.value.Modified_Time;
+        const again = await crm.getRecord(cred, LEADS_MODULE, lead, { fields: isDeck ? ["Modified_Time", PITCH_DECK_FIELD] : ["Modified_Time"], signal });
+        if (again.ok && again.value && typeof again.value.Modified_Time === "string" && DATETIME.test(again.value.Modified_Time)) {
+          modified = again.value.Modified_Time;
+          if (isDeck) deckAlready = typeof again.value[PITCH_DECK_FIELD] === "string" && again.value[PITCH_DECK_FIELD] !== "";
+        }
       } catch { /* keep the loaded one; the writer refuses if it moved */ }
+      // ---- M12-S13: the deck went, so Pitch deck is sent — set once (idempotent), guarded, before the touch
+      let materialMarked: boolean | undefined;
+      if (isDeck) {
+        materialMarked = false;
+        if (deckAlready === false) {
+          try {
+            const put = await crm.update!(cred, LEADS_MODULE, lead, { [PITCH_DECK_FIELD]: zohoTime(clock()) }, { ifUnmodifiedSince: modified, signal });
+            if (put.ok) {
+              materialMarked = true;
+              if (put.value.modifiedTime && DATETIME.test(put.value.modifiedTime)) modified = put.value.modifiedTime;
+              try { log.event?.({ at: clock(), actor: { kind: "user", userId: me }, action: "material-sent", reason: "pitch-deck", recordIds: [lead] }); } catch { /* never blocks */ }
+            }
+          } catch { /* reported below */ }
+        }
+        if (deckAlready === null || (deckAlready === false && !materialMarked)) {
+          log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-email", reason: "material-not-marked", recordIds: [lead] });
+        }
+      }
       const planned = typeof L.Next_Step_At === "string" && L.Next_Step_At !== "";
       const keep = planned && L.Next_Step_Channel !== "Email";
       const scheduled = c.scheduled ?? null;
@@ -240,9 +295,10 @@ export function createEmailSender(deps: EmailDependencies) {
       if (!saved || !saved.ok) {
         log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-email", reason: "touch-not-recorded", recordIds: [lead] });
         return { ok: true, value: { sent: true, messageId, from: from.email, touchRecorded: false, touchId: null,
-          notice: "Email sent. The contact could not be recorded — add it with 'Log a contact'." } };
+          notice: "Email sent. The contact could not be recorded — add it with 'Log a contact'.", ...(isDeck ? { materialMarked } : {}) } };
       }
-      return { ok: true, value: { sent: true, messageId, from: from.email, touchRecorded: true, touchId: saved.value.touchId, notice: "Email sent" } };
+      return { ok: true, value: { sent: true, messageId, from: from.email, touchRecorded: true, touchId: saved.value.touchId, notice: "Email sent",
+        ...(isDeck ? { materialMarked } : {}) } };
     } finally {
       inFlight.delete(key);
     }
