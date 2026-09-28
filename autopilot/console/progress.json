@@ -1743,32 +1743,36 @@
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "5ab7650"
    ],
-   "at": "2026-09-27T22:56:24.642Z",
-   "note": "Jev run 28 Sep: app 2/7 vs prototype 2/7",
+   "at": "2026-09-28T11:38:53.855Z",
+   "note": "Teams API built and tested; waiting on the Teams page and Jev UI run.",
    "notes": 4
   },
   "M13-S05": {
    "status": "pending",
    "attempts": 0,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "zoho": "waiting"
    },
    "phase_attempts": {
     "fe": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "5ab7650"
    ],
-   "at": "2026-09-27T22:56:24.971Z",
-   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1",
+   "at": "2026-09-28T11:38:53.997Z",
+   "note": "Request-to-Case and reply delivery built; waiting on the app sending investor_contact_id, MA1 and the reply thread UI.",
    "notes": 7
   },
   "M16-S02": {
@@ -2146,7 +2150,16 @@
   "M12-S01": {
    "status": "pending",
    "attempts": 0,
-   "notes": 5
+   "notes": 5,
+   "phases": {
+    "zoho": "waiting"
+   },
+   "phase_attempts": {},
+   "at": "2026-09-28T11:38:53.712Z",
+   "note": "Scoped reads built and tested; waiting on sharing setup (T02), a Documents module decision and the DOCS tab.",
+   "commits": [
+    "5ab7650"
+   ]
   }
  },
  "subtasks": {
@@ -3485,6 +3498,26 @@
   "M11-S03-T02": {
    "status": "done",
    "at": "2026-09-28T11:38:39.823Z",
+   "phase": "zoho"
+  },
+  "M12-S01-T03": {
+   "status": "done",
+   "at": "2026-09-28T11:38:53.712Z",
+   "phase": "zoho"
+  },
+  "M17-S01-T01": {
+   "status": "done",
+   "at": "2026-09-28T11:38:53.855Z",
+   "phase": "zoho"
+  },
+  "M13-S05-T01": {
+   "status": "done",
+   "at": "2026-09-28T11:38:53.997Z",
+   "phase": "zoho"
+  },
+  "M13-S05-T03": {
+   "status": "done",
+   "at": "2026-09-28T11:38:53.997Z",
    "phase": "zoho"
   }
  },
@@ -6188,6 +6221,30 @@
    "status": "waiting",
    "hours": 3,
    "note": "Shelf built and tested; waiting on LLP roll-ups (T01) and the Farms tiles."
+  },
+  {
+   "at": "2026-09-28T11:38:53.712Z",
+   "story": "M12-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 4,
+   "note": "Scoped reads built and tested; waiting on sharing setup (T02), a Documents module decision and the DOCS tab."
+  },
+  {
+   "at": "2026-09-28T11:38:53.855Z",
+   "story": "M17-S01",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 3,
+   "note": "Teams API built and tested; waiting on the Teams page and Jev UI run."
+  },
+  {
+   "at": "2026-09-28T11:38:53.997Z",
+   "story": "M13-S05",
+   "phase": "zoho",
+   "status": "waiting",
+   "hours": 6,
+   "note": "Request-to-Case and reply delivery built; waiting on the app sending investor_contact_id, MA1 and the reply thread UI."
   }
  ],
  "last_regression_round": 0,
