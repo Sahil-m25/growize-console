@@ -39,6 +39,14 @@ if (diagnostics.length) {
   console.error(ts.formatDiagnostics(diagnostics, { getCanonicalFileName: (f) => f, getCurrentDirectory: () => consoleRoot, getNewLine: () => '\n' }));
   process.exit(1);
 }
+/* user-session asks the front end's own access policy (../access/policy -> @/lib/...): map `@/` onto the emitted tree */
+const Module = require('node:module');
+process.env.NODE_PATH = path.join(consoleRoot, 'node_modules');   /* the emitted tree lives in tmp; `react` etc. come from here */
+Module._initPaths();
+const resolveFilename = Module._resolveFilename;
+Module._resolveFilename = function (request, ...rest) {
+  return resolveFilename.call(this, request.startsWith('@/') ? path.join(outDir, request.slice(2)) : request, ...rest);
+};
 const load = (f) => require(path.join(outDir, f));
 const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createGate } = load('lib/zoho/gate.js');
@@ -195,7 +203,7 @@ test('every accepted non-administrator seat maps to its console seat token', asy
     'head-of-finance': 'head', 'finance-operations': 'fin', 'compliance-audit': 'comp', 'head-of-account-management': 'amlead',
     'key-account-manager': 'kam', viewer: 'exec' };
   for (const [zseat, seat] of Object.entries(want)) {
-    const h = harness({ user: accepted(zseat), grants: { hasGrantedPage: () => true } });
+    const h = harness({ user: accepted(zseat), grants: { grantsOf: () => ({ leads: ['view'] }) } });
     const { result } = await signIn(h);
     assert.equal(result.ok, true, zseat);
     assert.equal(result.session.seat, seat, zseat);
@@ -275,7 +283,7 @@ test('T03: a granted-only seat with no granted page is refused with the grant me
     assert.equal(h.planeCSink.events()[0].reason, 'no-grant');
     assert.equal(h.calls.revoke.length, 1);
   }
-  const throwing = harness({ user: accepted('viewer'), grants: { hasGrantedPage: () => { throw new Error('store down'); } } });
+  const throwing = harness({ user: accepted('viewer'), grants: { grantsOf: () => { throw new Error('store down'); } } });
   assert.equal((await signIn(throwing)).result.code, 'no-grant', 'a grant lookup that fails, fails closed');
 });
 
@@ -380,4 +388,59 @@ test('redirect URI must be exact https (http only on localhost)', () => {
   for (const bad of ['http://console.example.invalid/cb', 'https://x.invalid/cb?next=/', 'https://u:p@x.invalid/cb', 'not a url', 42]) {
     assert.throws(() => redirectUriOf(bad), String(bad));
   }
+});
+
+/* ---- M03-S01-T02: the callback's door is the front end's own rule (signInAdmits via ../access/policy) ---- */
+
+test('M03-S01: every Zoho seat through the callback — admitted, or refused with the named message', async () => {
+  const want = {
+    'ir-manager': 'conv', 'investor-relations': 'ir',                     /* lead side, by default */
+    'head-of-finance': 'head', 'finance-operations': 'fin', 'compliance-audit': 'comp', /* Investors side (Finance lands there) */
+    'head-of-account-management': 'amlead', 'key-account-manager': 'kam',
+    'business-unit-owner': 'no-grant', 'channel-partner': 'no-grant', viewer: 'no-grant', /* granted-only, no grant yet */
+  };
+  assert.deepEqual(Object.keys(want).sort(), seats.accepted.map((c) => c.seat).sort(), 'every accepted fixture seat is covered');
+  for (const [zseat, expect] of Object.entries(want)) {
+    const h = harness({ user: accepted(zseat) });
+    const { result } = await signIn(h);
+    if (expect === 'no-grant') {
+      assert.deepEqual(result, { ok: false, code: 'no-grant', message: SIGNIN_REFUSALS['no-grant'] }, zseat);
+      assert.equal(h.calls.revoke.length, 1, zseat);
+    } else {
+      assert.equal(result.ok, true, zseat);
+      assert.equal(result.session.seat, expect, zseat);
+    }
+  }
+  for (const c of seats.administratorRefused) {                         /* CEO, Digital Infrastructure (Administrator) */
+    const { result } = await signIn(harness({ user: withIdentity(c.body) }));
+    assert.deepEqual(result, { ok: false, code: 'no-seat', message: SIGNIN_REFUSALS['no-seat'] }, c.mappedSeat);
+  }
+});
+
+test('M03-S01: a grant must be a real screen with See it, inside the seat\'s ceiling', async () => {
+  const cases = [
+    ['viewer', { leads: ['view'] }, true],
+    ['viewer', { leads: ['edit'] }, false],            /* no "See it": not a page */
+    ['viewer', { me: ['view'] }, false],               /* Profile alone is never a grant */
+    ['channel-partner', { numbers: ['view'] }, false], /* outside a channel partner's ceiling */
+    ['channel-partner', { leads: ['view'] }, true],
+    ['business-unit-owner', { today: ['view'] }, false], /* seatShape: Today is an IR operator's page only */
+    ['business-unit-owner', { pay: ['view'] }, true],
+  ];
+  for (const [zseat, grid, ok] of cases) {
+    const { result } = await signIn(harness({ user: accepted(zseat), grants: { grantsOf: () => grid } }));
+    assert.equal(result.ok, ok, `${zseat} ${JSON.stringify(grid)}`);
+    if (!ok) assert.equal(result.code, 'no-grant');
+  }
+});
+
+test('M03-S01: a grant taken back ends the session at the next refresh as revoked', async () => {
+  let grid = { leads: ['view'] };
+  const h = harness({ user: accepted('viewer'), grants: { grantsOf: () => grid } });
+  const { result } = await signIn(h);
+  assert.equal(result.ok, true);
+  grid = {};
+  h.clock.advance(3_600_000);
+  assert.deepEqual(await h.sessions.credential(result.sid), { ok: false, why: 'revoked' });
+  assert.equal(h.store.size(), 0);
 });

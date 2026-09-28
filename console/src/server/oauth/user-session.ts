@@ -10,7 +10,9 @@
  *      enforces a 12-hour absolute life. A refresh Zoho refuses — or a refreshed CurrentUser that no
  *      longer resolves to the same person on the same seat — ends the session as 'revoked'.
  * T03  A Zoho user with no seat, or a granted-only seat with no granted page, is refused with a
- *      named message; their token is revoked, never kept; Plane C records the refusal.
+ *      named message; their token is revoked, never kept; Plane C records the refusal. Since
+ *      M03-S01-T02 the door is the front end's own rule (signInAdmits via ../access/policy), asked
+ *      again on every refresh, so a grant taken back ends the session as 'revoked'.
  *
  * The cookie carries only an opaque id; the store is keyed by its hash. Nothing here logs a token,
  * a code, an email or a body: Plane B gets call lines, Plane C gets who (a Zoho user id) / what /
@@ -22,6 +24,7 @@ import type { Gate } from "../../lib/zoho/gate";
 import type { LogActor, OpsLog } from "../../lib/zoho/log";
 import type { PlaneCLog } from "../identity/plane-c";
 import { idHash, pkceChallenge, randomToken, sameToken, type Sealer } from "./crypto";
+import { admitZohoSeat, NO_GRANTS, readGrants, ZOHO_SEAT_SIDES, type GrantReader } from "../access/policy";
 import type { ZohoSeat, ZohoSeatDirectory } from "./seat";
 import type { TokenGrant, ZohoAccounts } from "./zoho-accounts";
 
@@ -54,7 +57,8 @@ export const CONSOLE_SEAT: Readonly<Record<ZohoSeat, string | null>> = Object.fr
   viewer: "exec",
 });
 
-/** D60 / BYGRANT: these seats sign in only while Digital Infrastructure has granted them a page. */
+/** D60 / BYGRANT: these seats sign in only while Digital Infrastructure has granted them a page
+ *  (informational; admission itself is asked of the front-end policy via ../access/policy). */
 export const GRANT_ONLY_SEATS: ReadonlySet<string> = new Set(["exec", "bu", "corp", "cp"]);
 
 export type RefusalCode = "no-seat" | "no-grant" | "cancelled" | "failed";
@@ -98,12 +102,10 @@ export function createMemorySessionStore(): SessionStore & { readonly size: () =
   });
 }
 
-/** Whether a granted-only seat holds at least one granted page (M03-S02 owns the grants). */
-export interface GrantDirectory {
-  hasGrantedPage(zohoUserId: string, seat: string): Promise<boolean> | boolean;
-}
-/** Until grants are stored (M03-S02), no granted-only seat holds a page: they are refused, fail closed. */
-export const NO_GRANTS: GrantDirectory = Object.freeze({ hasGrantedPage: () => false });
+/** The pages granted to a person by name (M03-S02 owns the grants); see ../access/policy. */
+export type GrantDirectory = GrantReader;
+/** Until grants are stored (M03-S02), nobody holds a page: granted-only seats are refused, fail closed. */
+export { NO_GRANTS };
 
 export interface UserSessionDeps {
   readonly accounts: ZohoAccounts;
@@ -191,6 +193,12 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     }
   }
 
+  /** D60 door: the front-end rule (signInAdmits) over this Zoho user's seat and their grants. */
+  async function admit(zseat: ZohoSeat, who: string) {
+    const grants = await readGrants(d.grants, who, ZOHO_SEAT_SIDES[zseat].lead);
+    return admitZohoSeat(zseat, who, grants);
+  }
+
   async function end(key: string, rec: StoredSession, why: SignOutWhy, revoke: boolean): Promise<void> {
     live.delete(key);
     await d.store.delete(key);
@@ -226,7 +234,9 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     const id = await identify(r.value);
     if (id === null) return { ok: false, why: null, unavailable: true };
     const seat = id.resolution.ok ? CONSOLE_SEAT[id.resolution.value.seat] : null;
-    if (id.credential.userId !== rec.who || seat !== rec.seat) {
+    const still = id.resolution.ok && id.credential.userId === rec.who
+      && (await admit(id.resolution.value.seat, rec.who)).ok;
+    if (id.credential.userId !== rec.who || seat !== rec.seat || !still) {
       await end(key, rec, "revoked", true);
       return { ok: false, why: "revoked" };
     }
@@ -275,21 +285,12 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
         return refuse("no-seat", id.resolution.reason, who, null);
       }
       const seat = CONSOLE_SEAT[id.resolution.value.seat];
-      if (seat === null) {
+      const admission = await admit(id.resolution.value.seat, who);
+      if (seat === null || !admission.ok) {
         await revokeQuietly(grant.refresh_token, who);
-        return refuse("no-seat", "administrator-profile", who, null);
-      }
-      if (GRANT_ONLY_SEATS.has(seat)) {
-        let granted = false;
-        try {
-          granted = (await d.grants.hasGrantedPage(who, seat)) === true;
-        } catch {
-          granted = false;
-        }
-        if (!granted) {
-          await revokeQuietly(grant.refresh_token, who);
-          return refuse("no-grant", "no-grant", who, seat);
-        }
+        return admission.ok
+          ? refuse("no-seat", "administrator-profile", who, null)
+          : refuse(admission.code, admission.reason, who, admission.code === "no-grant" ? seat : null);
       }
 
       const sid = randomToken();
