@@ -6,14 +6,15 @@
 
 import type { KeyboardEvent } from "react";
 import {
-  ageing, banked, bookOf, cadence, cared, cOf_all, forfeitExposure, I, inr, isAM, KAMS, lastC, may,
-  money, needsKam, outstandingReserved, overdue, pageReadable, poolBook, PROGRAMME_UNITS, quiet,
-  readBook, ROLE, secOf, stuckDocs, tierOf, TIERS, UNIT, who, FORFEIT, aged, day6,
+  bookOf, cadence, cared, cOf_all, fmtDay, I, inr, isAM, KAMS, lastC, may,
+  money, needsKam, overdue, pageReadable, poolBook, quiet,
+  readBook, ROLE, secOf, tierOf, TIERS, FORFEIT, aged,
 } from "@/lib/im";
 import type { ImInvestor, ImState } from "@/lib/im";
-import { ImPname, ImSecBar, KycTag, ProvIR, type ImPageProps } from "../common";
-
-const pct = (v: number, target: number) => Math.round(v / target * 100);
+import { useApiRead, type Read } from "@/lib/data/api";
+import { investorsSection, investorsSideOffer, type SectionValue } from "@/lib/data/endpoints/numbers";
+import type { InvestorsSideSection } from "@/server/numbers/investors-side";
+import { ImPname, ImSecBar, ProvIR, type ImPageProps } from "../common";
 
 /* amCards(book, mine) — imx.js 1394–1411 */
 function AmCards({ s, me, book, mine }: { s: ImState; me: string; book: ImInvestor[]; mine: boolean }) {
@@ -43,89 +44,107 @@ function AmCards({ s, me, book, mine }: { s: ImState; me: string; book: ImInvest
   );
 }
 
+const LABEL: Record<InvestorsSideSection, string> = { cash: "Collection", risk: "At risk", paper: "Paper", comp: "Compliance", svc: "Service" };
+/** a date from the route ("2026-08-26T…") or the book ("26 Aug 10:00") as "26 Aug" */
+const dayText = (t: string | null | undefined): string =>
+  !t ? "—" : /^\d{4}-\d{2}-\d{2}/.test(t) ? fmtDay(Date.parse(t.slice(0, 10) + "T00:00:00Z")) : t.slice(0, 6);
+const Wait = ({ r }: { r: Read<unknown> }) => r.state === "error"
+  ? <div className="note" role="alert">{r.err.error}</div> : <p className="sm" style={{ margin: "8px 0" }}>Loading…</p>;
+
 export function ImIns({ s, me, dispatch }: ImPageProps) {
+  const book = { s, me };
+  const offer = useApiRead(investorsSideOffer, book, undefined);
+  const sections = offer.state === "ok" && offer.data.side ? offer.data.side.sections : [];
+  const S = secOf(s.ui.SEC, "ins", sections.map(k => ({ k })));
+  /* Compliance is read whenever it is offered (its tab carries the count); the open section is read on its own */
+  const compRead = useApiRead(investorsSection, book, sections.includes("comp") ? "comp" : null);
+  const secRead = useApiRead(investorsSection, book, S === "comp" ? null : (S as InvestorsSideSection));
   if (!pageReadable(s, me, "ins")) return null;
   const am = isAM(s, me);
   const D = s.data;
-  const SECS = (am ? [] : [{ k: "cash", t: "Collection" }, { k: "risk", t: "At risk" }, { k: "paper", t: "Paper" },
-    { k: "comp", t: "Compliance", n: D.INV.filter(x => x.kyc !== "passed" || x.fema === "outstanding").length, warn: true }])
-    .concat([{ k: "svc", t: "Service", n: readBook(s, me).filter(x => cared(x) && quiet(s, me, x)).length, warn: true }]);
-  const S = secOf(s.ui.SEC, "ins", SECS);
-  const target = PROGRAMME_UNITS * UNIT, got = banked(s);
-  const due = outstandingReserved(s, me);
+  const SECS = sections.map(k => k === "svc" ? { k, t: LABEL[k], n: readBook(s, me).filter(x => cared(x) && quiet(s, me, x)).length, warn: true }
+    : k === "comp" ? { k, t: LABEL[k], ...(compRead.state === "ok" && compRead.data.section === "comp" ? { n: compRead.data.count } : {}), warn: true }
+      : { k, t: LABEL[k] });
   const goTxn = () => dispatch({ type: "go", v: "txn" });
   const goInv = (id: string) => dispatch({ type: "go", v: "inv", id });
+  const r: Read<SectionValue> = S === "comp" ? compRead : secRead;
+  void D;
 
   return (
     <>
       <div className="ph"><h1>Numbers</h1>
         <span className="sub">{am ? "how well the book is being looked after"
           : "the money side and the service side — the funnel lives on the lead side"}</span></div>
-      <ImSecBar s={s} dispatch={dispatch} v="ins" list={SECS} />
+      {offer.state !== "ok" ? <Wait r={offer} /> : null}
+      {SECS.length ? <ImSecBar s={s} dispatch={dispatch} v="ins" list={SECS} /> : null}
       <div className="secw">
-        {S === "cash" ? <Cash got={got} due={due} target={target} goTxn={goTxn} /> : null}
-        {S === "risk" ? <Risk s={s} me={me} /> : null}
-        {S === "paper" ? <Paper s={s} me={me} goInv={goInv} /> : null}
-        {S === "svc" ? <Svc s={s} me={me} /> : null}
-        {S === "comp" ? <Comp s={s} goInv={goInv} /> : null}
+        {S === "svc" ? <Svc s={s} me={me} /> : SECS.length && r.state !== "ok" ? <Wait r={r} />
+          : r.state === "ok" && r.data.section === "cash" ? <Cash v={r.data} goTxn={goTxn} />
+            : r.state === "ok" && r.data.section === "risk" ? <Risk v={r.data} />
+              : r.state === "ok" && r.data.section === "paper" ? <Paper v={r.data} goInv={goInv} />
+                : r.state === "ok" && r.data.section === "comp" ? <Comp v={r.data} goInv={goInv} /> : null}
       </div>
     </>
   );
 }
 
-function Cash({ got, due, target, goTxn }: { got: number; due: number; target: number; goTxn: () => void }) {
+const pct = (v: number, target: number) => (target > 0 ? Math.round(v / target * 100) : 0);
+
+function Cash({ v, goTxn }: { v: Extract<SectionValue, { section: "cash" }>; goTxn: () => void }) {
+  const c = v.collection, target = c.programme, got = c.banked, due = c.outstanding;
   const rows: [string, number, string][] = [["Banked", got, "var(--go)"], ["Committed and outstanding", due, "var(--due)"],
     ["Not yet sold", Math.max(0, target - got - due), "var(--card-2)"]];
   return (
     <div className="card"><div className="ch"><h3>Against the plan</h3><div className="sp"></div>
-      <span className="prov demo">the 208-unit target is the BU plan&apos;s, not the Investors side&apos;s</span></div><div className="cb">
+      <span className="prov demo">the {c.programmeUnits}-unit target is the BU plan&apos;s, not the Investors side&apos;s</span></div><div className="cb">
+      <div className="stats" style={{ margin: "0 0 12px" }}>
+        <div className="stat"><b>{money(got)}</b><span>banked</span></div>
+        <div className="stat"><b>{money(due)}</b><span>committed, not yet in</span></div>
+        <div className="stat"><b>{money(target)}</b><span>the full programme</span></div></div>
       <div className="stats" style={{ margin: "0 0 12px" }}><div className="stat"><b>{pct(got, target)}%</b><span>of the programme collected</span></div>
         <div className="stat"><b>{pct(due, target)}%</b><span>committed, not yet in</span></div>
         <div className="stat"><b>{pct(Math.max(0, target - got - due), target)}%</b><span>not yet sold</span></div></div>
-      <p className="sm" style={{ margin: "0 0 10px" }}>Shares of the 208-unit programme. The rupee amounts are on{" "}
+      <p className="sm" style={{ margin: "0 0 10px" }}>Shares of the {c.programmeUnits}-unit programme. The receipts behind them are on{" "}
         <a className="lnk" role="button" tabIndex={0} onClick={goTxn}
           onKeyDown={(e: KeyboardEvent) => { if (e.key === "Enter") goTxn(); }}>Payments</a>.</p>
-      {rows.map(([t, v, c]) => (
+      {rows.map(([t, x, col]) => (
         <div className="led" key={t}><span style={{ minWidth: 0 }}><b>{t}</b>
           <div className="bar" style={{ height: "8px", borderRadius: "5px", background: "var(--card-2)", overflow: "hidden", marginTop: "5px", width: "min(320px,100%)" }}>
-            <i style={{ display: "block", height: "100%", width: pct(v, target) + "%", background: c }}></i></div></span>
-          <span className="amt">{pct(v, target)}%</span></div>
+            <i style={{ display: "block", height: "100%", width: pct(x, target) + "%", background: col }}></i></div></span>
+          <span className="amt">{pct(x, target)}%</span></div>
       ))}
       <p className="sm" style={{ margin: "11px 0 0" }}>{"Banked is what has cleared. Committed is an advance held against a balance that has not — it is a liability until the rest lands, and it is never shown inside the banked figure."}</p>
     </div></div>
   );
 }
 
-function Risk({ s, me }: { s: ImState; me: string }) {
+function Risk({ v }: { v: Extract<SectionValue, { section: "risk" }> }) {
   return (
     <div className="card"><div className="ch"><h3>Balance ageing</h3><div className="sp"></div>
-      <span className="sm">{inr(forfeitExposure(s))} forfeit exposure</span></div><div className="cb">
-      {ageing(s, me).filter(g => g.n || g.a <= 1).map(g => (
-        <div className="led" key={g.a}>
-          <span className={`tag ${g.b <= 0 ? "late" : g.a === 1 ? "late" : g.a === 8 ? "due" : ""}`}>
-            {g.b <= 0 ? "overdue" : g.a === 31 ? "31 days +" : g.a + "–" + g.b + " days"}</span>
-          <span style={{ minWidth: 0 }}><b>{g.n} reservation{g.n === 1 ? "" : "s"}</b>
-            <div className="sm">{g.b <= 0 ? "the hold has already run out"
-              : g.a === 1 ? "the hold ends inside a week" : "hold ends in this window"}</div></span>
-          <span className="amt">{money(g.v)}</span></div>
-      ))}
+      <span className="sm">{money(v.due)} still due on money already part-paid</span></div><div className="cb">
+      {v.rows.length ? v.rows.map(g => (
+        <div className="led" key={g.allotmentId}>
+          <span className={`tag ${g.days !== null && g.days >= 30 ? "late" : g.days !== null && g.days >= 14 ? "due" : ""}`}>{g.days === null ? "—" : g.days + "d"}</span>
+          <span style={{ minWidth: 0 }}><b>{g.investor.name ?? g.allotmentId}</b>
+            <div className="sm">{money(g.received)} of {money(g.committed)} in · last receipt {dayText(g.lastReceiptOn)}</div></span>
+          <span className="amt">{money(g.due)}</span></div>
+      )) : <p className="sm" style={{ margin: 0 }}>No reservation has a balance still due against money already received.</p>}
       <p className="sm" style={{ margin: "11px 0 0" }}>{"Every reservation that lapses costs the investor " + inr(FORFEIT)
-        + " a unit and costs Growize a sale it had already counted. The first band is the only one worth anybody's morning."}</p>
+        + " a unit and costs Growize a sale it had already counted. The longest since a receipt is the first worth anybody's morning."}</p>
     </div></div>
   );
 }
 
-function Paper({ s, me, goInv }: { s: ImState; me: string; goInv: (id: string) => void }) {
-  const stuck = stuckDocs(s);
+function Paper({ v, goInv }: { v: Extract<SectionValue, { section: "paper" }>; goInv: (id: string) => void }) {
   return (
     <div className="card fill"><div className="ch"><h3>Out for signature, oldest first</h3></div><div className="cb">
-      {stuck.length ? stuck.map(({ d, age }) => (
-        <div className="led" key={d.id}>
-          <span className={`tag ${age >= 10 ? "late" : age >= 5 ? "due" : ""}`}>{age}d</span>
-          <span style={{ minWidth: 0 }}><b>{d.t}</b>
-            <div className="sm">{((I(s, me, d.inv) || { n: "" }).n || d.inv) + " · sent " + day6(d.sent) + " by "
-              + who(s, d.by).n.split(" ")[0] + " · " + (d.sig || "—") + (d.exp ? " · link expires " + d.exp : "")}</div></span>
-          <button className="chip" onClick={() => goInv(d.inv)}>Open</button></div>
+      {v.rows.length ? v.rows.map(d => (
+        <div className="led" key={d.key}>
+          <span className={`tag ${(d.daysOut ?? 0) >= 10 ? "late" : (d.daysOut ?? 0) >= 5 ? "due" : ""}`}>{d.daysOut === null ? "—" : d.daysOut + "d"}</span>
+          <span style={{ minWidth: 0 }}><b>{d.document}</b>
+            <div className="sm">{(d.party || d.recordId) + " · sent " + dayText(d.sentAt) + (d.sentBy ? " by " + d.sentBy.split(" ")[0] : "") + " · " + (d.method || "—")
+              + (d.expiresAt ? " · link expires " + dayText(d.expiresAt) : "") + (d.status ? " · " + d.status : "")}</div></span>
+          {d.contactId ? <button className="chip" onClick={() => goInv(d.contactId!)}>Open</button> : null}</div>
       )) : <p className="sm" style={{ margin: 0 }}>Nothing is out.</p>}
       <p className="sm" style={{ margin: "11px 0 0" }}>An expiring link that expires is a second send, a second
         chase and a fortnight. <ProvIR t="The chasing itself" /> belongs to the IR — this is the list
@@ -191,23 +210,22 @@ function Svc({ s, me }: { s: ImState; me: string }) {
   );
 }
 
-function Comp({ s, goInv }: { s: ImState; goInv: (id: string) => void }) {
+function Comp({ v, goInv }: { v: Extract<SectionValue, { section: "comp" }>; goInv: (id: string) => void }) {
   return (
     <div className="card fill"><div className="ch"><h3>Who is not compliant</h3></div><div className="tw"><table>
-      <thead><tr><th>Investor</th><th>KYC</th><th>PAN</th><th>Aadhaar</th><th>Bank match</th>
+      <thead><tr><th>Investor</th><th>KYC</th><th>PAN</th><th>Bank match</th>
         <th>FEMA</th><th>Blocks</th></tr></thead>
-      <tbody>{s.data.INV.map(x => (
-        <tr className="k" key={x.id} onClick={() => goInv(x.id)} tabIndex={0}>
-          <td><b>{x.n}</b><div className="sm mono">{x.id}</div></td>
-          <td><KycTag x={x} /></td>
-          <td>{x.pan ? <span className="tag go"><span className="dot"></span>on file</span> : <span className="tag late">missing</span>}</td>
-          <td>{x.aadh ? <span className="sm mono">•••• {x.aadh}</span>
-            : x.nri ? <span className="sm">n/a — non-resident</span> : <span className="tag late">missing</span>}</td>
-          <td>{(x.bank || { drop: "" }).drop === "matched" ? <span className="tag go"><span className="dot"></span>matched</span>
-            : <span className="tag due"><span className="dot"></span>{(x.bank || { drop: "" }).drop || "—"}</span>}</td>
-          <td>{x.nri ? (x.fema === "outstanding" ? <span className="tag late"><span className="dot"></span>outstanding</span>
+      <tbody>{v.rows.map(x => (
+        <tr className="k" key={x.contactId} onClick={() => goInv(x.contactId)} tabIndex={0}>
+          <td><b>{x.name ?? x.contactId}</b><div className="sm mono">{x.arlId ?? ""}</div></td>
+          <td>{x.kyc === "passed" || x.kyc === "na" ? <span className="tag go"><span className="dot" />KYC passed</span>
+            : x.kyc === "failed" ? <span className="tag late"><span className="dot" />KYC failed</span> : <span className="tag due"><span className="dot" />KYC pending</span>}</td>
+          <td>{x.missing.includes("pan-proof") ? <span className="tag late">missing</span> : <span className="tag go"><span className="dot"></span>on file</span>}</td>
+          <td>{x.missing.includes("bank-proof") ? <span className="tag due"><span className="dot"></span>not matched</span>
+            : <span className="tag go"><span className="dot"></span>matched</span>}</td>
+          <td>{x.nri ? (x.missing.includes("fema") ? <span className="tag late"><span className="dot"></span>outstanding</span>
             : <span className="tag go"><span className="dot"></span>on file</span>) : <span className="sm">n/a</span>}</td>
-          <td className="sm">{x.kyc !== "passed" ? "allotment" : x.fema === "outstanding" ? "allotment" : "—"}</td></tr>
+          <td className="sm">{x.blocks ?? "—"}</td></tr>
       ))}
       </tbody></table></div>
       <div className="cb" style={{ paddingTop: "9px" }}><p className="sm" style={{ margin: 0 }}>{"The last column is the point of the table: what is actually held up. Nothing here blocks a conversation or a reservation — it blocks "}<b>allotment</b>{", and it does so silently unless somebody reads this."}</p>

@@ -19,13 +19,16 @@ describe("Insights (vIns)", () => {
     expect(h).toContain('<a class="lnk" role="button" tabindex="0">Payments</a>');
   });
   it("At risk, Paper and Compliance", () => {
-    expect(text(render("harsha", "risk"))).toContain("₹2,50,000 forfeit exposure overdue 0 reservations the hold has already run out");
-    expect(text(render("harsha", "risk"))).toContain("Every reservation that lapses costs the investor ₹50,000 a unit and costs Growize a sale it had already counted. The first band is the only one worth anybody's morning.");
+    /* M16-S08-W1: the route lists part-paid reservations with the balance still due, oldest receipt first (no forfeit exposure, no hold bands) */
+    expect(text(render("harsha", "risk"))).toContain("Balance ageing ₹1.13 Cr still due on money already part-paid");
+    expect(text(render("harsha", "risk"))).toContain("Joseph Mathew ₹10 L of ₹1 Cr in · last receipt 22 Aug ₹90 L");
+    expect(text(render("harsha", "risk"))).toContain("Every reservation that lapses costs the investor ₹50,000 a unit and costs Growize a sale it had already counted. The longest since a receipt is the first worth anybody's morning.");
     const p = text(render("harsha", "paper"));
     expect(p).toContain("6d FEMA declaration Joseph Mathew · sent 26 Aug by Meena · Class 3 DSC · link expires 09 Sep Open");
     expect(p).toContain("The chasing itself belongs to the IR");
     const c = text(render("latha", "comp"));
-    expect(c).toContain("Joseph Mathew ARL-INV-0209 KYC pending on file n/a — non-resident");
+    /* the route's row carries what is missing, never an Aadhaar figure (rule 7): PAN on file, bank not matched, FEMA outstanding */
+    expect(c).toContain("Joseph Mathew ARL-INV-0209 KYC pending on file not matched outstanding allotment");
     expect(c).toContain("it blocks allotment , and it does so silently unless somebody reads this.");
   });
   it("Service: Finance head sees By manager; the Auditor does not", () => {
