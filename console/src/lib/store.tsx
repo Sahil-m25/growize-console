@@ -185,6 +185,12 @@ export function useConsole(): ConsoleCtx {
 
 /* ---- convenience hooks, all client-side ------------------------------------------------------- */
 
+/** reloadData, or a no-op where there is no provider (the render tests mount screens bare). */
+export function useReload(): () => void {
+  const c = useContext(Ctx);
+  return c ? c.reloadData : () => {};
+}
+
 export function useMe(): Person {
   const { state } = useConsole();
   return state.PEOPLE[state.WHO];

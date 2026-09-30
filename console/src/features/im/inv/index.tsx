@@ -4,13 +4,14 @@
    record. The record is built as one page with sections rather than a wall: who they are, what
    they hold, what they have paid, what paper exists, and the journey that got them here. */
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   invRows, isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView,
+  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView, fmtDay,
 } from "@/lib/im";
+import { EXTDAYS } from "@/domain";
 import type { ImInvestor } from "@/lib/im";
 import { DocTag, ImPname, ImSecBar, KycTag, Pii, ProvIR, StTag } from "../common";
 import type { ImPageProps, ImSec } from "../common";
@@ -20,8 +21,9 @@ import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
 import { SignCell } from "../paper2/SignCell";
 import { InvUploads } from "../paper2/Upload";
-import { useApiRead } from "@/lib/data/api";
+import { useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { investorRecord } from "@/lib/data/endpoints/investors";
+import { holdExtend, holdOne, holdRelease, type HoldOne } from "@/lib/data/endpoints/holds";
 import type { InvestorRecord, RecordSection } from "@/server/investors/record";
 
 const blocksText = (x: ImInvestor) => Object.entries(x.blocks).map(([k, n]) => "Block " + k + " ×" + n).join(", ");
@@ -110,6 +112,8 @@ function VInv({ s, me, dispatch }: ImPageProps) {
    counts on Care, Paper and Tickets are still the book's until their own units wire them. */
 function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   const { s, me, dispatch, x, rec } = p;
+  /* M08-S04-W1: the hold clock is GET /api/holds/[allotmentId] on the record's Reserved allotment (lib/data/endpoints/holds) */
+  const ho = useApiRead(holdOne, { s, me }, rec.holdings.find(h => h.status === "Reserved")?.id ?? null);
   if (!x) return null;
   const am = isAM(s, me), o = overdue(s, me, x), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
   const showMoney = rec.sections.includes("money");
@@ -126,7 +130,6 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   const v = "inv:" + x.id;
   const S = secOf(s.ui.SEC, v, SECS);
   const T = tierOf(x)!;
-  const hd = holdDays(s, x);
   const lc = lastC(s, me, x.id);
   const plural = (n: number) => (n > 1 ? "s" : "");
   return (
@@ -134,7 +137,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
       <div className="ph">
         <button className="btn" onClick={() => dispatch({ type: "go", v: "inv", id: null })} aria-label="Back to the list">←</button>
         <h1>{x.n}</h1><span className="mono sm">{x.id}</span>
-        <StTag x={x} />{showMoney ? <KycTag x={x} /> : null}{x.nri ? <span className="tag">NRI</span> : null}
+        <StTag x={x} st={rec.state} />{showMoney ? <KycTag x={x} /> : null}{x.nri ? <span className="tag">NRI</span> : null}
         {cared(x) ? <span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span> : null}
         <div className="sp" />
         <span className="sm">{x.units + " unit" + plural(x.units) + (showMoney ? " · " + money(x.units * UNIT) : "")}</span></div>
@@ -144,11 +147,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
           + (lc ? day6(lc.at) : "it was allotted") + " is the one that is surprised by everything."}</div> : null}
 
       {rec.fema === "outstanding" ? <div className="note bad" style={{ marginBottom: 8 }}><b>FEMA declaration outstanding.</b> An NRI holding cannot be allotted without one, whatever the money says. The declaration is out for signature and <ProvIR t="the IR is chasing it" />.</div> : null}
-      {x.st === "reserved" && hd != null ? <div className={`note ${hd <= 7 ? "bad" : "warn"}`} style={{ marginBottom: 8 }}>
-        <b>{money(due) + " " + (hd < 0 ? "is overdue — the hold ran out " + (-hd) + " day" + (hd === -1 ? "" : "s") + " ago"
-          : "due in " + hd + " day" + (hd === 1 ? "" : "s")) + "."}</b>
-        {" The hold " + (hd < 0 ? "ended" : "ends") + " " + x.hold + ". A lapse forfeits " + inr(FORFEIT * x.units)
-          + " and puts " + x.units + " unit" + plural(x.units) + " back on the shelf."}</div> : null}
+      {ho.state === "ok" ? <HoldBanner h={ho.data.hold} /> : null}
 
       <ImSecBar s={s} dispatch={dispatch} v={v} list={SECS} />
       <div className="secw">
@@ -156,7 +155,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         {/* M12-S09 — the record's emails sit under "Who they are" rather than as a section of their own,
             so the record keeps exactly the prototype's sections */}
         {S === "who" ? <InvEmails s={s} me={me} id={x.id} /> : null}
-        {S === "hold" ? <SecHold {...p} /> : null}
+        {S === "hold" ? <SecHold {...p} ho={ho} /> : null}
         {S === "care" ? <SecCare {...p} /> : null}
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
@@ -257,10 +256,64 @@ function SecWho(p: ImPageProps & { x: ImInvestor }) {
   );
 }
 
+const dayMon = (iso: string) => fmtDay(Date.parse(iso + "T00:00:00Z"));
+const plural1 = (n: number) => (n > 1 ? "s" : "");
+
+/* the record's hold banner, from the route's clock (M08-S04-T03): days left and the hold's end by the one IST function */
+function HoldBanner({ h }: { h: HoldOne["hold"] }) {
+  const d = h.daysLeft;
+  return (
+    <div className={`note ${d <= 7 ? "bad" : "warn"}`} style={{ marginBottom: 8 }}>
+      <b>{h.due != null ? money(h.due) + " " + (d < 0 ? "is overdue — the hold ran out " + (-d) + " day" + (d === -1 ? "" : "s") + " ago" : "due in " + d + " day" + (d === 1 ? "" : "s")) + "."
+        : d < 0 ? "The hold ran out " + (-d) + " day" + (d === -1 ? "" : "s") + " ago." : "The hold has " + d + " day" + (d === 1 ? "" : "s") + " left."}</b>
+      {" The hold " + (d < 0 ? "ended" : "ends") + " " + dayMon(h.holdEnds) + ". A lapse forfeits " + inr(h.forfeit)
+        + " and puts " + h.units + " unit" + plural1(h.units) + " back on the shelf."}</div>
+  );
+}
+
+/* Extend the hold / Release the reservation, each confirmed in the page, never confirm() (M08-S04-T03).
+   Which of the two the seat is offered is the route's answer (`offers`), not a rule read off the book. */
+function HoldActions({ s, me, dispatch, h }: ImPageProps & { h: HoldOne["hold"] }) {
+  const [step, setStep] = useState<"" | "release" | "extend">("");
+  const [days, setDays] = useState<number>(EXTDAYS[0]);
+  const [why, setWhy] = useState("");
+  const [done, setDone] = useState<string | null>(null);
+  const release = useApiWrite(holdRelease, { s, me }, dispatch), extend = useApiWrite(holdExtend, { s, me }, dispatch);
+  if (!h.offers.release && !h.offers.extend && !done) return null;
+  /* a refusal (fixture: the reducer's, live: the route's) lands in the in-page note through the endpoint */
+  return (
+    <div className="drwsec">
+      {step === "" && h.offers.release ? <button className="chip" onClick={() => setStep("release")}>Release the reservation</button> : null}
+      {step === "" && h.offers.extend ? <button className="chip" onClick={() => setStep("extend")}>Extend the hold</button> : null}
+      {step === "release" ? (
+        <div className="note warn" role="alertdialog" aria-label="Release the reservation">
+          <b>{"Release " + h.units + " unit" + plural1(h.units) + "?"}</b>
+          {" " + inr(h.onLapse?.forfeit ?? h.forfeit) + " is forfeit and " + inr(h.onLapse?.refund ?? 0) + " is refunded. The account stays open — they paid money and part of it was kept."}
+          <div className="chips" style={{ marginTop: 8 }}>
+            <button className="chip on" onClick={() => void release({ id: h.allotmentId }).then(r => { if (r.ok) { setStep(""); setDone(r.data.state === "released" ? "Released." : "Release sent for approval."); }; })}>Yes, release it</button>
+            <button className="chip" onClick={() => setStep("")}>Leave it</button></div></div>
+      ) : null}
+      {step === "extend" ? (
+        <div className="note" role="group" aria-label="Extend the hold">
+          <b>Extend the hold</b> — the new day is the old deadline plus the days you pick; Zoho&apos;s approval process holds it.
+          <div className="chips" style={{ margin: "8px 0" }}>{EXTDAYS.map(d => (
+            <button key={d} className={`chip ${days === d ? "on" : ""}`} aria-pressed={days === d} onClick={() => setDays(d)}>{d} days</button>))}</div>
+          <label className="fi"><span>Reason</span>
+            <input className="inp" value={why} maxLength={500} onChange={e => setWhy(e.target.value)} /></label>
+          <div className="chips" style={{ marginTop: 8 }}>
+            <button className="chip on" disabled={!why.trim()} onClick={() => void extend({ id: h.allotmentId, days, reason: why.trim(), expectedModifiedTime: h.modifiedTime }).then(r => {
+              if (r.ok) { setStep(""); setWhy(""); setDone(r.data.state === "extended" ? "Extended to " + dayMon(r.data.to) + "." : "Extension to " + dayMon(r.data.to) + " sent for approval."); }; })}>Ask for the extension</button>
+            <button className="chip" onClick={() => setStep("")}>Leave it</button></div></div>
+      ) : null}
+      {done ? <p className="sm" style={{ margin: "8px 0 0" }} role="status">{done}</p> : null}
+    </div>
+  );
+}
+
 /* vOne → "hold", and the app account — imx.js 1619–1681 */
-function SecHold(p: ImPageProps & { x: ImInvestor }) {
-  const { s, me, dispatch, x } = p;
-  const hd = holdDays(s, x), due = dueBy(s, me, x.id);
+function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne> }) {
+  const { s, me, dispatch, x, ho } = p;
+  const due = dueBy(s, me, x.id);
   const a = appOf(s, me, x.id);
   return (
     <>
@@ -277,23 +330,19 @@ function SecHold(p: ImPageProps & { x: ImInvestor }) {
               );
             })
             : <span className="tag late">none — the units went back on the shelf</span>}</dd>
-          <dt>State</dt><dd>{x.st === "allocated"
+          <dt>State</dt><dd>{x.st === "said yes" ? "Said yes. Nothing is reserved yet — the supplementary agreement is the next step, then the advance."
+            : x.st === "allocated"
             ? "Allotted. The units are theirs and the allocation letter is on file."
             : x.st === "paid" ? "Paid in full and awaiting allotment — the letter is the last step."
               : x.st === "reserved" ? "Reserved against the advance. Not allotted until the balance lands."
                 : "Lapsed. The reservation ran out and the land went back on the shelf."}</dd>
         </dl>
         <div className="note">An advance reserves; it does not allot. Until the balance is in, these units are held against a liability and the portal says so on every screen that shows them — which is why <b>reserved</b> and <b>allocated</b> are different words here and never used loosely.</div>
-        {x.st === "reserved" && may(s, me, "refund") && hd != null && hd < 0 ? <div className="drwsec">
-          <button className="chip" onClick={() => dispatch({ type: "lapseHold", id: x.id })}>Release the reservation</button>
-          <p className="sm" style={{ margin: "8px 0 0" }}>{"The hold ran out " + (-hd) + " day" + (hd === -1 ? "" : "s") + " ago."}</p>
-        </div> : null}
+        {ho.state === "ok" ? <HoldActions {...p} h={ho.data.hold} /> : null}
       </div></div>
       <AllotCard {...p} />
       {!a ? (
-        <div className="card fill"><div className="ch">
-          <h3>The app account</h3></div><div className="cb"><p className="sm" style={{ margin: 0 }}>{"Nothing has been received from " + x.n
-            + " yet, so there is no account. It is created by the first confirmed receipt — not by anybody here — along with the welcome."}</p></div></div>
+        <p className="sm" style={{ margin: "8px 0" }}>The app account opens when the first receipt is matched — recording a receipt does not open it.</p>
       ) : (() => {
         const lock = markLocked(s, me, x.id), left = markLeft(s, me, x.id), perm = a.mark === "permanent";
         return (

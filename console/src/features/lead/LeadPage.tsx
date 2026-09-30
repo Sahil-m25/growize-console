@@ -20,7 +20,7 @@ import type { DrawerKind } from "@/lib/store";
 import { DAY, dISOtoDisp, hhmm, iso, money, nowT, plusD, when, whenT } from "@/lib/format";
 import {
   active, canAssign, canClaim, canDecideMove, canLose, canNote, canOperateLeads, canPlan, canReach,
-  canReadFinance, canReopen, canWork, channelForAction, claimOf, conFor, covOf, fcOf, gateWait, hasNext,
+  canReadFinance, canReopen, canWork, channelForAction, claimOf, conFor, covOf, fcOf, GATES, hasNext,
   inReservation, isIR, lost, ndaOK, nextUp, nxDue, nxWhen, openable, P, paperNow, ph, pr, prChases,
   ragOf, seeMoney, stepOwner, undoStage, watching, whyLocked,
 } from "@/lib/selectors";
@@ -36,6 +36,8 @@ import {
 } from "./lp";
 import type { LpNotice } from "./reducer";
 import { say } from "./Live";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { holdDay, leadEmailSend, leadGate } from "@/lib/data/endpoints/lead";
 import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
 import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
 import { LeadEmails } from "@/features/im/paper2/Emails";   /* M12-S09 */
@@ -223,8 +225,11 @@ function emDraftOf(state: Ctx["state"], l: Lead): EmDraft {
   return emUse(l, emTplFor(l, nda, state.SENT[l.id] as Record<string, string> | undefined), meName);
 }
 function LpComposer({ l }: { l: Lead }) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const lp = useLp(l);
+  /* M07-S05-W1: Send is POST /api/leads/[id]/email (lib/data/endpoints/lead) */
+  const send = useApiWrite(leadEmailSend, state, dispatch);
+  const live = useApiMode() === "live";
   const d = emDraftOf(state, l);
   const setD = (patch: Partial<EmDraft>) => {
     const EM = { ...((state.ui.EM as Record<string, EmDraft> | undefined) || {}) };
@@ -250,7 +255,19 @@ function LpComposer({ l }: { l: Lead }) {
         ? <textarea className="lp-mail" rows={8} aria-label="Message" value={d.b} onChange={(e) => setD({ b: e.target.value })} />
         : <div className="lp-preview">{d.b.split("\n").filter(Boolean).slice(0, 4).join("\n")}…<button type="button" className="lp-link" onClick={() => setD({ body: true })}>Edit message</button></div>}
       {d.err ? <p className="lp-err" role="alert">{d.err}</p> : null}
-      <div className="lp-ask"><button type="button" className="act" onClick={() => { if (lp.f) dispatch({ type: "emSend", id: l.id, tpl: d.tpl, s: d.s, b: d.b }); }}>Send email</button></div>
+      <div className="lp-ask"><button type="button" className="act" onClick={() => {
+        if (!lp.f) return;
+        void send({ id: l.id, expectedModifiedTime: l.mt ?? null, to: l.em, tpl: d.tpl, s: d.s, b: d.b }).then(r => {
+          /* fixture: the reducer has already closed the composer or shown its own refusal; live: the route's answer is the page's */
+          if (!live) return;
+          if (r.ok) {
+            const EM = { ...((state.ui.EM as Record<string, EmDraft> | undefined) || {}) }; delete EM[l.id];
+            dispatch({ type: "setUi", patch: { EM, LP: null, FU: null, LPNOTICE: { who: state.WHO, id: l.id, msg: r.data.notice, snap: null, label: "", t: Date.now() } } });
+            reloadData();
+          }
+          else setD({ err: r.error });
+        });
+      }}>Send email</button></div>
     </div>
   );
 }
@@ -369,6 +386,8 @@ export function LeadPage({ id }: { id: string }) {
   }, [fileDrw, state.ui.FILEON, dispatch]);
 
   const lpl = useLp(l0 || ({ id } as Lead));
+  /* M08-S02-W1: the finance gate on the next rung is GET /api/leads/[id]/gate (lib/data/endpoints/lead) */
+  const gate = useApiRead(leadGate, state, l0 ? l0.id : null);
   /* g1LeadFlow(id,what,channel) — ir-merged.js:4215: a Today contact button lands here and the
      page opens its own logging flow on that channel (lpOpen), once. */
   const hand = state.ui.LPFLOW as { id: string; what: "log" | "email"; channel?: string | null } | null | undefined;
@@ -431,16 +450,23 @@ export function LeadPage({ id }: { id: string }) {
   if (cv) al("cov", "due", <><b>{P(state.PEOPLE, cv.by).n} is covering</b> for {P(state.PEOPLE, l.own).n} until {cv.to}.</>);
   if (r && r.state === "waiting") al("req", "due", <><b>{P(state.PEOPLE, r.by).n} asked to move this to {P(state.PEOPLE, r.to).n}</b> — {r.why}</>,
     canDecideMove(state, l) ? <><button type="button" className="chip on" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: true })}>Approve</button><button type="button" className="chip" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: false })}>Decline</button></> : null);
-  if (seeMoney(state, l) && cm && cm.state === "waiting") al("cw", "due", <><b>Payment reported</b> — waiting for Finance to find it in the bank.</>, <button type="button" className="chip" onClick={() => open("claim")}>Status</button>);
-  else if (seeMoney(state, l) && cm && cm.state === "notfound") al("cn", "bad", <><b>Finance could not find that payment.</b> {cm.why}</>, <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
-  if (inReservation(state, l)) {
-    const hold = state.PAY[l.id]!.hold as string;
-    const dl = Math.round(((when(hold, state.NOW)?.getTime() || 0) - state.NOW.getTime()) / DAY);
+  /* M08-S02-W1: is a report waiting / not found — the gate route's `payment` (fixture: the same claim the book holds) */
+  const payGate = gate.state === "ok" ? gate.data.payment : null;
+  const reported = payGate ? payGate.reported : cm?.state === "waiting", notFound = payGate ? payGate.notFound : cm?.state === "notfound";
+  if (seeMoney(state, l) && reported) al("cw", "due", <><b>Payment reported</b> — waiting for Finance to find it in the bank.</>, <button type="button" className="chip" onClick={() => open("claim")}>Status</button>);
+  else if (seeMoney(state, l) && notFound) al("cn", "bad", <><b>Finance could not find that payment.</b> {cm?.why}</>, <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
+  /* M08-S04-W1: the reservation clock's day is the gate route's `holdUntil` */
+  if (gate.state === "ok" && gate.data.holdUntil) {
+    const hold = holdDay(gate.data.holdUntil);
+    const dl = Math.round((new Date(gate.data.holdUntil + "T00:00:00").getTime() - state.NOW.getTime()) / DAY);
     al("hold", dl <= 3 ? "bad" : "due", <><b>Reservation {dl < 0 ? "lapsed " + -dl + " days ago" : dl + " days left"}</b> — the balance is due by {hold}.</>, <button type="button" className="chip" onClick={() => open("hold")}>Details</button>);
   }
   if (!TOUCHCHANNELS.some((k) => conFor(l, k))) al("perm", "bad", <><b>No contact permission yet.</b> Record it before reaching out.</>,
     work ? <button type="button" className="act" onClick={() => open("details", { DTAB: "permission" })}>Record permission</button> : null);
 
+  /* who a shut gate waits on, as the route answered it (fixture: the same selectors the page used) */
+  const gr = gate.state === "ok" ? gate.data : null;
+  const gw = gr && gr.who && gr.gate ? { ...GATES[gr.gate], who: gr.who, d: gr.says ?? GATES[gr.gate].chase } : null;
   /* the Next milestone button — tick(id), ir-merged.js 2614 */
   const tick = () => {
     if (l.done < ST.TOUCH) {
@@ -448,7 +474,7 @@ export function LeadPage({ id }: { id: string }) {
       dispatch({ type: "openDrawer", k: "p:followup" as DrawerKind, id: l.id, seed: state.ui.FU ? {} : { FU: buildFollowupDraft(state, l, first || "reply") } });
       return;
     }
-    if (gateWait(state, l)) return;
+    if (gw || gate.state !== "ok") return;
     if (needOf(l)) { open("p:lead.rung" as DrawerKind, { RUNGSAID: false }); return; }
     if (RUNGASK[LADDER[l.done].t]) { open("p:lead.commit" as DrawerKind); return; }
     dispatch({ type: "tick", id: l.id });
@@ -459,14 +485,15 @@ export function LeadPage({ id }: { id: string }) {
   };
 
   /* rows that exist only while they apply */
-  const owned = !!here && stepOwner(state, l.done, l), gw = gateWait(state, l), rows: ReactNode[] = [];
-  if (act && here && owned && !gw && work)
+  const owned = !!here && stepOwner(state, l.done, l), rows: ReactNode[] = [];
+  if (gate.state === "error") rows.push(<p key="gerr" className="lp-err" role="alert">{gate.err.error}</p>);
+  if (act && here && owned && gate.state === "ok" && !gw && work)
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b>
       <button type="button" className="btn" onClick={tick}>{here.t === "First touch made" ? "Mark first contact made" : "Mark done"}</button>
       {here.skip ? <button type="button" className="lp-link" onClick={() => dispatch({ type: "skipStage", id: l.id })}>Not needed</button> : null}</div>);
   else if (act && here && owned && gw && gw.who === "fin")
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b><span className="tag due">Waiting on Finance</span></div>);
-  if (act && gw && canClaim(state, l) && !claimOf(state, l.id))
+  if (act && gw && canClaim(state, l) && !cm && !reported && !notFound)
     rows.push(<div key="pay" className="lp-stage"><span className="sm">Payment</span><b>Has the investor paid?</b>
       <button type="button" className="btn" onClick={() => open("claim", { CKIND: l.done >= ST.RESERVED ? "full" : "advance", CREF: "", CNOTE: "" })}>Investor says they paid</button></div>);
   rows.push(<LpPaperRow key="paper" l={l} />);

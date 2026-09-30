@@ -7,7 +7,7 @@
    - App access (M10-S21) with Preview app (M10-S22) and Test sign-in link (M10-S23).
    - ARL holdings (M10-S09), read-only. */
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   I, accessOf, accessView, agreementSigned, allotAmount, allotDue, allotPaid, allotPayStatus, allotTxns, allotUnits, allotsOf,
   arlTxnsOf, day6, fmtDate, holdingsOf, inr, isSuper, llpName, llpOf, may, mayAccess, mayHoldings, mayPayouts, mayPreview,
@@ -16,6 +16,8 @@ import {
 import type { ImAllot, ImInvestor } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
 import { payTagClass, poTagClass } from "./drawers";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { appAccount, appUnlock } from "@/lib/data/endpoints/app-account";
 
 type P = ImPageProps & { x: ImInvestor };
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
@@ -162,29 +164,44 @@ export function MoneyBlocks(p: P) {
 /* ---- App access (M10-S21) — with Preview app (M10-S22) and Test sign-in link (M10-S23) ---- */
 export function AppAccessCard(p: P) {
   const { s, me, dispatch, x } = p;
-  const a = accessOf(s, me, x.id);
-  const v = accessView(a);
-  /* the investor app writes App_Welcome_At back once the email is out (stub receiver until MA1) */
+  /* M08-S08-W1: the card is GET /api/investors/[id]/unlock; the two buttons are POST / DELETE on it (lib/data/endpoints/app-account) */
+  const r = useApiRead(appAccount, { s, me }, x.id);
+  const unlock = useApiWrite(appUnlock, { s, me }, dispatch);
+  const mode = useApiMode();
+  const [ask, setAsk] = useState(false);
+  const card = r.state === "ok" ? r.data.card : null;
+  const sending = card?.state === "sending" && card.mayChange;
+  /* the investor app writes App_Welcome_At back once the email is out — the demo's stand-in for that receiver (stub, D73) runs in
+     the fixture only; live, the card re-reads what the app really wrote */
   useEffect(() => {
-    if (v.k !== "sending" || !mayAccess(s, me)) return;
+    if (!sending || mode !== "fixture") return;
     const t = setTimeout(() => dispatch({ type: "welcomeDelivered", id: x.id }), 1500);
     return () => clearTimeout(t);
-  }, [v.k, s, me, dispatch, x.id]);
-  const canWrite = mayAccess(s, me);
-  const tag = v.k === "delivered" ? "go" : v.k === "locked" ? "late" : v.k === "sending" ? "br" : v.k === "hold" ? "due" : "";
+  }, [sending, mode, s, dispatch, x.id]);
+  if (r.state === "loading") return <div className="empty">Reading the app account…</div>;
+  if (r.state === "error") return r.err.status === 404 || r.err.status === 403 ? null : <div className="note bad" role="alert">{r.err.error}</div>;
+  if (!card) return null;
+  const v = card.state, canWrite = card.mayChange;
+  const a = accessOf(s, me, x.id);      /* the reason a lock was given is not on the route's card: the demo book still has it */
+  const tag = v === "delivered" ? "go" : v === "locked" ? "late" : v === "sending" ? "br" : v === "hold" ? "due" : "";
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>App access</h3><div className="sp" />
-      <span className={`tag ${tag}`}><span className="dot" />{v.k === "none" ? "no account" : v.k === "hold" ? "on hold" : v.k === "locked" ? "locked" : v.k === "sending" ? "sending" : "unlocked"}</span></div>
+      <span className={`tag ${tag}`}><span className="dot" />{v === "none" ? "no account" : v === "hold" ? "on hold" : v === "locked" ? "locked" : v === "sending" ? "sending" : "unlocked"}</span></div>
       <div className="cb">
-        <p style={{ margin: 0 }}><b>{v.t}</b></p>
+        <p style={{ margin: 0 }}><b>{card.text}</b></p>
         {a && a.Locked_Reason ? <p className="sm" style={{ margin: "4px 0 0" }}>{a.Locked_Reason} · {who(s, a.Locked_By).n} · <span className="mono">{a.Locked_At}</span></p> : null}
-        {canWrite && a ? <div className="drwsec"><div className="chips">
-          {a.App_Access === "Hold"
-            ? <button className="chip on" onClick={() => dispatch({ type: "sendWelcome", id: x.id })}>Send welcome and unlock</button>
+        {canWrite && card.access ? <div className="drwsec"><div className="chips">
+          {card.access === "Hold"
+            ? (ask ? <span className="note warn" role="alertdialog" aria-label="Send welcome and unlock">
+              <b>Send {x.n} the Growize welcome and unlock their app?</b> One email goes to {x.em} now, and they can sign in from then on. Their data is already in the app.
+              <span className="chips" style={{ marginTop: 8, display: "flex" }}>
+                <button className="chip on" onClick={() => void unlock({ id: x.id, expectedModifiedTime: card.modifiedTime }).then(() => setAsk(false))}>Send it</button>
+                <button className="chip" onClick={() => setAsk(false)}>Leave it</button></span></span>
+              : <button className="chip on" onClick={() => setAsk(true)}>Send welcome and unlock</button>)
             : <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "applock", id: x.id })}>Lock app access</button>}
         </div>
           <p className="sm" style={{ margin: "9px 0 0" }}>The welcome never goes by itself: the account opens on hold at the first matched money and waits for this button. Every change is on their Activity.</p></div>
-          : <p className="sm" style={{ margin: "9px 0 0" }}>Finance controls app access.</p>}
+          : <p className="sm" style={{ margin: "9px 0 0" }}>{canWrite ? "The account opens on hold at the first matched receipt." : "Finance controls app access."}</p>}
         {mayPreview(s, me, x.id) || mayTestLink(s, me) ? <div className="drwsec"><div className="chips">
           {mayPreview(s, me, x.id) ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "preview", id: x.id })}>Preview app</button> : null}
           {mayTestLink(s, me) ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "testlink", id: x.id })}>Test sign-in link</button> : null}

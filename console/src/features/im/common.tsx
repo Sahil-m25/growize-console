@@ -38,8 +38,10 @@ const Tag = ({ c, children }: { c?: string; children: ReactNode }) =>
 
 export const KycTag = ({ x }: { x: ImInvestor }) =>
   x.kyc === "passed" ? <Tag c="go">KYC passed</Tag> : x.kyc === "failed" ? <Tag c="late">KYC failed</Tag> : <Tag c="due">KYC pending</Tag>;
-export function StTag({ x }: { x: ImInvestor }) {
-  switch (x.st) {
+/** The state tag. `st` is the record route's own label (M08-S07); without it the book's `x.st` says the same words. */
+export function StTag({ x, st }: { x: ImInvestor; st?: string | null }) {
+  switch (st || x.st) {
+    case "said yes": return <Tag c="br">said yes</Tag>;
     case "allocated": return <Tag c="go">allocated</Tag>;
     case "paid": return <Tag c="br">paid, awaiting allotment</Tag>;
     case "reserved": return <Tag c="hold">reserved</Tag>;

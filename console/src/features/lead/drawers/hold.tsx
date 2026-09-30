@@ -6,8 +6,10 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { EXTDAYS, FORFEIT } from "@/domain";
-import { DAY, when } from "@/lib/format";
-import { canAskExt, canDecideExt, inReservation, isFin, may, P, payOf } from "@/lib/selectors";
+import { DAY } from "@/lib/format";
+import { canAskExt, canDecideExt, inReservation, isFin, may, P } from "@/lib/selectors";
+import { useApiRead } from "@/lib/data/api";
+import { holdDay, leadGate } from "@/lib/data/endpoints/lead";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 
@@ -15,10 +17,11 @@ function Body({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
   const l = lead!;
   const x = state.EXT[l.id];
-  const p = payOf(state, l.id);
-  const hold = p ? p.hold : null;
-  const hd = hold ? when(hold, state.NOW) : null;
-  const left = hd ? Math.round((hd.getTime() - state.NOW.getTime()) / DAY) : null;
+  /* M08-S04-W1: the hold's day is the gate route's `holdUntil` (GET /api/leads/[id]/gate) */
+  const gate = useApiRead(leadGate, state, l.id);
+  const until = gate.state === "ok" ? gate.data.holdUntil : null;
+  const hold = until ? holdDay(until) : null;
+  const left = until ? Math.round((new Date(until + "T00:00:00").getTime() - state.NOW.getTime()) / DAY) : null;
 
   return (
     <>

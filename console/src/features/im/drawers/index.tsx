@@ -11,7 +11,7 @@
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
 import { SignCell } from "../paper2/SignCell";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   CHANS, FSTATE, I, KAMS, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
   aged, ansOf, bookOf, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
@@ -21,6 +21,9 @@ import type { ImDrafts, ImDrawerKey, ImInvestor } from "@/lib/im";
 import { Icon } from "@/components/ui/Icon";
 import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
 import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
+import { newIdempotencyKey, useApiMode, useApiWrite } from "@/lib/data/api";
+import { receiptPrepare, receiptRecord } from "@/lib/data/endpoints/claims";
+import { useReload } from "@/lib/store";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -224,13 +227,32 @@ function payBody(c: Ctx): ReactNode {
     </>
   );
 }
-function payFoot(c: Ctx): ReactNode {
+/* M08-S03-W1: Record it is POST /api/receipts/prepare, then POST /api/receipts with one Idempotency-Key per press
+   (lib/data/endpoints/claims). Recording is never refused for unsigned paper — the answer says matching waits (D21). */
+function PayFoot(c: Ctx) {
   const { s, me, id, dispatch } = c; const { PKIND, PMODE, PUTR } = draft(c);
-  return may(s, me, "pay") && id ? (
-    <button className="act" onClick={() => dispatch({ type: "recordPay", id, kind: PKIND, mode: PMODE, utr: PUTR, allot: pickedAllot(s, me, id) || undefined })}>
-      Record it</button>
-  ) : null;
+  const prepare = useApiWrite(receiptPrepare, { s, me }, dispatch), record = useApiWrite(receiptRecord, { s, me }, dispatch);
+  const reloadData = useReload();
+  const live = useApiMode() === "live";
+  const [busy, setBusy] = useState(false);
+  if (!may(s, me, "pay") || !id) return null;
+  const press = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const allot = pickedAllot(s, me, id) || null, key = newIdempotencyKey();
+      const p = await prepare({ allotmentId: allot });
+      if (!p.ok) return;
+      const r = await record({ inv: id, allotmentId: allot, kind: PKIND, mode: PMODE, ref: PUTR, prepared: p.data }, { idempotencyKey: key });
+      if (!r.ok) return;
+      /* fixture: the reducer's recordPay has closed the drawer and cleared the draft; live: the page does */
+      if (live) { dispatch({ type: "setDraft", patch: { PUTR: "" } }); dispatch({ type: "closeDrawer" }); reloadData(); }
+      if (r.data.matchNote) dispatch({ type: "note", msg: r.data.matchNote });
+    } finally { setBusy(false); }
+  };
+  return <button className="act" disabled={busy} onClick={() => void press()}>Record it</button>;
 }
+const payFoot = (c: Ctx): ReactNode => <PayFoot {...c} />;
 
 /* ---- send — imx.js 2748–2776 ---- */
 const sendBlocked = (x: ImInvestor | null, DSIG: string): boolean => !!x && x.nri && DSIG === "Aadhaar OTP";

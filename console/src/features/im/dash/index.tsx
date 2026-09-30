@@ -7,11 +7,13 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import {
   banked, careQueue, freeUnits, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad, may, mineQueue,
-  money, myBook, cared, outstandingReserved, pageReadable, poolBook, tierOf, TIERS, tkOpen, who, FORFEIT, primaryName,
+  money, myBook, cared, outstandingReserved, pageReadable, poolBook, tierOf, TIERS, tkOpen, who, FORFEIT, primaryName, fmtDay,
 } from "@/lib/im";
 import type { ImInvestor, ImQ } from "@/lib/im";
 import { ProvIR } from "../common";
 import type { ImPageProps } from "../common";
+import { useApiRead } from "@/lib/data/api";
+import { holdsLand, holdsList, type HoldsList, type LandRead } from "@/lib/data/endpoints/holds";
 
 const enterOrSpace = (run: () => void) => (e: KeyboardEvent) => {
   if (e.key === "Enter" || e.key === " ") { e.preventDefault(); run(); }
@@ -78,6 +80,8 @@ export function AmCards({ s, me, book, mine }: { s: ImPageProps["s"]; me: string
 
 /* vDashFin — imx.js 1413–1445. Finance's day, and the super user's view of both queues. */
 function VDashFin({ s, me, dispatch }: ImPageProps) {
+  /* M08-S04-W1: Holds running and Land are GET /api/holds and /api/holds/land (lib/data/endpoints/holds) */
+  const hl = useApiRead(holdsList, { s, me }, undefined), land = useApiRead(holdsLand, { s, me }, undefined);
   if (!pageReadable(s, me, "dash") || isAM(s, me) || isSys(s, me)) return null;
   const q = mineQueue(s, me), now = q.filter(x => x.urg === "now");
   const risk = outstandingReserved(s, me);
@@ -112,6 +116,8 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
               ? "Every document is out or signed, every claim is answered and no hold is close."
               : "This is a read-only seat — the queue belongs to the people who can act on it."}</span></div>}
         </div></div>
+      <HoldsRunning r={hl} />
+      <LandCard r={land} />
       {sup ? (
         <div className="card fill" style={{ marginTop: 12 }}><div className="ch"><h3>Account Management&apos;s queue{aml ? " · primary: " + aml : ""}</h3>
           <div className="sp" /><span className={`tag ${c.length ? "due" : "go"}`}><span className="dot" />{c.length || "clear"}</span></div>
@@ -146,5 +152,43 @@ export function QRow({ s, me, dispatch, x }: ImPageProps & { x: ImQ }) {
       onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
       <div className="who2"><b>{x.inv.n}</b><span>{x.t}{x.kind === "claim" ? <>{" · "}<ProvIR t={"from " + who(s, x.n.ir).n.split(" ")[0]} /></> : null}
         {" · "}<span className="mono">{id}</span></span></div>{b}</div>
+  );
+}
+
+/* M08-S04-T05 — Holds running: the forfeit exposure and each hold by days left, from GET /api/holds */
+const dayMon = (iso: string) => fmtDay(Date.parse(iso + "T00:00:00Z"));
+function HoldsRunning({ r }: { r: ReturnType<typeof useApiRead<ImPageProps, void, HoldsList>> }) {
+  if (r.state === "idle") return null;
+  if (r.state === "loading") return <div className="empty sm">Reading the holds…</div>;
+  if (r.state === "error") return r.err.status === 403 ? null : <div className="note bad" role="alert">{r.err.error}</div>;
+  const { holds, exposure } = r.data;
+  return (
+    <div className="card fill" style={{ marginTop: 12 }}><div className="ch"><h3>Holds running</h3><div className="sp" />
+      <span className={`tag ${holds.length ? "due" : "go"}`}>{holds.length ? inr(exposure) + " forfeit exposure" : "none running"}</span></div>
+      <div className="cb">{holds.length ? holds.map(h => (
+        <div className="led" key={h.allotmentId}>
+          <span className={`tag ${h.urgent ? "late" : h.daysLeft <= 7 ? "due" : "go"}`}>{h.ranOut ? -h.daysLeft + "d over" : h.daysLeft + "d"}</span>
+          <span style={{ minWidth: 0 }}><b>{h.investor.name}</b>{h.llp.name ? <span className="sm">{" · " + h.llp.name}</span> : null}
+            <div className="sm">{h.units + " unit" + (h.units === 1 ? "" : "s") + (h.due != null ? " · " + money(h.due) + " due by " + dayMon(h.holdEnds) : " · hold ends " + dayMon(h.holdEnds))}</div></span>
+        </div>
+      )) : <div className="empty">No reservation is close to its deadline.</div>}</div></div>
+  );
+}
+
+/* M08-S04-T05 — Land: free of total units and what is reserved, per LLP, from GET /api/holds/land */
+function LandCard({ r }: { r: ReturnType<typeof useApiRead<ImPageProps, void, LandRead>> }) {
+  if (r.state !== "ok") return r.state === "error" && r.err.status !== 403 ? <div className="note bad" role="alert">{r.err.error}</div> : null;
+  const d = r.data;
+  return (
+    <div className="card fill" style={{ marginTop: 12 }}><div className="ch"><h3>Land</h3><div className="sp" />
+      <span className="sm">{d.free + " free of " + d.total}</span></div>
+      <div className="cb">{d.llps.map(l => (
+        <div className="led" key={l.id}>
+          <span className="tag">{"Block " + l.block}</span>
+          <span style={{ minWidth: 0 }}><b>{l.name}</b>
+            <div className="sm">{l.notReleased ? "not released — " + l.offShelf + " units off the shelf"
+              : (l.free ?? 0) + " free of " + (l.totalUnits ?? 0) + " · " + l.reserved + " reserved" + (l.oversold ? " · oversold" : "")}</div></span>
+        </div>
+      ))}</div></div>
   );
 }

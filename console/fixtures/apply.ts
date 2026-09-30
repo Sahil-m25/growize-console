@@ -56,7 +56,7 @@ const kiranJoshi = (): ImInvestor => ({
   addr: "5, 7th Main, HSR Layout, Bengaluru 560102", nri: false, pan: "AKJPJ5520Q", aadh: "6620",
   aref: "UIDAI-2508-900220", kyc: "passed", kycOn: "29 Aug",
   bank: { acct: "50100299002200", ifsc: "HDFC0000240", name: "KIRAN JOSHI", drop: "matched" },
-  units: 2, blocks: { A: 2 }, st: "prospect" as ImInvestor["st"], ir: "rohit", src: "Events", since: "28 Aug",
+  units: 2, blocks: { A: 2 }, st: "said yes", ir: "rohit", src: "Events", since: "28 Aug",
   nominee: "—", lead: "L21", kam: null, kamOn: null, intro: null,
 });
 const kiranNda = (): ImDoc => ({

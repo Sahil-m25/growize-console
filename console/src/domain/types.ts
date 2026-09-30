@@ -369,6 +369,9 @@ export interface Lead {
    *  absent for an ordinary lead, so `knownUnitIntent` reads a lead with no opinion on the field as
    *  known (ir-console-redesigned.html:3136). */
   unitsKnown?: boolean;
+  /** Zoho's Modified_Time as the page loaded the lead — a wired write (email, cover) sends it back as
+   *  `expectedModifiedTime` (D44). Absent in the demo book; the live lead book does not map it yet. */
+  mt?: string | null;
   /** Free-text contact instructions, the details drawer's own writer (ir-console-redesigned.html:
    *  11910,12020) — `fuPreference` reads this before falling back to its stock sentence. */
   contactPreference?: string;
