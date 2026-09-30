@@ -21,6 +21,7 @@ import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks } from "../money/rec
 import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
 import { SignCell } from "../paper2/SignCell";
+import { BlockIt } from "../paper2/BlockIt";
 import { InvUploads } from "../paper2/Upload";
 import { useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { amBook, investorRecord, investorSearch } from "@/lib/data/endpoints/investors";
@@ -511,7 +512,8 @@ function SecPaper({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
                 <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td>
               <td className="sm mono">{d.ref || "—"}</td>
               <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state === "awaiting"
-                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } })}>Verify</button> : null}</td>
+                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } })}>Verify</button>
+                : <BlockIt s={s} me={me} dispatch={dispatch} d={d} />}</td>
             </tr>
           )) : <tr><td colSpan={6}><div className="empty">Nothing on file.</div></td></tr>}
           </tbody></table></div></div>

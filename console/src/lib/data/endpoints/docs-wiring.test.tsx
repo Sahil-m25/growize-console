@@ -1,0 +1,61 @@
+/* M12 (phase 2b, D104) — documents, sign, emails: both halves of each endpoint. */
+import { describe, expect, it, vi } from "vitest";
+import { imDemoData } from "@fixtures/im/demo";
+import { initialImUi, type ImAction, type ImState } from "@/lib/im";
+import { runWrite } from "../api";
+import { documentUpload, documentsList } from "./documents";
+import { signBlock, signPrefill, signRemind, signSend } from "./sign";
+import { emailOpen } from "./emails";
+
+const demo = (): ImState => ({ data: imDemoData(), ui: initialImUi() });
+const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+describe("documents list — fixture half", () => {
+  it("Finance sees papers and a count of what is out; a seat off the route is refused", () => {
+    const r = documentsList.fixture({ s: demo(), me: "harsha" }, "all");
+    expect(r.ok).toBe(true);
+    if (r.ok) { expect(r.data.rows.length).toBeGreaterThan(0); expect(r.data.rows.every(x => x.paper !== "nda")).toBe(true); }
+    const no = documentsList.fixture({ s: demo(), me: "pradeep" }, "all");
+    expect(no.ok).toBe(false);
+  });
+  it("paths", () => {
+    expect(signPrefill.path({ paper: "fema", id: "a b" })).toBe("/api/documents/sign/prefill?paper=fema&id=a%20b");
+    expect(signPrefill.path({ paper: "fema", id: null })).toBeNull();
+    expect(emailOpen.path({ kind: "investor", id: "I1", messageId: "m/1", ownerId: "u1" } as never)).toBe("/api/emails/investor/I1/m%2F1?owner=u1");
+  });
+});
+
+describe("sign — fixture writes run the reducer action they replace", () => {
+  it("remind dispatches remindSign; block dispatches blockDoc with the reason", async () => {
+    const s = demo(), seen: ImAction[] = [];
+    const d = s.data.DOCS.find(x => x.state === "awaiting")!;
+    await runWrite("fixture", signRemind, { s, me: "harsha" }, (a: ImAction) => seen.push(a), { paper: "fema", recordId: d.id, did: d.id });
+    await runWrite("fixture", signBlock, { s, me: "harsha" }, (a: ImAction) => seen.push(a), { paper: "fema", recordId: d.id, reason: "wrong name", expectedModifiedTime: "", did: d.id });
+    expect(seen.map(a => a.type)).toEqual(["remindSign", "blockDoc"]);
+  });
+});
+
+describe("live halves", () => {
+  it("send posts JSON with one Idempotency-Key, reused on retry", async () => {
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { sent: { paper: "fema", recordId: "1", requestId: "r", state: "sent", label: "Sent" } }));
+    const args = { paper: "fema" as const, recordId: "1", method: "email-otp" as const, templateId: "", expectedModifiedTime: "t", book: { inv: "x", tpl: "y", sig: "z" } };
+    await runWrite("live", signSend, { s: demo(), me: "harsha" }, () => {}, args, { idempotencyKey: "K1", fetch: f });
+    await runWrite("live", signSend, { s: demo(), me: "harsha" }, () => {}, args, { idempotencyKey: "K1", fetch: f });
+    expect(f.mock.calls[0][0]).toBe("/api/documents/sign/send");
+    expect(JSON.parse(f.mock.calls[0][1]!.body as string)).toMatchObject({ paper: "fema", method: "email-otp" });
+    expect(new Headers(f.mock.calls[0][1]!.headers).get("Idempotency-Key")).toBe("K1");
+    expect(new Headers(f.mock.calls[1][1]!.headers).get("Idempotency-Key")).toBe("K1");
+  });
+  it("upload sends the raw bytes with the content type and the query the route reads", async () => {
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { uploaded: { scope: "personal", recordId: "C1", slot: "fema", attachmentId: "a", fileName: "f.pdf", size: 3, duplicate: false, recovered: false } }));
+    const a = { scope: "personal" as const, recordId: "C1", slot: "fema", name: "f.pdf", expected: "T", bytes: new Uint8Array([1, 2, 3]), contentType: "application/pdf",
+      book: { key: "k", Scope: "Personal" as const, Doc_Type: "FEMA declaration", Investor: "i", LLP: null, File_Size: 3, File_Type: "PDF" } };
+    const r = await runWrite("live", documentUpload, { s: demo(), me: "harsha" }, () => {}, a, { idempotencyKey: "K2", fetch: f });
+    expect(r.ok).toBe(true);
+    expect(f.mock.calls[0][0]).toBe("/api/documents/upload?scope=personal&id=C1&slot=fema&name=f.pdf&expected=T");
+    const init = f.mock.calls[0][1]!;
+    expect(init.body).toBeInstanceOf(Blob);
+    expect(new Headers(init.headers).get("Content-Type")).toBe("application/pdf");
+    expect(new Headers(init.headers).get("Idempotency-Key")).toBe("K2");
+  });
+});

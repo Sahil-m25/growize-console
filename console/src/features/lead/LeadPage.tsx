@@ -21,7 +21,7 @@ import { DAY, dISOtoDisp, hhmm, iso, money, nowT, plusD, when, whenT } from "@/l
 import {
   active, canAssign, canClaim, canDecideMove, canLose, canNote, canOperateLeads, canPlan, canReach,
   canReadFinance, canReopen, canWork, channelForAction, claimOf, conFor, covOf, fcOf, GATES, hasNext,
-  inReservation, isIR, lost, ndaOK, nextUp, nxDue, nxWhen, openable, P, paperNow, ph, pr, prChases,
+  inReservation, isIR, lost, nextUp, nxDue, nxWhen, openable, P, paperNow, ph, pr, prChases,
   ragOf, seeMoney, stepOwner, undoStage, watching, whyLocked,
 } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
@@ -41,6 +41,8 @@ import { holdDay, leadEmailSend, leadGate } from "@/lib/data/endpoints/lead";
 import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
 import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
 import { LeadEmails } from "@/features/im/paper2/Emails";   /* M12-S09 */
+import { useNda } from "./nda";   /* M12-S13 */
+import { currentRound, ndaSigned, paperworkRow, paperworkStep, paperworkUndo, stepSaved, type IrBeat, type PwChannel } from "@/lib/data/endpoints/paperwork";
 
 type Ctx = ReturnType<typeof useConsole>;
 
@@ -146,6 +148,7 @@ const Ask = ({ label, children }: { label: ReactNode; children: ReactNode }) => 
 /* ---- the logging flow, D57: one question at a time ---- */
 function LpLogger({ l }: { l: Lead }) {
   const { state } = useConsole();
+  const nda = useNda(l);
   const lp = useLp(l);
   const f = lp.f!;
   const d = f.d;
@@ -182,7 +185,7 @@ function LpLogger({ l }: { l: Lead }) {
       <Chip cls="lp-quiet" onClick={() => lp.set("obj", "")}>Skip</Chip></div></Ask>;
   else if (d.keep) q = <div className="lp-ask"><button type="button" className="act" onClick={() => lp.finish(d)}>Save</button></div>;
   else if (!d.t)
-    q = <Ask label="What's next?"><div className="chips">{lpNextChoices(l, ndaOK(state, l)).map((t) => <Chip key={t} onClick={() => lp.set("t", t)}>{t}</Chip>)}</div></Ask>;
+    q = <Ask label="What's next?"><div className="chips">{lpNextChoices(l, nda).map((t) => <Chip key={t} onClick={() => lp.set("t", t)}>{t}</Chip>)}</div></Ask>;
   else if (!f.day) {
     const tk = zKind(d.t) === "task";
     q = <Ask label={d.outcome === "No answer" || d.outcome === "Call back" ? "Which day will you try again?"
@@ -217,9 +220,9 @@ function LpLogger({ l }: { l: Lead }) {
 }
 
 /* ---- the email composer, D57b: a summary line, a preview, Send ---- */
-function emDraftOf(state: Ctx["state"], l: Lead): EmDraft {
+function emDraftOf(state: Ctx["state"], l: Lead, nda: boolean): EmDraft {
   const EM = (state.ui.EM as Record<string, EmDraft> | undefined) || {};
-  const nda = ndaOK(state, l), meName = P(state.PEOPLE, state.WHO).n;
+  const meName = P(state.PEOPLE, state.WHO).n;
   const cur = EM[l.id];
   if (cur) return emTplOK(cur.tpl, nda) ? cur : emUse(l, emTplFor(l, nda, state.SENT[l.id] as Record<string, string> | undefined), meName, cur);
   return emUse(l, emTplFor(l, nda, state.SENT[l.id] as Record<string, string> | undefined), meName);
@@ -230,14 +233,15 @@ function LpComposer({ l }: { l: Lead }) {
   /* M07-S05-W1: Send is POST /api/leads/[id]/email (lib/data/endpoints/lead) */
   const send = useApiWrite(leadEmailSend, state, dispatch);
   const live = useApiMode() === "live";
-  const d = emDraftOf(state, l);
+  const nda = useNda(l);
+  const d = emDraftOf(state, l, nda);
   const setD = (patch: Partial<EmDraft>) => {
     const EM = { ...((state.ui.EM as Record<string, EmDraft> | undefined) || {}) };
     EM[l.id] = { ...d, ...patch };
     dispatch({ type: "setUi", patch: { EM } });
   };
   const T = EMTPL[d.tpl] || { t: "Custom" }, M = EMMAT[d.tpl];
-  const nda = ndaOK(state, l), meName = P(state.PEOPLE, state.WHO).n;
+  const meName = P(state.PEOPLE, state.WHO).n;
   return (
     <div className="lp-flow" id="lp-flow">
       <div className="lp-sum"><span>{T.t}{M ? " · with " + M.say + " attached" : ""} · to {l.em} · from you via Zoho · <b>{d.s}</b></span><span className="sp" />
@@ -272,23 +276,39 @@ function LpComposer({ l }: { l: Lead }) {
   );
 }
 
-/* ---- D60: the paperwork row. Only the IR's one next beat, as tap-to-save controls ---- */
+/* ---- D60: the paperwork row. Only the IR's one next beat, as tap-to-save controls.
+   M12-S11-W1 (D104): the row is GET /api/leads/[id]/paperwork (what is next, what may be pressed, and each press's rowToken);
+   a tap is POST /api/leads/[id]/paperwork with that token, and its Undo (10 s) is the token's own. Fixture mode runs the reducer's
+   lpPaper / lpRestore. Finance's beats are never offered here. ---- */
 function LpPaperRow({ l }: { l: Lead }) {
   const { state, dispatch } = useConsole();
+  const mode = useApiMode();
+  const r = useApiRead(paperworkRow, state, l ? l.id : null);
+  const step = useApiWrite(paperworkStep, state, dispatch);
   if (!l || lost(l) || !(canReadFinance(state, l, "docs") || canWork(state, l))) return null;
-  const pn = paperNow(state, l);
-  if (!pn.R) return null;
-  const R = pn.R, n = pn.n as { k: string; t: string; who: string | null };
-  const p = (pr(state, l.id, R.k) || {}) as { draft?: { v?: number; link?: string }; back?: { why: string } };
-  const nm = lpPaperName(R.k), mine = n.who === "IR" && canWork(state, l);
-  const paper = (beat: string, a?: string, link?: string) => dispatch({ type: "lpPaper", id: l.id, beat, rk: R.k, a, link });
+  if (r.state === "error") return <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><p className="lp-err" role="alert" style={{ margin: 0 }}>{r.err.error}</p></div>;
+  if (r.state !== "ok") return r.state === "loading" ? <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><span className="sm">Reading…</span></div> : null;
+  const cur = currentRound(r.data);
+  if (!cur) return null;
+  const n = cur.next, nm = lpPaperName(cur.round);
+  const offers = r.data.offers.filter((o) => o.round === cur.round), mine = n.who === "IR" && offers.length > 0;
+  const offer = (beat: IrBeat) => offers.find((o) => o.beat === beat);
+  const paper = (beat: IrBeat, channel?: PwChannel, link?: string) => {
+    const o = offer(beat);
+    if (!o) return;
+    void step({ leadId: l.id, round: cur.round, beat, channel, rowToken: o.rowToken, link }).then((res) => {
+      if (!res.ok || mode === "fixture") return;   /* fixture: the reducer's own notice and Undo are already up */
+      const notice: LpNotice = { who: state.WHO, id: l.id, msg: stepSaved(beat, cur.round, channel, cur.draft ? cur.draft.version : 1), snap: null,
+        label: beat === "chase" ? "Undid a reminder" : "Undid a paperwork step", t: Date.now(), undoToken: res.data.undoToken };
+      dispatch({ type: "setUi", patch: { LPNOTICE: notice, PREDRAFT: null, PLINK: "" } });
+    });
+  };
   const chip = (label: string, onClick: () => void, cls = "") => <button type="button" key={label} className={`chip ${cls}`} onClick={onClick}>{label}</button>;
   const sub = (t: ReactNode) => <span className="d60d-sub">{t}</span>;
-  const deck = R.k === "nda" && !ndaOK(state, l) ? <span className="d60d-sub d60d-deck">Deck goes after the NDA is signed</span> : null;
-  const CH = (["call", "msg", "email"] as const).filter((ch) => conFor(l, ch));
+  const deck = cur.round === "nda" && !ndaSigned(r.data) ? <span className="d60d-sub d60d-deck">Deck goes after the NDA is signed</span> : null;
   const noCh = sub("Record contact permission first.");
   const link = String(state.ui.PLINK ?? "");
-  const linkField = (phd: string, btn: string, beat: string) => (
+  const linkField = (phd: string, btn: string, beat: IrBeat) => (
     <div className="d60d-link"><input className="inp" aria-label={phd} placeholder={phd} value={link}
       onChange={(e) => dispatch({ type: "setUi", patch: { PLINK: e.target.value } })} />
       <button type="button" className="btn" id="d60d-go" disabled={!link.trim()} onClick={() => paper(beat, undefined, link)}>{btn}</button></div>
@@ -298,28 +318,28 @@ function LpPaperRow({ l }: { l: Lead }) {
     head = nm + " — with Finance in the IM portal";
     body = sub(n.k === "sent" ? "Finance sends it for signature." : "They say it is signed; Finance is checking the signed copy.");
   } else if (!mine) {
-    head = nm + " — " + n.t.toLowerCase();
+    head = nm + " — " + (n.t || "").toLowerCase();
     tag = <span className="tag">{l.own ? "With " + P(state.PEOPLE, l.own).n.split(" ")[0] : "No owner"}</span>;
   } else if (n.k === "told") {
+    const CH = offer("told")?.channels ?? [];
     head = nm + " is in their inbox — how did you tell them?";
     body = CH.length ? <div className="chips">{CH.map((ch) => chip(LPPCH[ch][0].toUpperCase() + LPPCH[ch].slice(1), () => paper("told", ch)))}</div> : noCh;
   } else if (n.k === "said") {
-    const c = prChases(state, l.id, R.k, "sign").length;
+    const CH = offer("chase")?.channels ?? [], c = cur.reminders;
     head = nm + " — waiting for their signature · " + (c ? c + " reminder" + (c === 1 ? "" : "s") : "no reminders yet");
-    body = <>{p.back ? sub("Finance: not signed after all — " + p.back.why + ".") : null}
-      <div className="chips">{CH.map((ch) => chip("Reminded by " + LPPCH[ch], () => paper("chase", ch)))}
-        {chip("They say it's signed", () => paper("said"), "on")}</div></>;
+    body = <div className="chips">{CH.map((ch) => chip("Reminded by " + LPPCH[ch], () => paper("chase", ch)))}
+      {chip("They say it's signed", () => paper("said"), "on")}</div>;
   } else if (n.k === "draft") {
     head = nm + " — send the draft";
     body = linkField("Paste the Zoho link to the draft", "Draft sent", "draft");
   } else if (n.k === "agreed") {
-    const redo = state.ui.PREDRAFT === l.id + R.k;
+    const redo = state.ui.PREDRAFT === l.id + cur.round;
     head = nm + " — get the final draft agreed";
-    body = <>{sub("Draft " + (p.draft?.v || 1) + (p.draft?.link ? " · " + p.draft.link : ""))}
-      {redo ? linkField("Paste the link to draft " + ((p.draft?.v || 1) + 1), "New draft sent", "redraft")
+    body = <>{sub("Draft " + (cur.draft?.version || 1) + (cur.draft?.ref ? " · " + cur.draft.ref : ""))}
+      {redo ? linkField("Paste the link to draft " + ((cur.draft?.version || 1) + 1), "New draft sent", "redraft")
         : linkField("Paste the link to the agreed final draft", "Final draft agreed", "agreed")}
-      <button type="button" className="lp-link lp-mini" onClick={() => dispatch({ type: "setUi", patch: { PREDRAFT: redo ? null : l.id + R.k, PLINK: "" } })}>{redo ? "Back to the final draft" : "New draft"}</button></>;
-  } else head = nm + " — " + n.t.toLowerCase();
+      <button type="button" className="lp-link lp-mini" onClick={() => dispatch({ type: "setUi", patch: { PREDRAFT: redo ? null : l.id + cur.round, PLINK: "" } })}>{redo ? "Back to the final draft" : "New draft"}</button></>;
+  } else head = nm + " — " + (n.t || "").toLowerCase();
   return (
     <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody"><b>{head}</b>{body}{deck}</div>{tag}</div>
   );
@@ -341,17 +361,23 @@ function LpNoticeBar() {
   const { state, dispatch } = useConsole();
   const n = state.ui.LPNOTICE as LpNotice | null | undefined;
   const [, tickNow] = useState(0);
+  const undo = useApiWrite(paperworkUndo, state, dispatch);
   useEffect(() => {
-    if (!n || !n.snap) return;
+    if (!n || !(n.snap || n.undoToken)) return;
     const left = n.t + 10000 - Date.now();
-    const h = setTimeout(() => { dispatch({ type: "setUi", patch: { LPNOTICE: { ...n, snap: null } } }); tickNow((x) => x + 1); }, Math.max(0, left));
+    const h = setTimeout(() => { dispatch({ type: "setUi", patch: { LPNOTICE: { ...n, snap: null, undoToken: null } } }); tickNow((x) => x + 1); }, Math.max(0, left));
     return () => clearTimeout(h);
   }, [n, dispatch]);
   const legacy = state.ui.WORKNOTICE as string | null | undefined;
   if (n && n.who === state.WHO)
     return (
       <div className="work-notice" role="status"><span>{n.msg}</span>
-        {n.snap ? <button type="button" className="chip" onClick={() => dispatch({ type: "lpRestore", id: n.id as Lead["id"], snap: n.snap!, label: n.label })}>Undo</button> : null}
+        {n.snap || n.undoToken ? <button type="button" className="chip" onClick={() => {
+          /* a paperwork step's Undo is the route's (M12-S11-W1); every other notice still restores its own snapshot */
+          if (n.undoToken || /^Undid a (paperwork step|reminder)$/.test(n.label))
+            void undo({ leadId: n.id, undoToken: n.undoToken ?? null, snap: n.snap, label: n.label }).then((r) => { if (r.ok) dispatch({ type: "setUi", patch: { LPNOTICE: null } }); });
+          else dispatch({ type: "lpRestore", id: n.id as Lead["id"], snap: n.snap!, label: n.label });
+        }}>Undo</button> : null}
         <button type="button" className="btn" onClick={() => dispatch({ type: "setUi", patch: { LPNOTICE: null } })} aria-label="Dismiss notification"><Icon name="x" /></button></div>
     );
   if (legacy)

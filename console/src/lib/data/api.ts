@@ -34,6 +34,9 @@ export type ApiErr = {
   requestId?: string;
   /** a route's question to put to the person (test-link 409 confirm-needed: the warning to read before confirming) */
   ask?: string;
+  /** every other field the route's refusal body carried beyond error/code/recordId, for the few refusals that carry what the
+   *  page shows (a 503's `fresh` on the Documents list, a 428's taggedLeads, a 422's gaps). One bag for all of them. */
+  detail?: Record<string, unknown>;
 };
 export type ApiResult<T> = ApiOk<T> | ApiErr;
 
@@ -63,11 +66,15 @@ export interface ReadEndpoint<B, A, T> {
 }
 
 export type Method = "POST" | "PUT" | "PATCH" | "DELETE";
+/** A write whose body is a file's bytes, not JSON (an upload): sent as-is with its own Content-Type. */
+export type RawBody = { body: Blob; contentType: string };
 export interface WriteEndpoint<B, A, T, D = unknown> {
   method: Method;
   path(args: A): string;
   /** the JSON body; omit for none */
   body?(args: A): unknown;
+  /** the file's bytes instead of a JSON body (an upload); wins over `body` */
+  raw?(args: A): RawBody;
   /** send an Idempotency-Key (one per press; pass the same key to retry the same press) */
   idempotent?: boolean;
   pick(json: unknown): T;
@@ -98,16 +105,18 @@ const useLiveTick = () => useSyncExternalStore(subscribe, () => tick, () => 0);
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 /** One call to a route. Never throws. A non-2xx becomes ApiErr carrying the route's `error` and `code`. */
-export async function apiFetch(method: "GET" | Method, path: string, opts: { body?: unknown; idempotencyKey?: string; signal?: AbortSignal; fetch?: Fetch } = {}): Promise<ApiResult<unknown>> {
+export async function apiFetch(method: "GET" | Method, path: string, opts: { body?: unknown; raw?: RawBody; idempotencyKey?: string; signal?: AbortSignal; fetch?: Fetch } = {}): Promise<ApiResult<unknown>> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  /* a FormData body (the bank statement upload) goes as multipart: the browser sets the boundary header itself */
-  const multipart = typeof FormData !== "undefined" && opts.body instanceof FormData;
-  if (opts.body !== undefined && !multipart) headers["Content-Type"] = "application/json";
+  /* a FormData body (the bank statement upload) goes as multipart: the browser sets the boundary header itself;
+     a RawBody (a document upload) goes as its bytes with its own Content-Type */
+  const multipart = !opts.raw && typeof FormData !== "undefined" && opts.body instanceof FormData;
+  if (opts.raw) headers["Content-Type"] = opts.raw.contentType;
+  else if (opts.body !== undefined && !multipart) headers["Content-Type"] = "application/json";
   if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
   let r: Response;
   try {
     r = await (opts.fetch ?? fetch)(path, { method, headers, cache: "no-store", credentials: "same-origin", signal: opts.signal,
-      body: opts.body === undefined ? undefined : multipart ? (opts.body as FormData) : JSON.stringify(opts.body) });
+      body: opts.raw ? opts.raw.body : opts.body === undefined ? undefined : multipart ? (opts.body as FormData) : JSON.stringify(opts.body) });
   } catch {
     return fail(0, "network", UNREACHABLE);
   }
@@ -120,8 +129,9 @@ export async function apiFetch(method: "GET" | Method, path: string, opts: { bod
   const requestId = r.headers?.get?.("x-request-id") ?? undefined;
   /* a duplicate names the record it collided with (add-paid: existing.contactId) — the page links to it */
   const rid = typeof b.recordId === "string" ? b.recordId : typeof b.existing?.contactId === "string" ? b.existing.contactId : null;
+  const rest = Object.entries(b).filter(([k]) => k !== "error" && k !== "code" && k !== "recordId");
   return { ok: false, status: r.status, code, error, ...(rid ? { recordId: rid } : {}), ...(requestId ? { requestId } : {}),
-    ...(typeof b.ask === "string" ? { ask: b.ask } : {}) };
+    ...(typeof b.ask === "string" ? { ask: b.ask } : {}), ...(rest.length ? { detail: Object.fromEntries(rest) } : {}) };
 }
 
 export const newIdempotencyKey = (): string =>
@@ -149,7 +159,7 @@ export async function runWrite<B, A, T, D>(mode: ApiMode, ep: WriteEndpoint<B, A
   opts: { idempotencyKey?: string; fetch?: Fetch } = {}): Promise<ApiResult<T>> {
   if (mode === "fixture") return ep.fixture(book, dispatch, args);
   const r = await apiFetch(ep.method, ep.path(args), {
-    body: ep.body?.(args), fetch: opts.fetch,
+    body: ep.body?.(args), raw: ep.raw?.(args), fetch: opts.fetch,
     idempotencyKey: ep.idempotent ? opts.idempotencyKey ?? newIdempotencyKey() : undefined,
   });
   if (!r.ok) { ep.onLiveError?.(dispatch, r); reportFailedWrite(r); return r; }

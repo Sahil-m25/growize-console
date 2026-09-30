@@ -16,6 +16,9 @@ import { Fragment } from "react";
 import Link from "next/link";
 import type { NavKey } from "@/domain";
 import { scopeOf } from "@/lib/selectors";
+import { sidesOf } from "@/lib/selectors/access";
+import { useApiRead } from "@/lib/data/api";
+import { documentsOutCount } from "@/lib/data/endpoints/documents";
 import { useConsole } from "@/lib/store";
 import { Icon, type IconName } from "@/components/ui";
 import { dLabel } from "@/lib/format";
@@ -53,6 +56,9 @@ const navSec = (k: string) => NAVSECOF[k] ?? "work";
 
 export function Rail({ view }: { view: View | null }) {
   const { state, dispatch } = useConsole();
+  /* M12-S03-W1: the Documents badge on the Investors side is the route's outCount (fixture: the book's own count) */
+  const docsIm = sidesOf(state, "docs").im && !sidesOf(state, "docs").ir;
+  const docsOut = useApiRead(documentsOutCount, count(state, "docs"), docsIm);
   const railMin = state.ui.RAILMIN;
   /* setRail(on) — 03-app.js:7082. A furniture choice for this visit, not domain state: it is NOT
      reset by "go", which is why it lives in ui and is written with setUi rather than a case of its
@@ -103,7 +109,7 @@ export function Rail({ view }: { view: View | null }) {
               const k = n.k as NavKey;
               const here =
                 view === k || (view === "lead" && k === "leads") || (view === "event" && k === "events");
-              const c = count(state, k);
+              const c = k === "docs" && docsIm && docsOut.state === "ok" ? docsOut.data.outCount : count(state, k);
               const hot = navHot(state, k);
               const scoped = scopedRow(state, n);
               /* only "today" and "leads" carry the switch; NAV's `scoped` flag is what says so */

@@ -327,7 +327,8 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
     case "blockDoc": {
       if (!may(W, WHO, "doc")) break;
       const dc = d.DOCS.find(x => x.id === a.did);
-      if (!dc || !Ix(dc.inv) || dc.state === "signed" || dc.state === "blocked") break;
+      /* M12-S07: a verified paper can be blocked too (D77) — but only with a reason of its own */
+      if (!dc || !Ix(dc.inv) || (dc.state === "signed" && !(a.why || "").trim()) || dc.state === "blocked") break;
       dc.state = "blocked"; dc.why = a.why || "Nothing has come back signed"; dc.on = T(); dc.vby = WHO;
       d.OUTBOX.unshift({ at: T(), inv: dc.inv, t: dc.t + " — nothing has come back signed", by: WHO });
       log("Marked a document blocked", dc.inv, dc.t + " · " + dc.why, "doc");
