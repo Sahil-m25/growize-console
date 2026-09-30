@@ -17,7 +17,7 @@ import type { ImInvestor } from "@/lib/im";
 import { DocTag, ImPname, ImSecBar, KycTag, Pii, ProvIR, StTag } from "../common";
 import type { ImPageProps, ImSec } from "../common";
 import { TkRow } from "./TkRow";
-import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks, allotCount } from "../money/record";
+import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks } from "../money/record";
 import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
 import { SignCell } from "../paper2/SignCell";
@@ -187,7 +187,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
             <span className="sm">{money(got) + " of " + money(x.units * UNIT) + (due ? " · " + money(due) + " due" : "")}</span></div><div className="cb">
-            {allotCount(p) > 1 ? <MoneyBlocks {...p} /> : txOf(s, me, x.id).length ? txOf(s, me, x.id).map(t => (
+            {rec.holdings.length > 1 ? <MoneyBlocks {...p} /> : txOf(s, me, x.id).length ? txOf(s, me, x.id).map(t => (
               <div className="led" key={t.id}>
                 <span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold" : "go"}`}>{t.kind}</span>
                 <span style={{ minWidth: 0 }}><b className="mono">{t.id}</b>

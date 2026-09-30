@@ -6,14 +6,16 @@
 
 import type { MouseEvent, ReactNode } from "react";
 import {
-  I, allotOf, auditText, mayPayouts, fmtAt, fmtDate, inr, llpName, may, mayAddInvestor, mayMatch,
-  matchWhy, money, nowFull, payoutsDue, testLinkState, testLinks, thisMonth,
+  auditText, mayPayouts, fmtAt, fmtDate, inr, may, mayAddInvestor, mayMatch,
+  matchWhy, money, nowFull, testLinkState, testLinks,
 } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
 import { useApiRead, useApiWrite } from "@/lib/data/api";
 import { receiptMatch } from "@/lib/data/endpoints/receipts";
 import { farmList } from "@/lib/data/endpoints/farms";
+import { payoutQueue } from "@/lib/data/endpoints/payouts";
+import type { QueueLine } from "@/server/payouts/queue";
 
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
   <span className={`tag ${c}`}><span className="dot" />{children}</span>;
@@ -33,33 +35,41 @@ export function MatchCell({ s, me, dispatch, t }: ImPageProps & { t: ImTxn }) {
   return why ? <div className="sm" style={{ marginTop: 4 }}>{why}</div> : null;
 }
 
-/* ---- Payments: payouts due this month (M10-S20) ---- */
+/* ---- Payments: payouts due this month (M10-S20) ----
+   M10-S20-W1: the queue is GET /api/payouts (lib/data/endpoints/payouts) — this month's Scheduled payouts, and apart the
+   Scheduled ones overdue. Mark paid opens the drawer on the allotment's own schedule (POST /api/payouts/[id]/paid). */
 export function PayoutsDue({ s, me, dispatch }: ImPageProps) {
+  const r = useApiRead(payoutQueue, { s, me }, undefined);
   if (!mayPayouts(s, me)) return null;
-  const rows = payoutsDue(s, me);
-  const mo = fmtDate(thisMonth(s.data.NOW));
+  if (r.state === "idle" || r.state === "loading") return <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading the payouts…</p></div></div>;
+  if (r.state === "error") return r.err.status === 403 ? null
+    : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>Payouts: {r.err.error}</p></div></div>;
+  const { due: rows, overdue } = r.data;
+  const mo = fmtDate(r.data.month);
+  const line = (p: QueueLine, late: boolean) => {
+    const open = () => dispatch({ type: "go", v: "inv", id: p.investor.id ?? "" });
+    return (
+      <tr key={p.id} className="k" tabIndex={0} onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
+        <td className="mono sm">{p.id}<div className="sm">{p.instalment} of 60</div></td>
+        <td>{p.investor.name ?? p.investor.id}<div className="sm mono">{p.investor.id}</div></td>
+        <td className="sm">{p.farm.name ?? p.farm.id}</td>
+        <td className="sm mono">{fmtDate(p.dueOn)}{late ? <div><span className="tag late">overdue</span></div> : null}</td>
+        <td className="n mono">{inr(p.gross)}</td>
+        <td className="n mono sm">{p.tds ? inr(p.tds) : "—"}</td>
+        <td className="n mono"><b>{inr(p.net)}</b></td>
+        <td style={{ textAlign: "right" }}>{may(s, me, "pay")
+          ? <button className="chip" onClick={e => { e.stopPropagation(); dispatch({ type: "mset", k: "po:al", v: p.allotmentId });
+            dispatch({ type: "openDrawer", k: "payout", id: p.id }); }}>Mark paid</button> : null}</td>
+      </tr>
+    );
+  };
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>Payouts due this month</h3><div className="sp" />
-      <span className="sm">{rows.length} scheduled in {mo} · {inr(rows.reduce((n, p) => n + p.Net_Amount, 0))} net</span></div>
+      <span className="sm">{rows.length} scheduled in {mo} · {inr(rows.reduce((n, p) => n + p.net, 0))} net{overdue.length ? " · " + overdue.length + " overdue" : ""}</span></div>
       <div className="tw"><table>
         <thead><tr><th>Payout</th><th>Investor</th><th>Farm</th><th>Due</th><th className="n">Gross</th><th className="n">TDS</th><th className="n">Net</th><th></th></tr></thead>
-        <tbody>{rows.length ? rows.map(p => {
-          const a = allotOf(s, p.Allotment)!, x = I(s, me, a.Customer);
-          return (
-            <tr key={p.id} className="k" tabIndex={0} onClick={() => dispatch({ type: "go", v: "inv", id: a.Customer })}
-              onKeyDown={e => { if (e.key === "Enter") dispatch({ type: "go", v: "inv", id: a.Customer }); }}>
-              <td className="mono sm">{p.id}<div className="sm">{p.Instalment_No} of 60</div></td>
-              <td>{x ? x.n : a.Customer}<div className="sm mono">{a.Customer}</div></td>
-              <td className="sm">{llpName(s, a)}</td>
-              <td className="sm mono">{fmtDate(p.Due_On)}</td>
-              <td className="n mono">{inr(p.Gross_Amount)}</td>
-              <td className="n mono sm">{p.TDS_Amount ? inr(p.TDS_Amount) : "—"}</td>
-              <td className="n mono"><b>{inr(p.Net_Amount)}</b></td>
-              <td style={{ textAlign: "right" }}>{may(s, me, "pay")
-                ? <button className="chip" onClick={e => { e.stopPropagation(); dispatch({ type: "openDrawer", k: "payout", id: p.id }); }}>Mark paid</button> : null}</td>
-            </tr>
-          );
-        }) : <tr><td colSpan={8}><div className="empty">Nothing scheduled for {mo}.</div></td></tr>}</tbody></table></div>
+        <tbody>{overdue.length || rows.length ? <>{overdue.map(p => line(p, true))}{rows.map(p => line(p, false))}</>
+          : <tr><td colSpan={8}><div className="empty">Nothing scheduled for {mo}.</div></td></tr>}</tbody></table></div>
     </div>
   );
 }

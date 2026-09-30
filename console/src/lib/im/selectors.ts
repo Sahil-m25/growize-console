@@ -324,7 +324,8 @@ export function drawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string
       : k === "pay" ? may(s, WHO, "pay") : k === "send" ? may(s, WHO, "doc") : !notFin(s, WHO);
   }
   if (k === "verify") { const d = s.data.DOCS.find(x => x.id === id); return !!d && !!I(s, WHO, d.inv) && may(s, WHO, "doc"); }
-  if (k === "claim") { const n = s.data.INBOX.find(x => x.id === id); return !!n && !notFin(s, WHO) && may(s, WHO, "pay"); }
+  /* M10-S03-W1: whether the report exists is the route's answer (GET /api/claims/[id]), not the book's */
+  if (k === "claim") return !!id && !notFin(s, WHO) && may(s, WHO, "pay");
   return k === "tkt" ? may(s, WHO, "tkt") && (!id || !!I(s, WHO, id)) : k === "upd" ? may(s, WHO, "upd") : k === "field" ? may(s, WHO, "field") : false;
 }
 

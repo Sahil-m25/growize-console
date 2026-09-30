@@ -161,6 +161,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/investors/[id]/test-link": { kind: "page", page: "inv" }, /* M10-S23: super user only, decided inside */
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
   "/api/investors/[id]/kam": { kind: "page", page: "inv" },
+  "/api/payments": { kind: "session" },   /* M10-S01-W1 the Payments register: the seat (Finance pay/bank, the read-only Auditor) decides inside; a KAM is refused 403 */
   "/api/receipts": { kind: "page", page: "pay" },
   "/api/statements": { kind: "page", page: "pay" },   /* M10-S05 bank statement upload on the Payments page: Finance ("pay") decided inside too */
   "/api/claims": { kind: "page", page: "pay" },          /* M10-S03 claim answers: Finance ("pay") decided inside too */

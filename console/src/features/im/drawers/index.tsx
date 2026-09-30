@@ -11,11 +11,11 @@
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
 import { SignCell } from "../paper2/SignCell";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
-  CHANS, FSTATE, I, KAMS, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
-  aged, ansOf, bookOf, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
-  mayDetails, money, nOpen, nState, notFin, plusDays, quiet, readBook, roundOf, safeNote, tierOf, who,
+  CHANS, FSTATE, I, KAMS, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
+  aged, bookOf, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
+  mayDetails, money, notFin, plusDays, quiet, readBook, roundOf, safeNote, tierOf, who,
 } from "@/lib/im";
 import type { ImDrafts, ImDrawerKey, ImInvestor } from "@/lib/im";
 import { Icon } from "@/components/ui/Icon";
@@ -23,6 +23,7 @@ import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
 import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
 import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { receiptPrepare, receiptRecord } from "@/lib/data/endpoints/claims";
+import { claimConfirm, claimNotThere, claimOne } from "@/lib/data/endpoints/receipts";
 import { useReload } from "@/lib/store";
 import { investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
 import { investorAllot, investorAllotments } from "@/lib/data/endpoints/allotments";
@@ -156,48 +157,65 @@ function talkFoot(c: Ctx): ReactNode {
   ) : null;
 }
 
-/* ---- claim — imx.js 2674–2710 ---- */
-function claimBody(c: Ctx): ReactNode {
-  const { s, me, id } = c;
-  const n = s.data.INBOX.find(y => y.id === id); if (!n) return null;
-  const x = I(s, me, n.inv);
-  if (!x) return (
-    <div className="note bad"><b>No investor on this side matches
-      {" "}<span className="mono">{n.inv}</span>.</b> The claim came over the link against an ARL ID
-      the Investors side does not hold, which means the two books have drifted. Nothing can be recorded
-      against it until that is sorted out.</div>
-  );
-  const a = ansOf(s, n.id) || { by: "", at: "", why: undefined };
+/* ---- claim — imx.js 2674–2710 ----
+   M10-S03-W1: the report is GET /api/claims/[id]; "Confirm and record it" is POST /api/claims/[id]/confirm (Idempotency-Key per
+   press, the bank reference Finance found) and "Not there yet" is POST /api/claims/[id]/not-there { reason }. */
+const mxv = (c: Ctx, k: string): string => (c.s.ui.MX || {})[k] || "";
+const setMxv = (c: Ctx, k: string, v: string) => c.dispatch({ type: "mset", k, v });
+/** "2026-09-23" → "23 Sep"; the demo book's own "23 Sep" stays as it is */
+const dayOfIso = (v: string | null): string => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? fmtDate(v).slice(0, 6) : v || "—");
+function ClaimSub(c: Ctx) {
+  const r = useApiRead(claimOne, { s: c.s, me: c.me }, c.id);
+  const inv = useApiRead(investorRecord, { s: c.s, me: c.me }, r.state === "ok" ? r.data.claim.investorId : null);
+  return <>{inv.state === "ok" ? inv.data.record.investor.n : r.state === "ok" ? r.data.claim.investorId : ""}</>;
+}
+function ClaimBody(c: Ctx) {
+  const r = useApiRead(claimOne, { s: c.s, me: c.me }, c.id);
+  const inv = useApiRead(investorRecord, { s: c.s, me: c.me }, r.state === "ok" ? r.data.claim.investorId : null);
+  if (r.state === "idle") return null;
+  if (r.state === "loading") return <p className="sm" style={{ margin: 0 }}>Reading the report…</p>;
+  if (r.state === "error") return <div className="note bad" role="alert">{r.err.error}</div>;
+  const cl = r.data.claim, x = inv.state === "ok" ? inv.data.record.investor : null;
   return (
     <>
-      <div className="note ir"><b>{who(s, n.ir).n || n.ir} wrote this on the lead side</b>
-        {" "}<span className="mono">{n.at}</span>.<br />{safeNote(s, me, n.d)}</div>
+      {cl.superUserNote ? <div className="note su" style={{ marginBottom: 12 }}>{cl.superUserNote}</div> : null}
+      <div className="note ir"><b>{cl.byName || cl.byId} wrote this on the lead side</b>
+        {" "}<span className="mono">{cl.saidOn}</span>. <span className="sm">Written in the IR console.</span><br />{cl.words}</div>
       <p className="sm" style={{ margin: "12px 0 0" }}>It is not a receipt and it has moved nothing. You are the
         only person who can say whether the money is actually in the account, and saying so here is
         what writes the receipt — the IR never types one and never will.</p>
       <div className="drwsec"><dl className="kv" style={{ marginTop: 0 }}>
-        <dt>Investor</dt><dd><b>{x ? x.n : n.inv}</b> <span className="mono sm">{n.inv}</span></dd>
+        <dt>Investor</dt><dd><b>{x ? x.n : cl.investorId}</b> <span className="mono sm">{cl.investorId}</span></dd>
         <dt>Holding</dt><dd>{x ? x.units + " unit" + (x.units > 1 ? "s" : "") + " · " + money(x.units * UNIT) : "—"}</dd>
-        <dt>Already in</dt><dd className="mono">{money(gotBy(s, me, n.inv))}</dd>
-        <dt>Outstanding</dt><dd className="mono"><b>{money(dueBy(s, me, n.inv))}</b></dd>
-        {x && x.hold ? <><dt>Hold ends</dt><dd className="mono">{x.hold}</dd></> : null}
+        <dt>Already in</dt><dd className="mono">{money(cl.alreadyInRupees)}</dd>
+        <dt>Outstanding</dt><dd className="mono"><b>{money(cl.outstandingRupees)}</b></dd>
+        {cl.holdUntil ? <><dt>Hold ends</dt><dd className="mono">{dayOfIso(cl.holdUntil)}</dd></> : null}
       </dl></div>
-      {!nOpen(s, n) ? (
-        <div className="drwsec"><span className={`tag ${nState(s, n) === "confirmed" ? "go" : "late"}`}>
-          {nState(s, n)}</span> <span className="sm">{a.by ? <ImPname s={s} k={a.by} first /> : null}
-          {" "}<span className="mono">{a.at || ""}</span>{a.why ? " · " + safeNote(s, me, a.why) : ""}</span></div>
+      {cl.offers.includes("confirm") ? (
+        <div className="drwsec">
+          <label className="fi"><span>Bank reference you found</span>
+            <input className="inp" id="cl-ref" placeholder={cl.refLastFour ? "ends " + cl.refLastFour : "the reference on the statement"}
+              value={mxv(c, "cl:ref:" + c.id)} onChange={e => setMxv(c, "cl:ref:" + c.id, e.target.value)} /></label>
+          <label className="fi" style={{ marginTop: 12 }}><span>If it is not there yet — why</span>
+            <textarea className="nta" id="cl-why" rows={2} maxLength={500} placeholder="the IR sees this on the lead"
+              value={mxv(c, "cl:why:" + c.id)} onChange={e => setMxv(c, "cl:why:" + c.id, e.target.value)} /></label>
+        </div>
       ) : null}
     </>
   );
 }
-function claimFoot(c: Ctx): ReactNode {
-  const { s, me, id, dispatch } = c;
-  const n = s.data.INBOX.find(y => y.id === id);
-  if (!n || !nOpen(s, n) || !may(s, me, "pay")) return null;
+function ClaimFoot(c: Ctx) {
+  const { s, me, dispatch } = c;
+  const r = useApiRead(claimOne, { s, me }, c.id);
+  const confirm = useApiWrite(claimConfirm, { s, me }, dispatch);
+  const notThere = useApiWrite(claimNotThere, { s, me }, dispatch);
+  const key = useRef(newIdempotencyKey());
+  if (!c.id || r.state !== "ok" || !r.data.claim.offers.includes("confirm")) return null;
+  const done = (ok: boolean) => { if (!ok) return; key.current = newIdempotencyKey(); dispatch({ type: "closeDrawer" }); };
   return (
     <>
-      <button className="act" onClick={() => dispatch({ type: "confirmClaim", nid: n.id })}>Confirm and record it</button>{" "}
-      <button className="act ghost" onClick={() => dispatch({ type: "rejectClaim", nid: n.id, why: "Not in the account yet" })}>Not there yet</button>
+      <button className="act" onClick={() => void confirm({ id: c.id!, ref: mxv(c, "cl:ref:" + c.id).trim() }, { idempotencyKey: key.current }).then(x => done(x.ok))}>Confirm and record it</button>{" "}
+      <button className="act ghost" onClick={() => void notThere({ id: c.id!, reason: mxv(c, "cl:why:" + c.id).trim() }).then(x => done(x.ok))}>Not there yet</button>
     </>
   );
 }
@@ -550,8 +568,8 @@ export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
   talk: { w: 450, t: "Log a conversation", sub: nameOf, body: talkBody, foot: talkFoot },
   claim: {
     w: 450, t: "An IR says the money has arrived",
-    sub: ({ s, me, id }) => { const n = s.data.INBOX.find(y => y.id === id); return n ? (I(s, me, n.inv) || { n: "" }).n || n.inv : ""; },
-    body: claimBody, foot: claimFoot,
+    sub: c => <ClaimSub {...c} />,
+    body: c => <ClaimBody {...c} />, foot: c => <ClaimFoot {...c} />,
   },
   pay: { w: 430, t: "Record a receipt", sub: nameOf, body: payBody, foot: payFoot },
   send: { w: 440, t: "Send for signature", sub: nameOf, body: sendBody, foot: sendFoot },

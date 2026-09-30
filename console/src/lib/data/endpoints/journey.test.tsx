@@ -6,7 +6,8 @@ import { leadEmailSend, leadGate } from "./lead";
 import { coverEnd, coverStart } from "./cover";
 import { holdExtend, holdRelease, holdsLand, holdsList } from "./holds";
 import { leadClaim, receiptPrepare, receiptRecord } from "./claims";
-import { appAccount, appLock, appUnlock } from "./app-account";
+/* the app account card has one endpoint module, ./app (M10-S21-W1 owns /api/investors/[id]/unlock) */
+import { appCard as appAccount, appLock, appUnlock } from "./app";
 
 const demo = (): ImState => ({ data: imDemoData(), ui: initialImUi() });
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

@@ -6,14 +6,14 @@
 import { plusDays } from "./dates";
 import {
   addInvestorGate, allotOf, fmtDate, llpOf, lockAppGate, markPaidGate, newTestLink, nextInvId, openHeld,
-  payoutNet, payoutOf, sendWelcomeGate, testLinkGate,
+  payoutNet, payoutOf, payoutSchedule, sendWelcomeGate, testLinkGate,
 } from "./money";
-import { I } from "./selectors";
+import { I, may } from "./selectors";
 import type { ImAction, ImKind, ImMoneyAction, ImState } from "./types";
 import { inr } from "./dates";
 
 export const MONEY_ACTIONS = new Set<ImAction["type"]>([
-  "mset", "markPayoutPaid", "sendWelcome", "welcomeDelivered", "lockApp", "createTestLink", "addInvestor",
+  "mset", "markPayoutPaid", "schedulePayouts", "sendWelcome", "welcomeDelivered", "lockApp", "createTestLink", "addInvestor",
 ]);
 export const isMoneyAction = (a: ImAction): a is ImMoneyAction => MONEY_ACTIONS.has(a.type);
 
@@ -47,6 +47,20 @@ export function moneyRun(W: ImState, WHO: string, a: ImMoneyAction, c: MoneyCtx)
       d.OUTBOX.unshift({ at: c.T(), inv: al.Customer, t: "Payout paid · " + fmtDate(p.Period_Month) + " · " + inr(p.Net_Amount), by: WHO });
       mx({ "po:utr": null, "po:tds": null, "po:on": null, "po:mode": null });
       u.DRW = null;
+      break;
+    }
+
+    /* ---- M10-S20-W1: the schedule job — an Issued allotment's missing monthly payouts, never a duplicate (D82) ---- */
+    case "schedulePayouts": {
+      if (!may(W, WHO, "pay")) break;
+      for (const id of a.ids) {
+        const al = allotOf(W, id); if (!al || !I(W, WHO, al.Customer)) continue;
+        const have = new Set((d.PAYOUT || []).filter(p => p.Allotment === id).map(p => p.Instalment_No));
+        const add = payoutSchedule(al).filter(p => !have.has(p.Instalment_No));
+        if (!add.length) continue;
+        d.PAYOUT = (d.PAYOUT || []).concat(add);
+        c.log("Created the payout schedule", al.Customer, id + " · " + add.length + " monthly payouts", "money");
+      }
       break;
     }
 
