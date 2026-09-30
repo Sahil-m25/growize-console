@@ -9,6 +9,7 @@
    is ever open and the panel always asks — nothing is shown or released behind it. */
 
 import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useApiRead } from "@/lib/data/api";
 import { STEPUP_RETURN, stepUpHref, stepUpReturnOf, stepUpStatus, type StepUpAction, type StepUpReturn } from "@/lib/data/endpoints/session";
 
@@ -35,6 +36,8 @@ export function useStepUpReturn(): StepUpReturn | null {
 export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepUpAction | null; onOpen: () => void; onCancel: () => void; what?: string; lead?: ReactNode }) {
   const r = useApiRead(stepUpStatus, null, action);
   const back = useStepUpReturn();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const open = r.state === "ok" && r.data.valid;
   useEffect(() => { if (open) onOpen(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!action) return back ? <p className="sm" role="status">{STEPUP_RETURN[back]}</p> : null;
@@ -42,8 +45,9 @@ export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepU
   if (r.state === "error") return <p className="note bad" role="alert">{r.err.error}</p>;
   if (r.state !== "ok" || r.data.valid) return null;
   const locked = r.data.code === "locked";
-  return (
-    <div className="note" role="dialog" aria-label="Confirm it is you" style={{ marginTop: 7 }}>
+  const panel = (
+    <div className="note stepup-panel" role="dialog" aria-label="Confirm it is you"
+      style={mounted ? { position: "fixed", right: 16, bottom: 16, maxWidth: 440, zIndex: 60, background: "var(--card)", border: "1px solid var(--line-3)", boxShadow: "0 8px 28px rgba(0,0,0,.18)" } : { marginTop: 7 }}>
       {lead ? <>{lead}<br /></> : null}
       <b>Confirm it is you with a fresh sign-in code {what ?? WHAT[action]}.</b>{" "}
       {locked ? r.data.message : "Zoho asks you to sign in again, then brings you back here. This is logged with your name against it."}
@@ -54,4 +58,6 @@ export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepU
       <button className="chip" onClick={onCancel}>Cancel</button>
     </div>
   );
+  /* an open panel over the page (like a drawer), once the page is in the browser; inline before that */
+  return mounted ? createPortal(panel, document.body) : panel;
 }
