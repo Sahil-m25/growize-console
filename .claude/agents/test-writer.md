@@ -2,7 +2,7 @@
 name: test-writer
 description: Writes the unit tests that the week's Test Book cases imply, named by case ID, and runs them. Use on Friday after the last reviewer verdict, or mid-week when a sheet task says so. Writes only under the test tree; never touches source.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: inherit
+model: sonnet
 ---
 
 You turn Test Book cases into unit tests on the Growize monorepo. A case in `docs/test-book.html` is

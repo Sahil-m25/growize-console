@@ -4,65 +4,65 @@ Projected from the phase forecast (14 loop hours a day); refreshed every round b
 
 | Needed by (projected) | Phase | Story | Who | Item | Hours |
 |---|---|---|---|---|---|
-| Wed, 30 Sept, 12:32 pm | 2. Plug into Zoho | M02-S04 | Sahil | M02-S04-T02 Profiles per seat | 3 |
-| Wed, 30 Sept, 12:32 pm | 2. Plug into Zoho | M02-S04 | Sahil | M02-S04-T03 Field-level security wall | 2 |
-| Wed, 30 Sept, 12:32 pm | 2. Plug into Zoho | M02-S04 | Sahil | M02-S04-T04 Private sharing and B-12 rules | 1.5 |
-| Wed, 30 Sept, 09:57 pm | 2b. Wire screens to the API | M09-S02 | Sahil | M09-S02-T01 Record sharing for the KAM book | 2 |
-| Wed, 30 Sept, 11:40 pm | 2b. Wire screens to the API | M09-S04 | Sahil | M09-S04-T01 Ownership fields and workflow | 1.5 |
-| Thu, 1 Oct, 01:23 am | 2b. Wire screens to the API | M09-S08 | Sahil | M09-S08-T01 Originating IR field and sharing rule | 2 |
-| Thu, 1 Oct, 02:14 am | 2b. Wire screens to the API | M01-S10 | Sahil | M01-S10-T03 Approval process on forfeit/refund | 2 |
-| Thu, 1 Oct, 05:40 am | 2b. Wire screens to the API | M08-S03 | Sahil | M08-S03-T03 Receipt validation rules that never block | 1 |
-| Thu, 1 Oct, 06:32 am | 2b. Wire screens to the API | M08-S04 | Sahil | M08-S04-T01 Hold record and its approvals | 3 |
-| Thu, 1 Oct, 08:14 am | 2b. Wire screens to the API | M08-S07 | Sahil | M08-S07-T01 Contacts lifecycle blueprint starting at 'Said yes' | 3 |
-| Thu, 1 Oct, 09:06 am | 2b. Wire screens to the API | M08-S08 | Sahil | M08-S08-T01 app_mark formula and permanent_at workflow | 2 |
-| Thu, 1 Oct, 09:57 am | 2b. Wire screens to the API | M10-S01 | Sahil | M10-S01-T01 Receipts module | 3 |
-| Thu, 1 Oct, 10:49 am | 2b. Wire screens to the API | M10-S02 | Sahil | M10-S02-T01 Maker-checker rule and record lock | 1.5 |
-| Thu, 1 Oct, 12:32 pm | 2b. Wire screens to the API | M10-S05 | Sahil | M10-S05-T01 Statements module | 1 |
-| Thu, 1 Oct, 01:23 pm | 2b. Wire screens to the API | M11-S01 | Sahil | M11-S01-T01 Map blocks to LLPs | 1.5 |
-| Thu, 1 Oct, 02:14 pm | 2b. Wire screens to the API | M11-S02 | Sahil | M11-S02-T01 Canonical allotment module | 2 |
-| Thu, 1 Oct, 03:06 pm | 2b. Wire screens to the API | M11-S03 | Sahil | M11-S03-T01 Adopt the shelf | 2 |
-| Thu, 1 Oct, 04:49 pm | 2b. Wire screens to the API | M11-S05 | Sahil | M11-S05-T01 Allotment blueprint | 3 |
-| Thu, 1 Oct, 05:40 pm | 2b. Wire screens to the API | M11-S07 | Sahil | M11-S07-T02 Install the oversell guard | 1 |
-| Thu, 1 Oct, 06:32 pm | 2b. Wire screens to the API | M12-S01 | Sahil | M12-S01-T02 Sharing and profile permissions for attachments | 3 |
-| Thu, 1 Oct, 07:23 pm | 2b. Wire screens to the API | M12-S02 | Sahil | M12-S02-T01 Typed-slot file-upload fields | 2 |
-| Thu, 1 Oct, 08:14 pm | 2b. Wire screens to the API | M12-S03 | Sahil | M12-S03-T01 Sign status fields on the records | 2 |
-| Thu, 1 Oct, 09:06 pm | 2b. Wire screens to the API | M12-S04 | Sahil | M12-S04-T01 Zoho Sign plan and OAuth | 2 |
-| Thu, 1 Oct, 09:06 pm | 2b. Wire screens to the API | M12-S04 | Sahil | M12-S04-T02 Templates in Zoho Sign | 3 |
-| Thu, 1 Oct, 10:49 pm | 2b. Wire screens to the API | M12-S06 | Sahil | M12-S06-T01 Gate field permission | 2 |
-| Fri, 2 Oct, 12:32 am | 2b. Wire screens to the API | M12-S11 | Sahil | M12-S11-T01 NDA round fields and sharing | 3 |
-| Fri, 2 Oct, 02:14 am | 2b. Wire screens to the API | M14-S01 | Sahil | M14-S01-T01 Event fields on Leads | 1 |
-| Fri, 2 Oct, 07:23 am | 2b. Wire screens to the API | M13-S02 | Sahil | M13-S02-T01 Cases layout and fields | 3 |
-| Fri, 2 Oct, 08:14 am | 2b. Wire screens to the API | M13-S03 | Sahil | M13-S03-T01 Assignment rules and fallback owner | 2 |
-| Fri, 2 Oct, 09:06 am | 2b. Wire screens to the API | M13-S04 | Sahil | M13-S04-T02 Bank proof out of the Case | 2 |
-| Fri, 2 Oct, 09:57 am | 2b. Wire screens to the API | M13-S06 | Sahil | M13-S06-T01 Updates module and kind ownership | 3 |
-| Fri, 2 Oct, 11:14 pm | 3. Test and harden | M02-S01 | Sahil | M02-S01-T01 Renew Enterprise and buy the test-user seat | 1 |
-| Sat, 3 Oct, 01:23 am | 3. Test and harden | M02-S06 | Sahil | M02-S06-T01 Remove Convert permission | 1 |
-| Sat, 3 Oct, 02:40 am | 3. Test and harden | M02-S10 | Sahil | M02-S10-T02 Register OAuth clients | 1 |
-| Sat, 3 Oct, 05:14 am | 3. Test and harden | M20-S08 | Sahil | M20-S08-T01 Plan choice and purchase request | 1 |
-| Sat, 3 Oct, 05:14 am | 3. Test and harden | M20-S08 | Sahil | M20-S08-T02 OAuth client and secrets | 1 |
-| Sat, 3 Oct, 05:40 am | 3. Test and harden | M02-S07 | Sahil | M02-S07-T01 Unhide activities and enable sync | 1.5 |
-| Sat, 3 Oct, 10:49 am | 3. Test and harden | M03-S05 | Sahil | M03-S05-T01 Buy seats and invite users | 2 |
-| Sat, 3 Oct, 11:14 am | 3. Test and harden | M03-S06 | Sahil | M03-S06-T01 Auditor profile read-only | 1 |
-| Sat, 3 Oct, 11:40 am | 3. Test and harden | M03-S07 | Sahil | M03-S07-T01 Sharing for KAM books | 3 |
-| Sat, 3 Oct, 12:06 pm | 3. Test and harden | M03-S08 | Sahil | M03-S08-T01 FLS on kyc_status | 1 |
-| Sat, 3 Oct, 12:32 pm | 3. Test and harden | M03-S09 | Sahil | M03-S09-T01 Origin fields on Contacts | 1 |
-| Sat, 3 Oct, 02:14 pm | 3. Test and harden | M04-S03 | Sahil | M04-S03-T01 Consent fields | 1 |
-| Sun, 4 Oct, 06:57 am | 3. Test and harden | M10-S07 | Sahil | M10-S07-T01 Allotment lookup and Payment_Status workflow | 2 |
-| Sun, 4 Oct, 12:57 pm | 3. Test and harden | M12-S10 | Sahil | M12-S10-T02 Restricted test user | 1.5 |
-| Mon, 5 Oct, 03:57 am | 3. Test and harden | M18-S01 | Sahil | M18-S01-T05 Review limits dashboard | 1 |
-| Mon, 5 Oct, 04:23 am | 3. Test and harden | M18-S02 | Sahil | M18-S02-T04 Secrets, headers, cookies | 3 |
-| Mon, 5 Oct, 05:40 am | 3. Test and harden | M18-S05 | Sahil | M18-S05-T01 Schedule backups | 2 |
-| Mon, 5 Oct, 05:40 am | 3. Test and harden | M18-S05 | Sahil | M18-S05-T02 Restore drill | 3 |
-| Mon, 5 Oct, 06:06 am | 3. Test and harden | M18-S06 | Sahil | M18-S06-T01 Legacy flag and mapping + dry run | 4 |
-| Mon, 5 Oct, 06:06 am | 3. Test and harden | M18-S06 | Sahil | M18-S06-T02 Production migration | 2 |
-| Mon, 5 Oct, 06:57 am | 3. Test and harden | M18-S09 | Sahil | M18-S09-T03 Rollback rehearsal | 2 |
-| Mon, 5 Oct, 06:57 am | 3. Test and harden | M18-S09 | Sahil | M18-S09-T05 Cutover and smoke | 3 |
-| Mon, 5 Oct, 07:23 am | 3. Test and harden | M18-S12 | Sahil | M18-S12-T02 Dry run on the sandbox copy | 2 |
-| Mon, 5 Oct, 07:49 am | 3. Test and harden | M20-S03 | Sahil | M20-S03-T02 Walkthrough session | 1 |
-| Mon, 5 Oct, 08:40 am | 3. Test and harden | M18-S10 | Sahil | M18-S10-T02 Hypercare rota | 2 |
-| Mon, 5 Oct, 09:06 am | 3. Test and harden | M19-S07 | Sahil | M19-S07-T02 Hourly production check and alert | 1 |
+| Wed, 30 Sept, 06:17 pm | 2. Plug into Zoho | M02-S04 | Sahil | M02-S04-T02 Profiles per seat | 3 |
+| Wed, 30 Sept, 06:17 pm | 2. Plug into Zoho | M02-S04 | Sahil | M02-S04-T03 Field-level security wall | 2 |
+| Wed, 30 Sept, 06:17 pm | 2. Plug into Zoho | M02-S04 | Sahil | M02-S04-T04 Private sharing and B-12 rules | 1.5 |
+| Wed, 30 Sept, 08:52 pm | 2b. Wire screens to the API | M09-S04 | Sahil | M09-S04-T01 Ownership fields and workflow | 1.5 |
+| Wed, 30 Sept, 09:43 pm | 2b. Wire screens to the API | M09-S08 | Sahil | M09-S08-T01 Originating IR field and sharing rule | 2 |
+| Thu, 1 Oct, 12:17 am | 2b. Wire screens to the API | M08-S07 | Sahil | M08-S07-T01 Contacts lifecycle blueprint starting at 'Said yes' | 3 |
+| Thu, 1 Oct, 01:09 am | 2b. Wire screens to the API | M08-S08 | Sahil | M08-S08-T01 app_mark formula and permanent_at workflow | 2 |
+| Thu, 1 Oct, 02:00 am | 2b. Wire screens to the API | M10-S01 | Sahil | M10-S01-T01 Receipts module | 3 |
+| Thu, 1 Oct, 03:43 am | 2b. Wire screens to the API | M11-S07 | Sahil | M11-S07-T02 Install the oversell guard | 1 |
+| Thu, 1 Oct, 04:34 am | 2b. Wire screens to the API | M12-S01 | Sahil | M12-S01-T02 Sharing and profile permissions for attachments | 3 |
+| Thu, 1 Oct, 05:26 am | 2b. Wire screens to the API | M12-S02 | Sahil | M12-S02-T01 Typed-slot file-upload fields | 2 |
+| Thu, 1 Oct, 06:17 am | 2b. Wire screens to the API | M12-S04 | Sahil | M12-S04-T01 Zoho Sign plan and OAuth | 2 |
+| Thu, 1 Oct, 06:17 am | 2b. Wire screens to the API | M12-S04 | Sahil | M12-S04-T02 Templates in Zoho Sign | 3 |
+| Thu, 1 Oct, 07:09 am | 2b. Wire screens to the API | M12-S11 | Sahil | M12-S11-T01 NDA round fields and sharing | 3 |
+| Thu, 1 Oct, 03:17 pm | 3. Test and harden | M02-S01 | Sahil | M02-S01-T01 Renew Enterprise and buy the test-user seat | 1 |
+| Thu, 1 Oct, 05:26 pm | 3. Test and harden | M02-S06 | Sahil | M02-S06-T01 Remove Convert permission | 1 |
+| Thu, 1 Oct, 06:43 pm | 3. Test and harden | M02-S10 | Sahil | M02-S10-T02 Register OAuth clients | 1 |
+| Thu, 1 Oct, 09:17 pm | 3. Test and harden | M20-S08 | Sahil | M20-S08-T01 Plan choice and purchase request | 1 |
+| Thu, 1 Oct, 09:17 pm | 3. Test and harden | M20-S08 | Sahil | M20-S08-T02 OAuth client and secrets | 1 |
+| Thu, 1 Oct, 09:43 pm | 3. Test and harden | M02-S07 | Sahil | M02-S07-T01 Unhide activities and enable sync | 1.5 |
+| Fri, 2 Oct, 02:52 am | 3. Test and harden | M03-S05 | Sahil | M03-S05-T01 Buy seats and invite users | 2 |
+| Fri, 2 Oct, 03:17 am | 3. Test and harden | M03-S06 | Sahil | M03-S06-T01 Auditor profile read-only | 1 |
+| Fri, 2 Oct, 03:43 am | 3. Test and harden | M03-S07 | Sahil | M03-S07-T01 Sharing for KAM books | 3 |
+| Fri, 2 Oct, 04:09 am | 3. Test and harden | M03-S08 | Sahil | M03-S08-T01 FLS on kyc_status | 1 |
+| Fri, 2 Oct, 04:34 am | 3. Test and harden | M03-S09 | Sahil | M03-S09-T01 Origin fields on Contacts | 1 |
+| Fri, 2 Oct, 06:17 am | 3. Test and harden | M04-S03 | Sahil | M04-S03-T01 Consent fields | 1 |
+| Fri, 2 Oct, 01:09 pm | 3. Test and harden | M09-S02 | Sahil | M09-S02-T01 Record sharing for the KAM book | 2 |
+| Fri, 2 Oct, 05:00 pm | 3. Test and harden | M01-S10 | Sahil | M01-S10-T03 Approval process on forfeit/refund | 2 |
+| Fri, 2 Oct, 07:09 pm | 3. Test and harden | M08-S03 | Sahil | M08-S03-T03 Receipt validation rules that never block | 1 |
+| Fri, 2 Oct, 07:34 pm | 3. Test and harden | M08-S04 | Sahil | M08-S04-T01 Hold record and its approvals | 3 |
+| Fri, 2 Oct, 09:43 pm | 3. Test and harden | M10-S02 | Sahil | M10-S02-T01 Maker-checker rule and record lock | 1.5 |
+| Fri, 2 Oct, 10:34 pm | 3. Test and harden | M10-S05 | Sahil | M10-S05-T01 Statements module | 1 |
+| Fri, 2 Oct, 11:00 pm | 3. Test and harden | M10-S07 | Sahil | M10-S07-T01 Allotment lookup and Payment_Status workflow | 2 |
+| Fri, 2 Oct, 11:26 pm | 3. Test and harden | M11-S01 | Sahil | M11-S01-T01 Map blocks to LLPs | 1.5 |
+| Fri, 2 Oct, 11:52 pm | 3. Test and harden | M11-S02 | Sahil | M11-S02-T01 Canonical allotment module | 2 |
+| Sat, 3 Oct, 12:17 am | 3. Test and harden | M11-S03 | Sahil | M11-S03-T01 Adopt the shelf | 2 |
+| Sat, 3 Oct, 01:09 am | 3. Test and harden | M11-S05 | Sahil | M11-S05-T01 Allotment blueprint | 3 |
+| Sat, 3 Oct, 02:52 am | 3. Test and harden | M12-S03 | Sahil | M12-S03-T01 Sign status fields on the records | 2 |
+| Sat, 3 Oct, 04:09 am | 3. Test and harden | M12-S06 | Sahil | M12-S06-T01 Gate field permission | 2 |
+| Sat, 3 Oct, 05:00 am | 3. Test and harden | M12-S10 | Sahil | M12-S10-T02 Restricted test user | 1.5 |
+| Sat, 3 Oct, 06:43 am | 3. Test and harden | M14-S01 | Sahil | M14-S01-T01 Event fields on Leads | 1 |
+| Sat, 3 Oct, 11:00 am | 3. Test and harden | M13-S02 | Sahil | M13-S02-T01 Cases layout and fields | 3 |
+| Sat, 3 Oct, 11:26 am | 3. Test and harden | M13-S03 | Sahil | M13-S03-T01 Assignment rules and fallback owner | 2 |
+| Sat, 3 Oct, 11:52 am | 3. Test and harden | M13-S04 | Sahil | M13-S04-T02 Bank proof out of the Case | 2 |
+| Sat, 3 Oct, 12:17 pm | 3. Test and harden | M13-S06 | Sahil | M13-S06-T01 Updates module and kind ownership | 3 |
+| Sat, 3 Oct, 08:00 pm | 3. Test and harden | M18-S01 | Sahil | M18-S01-T05 Review limits dashboard | 1 |
+| Sat, 3 Oct, 08:26 pm | 3. Test and harden | M18-S02 | Sahil | M18-S02-T04 Secrets, headers, cookies | 3 |
+| Sat, 3 Oct, 09:43 pm | 3. Test and harden | M18-S05 | Sahil | M18-S05-T01 Schedule backups | 2 |
+| Sat, 3 Oct, 09:43 pm | 3. Test and harden | M18-S05 | Sahil | M18-S05-T02 Restore drill | 3 |
+| Sat, 3 Oct, 10:09 pm | 3. Test and harden | M18-S06 | Sahil | M18-S06-T01 Legacy flag and mapping + dry run | 4 |
+| Sat, 3 Oct, 10:09 pm | 3. Test and harden | M18-S06 | Sahil | M18-S06-T02 Production migration | 2 |
+| Sat, 3 Oct, 11:00 pm | 3. Test and harden | M18-S09 | Sahil | M18-S09-T03 Rollback rehearsal | 2 |
+| Sat, 3 Oct, 11:00 pm | 3. Test and harden | M18-S09 | Sahil | M18-S09-T05 Cutover and smoke | 3 |
+| Sat, 3 Oct, 11:26 pm | 3. Test and harden | M18-S12 | Sahil | M18-S12-T02 Dry run on the sandbox copy | 2 |
+| Sat, 3 Oct, 11:52 pm | 3. Test and harden | M20-S03 | Sahil | M20-S03-T02 Walkthrough session | 1 |
+| Sun, 4 Oct, 12:43 am | 3. Test and harden | M18-S10 | Sahil | M18-S10-T02 Hypercare rota | 2 |
+| Sun, 4 Oct, 01:09 am | 3. Test and harden | M19-S07 | Sahil | M19-S07-T02 Hourly production check and alert | 1 |
 
-## Testing phase (people, after the loop: Mon, 5 Oct, 11:14 am → Sun, 11 Oct, 11:14 am)
+## Testing phase (people, after the loop: Sun, 4 Oct, 03:17 am → Sat, 10 Oct, 03:17 am)
 
 | Story | Who | Item | Hours |
 |---|---|---|---|

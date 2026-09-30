@@ -11,4 +11,6 @@ Before the first round read CLAUDE.md, autopilot/AUTOPILOT.md and tools/PLUGINS.
 4. Print one line: `<STORY> [<phase>] → <done|review|waiting|none> · <what changed>`. The Slack tracker refreshes itself from done.mjs.
 5. Before the next round, drop the previous story's details from your working memory: re-read only the new packet. If the conversation is getting long, say so and suggest `/compact`.
 
+For a phase with many independent units, use `/fanout` instead (D111: parallel builder agents on Sonnet, Opus for the pattern and the merge).
+
 Never wait for a person, never edit a test's expected facts, never push or deploy, never print the TypeSafe key.

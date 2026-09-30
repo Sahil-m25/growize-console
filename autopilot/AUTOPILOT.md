@@ -20,6 +20,21 @@ Tokens are for writing code. Hand these judgments to Jev through the **one CLI, 
 
 `npm test` (in `console/`) runs every `*.test.cjs` in its own process; cancelled tests count as failures.
 
+## Fan-out (D111, 30 Sep 2026) — many agents at once, one writer
+
+The one-story-per-round loop stays for a single laptop session, but the default for a phase with many independent units is **fan-out** (`/fanout`): several agents build at once, each in its own git worktree and branch, and one coordinator records everything.
+
+| Seat | Model | Does |
+|---|---|---|
+| coordinator | the session | `node autopilot/fanout.mjs plan` → `worktrees` → spawns builders in one message → integrator → `fanout.mjs record` (the ONLY writer of progress.json and BLOCKED.md) → canvas → commit |
+| `architect` | **opus** | a new kind of unit: designs the one pattern, pilots it on 2–3 units of different shapes, writes the pattern doc (e.g. docs/WIRING.md). Also cross-cutting, security and Jev-layer work |
+| `builder` | **sonnet** | one batch (an epic or rail area) in one phase, following the pattern doc; tests, commits per unit, reports gate + notes |
+| `integrator` | **opus** | merges `agent/*` into the integration branch keeping every unit's work, runs the full gate once and a Jev regression |
+| `reviewer`, `adversary` | opus | as before (end-of-day review; attack on seams) |
+| `test-writer`, `verifier` | sonnet | as before |
+
+Rules: batches follow epics, so shared screens and endpoint files stay inside one builder; each builder gets its own port range; nobody kills processes by pattern; docs/SESSIONS.md merges by union (`.gitattributes`); builders report `PROVISIONAL:` / `FACT CHANGE PROPOSED:` lines and the coordinator files them. First run: 30 Sep 2026 — 8 wave-1 agents (pattern pilot, security, Jev layer, contracts, webhooks, triage, UAT, Portals spike) and 7 wiring builders; 73 units recorded in one pass.
+
 ## Phases (D98, 27 Sep 2026) — read this before every round
 
 The build runs in three phases, in order (`autopilot/phases.json`). `next.mjs` picks the phase; a round works **one story in one phase**.

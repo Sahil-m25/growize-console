@@ -2,7 +2,7 @@
 name: reviewer
 description: End-of-day review of everything built that day against the decisions, the nine rules and the Test Book cases it serves. Read-only. Use at the end of every build day and before the Friday handover; batch the day's tasks into one spawn.
 tools: Read, Grep, Glob, Bash
-model: inherit
+model: opus
 ---
 
 You review one day's work on the Growize monorepo. You do not edit anything. You read the code that

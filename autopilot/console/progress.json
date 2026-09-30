@@ -390,22 +390,25 @@
   },
   "M06-S03": {
    "status": "pending",
-   "attempts": 1,
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "wire": "done"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:06.350Z",
-   "notes": 1,
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
+   "at": "2026-09-30T12:29:34.185Z",
+   "notes": 3,
+   "note": "D110 search scope follows the seat (seat-search.ts); investors in results for org seats; 4/4",
    "commits": [
     "2c92b62",
-    "3c6435a"
+    "3c6435a",
+    "f387f44"
    ]
   },
   "M07-S03": {
@@ -634,19 +637,22 @@
   },
   "M20-S07": {
    "status": "pending",
-   "attempts": 1,
+   "attempts": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "harden": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "harden": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T17:12:32.839Z",
-   "notes": 1,
-   "note": "Contract validation, signing, stub receiver, signed push and request.raised to Case with 5 tests; waits on the app codebase, signing keys, the Plane B/C store and Cases proof.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "notes": 2,
+   "note": "Zoho CRM Portals spike: PARTIAL, leaning NO — no documented API/OAuth for portal users; keep Supabase (docs/reports/portals-spike.md)",
    "commits": [
-    "9069a95"
+    "9069a95",
+    "fba719b"
    ]
   },
   "M17-S06": {
@@ -701,21 +707,24 @@
   },
   "M01-S01": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "1690a59"
+    "1690a59",
+    "f387f44"
    ],
-   "at": "2026-09-28T07:44:02.938Z",
-   "note": "Guard built and tested; waiting on the front-end template.tsx wiring and sandbox proof (M02-S10).",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Page guard template + live Investors-side people/access from GET /api/session (session-access.ts); fixture unchanged",
+   "notes": 6
   },
   "M01-S03": {
    "status": "pending",
@@ -752,57 +761,66 @@
   },
   "M01-S09": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "1f09598"
+    "1f09598",
+    "f387f44"
    ],
-   "at": "2026-09-28T07:44:35.409Z",
-   "note": "/api/data returns a fresh block with error past the 5-minute ceiling; waiting on the front-end store reading it and staging proof (TC-IM01-013).",
-   "notes": 1
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Freshness from /api/data fresh via nextDataRead",
+   "notes": 2
   },
   "M03-S02": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "3eb18d2"
+    "3eb18d2",
+    "f387f44"
    ],
-   "at": "2026-09-28T09:15:23.256Z",
-   "note": "Grant store and API built and tested; waiting on Sahil's profile (Administrator), the grid screen and sandbox check of Reporting_To.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Grants via POST/DELETE /api/grants; 4/4",
+   "notes": 5
   },
   "M03-S04": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "5d6893b"
+    "5d6893b",
+    "f387f44"
    ],
-   "at": "2026-09-28T10:51:19.997Z",
-   "note": "Session kill and seat change built; waiting on the kam-pool-return grant, users.UPDATE scope and the seat dropdown.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Seat dropdown via PUT /api/users/{id}, never root/di, never own or super-admin row; 3/7 as baseline",
+   "notes": 6
   },
   "M03-S06": {
    "status": "pending",
@@ -881,21 +899,24 @@
   },
   "M05-S08": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "846c0a8"
+    "846c0a8",
+    "2fc5aea"
    ],
-   "at": "2026-09-28T13:46:20.499Z",
-   "note": "Care queue built and tested; waiting on the KAM Today screen and staging UAT.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "KAM Today tiles and cadence cards from /api/queues/investors side am",
+   "notes": 6
   },
   "M06-S02": {
    "status": "pending",
@@ -943,22 +964,25 @@
    "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6"
   },
   "M07-S05": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "a8085ba"
+    "a8085ba",
+    "057b4c1"
    ],
-   "at": "2026-09-28T07:44:43.151Z",
-   "note": "Sender built and tested; waiting on secrets/scopes, the NDA stamp reader, the composer screen and staging proof TC-E07-024.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Composer Send posts /api/leads/[id]/email",
+   "notes": 6
   },
   "M09-S01": {
    "status": "pending",
@@ -980,93 +1004,108 @@
   },
   "M09-S02": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "a4b0e76"
+    "a4b0e76",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T09:15:34.432Z",
-   "note": "AM scope keys built and tested; waiting on Contacts sharing (T01), the front-end columns and staging.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "AM heading/subtitle/No-manager chip from /api/investors/am; 3/3",
+   "notes": 5
   },
   "M09-S03": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "a4b0e76"
+    "a4b0e76",
+    "0973b9b"
    ],
-   "at": "2026-09-28T09:15:34.641Z",
-   "note": "Record read built and tested; waiting on the front-end record page (T02) and UI cases.",
-   "notes": 3
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Record header, banners and section bar from GET /api/investors/[id]/record; M09-S03 2/2 PASS",
+   "notes": 4
   },
   "M09-S04": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "03c8a5f"
+    "03c8a5f",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T10:51:43.404Z",
-   "note": "KAM assign built and tested; waiting on the KAM workflow and field security (T01), the care drawer and sandbox proof.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Name/move a manager via PUT …/kam with version",
+   "notes": 6
   },
   "M09-S07": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "e4c3d05"
+    "e4c3d05",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T11:38:39.672Z",
-   "note": "Search built and tested; waiting on the sandbox LIKE proof and the search box.",
-   "notes": 3
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Investors search debounced via /api/investors/search",
+   "notes": 4
   },
   "M09-S08": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "03c8a5f"
+    "03c8a5f",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T10:51:43.709Z",
-   "note": "IR scope built and tested; waiting on Originating_IR stamping and sharing in Zoho and staging proof.",
-   "notes": 3
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Not wired: an IR has no Investors page and no IR list route exists",
+   "notes": 4
   },
   "M07-S07": {
    "status": "pending",
@@ -1085,200 +1124,233 @@
   },
   "M01-S10": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "3eb18d2"
+    "3eb18d2",
+    "f387f44"
    ],
-   "at": "2026-09-28T09:15:23.454Z",
-   "note": "Step-up and release built and tested; waiting on the Zoho approval process (T03), the step-up redirect URI and the front-end panel.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Step-up panel asks reason, then /api/auth/step-up; M01-S10 4/4 (was 2/4)",
+   "notes": 8
   },
   "M05-S06": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "cbe5734"
+    "cbe5734",
+    "2fc5aea"
    ],
-   "at": "2026-09-28T12:31:15.942Z",
-   "note": "Headline figures built and tested; waiting on the tiles and sandbox call-budget proof.",
-   "notes": 3
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Investors Today tiles, as-of line and stale state from /api/numbers/investors-today; TC-IM03-002 now passes",
+   "notes": 4
   },
   "M05-S07": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "846c0a8"
+    "846c0a8",
+    "2fc5aea"
    ],
-   "at": "2026-09-28T13:46:20.280Z",
-   "note": "Queue built and tested; waiting on the Sign status reader for paper rows and the Today screen.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Waiting-on-you rows and actions from GET /api/queues/investors",
+   "notes": 5
   },
   "M08-S03": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "20f9187"
+    "20f9187",
+    "057b4c1"
    ],
-   "at": "2026-09-28T10:52:35.136Z",
-   "note": "Claim and receipt writes built and tested; waiting on Receipts Idempotency_Key, secrets, the drawers and sandbox/UAT.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Claim drawer and record-a-receipt drawer via /api/receipts/prepare + record; IM05-007 FAIL→REVIEW",
+   "notes": 6
   },
   "M08-S04": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "cbe5734"
+    "cbe5734",
+    "057b4c1"
    ],
-   "at": "2026-09-28T12:31:16.148Z",
-   "note": "Hold clock, extend and lapse built and tested; waiting on Zoho approval processes and the hold screens.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Holds running, Land cards, reservation alert/drawer, Extend/Release from /api/holds; IM03-009 and IM05-017 FAIL→PASS",
+   "notes": 7
   },
   "M08-S07": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "a4b0e76"
+    "a4b0e76",
+    "057b4c1"
    ],
-   "at": "2026-09-28T09:15:34.899Z",
-   "note": "Said-yes Contacts read built; waiting on the lifecycle blueprint (T01) and front-end state.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "\"said yes\" state added (ImSt); live investorOf derives it",
+   "notes": 5
   },
   "M08-S08": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "13062e9"
+    "13062e9",
+    "057b4c1"
    ],
-   "at": "2026-09-28T12:31:32.607Z",
-   "note": "Open-on-match verified and extended; waiting on App_Account_Mark/permanent fields (T01) and the app panel.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "App account card reads/writes the routes",
+   "notes": 7
   },
   "M10-S01": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "58ae166"
+    "58ae166",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T06:14:40.205Z",
-   "note": "Register read (T03) done; migration (T02) waiting on Sahil confirming legacy columns and completing Receipts (T01), plus the sandbox dry run.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Register via new GET /api/payments; UTR masked for super user and read-only seats (fixes TC-E11-016/TC-E15-009); matched-only totals, recorded apart (D21)",
+   "notes": 7
   },
   "M10-S02": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "12914d3"
+    "12914d3",
+    "0973b9b"
    ],
-   "at": "2026-09-28T11:38:27.735Z",
-   "note": "Match built and tested; waiting on the Zoho validation rule (T01) and the Match it control.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Match it posts /api/receipts/[id]/match with expectedModifiedTime; passes with merged rail names (scratch copies)",
+   "notes": 6
   },
   "M10-S03": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "12914d3"
+    "12914d3",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T11:38:27.936Z",
-   "note": "Claim answers built and tested; waiting on answer fields in Zoho and the claim drawer.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Answer an IR claim via /api/claims; lead-page \"Finance did not find it\" not wired",
+   "notes": 5
   },
   "M10-S05": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "13062e9"
+    "13062e9",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T12:31:32.838Z",
-   "note": "Parser and matcher built; waiting on a Statements module and the upload screen.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Bank statement upload + reconcile (multipart)",
    "notes": 4
   },
   "M10-S07": {
@@ -1301,237 +1373,286 @@
   },
   "M11-S01": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "421f8d9"
+    "421f8d9",
+    "0973b9b"
    ],
-   "at": "2026-09-28T09:16:22.255Z",
-   "note": "Shelf read built and tested; waiting on the block mapping (T01) and the Farms page.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Farms LLP list + drawer via endpoints/farms.ts (D104 pattern); M11-S03/S04 UI cases pass; no /api calls in fixture mode",
+   "notes": 5
   },
   "M11-S02": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "31fa384"
+    "31fa384",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T10:52:01.620Z",
-   "note": "Allotment reads built and tested; waiting on the front-end rows and an allotment write path for AC1.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Allotment rows from the two allotments routes",
+   "notes": 5
   },
   "M11-S03": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "e4c3d05"
+    "e4c3d05",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T11:38:39.823Z",
-   "note": "Shelf built and tested; waiting on LLP roll-ups (T01) and the Farms tiles.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Tiles and per-LLP bars from /api/farms/shelf; 3/3",
    "notes": 4
   },
   "M11-S04": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "7242913"
+    "7242913",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T12:31:49.561Z",
-   "note": "Release/take-back built; waiting on the Deluge guard install and the Farms buttons.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Release N / Take it back via /release; 3/3",
    "notes": 4
   },
   "M11-S05": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "b2f2527"
+    "b2f2527",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T13:47:17.645Z",
-   "note": "Allot built and tested; waiting on the allotment blueprint in Zoho and the Verify control.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Verify posts /allot (verify + allot in one write); 4/4",
+   "notes": 7
   },
   "M11-S07": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "7242913"
+    "7242913",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T12:31:49.764Z",
-   "note": "Oversell guard built; waiting on the Deluge install, writer wiring and drawers.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Allot drawer shows the route's oversell refusal",
+   "notes": 5
   },
   "M12-S02": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "9b84356"
+    "9b84356",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T12:32:07.731Z",
-   "note": "Upload built and tested; waiting on the upload control and sandbox uploader proof.",
-   "notes": 3
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Upload with one Idempotency-Key per file, raw bytes",
+   "notes": 4
   },
   "M12-S03": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "9b84356"
+    "9b84356",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T12:32:08.021Z",
-   "note": "Documents list built; waiting on sign fields/Documents module and the page.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Documents page via /api/documents/list?cut=out|all; badge = outCount; 3/3",
    "notes": 3
   },
   "M12-S04": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "d4be812"
+    "d4be812",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T13:46:01.859Z",
-   "note": "Send built and tested; waiting on the Sign API plan, templates and the send drawer.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Send drawer and Send one panel call prefill and send",
+   "notes": 7
   },
   "M12-S05": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 2,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done",
+    "harden": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1,
+    "harden": 1
    },
    "commits": [
     "3c6435a",
-    "d4be812"
+    "d4be812",
+    "9444836",
+    "8593446",
+    "0c47041"
    ],
-   "at": "2026-09-28T13:46:02.086Z",
-   "note": "Webhook status, remind and recall built; waiting on a real webhook run and the status chips.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "25 webhook tests (HMAC, replay, concurrent duplicate, dead letter, 4 s abort); fixed unlinked-event drop and concurrent double-processing",
+   "notes": 8
   },
   "M12-S06": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "d4be812"
+    "d4be812",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T13:46:02.370Z",
-   "note": "Filing built; waiting on service FLS and sandbox PDF proof.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Upload then sign/verify; 3/3",
    "notes": 4
   },
   "M12-S07": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "d4be812"
+    "d4be812",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T13:46:02.641Z",
-   "note": "Block built; waiting on blocked fields and the Block control.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Block via sign/block; TC-IM07-015 now passes",
    "notes": 3
   },
   "M12-S11": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "3db50dc"
+    "3db50dc",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T14:39:55.435Z",
-   "note": "Paperwork endpoint and hints built; waiting on the Lead round fields and sharing rule, the row UI and sandbox.",
-   "notes": 5
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Paperwork row GETs /api/leads/[id]/paperwork; 8/10 as baseline",
+   "notes": 6
   },
   "M12-S12": {
    "status": "pending",
@@ -1553,128 +1674,151 @@
   },
   "M12-S13": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "3db50dc"
+    "3db50dc",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T14:39:55.702Z",
-   "note": "NDA gate and deck stamp built; waiting on attachment support, the deck file and Pitch_Deck_Sent_At.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Deck follow-up hidden before NDA; 4/4",
    "notes": 3
   },
   "M14-S01": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "421f8d9"
+    "421f8d9",
+    "89a5226"
    ],
-   "at": "2026-09-28T09:16:22.452Z",
-   "note": "Events read built; waiting on the Leads sharing decision for counts and the Events pages.",
-   "notes": 3
-  },
-  "M14-S02": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a",
-    "77f1666"
-   ],
-   "at": "2026-09-28T10:52:53.843Z",
-   "note": "Event writes built and tested; waiting on the staff field direction on the sandbox, a roster reader and the drawer.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Events list and page read the routes",
    "notes": 4
   },
-  "M14-S03": {
-   "status": "pending",
-   "attempts": 0,
+  "M14-S02": {
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "77f1666"
+    "77f1666",
+    "89a5226"
    ],
-   "at": "2026-09-28T10:52:54.112Z",
-   "note": "Loader built and tested; waiting on the sheet source, Load_State setup, the Sahil load-right decision and the sheet card.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Add/correct/remove with the 428 confirm; TC-E10-007 known (M14-S02-NOTE-1)",
+   "notes": 5
+  },
+  "M14-S03": {
+   "status": "review",
+   "attempts": 1,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "review"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1
+   },
+   "commits": [
+    "3c6435a",
+    "77f1666",
+    "89a5226"
+   ],
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Capture event picker; sheet card still reads state.SHEET (no sheet route)",
    "notes": 6
   },
   "M10-S08": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "31fa384"
+    "31fa384",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T10:52:01.946Z",
-   "note": "Money by allotment built and tested; waiting on the front-end blocks and Jev cases.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Per-farm money blocks from /api/investors/[id]/money",
    "notes": 3
   },
   "M10-S09": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "31fa384"
+    "31fa384",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T10:52:02.218Z",
-   "note": "Holdings read built and tested; waiting on the front-end panel and Jev cases.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "ARL holdings panel, read-only",
    "notes": 2
   },
   "M12-S09": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "9b84356"
+    "9b84356",
+    "9444836",
+    "8593446"
    ],
-   "at": "2026-09-28T12:32:08.251Z",
-   "note": "Emails read built; waiting on the Emails tab and sandbox shape check.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Emails tab via /api/emails",
    "notes": 3
   },
   "M12-S14": {
@@ -1694,147 +1838,171 @@
   },
   "M13-S02": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "421f8d9"
+    "421f8d9",
+    "89a5226"
    ],
-   "at": "2026-09-28T09:16:22.620Z",
-   "note": "Cases read built; waiting on Cases fields (T01) and the Tickets page.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Tickets page reads GET /api/cases; 3/3",
+   "notes": 5
   },
   "M13-S03": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "4447586"
+    "4447586",
+    "89a5226"
    ],
-   "at": "2026-09-28T10:53:14.449Z",
-   "note": "Case writes built and tested; waiting on the Tickets drawer, assignment rule (T01) and sandbox proof.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Open/park/close via POST/PATCH /api/cases; 3/3",
    "notes": 4
   },
   "M13-S04": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "19ec347"
+    "19ec347",
+    "89a5226"
    ],
-   "at": "2026-09-28T12:32:27.955Z",
-   "note": "Handover built; waiting on the Handed_By/Handed_At fields (register depends on them) and the ticket row.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Hand it to Finance via the handover route; 3/3",
    "notes": 5
   },
   "M13-S06": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "4447586"
+    "4447586",
+    "89a5226"
    ],
-   "at": "2026-09-28T10:53:14.856Z",
-   "note": "Publish built and tested; waiting on Investor_Updates picklist/field changes, the AM custom function and the page.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Updates page and publish drawer via /api/updates; 3/3",
    "notes": 5
   },
   "M15-S03": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "ab04ccf"
+    "ab04ccf",
+    "2fc5aea"
    ],
-   "at": "2026-09-28T09:16:43.126Z",
-   "note": "Archive, export job and query built and tested; waiting on the S3 account, audit service token, sandbox export shapes and the Activity page.",
-   "notes": 6
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Investors-side Activity wired; lead-side Activity page still on the store",
+   "notes": 7
   },
   "M15-S05": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "89793a0"
+    "89793a0",
+    "2fc5aea"
    ],
-   "at": "2026-09-28T10:53:35.849Z",
-   "note": "Reader and route built and tested; waiting on the Logs view, the runbook and staging cases.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "System activity log drawer from /api/logs",
    "notes": 5
   },
   "M17-S01": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "5ab7650"
+    "5ab7650",
+    "f387f44"
    ],
-   "at": "2026-09-28T11:38:53.855Z",
-   "note": "Teams API built and tested; waiting on the Teams page and Jev UI run.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Members, active count, Investors seats rows and rights grid from GET /api/teams; person drawer (GET /api/teams/{id}) not ported",
+   "notes": 5
   },
   "M13-S05": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "5ab7650"
+    "5ab7650",
+    "89a5226"
    ],
-   "at": "2026-09-28T11:38:53.997Z",
-   "note": "Request-to-Case and reply delivery built; waiting on the app sending investor_contact_id, MA1 and the reply thread UI.",
-   "notes": 7
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "\"Reply to the investor\" composer + delivery line added; no route serves the thread",
+   "notes": 8
   },
   "M16-S02": {
    "status": "pending",
@@ -1867,22 +2035,25 @@
    "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
   },
   "M16-S08": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "dc2cbc6"
+    "dc2cbc6",
+    "2fc5aea"
    ],
-   "at": "2026-09-28T13:46:38.228Z",
-   "note": "Sections built and tested; waiting on the Numbers screens and the Sign status reader for paper dates.",
-   "notes": 2
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Collection, At risk, Paper, Compliance from /api/numbers/investors-side; Service has no route",
+   "notes": 4
   },
   "M18-S03": {
    "status": "pending",
@@ -1901,120 +2072,143 @@
   },
   "M09-S09": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "33a7028"
+    "33a7028",
+    "fe49f1c"
    ],
-   "at": "2026-09-28T09:15:57.245Z",
-   "note": "Add-paid built and tested; waiting on the front-end drawer wiring and sandbox rollback proof.",
-   "notes": 4
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Add investor posts /api/investors/add-paid with Idempotency-Key; 409 links to existing",
+   "notes": 5
   },
   "M10-S20": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "27706c1"
+    "27706c1",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T11:39:06.834Z",
-   "note": "Payouts built and tested; waiting on the issue-date anchor decision, a unique Name, the screens and sandbox proof.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Payouts tab and due queue from /api/payouts",
    "notes": 4
   },
   "M10-S21": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "33a7028"
+    "33a7028",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T09:15:57.540Z",
-   "note": "Unlock/lock built and tested; waiting on App_Access history tracking, front-end card wiring and the app's staging webhook (MA1).",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "App unlock/welcome via /api/investors/[id]/app",
    "notes": 4
   },
   "M10-S22": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "89793a0"
+    "89793a0",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T10:53:36.206Z",
-   "note": "Preview read built and tested; waiting on the front-end wiring and Investor_Payouts mapping.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "App preview from /api/investors/[id]/preview",
    "notes": 3
   },
   "M10-S23": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "wire": 1
    },
    "commits": [
     "3c6435a",
-    "89793a0"
+    "89793a0",
+    "5aae3b8"
    ],
-   "at": "2026-09-28T10:53:36.543Z",
-   "note": "Test-link gate built and tested; waiting on the investor app endpoint (MA1) and the drawer.",
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Test sign-in link drawer; 409 confirm-needed carries its question",
    "notes": 4
   },
   "M01-S02": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "notes": 6,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T06:14:32.628Z",
-   "note": "Server flow built and tested on fixtures; waiting on sandbox OAuth clients (M02-S10) for live proof and the front-end redirect/refusal wiring.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Sign-in follows the route redirect; refusal message shown; signedOut signs out",
    "commits": [
-    "58e93b5"
+    "58e93b5",
+    "f387f44"
    ]
   },
   "M18-S04": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "notes": 4,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T06:14:16.778Z",
-   "note": "Server side built and tested on fixtures; waiting on mail provider (HUMAN), the front-end beacon call and sandbox proof T03 (M02-S10).",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "installErrorBeacon on live payload; failed writes and give-ups send the beacon; 2/2",
    "commits": [
-    "0683e32"
+    "0683e32",
+    "2fc5aea"
    ]
   },
   "M18-S12": {
@@ -2103,44 +2297,56 @@
   },
   "M06-S05": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "notes": 3,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T09:16:10.105Z",
-   "note": "Search wall built and tested; waiting on the sandbox proof with the restricted IR user.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Contacts wall per seat; 21 per-seat tests",
    "commits": [
-    "399b469"
+    "399b469",
+    "f387f44"
    ]
   },
   "M08-S02": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "notes": 4,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T09:16:10.290Z",
-   "note": "Gates built on Receipts and allotment stamps; waiting on field-register decision, staging TC-E08-010 and the front end.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Next milestone row and payment drawer read the gate route",
    "commits": [
-    "399b469"
+    "399b469",
+    "057b4c1"
    ]
   },
   "M08-S05": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "review",
+   "attempts": 1,
    "notes": 5,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T09:16:10.496Z",
-   "note": "Cover windows built; waiting on the service grant, roster reader, sweep schedule and sandbox TC-E08-025.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Cover start/end call /api/leads/[id]/cover",
    "commits": [
-    "399b469"
+    "399b469",
+    "057b4c1"
    ]
   },
   "M13-S01": {
@@ -2201,44 +2407,57 @@
   },
   "M03-S03": {
    "status": "pending",
-   "attempts": 0,
+   "attempts": 1,
    "notes": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T10:51:19.630Z",
-   "note": "Grantor rules proven on fixtures; waiting on Sahil's profile and the Teams screens on staging.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Grantor matrix rules tested; 3/4 same as baseline",
    "commits": [
-    "5d6893b"
+    "5d6893b",
+    "f387f44"
    ]
   },
   "M12-S01": {
-   "status": "pending",
-   "attempts": 0,
-   "notes": 5,
+   "status": "review",
+   "attempts": 1,
+   "notes": 6,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "review"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T11:38:53.712Z",
-   "note": "Scoped reads built and tested; waiting on sharing setup (T02), a Documents module decision and the DOCS tab.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Investor and farm DOCS read the routes",
    "commits": [
-    "5ab7650"
+    "5ab7650",
+    "9444836",
+    "8593446"
    ]
   },
   "M17-S02": {
    "status": "pending",
-   "attempts": 0,
-   "notes": 4,
+   "attempts": 1,
+   "notes": 5,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T12:32:28.222Z",
-   "note": "Grant, seat and manager writes built; waiting on staging runs and the Teams step-up handling.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Seat and manager changes via PUT /api/users; step-up 403 in page",
    "commits": [
-    "19ec347"
+    "19ec347",
+    "f387f44"
    ]
   },
   "M12-S08": {
@@ -2257,16 +2476,20 @@
   },
   "M16-S09": {
    "status": "pending",
-   "attempts": 0,
-   "notes": 3,
+   "attempts": 1,
+   "notes": 4,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "wire": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T13:46:38.448Z",
-   "note": "Server refusal built and tested; waiting on the screens, the Sahil decision and profile permissions.",
+   "phase_attempts": {
+    "wire": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Money-hidden 403 mirrored in the fixture; per-seat sections from the route",
    "commits": [
-    "dc2cbc6"
+    "dc2cbc6",
+    "2fc5aea"
    ]
   },
   "M18-S01": {
@@ -2285,17 +2508,86 @@
   },
   "M18-S08": {
    "status": "pending",
-   "attempts": 0,
-   "notes": 1,
+   "attempts": 1,
+   "notes": 3,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "harden": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T14:40:19.377Z",
-   "note": "UAT defect fixes wait for UAT on staging; integration follow-ups committed.",
+   "phase_attempts": {
+    "harden": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "UAT pack: 10 seat scenarios, 131 steps, sign-off sheet, defect intake (docs/uat/)",
    "commits": [
-    "41100de"
+    "41100de",
+    "a1833bf"
    ]
+  },
+  "M18-S14": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "harden": "done"
+   },
+   "phase_attempts": {
+    "harden": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Route contract suite: 81 routes / 96 route×method in the table; 393 refusal + 104 leak cases pass; unlisted route fails",
+   "commits": [
+    "1cba2ac"
+   ],
+   "notes": 2
+  },
+  "M18-S15": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "harden": "done"
+   },
+   "phase_attempts": {
+    "harden": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Headers (nonce CSP, HSTS, XFO, nosniff, Referrer, Permissions), Origin/Sec-Fetch-Site guard on writes, rate limits, upload 413/415, npm audit in CI; next 15.5.26 + postcss/sharp overrides",
+   "commits": [
+    "09575ca",
+    "4e60dca"
+   ],
+   "notes": 1
+  },
+  "M19-S12": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "harden": "done"
+   },
+   "phase_attempts": {
+    "harden": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "Jev triage: 213→224/319; 8 bugs fixed, 82 stale, 8 bug-open, 11 flaky; calibration 18/18; report docs/reports/jev-triage-2026-09-30.md",
+   "commits": [
+    "c88afd2"
+   ],
+   "notes": 6
+  },
+  "M19-S13": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "harden": "done"
+   },
+   "phase_attempts": {
+    "harden": 1
+   },
+   "at": "2026-09-30T12:29:34.185Z",
+   "note": "One Jev layer (jev/): client, grounding, 9 versioned questions, policy, CLI, calibration for 8 types; runner verdicts identical before/after",
+   "commits": [
+    "6cca053"
+   ],
+   "notes": 1
   }
  },
  "subtasks": {
@@ -3850,6 +4142,446 @@
    "status": "done",
    "by": "owner (BLOCKED.md)",
    "at": "2026-09-30T06:31:48.122Z"
+  },
+  "M11-S01-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M09-S03-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M01-S01-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M01-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M01-S09-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M01-S10-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M03-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M03-S03-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M17-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M06-S03-W2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M06-S05-W2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M03-S04-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M17-S01-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M05-S06-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M05-S07-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M05-S07-W2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M05-S08-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M16-S09-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M18-S04-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M16-S08-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M15-S03-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M15-S05-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M08-S03-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M08-S04-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M07-S05-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M08-S02-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M08-S05-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M08-S07-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M08-S08-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M09-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M09-S07-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M09-S09-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M11-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M11-S03-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M11-S04-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M11-S05-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M09-S04-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M11-S07-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M09-S08-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S05-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S08-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S09-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S20-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S21-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S22-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S23-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S01-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M10-S03-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S03-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S05-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S05-W2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S06-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S07-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S09-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S13-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S01-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S02-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S04-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M12-S11-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M13-S02-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M13-S03-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M13-S04-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M13-S06-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M14-S01-W1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M13-S05-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M14-S02-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M14-S03-W1": {
+   "status": "review",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "wire"
+  },
+  "M18-S14-H1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S14-H2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S14-H3": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S15-H1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S15-H2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S15-H3": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S15-H4": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M12-S05-H5": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S12-H1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S12-H2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S12-H3": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S08-H5": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M18-S08-H6": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M20-S07-H7": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S13-H1": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S13-H2": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S13-H3": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S13-H4": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S13-H5": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
+  },
+  "M19-S13-H6": {
+   "status": "done",
+   "at": "2026-09-30T12:29:34.185Z",
+   "phase": "harden"
   }
  },
  "rounds": [
@@ -6792,6 +7524,663 @@
    "status": "waiting",
    "hours": 8,
    "note": "UAT defect fixes wait for UAT on staging; integration follow-ups committed."
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M11-S01",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Farms LLP list + drawer via endpoints/farms.ts (D104 pattern); M11-S03/S04 UI cases pass; no /api calls in fixture mode",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M09-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Record header, banners and section bar from GET /api/investors/[id]/record; M09-S03 2/2 PASS",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Match it posts /api/receipts/[id]/match with expectedModifiedTime; passes with merged rail names (scratch copies)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M01-S01",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Page guard template + live Investors-side people/access from GET /api/session (session-access.ts); fixture unchanged",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M01-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Sign-in follows the route redirect; refusal message shown; signedOut signs out",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M01-S09",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Freshness from /api/data fresh via nextDataRead",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M01-S10",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Step-up panel asks reason, then /api/auth/step-up; M01-S10 4/4 (was 2/4)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M03-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Grants via POST/DELETE /api/grants; 4/4",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M03-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Grantor matrix rules tested; 3/4 same as baseline",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M17-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Seat and manager changes via PUT /api/users; step-up 403 in page",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M06-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "D110 search scope follows the seat (seat-search.ts); investors in results for org seats; 4/4",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M06-S05",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Contacts wall per seat; 21 per-seat tests",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M03-S04",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Seat dropdown via PUT /api/users/{id}, never root/di, never own or super-admin row; 3/7 as baseline",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M17-S01",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Members, active count, Investors seats rows and rights grid from GET /api/teams; person drawer (GET /api/teams/{id}) not ported",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M05-S06",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Investors Today tiles, as-of line and stale state from /api/numbers/investors-today; TC-IM03-002 now passes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M05-S07",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Waiting-on-you rows and actions from GET /api/queues/investors",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M05-S08",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "KAM Today tiles and cadence cards from /api/queues/investors side am",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M16-S09",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Money-hidden 403 mirrored in the fixture; per-seat sections from the route",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M18-S04",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "installErrorBeacon on live payload; failed writes and give-ups send the beacon; 2/2",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M16-S08",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Collection, At risk, Paper, Compliance from /api/numbers/investors-side; Service has no route",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M15-S03",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Investors-side Activity wired; lead-side Activity page still on the store",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M15-S05",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "System activity log drawer from /api/logs",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M08-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Claim drawer and record-a-receipt drawer via /api/receipts/prepare + record; IM05-007 FAIL→REVIEW",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M08-S04",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Holds running, Land cards, reservation alert/drawer, Extend/Release from /api/holds; IM03-009 and IM05-017 FAIL→PASS",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M07-S05",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Composer Send posts /api/leads/[id]/email",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M08-S02",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Next milestone row and payment drawer read the gate route",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M08-S05",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Cover start/end call /api/leads/[id]/cover",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M08-S07",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "\"said yes\" state added (ImSt); live investorOf derives it",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M08-S08",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "App account card reads/writes the routes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M09-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "AM heading/subtitle/No-manager chip from /api/investors/am; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M09-S07",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Investors search debounced via /api/investors/search",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M09-S09",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Add investor posts /api/investors/add-paid with Idempotency-Key; 409 links to existing",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M11-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Allotment rows from the two allotments routes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M11-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Tiles and per-LLP bars from /api/farms/shelf; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M11-S04",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Release N / Take it back via /release; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M11-S05",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Verify posts /allot (verify + allot in one write); 4/4",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M09-S04",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Name/move a manager via PUT …/kam with version",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M11-S07",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Allot drawer shows the route's oversell refusal",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M09-S08",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Not wired: an IR has no Investors page and no IR list route exists",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S05",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Bank statement upload + reconcile (multipart)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S08",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Per-farm money blocks from /api/investors/[id]/money",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S09",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "ARL holdings panel, read-only",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S20",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Payouts tab and due queue from /api/payouts",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S21",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "App unlock/welcome via /api/investors/[id]/app",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S22",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "App preview from /api/investors/[id]/preview",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S23",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Test sign-in link drawer; 409 confirm-needed carries its question",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S01",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Register via new GET /api/payments; UTR masked for super user and read-only seats (fixes TC-E11-016/TC-E15-009); matched-only totals, recorded apart (D21)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M10-S03",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Answer an IR claim via /api/claims; lead-page \"Finance did not find it\" not wired",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Documents page via /api/documents/list?cut=out|all; badge = outCount; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S05",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Status chips, remind and recall via the sign routes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S06",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Upload then sign/verify; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S07",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Block via sign/block; TC-IM07-015 now passes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S09",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Emails tab via /api/emails",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S13",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Deck follow-up hidden before NDA; 4/4",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S01",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Investor and farm DOCS read the routes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S02",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Upload with one Idempotency-Key per file, raw bytes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S04",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Send drawer and Send one panel call prefill and send",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S11",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Paperwork row GETs /api/leads/[id]/paperwork; 8/10 as baseline",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M13-S02",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Tickets page reads GET /api/cases; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M13-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Open/park/close via POST/PATCH /api/cases; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M13-S04",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Hand it to Finance via the handover route; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M13-S06",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Updates page and publish drawer via /api/updates; 3/3",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M14-S01",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 1,
+   "note": "Events list and page read the routes",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M13-S05",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "\"Reply to the investor\" composer + delivery line added; no route serves the thread",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M14-S02",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Add/correct/remove with the 428 confirm; TC-E10-007 known (M14-S02-NOTE-1)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M14-S03",
+   "phase": "wire",
+   "status": "review",
+   "attempt": 1,
+   "note": "Capture event picker; sheet card still reads state.SHEET (no sheet route)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M18-S14",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "Route contract suite: 81 routes / 96 route×method in the table; 393 refusal + 104 leak cases pass; unlisted route fails",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M18-S15",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "Headers (nonce CSP, HSTS, XFO, nosniff, Referrer, Permissions), Origin/Sec-Fetch-Site guard on writes, rate limits, upload 413/415, npm audit in CI; next 15.5.26 + postcss/sharp overrides",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M12-S05",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "25 webhook tests (HMAC, replay, concurrent duplicate, dead letter, 4 s abort); fixed unlinked-event drop and concurrent double-processing",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M19-S12",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "Jev triage: 213→224/319; 8 bugs fixed, 82 stale, 8 bug-open, 11 flaky; calibration 18/18; report docs/reports/jev-triage-2026-09-30.md",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M18-S08",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "UAT pack: 10 seat scenarios, 131 steps, sign-off sheet, defect intake (docs/uat/)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M20-S07",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "Zoho CRM Portals spike: PARTIAL, leaning NO — no documented API/OAuth for portal users; keep Supabase (docs/reports/portals-spike.md)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-09-30T12:29:34.185Z",
+   "story": "M19-S13",
+   "phase": "harden",
+   "status": "done",
+   "attempt": 1,
+   "note": "One Jev layer (jev/): client, grounding, 9 versioned questions, policy, CLI, calibration for 8 types; runner verdicts identical before/after",
+   "by": "fan-out (D111)"
   }
  ],
  "last_regression_round": 0,
