@@ -22,7 +22,7 @@ import {
   canAssign,
   covOf,
   custodian,
-  gateWait,
+  GATES,
   outFor,
   outTo,
   secondaryMayWork,
@@ -31,13 +31,28 @@ import {
   titleOf,
 } from "@/lib/selectors";
 import { Pav, Pname } from "@/components/ui";
+import { useState } from "react";
 import { useConsole } from "@/lib/store";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { leadGate } from "@/lib/data/endpoints/lead";
+import { coverEnd, coverStart } from "@/lib/data/endpoints/cover";
+import type { CoverDuration } from "@/server/leads/cover";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiAsto, uiMvto } from "@/features/leads/ui";
 
 function OwnerBody({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
+  /* M08-S02-W1: where it stands is GET /api/leads/[id]/gate; M08-S05-W1: Start / End the cover are POST / DELETE /api/leads/[id]/cover */
+  const gate = useApiRead(leadGate, state, l.id);
+  const start = useApiWrite(coverStart, state, dispatch), end = useApiWrite(coverEnd, state, dispatch);
+  const live = useApiMode() === "live";
+  const [coverErr, setCoverErr] = useState<string | null>(null);
+  const press = (r: Awaited<ReturnType<typeof start>>) => {
+    /* fixture: the reducer did it (a refusal there is silent, as before); live: the route's answer is the page's */
+    if (!live) return;
+    if (r.ok) { setCoverErr(null); reloadData(); } else setCoverErr(r.error);
+  };
 
   if (!l.own) {
     /* the door that opens this drawer only shows once the lead has no owner at all — matches the
@@ -99,7 +114,8 @@ function OwnerBody({ lead }: DrawerProps) {
   const others = assignees(state).filter((k) => k !== l.own);
   const load = (k: PersonKey) => state.LEADS.filter((x) => x.own === k && active(x)).length;
   const ASTO = uiAsto(state.ui);
-  const g = gateWait(state, l);
+  const gr = gate.state === "ok" ? gate.data : null;
+  const g = gr && gr.who && gr.gate ? GATES[gr.gate] : null;
 
   return (
     <>
@@ -209,6 +225,7 @@ function OwnerBody({ lead }: DrawerProps) {
       {mayCover ? (
         <div className="drwsec">
           <p className="lbl">Temporary cover</p>
+          {coverErr ? <p className="ux-date-error" role="alert">{coverErr}</p> : null}
           {c ? (
             <>
               <p className="sm" style={{ margin: "0 0 9px" }}>
@@ -219,7 +236,7 @@ function OwnerBody({ lead }: DrawerProps) {
               <button
                 type="button"
                 className="act"
-                onClick={() => dispatch({ type: "endCover", id: l.id })}
+                onClick={() => void end({ id: l.id, expectedModifiedTime: l.mt ?? null }).then(press)}
               >
                 End the cover
               </button>
@@ -236,7 +253,7 @@ function OwnerBody({ lead }: DrawerProps) {
                     type="button"
                     key={k}
                     className="chip"
-                    onClick={() => dispatch({ type: "handover", id: l.id, perm: false, why: k })}
+                    onClick={() => void start({ id: l.id, expectedModifiedTime: l.mt ?? null, duration: k as CoverDuration }).then(press)}
                   >
                     Start · {d.t}
                     {d.days === null && outFor(state, l.own as PersonKey) ? (

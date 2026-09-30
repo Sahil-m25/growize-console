@@ -18,11 +18,13 @@ import { CLAIMKINDS, CLAIMMODES, IMP, UNIT } from "@/domain";
 import type { Lead } from "@/domain";
 import { iso, maskRef, money } from "@/lib/format";
 import {
-  canClaim, canReadFinance, canReportPayment, claimArchiveOf, claimFieldsError,
+  canClaim, canReadFinance, canReportPayment, claimArchiveOf,
   claimReceiptMatch, claimReportLabel, claimWhy, financeAccountId, financeDocuments,
   financePaymentHistory, financePaySummary, hasFinanceSource, isFin, knownUnitIntent, may, P,
 } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { leadClaim } from "@/lib/data/endpoints/claims";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { useGo } from "@/features/pay/common";
 import { ClaimBlock } from "@/features/pay/ClaimBlock";
@@ -283,7 +285,10 @@ function FinanceFoot({ lead }: DrawerProps) {
 }
 
 function ClaimFoot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
+  /* M08-S03-W1: Tell Finance is POST /api/leads/[id]/claim (lib/data/endpoints/claims) */
+  const report = useApiWrite(leadClaim, state, dispatch);
+  const live = useApiMode() === "live";
   if (!lead || !canReadFinance(state, lead, "pay")) return null;
   const l = lead!, c = state.CLAIM[l.id];
   if (!c) {
@@ -294,10 +299,11 @@ function ClaimFoot({ lead }: DrawerProps) {
         onClick={can ? () => {
           if (!knownUnitIntent(l)) { dispatch({ type: "openDrawer", k: "details", id: l.id }); return; }
           const draft = { kind: CKIND(state), mode: CMODE(state), amount: CAMOUNT(state) || "0", said_on: CSAIDON(state) || iso(state.NOW), ref: CREF(state), note: CNOTE(state) };
-          const err = claimFieldsError(state, draft);
-          dispatch({ type: "setUi", patch: { CLAIMERR: err || null } });
-          if (err) return;
-          dispatch({ type: "claimPaid", id: l.id });
+          /* the route (fixture: its twin) judges the fields and answers in claimFieldsError's own words; the page shows them */
+          void report({ id: l.id, ...draft, amount: Number(draft.amount) }).then(r => {
+            dispatch({ type: "setUi", patch: { CLAIMERR: r.ok ? null : r.error } });
+            if (r.ok && live) { dispatch({ type: "closeDrawer" }); reloadData(); }
+          });
         } : undefined}
       >
         Tell Finance

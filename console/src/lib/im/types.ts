@@ -34,7 +34,8 @@ export type ImFarm = {
   crop: string; by: string | null; at: string | null;
 };
 export type ImKyc = "passed" | "pending" | "failed";
-export type ImSt = "reserved" | "paid" | "allocated" | "lapsed";
+/** "said yes": the Contact exists (the IR's Said yes, D11) and nothing is reserved yet — no allotment, no advance */
+export type ImSt = "said yes" | "reserved" | "paid" | "allocated" | "lapsed";
 export type ImBank = { acct: string; ifsc: string; name: string; drop: string };
 export type ImInvestor = {
   id: string; n: string; ph: string; em: string; city: string; addr: string; nri: boolean;

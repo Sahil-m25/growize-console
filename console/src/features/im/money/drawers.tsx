@@ -5,7 +5,7 @@
    and the app preview (M10-S22). Same frame, classes and gates as the prototype's drawers; their
    form fields live in ui.MX, written with {type:"mset"}. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   I, PAYOUT_MODES, TESTLINK_MIN, addInvestorGate, allotDue, allotAmount, allotOf, allotPayStatus, allotTxns, allotUnits,
   allotsOnLlp, dupEmail, fmtAt, fmtDate, inr, llpCounts, llpName, llpOf, llps, may,
@@ -14,8 +14,10 @@ import {
 import type { ImMoneyDrawerKey, ImPayoutMode } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { AppPreview } from "./preview";
-import { useApiRead } from "@/lib/data/api";
 import { farmOne } from "@/lib/data/endpoints/farms";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { appLock } from "@/lib/data/endpoints/app-account";
+import { useReload } from "@/lib/store";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -212,11 +214,25 @@ function lockBody(c: Ctx): ReactNode {
     </>
   );
 }
-function lockFoot(c: Ctx): ReactNode {
+function LockFoot({ c }: { c: Ctx }) {
   const why = mx(c, "lock:" + c.id).trim();
-  return c.id ? <button className="act" disabled={!why} title={why ? undefined : "Say why first"}
-    onClick={why ? () => c.dispatch({ type: "lockApp", id: c.id!, why }) : undefined}>Lock app access</button> : null;
+  const mode = useApiMode();
+  const reloadData = useReload();
+  const lock = useApiWrite(appLock, { s: c.s, me: c.me }, c.dispatch);
+  const [busy, setBusy] = useState(false);
+  if (!c.id) return null;
+  const go = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await lock({ id: c.id!, reason: why, expectedModifiedTime: null });
+      if (r.ok && mode === "live") { c.dispatch({ type: "closeDrawer" }); reloadData(); }
+    } finally { setBusy(false); }
+  };
+  return <button className="act" disabled={!why || busy} title={why ? undefined : "Say why first"}
+    onClick={why ? go : undefined}>Lock app access</button>;
 }
+const lockFoot = (c: Ctx): ReactNode => <LockFoot c={c} />;
 
 /* ---- testlink: a one-time test sign-in link (M10-S23) ---- */
 function Qr({ text }: { text: string }) {
