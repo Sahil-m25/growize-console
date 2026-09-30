@@ -43,7 +43,8 @@ export const CHANGED = "Changed by someone else — reload.";
 export const UNREACHABLE = "Could not reach the console. Nothing was changed; try again.";
 
 export const ok = <T>(data: T): ApiOk<T> => ({ ok: true, data });
-export const fail = (status: number, code: string, error: string): ApiErr => ({ ok: false, status, code, error });
+export const fail = (status: number, code: string, error: string, recordId?: string): ApiErr =>
+  ({ ok: false, status, code, error, ...(recordId ? { recordId } : {}) });
 
 /* ---- endpoints ------------------------------------------------------------------------------- */
 /** B = the book the fixture half projects from (e.g. {s, me} on the Investors side, ConsoleState on the lead side). */
@@ -105,11 +106,13 @@ export async function apiFetch(method: "GET" | Method, path: string, opts: { bod
   }
   const json: unknown = await r.json().catch(() => null);
   if (r.ok) return ok(json);
-  const b = (json && typeof json === "object" ? json : {}) as { error?: unknown; code?: unknown; recordId?: unknown };
+  const b = (json && typeof json === "object" ? json : {}) as { error?: unknown; code?: unknown; recordId?: unknown; existing?: { contactId?: unknown } };
   const code = typeof b.code === "string" ? b.code : String(r.status);
   const error = r.status === 409 && /changed$/.test(code) ? CHANGED
     : typeof b.error === "string" && b.error ? b.error : `Refused (${r.status}).`;
-  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}) };
+  /* a duplicate names the record it collided with (add-paid: existing.contactId) — the page links to it */
+  const rid = typeof b.recordId === "string" ? b.recordId : typeof b.existing?.contactId === "string" ? b.existing.contactId : null;
+  return { ok: false, status: r.status, code, error, ...(rid ? { recordId: rid } : {}) };
 }
 
 export const newIdempotencyKey = (): string =>

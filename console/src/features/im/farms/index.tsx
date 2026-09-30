@@ -3,50 +3,58 @@
 /* 11. FARMS — imx.js 1844–1916 (vFarms, 1849). The shelf is drawn — released, held, free — rather than
    described; every figure is counted off the investor records. */
 
-import { allocated, blockUse, day6, freeUnits, may, pageReadable, released, reserved, safeNote } from "@/lib/im";
+import { day6, may, pageReadable, safeNote } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
 import { FarmLlps } from "../money/pages";
+import { useApiRead, useApiWrite } from "@/lib/data/api";
+import { farmList, farmRelease, farmShelf, farmTakeBack } from "@/lib/data/endpoints/farms";
 
 export function ImFarms({ s, me, dispatch }: ImPageProps) {
+  /* M11-S03-W1: the tiles and per-LLP bars are GET /api/farms/shelf; M11-S04-W1: Release / Take it back are
+     POST / DELETE /api/farms/[id]/release with the LLP's version from GET /api/farms (lib/data/endpoints/farms) */
+  const shelf = useApiRead(farmShelf, { s, me }, undefined);
+  const list = useApiRead(farmList, { s, me }, undefined);
+  const release = useApiWrite(farmRelease, { s, me }, dispatch);
+  const takeBack = useApiWrite(farmTakeBack, { s, me }, dispatch);
   if (!pageReadable(s, me, "farms")) return null;
-  const { FARMS, INV, FIELD, UPD } = s.data;
-  const ACRES = FARMS.reduce((a, f) => a + f.acres, 0);
-  const TOTALUNITS = FARMS.reduce((a, f) => a + f.units, 0);
-  const over = freeUnits(s) < 0;
+  const { FIELD, UPD } = s.data;
+  if (shelf.state === "idle" || shelf.state === "loading") return <div className="empty">Reading the shelf…</div>;
+  if (shelf.state === "error") return <div className="note bad" role="alert">{shelf.err.error}</div>;
+  const { llps: LLPS, tiles } = shelf.data;
+  const version = (id: string) => (list.state === "ok" ? list.data.rows.find(r => r.id === id)?.version ?? null : null);
+  const over = tiles.oversold;
   return (
     <>
       <div className="ph"><h1>Farms</h1>
-        <span className="sub">{ACRES.toFixed(1)} acres · {TOTALUNITS} units · {released(s)} released</span>
+        <span className="sub">{tiles.acres.toFixed(1)} acres · {tiles.units} units · {tiles.released} released</span>
         <div className="sp"></div>{over ? <span className="tag late"><span className="dot"></span>oversold</span>
-          : <span className="tag go"><span className="dot"></span>{freeUnits(s)} free to sell</span>}</div>
+          : <span className="tag go"><span className="dot"></span>{tiles.free} free to sell</span>}</div>
       <div className="stats">
-        <div className="stat"><b>{released(s)}</b><span>released — deliverable</span></div>
-        <div className="stat"><b>{allocated(s)}</b><span>allotted</span></div>
-        <div className="stat"><b>{reserved(s)}</b><span>reserved or paid</span></div>
-        <div className={`stat ${over ? "bad" : ""}`}><b>{freeUnits(s)}</b><span>free to sell</span></div>
+        <div className="stat"><b>{tiles.released}</b><span>released — deliverable</span></div>
+        <div className="stat"><b>{tiles.allotted}</b><span>allotted</span></div>
+        <div className="stat"><b>{tiles.reservedOrPaid}</b><span>reserved or paid</span></div>
+        <div className={`stat ${over ? "bad" : ""}`}><b>{tiles.free}</b><span>free to sell</span></div>
       </div>
       <div className="secw">
         <div className="card"><div className="ch"><h3>The shelf</h3><div className="sp"></div>
           <span className="sm">{may(s, me, "farm") ? "you can release land" : "read only"}</span></div><div className="cb">
-          <div className="blocks">{FARMS.map(f => {
-            const u = blockUse(s, f.k);
-            const al = INV.filter(i => i.st === "allocated").reduce((a, i) => a + (i.blocks[f.k] || 0), 0);
-            const pd = INV.filter(i => i.st === "paid").reduce((a, i) => a + (i.blocks[f.k] || 0), 0);
-            const re = u - al - pd, fr = Math.max(0, f.released - u);
+          <div className="blocks">{LLPS.map(f => {
+            const al = f.allotted, pd = f.paid ?? 0, re = f.reservedOrPaid - pd, fr = f.free;
             const w = (n: number) => (f.released ? (n / f.released * 100) + "%" : "0%");
+            const args = { id: f.id, k: f.block ?? "", version: version(f.id) };
             return (
-              <div className="blk" key={f.k}><b>Block {f.k}</b>
-                <div className="sm">{f.acres} acres · {f.units} units</div>
+              <div className="blk" key={f.id}><b>Block {f.block}</b>
+                <div className="sm">{f.acres} acres · {f.totalUnits} units</div>
                 <div className="bar">{f.released ? <>
                   <i className="al" style={{ width: w(al) }}></i>
                   <i className="re" style={{ width: w(re + pd) }}></i><i className="fr" style={{ width: w(fr) }}></i></> : null}</div>
                 <div className="sm">{f.released
                   ? `${al} allotted${pd ? " · " + pd + " paid" : ""}${re ? " · " + re + " reserved" : ""} · ${fr} free`
                   : <span className="tag due">not released</span>}</div>
-                <div className="sm" style={{ marginTop: 5 }}>{f.crop}</div>
+                <div className="sm" style={{ marginTop: 5 }}>{f.cropStage}</div>
                 {may(s, me, "farm") ? <div className="chips" style={{ marginTop: 8 }}>{f.released
-                  ? <button className="chip" onClick={() => dispatch({ type: "holdBlock", k: f.k })}>Take it back</button>
-                  : <button className="chip" onClick={() => dispatch({ type: "releaseBlock", k: f.k })}>Release {f.units}</button>}</div> : null}
+                  ? <button className="chip" onClick={() => void takeBack(args)}>Take it back</button>
+                  : <button className="chip" onClick={() => void release(args)}>Release {f.totalUnits}</button>}</div> : null}
               </div>
             );
           })}</div>
