@@ -175,6 +175,10 @@ export async function handleZohoSignWebhook(
   deps: ZohoSignWebhookDeps,
 ): Promise<ZohoSignWebhookResult> {
   const r = await handleOnce(input, deps);
+  if (r.ok && r.outcome === "unlinked" && deps.deadLetter) {
+    // M12-S05-H5: a verified event bound to no record is answered 200 (a retry cannot bind it) but never dropped silently.
+    try { deps.deadLetter({ at: (deps.clock ?? Date.now)(), reason: "unlinked", requestId: r.requestId, retryable: false }); } catch { /* the answer stands */ }
+  }
   if (!r.ok && deps.deadLetter) {
     // Only a verified body may name its request id in the dead-letter list.
     const requestId = r.kind === "invalid-signature" ? null : requestIdFrom(input.body);
@@ -215,6 +219,30 @@ async function handleOnce(
   }
   const markSeen = async (): Promise<void> => { if (deps.seen && eventKey) { try { await deps.seen.add(eventKey); } catch { /* a redelivery re-checks */ } } };
 
+  // M12-S05-H5: the seen mark lands only after success, so two concurrent deliveries of one event would both be processed;
+  // claim the key for the duration of the work (this process; the durable worker of M20-S08-NOTE-3 replaces it).
+  if (eventKey) {
+    if (inFlight.has(eventKey)) {
+      deps.log.event?.({ at: Date.now(), actor: { kind: "service", job: "provider-callback" }, action: "signWebhook", reason: "duplicate", recordIds: [] });
+      return { ok: true, outcome: "duplicate", requestId, recordId: null };
+    }
+    inFlight.add(eventKey);
+  }
+  try {
+    return await processEvent(requestId, markSeen, input, deps);
+  } finally {
+    if (eventKey) inFlight.delete(eventKey);
+  }
+}
+
+const inFlight = new Set<string>();
+
+async function processEvent(
+  requestId: string,
+  markSeen: () => Promise<void>,
+  input: { readonly body: string; readonly signature: string | null; readonly signal?: AbortSignal },
+  deps: ZohoSignWebhookDeps,
+): Promise<ZohoSignWebhookResult> {
   let credential: ServiceCredential;
   try {
     credential = await deps.credential(input.signal);
