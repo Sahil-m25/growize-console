@@ -19,6 +19,9 @@ import {
 } from "@/lib/im";
 import type { ImDrafts, ImDrawerKey, ImInvestor } from "@/lib/im";
 import { Icon } from "@/components/ui/Icon";
+import { useApiRead, useApiWrite } from "@/lib/data/api";
+import { caseOpen } from "@/lib/data/endpoints/cases";
+import { audienceOf, updateList, updatePublish } from "@/lib/data/endpoints/updates";
 import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
 import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
 
@@ -380,27 +383,39 @@ function tktBody(c: Ctx): ReactNode {
     </>
   );
 }
-function tktFoot(c: Ctx): ReactNode {
+function tktFoot(c: Ctx): ReactNode { return <TktFoot {...c} />; }
+/* M13-S03-W1: 'Open it' is POST /api/cases; a refusal lands in the page note, and the drawer closes on success */
+function TktFoot(c: Ctx) {
   const { s, me, dispatch } = c; const { TK } = draft(c);
+  const open = useApiWrite(caseOpen, { s, me }, dispatch);
   if (!may(s, me, "tkt")) return null;
   const ok = !!I(s, me, TK.inv) && !!TK.t.trim();
+  const go = async () => {
+    if (!ok || !TK.inv) return;
+    const r = await open({ investorId: TK.inv, category: TK.cat, subject: TK.t, description: TK.d, priority: TK.pri, ownerId: me });
+    if (r.ok) { set(c, { TK: { inv: null, cat: "Query", t: "", d: "", pri: "normal" } }); dispatch({ type: "closeDrawer" }); }
+  };
   return (
     <button className="act" disabled={!ok} title={ok ? undefined : "An investor and a line saying what they want"}
-      onClick={ok && TK.inv ? () => dispatch({ type: "newTicket", inv: TK.inv as string, cat: TK.cat, t: TK.t, d: TK.d, own: me, pri: TK.pri }) : undefined}>
+      onClick={ok ? () => { void go(); } : undefined}>
       Open it</button>
   );
 }
 
 /* ---- upd — imx.js 2863–2885 ---- */
-function updBody(c: Ctx): ReactNode {
-  const { s } = c; const { UP } = draft(c); const INV = s.data.INV;
+function updBody(c: Ctx): ReactNode { return <UpdBody {...c} />; }
+/* M13-S06-W1: the kinds this seat may publish are what GET /api/updates answers (a KAM: Produce, Notice) */
+function UpdBody(c: Ctx) {
+  const { s, me } = c; const { UP } = draft(c); const INV = s.data.INV;
+  const r = useApiRead(updateList, { s, me }, undefined);
+  const kinds = r.state === "ok" ? UPCATS.filter(k => (r.data.kinds as string[]).includes(k)) : UPCATS;
   return (
     <>
       <label className="fi"><span>Headline</span>
         <input className="inp" id="up-t" placeholder="e.g. Block A — year-3 flowering ahead of schedule"
           value={UP.t} onChange={e => set(c, { UP: { ...UP, t: e.target.value } })} /></label>
       <p className="lbl" style={{ marginTop: 14 }}>Kind</p>
-      <div className="chips">{UPCATS.map(k =>
+      <div className="chips">{kinds.map(k =>
         <button key={k} className={`chip ${UP.cat === k ? "on" : ""}`} onClick={() => set(c, { UP: { ...UP, cat: k } })}>{k}</button>)}</div>
       <p className="lbl" style={{ marginTop: 14 }}>Who sees it</p>
       <div className="chips">{UPTO.map(([k, t]) =>
@@ -414,12 +429,19 @@ function updBody(c: Ctx): ReactNode {
     </>
   );
 }
-function updFoot(c: Ctx): ReactNode {
-  const { dispatch } = c; const { UP } = draft(c);
+function updFoot(c: Ctx): ReactNode { return <UpdFoot {...c} />; }
+/* M13-S06-W1: 'Publish it' is POST /api/updates {headline, kind, audience, llpId, body}; the drawer closes on success */
+function UpdFoot(c: Ctx) {
+  const { s, me, dispatch } = c; const { UP } = draft(c);
+  const publish = useApiWrite(updatePublish, { s, me }, dispatch);
   const ok = !!UP.t.trim();
+  const go = async () => {
+    const r = await publish({ headline: UP.t, kind: UP.cat, audience: audienceOf(UP.to), body: UP.d });
+    if (r.ok) { set(c, { UP: { t: "", cat: "Produce", d: "", to: "all" } }); dispatch({ type: "closeDrawer" }); }
+  };
   return (
     <button className="act" disabled={!ok} title={ok ? undefined : "A headline at least"}
-      onClick={ok ? () => dispatch({ type: "publish", t: UP.t, cat: UP.cat, d: UP.d, to: UP.to }) : undefined}>Publish it</button>
+      onClick={ok ? () => { void go(); } : undefined}>Publish it</button>
   );
 }
 

@@ -29,6 +29,8 @@ export type ApiErr = {
   /** the in-page message: the route's own `error`, never a Zoho body */
   error: string;
   recordId?: string | null;
+  /** what the route's error body carries beyond error/code/recordId, for the few refusals that carry numbers the page shows (a 428's taggedLeads, a 422's gaps) */
+  detail?: Record<string, unknown>;
 };
 export type ApiResult<T> = ApiOk<T> | ApiErr;
 
@@ -107,9 +109,12 @@ export async function apiFetch(method: "GET" | Method, path: string, opts: { bod
   if (r.ok) return ok(json);
   const b = (json && typeof json === "object" ? json : {}) as { error?: unknown; code?: unknown; recordId?: unknown };
   const code = typeof b.code === "string" ? b.code : String(r.status);
+  const rest = Object.entries(b).filter(([k]) => k !== "error" && k !== "code" && k !== "recordId");
+  const extra = rest.length ? Object.fromEntries(rest) : null;
   const error = r.status === 409 && /changed$/.test(code) ? CHANGED
     : typeof b.error === "string" && b.error ? b.error : `Refused (${r.status}).`;
-  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}) };
+  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}),
+    ...(extra ? { detail: extra } : {}) };
 }
 
 export const newIdempotencyKey = (): string =>
