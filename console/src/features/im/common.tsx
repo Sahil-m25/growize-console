@@ -91,7 +91,7 @@ export function Pii({ s, me, dispatch, x, f }: ImPageProps & { x: ImInvestor | n
         </div>
       ) : null}
       {/* M01-S10-W1: the reason first, then a fresh Zoho sign-in (GET /api/auth/step-up/status decides) */}
-      <StepUp action={ask && why ? "reveal" : null}
+      <StepUp action={ask && why ? "reveal" : null} what={isPan ? "before the PAN is shown" : "before the bank account is shown"}
         onOpen={() => { const w = why; setWhy(null); if (w) dispatch({ type: "reveal", id: x.id, f, why: w }); }}
         onCancel={() => { setWhy(null); dispatch({ type: "revCancel" }); }} />
       {right ? null : <span className="sm" style={{ display: "block" }}>{isPan

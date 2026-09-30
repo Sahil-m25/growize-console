@@ -8,7 +8,7 @@
    step-up shows the route's own message and no button. The demo has no Zoho, so in fixture mode no step-up
    is ever open and the panel always asks — nothing is shown or released behind it. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useApiRead } from "@/lib/data/api";
 import { STEPUP_RETURN, stepUpHref, stepUpReturnOf, stepUpStatus, type StepUpAction, type StepUpReturn } from "@/lib/data/endpoints/session";
 
@@ -28,10 +28,11 @@ export function useStepUpReturn(): StepUpReturn | null {
 }
 
 /**
- * Ask for `action` (null = not asking). `onOpen` runs once when a step-up is already open for it.
+ * Ask for `action` (null = not asking). `onOpen` runs once when a step-up is already open for it. `what` names
+ * what waits on it ("before the PAN is shown"); `lead` is what the action will do, said first (a release's sums).
  * Renders nothing while not asking; one quiet line while the status is read; else the panel.
  */
-export function StepUp({ action, onOpen, onCancel }: { action: StepUpAction | null; onOpen: () => void; onCancel: () => void }) {
+export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepUpAction | null; onOpen: () => void; onCancel: () => void; what?: string; lead?: ReactNode }) {
   const r = useApiRead(stepUpStatus, null, action);
   const back = useStepUpReturn();
   const open = r.state === "ok" && r.data.valid;
@@ -43,15 +44,14 @@ export function StepUp({ action, onOpen, onCancel }: { action: StepUpAction | nu
   const locked = r.data.code === "locked";
   return (
     <div className="note" role="dialog" aria-label="Confirm it is you" style={{ marginTop: 7 }}>
-      <b>Confirm it is you.</b>{" "}
-      {locked ? r.data.message : `Sign in to Zoho again with a fresh sign-in code ${WHAT[action]}. This is logged with your name against it.`}
-      {back && back !== "ok" ? <div className="sm">{STEPUP_RETURN[back]}</div> : null}
-      <div className="chips" style={{ marginTop: 7 }}>
-        {locked ? null : (
-          <button className="chip" onClick={() => window.location.assign(stepUpHref(action, window.location.pathname))}>Confirm with Zoho</button>
-        )}
-        <button className="chip" onClick={onCancel}>Cancel</button>
-      </div>
+      {lead ? <>{lead}<br /></> : null}
+      <b>Confirm it is you with a fresh sign-in code {what ?? WHAT[action]}.</b>{" "}
+      {locked ? r.data.message : "Zoho asks you to sign in again, then brings you back here. This is logged with your name against it."}
+      {back && back !== "ok" ? <> {STEPUP_RETURN[back]}</> : null}{" "}
+      {locked ? null : (
+        <button className="chip" onClick={() => window.location.assign(stepUpHref(action, window.location.pathname))}>Confirm with Zoho</button>
+      )}{" "}
+      <button className="chip" onClick={onCancel}>Cancel</button>
     </div>
   );
 }
