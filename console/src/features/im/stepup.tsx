@@ -36,8 +36,10 @@ export function useStepUpReturn(): StepUpReturn | null {
 export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepUpAction | null; onOpen: () => void; onCancel: () => void; what?: string; lead?: ReactNode }) {
   const r = useApiRead(stepUpStatus, null, action);
   const back = useStepUpReturn();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  /* the scroll position when the panel opened (null before the page is in the browser): the panel is placed
+     over the page there, as a drawer is — absolute, not fixed, so it stays part of the document's flow of focus */
+  const [mounted, setMounted] = useState<number | null>(null);
+  useEffect(() => setMounted(window.scrollY), []);
   const open = r.state === "ok" && r.data.valid;
   useEffect(() => { if (open) onOpen(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!action) return back ? <p className="sm" role="status">{STEPUP_RETURN[back]}</p> : null;
@@ -47,7 +49,7 @@ export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepU
   const locked = r.data.code === "locked";
   const panel = (
     <div className="note stepup-panel" role="dialog" aria-label="Confirm it is you"
-      style={mounted ? { position: "fixed", right: 16, bottom: 16, maxWidth: 440, zIndex: 60, background: "var(--card)", border: "1px solid var(--line-3)", boxShadow: "0 8px 28px rgba(0,0,0,.18)" } : { marginTop: 7 }}>
+      style={mounted !== null ? { position: "absolute", right: 16, top: mounted + 72, maxWidth: 440, zIndex: 60, background: "var(--card)", border: "1px solid var(--line-3)", boxShadow: "0 8px 28px rgba(0,0,0,.18)" } : { marginTop: 7 }}>
       {lead ? <>{lead}<br /></> : null}
       <b>Confirm it is you with a fresh sign-in code {what ?? WHAT[action]}.</b>{" "}
       {locked ? r.data.message : "Zoho asks you to sign in again, then brings you back here. This is logged with your name against it."}
@@ -59,5 +61,5 @@ export function StepUp({ action, onOpen, onCancel, what, lead }: { action: StepU
     </div>
   );
   /* an open panel over the page (like a drawer), once the page is in the browser; inline before that */
-  return mounted ? createPortal(panel, document.body) : panel;
+  return mounted !== null ? createPortal(panel, document.body) : panel;
 }
