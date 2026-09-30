@@ -12,19 +12,19 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { useRouter } from "next/navigation";
-import type { EventRec } from "@/domain";
+import type { EventRow } from "@/server/events/events";
 import {
-  P, evLeads, evStats, eventCount, may, perEventNeed,
+  P, eventCount, may, perEventNeed,
 } from "@/lib/selectors";
 import { GOALS } from "@/domain";
 import { useConsole } from "@/lib/store";
+import { useApiRead } from "@/lib/data/api";
+import { eventDates, eventList, eventMonth } from "@/lib/data/endpoints/events";
 import { pathOf } from "@/components/shell";
 import { Icon } from "@/components/ui";
-import { evDateRange, evDraft, evISODate, uiEventsView } from "./eventDraft";
+import { evDraft, evISODate, uiEventsView } from "./eventDraft";
 import { EventPage } from "./EventPage";
 import { UxDetails } from "./UxDetails";
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /* ICONS.plus/ICONS.events — ir-console-redesigned.html:2440. Not yet in the shell's `Icon` set
    (only what the shell itself draws lives there) — see crossOwnerRequests. Drawn locally, same
@@ -46,25 +46,33 @@ function EventsIcon() {
   );
 }
 
+/** initials for a staff chip: the book's own when the person is on it, else the name's */
+const initials = (state: Parameters<typeof P>[0], id: string, name: string | null): string => {
+  const p = state[id];
+  return p ? p.i : (name ?? id).split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+};
+
 export function EventsPage() {
   const { state, dispatch } = useConsole();
   const router = useRouter();
+  /* M14-S01-W1: the two lists are GET /api/events (lib/data/endpoints/events) — never the store's EVENTS */
+  const list = useApiRead(eventList, state, undefined);
   const view = uiEventsView(state.ui);
   const setView = (v: "upcoming" | "completed") => dispatch({ type: "setUi", patch: { EVENTVIEW: v } });
   const openAdd = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: null, seed: { EVD: evDraft(null, state.NOW.getFullYear()) } });
 
   const need = perEventNeed(state.PLAN);
-  const ran = state.EVENTS.filter((e) => e.state === "done");
-  const planned = [...state.EVENTS.filter((e) => e.state === "planned")]
-    .sort((a, b) => (evDateRange(a.date, state.NOW.getFullYear()).from || "9999").localeCompare(evDateRange(b.date, state.NOW.getFullYear()).from || "9999"));
+  const ran: EventRow[] = list.state === "ok" ? list.data.completed : [];
+  const planned: EventRow[] = list.state === "ok" ? list.data.upcoming : [];
+  const year = state.NOW.getFullYear();
   /* short — the shortfall the plan's budget carries and the diary does not. eventCount() is the
      same divisor the Plan uses, so moving the event share moves this without re-typing it. */
-  const short = Math.max(0, eventCount(state.PLAN) - state.EVENTS.length);
-  const tot = ran.reduce((a, e) => a + evStats(state, e).captured, 0);
-  const taggedTotal = ran.reduce((a, e) => a + evLeads(state, e.id).length, 0);
+  const short = Math.max(0, eventCount(state.PLAN) - (ran.length + planned.length));
+  const tot = ran.reduce((a, e) => a + (e.stats.captured ?? 0), 0);
+  const taggedTotal = ran.reduce((a, e) => a + e.stats.tagged, 0);
   const canEdit = may(state, "events", "edit");
 
-  const ready = state.EVENTS.filter((e) => state.SHEET[e.id]?.state === "ready");
+  const ready = [...planned, ...ran].filter((e) => state.SHEET[e.id]?.state === "ready");
 
   /* go('event',null,id) is synchronous in the prototype; a dev-server route to /events/[id] is not.
      The press is remembered against this NAVSEQ (any later go() bumps it, so it can never go stale)
@@ -74,40 +82,42 @@ export function EventsPage() {
     router.push(pathOf("event", id));
   };
   const pend = state.ui.EVPEND as { id: string; seq: unknown } | null | undefined;
-  if (pend && pend.seq === (state.ui.NAVSEQ ?? 0) && state.EVENTS.some((x) => x.id === pend.id)) {
+  if (pend && pend.seq === (state.ui.NAVSEQ ?? 0)) {
     return <EventPage id={pend.id} />;
   }
+  if (list.state === "idle" || list.state === "loading") return <div className="empty">Reading the events…</div>;
+  if (list.state === "error") return <div className="note bad" role="alert">{list.err.error}</div>;
 
   /* D59 · cost per qualified shown only when at least one event can actually be costed */
-  const costable = (e: EventRec) => { const st = evStats(state, e); return st.tagged >= st.captured; };
+  const costable = (e: EventRow) => e.stats.costHiddenWhy === null;
   const costCol = ran.some(costable);
   const avg = Math.round(tot / Math.max(1, ran.length));
 
-  const Row = ({ e }: { e: EventRec }) => {
-    const st = evStats(state, e);
-    const pct = Math.round(st.captured / Math.max(1, need) * 100);
+  const Row = ({ e }: { e: EventRow }) => {
+    const st = e.stats, captured = st.captured ?? 0;
+    const pct = Math.round(captured / Math.max(1, need) * 100);
     return (
       <tr className="g4-row" onClick={() => go(e.id)}>
         <th scope="row">
-          <button type="button" className="g4-name" onClick={(ev) => { ev.stopPropagation(); go(e.id); }}><b>{e.n}</b></button>
-          <div className="sm">{e.type} · {e.ch}</div>
+          <button type="button" className="g4-name" onClick={(ev) => { ev.stopPropagation(); go(e.id); }}><b>{e.name}</b></button>
+          <div className="sm">{e.type} · {e.channel}</div>
         </th>
-        <td className="sm mono">{e.date}</td>
-        <td className="sm">{e.staff.map((k) => P(state.PEOPLE, k).i).join(" ")}</td>
-        <td className="n">{st.captured}</td>
+        <td className="sm mono">{eventDates(e, year)}</td>
+        <td className="sm">{e.staff.map((k) => initials(state.PEOPLE, k.id, k.name)).join(" ")}</td>
+        <td className="n">{captured}</td>
         <td style={{ width: "110px" }}>
           <div className="bar">
             <i style={{ width: `${Math.min(100, pct)}%`, background: `var(${pct < 100 ? "--late" : "--go"})` }} />
           </div>
           <span className="sm mono">{pct}%</span>
         </td>
-        <td className="n">{st.qual}</td>
-        <td className="n">{st.res}</td>
+        <td className="n">{st.qualified}</td>
+        <td className="n">{st.reserved}</td>
         {costCol && (
           <td className="n">
             {costable(e)
-              ? <b>₹{Math.round(e.cost / Math.max(1, st.qual)).toLocaleString("en-IN")}</b>
-              : <span className="sm" title={`${st.captured - st.tagged} captured leads still untagged`}>—</span>}
+              ? <b>₹{(st.costPerQualified ?? 0).toLocaleString("en-IN")}</b>
+              : <span className="sm" title={st.costHiddenWhy === "untagged" ? `${captured - st.tagged} captured leads still untagged` : undefined}>—</span>}
           </td>
         )}
       </tr>
@@ -144,7 +154,7 @@ export function EventsPage() {
             <div className="chips" style={{ marginTop: "8px" }}>
               {ready.map((e) => (
                 <button key={e.id} type="button" className="chip" onClick={() => go(e.id)}>
-                  {e.n} · {state.SHEET[e.id]!.ok} leads
+                  {e.name} · {state.SHEET[e.id]!.ok} leads
                 </button>
               ))}
             </div>
@@ -184,22 +194,22 @@ export function EventsPage() {
               <div className="ch"><h3>Upcoming events</h3></div>
               <div className="rd-agenda-list">
                 {planned.length ? planned.map((e) => {
-                  const date = evISODate(evDateRange(e.date, state.NOW.getFullYear()).from);
+                  const date = e.startsOn ? evISODate(e.startsOn) : null;
                   return (
                     <button key={e.id} type="button" className="rd-agenda-row" onClick={() => go(e.id)}
-                      aria-label={`Open ${e.n}`}>
+                      aria-label={`Open ${e.name}`}>
                       <span className="rd-event-date" aria-hidden="true">
-                        <span>{date ? MONTHS[date.getMonth()] : "Date"}</span>
+                        <span>{eventMonth(e.startsOn)}</span>
                         <b>{date ? date.getDate() : "—"}</b>
                       </span>
                       <span className="rd-agenda-main">
-                        <b>{e.n}</b>
-                        <span>{e.date} · {e.city}</span>
-                        <span className="sm">{e.type} · {e.ch}</span>
+                        <b>{e.name}</b>
+                        <span>{eventDates(e, year)} · {e.city}</span>
+                        <span className="sm">{e.type} · {e.channel}</span>
                       </span>
                       <span className="rd-agenda-team">
                         <span className="sm">Team</span>
-                        <span>{e.staff.length ? e.staff.map((k) => P(state.PEOPLE, k).n.split(" ")[0]).join(", ") : "Not assigned"}</span>
+                        <span>{e.staff.length ? e.staff.map((k) => (k.name ?? P(state.PEOPLE, k.id).n).split(" ")[0]).join(", ") : "Not assigned"}</span>
                       </span>
                       <span className="rd-row-next" aria-hidden="true"><Icon name="next" /></span>
                     </button>
@@ -220,7 +230,7 @@ export function EventsPage() {
           <div className="stats" style={{ marginBottom: "8px", gridTemplateColumns: "repeat(4,1fr)" }}>
             <div className="stat"><b>{need}</b><span>leads the plan needs per event</span></div>
             <div className={`stat ${short ? "bad" : ""}`}>
-              <b>{state.EVENTS.length} of {eventCount(state.PLAN)}</b>
+              <b>{ran.length + planned.length} of {eventCount(state.PLAN)}</b>
               <span>{short ? "events in the diary" : "in the diary, the whole budget"}</span>
             </div>
             <div className={`stat ${avg < need ? "bad" : ""}`}>

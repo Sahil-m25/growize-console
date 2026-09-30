@@ -18,32 +18,42 @@
    that last, rare gap instead of this page assuming it away). — ponytail: known ceiling, upgrade
    when the reducer exports its own row list. */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ASSIGNRULE, LADDER, ST, UNIT } from "@/domain";
-import { money } from "@/lib/format";
+import { ASSIGNRULE } from "@/domain";
 import {
-  P, assignees, canAssign, evLeads, evStats, isIR, may, openable,
+  P, assignees, canAssign, isIR, may,
 } from "@/lib/selectors";
 import { dealTo, splitLine } from "@/features/add";
 import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { eventOne, eventRecOf, ruleOf, sheetLoad } from "@/lib/data/endpoints/events";
 import { pathOf } from "@/components/shell";
-import { evDraft } from "./eventDraft";
-import { sheetRows } from "./sheet";
+import { evDraftOf, evTitleDates } from "./eventDraft";
+import { intakeRows, sheetRows } from "./sheet";
 import { UxDetails } from "./UxDetails";
 import { EventsPage } from "./EventsPage";
+
+/* Zoho's Lead_Status → whether the lead has reached a reservation (the card's "go" tag) */
+const REACHED = /^(Reserved|Fully paid|Allocated|Onboarded|Converted)/;
 
 export function EventPage({ id }: { id: string }) {
   const { state, dispatch } = useConsole();
   const router = useRouter();
+  const mode = useApiMode();
   const set = (patch: Partial<UiState>) => dispatch({ type: "setUi", patch });
+  /* M14-S01-W1: the event and the leads the viewer may open are GET /api/events/[id] (lib/data/endpoints/events) */
+  const one = useApiRead(eventOne, state, id);
+  /* M14-S03-W1: 'Load N leads' is POST /api/events/[id]/sheet {rule, rows}; a refusal reads under the button */
+  const load = useApiWrite(sheetLoad, state, dispatch);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
 
   /* dropEvent() sets VIEW='events' the moment the record is gone (ir-console-redesigned.html:3910)
      — you cannot stand on a URL naming a record that no longer exists. This port has no VIEW to
-     flip; the id is the URL, so a stale one redirects here instead of silently falling back to
-     some other event, which is what showed Prestige Falcon City under a removed event's address. */
-  const e = state.EVENTS.find((x) => x.id === id) ?? null;
+     flip; the id is the URL, so a route that answers 404 redirects here instead of silently falling back
+     to some other event, which is what showed Prestige Falcon City under a removed event's address. */
+  const gone = one.state === "error" && one.err.status === 404;
   /* the route has landed: a press EventsPage was drawing ahead of it is done with */
   const pathname = usePathname();
   const landed = !!pathname && pathname.startsWith("/events/");
@@ -52,41 +62,43 @@ export function EventPage({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landed]);
   useEffect(() => {
-    if (!e && state.EVENTS.length) router.replace(pathOf("events"));
+    if (gone) router.replace(pathOf("events"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [e, state.EVENTS.length]);
+  }, [gone]);
   /* a record that is gone while its route still stands (dropEvent, or a stale link): the
      prototype's dropEvent puts you on the list at once, so draw the list until the redirect lands */
-  if (!e && state.EVENTS.length) return <EventsPage />;
-  if (!e) {
+  if (gone) return <EventsPage />;
+  if (one.state === "idle" || one.state === "loading") return <div className="empty">Reading the event…</div>;
+  if (one.state === "error") {
     return (
       <div>
         <div className="ph"><button type="button" className="btn" onClick={() => router.push(pathOf("events"))}>← Events</button><h1>Event unavailable</h1></div>
-        <div className="empty">Choose an event from the event list.</div>
+        <div className="empty" role="alert">{one.err.status === 403 ? "Choose an event from the event list." : one.err.error}</div>
       </div>
     );
   }
-  const st = evStats(state, e);
-  const ran = e.state === "done";
+  const row = one.data.event;
+  const e = eventRecOf(row);
+  const st = row.stats;
+  const ran = row.state === "done";
   /* the counts are the event's; the NAMES below are only ever the ones you may already open */
-  const all = evLeads(state, e.id);
-  const open = openable(state);
-  const L = all.filter((l) => open.some((x) => x.id === l.id));
-  const hid = all.length - L.length;
+  const L = one.data.leads;
+  const hid = one.data.othersCount ?? 0;
+  const captured = st.captured ?? 0;
   /* D59 · Captured and Qualified always; a later stage only once something reached it */
   const steps = ([
-    ["Captured", st.captured], ["Qualified", st.qual], ["Reserved", st.res],
-    ["Fully paid", st.paid], ["Investor", st.done ?? 0],
+    ["Captured", captured], ["Qualified", st.qualified], ["Reserved", st.reserved],
   ] as [string, number][]).filter(([, v], i) => i < 2 || v > 0);
   /* the DIVISOR is floored, never the value — a zero must never paint a bar */
-  const max = Math.max(1, st.captured);
-  const untagged = Math.max(0, st.captured - st.tagged);
+  const max = Math.max(1, captured);
+  const untagged = Math.max(0, captured - st.tagged);
   const canEdit = may(state, "events", "edit");
   const canCapture = may(state, "add", "capture");
-  const openEditor = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: e.id, seed: { EVD: evDraft(e, state.NOW.getFullYear()) } });
+  const openEditor = () => dispatch({ type: "openDrawer", k: "p:event.edit", id: e.id, seed: { EVD: evDraftOf(row) } });
   /* evIRs(e) — the staff on this event who still carry a book */
   const evIRs = e.staff.filter((k) => assignees(state).includes(k));
   const first = (k: string) => P(state.PEOPLE, k).n.split(" ")[0];
+  const staffName = (k: string) => row.staff.find((x) => x.id === k)?.name ?? P(state.PEOPLE, k).n;
 
   const sh = state.SHEET[e.id];
   const ready = !!sh && sh.state === "ready";
@@ -100,6 +112,19 @@ export function EventPage({ id }: { id: string }) {
   /* back to the list — also drops a pending press, which is what is drawing this page if the
      /events/[id] route has not landed yet (EventsPage) */
   const back = () => { set({ EVPEND: null }); router.push(pathOf("events")); };
+  const doLoad = async () => {
+    if (!sh) return;
+    setLoadErr(null);
+    const r = await load({ eventId: e.id, rule: ruleOf(AR, ARWHO), rows: intakeRows(state, e.id, sh, e.city) });
+    if (!r.ok) { setLoadErr(r.error); return; }
+    /* the reducer wrote its own line in the demo book; a live load words it from the route's answer */
+    if (mode === "live") {
+      const l = r.data;
+      dispatch({ type: "log", what: "Loaded the event sheet", lead: null, kind: "admin",
+        note: e.n + " — " + l.loaded + " leads" + (l.duplicates ? ", " + l.duplicates + " refused as duplicates" : "") + ", "
+          + (ASSIGNRULE[AR] ?? "").toLowerCase() + (AR === "one" && ARWHO ? " (" + staffName(ARWHO) + ")" : "") });
+    }
+  };
 
   return (
     <div className="rd-page rd-event-detail">
@@ -108,8 +133,8 @@ export function EventPage({ id }: { id: string }) {
       <div className="ph rd-page-heading">
         <div>
           <span className="rd-eyebrow">{e.type} · {ran ? "Completed event" : "Planned event"}</span>
-          <h1>{e.n}</h1>
-          <p className="sub">{e.date} · {e.city}</p>
+          <h1>{row.name}</h1>
+          <p className="sub">{evTitleDates(row)} · {e.city}</p>
         </div>
         <div className="sp" />
         {canEdit && <button type="button" className="act" onClick={openEditor}>Edit event</button>}
@@ -173,11 +198,12 @@ export function EventPage({ id }: { id: string }) {
                           <button type="button" className="act"
                             disabled={AR === "one" && !ARWHO}
                             title={AR === "one" && !ARWHO ? "Pick who carries them first" : undefined}
-                            onClick={() => dispatch({ type: "loadSheet", ev: e.id })}>
+                            onClick={() => { void doLoad(); }}>
                             Load {sh.ok} leads
                           </button>
                           <span className="sm">They keep this event as their source. Contact permission comes from the intake form; email permission is not assumed.</span>
                         </div>
+                        {loadErr ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{loadErr}</p> : null}
                       </>
                     ) : (
                       <p className="sm" style={{ margin: 0 }}>Your seat does not load event sheets; the IR team or Marketing do.</p>
@@ -186,7 +212,7 @@ export function EventPage({ id }: { id: string }) {
                 ) : (
                   <p className="sm" style={{ margin: 0 }}>
                     {sh.ok} of {sh.rows} rows loaded
-                    {sh.loadedBy ? " by " + P(state.PEOPLE, sh.loadedBy).n + " · " + sh.loadedAt : ""}
+                    {sh.loadedBy ? " by " + staffName(sh.loadedBy) + " · " + sh.loadedAt : ""}
                     {sh.rule ? " · " + sh.rule.toLowerCase() : ""}, {sh.dupe} skipped as duplicates
                     {sh.bad ? ", " + sh.bad + " left on the sheet" : ""}. A sheet loads once — corrections go through the
                     lead, so the console stays the record.
@@ -199,33 +225,30 @@ export function EventPage({ id }: { id: string }) {
           <div className="card" style={{ marginTop: "8px" }}>
             <div className="ch">
               <h3>Leads from this event</h3><div className="sp" />
-              <span className="sm mono">{ran && untagged ? `${st.tagged} of ${st.captured} tagged` : all.length}</span>
+              <span className="sm mono">{ran && untagged ? `${st.tagged} of ${captured} tagged` : st.tagged}</span>
             </div>
             <div className="tw scroll"><table>
               <thead><tr>
                 <th scope="col">Lead</th><th scope="col">Stage</th>
-                <th scope="col" style={{ textAlign: "right" }}>Total</th>
               </tr></thead>
               <tbody>
                 {L.length ? L.map((l) => (
                   <tr key={l.id} className="g4-row" onClick={() => goLead(l.id)}>
                     <th scope="row">
-                      <button type="button" className="g4-name" onClick={(ev) => { ev.stopPropagation(); goLead(l.id); }}><b>{l.n}</b></button>
-                      <div className="sm">{l.own ? P(state.PEOPLE, l.own).n : "no owner"}</div>
+                      <button type="button" className="g4-name" onClick={(ev) => { ev.stopPropagation(); goLead(l.id); }}><b>{l.name}</b></button>
                     </th>
                     <td>
-                      <span className={`tag ${l.done >= ST.RESERVED ? "go" : ""}`}>
-                        {LADDER[Math.max(0, l.done - 1)]!.t}
+                      <span className={`tag ${REACHED.test(l.status ?? "") ? "go" : ""}`}>
+                        {l.status ?? "—"}
                       </span>
                     </td>
-                    <td className="n">{money(l.units * UNIT)}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={3} className="empty">
-                    {all.length
-                      ? `None of this event's ${all.length} lead${all.length === 1 ? "" : "s"} ${all.length === 1 ? "is" : "are"} in your book. ${all.length === 1 ? "It is" : "They are"} counted in the event's results — a lead is named only to the person who may open it.`
+                  <tr><td colSpan={2} className="empty">
+                    {st.tagged
+                      ? `None of this event's ${st.tagged} lead${st.tagged === 1 ? "" : "s"} ${st.tagged === 1 ? "is" : "are"} in your book. ${st.tagged === 1 ? "It is" : "They are"} counted in the event's results — a lead is named only to the person who may open it.`
                       : "No lead has been tagged to this event yet. A lead joins this list when this event is chosen as its source at capture, or when the event's sheet is loaded above."}
-                    {!all.length && canCapture && (
+                    {!st.tagged && canCapture && (
                       <>
                         <br />
                         <button type="button" className="chip" style={{ marginTop: "10px" }}
@@ -237,7 +260,7 @@ export function EventPage({ id }: { id: string }) {
                   </td></tr>
                 )}
                 {!!hid && !!L.length && (
-                  <tr><td colSpan={3} className="sm" style={{ color: "var(--ink-3)" }}>
+                  <tr><td colSpan={2} className="sm" style={{ color: "var(--ink-3)" }}>
                     and {hid} more, in somebody else&apos;s book
                   </td></tr>
                 )}
@@ -274,8 +297,8 @@ export function EventPage({ id }: { id: string }) {
               <div className="chips">
                 {e.staff.length ? e.staff.map((k) => (
                   <span className="chip" key={k}
-                    title={evIRs.includes(k) ? undefined : `${P(state.PEOPLE, k).n} no longer carries a book, so nothing is dealt to them`}>
-                    {P(state.PEOPLE, k).n}
+                    title={evIRs.includes(k) ? undefined : `${staffName(k)} no longer carries a book, so nothing is dealt to them`}>
+                    {staffName(k)}
                   </span>
                 )) : <span className="sm">Nobody is named on this one yet.</span>}
               </div>
@@ -292,12 +315,12 @@ export function EventPage({ id }: { id: string }) {
                 {ran && (
                   <>
                     <dt>Per lead</dt>
-                    <dd className="mono">₹{Math.round(e.cost / Math.max(1, st.captured)).toLocaleString("en-IN")}</dd>
+                    <dd className="mono">₹{Math.round(e.cost / Math.max(1, captured)).toLocaleString("en-IN")}</dd>
                     <dt>Per qualified</dt>
                     <dd>
                       {untagged
                         ? <><span className="tag due">not yet</span> <span className="sm">tag the other {untagged} captured leads</span></>
-                        : <b className="mono">₹{Math.round(e.cost / Math.max(1, st.qual)).toLocaleString("en-IN")}</b>}
+                        : <b className="mono">₹{(st.costPerQualified ?? Math.round(e.cost / Math.max(1, st.qualified))).toLocaleString("en-IN")}</b>}
                     </dd>
                   </>
                 )}

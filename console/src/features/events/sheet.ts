@@ -18,3 +18,16 @@ export function sheetRows(ev: string, sh: Pick<SheetRec, "ok"> | undefined, lead
   }
   return out;
 }
+
+/* The rows the card posts with "Load N leads" — the sheet as the page read it (PROVISIONAL, D85/jev 0.95: until a sheet
+   reader exists the page posts the parsed intake rows, and the route re-checks every one). The demo book keeps the
+   sheet as counts only, so its rows are dealt the way the reducer's own loadSheet deals them. */
+export type IntakeRow = { name: string; mobile: string; city: string; units: number; consent: { msg: boolean; call: boolean; email: boolean } };
+export function intakeRows(state: { SHEETNAMES: readonly string[] }, ev: string, sh: Pick<SheetRec, "ok"> | undefined, city: string): IntakeRow[] {
+  if (!sh) return [];
+  void ev;
+  return Array.from({ length: sh.ok }, (_, i) => ({
+    name: state.SHEETNAMES[i % state.SHEETNAMES.length] ?? "", mobile: "+91 9" + String(400000000 + i * 7919).slice(0, 9), city, units: 1,
+    consent: { msg: true, call: true, email: false },
+  }));
+}

@@ -146,3 +146,17 @@ export function uiEVD(ui: UiState): EventDraft {
     prototype's own. */
 export type EventsView = "upcoming" | "completed";
 export const uiEventsView = (ui: UiState): EventsView => (ui.EVENTVIEW === "completed" ? "completed" : "upcoming");
+
+/** evDraft for a record read from GET /api/events/[id] (the route's row, not the book's). */
+export function evDraftOf(r: import("@/server/events/events").EventRow): EventDraft {
+  const from = r.startsOn ?? "", to = r.endsOn ?? "";
+  return {
+    id: r.id as EventId, n: r.name, type: (r.type ?? "Society") as EventType, ch: (r.channel ?? "Direct") as EventChannel,
+    date: from && to ? evDateText(from, to) : "", from, to, city: r.city ?? "", cost: r.cost ?? 0,
+    state: r.state === "done" ? "done" : "planned", off: r.stats.captured ?? 0, staff: r.staff.map((s) => s.id),
+  };
+}
+
+/** The dates as the event's own page heads them: the whole span with its year ("3–4 Oct 2026"). */
+export const evTitleDates = (r: Pick<import("@/server/events/events").EventRow, "startsOn" | "endsOn">): string =>
+  r.startsOn && r.endsOn ? evDateText(r.startsOn, r.endsOn) : "";
