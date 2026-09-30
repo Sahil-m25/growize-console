@@ -29,6 +29,8 @@ export type ApiErr = {
   /** the in-page message: the route's own `error`, never a Zoho body */
   error: string;
   recordId?: string | null;
+  /** any other field the route's refusal carried (e.g. a 503's `fresh` on the Documents list) */
+  extra?: Record<string, unknown>;
 };
 export type ApiResult<T> = ApiOk<T> | ApiErr;
 
@@ -57,11 +59,15 @@ export interface ReadEndpoint<B, A, T> {
 }
 
 export type Method = "POST" | "PUT" | "PATCH" | "DELETE";
+/** A write whose body is a file's bytes, not JSON (an upload): sent as-is with its own Content-Type. */
+export type RawBody = { body: Blob; contentType: string };
 export interface WriteEndpoint<B, A, T, D = unknown> {
   method: Method;
   path(args: A): string;
   /** the JSON body; omit for none */
   body?(args: A): unknown;
+  /** the file's bytes instead of a JSON body (an upload); wins over `body` */
+  raw?(args: A): RawBody;
   /** send an Idempotency-Key (one per press; pass the same key to retry the same press) */
   idempotent?: boolean;
   pick(json: unknown): T;
@@ -92,14 +98,15 @@ const useLiveTick = () => useSyncExternalStore(subscribe, () => tick, () => 0);
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 /** One call to a route. Never throws. A non-2xx becomes ApiErr carrying the route's `error` and `code`. */
-export async function apiFetch(method: "GET" | Method, path: string, opts: { body?: unknown; idempotencyKey?: string; signal?: AbortSignal; fetch?: Fetch } = {}): Promise<ApiResult<unknown>> {
+export async function apiFetch(method: "GET" | Method, path: string, opts: { body?: unknown; raw?: RawBody; idempotencyKey?: string; signal?: AbortSignal; fetch?: Fetch } = {}): Promise<ApiResult<unknown>> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  if (opts.raw) headers["Content-Type"] = opts.raw.contentType;
+  else if (opts.body !== undefined) headers["Content-Type"] = "application/json";
   if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
   let r: Response;
   try {
     r = await (opts.fetch ?? fetch)(path, { method, headers, cache: "no-store", credentials: "same-origin", signal: opts.signal,
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
+      body: opts.raw ? opts.raw.body : opts.body === undefined ? undefined : JSON.stringify(opts.body) });
   } catch {
     return fail(0, "network", UNREACHABLE);
   }
@@ -109,7 +116,9 @@ export async function apiFetch(method: "GET" | Method, path: string, opts: { bod
   const code = typeof b.code === "string" ? b.code : String(r.status);
   const error = r.status === 409 && /changed$/.test(code) ? CHANGED
     : typeof b.error === "string" && b.error ? b.error : `Refused (${r.status}).`;
-  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}) };
+  const more = Object.fromEntries(Object.entries(b).filter(([k]) => k !== "error" && k !== "code" && k !== "recordId"));
+  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}),
+    ...(Object.keys(more).length ? { extra: more } : {}) };
 }
 
 export const newIdempotencyKey = (): string =>
@@ -129,7 +138,7 @@ export async function runWrite<B, A, T, D>(mode: ApiMode, ep: WriteEndpoint<B, A
   opts: { idempotencyKey?: string; fetch?: Fetch } = {}): Promise<ApiResult<T>> {
   if (mode === "fixture") return ep.fixture(book, dispatch, args);
   const r = await apiFetch(ep.method, ep.path(args), {
-    body: ep.body?.(args), fetch: opts.fetch,
+    body: ep.body?.(args), raw: ep.raw?.(args), fetch: opts.fetch,
     idempotencyKey: ep.idempotent ? opts.idempotencyKey ?? newIdempotencyKey() : undefined,
   });
   if (!r.ok) { ep.onLiveError?.(dispatch, r); return r; }

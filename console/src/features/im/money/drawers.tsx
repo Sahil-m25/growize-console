@@ -15,6 +15,7 @@ import type { ImMoneyDrawerKey, ImPayoutMode } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { AppPreview } from "./preview";
 import { useApiRead } from "@/lib/data/api";
+import { FarmDocs } from "../paper2/FarmDocs";
 import { farmOne } from "@/lib/data/endpoints/farms";
 
 type Ctx = ImPageProps & { id: string | null };
@@ -145,6 +146,7 @@ function LlpBody(c: Ctx) {
         }) : <p className="sm" style={{ margin: 0 }}>Nobody holds units on this farm{superUser || fin ? "" : " that you look after"}.</p>}
         {fin && rows.length ? <p className="sm" style={{ margin: "9px 0 0" }}>Matched receipts on this farm: <b>{money(matched)}</b> — the same total Payments shows for {l.name.split(" — ")[0]}.</p> : null}
       </div>
+      <FarmDocs s={s} me={me} id={l.id} />
     </>
   );
 }

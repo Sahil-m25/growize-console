@@ -1,21 +1,35 @@
 "use client";
 
-/* 12. DOCUMENTS — imx.js 1959–1993 (vDocs) and 1994–2027 (vSendPanel). */
+/* 12. DOCUMENTS — imx.js 1959–1993 (vDocs) and 1994–2027 (vSendPanel).
+   Phase 2b (D104): the list is GET /api/documents/list?cut=out|all (M12-S03-W1) — one row per paper with a Zoho Sign
+   request, cut to the seat — and Send one reads GET /api/documents/sign/prefill and POSTs /api/documents/sign/send
+   with an Idempotency-Key per press (M12-S04-W1). A 503 draws the last good read's time, never old rows. */
 
-import { ago, day6, I, may, pageReadable, readBook, safeNote, secOf, SIGS, TPL } from "@/lib/im";
-import { DocTag, ImPname, ImSecBar, type ImPageProps, type ImSec } from "../common";
-import { SignCell } from "../paper2/SignCell";
+import { useRef } from "react";
+import { ago, I, may, pageReadable, readBook, safeNote, secOf, SIGS, TPL } from "@/lib/im";
+import { newIdempotencyKey, useApiRead, useApiWrite } from "@/lib/data/api";
+import { dayOf, documentsList } from "@/lib/data/endpoints/documents";
+import { allotmentOf, METHOD_OF, PAPER_OF_TEMPLATE, signPrefill, signSend } from "@/lib/data/endpoints/sign";
+import type { DocRow, Paper } from "@/server/documents/list";
+import { DocTag, ImSecBar, type ImPageProps, type ImSec } from "../common";
+import { ReadNote } from "../paper2/ReadNote";
+import { SignRowCell } from "../paper2/SignCell";
 import { UploadList, UploadPanel } from "../paper2/Upload";
 
+const first = (n: string | null | undefined): string => String(n || "—").split(" ")[0]!;
 export function ImDocs({ s, me, dispatch }: ImPageProps) {
+  const book = { s, me };
+  const out = useApiRead(documentsList, book, "out");
+  const all = useApiRead(documentsList, book, "all");
   if (!pageReadable(s, me, "docs")) return null;
-  const book = s.data.DOCS.filter(d => I(s, me, d.inv));
-  const SECS: ImSec[] = [{ k: "out", t: "Out for signature", n: book.filter(d => d.state === "awaiting").length, warn: true },
-    { k: "all", t: "Everything on file", n: book.length },
+  const outRows = out.state === "ok" ? out.data.rows : [], allRows = all.state === "ok" ? all.data.rows : [];
+  const SECS: ImSec[] = [{ k: "out", t: "Out for signature", n: out.state === "ok" ? out.data.outCount : 0, warn: true },
+    { k: "all", t: "Everything on file", n: allRows.length },
     { k: "send", t: "Send one" },
     { k: "up", t: "Upload one" }];   /* M12-S02 */
   const S = secOf(s.ui.SEC, "docs", SECS);
-  const rows = S === "out" ? book.filter(d => d.state === "awaiting") : book;
+  const shown = S === "out" ? out : all;
+  const rows = S === "out" ? outRows : allRows;
   return (
     <>
       <div className="ph"><h1>Documents</h1>
@@ -28,45 +42,64 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
       <div className="secw">
         {S === "send" ? <SendPanel s={s} me={me} dispatch={dispatch} />
           : S === "up" ? <><UploadPanel s={s} me={me} dispatch={dispatch} /><div style={{ marginTop: 12 }}><UploadList s={s} me={me} /></div></>
-          : <div className="card fill"><div className="tw"><table>
+          : <><ReadNote r={shown} what="the documents" /><div className="card fill"><div className="tw"><table>
           <thead><tr><th>Document</th><th>Investor</th><th>Sent</th><th>Signing</th><th>State</th>
-            <th>Reference</th><th></th></tr></thead>
-          <tbody>{rows.length ? rows.map(d => {
-            const x = I(s, me, d.inv);
-            return (
-              <tr className="k" key={d.id} onClick={() => dispatch({ type: "go", v: "inv", id: d.inv })} tabIndex={0}>
-                <td><b>{d.t}</b><div className="sm">{d.cls} · {d.id}</div></td>
-                <td>{x ? x.n : d.inv}<div className="sm mono">{d.inv}</div></td>
-                <td className="sm"><ImPname s={s} k={d.by} first /> <span className="mono">{day6(d.sent)}</span></td>
-                <td className="sm">{d.sig || "—"}</td>
-                <td><DocTag d={d} />{d.state === "awaiting"
-                  ? <div className="sm">{ago(s.data.NOW, d.sent)}{d.exp ? " · expires " + d.exp : ""}</div>
-                  : d.on ? <div className="sm mono">{day6(d.on)}</div> : null}
-                  <SignCell s={s} me={me} dispatch={dispatch} d={d} /></td>
-                <td className="sm mono">{d.ref || "—"}</td>
-                <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state === "awaiting"
-                  ? <button className="chip" onClick={e => { e.stopPropagation();
-                    dispatch({ type: "openDrawer", k: "verify", id: d.id, seed: { DREF: "" } }); }}>Verify</button>
-                  : d.state === "blocked" ? <span className="sm">{safeNote(s, me, d.why)}</span> : null}</td></tr>
-            );
-          }) : <tr><td colSpan={7}><div className="empty">Nothing out for signature.</div></td></tr>}
-          </tbody></table></div></div>}
+            <th>Verified</th><th></th></tr></thead>
+          <tbody>{rows.length ? rows.map((d: DocRow) => (
+            <tr className="k" key={d.key} onClick={() => dispatch({ type: "go", v: "inv", id: d.contactId || "" })} tabIndex={0}>
+              <td><b>{d.label}</b><div className="sm">{(d.module === "Contacts" ? "Personal" : "Allotment") + " · " + d.recordId}</div></td>
+              <td>{d.party || d.contactId}<div className="sm mono">{d.contactId}</div></td>
+              <td className="sm">{first(d.sign && d.sign.sentBy)} <span className="mono">{dayOf(d.sign && d.sign.sentAt)}</span></td>
+              <td className="sm">{d.method || "—"}</td>
+              <td><DocTag d={{ state: d.state === "verified" ? "signed" : d.key.startsWith("blocked:") ? "blocked" : "awaiting" }} />
+                {d.state === "sent" && !d.key.startsWith("blocked:") && d.sign
+                  ? <div className="sm">{(ago(s.data.NOW, d.sign.sentAt) !== "—" ? ago(s.data.NOW, d.sign.sentAt) : "")
+                    + (d.sign.expiresAt ? " · expires " + d.sign.expiresAt : "")}</div>
+                  : d.verifiedAt ? <div className="sm mono">{dayOf(d.verifiedAt)}</div> : null}
+                <SignRowCell s={s} me={me} dispatch={dispatch} row={d} /></td>
+              <td className="sm mono">{d.state === "verified" ? dayOf(d.verifiedAt) : "—"}</td>
+              <td style={{ textAlign: "right" }}>{d.key.startsWith("blocked:")
+                ? <span className="sm">{safeNote(s, me, (s.data.DOCS.find(x => x.id === d.recordId) || { why: "" }).why)}</span>
+                : may(s, me, "doc") && d.state !== "verified"
+                ? <button className="chip" onClick={e => { e.stopPropagation();
+                  dispatch({ type: "openDrawer", k: "verify", id: d.recordId, seed: { DREF: "" } }); }}>Verify</button> : null}</td></tr>
+          )) : <tr><td colSpan={7}><div className="empty">{shown.state === "loading" ? "Reading…" : S === "out" ? "Nothing out for signature." : "Nothing on file."}</div></td></tr>}
+          </tbody></table></div></div></>}
       </div>
     </>
   );
 }
 
+/** the record id the send routes take for a paper of this investor (fixture: the book's own ids) */
+function recordFor(paper: Paper | null, x: { id: string; lead?: string } | null, alot: string | null): string | null {
+  if (!paper || !x) return null;
+  return paper === "fema" ? x.id : paper === "nda" ? x.lead ?? x.id : alot ?? x.id;
+}
+
 /** vSendPanel — imx.js 1994–2027 */
 export function SendPanel({ s, me, dispatch }: ImPageProps) {
-  if (!pageReadable(s, me, "docs")) return null;
-  if (!may(s, me, "doc")) return <div className="card"><div className="empty">Sending belongs to Finance
-    Operations, Compliance and the Head of Finance.</div></div>;
   const { SEL } = s.ui, { DTPL, DSIG } = s.ui.drafts;
   const cands = readBook(s, me).filter(x => x.st !== "lapsed");
   /* read, never write: the pane picks the first candidate without reassigning SEL */
   const pick = (SEL && I(s, me, SEL)) ? SEL : (cands[0] ? cands[0].id : null);
   const x = I(s, me, pick), t = TPL.find(y => y.t === DTPL);
-  const blocked = x && x.nri && DSIG === "Aadhaar OTP";
+  const paper = t ? PAPER_OF_TEMPLATE[t.t] ?? null : null;
+  const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: paper && x ? recordFor(paper, x, allotmentOf({ s, me }, x.id)) : null });
+  const send = useApiWrite(signSend, { s, me }, dispatch);
+  const press = useRef<string | null>(null);
+  if (!pageReadable(s, me, "docs")) return null;
+  if (!may(s, me, "doc")) return <div className="card"><div className="empty">Sending belongs to Finance
+    Operations, Compliance and the Head of Finance.</div></div>;
+  const aadhaarOff = paper ? pre.state === "ok" && !pre.data.methods.includes("aadhaar") : !!(x && x.nri);
+  const blocked = !!x && aadhaarOff && DSIG === "Aadhaar OTP";
+  const can = !!x && !!DTPL && !blocked && (!paper || (pre.state === "ok" && pre.data.maySend));
+  const go = () => {
+    if (!x || !DTPL || !pick) return;
+    press.current ??= newIdempotencyKey();
+    void send({ paper: paper ?? "other", recordId: (paper && recordFor(paper, x, allotmentOf({ s, me }, x.id))) || x.id, method: METHOD_OF[DSIG] ?? "email-otp",
+      templateId: "", expectedModifiedTime: pre.state === "ok" ? pre.data.modifiedTime ?? "" : "", book: { inv: pick, tpl: DTPL, sig: DSIG } },
+    { idempotencyKey: press.current }).then(r => { if (r.ok) press.current = null; });
+  };
   return (
     <div className="card"><div className="ch"><h3>Send a document</h3></div><div className="cb">
       <label className="fi" style={{ marginBottom: 12 }}><span>Investor</span>
@@ -86,13 +119,16 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
         <p className="lbl">Signing</p>
         <div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg => <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`}
           onClick={() => dispatch({ type: "setDraft", patch: { DSIG: sg } })}>{sg}</button>)}</div></>}
-      {x && DTPL && !blocked
-        ? <button className="act" onClick={() => dispatch({ type: "sendDocNow", id: pick!, tpl: DTPL, sig: DSIG })}>Send through Zoho Sign</button>
-        : <button className="act" disabled title="Pick the investor, the template and how it is signed">Send through Zoho Sign</button>}
+      {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}
+      {paper && pre.state === "ok" && pre.data.recipient
+        ? <p className="sm" style={{ margin: "0 0 10px" }}>{"To " + pre.data.recipient.name + " · " + pre.data.recipient.email}</p> : null}
+      {can
+        ? <button className="act" onClick={go}>Send through Zoho Sign</button>
+        : <button className="act" disabled title={paper && pre.state === "ok" && !pre.data.maySend ? "Already out or on file for this investor" : "Pick the investor, the template and how it is signed"}>Send through Zoho Sign</button>}
       <p className="sm" style={{ margin: "10px 0 0" }}>Goes from the finance mailbox as an expiring link. The IR
         sees that it went — never what is in it — and it is their job from there to tell the investor
         and chase the signature.</p>
-      {blocked ? <div className="note bad" style={{ marginTop: 12 }}><b>{x.n} is an NRI.</b>{" "}
+      {blocked && x ? <div className="note bad" style={{ marginTop: 12 }}><b>{x.n} is an NRI.</b>{" "}
         Aadhaar OTP needs an Aadhaar linked to a live Indian mobile. Use a Class 3 DSC or a wet
         signature.</div> : null}
     </div></div>

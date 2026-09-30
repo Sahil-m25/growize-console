@@ -8,7 +8,7 @@ import type { KeyboardEvent } from "react";
 import {
   ageing, banked, bookOf, cadence, cared, cOf_all, forfeitExposure, I, inr, isAM, KAMS, lastC, may,
   money, needsKam, outstandingReserved, overdue, pageReadable, poolBook, PROGRAMME_UNITS, quiet,
-  readBook, ROLE, secOf, stuckDocs, tierOf, TIERS, UNIT, who, FORFEIT, aged, day6,
+  readBook, ROLE, secOf, signChip, stuckDocs, tierOf, TIERS, UNIT, who, FORFEIT, aged, day6,
 } from "@/lib/im";
 import type { ImInvestor, ImState } from "@/lib/im";
 import { ImPname, ImSecBar, KycTag, ProvIR, type ImPageProps } from "../common";
@@ -125,7 +125,8 @@ function Paper({ s, me, goInv }: { s: ImState; me: string; goInv: (id: string) =
           <span style={{ minWidth: 0 }}><b>{d.t}</b>
             <div className="sm">{((I(s, me, d.inv) || { n: "" }).n || d.inv) + " · sent " + day6(d.sent) + " by "
               + who(s, d.by).n.split(" ")[0] + " · " + (d.sig || "—") + (d.exp ? " · link expires " + d.exp : "")}</div></span>
-          <button className="chip" onClick={() => goInv(d.inv)}>Open</button></div>
+          <button className="chip" onClick={() => goInv(d.inv)}>Open</button>
+          {signChip(s, d) ? <span className="sm"> {signChip(s, d)!.t}</span> : null}</div>
       )) : <p className="sm" style={{ margin: 0 }}>Nothing is out.</p>}
       <p className="sm" style={{ margin: "11px 0 0" }}>An expiring link that expires is a second send, a second
         chase and a fortnight. <ProvIR t="The chasing itself" /> belongs to the IR — this is the list

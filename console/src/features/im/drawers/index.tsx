@@ -10,14 +10,21 @@
    and closeDrawer, so a drawer here only reads the active draft. drawerReadable gates the whole
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
-import { SignCell } from "../paper2/SignCell";
-import type { ReactNode } from "react";
+import { SignRowCell } from "../paper2/SignCell";
+import { useRef, useState, type ReactNode } from "react";
+import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { dayOf, documentUpload, documentsList } from "@/lib/data/endpoints/documents";
+import { investorRecord } from "@/lib/data/endpoints/investors";
+import { leadHints, NO_WORD } from "@/lib/data/endpoints/paperwork";
+import { allotmentOf, HAND_METHODS, METHOD_OF, NOTHING_CAME_BACK, PAPER_OF_TEMPLATE, signBlock, signPrefill, signSend, signVerify, type HandMethod } from "@/lib/data/endpoints/sign";
+import type { Paper } from "@/server/documents/list";
 import {
   CHANS, FSTATE, I, KAMS, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
   aged, ansOf, bookOf, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
   mayDetails, money, nOpen, nState, notFin, plusDays, quiet, readBook, roundOf, safeNote, tierOf, who,
+  fileKind, llpOf, UPLOAD_ACCEPT, uploadCheck, uploadKey,
 } from "@/lib/im";
-import type { ImDrafts, ImDrawerKey, ImInvestor } from "@/lib/im";
+import type { ImDrafts, ImDrawerKey, ImInvestor, ImScope } from "@/lib/im";
 import { Icon } from "@/components/ui/Icon";
 import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
 import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
@@ -232,12 +239,24 @@ function payFoot(c: Ctx): ReactNode {
   ) : null;
 }
 
-/* ---- send — imx.js 2748–2776 ---- */
+/* ---- send — imx.js 2748–2776 ----
+   M12-S04-W1: the facts are GET /api/documents/sign/prefill (recipient, NRI, what is already out) and Send is
+   POST /api/documents/sign/send with one Idempotency-Key per press; a plain function part renders a component so it may read. */
 const sendBlocked = (x: ImInvestor | null, DSIG: string): boolean => !!x && x.nri && DSIG === "Aadhaar OTP";
-function sendBody(c: Ctx): ReactNode {
-  const { s, me, id } = c; const x = I(s, me, id); if (!x || !id) return null;
+function useSendFacts(c: Ctx) {
+  const { s, me, id } = c; const x = I(s, me, id);
   const { DTPL, DSIG } = draft(c);
-  const t = TPL.find(y => y.t === DTPL), blocked = sendBlocked(x, DSIG);
+  const paper = DTPL ? PAPER_OF_TEMPLATE[DTPL] ?? null : null;
+  const rid = paper && x ? (paper === "fema" ? x.id : paper === "nda" ? x.lead ?? x.id : allotmentOf({ s, me }, x.id) ?? x.id) : null;
+  const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: rid });
+  /* Aadhaar is offered only where the route says so; a template that is not one of the four papers has no prefill: the book's NRI flag */
+  const off = paper ? pre.state === "ok" && !pre.data.methods.includes("aadhaar") : !!(x && x.nri);
+  return { x, DTPL, DSIG, paper, rid, pre, blocked: !!x && off && DSIG === "Aadhaar OTP" };
+}
+function SendBody(c: Ctx) {
+  const { s, id } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, blocked, pre, paper } = f;
+  if (!x || !id) return null;
+  const t = TPL.find(y => y.t === DTPL);
   return (
     <>
       <p className="lbl">Template</p>
@@ -252,6 +271,9 @@ function sendBody(c: Ctx): ReactNode {
       {t && t.noSign ? <p className="sm" style={{ margin: "0 0 12px" }}>A receipt is issued, not signed.</p>
         : <><p className="lbl">Signing</p><div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg =>
           <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`} onClick={() => set(c, { DSIG: sg })}>{sg}</button>)}</div></>}
+      {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}
+      {paper && pre.state === "ok" && pre.data.recipient
+        ? <p className="sm" style={{ margin: "0 0 12px" }}>{"To " + pre.data.recipient.name + " · " + pre.data.recipient.email}</p> : null}
       {blocked ? (
         <div className="note bad"><b>{x.n} is an NRI.</b> Aadhaar OTP needs an Aadhaar
           linked to a live Indian mobile. Use a Class 3 DSC or a wet signature.</div>
@@ -263,58 +285,127 @@ function sendBody(c: Ctx): ReactNode {
     </>
   );
 }
-function sendFoot(c: Ctx): ReactNode {
-  const { s, me, id, dispatch } = c; const x = I(s, me, id); const { DTPL, DSIG } = draft(c);
-  const blocked = sendBlocked(x, DSIG);
+function SendFoot(c: Ctx) {
+  const { s, me, id, dispatch } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, blocked, pre, paper, rid } = f;
+  const send = useApiWrite(signSend, { s, me }, dispatch);
+  const press = useRef<string | null>(null);
   if (!may(s, me, "doc") || !id) return null;
-  const ok = !!DTPL && !blocked;
+  const ok = !!DTPL && !blocked && (!paper || (pre.state === "ok" && pre.data.maySend));
+  const go = () => {
+    if (!x || !DTPL) return;
+    press.current ??= newIdempotencyKey();
+    void send({ paper: paper ?? "other", recordId: rid || x.id, method: METHOD_OF[DSIG] ?? "email-otp", templateId: "",
+      expectedModifiedTime: pre.state === "ok" ? pre.data.modifiedTime ?? "" : "", book: { inv: id, tpl: DTPL, sig: DSIG } },
+    { idempotencyKey: press.current }).then(r => { if (r.ok) press.current = null; });
+  };
   return (
-    <button className="act" disabled={!ok} title={ok ? undefined : "Pick a template"}
-      onClick={ok ? () => dispatch({ type: "sendDocNow", id, tpl: DTPL || "", sig: DSIG }) : undefined}>Send it</button>
+    <button className="act" disabled={!ok} title={ok ? undefined : "Pick a template"} onClick={ok ? go : undefined}>Send it</button>
   );
 }
 
-/* ---- verify — imx.js 2778–2805 ---- */
-function verifyBody(c: Ctx): ReactNode {
-  const { s, me, id } = c;
-  const d = s.data.DOCS.find(y => y.id === id); if (!d) return null;
+/* ---- verify — imx.js 2778–2805 ----
+   M12-S06-W1: paper signed outside Zoho Sign. The signed copy is first filed to the paper's slot (POST /api/documents/upload),
+   then POST /api/documents/sign/verify names the method and the reference. M12-S07-W1: "Nothing has come back" is
+   POST /api/documents/sign/block with its reason. M12-S11-W1: the IR's word on THIS paper is GET /api/leads/[id]/hints?paper=
+   — a hint, never a signature, and never a note about another paper. The buttons live in the body (they share the file). */
+const PAPER_FILING: Record<string, { scope: "personal" | "allotment"; slot: string; type: string; Scope: "Personal" | "Allotment" }> = {
+  fema: { scope: "personal", slot: "fema-declaration", type: "FEMA declaration", Scope: "Personal" },
+  supplementary: { scope: "allotment", slot: "supplementary-agreement", type: "Supplementary agreement", Scope: "Allotment" },
+  "allocation-letter": { scope: "allotment", slot: "allocation-letter", type: "Allocation letter", Scope: "Allotment" },
+};
+function VerifyBody(c: Ctx) {
+  const { s, me, id, dispatch } = c;
+  const mode = useApiMode();
+  const list = useApiRead(documentsList, { s, me }, "all");
+  const row = list.state === "ok" ? list.data.rows.find(r => r.recordId === id || r.key === id) ?? null : null;
+  const rec = useApiRead(investorRecord, { s, me }, row ? row.contactId : null);
+  const leadId = rec.state === "ok" ? rec.data.record.origin.leadId : null;
+  const hints = useApiRead(leadHints, { s, me }, { leadId, paper: row ? row.paper : "nda" });
+  const pre = useApiRead(signPrefill, { s, me }, { paper: row ? row.paper : "nda", id: row ? row.recordId : null });
+  const upload = useApiWrite(documentUpload, { s, me }, dispatch);
+  const verify = useApiWrite(signVerify, { s, me }, dispatch);
+  const block = useApiWrite(signBlock, { s, me }, dispatch);
+  const [method, setMethod] = useState<HandMethod | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const idem = useRef<string | null>(null);
   const { DREF } = draft(c);
-  const said = s.data.INBOX.find(n => n.inv === d.inv && n.kind === "signed");
-  const age = aged(s.data.NOW, d.sent);
+  if (list.state === "loading") return <p className="sm" style={{ margin: 0 }}>Reading the document…</p>;
+  if (list.state === "error") return <p className="sm" role="alert" style={{ margin: 0 }}>{list.err.error}</p>;
+  if (!row) return null;
+  const modified = pre.state === "ok" ? pre.data.modifiedTime ?? "" : "";
+  const how: HandMethod = method ?? ((HAND_METHODS as readonly string[]).includes(row.method || "") ? (row.method as HandMethod) : "Uploaded");
+  const sg = row.sign, age = sg ? aged(s.data.NOW, sg.sentAt) : null;
+  const h = hints.state === "ok" ? hints.data.hints[0] ?? null : null;
+  const filing = PAPER_FILING[row.paper];
+  const acting = may(s, me, "doc");
+  const done = (ok: boolean) => { if (ok && mode === "live") dispatch({ type: "closeDrawer" }); };
+  const isLive = mode === "live";
+  /* the demo book files each paper under a class (Regulatory, Contractual…); the route has no such field */
+  const bookCls = (s.data.DOCS.find(x => x.id === row.recordId) || { cls: "" }).cls;
+
+  const verifyIt = async () => {
+    setErr(null);
+    if (file && filing) {
+      const chk = uploadCheck({ name: file.name, size: file.size, type: file.type });
+      if (!chk.ok) { setErr(chk.msg || "That cannot be uploaded."); return; }
+      const kind = fileKind(file.name, file.type);
+      const llp = row.llpId ? (llpOf(s, row.llpId) || { Block_Code: null }).Block_Code : null;
+      const target = { Scope: filing.Scope as ImScope, Doc_Type: filing.type, Investor: row.contactId, LLP: filing.scope === "personal" ? null : llp };
+      idem.current ??= newIdempotencyKey();
+      const up = await upload({ scope: filing.scope, recordId: row.recordId, slot: filing.slot, name: file.name, expected: modified || null,
+        bytes: new Uint8Array(await file.arrayBuffer()), contentType: file.type || (kind === "PDF" ? "application/pdf" : kind === "PNG" ? "image/png" : "image/jpeg"),
+        book: { key: uploadKey(file, target), ...target, File_Size: file.size, File_Type: file.type } }, { idempotencyKey: idem.current });
+      if (!up.ok) { if (isLive) setErr(up.error); return; }
+      idem.current = null;
+    }
+    const r = await verify({ paper: row.paper, recordId: row.recordId, method: how, reference: DREF.trim(), expectedModifiedTime: modified, did: row.recordId });
+    done(r.ok);
+  };
+
   return (
     <>
       <dl className="kv" style={{ marginTop: 0 }}>
-        <dt>Document</dt><dd><b>{d.t}</b> <span className="sm">{d.cls}</span></dd>
-        <dt>Sent</dt><dd><ImPname s={s} k={d.by} first /> <span className="mono">{d.sent}</span></dd>
-        <dt>Signing</dt><dd>{d.sig || "—"}</dd>
-        <dt>Out for</dt><dd>{age} day{age === 1 ? "" : "s"}{d.exp ? ` · link expires ${d.exp}` : ""}</dd>
+        <dt>Document</dt><dd><b>{row.label}</b>{mode === "fixture" && bookCls ? <> <span className="sm">{bookCls}</span></> : null}</dd>
+        <dt>Sent</dt><dd>{sg && sg.sentBy ? sg.sentBy.split(" ")[0] + " " : ""}<span className="mono">{sg ? dayOf(sg.sentAt) : "—"}</span></dd>
+        <dt>Signing</dt><dd>{row.method || "—"}</dd>
+        <dt>Out for</dt><dd>{age == null ? "—" : age + " day" + (age === 1 ? "" : "s")}{sg && sg.expiresAt ? ` · link expires ${sg.expiresAt}` : ""}</dd>
       </dl>
       {/* M12-S05 — the request's Zoho Sign status, a reminder and a recall (not in the prototype) */}
-      <SignCell s={s} me={me} dispatch={c.dispatch} d={d} actions />
-      {said ? (
-        <div className="note ir" style={{ marginTop: 12 }}><b>{who(s, said.ir).n || said.ir} says the
-          investor has signed and sent it</b> <span className="mono">{said.at}</span>. {said.d || ""}
-          <br />That is what they were told, not a signature. This is where it becomes one.</div>
+      <SignRowCell s={s} me={me} dispatch={dispatch} row={row} actions />
+      {h ? (
+        <div className="note ir" style={{ marginTop: 12 }}><b>{(h.by && h.by.name) || "The IR"} says the
+          investor has signed and sent it</b> <span className="mono">{h.at}</span>.
+          <br />{hints.state === "ok" ? hints.data.note : ""} This is where it becomes one.</div>
+      ) : hints.state === "error" ? (
+        <p className="sm" role="alert" style={{ margin: "12px 0 0" }}>{hints.err.error}</p>
       ) : (
-        <p className="sm" style={{ margin: "12px 0 0" }}>No word from the IR yet. Verifying now is fine if the
+        <p className="sm" style={{ margin: "12px 0 0" }}>{NO_WORD} Verifying now is fine if the
           signed copy is in front of you — the relay does not require their beat first.</p>
       )}
+      {acting && row.state !== "verified" ? (
+        <>
+          <p className="lbl" style={{ marginTop: 14 }}>How it was signed</p>
+          <div className="chips" role="group" aria-label="How it was signed">
+            {HAND_METHODS.map(m => <button key={m} type="button" className={`chip ${how === m ? "on" : ""}`} aria-pressed={how === m}
+              onClick={() => setMethod(m)}>{m}</button>)}</div>
+          <label className="fi" style={{ marginTop: 14 }}><span>The signed copy (PDF, JPG or PNG)</span>
+            <input type="file" accept={UPLOAD_ACCEPT} onChange={e => { setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null); setErr(null); idem.current = null; }} /></label>
+        </>
+      ) : null}
       <label className="fi" style={{ marginTop: 14 }}><span>e-Mudhra reference</span>
         <input className="inp mono" id="d-ref" placeholder="EMU-…" value={DREF}
           onChange={e => set(c, { DREF: e.target.value })} /></label>
       <p className="sm" style={{ margin: "8px 0 0" }}>Leave it blank and one is generated from today&apos;s date —
         but the reference is what makes the signature provable, so it is worth pasting.</p>
+      {err ? <div className="note bad" role="alert" style={{ marginTop: 10 }}>{err}</div> : null}
+      {acting ? (
+        <div style={{ marginTop: 14 }}>
+          <button className="act" onClick={() => { void verifyIt(); }}>The signed copy is here</button>{" "}
+          <button className="act ghost" onClick={() => { void block({ paper: row.paper, recordId: row.recordId, reason: NOTHING_CAME_BACK, expectedModifiedTime: modified, did: row.recordId }).then(r => done(r.ok)); }}>Nothing has come back</button>
+        </div>) : null}
     </>
   );
-}
-function verifyFoot(c: Ctx): ReactNode {
-  const { s, me, id, dispatch } = c; const { DREF } = draft(c);
-  return may(s, me, "doc") && id ? (
-    <>
-      <button className="act" onClick={() => dispatch({ type: "verifyDoc", did: id, ref: DREF })}>The signed copy is here</button>{" "}
-      <button className="act ghost" onClick={() => dispatch({ type: "blockDoc", did: id, why: "Nothing has come back signed" })}>Nothing has come back</button>
-    </>
-  ) : null;
 }
 
 /* ---- kyc — imx.js 2807–2834 ---- */
@@ -500,11 +591,11 @@ export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
     body: claimBody, foot: claimFoot,
   },
   pay: { w: 430, t: "Record a receipt", sub: nameOf, body: payBody, foot: payFoot },
-  send: { w: 440, t: "Send for signature", sub: nameOf, body: sendBody, foot: sendFoot },
+  send: { w: 440, t: "Send for signature", sub: nameOf, body: c => <SendBody {...c} />, foot: c => <SendFoot {...c} /> },
   verify: {
     w: 430, t: "Verify the signed copy",
     sub: ({ s, me, id }) => { const d = s.data.DOCS.find(y => y.id === id); return d ? (I(s, me, d.inv) || { n: "" }).n || d.inv : ""; },
-    body: verifyBody, foot: verifyFoot,
+    body: c => <VerifyBody {...c} />, foot: () => null,
   },
   kyc: { w: 430, t: "KYC", sub: nameOf, body: kycBody, foot: kycFoot },
   tkt: { w: 440, t: "Open a ticket", sub: () => "raised on behalf of an investor", body: tktBody, foot: tktFoot },
