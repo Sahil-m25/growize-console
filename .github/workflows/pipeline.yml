@@ -1,6 +1,7 @@
 # Growize console pipeline — M19-S05 (CI), M01-S05 (staging + production), M19-S06 (rule tests on every push).
 #
-#   check       every push and PR: tsc, vitest (reports the rule-test count), a11y lint, node --test (src/ and scripts/)
+#   check       every push and PR: tsc, vitest (reports the rule-test count), a11y lint, node --test (src/ and scripts/),
+#               npm audit --audit-level=high (M18-S15-H4)
 #   staging     push to main: build with staging env, bundle secret scan, DEPLOY (placeholder), smoke,
 #               reset sandbox, Jev UI suite, calibration gate, publish results.csv
 #   production  after green staging, behind the `production` Environment's required reviewers (manual approval)
@@ -80,6 +81,11 @@ jobs:
 
       - name: Script tests (node --test, scripts/*.test.cjs)
         run: npm run test:scripts
+
+      # M18-S15-H4: a high or critical advisory in console's dependency tree fails the check. Last, so the
+      # steps above still report on a red audit.
+      - name: Dependency audit (npm audit, high and above)
+        run: npm audit --audit-level=high
 
   staging:
     name: staging
