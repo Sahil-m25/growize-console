@@ -96,10 +96,16 @@ async function triage(file) {
 async function decide(argv) {
   const i = argv.indexOf("--state"), f = argv.indexOf("--state-file");
   const state = { facts: i > -1 ? argv[i + 1] : f > -1 ? fs.readFileSync(argv[f + 1], "utf8").slice(0, 12000) : "" };
-  const drop = new Set([i, f].filter(x => x > -1).flatMap(x => [x, x + 1])); const rest = argv.filter((_, k) => !drop.has(k));
+  // D106: every cited decision (D-number in the question or facts) and the nine rules ride along, so Jev judges against what governs
+  const DEC = {}; try { for (const l of fs.readFileSync(P("docs", "DECISIONS.md"), "utf8").split("\n")) { const m = l.match(/^\| \[(D\d+)\][^|]*\| ([^|]+)\|/); if (m) DEC[m[1]] = m[2].trim(); } } catch {}
+  const cited = [...new Set(((argv.join(" ") + state.facts).match(/\bD\d+\b/g) || []))].filter(d => DEC[d]);
+  const bare = argv.includes("--bare");   // calibration: no grounding
+  if (cited.length && !bare) state.decisions = Object.fromEntries(cited.map(d => [d, DEC[d]]));
+  if (!bare) try { state.rules = (fs.readFileSync(P("CLAUDE.md"), "utf8").split("## The nine rules")[1] || "").split("\n## ")[0].replace(/\s+/g, " ").slice(0, 3500); } catch {}
+  const drop = new Set([i, f].filter(x => x > -1).flatMap(x => [x, x + 1])); const rest = argv.filter((_, k) => !drop.has(k) && argv[k] !== "--bare");
   const [question, ...opts] = rest; const criteria = Object.fromEntries(opts.map(o => { const j = o.indexOf("="); return [o.slice(0, j), o.slice(j + 1)]; }));
   if (!question || opts.length < 2) { console.error('usage: jev.mjs decide "<question>" "a=meaning" "b=meaning" [--state "<facts>"]'); process.exit(64); }
-  const a = (await jev(state, { d: { type: "choice", instructions: question + (state.facts ? " Use `facts`." : ""), criteria } })).d;
+  const a = (await jev(state, { d: { type: "choice", instructions: question + " Judge against `facts`" + (state.decisions ? ", `decisions` (they govern)" : "") + " and `rules`.", criteria } })).d;
   console.log(JSON.stringify({ choice: a.choice, confidence: +a.confidence.toFixed(2), probabilities: a.probabilities }));
   if (a.confidence < 0.7) console.log(`LOW CONFIDENCE: build "${a.choice}" and record "PROVISIONAL: ${question} → ${a.choice}" with done.mjs --human`);
   log(`decide ${question.slice(0, 60)} → ${a.choice} ${a.confidence.toFixed(2)}`);

@@ -105,7 +105,7 @@ Rules for the backend worktree:
 
 8. **Commit and record.**
    - Stage only the files the story touched. Commit as `<STORY> <title> [autopilot]`, with the attribution lines from `CLAUDE.md` / the session.
-   - Record the result: `node autopilot/done.mjs <QUEUE> <STORY> <done|review|waiting> --commit <sha> --note "<one line>"`.
+   - Record the result: `node autopilot/done.mjs <QUEUE> <STORY> <done|review|waiting> --commit <sha> --note "<one line>"`. The note is audited later (D109): say what was built, which acceptance lines it meets, which decisions it applied (D-numbers), and what is left and why — never only a Jev pass count.
      - `waiting` means your part is done but a person's part (BLOCKED.md) is still open.
      - The same command marks the story's autopilot subtasks done.
    - Append one line to `docs/SESSIONS.md`.
@@ -118,7 +118,7 @@ Rules for the backend worktree:
 - Never delete Zoho records or fields, or change another person's records.
 - Never use real investor data, or print or commit `.typesafe-key` or any token.
 - Never act as the integration user to do a human's work.
-- Never edit `pm/tests/*` expected facts, `pm/jev-ui-runner.mjs`, or `pm/jev-calibrate.mjs`. Propose changes in BLOCKED.md instead.
+- Never edit `pm/tests/*` expected facts, `pm/jev-ui-runner.mjs`, or `pm/jev-calibrate.mjs`. Propose changes in BLOCKED.md instead. Exception (D107): M19-S13 may move the runner onto the shared `jev/` client and calibration, with its questions and PASS_AT unchanged and a before/after full-suite diff as proof.
 - Never work on more than one story in a round.
 - Never skip the test step. A story without a Jev run is not done.
 

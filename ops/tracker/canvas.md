@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 28 Sep 2026 23:31 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 30 Sep 2026 11:47 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -8,19 +8,23 @@
 
 **Now working on:** 2b. Wire screens to the API — The screen no longer touches the demo reducer: it reads and writes through its /api route (src/lib/data → the route), its Jev UI cases still pass with FIXTURE_MODE=local, typecheck and npm test pass. No live Zoho needed.
 
+::: {.callout}
+:warning: The build loop has not run for 40 hours. Nothing moves until /build runs on the laptop again.
+:::
+
 |Phase|Done (proven)|Waiting on people|Review|Left for the loop|Loop hours left|Forecast finish|Pace|
 |---|---|---|---|---|---|---|---|
 |**1. Front end on demo data**|92 of 92 (100%)|0 (0%)|0|0|0|done|0 min/unit measured|
-|**2. Plug into Zoho**|7 of 119 (6%)|111 (93%)|1|1|0.2|![](slack_date:2026-09-28)|10.4 min/unit measured|
-|**2b. Wire screens to the API** :arrow_left:|0 of 64 (0%)|0 (0%)|0|64|32|![](slack_date:2026-10-01)|assumed until 5 rounds|
-|**2c. Test contracts and security hardening** :twisted_rightwards_arrows: parallel worktree|0 of 5 (0%)|0 (0%)|0|5|12.5|![](slack_date:2026-09-29)|assumed until 5 rounds|
-|**3. Test and harden**|0 of 145 (0%)|0 (0%)|0|145|36.3|![](slack_date:2026-10-03)|assumed until 5 rounds|
+|**2. Plug into Zoho**|7 of 119 (6%)|111 (93%)|1|1|0.2|![](slack_date:2026-09-30)|10.4 min/unit measured|
+|**2b. Wire screens to the API** :arrow_left:|0 of 66 (0%)|0 (0%)|0|66|33|![](slack_date:2026-10-02)|assumed until 5 rounds|
+|**2c. Test contracts and security hardening** :twisted_rightwards_arrows: parallel worktree|0 of 7 (0%)|0 (0%)|0|7|17.5|![](slack_date:2026-10-01)|assumed until 5 rounds|
+|**3. Test and harden**|0 of 145 (0%)|0 (0%)|0|145|36.3|![](slack_date:2026-10-05)|assumed until 5 rounds|
 
 |Forecast|Date|
 |---|---|
-|All three phases through the loop|![](slack_date:2026-10-03)|
-|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:2026-10-03) → ![](slack_date:2026-10-09)|
-|Status|:large_green_circle: On track|
+|All three phases through the loop|![](slack_date:2026-10-05)|
+|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:2026-10-05) → ![](slack_date:2026-10-11)|
+|Status|:red_circle: Behind the target|
 
 ::: {.callout}
 **What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be proven without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); its code is written and unit-tested, so it sits in *Waiting on people*, not *Done*. Phase 2b wires each screen to its API route on demo data and needs nothing. Phase 3 needs the sandbox for every live proof, then the tester's reviews and UAT by the business users (M18-S08).
@@ -32,32 +36,33 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-10-01)|
-|S1|Foundations, access, test suite|23|3|![](slack_date:2026-10-01)|
-|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-03)|
-|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-03)|
-|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-03)|
-|S5|Hardening, UAT, migration, release|16|0|![](slack_date:2026-10-03)|
+|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-10-03)|
+|S1|Foundations, access, test suite|23|3|![](slack_date:2026-10-03)|
+|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-05)|
+|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-05)|
+|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-05)|
+|S5|Hardening, UAT, migration, release|17|0|![](slack_date:2026-10-05)|
 
 # :calendar: Month by month
 
 |Month|Stories finished|Forecast to finish|Cumulative forecast|
 |---|---|---|---|
-|September 2026|5|3|8 of 154|
-|October 2026|0|145|153 of 154|
+|September 2026|5|0|5 of 155|
+|October 2026|0|149|154 of 155|
 
 # :spiral_calendar_pad: Week by week
 
 |Week of|Finished|Forecast|Cumulative|Burn-up|
 |---|---|---|---|---|
 |![](slack_date:2026-09-21)|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
-|![](slack_date:2026-09-28) **(this week)**|3|148|153|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square: 99%|
+|![](slack_date:2026-09-28) **(this week)**|3|123|128|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 83%|
+|![](slack_date:2026-10-05)|0|26|154|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square: 99%|
 
 ## This week
 
 **Finished (3):** M19-S04, M19-S05, M19-S06
 
-**Planned by the forecast (148):** M18-S14, M18-S15, M19-S12, M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S03, M02-S04, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S11, M02-S12, M20-S01, M20-S05, M20-S06, M20-S08, M02-S07, M01-S01, M01-S02, M01-S03, M01-S04, M01-S05, M01-S07, M01-S08, M01-S09, M03-S02, M03-S03, M03-S04, M03-S05, M03-S06, M03-S07, M03-S08, M03-S09, M01-S06, M04-S01, M04-S02, M04-S03, M05-S01, M05-S02, M05-S03, M05-S08, M06-S01, M06-S02, M06-S03, M06-S05, M07-S01, M07-S02, M07-S03, M07-S04, M07-S05, M07-S06, M09-S01, M09-S02, M09-S03, M09-S04, M09-S07, M09-S08, M19-S10, M19-S11, M04-S04, M07-S07, M01-S10, M05-S06, M05-S07, M08-S01, M08-S02, M08-S03, M08-S04, M08-S05, M08-S07, M08-S08, M10-S01, M10-S02, M10-S03, M10-S05, M10-S07, M11-S01, M11-S02, M11-S03, M11-S04, M11-S05, M11-S07, M12-S01, M12-S02, M12-S03, M12-S04, M12-S05, M12-S06, M12-S07, M12-S10, M12-S11, M12-S12, M12-S13, M14-S01, M14-S02, M14-S03, M10-S08, M10-S09, M12-S08, M12-S09, M12-S14, M19-S08, M13-S01, M13-S02, M13-S03, M13-S04, M13-S06, M15-S01, M15-S03, M15-S05, M16-S01, M16-S03, M16-S04, M16-S06, M16-S09, M17-S01, M17-S02, M17-S05, M17-S06, M20-S07, M13-S05, M16-S02, M16-S07, M16-S08, M18-S01, M18-S02, M18-S03, M18-S04, M18-S05, M18-S06, M18-S08, M18-S09, M18-S12, M20-S03, M20-S04, M18-S10, M19-S07, M09-S09, M10-S20, M10-S21, M10-S22, M10-S23
+**Planned by the forecast (123):** M18-S14, M18-S15, M19-S12, M19-S13, M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S03, M02-S04, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S11, M02-S12, M20-S01, M20-S05, M20-S06, M20-S08, M02-S07, M01-S01, M01-S02, M01-S03, M01-S04, M01-S05, M01-S07, M01-S08, M01-S09, M03-S02, M03-S03, M03-S04, M03-S05, M03-S06, M03-S07, M03-S08, M03-S09, M01-S06, M04-S01, M04-S02, M04-S03, M05-S01, M05-S02, M05-S03, M05-S08, M06-S01, M06-S02, M06-S03, M06-S05, M07-S01, M07-S02, M07-S03, M07-S04, M07-S05, M07-S06, M09-S01, M09-S02, M09-S03, M09-S04, M09-S07, M09-S08, M19-S10, M19-S11, M04-S04, M07-S07, M01-S10, M05-S06, M05-S07, M08-S01, M08-S02, M08-S03, M08-S04, M08-S05, M08-S07, M08-S08, M10-S01, M10-S02, M10-S03, M10-S05, M10-S07, M11-S01, M11-S02, M11-S03, M11-S04, M11-S05, M11-S07, M12-S01, M12-S02, M12-S03, M12-S04, M12-S05, M12-S06, M12-S07, M12-S10, M12-S11, M12-S12, M12-S13, M14-S01, M14-S02, M14-S03, M10-S08, M10-S09, M12-S08, M12-S09, M12-S14, M19-S08, M13-S01, M13-S02, M13-S03, M13-S04, M13-S06, M15-S01, M15-S03, M15-S05, M16-S01, M16-S03, M16-S04, M16-S06, M16-S09, M17-S01
 
 **Stuck: review or waiting on people (2):**
 
@@ -97,20 +102,20 @@ Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumpti
 |**M16** Numbers, Plan & Transfers|S4|8|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|One Numbers page with a Lead side / Investors side switch, a Plan page and a Transfers page, all worked out live from Zoho within the viewer|
 |**M17** Teams, Profile & System|S4|4|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Admin pages of the one app: Teams (members plus an Investors side seats section), seat and page grants, temporary access, own profile, Syste|
 |**M18** Hardening, security & release|S5|12|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Prove the one app is fast inside Zoho's limits, leaks nothing across seats or users, works on a phone and by keyboard, fails visibly, can be|
-|**M19** Quality — Jev UI suite|S1|11|3|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 27%|A Jev UI suite that runs the same plain-language cases against the merged prototype (growize-console-merged.html) and the built app, per sea|
+|**M19** Quality — Jev UI suite|S1|12|3|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 25%|A Jev UI suite that runs the same plain-language cases against the merged prototype (growize-console-merged.html) and the built app, per sea|
 |**M20** Launch readiness & operations|S0|7|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|The brief, KPIs, status rhythm and change control that keep the plan honest, the guides and support model for go-live, and the two outside p|
-# :card_index_dividers: Backlog in BLOCKED.md — 398 open, 2 ticked
+# :card_index_dividers: Backlog in BLOCKED.md — 399 open, 3 ticked
 
 |Kind|Open|What it is|
 |---|---|---|
 |FRONT-END LOOP|66|Screens to wire to their API route (now phase 2b units)|
 |PROVISIONAL|70|Choices the build made at low confidence — owner confirms or reverses|
-|FACT CHANGE PROPOSED|40|Test cases that contradict a decision — owner rules, then the case changes|
+|FACT CHANGE PROPOSED|41|Test cases that contradict a decision — owner rules, then the case changes|
 |BLOCK|6|Do-not-activate blocks (a design or decision gap)|
 |STAGING PROOF|4|Proofs to run on the sandbox|
 |OWNER ACTION|2|Owner actions in Zoho|
-|Tasks for people|22|Autopilot 11, Sahil 10, Tester 1|
-|Other notes|188|Zoho fields/modules the code expects, secrets and config, staging steps|
+|Tasks for people|23|Sahil 11, Autopilot 11, Tester 1|
+|Other notes|187|Zoho fields/modules the code expects, secrets and config, staging steps|
 
 Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line in BLOCKED.md when it is done; the loop reads the ticks.
 
@@ -141,7 +146,6 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 - [ ] M03-S05-T01 (M03-S05, Sahil, Before its story (do early)) Buy seats and invite users — First complete the Enterprise renewal and single restricted-test-user licence in M02-S01-T01; that test seat must exist before T11. Only after M02-S04's profiles/FLS/sharing wall exists and the restricted user has
 - [ ] M03-S05-NOTE-1 (M03-S05) SANITIZED SEAT EXPORTS AND STAGING PROOF: After the role/profile wall is final in both the Enterprise sandbox and production, call `GET /crm/v8/settings/roles`, `GET /crm/v8/settings/profiles` and `GET /crm/v8/users?type=CurrentUser` with the restricted user's own scoped OAu
 - [ ] M03-S05-NOTE-2 (M03-S05) FARM OPERATIONS DECISION REQUIRED: M03-S05 acceptance requires a Farm ops seat, but D80's applied role tree has no Farm Operations role, `docs/ACCESS-PLAN.md` defines no Farm-ops role/profile, and `ops/SEAT-PLAN.md` ambiguously combines Farm ops with Channel Partner. The bac
-- [ ] M03-S05-NOTE-3 (M03-S05) ADMINISTRATOR TOKEN CONFLICT: D78 keeps Sahil on the Administrator profile and the existing CEO/root seat is also Administrator, while `CLAUDE.md` rule 2 says no administrator token is used by the application at all. The resolver records both exact role-to-seat mappings but 
 - [ ] M03-S05-NOTE-4 (M03-S05) ENTERPRISE ENTITLEMENT PROOF: CurrentUser proves the authenticated user, active/confirmed state, user type and role/profile, but not that the org's paid Enterprise entitlement is current. Before enabling sign-in, capture sanitized Organization API evidence for the configured
 - [ ] M03-S07-T01 (M03-S07, Sahil, Before its story (do early)) Sharing for KAM books — Private default on Contacts; KAM access by owner/kam lookup sharing rule; Head of AM above KAMs in the hierarchy.
 - [ ] M03-S07-NOTE-1 (M03-S07) ZOHO SHARING PROOF (human, sandbox then production): the backend refuses foreign rows, but only Zoho sharing proves a KAM token cannot read them. With synthetic Contacts + Issued allotments: (1) signed in as a KAM (Imran), COQL 'select id from Contacts where id is not null' 
@@ -504,6 +508,8 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 - [ ] M08-S08-NOTE-6 (M08-S08) PROVISIONAL: Add-paid leaves App_Access empty; the account opens On hold only when a second person matches its Pending receipt (Jev 0.85).
 - [ ] M09-S09-NOTE-4 (M09-S09) GAP: Add-paid still writes its own 30-day Hold_Until on a Reserved allotment; match.ts moves it only if the match gives a later day. The add-paid answer now says the app opens when the Head of Finance matches the receipt.
 - [ ] M18-S08-NOTE-1 (M18-S08) WAITING: T08 UAT defect fixes start only once exploratory sessions and UAT (T01-T07) run on staging; nothing to build before then.
+- [ ] M02-S13-NOTE-1 (M02-S13) FACT CHANGE PROPOSED: M02-S13 acceptance names Contacts KYC_Proof/Nominee_Form and Signed_NDA on the allotment; D79 put FEMA/PAN/bank proofs on the Contact and the NDA on the Lead, and the build follows D79. Rewrite the acceptance to D79's slot list (build audit D109).
+- [ ] M03-S05-T02 (M03-S05, Sahil, Before its story (do early)) Digital Infrastructure profile for Sahil (non-admin) — Create profile "Digital Infrastructure" with every module of both sides and no Administrator; move Sahil's user onto it; keep the permanent super admin separate (D110).
 
 # :clipboard: Stories
 
@@ -549,7 +555,7 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 |**M03-S02** Sahil grants pages to other people, read-only by default|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|—|To do|Built (demo data)|S1|Must|2/4|
 |**M03-S03** Extra pages for IRs, and the IR Manager's limits|—|:hourglass_flowing_sand: Waiting on people|To do|—|To do|Built (demo data)|S1|Must|1/3|
 |**M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|—|To do|Built (demo data)|S1|Must|3/6|
-|**M03-S05** Zoho users provisioned seat by seat, both sides|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S1|Must|1/4|
+|**M03-S05** Zoho users provisioned seat by seat, both sides|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S1|Must|2/5|
 |**M03-S06** The Auditor (viewer) reads and never writes|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S1|Must|1/4|
 |**M03-S07** Key account managers see and work only their own accounts|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S1|Must|1/4|
 |**M03-S08** Compliance owns KYC|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S1|Must|1/3|
@@ -582,8 +588,8 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 |---|---|---|---|---|---|---|---|---|---|
 |**M06-S01** Leads list with Personal and Team scope|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
 |**M06-S02** Filters, sort and the Overdue fix|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|1/2|
-|**M06-S03** Find a lead in the top bar (leads only, own book)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
-|**M06-S05** Search wall: the lead search never reaches investor data|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
+|**M06-S03** Find a lead in the top bar (leads only, own book)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|To do|—|To do|Built (demo data)|S2|Must|2/4|
+|**M06-S05** Search wall: the lead search never reaches investor data|—|:hourglass_flowing_sand: Waiting on people|To do|—|To do|Built (demo data)|S2|Must|2/4|
 
 ## M07 · Lead page
 
@@ -745,6 +751,7 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 |**M19-S10** Map the two old suites onto the merged console and retire dead cases|—|—|—|—|To do|Not a screen|S2|Must|0/2|
 |**M19-S11** Regenerate the Jev UI cases against the merged console: super user and per seat|—|—|—|—|To do|Not a screen|S2|Must|0/4|
 |**M19-S12** The 88 unexplained Jev failures are each a fixed bug or a proposed fact change|—|—|—|To do|—|—|S5|Must|0/3|
+|**M19-S13** One Jev layer for the whole build: shared client, grounding, question library, calibration per question type, |—|—|—|To do|—|—|S5|Must|0/6|
 |**M19-S04** Judge calibration gate|—|:hourglass_flowing_sand: Waiting on people|—|—|—|Not a screen|S1|Must|1/1|
 |**M19-S05** CI pipeline|—|:hourglass_flowing_sand: Waiting on people|—|—|—|Not a screen|S1|Must|1/1|
 |**M19-S06** Unit tests for business rules|—|:white_check_mark: Done|—|—|—|Not a screen|S1|Must|1/1|
@@ -758,5 +765,5 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 |**M20-S04** Support model and issue intake|—|—|—|—|To do|Not a screen|S5|Must|0/1|
 |**M20-S05** Stage reviews, status and retrospectives|—|—|—|—|To do|Not a screen|S0|Must|0/6|
 |**M20-S06** Change control|—|—|—|—|To do|Not a screen|S0|Must|0/1|
-|**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S4|Must|4/5|
+|**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|:hourglass_flowing_sand: Waiting on people|—|To do|To do|Partly built|S4|Must|4/6|
 |**M20-S08** Buy the Zoho Sign plan and set up its webhooks|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S0|Must|1/4|

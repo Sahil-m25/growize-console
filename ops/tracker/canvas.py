@@ -7,10 +7,13 @@ import json, re, collections, datetime, os, sys, subprocess
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); os.chdir(ROOT)
 # D100: when the backend worktree's branch exists, show its progress too (merged view, progress.json untouched)
 VIEW = 'autopilot/console/progress.view.json'; env = dict(os.environ)
+# D105: merge the progress of every other autopilot/* branch (each worktree runs one pinned phase) into a read-only view
 br = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, text=True).stdout.strip()
-if br != 'autopilot/backend' and subprocess.run(['git', 'rev-parse', '--verify', '-q', 'autopilot/backend'], capture_output=True).returncode == 0 \
-   and subprocess.run(['node', 'autopilot/merge-progress.mjs', 'autopilot/backend', '--out', VIEW], capture_output=True).returncode == 0:
-    env['PROGRESS_VIEW'] = VIEW
+others = [b.strip() for b in subprocess.run(['git', 'for-each-ref', '--format=%(refname:short)', 'refs/heads/autopilot/'], capture_output=True, text=True).stdout.splitlines() if b.strip() and b.strip() != br]
+for b in others:
+    e2 = dict(env); e2.pop('PROGRESS_VIEW', None) if 'PROGRESS_VIEW' not in env else None
+    if subprocess.run(['node', 'autopilot/merge-progress.mjs', b, '--out', VIEW], capture_output=True, env=env if 'PROGRESS_VIEW' in env else e2).returncode == 0:
+        env['PROGRESS_VIEW'] = VIEW
 subprocess.run(['node', 'autopilot/status.mjs'], check=False, capture_output=True, env=env)
 PH = json.load(open('autopilot/phases.json', encoding='utf-8'))
 P = json.load(open('pm/plan-merged/growize-console-plan.json', encoding='utf-8'))

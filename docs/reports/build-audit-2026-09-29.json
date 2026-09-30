@@ -1,0 +1,1696 @@
+[
+ {
+  "id": "M01-S01",
+  "title": "One Next.js shell with the rail built from the person's seat",
+  "verdict": "aligned",
+  "conf": 0.46,
+  "touches": "D28",
+  "tconf": 0.55,
+  "note": "[zoho waiting] Guard built and tested; waiting on the front-end template.tsx wiring and sandbox proof (M02-S10).",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M01-S02",
+  "title": "Sign in with my own Zoho account; signing out or changing person clears everything",
+  "verdict": "aligned",
+  "conf": 0.57,
+  "touches": "none",
+  "tconf": 0.54,
+  "note": "[zoho waiting] Server flow built and tested on fixtures; waiting on sandbox OAuth clients (M02-S10) for live proof and the front-end redirect/refusal wiring.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M01-S03",
+  "title": "Live reads and writes through one Zoho client, gate and scope-keyed cache",
+  "verdict": "aligned",
+  "conf": 0.84,
+  "touches": "none",
+  "tconf": 0.57,
+  "note": "[zoho waiting] Live source built and tested on fixtures; waiting on sandbox proof (T06/T07), front-end freshness states (T04) and a Zoho Users reader for PEOPLE.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M01-S04",
+  "title": "Operations and identity logs",
+  "verdict": "aligned",
+  "conf": 0.74,
+  "touches": "none",
+  "tconf": 0.6,
+  "note": "[zoho waiting] Sinks built and tested; waiting on the staging host LOG_DIR (AP4) and TC-E01-010/011 on staging.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M01-S05",
+  "title": "Staging and production environments",
+  "verdict": "aligned",
+  "conf": 0.7,
+  "touches": "none",
+  "tconf": 0.89,
+  "note": "[zoho waiting] Env matrix and pipeline written; waiting on the hosting account (AP4), GitHub environments and the repo push.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M01-S06",
+  "title": "Pending saves while offline",
+  "verdict": "unclear",
+  "conf": 0.25,
+  "touches": "none",
+  "tconf": 0.52,
+  "note": "[fe done] Jev run 28 Sep: app 0/1 vs prototype 0/1",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M01-S07",
+  "title": "Refusals and confirmations said in the page, never in alert() or confirm()",
+  "verdict": "incomplete",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.42,
+  "note": "[fe done] Jev run 28 Sep: app 3/4 vs prototype 3/4",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M01-S08",
+  "title": "Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land",
+  "verdict": "aligned",
+  "conf": 0.44,
+  "touches": "none",
+  "tconf": 0.45,
+  "note": "[fe done] Jev run 28 Sep: app 1/3 vs prototype 0/3",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M01-S09",
+  "title": "Honest connection and freshness line in the top bar",
+  "verdict": "aligned",
+  "conf": 0.62,
+  "touches": "none",
+  "tconf": 0.59,
+  "note": "[zoho waiting] /api/data returns a fresh block with error past the 5-minute ceiling; waiting on the front-end store reading it and staging proof (TC-IM01-013).",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M01-S10",
+  "title": "Step-up before a reveal, an export or money leaving, with a second hand on refunds",
+  "verdict": "aligned",
+  "conf": 0.53,
+  "touches": "none",
+  "tconf": 0.47,
+  "note": "[zoho waiting] Step-up and release built and tested; waiting on the Zoho approval process (T03), the step-up redirect URI and the front-end panel.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M02-S02",
+  "title": "Lead fields, rungs and picklists per the mapping",
+  "verdict": "incomplete",
+  "conf": 0.33,
+  "touches": "none",
+  "tconf": 0.61,
+  "note": "[undefined waiting] Lead fields (27), Lead_Event lookup and the 10 ladder values in Lead_Status are live. 6 old default values remain only because the sample Blueprint 'Lead nurturing process' (inactive) references them - owner to delete it",
+  "phases": {
+   "zoho": "waiting",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S03",
+  "title": "Custom modules for the lead side; LLP modules adopted",
+  "verdict": "drifted",
+  "conf": 0.5,
+  "touches": "none",
+  "tconf": 0.38,
+  "note": "[undefined done] Touches, Investor_Updates, Mail_Templates, Sales_Plans, Lead_Events, Investor_Payouts modules created; LLP_Creation_Module and LLP_UnitAllocation_Module adopted. Applied in Zoho from the Cowork session (D74-D85) and verifie",
+  "phases": {
+   "zoho": "done",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S04",
+  "title": "Roles, profiles, Private sharing and the field-level security wall for every seat",
+  "verdict": "incomplete",
+  "conf": 0.4,
+  "touches": "none",
+  "tconf": 0.42,
+  "note": "[fe done] Jev run 28 Sep: app 6/7 vs prototype 6/7; TC-IM04-012 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour",
+  "phases": {
+   "fe": "done",
+   "zoho": "review",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S05",
+  "title": "Restricted test user and T11",
+  "verdict": "aligned",
+  "conf": 0.6,
+  "touches": "none",
+  "tconf": 0.57,
+  "note": "[undefined waiting] No Zoho sandbox/test-user seat (AP4, M02-S01-T01); T01-T03 parked in BLOCKED.md; 412 classification already unit-tested",
+  "phases": {
+   "zoho": "waiting",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S08",
+  "title": "Email sent from the person's own mailbox",
+  "verdict": "aligned",
+  "conf": 0.67,
+  "touches": "none",
+  "tconf": 0.73,
+  "note": "[undefined waiting] Needs Zoho sandbox + licensed test user + mailbox; T01/T02 in BLOCKED.md; no code possible",
+  "phases": {
+   "zoho": "waiting",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S09",
+  "title": "Cover windows as record-level sharing",
+  "verdict": "aligned",
+  "conf": 0.86,
+  "touches": "none",
+  "tconf": 0.83,
+  "note": "[undefined waiting] share/unshare client + job skeleton, unit-tested; sandbox proof (T01/T03, TC-E02-017/018 live) waits on Zoho sandbox + test user",
+  "phases": {
+   "zoho": "waiting",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S10",
+  "title": "Sandbox and the console's OAuth client",
+  "verdict": "aligned",
+  "conf": 0.35,
+  "touches": "none",
+  "tconf": 0.8,
+  "note": "[zoho waiting] Waiting on owner-created sandbox, OAuth clients and sandbox parity evidence; live Zoho writes are forbidden in this run. Typecheck passed; sandbox reset tests 3/3 passed; npm test is not yet defined on the frontend-owned pack",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M02-S11",
+  "title": "Decide the canonical allotment module: LLP_UnitAllocation_Module or LLP_Unit_Allocation",
+  "verdict": "drifted",
+  "conf": 0.67,
+  "touches": "none",
+  "tconf": 0.67,
+  "note": "[undefined waiting] Decided by the owner: LLP_UnitAllocation_Module is canonical (D75); the duplicate LLP_Unit_Allocation's extra fields were removed (D77).",
+  "phases": {
+   "zoho": "done",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S12",
+  "title": "Receipts module linked to the allotment, the Contact and the LLP",
+  "verdict": "aligned",
+  "conf": 0.23,
+  "touches": "none",
+  "tconf": 0.58,
+  "note": "[undefined waiting] Receipts (CustomModule7) with Allotment lookup, Kind, Amount, Mode, unique UTR, Received_On, Match_State incl. Claimed, Matched_By, Reversal_Of. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/fiel",
+  "phases": {
+   "zoho": "done",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M02-S13",
+  "title": "Document-slot file-upload fields on the Contact, the allotment and the LLP",
+  "verdict": "drifted",
+  "conf": 0.71,
+  "touches": "none",
+  "tconf": 0.29,
+  "note": "[undefined waiting] File-upload slots created: Contacts PAN_Proof/Bank_Proof/FEMA_Declaration; allotment Supplementary_Agreement/Allocation_Letter/Unit_Certificate; LLP LLP_Deed/Insurance_Policy_Document; Leads NDA (D74/D75/D79). Applied in",
+  "phases": {
+   "zoho": "done"
+  }
+ },
+ {
+  "id": "M02-S14",
+  "title": "Zoho Sign request id and status fields on the allotment and the Contact; Zoho Sign plan and webhooks",
+  "verdict": "aligned",
+  "conf": 0.46,
+  "touches": "none",
+  "tconf": 0.59,
+  "note": "[undefined waiting] Signed_Via / Sign_Req_Id / Verified_By / Verified_At fields on NDA, FEMA, supplementary agreement and allocation letter (D79). The Zoho Sign paid plan + webhooks is still owner item AP3 (M20-S08). Applied in Zoho from th",
+  "phases": {
+   "zoho": "done"
+  }
+ },
+ {
+  "id": "M03-S01",
+  "title": "Only people with a seat or a granted page sign in",
+  "verdict": "aligned",
+  "conf": 0.47,
+  "touches": "none",
+  "tconf": 0.28,
+  "note": "[zoho waiting] Admission built on the shared policy and tested for every seat; waiting on sandbox admission matrix (T03) and owner decisions on Sahil and Pradeep.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M03-S02",
+  "title": "Sahil grants pages to other people, read-only by default",
+  "verdict": "aligned",
+  "conf": 0.77,
+  "touches": "none",
+  "tconf": 0.73,
+  "note": "[zoho waiting] Grant store and API built and tested; waiting on Sahil's profile (Administrator), the grid screen and sandbox check of Reporting_To.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M03-S03",
+  "title": "Extra pages for IRs, and the IR Manager's limits",
+  "verdict": "aligned",
+  "conf": 0.69,
+  "touches": "none",
+  "tconf": 0.62,
+  "note": "[zoho waiting] Grantor rules proven on fixtures; waiting on Sahil's profile and the Teams screens on staging.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M03-S04",
+  "title": "Grant and seat changes move the sign-in list, follow the job and are logged",
+  "verdict": "aligned",
+  "conf": 0.51,
+  "touches": "none",
+  "tconf": 0.61,
+  "note": "[zoho waiting] Session kill and seat change built; waiting on the kam-pool-return grant, users.UPDATE scope and the seat dropdown.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M03-S05",
+  "title": "Zoho users provisioned seat by seat, both sides",
+  "verdict": "aligned",
+  "conf": 0.53,
+  "touches": "none",
+  "tconf": 0.4,
+  "note": "[zoho waiting] Built fail-closed D80 role/profile-id seat directory; 234 recorded-fixture tests pass and typecheck is clean. Waiting on T11/user provisioning, sanitized role/profile exports, staging sign-ins, Farm Operations mapping, Admini",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M03-S06",
+  "title": "The Auditor (viewer) reads and never writes",
+  "verdict": "aligned",
+  "conf": 0.32,
+  "touches": "none",
+  "tconf": 0.23,
+  "note": "[fe done] Jev run 28 Sep: app 3/3 vs prototype 3/3",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M03-S07",
+  "title": "Key account managers see and work only their own accounts",
+  "verdict": "aligned",
+  "conf": 0.82,
+  "touches": "none",
+  "tconf": 0.75,
+  "note": "[zoho waiting] KAM book service (own book, Head-of-AM team+pool, guarded detail and Touch writes, identity wall) with 20 recorded-fixture tests; typecheck clean. Waiting on T01 Zoho sharing config and the sharing proof (NOTE-1); T03 Jev UI ",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M03-S08",
+  "title": "Compliance owns KYC",
+  "verdict": "aligned",
+  "conf": 0.2,
+  "touches": "none",
+  "tconf": 0.35,
+  "note": "[fe done] Jev run 28 Sep: app 3/3 vs prototype 3/3",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M03-S09",
+  "title": "An IR sees investor data only for investors from their own leads, enforced at the data layer",
+  "verdict": "aligned",
+  "conf": 0.77,
+  "touches": "none",
+  "tconf": 0.83,
+  "note": "[zoho waiting] Guard and record share built and tested; waiting on the handoff-share credential, a hand-off caller, Plane C scope-refused action and two sandbox IR users.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M04-S01",
+  "title": "Add a single lead",
+  "verdict": "aligned",
+  "conf": 0.52,
+  "touches": "none",
+  "tconf": 0.41,
+  "note": "[fe done] Jev run 28 Sep: app 4/4 vs prototype 4/4",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M04-S02",
+  "title": "Duplicate mobile refused",
+  "verdict": "aligned",
+  "conf": 0.53,
+  "touches": "none",
+  "tconf": 0.84,
+  "note": "[fe done] Jev run 28 Sep: app 2/2 vs prototype 2/2",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M04-S03",
+  "title": "Contact permission at capture",
+  "verdict": "unclear",
+  "conf": 0.65,
+  "touches": "none",
+  "tconf": 0.72,
+  "note": "[fe done] Jev run 28 Sep: app 2/2 vs prototype 2/2",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M04-S04",
+  "title": "CSV import with preview",
+  "verdict": "aligned",
+  "conf": 0.37,
+  "touches": "none",
+  "tconf": 0.57,
+  "note": "[fe done] no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M05-S01",
+  "title": "My day list (Lead side)",
+  "verdict": "aligned",
+  "conf": 0.38,
+  "touches": "D59",
+  "tconf": 0.27,
+  "note": "[fe done] Jev run 28 Sep: app 0/3 vs prototype 0/3",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M05-S02",
+  "title": "One action per row and the focus panel",
+  "verdict": "aligned",
+  "conf": 0.59,
+  "touches": "none",
+  "tconf": 0.45,
+  "note": "[fe done] Jev run 28 Sep: app 1/4 vs prototype 1/4",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M05-S03",
+  "title": "Paperwork 'your move' on Today",
+  "verdict": "unclear",
+  "conf": 0.34,
+  "touches": "none",
+  "tconf": 0.44,
+  "note": "[fe done] Jev run 28 Sep: app 2/2 vs prototype 2/2",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M05-S04",
+  "title": "Call times and reschedule",
+  "verdict": "drifted",
+  "conf": 0.23,
+  "touches": "none",
+  "tconf": 0.13,
+  "note": "[zoho waiting] Reschedule moves the lead step and its Call/Meeting/Task together with 10 s Undo, 2 tests; waits on activity access (M02-S07) and the tester's reminder check.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M05-S06",
+  "title": "Headline figures on Today (Investors side)",
+  "verdict": "aligned",
+  "conf": 0.65,
+  "touches": "none",
+  "tconf": 0.81,
+  "note": "[zoho waiting] Headline figures built and tested; waiting on the tiles and sandbox call-budget proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M05-S07",
+  "title": "Waiting on you: the Investors-side queue per seat, including IR payment claims",
+  "verdict": "aligned",
+  "conf": 0.56,
+  "touches": "none",
+  "tconf": 0.51,
+  "note": "[zoho waiting] Queue built and tested; waiting on the Sign status reader for paper rows and the Today screen.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M05-S08",
+  "title": "Account Management's Today (Investors side)",
+  "verdict": "aligned",
+  "conf": 0.71,
+  "touches": "none",
+  "tconf": 0.79,
+  "note": "[zoho waiting] Care queue built and tested; waiting on the KAM Today screen and staging UAT.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M06-S01",
+  "title": "Leads list with Personal and Team scope",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.8,
+  "note": "[fe done] Jev run 28 Sep: app 3/3 vs prototype 3/3",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M06-S02",
+  "title": "Filters, sort and the Overdue fix",
+  "verdict": "incomplete",
+  "conf": 0.24,
+  "touches": "none",
+  "tconf": 0.53,
+  "note": "[fe done] Jev run 28 Sep: app 3/4 vs prototype 3/4",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M06-S03",
+  "title": "Find a lead in the top bar (leads only, own book)",
+  "verdict": "aligned",
+  "conf": 0.71,
+  "touches": "none",
+  "tconf": 0.63,
+  "note": "[fe done] Jev run 28 Sep: app 3/4 vs prototype 3/4",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M06-S05",
+  "title": "Search wall: the lead search never reaches investor data",
+  "verdict": "aligned",
+  "conf": 0.95,
+  "touches": "none",
+  "tconf": 0.68,
+  "note": "[zoho waiting] Search wall built and tested; waiting on the sandbox proof with the restricted IR user.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M07-S01",
+  "title": "Lead page shell and Next step card",
+  "verdict": "incomplete",
+  "conf": 0.23,
+  "touches": "none",
+  "tconf": 0.67,
+  "note": "[fe done] Jev run 28 Sep: app 3/4 vs prototype 3/4",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M07-S02",
+  "title": "Logging flow — one question at a time",
+  "verdict": "unclear",
+  "conf": 0.47,
+  "touches": "none",
+  "tconf": 0.69,
+  "note": "[fe done] Jev run 28 Sep: app 6/6 vs prototype 6/6",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M07-S03",
+  "title": "Save on the last tap, recorded once, with 10-second Undo",
+  "verdict": "aligned",
+  "conf": 0.58,
+  "touches": "none",
+  "tconf": 0.68,
+  "note": "[zoho waiting] Follow-up save/undo server functions with guarded lead-first write, take-back and signed 10 s Undo, 9 tests; waits on delete/activity permissions, Undo secret and the session layer for route handlers.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M07-S04",
+  "title": "Call time and Zoho activity mapping",
+  "verdict": "aligned",
+  "conf": 0.8,
+  "touches": "none",
+  "tconf": 0.67,
+  "note": "[fe done] Jev run 28 Sep: app 4/5 vs prototype 4/5",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M07-S05",
+  "title": "Email composer sent through Zoho send_mail",
+  "verdict": "aligned",
+  "conf": 0.65,
+  "touches": "none",
+  "tconf": 0.77,
+  "note": "[zoho waiting] Sender built and tested; waiting on secrets/scopes, the NDA stamp reader, the composer screen and staging proof TC-E07-024.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M07-S06",
+  "title": "Close as lost in one step, undo and re-open",
+  "verdict": "aligned",
+  "conf": 0.5,
+  "touches": "none",
+  "tconf": 0.8,
+  "note": "[zoho waiting] Loss in the same guarded save with Undo, money-in refusal and guarded re-open, 3 tests; waits on the Lead_Status-on-loss blueprint choice and staging proof.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M07-S07",
+  "title": "Latest note, all notes and inline note",
+  "verdict": "unclear",
+  "conf": 0.2,
+  "touches": "none",
+  "tconf": 0.64,
+  "note": "[fe done] Jev run 28 Sep: app 2/2 vs prototype 2/2",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M08-S01",
+  "title": "Journey bar, ticks, un-tick and skip",
+  "verdict": "aligned",
+  "conf": 0.48,
+  "touches": "none",
+  "tconf": 0.85,
+  "note": "[fe done] Jev run 28 Sep: app 6/6 vs prototype 6/6",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M08-S02",
+  "title": "Finance gates read live from Zoho",
+  "verdict": "aligned",
+  "conf": 0.52,
+  "touches": "none",
+  "tconf": 0.78,
+  "note": "[zoho waiting] Gates built on Receipts and allotment stamps; waiting on field-register decision, staging TC-E08-010 and the front end.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M08-S03",
+  "title": "Money in: the IR reports a payment, Finance records the receipt",
+  "verdict": "aligned",
+  "conf": 0.36,
+  "touches": "none",
+  "tconf": 0.71,
+  "note": "[zoho waiting] Claim and receipt writes built and tested; waiting on Receipts Idempotency_Key, secrets, the drawers and sandbox/UAT.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M08-S04",
+  "title": "Reservation hold: clock, balance due, extend and release",
+  "verdict": "aligned",
+  "conf": 0.72,
+  "touches": "none",
+  "tconf": 0.76,
+  "note": "[zoho waiting] Hold clock, extend and lapse built and tested; waiting on Zoho approval processes and the hold screens.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M08-S05",
+  "title": "Owners and cover (D44)",
+  "verdict": "aligned",
+  "conf": 0.79,
+  "touches": "none",
+  "tconf": 0.63,
+  "note": "[zoho waiting] Cover windows built; waiting on the service grant, roster reader, sweep schedule and sandbox TC-E08-025.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M08-S07",
+  "title": "'Said yes' becomes the investor record",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.76,
+  "note": "[zoho waiting] Said-yes Contacts read built; waiting on the lifecycle blueprint (T01) and front-end state.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M08-S08",
+  "title": "The first matched advance opens the investor app account",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.48,
+  "note": "[zoho waiting] Open-on-match verified and extended; waiting on App_Account_Mark/permanent fields (T01) and the app panel.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S01",
+  "title": "Investors list for Finance",
+  "verdict": "aligned",
+  "conf": 0.55,
+  "touches": "none",
+  "tconf": 0.83,
+  "note": "[zoho waiting] Finance list read (T01) built and tested; waiting on an API route, the front-end table (T02) and Jev UI cases.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S02",
+  "title": "KAM book and Head of AM book",
+  "verdict": "aligned",
+  "conf": 0.51,
+  "touches": "none",
+  "tconf": 0.69,
+  "note": "[zoho waiting] AM scope keys built and tested; waiting on Contacts sharing (T01), the front-end columns and staging.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S03",
+  "title": "The investor record — header, banners and sections by seat",
+  "verdict": "aligned",
+  "conf": 0.63,
+  "touches": "none",
+  "tconf": 0.81,
+  "note": "[zoho waiting] Record read built and tested; waiting on the front-end record page (T02) and UI cases.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S04",
+  "title": "Who looks after the account — KAM ownership",
+  "verdict": "incomplete",
+  "conf": 0.26,
+  "touches": "none",
+  "tconf": 0.77,
+  "note": "[zoho waiting] KAM assign built and tested; waiting on the KAM workflow and field security (T01), the care drawer and sandbox proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S07",
+  "title": "Investor search on the Investors page",
+  "verdict": "aligned",
+  "conf": 0.54,
+  "touches": "none",
+  "tconf": 0.88,
+  "note": "[zoho waiting] Search built and tested; waiting on the sandbox LIKE proof and the search box.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S08",
+  "title": "An IR sees only investors from their own leads",
+  "verdict": "aligned",
+  "conf": 0.72,
+  "touches": "none",
+  "tconf": 0.74,
+  "note": "[zoho waiting] IR scope built and tested; waiting on Originating_IR stamping and sharing in Zoho and staging proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M09-S09",
+  "title": "Add an investor who has already paid, straight from the console",
+  "verdict": "aligned",
+  "conf": 0.81,
+  "touches": "none",
+  "tconf": 0.84,
+  "note": "[zoho waiting] Add-paid built and tested; waiting on the front-end drawer wiring and sandbox rollback proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S01",
+  "title": "Payments register",
+  "verdict": "aligned",
+  "conf": 0.38,
+  "touches": "none",
+  "tconf": 0.63,
+  "note": "[zoho waiting] Register read (T03) done; migration (T02) waiting on Sahil confirming legacy columns and completing Receipts (T01), plus the sandbox dry run.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S02",
+  "title": "Match a receipt — the second hand",
+  "verdict": "aligned",
+  "conf": 0.79,
+  "touches": "none",
+  "tconf": 0.71,
+  "note": "[zoho waiting] Match built and tested; waiting on the Zoho validation rule (T01) and the Match it control.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S03",
+  "title": "Answer an IR's payment report",
+  "verdict": "aligned",
+  "conf": 0.65,
+  "touches": "none",
+  "tconf": 0.68,
+  "note": "[zoho waiting] Claim answers built and tested; waiting on answer fields in Zoho and the claim drawer.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S05",
+  "title": "Weekly bank statement upload and reconciliation",
+  "verdict": "aligned",
+  "conf": 0.51,
+  "touches": "none",
+  "tconf": 0.67,
+  "note": "[zoho waiting] Parser and matcher built; waiting on a Statements module and the upload screen.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S07",
+  "title": "Receipts belong to the allotment (investor × farm)",
+  "verdict": "aligned",
+  "conf": 0.84,
+  "touches": "none",
+  "tconf": 0.83,
+  "note": "[zoho waiting] Guard layer built and tested; waiting on Sahil's T01 Zoho config (lookups, Payment_Status workflow, Idempotency_Key) and sandbox proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S08",
+  "title": "Per-farm payment view for an investor with several allotments",
+  "verdict": "aligned",
+  "conf": 0.5,
+  "touches": "none",
+  "tconf": 0.65,
+  "note": "[zoho waiting] Money by allotment built and tested; waiting on the front-end blocks and Jev cases.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S09",
+  "title": "ARL holdings and transactions — read-only panel",
+  "verdict": "aligned",
+  "conf": 0.54,
+  "touches": "none",
+  "tconf": 0.89,
+  "note": "[zoho waiting] Holdings read built and tested; waiting on the front-end panel and Jev cases.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S20",
+  "title": "Monthly payouts: 60-month schedule per allotment, Finance due queue",
+  "verdict": "aligned",
+  "conf": 0.64,
+  "touches": "none",
+  "tconf": 0.56,
+  "note": "[zoho waiting] Payouts built and tested; waiting on the issue-date anchor decision, a unique Name, the screens and sandbox proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S21",
+  "title": "Unlock the investor app and send the welcome from the console",
+  "verdict": "aligned",
+  "conf": 0.55,
+  "touches": "none",
+  "tconf": 0.59,
+  "note": "[zoho waiting] Unlock/lock built and tested; waiting on App_Access history tracking, front-end card wiring and the app's staging webhook (MA1).",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S22",
+  "title": "Preview the investor's app screens (mock-up with their data)",
+  "verdict": "aligned",
+  "conf": 0.5,
+  "touches": "none",
+  "tconf": 0.71,
+  "note": "[zoho waiting] Preview read built and tested; waiting on the front-end wiring and Investor_Payouts mapping.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M10-S23",
+  "title": "Test sign-in link to check the real app on another device",
+  "verdict": "aligned",
+  "conf": 0.63,
+  "touches": "none",
+  "tconf": 0.63,
+  "note": "[zoho waiting] Test-link gate built and tested; waiting on the investor app endpoint (MA1) and the drawer.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M11-S01",
+  "title": "Farms are the LLP shelf",
+  "verdict": "aligned",
+  "conf": 0.48,
+  "touches": "none",
+  "tconf": 0.77,
+  "note": "[zoho waiting] Shelf read built and tested; waiting on the block mapping (T01) and the Farms page.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M11-S02",
+  "title": "An allotment links an investor to a farm LLP",
+  "verdict": "aligned",
+  "conf": 0.5,
+  "touches": "none",
+  "tconf": 0.86,
+  "note": "[zoho waiting] Allotment reads built and tested; waiting on the front-end rows and an allotment write path for AC1.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M11-S03",
+  "title": "The shelf — released, held and free per farm LLP",
+  "verdict": "aligned",
+  "conf": 0.47,
+  "touches": "none",
+  "tconf": 0.83,
+  "note": "[zoho waiting] Shelf built and tested; waiting on LLP roll-ups (T01) and the Farms tiles.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M11-S04",
+  "title": "Release a farm LLP's units or take them back",
+  "verdict": "aligned",
+  "conf": 0.77,
+  "touches": "none",
+  "tconf": 0.56,
+  "note": "[zoho waiting] Release/take-back built; waiting on the Deluge guard install and the Farms buttons.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M11-S05",
+  "title": "Allotment on the verified allocation letter",
+  "verdict": "aligned",
+  "conf": 0.78,
+  "touches": "none",
+  "tconf": 0.83,
+  "note": "[zoho waiting] Allot built and tested; waiting on the allotment blueprint in Zoho and the Verify control.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M11-S07",
+  "title": "No unit is sold twice — the oversell guard",
+  "verdict": "aligned",
+  "conf": 0.75,
+  "touches": "none",
+  "tconf": 0.74,
+  "note": "[zoho waiting] Oversell guard built; waiting on the Deluge install, writer wiring and drawers.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S01",
+  "title": "Documents in three scopes, with who sees what",
+  "verdict": "aligned",
+  "conf": 0.45,
+  "touches": "none",
+  "tconf": 0.48,
+  "note": "[zoho waiting] Scoped reads built and tested; waiting on sharing setup (T02), a Documents module decision and the DOCS tab.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S02",
+  "title": "Upload a document straight from the console to Zoho",
+  "verdict": "aligned",
+  "conf": 0.62,
+  "touches": "none",
+  "tconf": 0.76,
+  "note": "[zoho waiting] Upload built and tested; waiting on the upload control and sandbox uploader proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S03",
+  "title": "Documents page: out for signature and on file, scoped to the seat",
+  "verdict": "aligned",
+  "conf": 0.44,
+  "touches": "none",
+  "tconf": 0.56,
+  "note": "[zoho waiting] Documents list built; waiting on sign fields/Documents module and the page.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S04",
+  "title": "Send a document for signature through Zoho Sign",
+  "verdict": "aligned",
+  "conf": 0.89,
+  "touches": "none",
+  "tconf": 0.74,
+  "note": "[zoho waiting] Send built and tested; waiting on the Sign API plan, templates and the send drawer.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S05",
+  "title": "Live signature status from Zoho Sign webhooks, with reminders and recall",
+  "verdict": "aligned",
+  "conf": 0.75,
+  "touches": "none",
+  "tconf": 0.66,
+  "note": "[zoho waiting] Webhook status, remind and recall built; waiting on a real webhook run and the status chips.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S06",
+  "title": "Signed PDF filed to the allotment and Agreement_Signed set",
+  "verdict": "aligned",
+  "conf": 0.74,
+  "touches": "none",
+  "tconf": 0.64,
+  "note": "[zoho waiting] Filing built; waiting on service FLS and sandbox PDF proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S07",
+  "title": "Block or supersede a document",
+  "verdict": "aligned",
+  "conf": 0.39,
+  "touches": "none",
+  "tconf": 0.73,
+  "note": "[zoho waiting] Block built; waiting on blocked fields and the Block control.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S08",
+  "title": "The investor signs by email or inside the investor app",
+  "verdict": "aligned",
+  "conf": 0.56,
+  "touches": "none",
+  "tconf": 0.54,
+  "note": "[zoho waiting] Embed token and contract built; waiting on the investor app (MA1).",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S09",
+  "title": "See a record's emails in the console",
+  "verdict": "aligned",
+  "conf": 0.56,
+  "touches": "none",
+  "tconf": 0.79,
+  "note": "[zoho waiting] Emails read built; waiting on the Emails tab and sandbox shape check.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S11",
+  "title": "NDA loop on the lead page, and the IR's word beside Finance's queue",
+  "verdict": "aligned",
+  "conf": 0.67,
+  "touches": "none",
+  "tconf": 0.62,
+  "note": "[zoho waiting] Paperwork endpoint and hints built; waiting on the Lead round fields and sharing rule, the row UI and sandbox.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S12",
+  "title": "Supplementary agreement draft loop",
+  "verdict": "aligned",
+  "conf": 0.68,
+  "touches": "none",
+  "tconf": 0.75,
+  "note": "[zoho waiting] Draft loop built; waiting on the Supp_ fields and the send hand-over.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S13",
+  "title": "Material follows the NDA; deck email marks the deck sent",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.61,
+  "note": "[zoho waiting] NDA gate and deck stamp built; waiting on attachment support, the deck file and Pitch_Deck_Sent_At.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M12-S14",
+  "title": "'Your move' on Today and Documents",
+  "verdict": "aligned",
+  "conf": 0.35,
+  "touches": "none",
+  "tconf": 0.76,
+  "note": "[fe done] Jev run 28 Sep: app 3/4 vs prototype 3/4; TC-E09-019 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M13-S01",
+  "title": "Push to the investor app through the signed contracts, with a stub receiver",
+  "verdict": "aligned",
+  "conf": 0.87,
+  "touches": "none",
+  "tconf": 0.82,
+  "note": "[zoho waiting] Outbox, inbound and stub built and tested; waiting on the investor app URL/key (MA1) and sandbox Case proof.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M13-S02",
+  "title": "Tickets register scoped by seat",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.9,
+  "note": "[zoho waiting] Cases read built; waiting on Cases fields (T01) and the Tickets page.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M13-S03",
+  "title": "Open, wait and close a ticket",
+  "verdict": "aligned",
+  "conf": 0.4,
+  "touches": "none",
+  "tconf": 0.87,
+  "note": "[zoho waiting] Case writes built and tested; waiting on the Tickets drawer, assignment rule (T01) and sandbox proof.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M13-S04",
+  "title": "A KAM hands a bank or compliance ticket to Finance and keeps watching",
+  "verdict": "aligned",
+  "conf": 0.62,
+  "touches": "none",
+  "tconf": 0.59,
+  "note": "[zoho waiting] Handover built; waiting on the Handed_By/Handed_At fields (register depends on them) and the ticket row.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M13-S05",
+  "title": "Investor requests arrive as tickets and replies go back to the app",
+  "verdict": "aligned",
+  "conf": 0.68,
+  "touches": "none",
+  "tconf": 0.59,
+  "note": "[zoho waiting] Request-to-Case and reply delivery built; waiting on the app sending investor_contact_id, MA1 and the reply thread UI.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M13-S06",
+  "title": "Publish an investor update to a reconstructable segment",
+  "verdict": "aligned",
+  "conf": 0.64,
+  "touches": "none",
+  "tconf": 0.73,
+  "note": "[zoho waiting] Publish built and tested; waiting on Investor_Updates picklist/field changes, the AM custom function and the page.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M14-S01",
+  "title": "Events list and event page",
+  "verdict": "aligned",
+  "conf": 0.3,
+  "touches": "none",
+  "tconf": 0.48,
+  "note": "[zoho waiting] Events read built; waiting on the Leads sharing decision for counts and the Events pages.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M14-S02",
+  "title": "Add, correct and remove an event",
+  "verdict": "aligned",
+  "conf": 0.67,
+  "touches": "none",
+  "tconf": 0.51,
+  "note": "[zoho waiting] Event writes built and tested; waiting on the staff field direction on the sandbox, a roster reader and the drawer.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M14-S03",
+  "title": "Capture and sheet load tie leads to the event",
+  "verdict": "aligned",
+  "conf": 0.73,
+  "touches": "none",
+  "tconf": 0.38,
+  "note": "[zoho waiting] Loader built and tested; waiting on the sheet source, Load_State setup, the Sahil load-right decision and the sheet card.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M15-S01",
+  "title": "Updates: what others changed on my book",
+  "verdict": "aligned",
+  "conf": 0.38,
+  "touches": "none",
+  "tconf": 0.54,
+  "note": "[fe done] Jev run 28 Sep: app 4/5 vs prototype 4/5",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M15-S03",
+  "title": "Activity page: who did what, each seat its own scope, Lead side | Investors side",
+  "verdict": "aligned",
+  "conf": 0.49,
+  "touches": "none",
+  "tconf": 0.52,
+  "note": "[zoho waiting] Archive, export job and query built and tested; waiting on the S3 account, audit service token, sandbox export shapes and the Activity page.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M15-S05",
+  "title": "Console logs for refusals, reveals and API headroom (Planes B and C), filterable",
+  "verdict": "aligned",
+  "conf": 0.67,
+  "touches": "none",
+  "tconf": 0.71,
+  "note": "[zoho waiting] Reader and route built and tested; waiting on the Logs view, the runbook and staging cases.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M16-S01",
+  "title": "Assignments by IR report",
+  "verdict": "aligned",
+  "conf": 0.55,
+  "touches": "none",
+  "tconf": 0.67,
+  "note": "[fe done] Jev run 28 Sep: app 3/4 vs prototype 3/4",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M16-S02",
+  "title": "Open one IR's row and list the leads behind a count",
+  "verdict": "aligned",
+  "conf": 0.39,
+  "touches": "none",
+  "tconf": 0.64,
+  "note": "[fe done] Jev run 28 Sep: app 1/1 vs prototype 1/1",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M16-S03",
+  "title": "Lead-side Numbers sections computed live, one scope at a time",
+  "verdict": "aligned",
+  "conf": 0.8,
+  "touches": "none",
+  "tconf": 0.77,
+  "note": "[fe done] Jev run 28 Sep: app 2/3 vs prototype 2/3",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M16-S04",
+  "title": "Read the plan",
+  "verdict": "aligned",
+  "conf": 0.24,
+  "touches": "none",
+  "tconf": 0.7,
+  "note": "[zoho waiting] Plan read from Sales_Plans with paid units and banked money from matched Receipts, 2 tests; waits on plan records, Receipts read for managers and a source for decisions/rates.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M16-S06",
+  "title": "Transfers per month: leads that became investors",
+  "verdict": "aligned",
+  "conf": 0.89,
+  "touches": "none",
+  "tconf": 0.73,
+  "note": "[fe done] Jev run 28 Sep: app 5/5 vs prototype 5/5",
+  "phases": {
+   "zoho": "waiting",
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M16-S07",
+  "title": "Open a month to its investors",
+  "verdict": "unclear",
+  "conf": 0.46,
+  "touches": "none",
+  "tconf": 0.8,
+  "note": "[fe done] Jev run 28 Sep: app 2/2 vs prototype 2/2",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M16-S08",
+  "title": "Investors side of Numbers: collection, paper and compliance",
+  "verdict": "aligned",
+  "conf": 0.6,
+  "touches": "none",
+  "tconf": 0.6,
+  "note": "[zoho waiting] Sections built and tested; waiting on the Numbers screens and the Sign status reader for paper dates.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M16-S09",
+  "title": "Money figures only to seats that may see them",
+  "verdict": "aligned",
+  "conf": 0.77,
+  "touches": "none",
+  "tconf": 0.35,
+  "note": "[zoho waiting] Server refusal built and tested; waiting on the screens, the Sahil decision and profile permissions.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M17-S01",
+  "title": "Teams: members, seats and what each seat may do, from Zoho",
+  "verdict": "aligned",
+  "conf": 0.59,
+  "touches": "none",
+  "tconf": 0.68,
+  "note": "[zoho waiting] Teams API built and tested; waiting on the Teams page and Jev UI run.",
+  "phases": {
+   "fe": "done",
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M17-S02",
+  "title": "Grant pages and change seats",
+  "verdict": "aligned",
+  "conf": 0.46,
+  "touches": "none",
+  "tconf": 0.82,
+  "note": "[zoho waiting] Grant, seat and manager writes built; waiting on staging runs and the Teams step-up handling.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M17-S05",
+  "title": "My profile",
+  "verdict": "aligned",
+  "conf": 0.71,
+  "touches": "none",
+  "tconf": 0.92,
+  "note": "[zoho waiting] Own-profile name/mobile update on the person's own Zoho user with email read-only, 3 tests; waits on staging proof that a restricted user may update self and the access store for initials.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M17-S06",
+  "title": "System health and administration",
+  "verdict": "drifted",
+  "conf": 0.16,
+  "touches": "none",
+  "tconf": 0.35,
+  "note": "[zoho waiting] System checks computed from Plane B and held facts with owners and fixes, DI only, 3 tests; waits on a licence-expiry source and the Plane B/C store.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M18-S01",
+  "title": "The app stays fast inside Zoho's API limits",
+  "verdict": "aligned",
+  "conf": 0.91,
+  "touches": "none",
+  "tconf": 0.82,
+  "note": "[zoho waiting] Harness and tuning built; waiting on a staging load run and real mail.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M18-S02",
+  "title": "Nothing leaks outside a seat's scope: seat x page x action x field matrix",
+  "verdict": "aligned",
+  "conf": 0.88,
+  "touches": "none",
+  "tconf": 0.45,
+  "note": "[zoho waiting] Log scrub test (T03) passes; leak matrix script (T02) built, waiting on staging users per role; T04 is Sahil's.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M18-S03",
+  "title": "Every page works on a phone and by keyboard",
+  "verdict": "aligned",
+  "conf": 0.11,
+  "touches": "none",
+  "tconf": 0.55,
+  "note": "[fe done] Jev run 28 Sep: app 3/3 vs prototype 3/3",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M18-S04",
+  "title": "Errors are captured, visible and alerted",
+  "verdict": "aligned",
+  "conf": 0.42,
+  "touches": "none",
+  "tconf": 0.35,
+  "note": "[zoho waiting] Server side built and tested on fixtures; waiting on mail provider (HUMAN), the front-end beacon call and sandbox proof T03 (M02-S10).",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M18-S08",
+  "title": "Exploratory sessions and UAT signed off on both sides",
+  "verdict": "aligned",
+  "conf": 0.29,
+  "touches": "none",
+  "tconf": 0.66,
+  "note": "[zoho waiting] UAT defect fixes wait for UAT on staging; integration follow-ups committed.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M18-S12",
+  "title": "Move the org's old payment columns into Receipts on the allotment",
+  "verdict": "aligned",
+  "conf": 0.84,
+  "touches": "none",
+  "tconf": 0.84,
+  "note": "[zoho waiting] Migration script (T01) shared with M10-S01 and tested; waiting on Sahil's sandbox dry run (T02) and legacy column confirmation.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M19-S01",
+  "title": "UI test contract",
+  "verdict": "incomplete",
+  "conf": 0.71,
+  "touches": "D63",
+  "tconf": 0.22,
+  "note": "[fe done] no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+  "phases": {
+   "fe": "done"
+  }
+ },
+ {
+  "id": "M19-S02",
+  "title": "Jev UI runner on staging",
+  "verdict": "aligned",
+  "conf": 0.78,
+  "touches": "none",
+  "tconf": 0.54,
+  "note": "[zoho waiting] Scripts built; T03 proven on a workbook copy; T01/T02 wait on sandbox users per seat (M02-S10) and staging seeding (M19-S03).",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M19-S03",
+  "title": "Zoho sandbox seed and reset",
+  "verdict": "aligned",
+  "conf": 0.41,
+  "touches": "none",
+  "tconf": 0.87,
+  "note": "[fe done] all 90 catalogue fixtures registered (data edits, reducer-run as a person, clock, client actions; staging ones explicit no-ops); fresh / resets",
+  "phases": {
+   "fe": "done",
+   "zoho": "done",
+   "test": "pending"
+  }
+ },
+ {
+  "id": "M19-S04",
+  "title": "Judge calibration gate",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.63,
+  "note": "[zoho waiting] Gate script built and tested on sample outputs; waiting on a CI pipeline to run it after each suite.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M19-S05",
+  "title": "CI pipeline",
+  "verdict": "aligned",
+  "conf": 0.58,
+  "touches": "none",
+  "tconf": 0.64,
+  "note": "[zoho waiting] Pipeline written; waiting on hosting, secrets, branch protection and pm/jev-calibrate.mjs.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M19-S06",
+  "title": "Unit tests for business rules",
+  "verdict": "aligned",
+  "conf": 0.43,
+  "touches": "none",
+  "tconf": 0.96,
+  "note": "[zoho done] 33 rule tests pass on the real modules; reporting on every push waits on CI (M19-S05).",
+  "phases": {
+   "zoho": "done"
+  }
+ },
+ {
+  "id": "M20-S07",
+  "title": "Bring the investor app codebase into the repo and wire the contract receivers",
+  "verdict": "incomplete",
+  "conf": 0.23,
+  "touches": "none",
+  "tconf": 0.53,
+  "note": "[zoho waiting] Contract validation, signing, stub receiver, signed push and request.raised to Case with 5 tests; waits on the app codebase, signing keys, the Plane B/C store and Cases proof.",
+  "phases": {
+   "zoho": "waiting"
+  }
+ },
+ {
+  "id": "M20-S08",
+  "title": "Buy the Zoho Sign plan and set up its webhooks",
+  "verdict": "incomplete",
+  "conf": 0.35,
+  "touches": "none",
+  "tconf": 0.27,
+  "note": "[zoho waiting] Local HMAC, India-DC OAuth refresh, source re-read, request-id binding, callback limits and failure logs pass 74 recorded-response tests plus 3 sandbox-reset tests. Waiting on paid plan, owner OAuth/HMAC secrets, sandbox Aadh",
+  "phases": {
+   "zoho": "waiting"
+  }
+ }
+]

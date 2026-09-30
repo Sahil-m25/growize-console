@@ -1,0 +1,146 @@
+[
+ {
+  "cite": "D21",
+  "question": "A Finance user records a receipt from the bank statement. Should it count as matched money at once, or stay pending until a second person matches it?",
+  "options": {
+   "a": "pending until a second person matches it",
+   "b": "matched by the recorder at once"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D21",
+  "question": "Who decides KYC is complete for an investor?",
+  "options": {
+   "a": "a person flips a KYC switch after checking",
+   "b": "the system infers it when all document slots are filled"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D45",
+  "question": "Where does the console keep lead and investor data it shows on screen?",
+  "options": {
+   "a": "read live from Zoho each time, with only a short-TTL read cache",
+   "b": "in its own database, synced from Zoho on a schedule"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D53",
+  "question": "A shared cache of counts is cheaper. How should the cache be keyed?",
+  "options": {
+   "a": "one global cache, since the numbers are the same for everyone",
+   "b": "per visibility scope, so a KAM never sees Finance's totals"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D53",
+  "question": "Viewers (auditors) only read. Should they get a cheaper non-Enterprise Zoho identity?",
+  "options": {
+   "a": "yes, a portal or read-only user is enough",
+   "b": "no, every human holds a full Enterprise seat"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D60",
+  "question": "Marketing staff are active Zoho users. Do they get a console seat by default?",
+  "options": {
+   "a": "yes, any active user may sign in",
+   "b": "no, only IR, IR Manager, Digital Infrastructure and people granted a page"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D68",
+  "question": "Should Sahil's super-user account be able to reveal PAN and bank details, so one account can test every feature?",
+  "options": {
+   "a": "yes, logged",
+   "b": "no, identity fields stay hidden from him"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D77",
+  "question": "Where do investor documents live?",
+  "options": {
+   "a": "a dedicated Documents module in Zoho",
+   "b": "file slots and attachments on the Contact, allotment and LLP"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D77",
+  "question": "How does the console know a document's signature status?",
+  "options": {
+   "a": "read live from Zoho Sign per viewer",
+   "b": "a status field written on the CRM record by the webhook"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D76",
+  "question": "IR touches on leads and KAM conversations with investors: one module or two?",
+  "options": {
+   "a": "one shared Touches module",
+   "b": "two modules, one per side"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D82",
+  "question": "How is the 60-month payout schedule stored?",
+  "options": {
+   "a": "computed on the fly from the allotment date, no records",
+   "b": "one Investor Payouts record per monthly payout"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D84",
+  "question": "Where do event records for lead capture live?",
+  "options": {
+   "a": "event records with an Events page and CSV load tagged to an event",
+   "b": "three fields on the lead, no Events page"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D93",
+  "question": "Who opens an investor's app account and sends the welcome?",
+  "options": {
+   "a": "Finance from the console; the account opens On hold first",
+   "b": "the Zoho UI workflow when the Contact is created"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D47",
+  "question": "The console's own operational and security log: allowed under zero copy?",
+  "options": {
+   "a": "no, zero copy forbids any store outside Zoho",
+   "b": "yes, it is the console's own plane, not a copy of records"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D44",
+  "question": "A secondary owner on a lead: what access do they have while the primary is active?",
+  "options": {
+   "a": "full access at all times",
+   "b": "none until a leave/handover window is running"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D58",
+  "question": "A next step 'call back at 16:30' \u2014 where does it go in Zoho?",
+  "options": {
+   "a": "a Zoho Call with a reminder",
+   "b": "a Task with a due date only"
+  },
+  "answer": "a"
+ }
+]

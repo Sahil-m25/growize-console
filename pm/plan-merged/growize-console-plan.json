@@ -8942,6 +8942,39 @@
    "plan": "In plan",
    "change": "D105 (28 Sep 2026)",
    "day": 6
+  },
+  {
+   "id": "M19-S13",
+   "epic": "M19",
+   "title": "One Jev layer for the whole build: shared client, grounding, question library, calibration per question type, policy",
+   "as_a": "Sahil (Digital Infrastructure)",
+   "i_want": "every script that asks Jev (UI runner, context, triage, decide, rulings, audit) to go through one jev/ package with one client, one grounding function, a versioned question library, a measured threshold per question type and a policy that keeps money, legal, access and licence questions with the owner",
+   "so_that": "a Jev answer means the same thing everywhere, is judged against the decisions that govern, and is trusted only where it has been measured",
+   "acceptance": [
+    "Given jev/client.mjs, when any script asks Jev, then key lookup, retry, a concurrency pool, a content-hash cache (same state + questions → cached answer) and a JSONL log with probabilities and input tokens are the one code path; the three copies in pm/jev-ui-runner.mjs, autopilot/jev.mjs and autopilot/rulings.mjs are gone",
+    "Given jev/ground.mjs, when a question carries text, then every decision it cites (docs/DECISIONS.md), the nine CLAUDE.md rules, the story acceptance and the seat table are attached as state, with a unit test per source",
+    "Given jev/questions/*.mjs, when a script asks pick-control, judge-fact, relevance, triage-class, decide, ruling or cost-if-wrong, then it uses the versioned definition (instructions + criteria + version), and a change to one bumps its version in the log",
+    "Given jev/calibration/<type>.json control sets with known answers (decide: at least 30 either/or questions posed from past DECISIONS.md rulings; triage: past triaged results; relevance: hand-labelled story→file pairs; pick-control and judge-fact: the existing D63 seeded-wrong and mutation sets), when node jev/cli.mjs calibrate runs, then it reports accuracy per type, writes jev/calibration/thresholds.json, and a type under its floor is marked untrusted",
+    "Given a type marked untrusted, when a script asks it, then the answer is still returned but recorded as PROVISIONAL (decide) or REVIEW (triage, relevance) regardless of confidence; the UI runner keeps PASS_AT and the D63 gate unchanged",
+    "Given jev/policy.mjs, when a question text or state mentions money amounts, refunds, legal or signed-document wording, field-level security, seats, profiles, sharing or licences, then decide answers owner and never confirm/reverse, with a test per trigger word list",
+    "Given the full Jev UI suite run before and after the runner moves onto the shared client, when the two result files are compared, then every case has the same verdict and the calibration gate passes on both",
+    "Given AUTOPILOT.md, when the model reads the Jev section, then it names one CLI (node jev/cli.mjs context|triage|decide|rulings|calibrate) and the retired scripts are removed"
+   ],
+   "priority": "Must",
+   "stage": "S5",
+   "decisions": [
+    "D63",
+    "D101",
+    "D106"
+   ],
+   "prototype": [],
+   "zoho": [],
+   "depends_on": [
+    "M19-S04"
+   ],
+   "plan": "In plan",
+   "change": "D107 (29 Sep 2026)",
+   "day": 6
   }
  ],
  "subtasks": [
@@ -17087,6 +17120,116 @@
    "owner": "Sahil",
    "doer": "Autopilot",
    "when": "Build"
+  },
+  {
+   "id": "M19-S13-H1",
+   "story": "M19-S13",
+   "type": "Hardening",
+   "title": "jev/client.mjs + log + cache",
+   "detail": "One fetch client (key, retry, pool, content-hash cache under jev/.cache, JSONL log jev/logs/calls.jsonl with question type+version, choice, probabilities, tokens). Tests with a stubbed fetch.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M19-S13-H2",
+   "story": "M19-S13",
+   "type": "Hardening",
+   "title": "jev/ground.mjs",
+   "detail": "Grounding from text: cited D-numbers → DECISIONS.md rows, nine rules, story acceptance from queue.json, seat table from SEATCAPS. Unit test per source; size cap with deterministic truncation.",
+   "est_hours": 1.5,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M19-S13-H3",
+   "story": "M19-S13",
+   "type": "Hardening",
+   "title": "jev/questions/*.mjs library",
+   "detail": "Versioned definitions: pick-control, judge-fact (moved verbatim from the runner), relevance, triage-class, decide, ruling, cost-if-wrong. Each exports {version, build(state) → question}.",
+   "est_hours": 1.5,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M19-S13-H4",
+   "story": "M19-S13",
+   "type": "Hardening",
+   "title": "jev/policy.mjs + thresholds",
+   "detail": "Per-type threshold from jev/calibration/thresholds.json (fallback: today's values), below-threshold action, never-list → owner. Tests for each trigger list.",
+   "est_hours": 1,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M19-S13-H5",
+   "story": "M19-S13",
+   "type": "Hardening",
+   "title": "Calibration sets + node jev/cli.mjs calibrate",
+   "detail": "Control sets: decide from ≥30 past DECISIONS.md rulings posed as either/or (answer = what was decided); triage from past results with known classes; relevance from hand-labelled pairs; pick/judge reuse D63 sets. Reports accuracy per type; writes thresholds.json; marks untrusted types.",
+   "est_hours": 3,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M19-S13-H6",
+   "story": "M19-S13",
+   "type": "Hardening",
+   "title": "Migrate callers; retire copies",
+   "detail": "autopilot/jev.mjs, autopilot/rulings.mjs, ops/tracker audit and pm/jev-ui-runner.mjs use jev/; runner questions and PASS_AT unchanged. Full-suite before/after diff proves identical verdicts; D63 gate green on both. Update AUTOPILOT.md Jev table to one CLI.",
+   "est_hours": 3,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M06-S03-W2",
+   "story": "M06-S03",
+   "type": "Wiring",
+   "title": "Wire: search scope follows the seat (D110)",
+   "detail": "GET /api/leads/search scopes by seat: IR own book; IR Manager team; Digital Infrastructure and owner org-wide over leads AND investors (results carry a kind chip and open the record); Finance/KAM/Head of AM investors within scope. Own token only (D53). Update M06-S03 acceptance lines 2–3 to read \"an IR\"; add per-seat cases.",
+   "est_hours": 2,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M06-S05-W2",
+   "story": "M06-S05",
+   "type": "Wiring",
+   "title": "Wire: the search wall applies per seat (D110)",
+   "detail": "The Contacts refusal holds for IR seats only; org seats may read Contacts on their own token; cache keyed by scope. Tests: IR refused, IR Manager refused, DI allowed, Finance allowed within scope.",
+   "est_hours": 1.5,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M20-S07-H7",
+   "story": "M20-S07",
+   "type": "Hardening",
+   "title": "Spike: can the investor app connect to Zoho CRM Portals directly? (D110)",
+   "detail": "Documentation-level feasibility, no sandbox: Portals user model per investor (Contact-linked portal users), auth flow the Flutter app could use, API surface for the app (read own allotments/receipts/payouts/documents, raise a request), pricing per portal user, limits. Deliver docs/reports/portals-spike.md with a yes/no recommendation and what MA1 would change (M12-S08, M13 push contracts, M10-S23).",
+   "est_hours": 3,
+   "owner": "Sahil",
+   "doer": "Autopilot",
+   "when": "Build"
+  },
+  {
+   "id": "M03-S05-T02",
+   "story": "M03-S05",
+   "type": "Zoho config",
+   "title": "Digital Infrastructure profile for Sahil (non-admin)",
+   "detail": "Create profile \"Digital Infrastructure\": every module of both sides, no Administrator; identity fields per D68 reveal rules; move Sahil's user onto it; keep the permanent super admin separate. Export sanitized role/profile ids under zoho/.",
+   "est_hours": 1,
+   "owner": "Sahil",
+   "doer": "Sahil",
+   "when": "Before its story (do early)"
   }
  ],
  "tests": [

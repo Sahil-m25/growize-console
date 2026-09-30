@@ -1,0 +1,2356 @@
+[
+ {
+  "id": "D1",
+  "n": 1,
+  "file": "decisions/D01-zoho-crm-is-the-primary-system-of-record-on-per-user.md",
+  "text": "Zoho CRM is the primary system of record, on per-user seats",
+  "date": "4 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.24,
+  "probs": {
+   "consistent": 0.15,
+   "contradicts_decision": 0.39,
+   "contradicts_rule": 0.03,
+   "superseded": 0.43
+  },
+  "with": "D24",
+  "withConf": 0.57,
+  "related": [
+   "D72",
+   "D6",
+   "D17",
+   "D20",
+   "D24",
+   "D37",
+   "D45",
+   "D58"
+  ]
+ },
+ {
+  "id": "D2",
+  "n": 2,
+  "file": "decisions/D02-two-zoho-orgs-leads-and-investor.md",
+  "text": "Two Zoho orgs — Leads and Investor",
+  "date": "stated earlier",
+  "verdict": "contradicts_rule",
+  "conf": 0.33,
+  "probs": {
+   "consistent": 0.02,
+   "superseded": 0.31,
+   "contradicts_rule": 0.5,
+   "contradicts_decision": 0.17
+  },
+  "with": "D45",
+  "withConf": 0.41,
+  "related": [
+   "D46",
+   "D20",
+   "D23",
+   "D58",
+   "D3",
+   "D45",
+   "D69",
+   "D72"
+  ]
+ },
+ {
+  "id": "D3",
+  "n": 3,
+  "file": "decisions/D03-supabase-is-the-read-model-two-projects-leads-and-in.md",
+  "text": "Supabase is the read model — two projects, leads and investors",
+  "date": "4 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.74,
+  "probs": {
+   "consistent": 0,
+   "superseded": 0.81,
+   "contradicts_rule": 0.19,
+   "contradicts_decision": 0
+  },
+  "with": "D45",
+  "withConf": 0.97,
+  "related": [
+   "D6",
+   "D42",
+   "D45",
+   "D46",
+   "D52",
+   "D69",
+   "D79",
+   "D93"
+  ]
+ },
+ {
+  "id": "D4",
+  "n": 4,
+  "file": "decisions/D04-write-through-the-portal-writes-the-mirror-from-zoho.md",
+  "text": "Write-through: the portal writes the mirror from Zoho’s answer in the same request",
+  "date": "4 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.77,
+  "probs": {
+   "contradicts_decision": 0.01,
+   "consistent": 0,
+   "superseded": 0.83,
+   "contradicts_rule": 0.16
+  },
+  "with": "D45",
+  "withConf": 1,
+  "related": [
+   "D17",
+   "D24",
+   "D13",
+   "D45",
+   "D74",
+   "D78",
+   "D79",
+   "D84"
+  ]
+ },
+ {
+  "id": "D5",
+  "n": 5,
+  "file": "decisions/D05-business-rules-are-enforced-in-zoho-blueprints-valid.md",
+  "text": "Business rules are enforced in Zoho (blueprints, validation rules, custom functions, field-level security)",
+  "date": "4 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.7,
+  "probs": {
+   "superseded": 0.77,
+   "contradicts_decision": 0.02,
+   "consistent": 0.19,
+   "contradicts_rule": 0.02
+  },
+  "with": "D50",
+  "withConf": 0.92,
+  "related": [
+   "D13",
+   "D50",
+   "D80",
+   "D52",
+   "D84",
+   "D17",
+   "D74",
+   "D6"
+  ]
+ },
+ {
+  "id": "D6",
+  "n": 6,
+  "file": "decisions/D06-staff-sign-in-with-zoho-oauth-2-0-per-user-tokens-in.md",
+  "text": "Staff sign in with Zoho (OAuth 2.0, per-user tokens); investors sign in with Supabase",
+  "date": "4 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.44,
+  "probs": {
+   "consistent": 0.27,
+   "superseded": 0.1,
+   "contradicts_rule": 0.58,
+   "contradicts_decision": 0.05
+  },
+  "with": "none",
+  "withConf": 0.25,
+  "related": [
+   "D79",
+   "D72",
+   "D77",
+   "D93",
+   "D1",
+   "D15",
+   "D20",
+   "D24"
+  ]
+ },
+ {
+  "id": "D7",
+  "n": 7,
+  "file": "decisions/D07-emudhra-is-the-permanent-signature-authority.md",
+  "text": "eMudhra is the permanent signature authority",
+  "date": "4 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.71,
+  "probs": {
+   "superseded": 0.06,
+   "consistent": 0.77,
+   "contradicts_decision": 0.04,
+   "contradicts_rule": 0.13
+  },
+  "with": "none",
+  "withConf": 0.22,
+  "related": [
+   "D10"
+  ]
+ },
+ {
+  "id": "D8",
+  "n": 8,
+  "file": "decisions/D08-documents-live-only-in-zoho-the-app-fetches-on-deman.md",
+  "text": "Documents live only in Zoho; the app fetches on demand",
+  "date": "4 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.58,
+  "probs": {
+   "contradicts_rule": 0.02,
+   "contradicts_decision": 0.03,
+   "consistent": 0.68,
+   "superseded": 0.27
+  },
+  "with": "D77",
+  "withConf": 0.5,
+  "related": [
+   "D77",
+   "D45",
+   "D66",
+   "D72",
+   "D74",
+   "D93",
+   "D10",
+   "D13"
+  ]
+ },
+ {
+  "id": "D9",
+  "n": 9,
+  "file": "decisions/D09-the-gate-model-the-ir-owns-and-moves-the-lead-financ.md",
+  "text": "The gate model — the IR owns and moves the lead; Finance confirms; nothing transfers",
+  "date": "3 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.52,
+  "probs": {
+   "contradicts_rule": 0.02,
+   "contradicts_decision": 0.06,
+   "superseded": 0.28,
+   "consistent": 0.64
+  },
+  "with": "none",
+  "withConf": 0.37,
+  "related": [
+   "D60",
+   "D43",
+   "D82",
+   "D11",
+   "D15",
+   "D20",
+   "D22",
+   "D29"
+  ]
+ },
+ {
+  "id": "D10",
+  "n": 10,
+  "file": "decisions/D10-the-app-account-opens-at-the-first-confirmed-money-t.md",
+  "text": "The app account opens at the first confirmed money, tentative; permanent at full payment; locked seven days later",
+  "date": "3 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.43,
+  "probs": {
+   "consistent": 0.12,
+   "superseded": 0.58,
+   "contradicts_rule": 0.06,
+   "contradicts_decision": 0.24
+  },
+  "with": "D93",
+  "withConf": 0.89,
+  "related": [
+   "D93",
+   "D61",
+   "D68",
+   "D12",
+   "D21",
+   "D22",
+   "D26",
+   "D29"
+  ]
+ },
+ {
+  "id": "D11",
+  "n": 11,
+  "file": "decisions/D11-the-handover-creates-the-contact-at-said-yes-the-lea.md",
+  "text": "The handover creates the Contact at “said yes”; the lead continues; the close copy fills the placeholders at Onboarded",
+  "date": "4 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.62,
+  "probs": {
+   "consistent": 0.71,
+   "superseded": 0.17,
+   "contradicts_rule": 0.1,
+   "contradicts_decision": 0.02
+  },
+  "with": "none",
+  "withConf": 0.58,
+  "related": [
+   "D52",
+   "D60",
+   "D74",
+   "D43",
+   "D79",
+   "D14",
+   "D29",
+   "D35"
+  ]
+ },
+ {
+  "id": "D12",
+  "n": 12,
+  "file": "decisions/D12-account-management-sits-in-the-investor-org-kams-are.md",
+  "text": "Account Management sits in the Investor org; KAMs are Team users; named at allotment; measured on service",
+  "date": "3 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.72,
+  "probs": {
+   "consistent": 0.79,
+   "contradicts_decision": 0.04,
+   "contradicts_rule": 0.06,
+   "superseded": 0.11
+  },
+  "with": "none",
+  "withConf": 0.55,
+  "related": [
+   "D20",
+   "D23",
+   "D46",
+   "D49",
+   "D68",
+   "D70",
+   "D72",
+   "D77"
+  ]
+ },
+ {
+  "id": "D13",
+  "n": 13,
+  "file": "decisions/D13-sensitive-data-encrypted-fields-in-zoho-behind-field.md",
+  "text": "Sensitive data: encrypted fields in Zoho behind field-level security; masked only in the mirror; Aadhaar never stored; reveals logged; bank beneficiary via the bank where possible",
+  "date": "4 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.5,
+  "probs": {
+   "contradicts_rule": 0.62,
+   "consistent": 0.16,
+   "superseded": 0.12,
+   "contradicts_decision": 0.1
+  },
+  "with": "D68",
+  "withConf": 0.46,
+  "related": [
+   "D68",
+   "D79",
+   "D5",
+   "D52",
+   "D80",
+   "D93",
+   "D17",
+   "D24"
+  ]
+ },
+ {
+  "id": "D14",
+  "n": 14,
+  "file": "decisions/D14-aws-s3-with-object-lock-is-the-backup-target-and-the.md",
+  "text": "AWS S3 with Object Lock is the backup target and the exit; a VPS or NAS is at most a third copy; never a second live system",
+  "date": "4 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.65,
+  "probs": {
+   "consistent": 0.74,
+   "superseded": 0.15,
+   "contradicts_rule": 0.06,
+   "contradicts_decision": 0.05
+  },
+  "with": "none",
+  "withConf": 0.51,
+  "related": [
+   "D45",
+   "D47",
+   "D46",
+   "D57",
+   "D17",
+   "D22",
+   "D24",
+   "D26"
+  ]
+ },
+ {
+  "id": "D15",
+  "n": 15,
+  "file": "decisions/D15-the-fms-stays-a-separate-vertical-farm-progress-arri.md",
+  "text": "The FMS stays a separate vertical; farm progress arrives by webhook into the investors project; nothing farm-related goes to Zoho",
+  "date": "4 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.23,
+  "probs": {
+   "contradicts_rule": 0.34,
+   "contradicts_decision": 0.11,
+   "consistent": 0.12,
+   "superseded": 0.43
+  },
+  "with": "none",
+  "withConf": 0.31,
+  "related": [
+   "D69",
+   "D66",
+   "D68",
+   "D74",
+   "D78",
+   "D79",
+   "D93",
+   "D6"
+  ]
+ },
+ {
+  "id": "D16",
+  "n": 16,
+  "file": "decisions/D16-every-finding-of-the-cross-analysis-is-a-register-it.md",
+  "text": "Every finding of the cross-analysis is a register item, ticked with a note when fixed",
+  "date": "4 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.44,
+  "probs": {
+   "contradicts_decision": 0.02,
+   "superseded": 0.38,
+   "contradicts_rule": 0.02,
+   "consistent": 0.58
+  },
+  "with": "D32",
+  "withConf": 0.51,
+  "related": [
+   "D81",
+   "D19",
+   "D28",
+   "D32",
+   "D46",
+   "D49",
+   "D51",
+   "D52"
+  ]
+ },
+ {
+  "id": "D17",
+  "n": 17,
+  "file": "decisions/D17-email-is-sent-from-the-portal-as-the-person-through.md",
+  "text": "Email is sent from the portal as the person through Zoho’s Send Mail API with Zoho email templates; uploads attach to the Zoho record (KYC files in a restricted module); approvals are Zoho approval processes; automation is workflow rules logged as system touches",
+  "date": "4 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.75,
+  "probs": {
+   "contradicts_rule": 0.1,
+   "contradicts_decision": 0.08,
+   "superseded": 0.81,
+   "consistent": 0.01
+  },
+  "with": "D79",
+  "withConf": 0.9,
+  "related": [
+   "D79",
+   "D72",
+   "D55",
+   "D80",
+   "D84",
+   "D77",
+   "D85",
+   "D93"
+  ]
+ },
+ {
+  "id": "D18",
+  "n": 18,
+  "file": "decisions/D18-automation-is-catalogued-21-and-bounded-by-six-hones.md",
+  "text": "Automation is catalogued (§21) and bounded by six honesty rules",
+  "date": "4 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.23,
+  "probs": {
+   "consistent": 0.42,
+   "superseded": 0.34,
+   "contradicts_rule": 0.22,
+   "contradicts_decision": 0.02
+  },
+  "with": "D50",
+  "withConf": 0.45,
+  "related": [
+   "D17",
+   "D19",
+   "D49",
+   "D50",
+   "D80",
+   "D84",
+   "D106"
+  ]
+ },
+ {
+  "id": "D19",
+  "n": 19,
+  "file": "decisions/D19-the-failure-mode-analysis-is-adopted-reversal-events.md",
+  "text": "The failure-mode analysis is adopted: reversal events, one actor per consequence, delegation everywhere, a KYC step, recording always allowed, an allow-list mapper, a real job runner, a heartbeat that lives elsewhere — and eleven canaries in place of the six alerts",
+  "date": "5 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.71,
+  "probs": {
+   "consistent": 0.79,
+   "superseded": 0.11,
+   "contradicts_decision": 0.01,
+   "contradicts_rule": 0.09
+  },
+  "with": "none",
+  "withConf": 0.62,
+  "related": [
+   "D107",
+   "D22",
+   "D63",
+   "D82",
+   "D20",
+   "D36",
+   "D56",
+   "D64"
+  ]
+ },
+ {
+  "id": "D20",
+  "n": 20,
+  "file": "decisions/D20-seats-are-bought-per-org-at-the-cheapest-edition-tha.md",
+  "text": "Seats are bought per org at the cheapest edition that carries the features that org actually uses — Professional for Leads if the trial confirms it, Enterprise for Investor, Team users for KAMs; Zoho One only if the company adopts the suite",
+  "date": "7 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.57,
+  "probs": {
+   "consistent": 0.13,
+   "contradicts_rule": 0.06,
+   "contradicts_decision": 0.14,
+   "superseded": 0.67
+  },
+  "with": "D52",
+  "withConf": 0.54,
+  "related": [
+   "D23",
+   "D52",
+   "D12",
+   "D72",
+   "D82",
+   "D21",
+   "D46",
+   "D51"
+  ]
+ },
+ {
+  "id": "D21",
+  "n": 21,
+  "file": "decisions/D21-kyc-is-a-switch-a-person-sets-money-is-typed-and-che.md",
+  "text": "KYC is a switch a person sets, money is typed and checked against the bank statement weekly, and the Leads org holds four or five seats — not thirteen",
+  "date": "7 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.43,
+  "probs": {
+   "consistent": 0.58,
+   "superseded": 0.22,
+   "contradicts_rule": 0.08,
+   "contradicts_decision": 0.12
+  },
+  "with": "none",
+  "withConf": 0.37,
+  "related": [
+   "D22",
+   "D68",
+   "D20",
+   "D23",
+   "D49",
+   "D51",
+   "D52",
+   "D60"
+  ]
+ },
+ {
+  "id": "D22",
+  "n": 22,
+  "file": "decisions/D22-step-up-authentication-on-eight-authoritative-action.md",
+  "text": "Step-up authentication on eight authoritative actions; the bank statement is the second hand for ordinary receipts and an administrator is the second hand for money leaving; one seat per human inside Finance",
+  "date": "7 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.7,
+  "probs": {
+   "superseded": 0.05,
+   "contradicts_decision": 0.04,
+   "consistent": 0.77,
+   "contradicts_rule": 0.14
+  },
+  "with": "none",
+  "withConf": 0.35,
+  "related": [
+   "D68",
+   "D82",
+   "D53",
+   "D54",
+   "D57",
+   "D78",
+   "D81",
+   "D19"
+  ]
+ },
+ {
+  "id": "D23",
+  "n": 23,
+  "file": "decisions/D23-whether-leads-and-investor-share-one-zoho-org-is-dec.md",
+  "text": "Whether Leads and Investor share one Zoho org is decided by a sandbox test in week one, not by argument",
+  "date": "7 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.76,
+  "probs": {
+   "superseded": 0.82,
+   "contradicts_decision": 0.03,
+   "contradicts_rule": 0.02,
+   "consistent": 0.13
+  },
+  "with": "D52",
+  "withConf": 0.41,
+  "related": [
+   "D20",
+   "D46",
+   "D52",
+   "D82",
+   "D2",
+   "D51",
+   "D55",
+   "D56"
+  ]
+ },
+ {
+  "id": "D24",
+  "n": 24,
+  "file": "decisions/D24-a-zoho-seat-is-required-to-write-never-to-read-read.md",
+  "text": "A Zoho seat is required to write, never to read — read-only staff hold a portal login and no CRM licence",
+  "date": "7 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.68,
+  "probs": {
+   "contradicts_decision": 0.08,
+   "superseded": 0.11,
+   "consistent": 0.05,
+   "contradicts_rule": 0.76
+  },
+  "with": "none",
+  "withConf": 0.28,
+  "related": [
+   "D79",
+   "D93",
+   "D46",
+   "D4",
+   "D42",
+   "D45",
+   "D47",
+   "D48"
+  ]
+ },
+ {
+  "id": "D25",
+  "n": 25,
+  "file": "decisions/D25-the-master-dashboard-leaves-the-thirteen-weeks-and-b.md",
+  "text": "The master dashboard leaves the thirteen weeks and becomes its own conversation",
+  "date": "7 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.92,
+  "probs": {
+   "superseded": 0.04,
+   "contradicts_rule": 0.02,
+   "consistent": 0.9299999999999999,
+   "contradicts_decision": 0.01
+  },
+  "with": "none",
+  "withConf": 0.91,
+  "related": [
+   "D26",
+   "D29",
+   "D31",
+   "D40",
+   "D47",
+   "D63",
+   "D65",
+   "D69"
+  ]
+ },
+ {
+  "id": "D26",
+  "n": 26,
+  "file": "decisions/D26-the-portals-are-nextjs-app-router-and-typescript-wi.md",
+  "text": "The portals are Next.js App Router and TypeScript, with no UI kit, no state library and the prototype's own stylesheet as the design system",
+  "date": "9 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.9,
+  "probs": {
+   "superseded": 0.06,
+   "contradicts_rule": 0.01,
+   "contradicts_decision": 0.01,
+   "consistent": 0.92
+  },
+  "with": "none",
+  "withConf": 0.77,
+  "related": [
+   "D32",
+   "D72",
+   "D29",
+   "D40",
+   "D45",
+   "D47",
+   "D48",
+   "D49"
+  ]
+ },
+ {
+  "id": "D27",
+  "n": 27,
+  "file": "decisions/D27-the-consoles-look-is-neutral-with-one-green-light-rai.md",
+  "text": "The console looks like a product: Inter embedded, an icon set, one control family, Airtable-style pills and tabs — UI only, the UX untouched",
+  "date": "10 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.37,
+  "probs": {
+   "contradicts_rule": 0,
+   "consistent": 0.35,
+   "superseded": 0.54,
+   "contradicts_decision": 0.11
+  },
+  "with": "D28",
+  "withConf": 0.73,
+  "related": [
+   "D28",
+   "D55",
+   "D65",
+   "D68",
+   "D72",
+   "D30",
+   "D33",
+   "D36"
+  ]
+ },
+ {
+  "id": "D28",
+  "n": 28,
+  "file": "decisions/D28-the-console-is-a-page-that-scrolls-styled-on-shadcn-t.md",
+  "text": "The console is a page that scrolls, styled on shadcn/ui's tokens and components — the fixed one-screen frame is gone; the workflow is untouched",
+  "date": "10 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.5,
+  "probs": {
+   "consistent": 0.06,
+   "contradicts_rule": 0,
+   "superseded": 0.62,
+   "contradicts_decision": 0.32
+  },
+  "with": "D33",
+  "withConf": 0.96,
+  "related": [
+   "D30",
+   "D33",
+   "D55",
+   "D60",
+   "D68",
+   "D27",
+   "D56",
+   "D59"
+  ]
+ },
+ {
+  "id": "D29",
+  "n": 29,
+  "file": "decisions/D29-every-door-on-the-lead-page-opens-in-its-own-browser.md",
+  "text": "Every door on the lead page opens in its own browser window; the short forms stay in the drawer",
+  "date": "10 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.63,
+  "probs": {
+   "contradicts_rule": 0.01,
+   "contradicts_decision": 0.14,
+   "superseded": 0.72,
+   "consistent": 0.13
+  },
+  "with": "D33",
+  "withConf": 0.27,
+  "related": [
+   "D56",
+   "D61",
+   "D33",
+   "D68",
+   "D69",
+   "D40",
+   "D55",
+   "D59"
+  ]
+ },
+ {
+  "id": "D30",
+  "n": 30,
+  "file": "decisions/D30-the-console-has-a-sign-in-screen-the-seat-picker-is.md",
+  "text": "The console has a sign-in screen; the seat picker is gone",
+  "date": "10 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.43,
+  "probs": {
+   "superseded": 0.27,
+   "contradicts_rule": 0.02,
+   "contradicts_decision": 0.14,
+   "consistent": 0.57
+  },
+  "with": "none",
+  "withConf": 0.35,
+  "related": [
+   "D28",
+   "D72",
+   "D78",
+   "D79",
+   "D93",
+   "D33",
+   "D45",
+   "D46"
+  ]
+ },
+ {
+  "id": "D31",
+  "n": 31,
+  "file": "decisions/D31-updates-moves-into-a-bell-people-becomes-team-and-a.md",
+  "text": "Updates moves into a bell; People becomes Team & access and stays",
+  "date": "10 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.46,
+  "probs": {
+   "contradicts_decision": 0.08,
+   "consistent": 0.3,
+   "contradicts_rule": 0.03,
+   "superseded": 0.59
+  },
+  "with": "D35",
+  "withConf": 0.54,
+  "related": [
+   "D35",
+   "D44",
+   "D78",
+   "D80",
+   "D37",
+   "D40",
+   "D46",
+   "D63"
+  ]
+ },
+ {
+  "id": "D32",
+  "n": 32,
+  "file": "decisions/D32-the-52-findings-of-the-design-review-are-fixed-in-t.md",
+  "text": "The 52 findings of the design review are fixed in the prototype",
+  "date": "10 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.64,
+  "probs": {
+   "contradicts_decision": 0.02,
+   "consistent": 0.73,
+   "superseded": 0.19,
+   "contradicts_rule": 0.06
+  },
+  "with": "none",
+  "withConf": 0.65,
+  "related": [
+   "D62",
+   "D63",
+   "D64",
+   "D26",
+   "D48",
+   "D60",
+   "D70",
+   "D81"
+  ]
+ },
+ {
+  "id": "D33",
+  "n": 33,
+  "file": "decisions/D33-every-page-is-one-screen-what-left-it-opens-from-a.md",
+  "text": "Every page is one screen; what left it opens from a door",
+  "date": "11 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.76,
+  "probs": {
+   "contradicts_rule": 0.02,
+   "contradicts_decision": 0.12,
+   "consistent": 0.04,
+   "superseded": 0.82
+  },
+  "with": "D28",
+  "withConf": 0.78,
+  "related": [
+   "D56",
+   "D82",
+   "D28",
+   "D29",
+   "D55",
+   "D59",
+   "D61",
+   "D68"
+  ]
+ },
+ {
+  "id": "D35",
+  "n": 35,
+  "file": "decisions/D35.md",
+  "text": "Fewer destinations — Add lead and Team & access come off the rail, neither losing a capability",
+  "date": "14 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.24,
+  "probs": {
+   "contradicts_decision": 0.1,
+   "consistent": 0.44,
+   "superseded": 0.41,
+   "contradicts_rule": 0.05
+  },
+  "with": "D31",
+  "withConf": 0.69,
+  "related": [
+   "D83",
+   "D40",
+   "D44",
+   "D74",
+   "D93",
+   "D31",
+   "D37",
+   "D43"
+  ]
+ },
+ {
+  "id": "D36",
+  "n": 36,
+  "file": "decisions/D36.md",
+  "text": "What the restore broke and how it was caught; My day says what kind of work a row is; one line of filters; Events create, change and remove",
+  "date": "15 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.79,
+  "probs": {
+   "superseded": 0.13,
+   "contradicts_rule": 0.02,
+   "consistent": 0.84,
+   "contradicts_decision": 0.01
+  },
+  "with": "none",
+  "withConf": 0.61,
+  "related": [
+   "D57",
+   "D59",
+   "D63",
+   "D82",
+   "D19",
+   "D37",
+   "D39",
+   "D51"
+  ]
+ },
+ {
+  "id": "D37",
+  "n": 37,
+  "file": "decisions/D37-workflow-alignment-and-user-data-visibility.md",
+  "text": "Work queue alignment and user, record, reporting and temporary-access visibility boundaries",
+  "date": "15 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.63,
+  "probs": {
+   "superseded": 0.26,
+   "contradicts_decision": 0.01,
+   "consistent": 0.72,
+   "contradicts_rule": 0.01
+  },
+  "with": "none",
+  "withConf": 0.42,
+  "related": [
+   "D53",
+   "D72",
+   "D82",
+   "D1",
+   "D39",
+   "D40",
+   "D44",
+   "D47"
+  ]
+ },
+ {
+  "id": "D38",
+  "n": 38,
+  "file": "decisions/D38-content-sized-drawers-and-layouts.md",
+  "text": "Content-sized timeline icons, cards, controls and layouts that respond to available width",
+  "date": "16 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.83,
+  "probs": {
+   "consistent": 0.88,
+   "contradicts_decision": 0,
+   "superseded": 0.12,
+   "contradicts_rule": 0
+  },
+  "with": "none",
+  "withConf": 0.53,
+  "related": [
+   "D39",
+   "D56"
+  ]
+ },
+ {
+  "id": "D39",
+  "n": 39,
+  "file": "decisions/D39-ir-weekly-work-and-focused-today.md",
+  "text": "IR weekly recorded-work totals and a focused Today page without duplicate summary cards",
+  "date": "16 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.59,
+  "probs": {
+   "contradicts_rule": 0.02,
+   "contradicts_decision": 0.01,
+   "consistent": 0.7,
+   "superseded": 0.27
+  },
+  "with": "none",
+  "withConf": 0.51,
+  "related": [
+   "D61",
+   "D83",
+   "D55",
+   "D56",
+   "D59",
+   "D60",
+   "D66",
+   "D68"
+  ]
+ },
+ {
+  "id": "D40",
+  "n": 40,
+  "file": "decisions/D40-console-roles-and-explicit-sensitive-access.md",
+  "text": "Lead operators and business viewers, own-assigned Channel Partners, account-menu Profile and explicit sensitive access",
+  "date": "16 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.67,
+  "probs": {
+   "contradicts_decision": 0.02,
+   "superseded": 0.19,
+   "contradicts_rule": 0.03,
+   "consistent": 0.76
+  },
+  "with": "none",
+  "withConf": 0.65,
+  "related": [
+   "D55",
+   "D69",
+   "D74",
+   "D83",
+   "D29",
+   "D35",
+   "D41",
+   "D43"
+  ]
+ },
+ {
+  "id": "D41",
+  "n": 41,
+  "file": "decisions/D41-connection-freshness-and-pending-saves.md",
+  "text": "Honest demo/browser freshness status and session-safe five-minute pending saves with explicit retry",
+  "date": "16 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.78,
+  "probs": {
+   "contradicts_decision": 0.01,
+   "consistent": 0.84,
+   "superseded": 0.12,
+   "contradicts_rule": 0.03
+  },
+  "with": "none",
+  "withConf": 0.57,
+  "related": [
+   "D49",
+   "D50",
+   "D56",
+   "D57",
+   "D66",
+   "D68",
+   "D72",
+   "D105"
+  ]
+ },
+ {
+  "id": "D42",
+  "n": 42,
+  "file": "decisions/D42-ir-read-only-finance-history-mirror.md",
+  "text": "IR read-only Finance payment/document histories for current held leads, with portal source records and a single writer",
+  "date": "16 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.43,
+  "probs": {
+   "superseded": 0.26,
+   "contradicts_rule": 0.11,
+   "consistent": 0.58,
+   "contradicts_decision": 0.05
+  },
+  "with": "D3",
+  "withConf": 0.52,
+  "related": [
+   "D44",
+   "D46",
+   "D60",
+   "D82",
+   "D84",
+   "D85",
+   "D93",
+   "D3"
+  ]
+ },
+ {
+  "id": "D43",
+  "n": 43,
+  "file": "decisions/D43-investor-copy-gate-and-manual-recovery.md",
+  "text": "Investor copy at signed agreements and Finance-confirmed 10%, retained lead/IR ownership and guarded manual recovery",
+  "date": "16 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.52,
+  "probs": {
+   "contradicts_rule": 0.65,
+   "consistent": 0.14,
+   "superseded": 0.19,
+   "contradicts_decision": 0.02
+  },
+  "with": "none",
+  "withConf": 0.37,
+  "related": [
+   "D82",
+   "D46",
+   "D56",
+   "D60",
+   "D61",
+   "D69",
+   "D72",
+   "D73"
+  ]
+ },
+ {
+  "id": "D44",
+  "n": 44,
+  "file": "decisions/D44-active-secondary-access-and-manager-finance-views.md",
+  "text": "Dormant secondary privacy, active leave/handover access and read-only IR-manager team Finance oversight",
+  "date": "16 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.31,
+  "probs": {
+   "consistent": 0.34,
+   "superseded": 0.48,
+   "contradicts_rule": 0.11,
+   "contradicts_decision": 0.07
+  },
+  "with": "D60",
+  "withConf": 0.39,
+  "related": [
+   "D60",
+   "D93",
+   "D77",
+   "D80",
+   "D31",
+   "D35",
+   "D42",
+   "D45"
+  ]
+ },
+ {
+  "id": "D45",
+  "n": 45,
+  "file": "decisions/D45-zero-copy-the-console-reads-and-writes-zoho-live.md",
+  "text": "Zero copy: the console reads and writes Zoho live — supersedes D3/D4; a short-TTL read-only cache is allowed, a second store is not; three System checks retired, two added",
+  "date": "22 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.72,
+  "probs": {
+   "contradicts_decision": 0.05,
+   "consistent": 0.79,
+   "superseded": 0.14,
+   "contradicts_rule": 0.02
+  },
+  "with": "none",
+  "withConf": 0.37,
+  "related": [
+   "D46",
+   "D47",
+   "D65",
+   "D14",
+   "D60",
+   "D71",
+   "D74",
+   "D77"
+  ]
+ },
+ {
+  "id": "D46",
+  "n": 46,
+  "file": "decisions/D46-q30-q31-answered-and-the-stage-sheets-reconciled.md",
+  "text": "Q30 and Q31 answered from Zoho's documentation: concurrency binds, not credits; no token reads two orgs, so the cross-org read moves to a second server-held credential and costs an Investor-org seat; the stage sheets placed under zero copy",
+  "date": "22 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.19,
+  "probs": {
+   "consistent": 0.33,
+   "superseded": 0.23,
+   "contradicts_rule": 0.39,
+   "contradicts_decision": 0.05
+  },
+  "with": "D49",
+  "withConf": 0.24,
+  "related": [
+   "D45",
+   "D47",
+   "D2",
+   "D49",
+   "D54",
+   "D58",
+   "D71",
+   "D72"
+  ]
+ },
+ {
+  "id": "D47",
+  "n": 47,
+  "file": "decisions/D47-three-log-planes.md",
+  "text": "Three log planes — the record audit read live, the org audit archived, and the console's own operational and security log, which zero copy never forbade; resolves O-01 and corrects D45's API-headroom check",
+  "date": "22 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.77,
+  "probs": {
+   "consistent": 0.82,
+   "superseded": 0.04,
+   "contradicts_rule": 0.12,
+   "contradicts_decision": 0.02
+  },
+  "with": "none",
+  "withConf": 0.59,
+  "related": [
+   "D45",
+   "D60",
+   "D65",
+   "D71",
+   "D72",
+   "D46",
+   "D74",
+   "D77"
+  ]
+ },
+ {
+  "id": "D48",
+  "n": 48,
+  "file": "decisions/D48-the-im-portal-comes-onto-the-consoles-architecture.md",
+  "text": "The IM portal comes onto the console's design architecture — a rewrite, not a restyle; shared by a generated fence, not a link; and step-up is built for the portal, never borrowed",
+  "date": "22 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.7,
+  "probs": {
+   "consistent": 0.77,
+   "contradicts_rule": 0.11,
+   "superseded": 0.06,
+   "contradicts_decision": 0.06
+  },
+  "with": "none",
+  "withConf": 0.41,
+  "related": [
+   "D65",
+   "D60",
+   "D81",
+   "D84",
+   "D93",
+   "D107",
+   "D24",
+   "D47"
+  ]
+ },
+ {
+  "id": "D49",
+  "n": 49,
+  "file": "decisions/D49-four-blockers-closed.md",
+  "text": "Four blockers closed — two bounded cross-org service identities, console state split by what it actually is, a dedicated touch object, and the fifteen-minute undo dropped",
+  "date": "22 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.94,
+  "probs": {
+   "consistent": 0.01,
+   "contradicts_decision": 0,
+   "contradicts_rule": 0.03,
+   "superseded": 0.96
+  },
+  "with": "D52",
+  "withConf": 0.87,
+  "related": [
+   "D51",
+   "D52",
+   "D46",
+   "D50",
+   "D59",
+   "D60",
+   "D65",
+   "D12"
+  ]
+ },
+ {
+  "id": "D50",
+  "n": 50,
+  "file": "decisions/D50-the-last-three-blockers-and-the-drift-in-d5.md",
+  "text": "The last three blockers closed, and the drift they revealed — five business rules now enforced outside Zoho; D5 amended; the edition question reopened as a measurement (T14)",
+  "date": "22 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.65,
+  "probs": {
+   "consistent": 0.14,
+   "superseded": 0.1,
+   "contradicts_rule": 0.74,
+   "contradicts_decision": 0.02
+  },
+  "with": "D5",
+  "withConf": 0.7,
+  "related": [
+   "D5",
+   "D55",
+   "D56",
+   "D57",
+   "D58",
+   "D74",
+   "D78",
+   "D80"
+  ]
+ },
+ {
+  "id": "D51",
+  "n": 51,
+  "file": "decisions/D51-one-enterprise-org-built-from-the-super-admin.md",
+  "text": "One Enterprise org, production included, built outward from the super admin; if D23's identity wall holds, the cross-org machinery of D46/D49 is dropped",
+  "date": "23 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.67,
+  "probs": {
+   "contradicts_decision": 0.02,
+   "contradicts_rule": 0.01,
+   "superseded": 0.21,
+   "consistent": 0.76
+  },
+  "with": "none",
+  "withConf": 0.35,
+  "related": [
+   "D52",
+   "D53",
+   "D20",
+   "D49",
+   "D54",
+   "D65",
+   "D68",
+   "D21"
+  ]
+ },
+ {
+  "id": "D52",
+  "n": 52,
+  "file": "decisions/D52-one-enterprise-org-for-leads-and-investors.md",
+  "text": "One Enterprise org for leads and investors — supersedes D02; field-level security is the identity wall; the Lead carries all seven rungs and the Contact is linked at 'said yes'; the cross-org machinery of D46/D49 is dropped",
+  "date": "23 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.55,
+  "probs": {
+   "consistent": 0.66,
+   "contradicts_rule": 0.07,
+   "superseded": 0.16,
+   "contradicts_decision": 0.11
+  },
+  "with": "none",
+  "withConf": 0.26,
+  "related": [
+   "D51",
+   "D20",
+   "D60",
+   "D74",
+   "D11",
+   "D69",
+   "D79",
+   "D80"
+  ]
+ },
+ {
+  "id": "D53",
+  "n": 53,
+  "file": "decisions/D53-every-human-on-an-enterprise-seat-and-the-cache-keyed-by-scope.md",
+  "text": "Every human holds a full Enterprise seat; the cache is keyed by visibility scope, because a shared cache would serve one user's numbers to another",
+  "date": "23 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.87,
+  "probs": {
+   "contradicts_decision": 0.03,
+   "contradicts_rule": 0.02,
+   "superseded": 0.04,
+   "consistent": 0.91
+  },
+  "with": "none",
+  "withConf": 0.57,
+  "related": [
+   "D22",
+   "D51",
+   "D54",
+   "D59",
+   "D68",
+   "D76",
+   "D78",
+   "D81"
+  ]
+ },
+ {
+  "id": "D54",
+  "n": 54,
+  "file": "decisions/D54-the-org-as-found-hold-d52-adopt-the-llp-modules.md",
+  "text": "The org as found: hold D52 (stop native conversion, Deals become history), adopt the existing LLP modules as shelf and Allotments with a new Receipts module, Aadhaar to last-4 + reference with the full number hidden, and the wall before any second seat",
+  "date": "23 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.48,
+  "probs": {
+   "contradicts_rule": 0.03,
+   "consistent": 0.6,
+   "contradicts_decision": 0.04,
+   "superseded": 0.33
+  },
+  "with": "D74",
+  "withConf": 0.37,
+  "related": [
+   "D70",
+   "D76",
+   "D74",
+   "D82",
+   "D22",
+   "D46",
+   "D57",
+   "D75"
+  ]
+ },
+ {
+  "id": "D55",
+  "n": 55,
+  "file": "decisions/D55-the-lead-page-answers-one-question.md",
+  "text": "The lead page answers one question — what happens next: tap-only log (reach · what happened · what's next), one Activity feed, one More menu; email composed in the console, sent via Zoho only when the owner presses Send",
+  "date": "23 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.25,
+  "probs": {
+   "superseded": 0.44,
+   "contradicts_decision": 0.24,
+   "consistent": 0.25,
+   "contradicts_rule": 0.07
+  },
+  "with": "D79",
+  "withConf": 0.63,
+  "related": [
+   "D93",
+   "D59",
+   "D72",
+   "D56",
+   "D74",
+   "D79",
+   "D82",
+   "D17"
+  ]
+ },
+ {
+  "id": "D56",
+  "n": 56,
+  "file": "decisions/D56-the-lead-page-scored-by-jev.md",
+  "text": "The lead page scored element by element by Jev over five rounds (clutter 3.43 → 0.47 of 4); ~6 controls until the IR acts, the logging flow opens in place one question at a time, one Investor file drawer; 11 elements plateau at 0.64–0.89 with Jev's top pick matching",
+  "date": "23 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.62,
+  "probs": {
+   "contradicts_decision": 0,
+   "contradicts_rule": 0.01,
+   "superseded": 0.27,
+   "consistent": 0.72
+  },
+  "with": "none",
+  "withConf": 0.4,
+  "related": [
+   "D59",
+   "D57",
+   "D60",
+   "D69",
+   "D82",
+   "D29",
+   "D55",
+   "D58"
+  ]
+ },
+ {
+  "id": "D57",
+  "n": 57,
+  "file": "decisions/D57-one-question-at-a-time.md",
+  "text": "Inside the logging flow, one question at a time: answered steps collapse to one line, the channel is never re-asked, a loss is one question that saves the contact and the loss together, the last tap saves with a 10-second Undo; Jev load 2.4–2.75 → 0.04–0.19",
+  "date": "23 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.83,
+  "probs": {
+   "superseded": 0.05,
+   "contradicts_rule": 0.07,
+   "contradicts_decision": 0.01,
+   "consistent": 0.87
+  },
+  "with": "none",
+  "withConf": 0.72,
+  "related": [
+   "D56",
+   "D59",
+   "D60",
+   "D107",
+   "D58",
+   "D22",
+   "D55",
+   "D63"
+  ]
+ },
+ {
+  "id": "D58",
+  "n": 58,
+  "file": "decisions/D58-notes-call-times-and-zoho-activities.md",
+  "text": "Latest note on the Next step card; a time question for calls and meetings (pre-highlights the investor's stated time); next steps map to Zoho Calls (reminder, CRM calendar), Meetings (two-way Zoho Calendar sync) or Tasks",
+  "date": "24 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.51,
+  "probs": {
+   "superseded": 0.12,
+   "consistent": 0.63,
+   "contradicts_decision": 0.04,
+   "contradicts_rule": 0.21
+  },
+  "with": "none",
+  "withConf": 0.51,
+  "related": [
+   "D79",
+   "D2",
+   "D46",
+   "D55",
+   "D56",
+   "D57",
+   "D65",
+   "D70"
+  ]
+ },
+ {
+  "id": "D59",
+  "n": 59,
+  "file": "decisions/D59-every-page-like-the-lead-page-and-assignments-by-ir.md",
+  "text": "Every page brought in line with the lead page by Jev scoring (564 elements; mean clutter 1.21 → 0.69; top pick matches 77% → 88%), and the IR manager's 'Assignments by IR' report on Numbers (four non-overlapping periods, cohort, worked = owner touch, breakdown one tap away)",
+  "date": "24 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.77,
+  "probs": {
+   "consistent": 0.82,
+   "contradicts_rule": 0.11,
+   "contradicts_decision": 0.02,
+   "superseded": 0.05
+  },
+  "with": "none",
+  "withConf": 0.55,
+  "related": [
+   "D56",
+   "D60",
+   "D55",
+   "D82",
+   "D57",
+   "D69",
+   "D74",
+   "D107"
+  ]
+ },
+ {
+  "id": "D60",
+  "n": 60,
+  "file": "decisions/D60-three-seats-org-search-transfers-paperwork-inline.md",
+  "text": "Three console seats (IR, IR Manager, Digital Infrastructure; everyone else by grant; Finance/Marketing never), org-wide top-bar search with read-only peek, Transfers analytics (said-yes by month), Overdue filter fixed, IR paperwork steps inline on the lead page (the writers had been unreachable) and no page-reloading loops; Jev paperwork load 1.62–3.65 → 0.05–0.27",
+  "date": "24 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.4,
+  "probs": {
+   "contradicts_decision": 0.06,
+   "consistent": 0.55,
+   "superseded": 0.14,
+   "contradicts_rule": 0.25
+  },
+  "with": "D69",
+  "withConf": 0.49,
+  "related": [
+   "D61",
+   "D69",
+   "D93",
+   "D47",
+   "D59",
+   "D65",
+   "D68",
+   "D74"
+  ]
+ },
+ {
+  "id": "D61",
+  "n": 61,
+  "file": "decisions/D61-paperwork-your-move-and-it-grants.md",
+  "text": "Paperwork shows as the IR's move on Today (button or chip) and Documents, and opens the lead's paperwork row; writes stay on the lead page. Digital Infrastructure may grant IRs extra pages (confirmed)",
+  "date": "24 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.52,
+  "probs": {
+   "contradicts_decision": 0.12,
+   "contradicts_rule": 0.03,
+   "superseded": 0.64,
+   "consistent": 0.21
+  },
+  "with": "D77",
+  "withConf": 0.92,
+  "related": [
+   "D60",
+   "D29",
+   "D68",
+   "D74",
+   "D82",
+   "D56",
+   "D69",
+   "D77"
+  ]
+ },
+ {
+  "id": "D62",
+  "n": 62,
+  "file": "decisions/D62-ir-console-delivery-plan.md",
+  "text": "IR console delivery plan replaces plan.xlsx: 15 epics, 86 stories, 229 subtasks, 310 test cases (247 automated, judged by Jev: 232 PASS · 12 REVIEW · 3 FAIL = real prototype gaps); waterfall S0–S5 28 Sep–13 Dec with stage gates; pm/IR-Console-Delivery-Plan.xlsx",
+  "date": "24 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.59,
+  "probs": {
+   "superseded": 0.69,
+   "consistent": 0.06,
+   "contradicts_decision": 0.18,
+   "contradicts_rule": 0.07
+  },
+  "with": "D66",
+  "withConf": 0.48,
+  "related": [
+   "D63",
+   "D64",
+   "D65",
+   "D66",
+   "D70",
+   "D72",
+   "D76",
+   "D77"
+  ]
+ },
+ {
+  "id": "D63",
+  "n": 63,
+  "file": "decisions/D63-jev-gap-review-and-ui-testing.md",
+  "text": "Jev gap review of the D62 plan → added E16 quality engineering and E17 launch readiness plus PM sheets (brief/KPIs, ways of working, test strategy, risks, dependencies, change log, budget, traceability); Jev becomes the main tester via a UI runner (plain-language steps, per-fact judging, fixtures); 190 PASS / 16 REVIEW / 5 FAIL (real gaps) on the prototype, 16/16 seeded-wrong caught, 0–1 clear false passes in 494 near-miss facts; PASS at ≥ 0.80",
+  "date": "24 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.47,
+  "probs": {
+   "superseded": 0.18,
+   "consistent": 0.61,
+   "contradicts_decision": 0.2,
+   "contradicts_rule": 0.01
+  },
+  "with": "D62",
+  "withConf": 0.32,
+  "related": [
+   "D64",
+   "D62",
+   "D72",
+   "D77",
+   "D106",
+   "D107",
+   "D19",
+   "D65"
+  ]
+ },
+ {
+  "id": "D64",
+  "n": 64,
+  "file": "decisions/D64-jev-main-tester.md",
+  "text": "Owner confirms Jev as the main tester: the Jev UI runner runs every UI case (prototype now, staging after each deploy); PASS ≥ 0.80 per fact, REVIEW to the tester; a run counts only if every seeded-wrong case fails and near-miss false passes ≤ 1%",
+  "date": "24 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.82,
+  "probs": {
+   "contradicts_decision": 0.02,
+   "contradicts_rule": 0.01,
+   "superseded": 0.1,
+   "consistent": 0.87
+  },
+  "with": "none",
+  "withConf": 0.57,
+  "related": [
+   "D63",
+   "D107",
+   "D62",
+   "D77",
+   "D80",
+   "D65",
+   "D66",
+   "D74"
+  ]
+ },
+ {
+  "id": "D65",
+  "n": 65,
+  "file": "decisions/D65-three-weeks-autopilot.md",
+  "text": "IR console in three weeks (28 Sep – 16 Oct, live Mon 19 Oct), IM portal in two (19 – 30 Oct, live Mon 2 Nov), built by a hands-off autopilot: one command loops Claude Code one story per round, Jev tests each story, people get BLOCKED.md and a calendar; daily Cowork check reports; both workbooks rebuilt every round",
+  "date": "24 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.57,
+  "probs": {
+   "superseded": 0.68,
+   "consistent": 0.04,
+   "contradicts_decision": 0.25,
+   "contradicts_rule": 0.03
+  },
+  "with": "D66",
+  "withConf": 0.94,
+  "related": [
+   "D66",
+   "D68",
+   "D77",
+   "D45",
+   "D47",
+   "D60",
+   "D74",
+   "D82"
+  ]
+ },
+ {
+  "id": "D66",
+  "n": 66,
+  "file": "decisions/D66-progress-based-and-slack.md",
+  "text": "Progress-based, not calendar-based: the autopilot runs round the clock from 24 Sep, target everything (IR then IM) built by Sat 3 Oct, then test & harden; dates are projections from measured pace (autopilot/status.mjs, Progress sheet); everything tracked in Slack #growize-app-documents (per-round webhook posts, tracker canvas, 3× daily Cowork summary)",
+  "date": "24 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.14,
+  "probs": {
+   "consistent": 0.32,
+   "superseded": 0.36,
+   "contradicts_rule": 0.03,
+   "contradicts_decision": 0.29
+  },
+  "with": "D65",
+  "withConf": 0.79,
+  "related": [
+   "D65",
+   "D72",
+   "D81",
+   "D77",
+   "D105",
+   "D8",
+   "D15",
+   "D62"
+  ]
+ },
+ {
+  "id": "D68",
+  "n": 68,
+  "file": "decisions/D68-sahil-super-user.md",
+  "text": "Sahil is the super user of the merged console: every page and action of both sides (incl. PAN/Aadhaar/bank reveals, logged) so one account tests every feature; Finance (Harsha) stays the primary doer of money and paperwork, Compliance of KYC, Account Management of care — their queues stay theirs and are labelled so; Investors-side browser dialogs replaced by in-page refusals and confirmations",
+  "date": "25 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.76,
+  "probs": {
+   "contradicts_rule": 0.82,
+   "contradicts_decision": 0.12,
+   "consistent": 0.02,
+   "superseded": 0.04
+  },
+  "with": "D60",
+  "withConf": 0.62,
+  "related": [
+   "D78",
+   "D93",
+   "D13",
+   "D22",
+   "D60",
+   "D65",
+   "D69",
+   "D79"
+  ]
+ },
+ {
+  "id": "D69",
+  "n": 69,
+  "file": "decisions/D69-search-stays-separate.md",
+  "text": "Search stays separate: top-bar search = leads only in the searcher's book; investor search on the Investors page; an IR sees investor data only for investors from their own lead (mechanism open, OD2)",
+  "date": "25 Sep 2026",
+  "verdict": "contradicts_decision",
+  "conf": 0.28,
+  "probs": {
+   "consistent": 0.36,
+   "superseded": 0.14,
+   "contradicts_decision": 0.47000000000000003,
+   "contradicts_rule": 0.03
+  },
+  "with": "D60",
+  "withConf": 0.85,
+  "related": [
+   "D93",
+   "D60",
+   "D82",
+   "D56",
+   "D74",
+   "D83",
+   "D15",
+   "D29"
+  ]
+ },
+ {
+  "id": "D70",
+  "n": 70,
+  "file": "decisions/D70-documents-and-payments-three-scopes.md",
+  "text": "Documents and payments have three scopes — personal (Contact), allotment (investor × LLP, incl. Receipts), project (LLP); prototype's investor-only DOCS/TXN and Blocks A–F map to the real LLP/allotment modules; canonical allotment module open (OD1)",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.66,
+  "probs": {
+   "contradicts_rule": 0.06,
+   "superseded": 0.17,
+   "consistent": 0.74,
+   "contradicts_decision": 0.03
+  },
+  "with": "D77",
+  "withConf": 0.42,
+  "related": [
+   "D77",
+   "D76",
+   "D82",
+   "D54",
+   "D74",
+   "D79",
+   "D81",
+   "D72"
+  ]
+ },
+ {
+  "id": "D71",
+  "n": 71,
+  "file": "decisions/D71-upload-straight-from-the-console.md",
+  "text": "Upload straight from the console to Zoho (Attachments API / ZFS + file-upload fields, 20 MB, allowlist, own token, no copy) — nobody uses the Zoho UI to upload",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.52,
+  "probs": {
+   "contradicts_rule": 0.02,
+   "consistent": 0.64,
+   "superseded": 0.2,
+   "contradicts_decision": 0.14
+  },
+  "with": "D78",
+  "withConf": 0.46,
+  "related": [
+   "D72",
+   "D47",
+   "D74",
+   "D77",
+   "D78",
+   "D79",
+   "D45",
+   "D46"
+  ]
+ },
+ {
+  "id": "D72",
+  "n": 72,
+  "file": "decisions/D72-zoho-sign-inside-the-console.md",
+  "text": "Zoho Sign inside the console: send from template/PDF, HMAC webhooks for status, signed PDF filed to the allotment, investor signs by email or embedded in the app, record emails via the viewer's own token; per-user isolation suite; needs a Sign plan with API (AP3)",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.42,
+  "probs": {
+   "consistent": 0.57,
+   "superseded": 0.1,
+   "contradicts_decision": 0.19,
+   "contradicts_rule": 0.14
+  },
+  "with": "D78",
+  "withConf": 0.67,
+  "related": [
+   "D79",
+   "D93",
+   "D77",
+   "D78",
+   "D81",
+   "D17",
+   "D55",
+   "D71"
+  ]
+ },
+ {
+  "id": "D73",
+  "n": 73,
+  "file": "decisions/D73-tickets-and-updates-go-to-the-investor-app.md",
+  "text": "Tickets and investor updates are pushed to the existing investor app through the signed contracts; stub receiver until the app codebase is added (MA1)",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.32,
+  "probs": {
+   "superseded": 0.18,
+   "contradicts_decision": 0.05,
+   "contradicts_rule": 0.27,
+   "consistent": 0.5
+  },
+  "with": "D93",
+  "withConf": 0.42,
+  "related": [
+   "D76",
+   "D72",
+   "D82",
+   "D93",
+   "D43",
+   "D56",
+   "D75",
+   "D77"
+  ]
+ },
+ {
+  "id": "D74",
+  "n": 74,
+  "file": "decisions/D74-owner-answers-and-first-zoho-fields.md",
+  "text": "Owner answers: allotments live in LLP_Unit_Allocation (extend it); an IR's own investors = the lead owner at Said yes, enforced by a Zoho record share; renewal off our list; Zoho writes approved if the mapping is right — 75-row mapping checked with Jev, 36 fields created in production (Contacts 20, allotment 10, LLP 6), 2 held, modules/Setup items listed",
+  "date": "25 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.94,
+  "probs": {
+   "consistent": 0,
+   "superseded": 0.96,
+   "contradicts_rule": 0.01,
+   "contradicts_decision": 0.03
+  },
+  "with": "D75",
+  "withConf": 1,
+  "related": [
+   "D77",
+   "D75",
+   "D79",
+   "D85",
+   "D76",
+   "D82",
+   "D52",
+   "D55"
+  ]
+ },
+ {
+  "id": "D75",
+  "n": 75,
+  "file": "decisions/D75-allotments-in-llp-unitallocation-module.md",
+  "text": "Correction: allotments live in LLP_UnitAllocation_Module (active investors), restoring D54; 9 fields created and verified there; existing Total_Amount_Received/Receivable, Reserved_Units, Customer_Status reused; the 10 D74 fields on LLP_Unit_Allocation to be deleted in Setup",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.32,
+  "probs": {
+   "contradicts_decision": 0.13,
+   "consistent": 0.49,
+   "superseded": 0.37,
+   "contradicts_rule": 0.01
+  },
+  "with": "D74",
+  "withConf": 0.79,
+  "related": [
+   "D74",
+   "D77",
+   "D79",
+   "D85",
+   "D76",
+   "D82",
+   "D54",
+   "D78"
+  ]
+ },
+ {
+  "id": "D76",
+  "n": 76,
+  "file": "decisions/D76-zoho-setup-modules-and-touches.md",
+  "text": "One shared Touches module for IR touches and KAM conversations (Jev 0.64 vs 0.30); Cases enabled + 3 fields; Receipts, Touches, Investor Updates modules created with Jev-trimmed fields; Lead_Source values added; history on App_Account_Mark; Documents module, 'Darft' fix, field deletions and FLS held",
+  "date": "25 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.34,
+  "probs": {
+   "consistent": 0.07,
+   "superseded": 0.51,
+   "contradicts_decision": 0.37,
+   "contradicts_rule": 0.05
+  },
+  "with": "D77",
+  "withConf": 0.93,
+  "related": [
+   "D82",
+   "D77",
+   "D70",
+   "D74",
+   "D79",
+   "D54",
+   "D80",
+   "D81"
+  ]
+ },
+ {
+  "id": "D77",
+  "n": 77,
+  "file": "decisions/D77-no-documents-module-cleanup-access-draft.md",
+  "text": "No Documents module (owner + Jev 0.95): files stay in slots/Attachments per investor, allotment, LLP; signing read live from Zoho Sign; 10 unused LLP_Unit_Allocation fields deleted after an emptiness check; access plan drafted (docs/ACCESS-PLAN.md) with R1 Administrator-bypass decision",
+  "date": "25 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.32,
+  "probs": {
+   "consistent": 0.06,
+   "contradicts_rule": 0.49,
+   "superseded": 0.32,
+   "contradicts_decision": 0.13
+  },
+  "with": "D78",
+  "withConf": 0.54,
+  "related": [
+   "D74",
+   "D78",
+   "D82",
+   "D70",
+   "D72",
+   "D79",
+   "D93",
+   "D76"
+  ]
+ },
+ {
+  "id": "D78",
+  "n": 78,
+  "file": "decisions/D78-access-approved-sign-plus-manual-upload.md",
+  "text": "Access plan approved; Sahil stays Administrator (owner/developer); Compliance and Auditor one seat; every paper can arrive by Zoho Sign or manual upload into the same slot, both verified the same way; Zoho Sign is on Free Edition (no API/webhooks) — upgrade needed for integration",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.18,
+  "probs": {
+   "consistent": 0.39,
+   "superseded": 0.23,
+   "contradicts_rule": 0.27,
+   "contradicts_decision": 0.11
+  },
+  "with": "D72",
+  "withConf": 0.22,
+  "related": [
+   "D77",
+   "D79",
+   "D68",
+   "D72",
+   "D82",
+   "D84",
+   "D93",
+   "D20"
+  ]
+ },
+ {
+  "id": "D79",
+  "n": 79,
+  "file": "decisions/D79-integrations-and-paper-fields.md",
+  "text": "23 paper-tracking fields created (NDA on Lead; FEMA/PAN/bank on Contact; supplementary/allocation letter/unit certificate on allotment). Integrations corrected: staff Zoho OAuth; investors Supabase; mail is Google Workspace via CRM Send Mail (not Zoho Mail); Google Calendar sync; Zoho Sign needs upgrade; templates via a small Mail Templates module (CRM API can't write templates); SPF has 3 records — fix",
+  "date": "25 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.39,
+  "probs": {
+   "contradicts_rule": 0.54,
+   "contradicts_decision": 0.14,
+   "consistent": 0.17,
+   "superseded": 0.15
+  },
+  "with": "D17",
+  "withConf": 0.61,
+  "related": [
+   "D72",
+   "D85",
+   "D6",
+   "D17",
+   "D74",
+   "D77",
+   "D78",
+   "D82"
+  ]
+ },
+ {
+  "id": "D80",
+  "n": 80,
+  "file": "decisions/D80-mail-templates-roles-default-sharing.md",
+  "text": "Mail Templates module + 5 seeded templates; role tree (11 roles) and default sharing applied (Emails now Private; farms, updates, templates Public Read Only); sharing rules, profiles and field-level security not applied — access grants left to the owner",
+  "date": "25 Sep 2026",
+  "verdict": "contradicts_rule",
+  "conf": 0.28,
+  "probs": {
+   "superseded": 0.02,
+   "contradicts_decision": 0.07,
+   "consistent": 0.45,
+   "contradicts_rule": 0.46
+  },
+  "with": "none",
+  "withConf": 0.42,
+  "related": [
+   "D5",
+   "D17",
+   "D77",
+   "D82",
+   "D84",
+   "D13",
+   "D52",
+   "D64"
+  ]
+ },
+ {
+  "id": "D81",
+  "n": 81,
+  "file": "decisions/D81-templates-copies-draft-fix-finance-minimal.md",
+  "text": "Personal template copies (Shared/Personal + Copied_From, 10 per user, console-enforced); \"Darft\" label fixed to Draft (API value unchanged); SPF note posted to Slack; minimal money model proposed (units × price, receipts, everything else computed); payouts/TDS open",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.79,
+  "probs": {
+   "superseded": 0.03,
+   "contradicts_rule": 0.11,
+   "contradicts_decision": 0.02,
+   "consistent": 0.84
+  },
+  "with": "none",
+  "withConf": 0.46,
+  "related": [
+   "D72",
+   "D82",
+   "D107",
+   "D22",
+   "D60",
+   "D66",
+   "D68",
+   "D70"
+  ]
+ },
+ {
+  "id": "D82",
+  "n": 82,
+  "file": "decisions/D82-payouts-claims-events-plan-ladder.md",
+  "text": "Investor Payouts module (one record per monthly payout, 60 per 5-yr allotment; tab on investor page + Finance due queue, no new page); \"Claimed\" added to Receipts.Match_State; Campaigns activated for events (+Leads.Event); Sales Plans module; Lead_Status ladder values added (6 old values blocked by Blueprint \"Lead nurturing process\"); 41 empty extra fields verified but removal left to owner",
+  "date": "25 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.42,
+  "probs": {
+   "contradicts_decision": 0.22,
+   "contradicts_rule": 0.05,
+   "superseded": 0.56,
+   "consistent": 0.17
+  },
+  "with": "D83",
+  "withConf": 0.57,
+  "related": [
+   "D85",
+   "D76",
+   "D83",
+   "D84",
+   "D77",
+   "D74",
+   "D20",
+   "D22"
+  ]
+ },
+ {
+  "id": "D83",
+  "n": 83,
+  "file": "decisions/D82-payouts-claims-events-plan-ladder.md#d83",
+  "text": "Events become 3 fields on the lead (Event_Name/Date/Channel), no Events page, Campaigns switched off again; leads come in from a Google Sheet loaded in the console with preview + duplicate check (M04-S04 In plan)",
+  "date": "25 Sep 2026",
+  "verdict": "superseded",
+  "conf": 0.85,
+  "probs": {
+   "consistent": 0.01,
+   "superseded": 0.89,
+   "contradicts_rule": 0.03,
+   "contradicts_decision": 0.07
+  },
+  "with": "D85",
+  "withConf": 0.66,
+  "related": [
+   "D82",
+   "D85",
+   "D84",
+   "D35",
+   "D55",
+   "D60",
+   "D65",
+   "D69"
+  ]
+ },
+ {
+  "id": "D84",
+  "n": 84,
+  "file": "decisions/D82-payouts-claims-events-plan-ladder.md",
+  "text": "Events back to the portal design (event records, Events page, CSV load tagged to an event, portal owner rules + manual Assign owner); event store in Zoho awaits owner choice (Campaigns vs custom module); TDS not computed",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.41,
+  "probs": {
+   "consistent": 0.55,
+   "contradicts_rule": 0.06,
+   "superseded": 0.35,
+   "contradicts_decision": 0.04
+  },
+  "with": "D85",
+  "withConf": 0.29,
+  "related": [
+   "D82",
+   "D85",
+   "D17",
+   "D5",
+   "D55",
+   "D77",
+   "D78",
+   "D79"
+  ]
+ },
+ {
+  "id": "D85",
+  "n": 85,
+  "file": "decisions/D82-payouts-claims-events-plan-ladder.md",
+  "text": "Lead Events module (portal event record + staff roster + load log) and Leads.Lead_Event created; D83 lead event fields deleted; 41 empty legacy fields deleted (34 allotment, 7 Contacts)",
+  "date": "25 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.49,
+  "probs": {
+   "contradicts_rule": 0.02,
+   "contradicts_decision": 0.22,
+   "consistent": 0.62,
+   "superseded": 0.14
+  },
+  "with": "D83",
+  "withConf": 0.63,
+  "related": [
+   "D82",
+   "D74",
+   "D79",
+   "D84",
+   "D77",
+   "D83",
+   "D17",
+   "D75"
+  ]
+ },
+ {
+  "id": "D93",
+  "n": 93,
+  "file": "decisions/D93-app-access-from-the-console.md",
+  "text": "Investor app access is run from the console, never the Zoho UI: accounts open On hold (data synced, sign-in locked, no email); Finance presses Send welcome and unlock; add already-paid investors from the Investors page; read-only audited View as investor. Adds M09-S09, M10-S21, M10-S22; M08-S08 opens on hold",
+  "date": "",
+  "verdict": "consistent",
+  "conf": 0.33,
+  "probs": {
+   "contradicts_decision": 0.09,
+   "consistent": 0.49,
+   "superseded": 0.08,
+   "contradicts_rule": 0.34
+  },
+  "with": "none",
+  "withConf": 0.27,
+  "related": [
+   "D72",
+   "D55",
+   "D60",
+   "D69",
+   "D77",
+   "D24",
+   "D68",
+   "D79"
+  ]
+ },
+ {
+  "id": "D104",
+  "n": 104,
+  "file": "decisions/D104-tracker-waiting-wire-phase.md",
+  "text": "Tracker shows done and waiting apart; 66 FRONT-END LOOP notes become phase 2b \"wire\" units (64 units, 32 loop h); review no longer holds a phase; BLOCKED.md counted by kind; UAT is a dated stage with entry criteria",
+  "date": "28 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.72,
+  "probs": {
+   "consistent": 0.79,
+   "superseded": 0.07,
+   "contradicts_rule": 0.11,
+   "contradicts_decision": 0.03
+  },
+  "with": "none",
+  "withConf": 0.7,
+  "related": [
+   "D105",
+   "D62",
+   "D107"
+  ]
+ },
+ {
+  "id": "D105",
+  "n": 105,
+  "file": "decisions/D105-harden-phase.md",
+  "text": "Phase 2c \"harden\" in a parallel worktree: route contract suite (M18-S14), browser/request hardening (M18-S15), webhook tests (M12-S05-H5), Jev failure triage (M19-S12), UAT pack (M18-S08-H5/H6); 5 units, 12.5 loop h; phase 3 waits for the sandbox",
+  "date": "28 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.61,
+  "probs": {
+   "contradicts_decision": 0.07,
+   "consistent": 0.71,
+   "superseded": 0.16,
+   "contradicts_rule": 0.06
+  },
+  "with": "D104",
+  "withConf": 0.21,
+  "related": [
+   "D104",
+   "D107",
+   "D65",
+   "D66",
+   "D68",
+   "D106"
+  ]
+ },
+ {
+  "id": "D106",
+  "n": 106,
+  "file": "decisions/D106-jev-rulings.md",
+  "text": "Jev rulings sheet over all open PROVISIONAL/FACT CHANGE lines with decisions + rules as state (docs/reports/rulings-2026-09-29.md: 15 reverse, 4 confirm, 12 needs-you, 78 undecided); jev decide attaches cited decisions automatically",
+  "date": "29 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.9,
+  "probs": {
+   "superseded": 0.04,
+   "contradicts_rule": 0.03,
+   "consistent": 0.92,
+   "contradicts_decision": 0.01
+  },
+  "with": "none",
+  "withConf": 0.91,
+  "related": [
+   "D63",
+   "D56",
+   "D64",
+   "D65",
+   "D70",
+   "D77",
+   "D107"
+  ]
+ },
+ {
+  "id": "D107",
+  "n": 107,
+  "file": "decisions/D107-one-jev-layer.md",
+  "text": "One Jev layer (M19-S13, phase 2c): shared client, grounding, versioned questions, calibration and threshold per question type, owner never-list; UI runner migrates with questions/PASS_AT unchanged",
+  "date": "29 Sep 2026",
+  "verdict": "consistent",
+  "conf": 0.82,
+  "probs": {
+   "contradicts_rule": 0.06,
+   "consistent": 0.86,
+   "superseded": 0.07,
+   "contradicts_decision": 0.01
+  },
+  "with": "none",
+  "withConf": 0.69,
+  "related": [
+   "D19",
+   "D57",
+   "D64",
+   "D55",
+   "D56",
+   "D59",
+   "D63",
+   "D65"
+  ]
+ }
+]

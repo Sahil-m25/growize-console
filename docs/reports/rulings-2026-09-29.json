@@ -1,0 +1,2310 @@
+[
+ {
+  "ticked": false,
+  "id": "M04-S02-NOTE-2",
+  "story": "M04-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "M04-S02-T01 says the duplicate lookup uses a service read across the org; CLAUDE.md rule 2 (D53) says a service token never serves a screen, so it was built on the person's own token instead. Consequence for acceptance 3: a number held in a book the IR cannot see is not known while typing; it is refused at Add by Zoho's duplicate check, with no name and no id. To keep \"known while typing\", the owner would have to allow a named service job for this in the ServiceJob list (a rule change), which was not done.",
+  "refs": [
+   "D53",
+   "D45"
+  ],
+  "choice": "confirm",
+  "conf": 0.5,
+  "probs": {
+   "confirm": 0.66,
+   "reverse": 0.3,
+   "owner": 0.04
+  },
+  "cost": 0.26
+ },
+ {
+  "ticked": false,
+  "id": "M02-S10-NOTE-2",
+  "story": "M02-S10",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E02-020 currently says both GET /crm/v8/settings/profiles and a Zoho Books call must return OAUTH_SCOPE_MISMATCH, but this story explicitly grants CRM settings read. Expected behaviour should distinguish the allowed in-scope CRM call from the refused Books call; do not change the case until the owner resolves it.",
+  "refs": [
+   "D26",
+   "D51"
+  ],
+  "choice": "confirm",
+  "conf": 0.62,
+  "probs": {
+   "confirm": 0.75,
+   "reverse": 0.09,
+   "owner": 0.16
+  },
+  "cost": 0.22
+ },
+ {
+  "ticked": false,
+  "id": "M04-S01-NOTE-2",
+  "story": "M04-S01",
+  "kind": "PROVISIONAL",
+  "text": "How is an unassigned lead represented in Zoho, where every record must have an Owner? → built as (b) a dedicated 'Unassigned' queue user owns it (Jev 0.49 vs 0.49 for (a) the adding manager owns it with Owner_Assigned_At empty; LOW CONFIDENCE). Needs a seat for that user, or choose (a) and the capture server changes one line (unassignedQueueUserId = the manager). Until decided, an unassigned capture is refused with 'the unassigned queue is not set up in Zoho yet'.",
+  "refs": [
+   "D45",
+   "D53",
+   "D59",
+   "D84"
+  ],
+  "choice": "owner",
+  "conf": 0.64,
+  "probs": {
+   "owner": 0.76,
+   "confirm": 0.03,
+   "reverse": 0.21
+  },
+  "cost": 0.44
+ },
+ {
+  "ticked": false,
+  "id": "M20-S08-NOTE-2",
+  "story": "M20-S08",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "M20-S08-T03 says to store Sign status on the Zoho record, but D77 requires status to be read live from Zoho Sign and D79 created request-id/verification fields without a status field. The local webhook therefore verifies and re-fetches the request, resolves its stored request-id binding, and observes the event without duplicating status. M12-S06 must file the signed PDF plus completion certificate and set Agreement_Signed as one compensated act. Confirm whether D77 still governs or approve named status fields before code writes any status.",
+  "refs": [
+   "D77",
+   "D79",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.12,
+  "probs": {
+   "reverse": 0.41,
+   "owner": 0.18,
+   "confirm": 0.41
+  },
+  "cost": 0.8
+ },
+ {
+  "ticked": false,
+  "id": "M05-S01-NOTE-1",
+  "story": "M05-S01",
+  "kind": "PROVISIONAL",
+  "text": "Where are nextUp/workGroup computed for Today in the Zoho phase? → built as (b): the server returns the Today read (open leads in scope plus their open Tasks, Calls and Meetings; lost and onboarded left out) and the existing ported rule in features/today/work.ts computes nextUp/workGroup once the data interface feeds it Zoho rows (Jev 0.80 vs 0.20; one rule, one place — CLAUDE.md rule 1). The plan's \"compute server-side\" and \"cache 60s\" are not built: rows are records and the shared cache holds counts only (D52).",
+  "refs": [
+   "D52",
+   "D39",
+   "D45",
+   "D53",
+   "D59"
+  ],
+  "choice": "confirm",
+  "conf": 0.48,
+  "probs": {
+   "reverse": 0.33,
+   "owner": 0.02,
+   "confirm": 0.65
+  },
+  "cost": 0.28
+ },
+ {
+  "ticked": false,
+  "id": "M07-S03-NOTE-2",
+  "story": "M07-S03",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "M07-S03-T01 says a saved follow-up \"writes Calls (completed)\"; D76 (as applied, 25 Sep) made the shared Touches module the one log of every human contact, and D58 keeps Calls for scheduled callbacks. Built per D76/D58: the contact is one Touch (Channel, Occurred_At, Is_Reply, Note = outcome — note), and a Call is created only when the next step is a call. The route handlers (POST /api/leads/[id]/followup and /undo) are not built yet because the session layer that turns a request into the signed-in person's credential does not exist; the server functions are ready for them.",
+  "refs": [
+   "D76",
+   "D58",
+   "D57",
+   "D45",
+   "D41",
+   "D47"
+  ],
+  "choice": "confirm",
+  "conf": 0.68,
+  "probs": {
+   "confirm": 0.79,
+   "reverse": 0.2,
+   "owner": 0.01
+  },
+  "cost": 0.57
+ },
+ {
+  "ticked": false,
+  "id": "M03-S01-NOTE-2",
+  "story": "M03-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E03-002 'does not offer Harsha Bhat' → Harsha Bhat (Head of Finance) signs in for the Investors side in the merged console (D98, merge notes 'Who sees what'). The prototype fails this fact too.",
+  "refs": [
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.28,
+  "probs": {
+   "owner": 0.06,
+   "confirm": 0.42,
+   "reverse": 0.52
+  },
+  "cost": 0.5
+ },
+ {
+  "ticked": false,
+  "id": "M03-S01-NOTE-1",
+  "story": "M03-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E03-001 'offers exactly six people … does not offer Harsha Bhat / Arvind Menon or Pradeep Ram' → the merged console (D98, prototype growize-console-merged.html vSignin) offers every person either side admits: the four IRs, Tasneem, Harsha, Meena, Fahad, Latha, Divya, Imran, Neha, Sahil and Pradeep (Investors-side administrator). The prototype itself fails this case; the fact predates the merge.",
+  "refs": [
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.72,
+  "probs": {
+   "owner": 0.06,
+   "reverse": 0.81,
+   "confirm": 0.13
+  },
+  "cost": 0.45
+ },
+ {
+  "ticked": false,
+  "id": "M03-S01-NOTE-3",
+  "story": "M03-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E03-004 'does not offer Pradeep Ram' → Pradeep Ram holds the Investors-side administrator seat (System, Activity, Team) in the merged console, so he is offered. The prototype fails this fact too.",
+  "refs": [
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.1,
+  "probs": {
+   "reverse": 0.4,
+   "owner": 0.28,
+   "confirm": 0.32
+  },
+  "cost": 0.38
+ },
+ {
+  "ticked": false,
+  "id": "M06-S02-NOTE-1",
+  "story": "M06-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E06-006 'A chip Name, A to Z × is shown' / 'offers Clear filters' → no chip: Name, A to Z is the default order and the merged prototype shows a chip only for a non-default sort. The prototype fails this case too.",
+  "refs": [
+   "D59",
+   "D60"
+  ],
+  "choice": "reverse",
+  "conf": 0.31,
+  "probs": {
+   "reverse": 0.54,
+   "owner": 0.22,
+   "confirm": 0.24
+  },
+  "cost": 0.11
+ },
+ {
+  "ticked": false,
+  "id": "M14-S02-NOTE-1",
+  "story": "M14-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E10-007 — the step that sets a run event back to Planned should be dropped: Planned is disabled for an event that has run (a run event cannot go back to planned). The facts can stay. The prototype fails the case too.",
+  "refs": [
+   "D45",
+   "D48",
+   "D59",
+   "D68",
+   "D84"
+  ],
+  "choice": "confirm",
+  "conf": 0.81,
+  "probs": {
+   "reverse": 0.1,
+   "owner": 0.03,
+   "confirm": 0.87
+  },
+  "cost": 0.39
+ },
+ {
+  "ticked": false,
+  "id": "M14-S03-NOTE-1",
+  "story": "M14-S03",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E10-012 'Sahil cannot load / no Load 31 leads' → 'Sahil (super user, D68) is offered Load 31 leads'. In the merged prototype his seat can load the sheet; the prototype fails the case too.",
+  "refs": [
+   "D68",
+   "D45",
+   "D59",
+   "D60",
+   "D84"
+  ],
+  "choice": "reverse",
+  "conf": 0.64,
+  "probs": {
+   "confirm": 0.14,
+   "reverse": 0.77,
+   "owner": 0.09
+  },
+  "cost": 0.38
+ },
+ {
+  "ticked": false,
+  "id": "M15-S01-NOTE-1",
+  "story": "M15-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E11-004 '…Needs attention, listing Ritu Anand and Harish Kamath' / '…listing Sanjay Menon and Farida Contractor' → '…Needs attention, reading They are listed once, on Leads under Needs an owner.' / '…They are listed once, on Today in the team's queue.' The merged prototype never lists names in those two groups.",
+  "refs": [
+   "D31",
+   "D47",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.24,
+  "probs": {
+   "owner": 0.08,
+   "reverse": 0.5,
+   "confirm": 0.42
+  },
+  "cost": 0.15
+ },
+ {
+  "ticked": false,
+  "id": "M10-S02-NOTE-1",
+  "story": "M10-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-IM05-009 and TC-IM05-010 steps 'Press Transactions' → 'Press Payments'. In the merged console the Investors page Transactions is the rail entry Payments (merge-glue.js MT). The prototype fails both cases for this reason.",
+  "refs": [
+   "D10",
+   "D19",
+   "D21",
+   "D22",
+   "D70",
+   "D73"
+  ],
+  "choice": "confirm",
+  "conf": 0.41,
+  "probs": {
+   "confirm": 0.6,
+   "owner": 0.23,
+   "reverse": 0.17
+  },
+  "cost": 0.09
+ },
+ {
+  "ticked": false,
+  "id": "M12-S14-NOTE-1",
+  "story": "M12-S14",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E09-019 'a Call back step due 28 Aug · 16:30' → a wording true both before and after 16:30 (e.g. 'a Call back step for 28 Aug at 16:30'), or add fixture CLOCK_28AUG_1000. The row reads 'Call back — today at 16:30' before 16:30 and 'Overdue · Call back — was due 28 Aug · 16:30' after it, on the app and the prototype alike (the prototype fails it in the morning).",
+  "refs": [
+   "D61"
+  ],
+  "choice": "confirm",
+  "conf": 0.29,
+  "probs": {
+   "reverse": 0.28,
+   "owner": 0.2,
+   "confirm": 0.52
+  },
+  "cost": 0.09
+ },
+ {
+  "ticked": false,
+  "id": "M01-S01-NOTE-1",
+  "story": "M01-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-IM01-001..004 and other Investors-portal cases still name the old portal's rail (Dashboard, Transactions, Insights, Activity log, Team, 'Toggle theme', 'Signed in as' dropdown). In the merged console (D98) these are Today, Payments, Numbers, Activity, Teams, the account menu's appearance control and the sign-in screen. The prototype fails these facts too; they need rewording to the merged names.",
+  "refs": [
+   "D26",
+   "D27",
+   "D28",
+   "D33",
+   "D40",
+   "D60",
+   "D68"
+  ],
+  "choice": "confirm",
+  "conf": 0.83,
+  "probs": {
+   "reverse": 0.1,
+   "owner": 0.01,
+   "confirm": 0.89
+  },
+  "cost": 0.1
+ },
+ {
+  "ticked": false,
+  "id": "M10-S02-NOTE-2",
+  "story": "M10-S02",
+  "kind": "PROVISIONAL",
+  "text": "recording a receipt still marks it matched by the recorder, as the merged prototype does; D21/CLAUDE.md rule 3 (record freely, matching gated by a second person) would make recorded receipts pending until 'Match it'. Built as the prototype; 'Match it' exists for pending rows (lapse refunds today). Owner to decide whether phase 2 makes every recorded receipt pending.",
+  "refs": [
+   "D21",
+   "D10",
+   "D19",
+   "D22",
+   "D70",
+   "D73"
+  ],
+  "choice": "reverse",
+  "conf": 0.05,
+  "probs": {
+   "owner": 0.29,
+   "reverse": 0.37,
+   "confirm": 0.34
+  },
+  "cost": 0.65
+ },
+ {
+  "ticked": false,
+  "id": "M10-S08-NOTE-1",
+  "story": "M10-S08",
+  "kind": "PROVISIONAL",
+  "text": "the two-farm investor, an app On hold and a locked app are shown only with the new fixture IM:MONEY_DEMO (added to pm/merge-audit/ui-sahil/fixtures-merged.json), because every demo investor in the prototype holds one block and changing the default book would change the prototype's Investors list. Owner to OK the catalogue entry.",
+  "refs": [
+   "D70",
+   "D48"
+  ],
+  "choice": "owner",
+  "conf": 0.47,
+  "probs": {
+   "confirm": 0.26,
+   "reverse": 0.1,
+   "owner": 0.64
+  },
+  "cost": 0.26
+ },
+ {
+  "ticked": false,
+  "id": "M01-S02-NOTE-2",
+  "story": "M01-S02",
+  "kind": "PROVISIONAL",
+  "text": "A Zoho-signed-in session holds the Zoho CRM user id from CurrentUser as its PersonKey (Jev 0.94), until the Zoho data source keys PEOPLE.",
+  "refs": [
+   "D30",
+   "D41",
+   "D53",
+   "D60"
+  ],
+  "choice": "reverse",
+  "conf": 0.34,
+  "probs": {
+   "reverse": 0.55,
+   "owner": 0.07,
+   "confirm": 0.38
+  },
+  "cost": 0.35
+ },
+ {
+  "ticked": false,
+  "id": "M19-S01-NOTE-1",
+  "story": "M19-S01",
+  "kind": "PROVISIONAL",
+  "text": "the a11y lint (npm run lint:a11y) is in place but not wired into a pre-commit hook or CI yet; wire it when CI exists. Controls the prototype leaves unlabelled carry a title rather than an aria-label so the UI cases still find them by their row.",
+  "refs": [
+   "D63"
+  ],
+  "choice": "confirm",
+  "conf": 0.32,
+  "probs": {
+   "confirm": 0.54,
+   "reverse": 0.4,
+   "owner": 0.06
+  },
+  "cost": 0.18
+ },
+ {
+  "ticked": false,
+  "id": "M01-S02-NOTE-3",
+  "story": "M01-S02",
+  "kind": "PROVISIONAL",
+  "text": "Only a definitive Zoho refusal (error body or 400/401) on token refresh signs a person out as 'revoked'; a network error, timeout or 5xx fails that one request and keeps the session (Jev, low confidence).",
+  "refs": [
+   "D30",
+   "D41",
+   "D53",
+   "D60"
+  ],
+  "choice": "reverse",
+  "conf": 0.44,
+  "probs": {
+   "confirm": 0.27,
+   "reverse": 0.62,
+   "owner": 0.11
+  },
+  "cost": 0.37
+ },
+ {
+  "ticked": false,
+  "id": "M18-S04-NOTE-3",
+  "story": "M18-S04",
+  "kind": "PROVISIONAL",
+  "text": "A 5xx spike alert is at least 5 server errors within 5 minutes (Jev 0.66); every alert rule has a 30-minute cool-down and the credits-header alert fires at most once per Kolkata day.",
+  "refs": [
+   "D41",
+   "D47"
+  ],
+  "choice": "reverse",
+  "conf": 0.25,
+  "probs": {
+   "owner": 0.25,
+   "reverse": 0.5,
+   "confirm": 0.25
+  },
+  "cost": 0.18
+ },
+ {
+  "ticked": false,
+  "id": "M10-S01-NOTE-4",
+  "story": "M10-S01",
+  "kind": "PROVISIONAL",
+  "text": "A moved legacy payment's Kind is inferred - the payment that brings the allotment to units x unit price is Full, a first payment equal to Token_Advance_Amount is Advance, every other is Part (Jev 0.78).",
+  "refs": [
+   "D21",
+   "D45",
+   "D54",
+   "D70"
+  ],
+  "choice": "owner",
+  "conf": 0.14,
+  "probs": {
+   "owner": 0.43,
+   "reverse": 0.35,
+   "confirm": 0.22
+  },
+  "cost": 0.75
+ },
+ {
+  "ticked": false,
+  "id": "M18-S04-NOTE-4",
+  "story": "M18-S04",
+  "kind": "PROVISIONAL",
+  "text": "Plane B error lines are kept in an in-memory buffer of 2,000 until D47 decides where Plane B is stored.",
+  "refs": [
+   "D47",
+   "D41"
+  ],
+  "choice": "reverse",
+  "conf": 0.2,
+  "probs": {
+   "reverse": 0.45999999999999996,
+   "confirm": 0.28,
+   "owner": 0.26
+  },
+  "cost": 0.23
+ },
+ {
+  "ticked": false,
+  "id": "M10-S01-NOTE-5",
+  "story": "M10-S01",
+  "kind": "PROVISIONAL",
+  "text": "Moved legacy receipts get Match_State Matched with a Note naming the source record and slot (Jev, low confidence).",
+  "refs": [
+   "D21",
+   "D45",
+   "D54",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.09,
+  "probs": {
+   "owner": 0.29,
+   "confirm": 0.31,
+   "reverse": 0.4
+  },
+  "cost": 0.65
+ },
+ {
+  "ticked": false,
+  "id": "M01-S03-NOTE-1",
+  "story": "M01-S03",
+  "kind": "PROVISIONAL",
+  "text": "An IR Manager's team leads are read with no owner filter on the manager's own token, relying on Zoho's role hierarchy, until a server reader of the Zoho Users reporting_to subtree exists (Jev 0.58, low confidence).",
+  "refs": [
+   "D45",
+   "D46",
+   "D47",
+   "D53",
+   "D69"
+  ],
+  "choice": "reverse",
+  "conf": 0.48,
+  "probs": {
+   "owner": 0.08,
+   "reverse": 0.65,
+   "confirm": 0.27
+  },
+  "cost": 0.24
+ },
+ {
+  "ticked": false,
+  "id": "M01-S03-NOTE-3",
+  "story": "M01-S03",
+  "kind": "PROVISIONAL",
+  "text": "Field API names for Cases (Category, SLA_Due, Closed_At), ARL_Holdings, ARL_Transactions, allotment Issued_On/Annual_Rental_Yield and Contacts.Originating_IR come from money-types.ts and the Zoho mapping and must be confirmed against the sandbox (M02-S10) before live use.",
+  "refs": [
+   "D45",
+   "D46",
+   "D47",
+   "D53",
+   "D69"
+  ],
+  "choice": "owner",
+  "conf": 0.25,
+  "probs": {
+   "confirm": 0.47,
+   "owner": 0.5,
+   "reverse": 0.03
+  },
+  "cost": 0.38
+ },
+ {
+  "ticked": false,
+  "id": "M01-S03-NOTE-2",
+  "story": "M01-S03",
+  "kind": "PROVISIONAL",
+  "text": "Digital Infrastructure (ops/di) gets the 'all' scope in server/data/scope.ts, but an Administrator-profile seat cannot sign in yet, so that scope is unused until the owner resolves Sahil's profile.",
+  "refs": [
+   "D45",
+   "D46",
+   "D47",
+   "D53",
+   "D69"
+  ],
+  "choice": "reverse",
+  "conf": 0.08,
+  "probs": {
+   "confirm": 0.25,
+   "owner": 0.37,
+   "reverse": 0.38
+  },
+  "cost": 0.09
+ },
+ {
+  "ticked": false,
+  "id": "M03-S01-NOTE-5",
+  "story": "M03-S01",
+  "kind": "PROVISIONAL",
+  "text": "The D80 role Compliance and Audit takes Investors seat comp, not audit (Jev 0.97); grants are checked only against the seat's own limit until the manager chain is read from Zoho; the staging sign-in list switch is GZ_SIGNIN_LIST=staging.",
+  "refs": [
+   "D80",
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.46,
+  "probs": {
+   "confirm": 0.21,
+   "reverse": 0.64,
+   "owner": 0.15
+  },
+  "cost": 0.42
+ },
+ {
+  "ticked": false,
+  "id": "M03-S01-NOTE-3",
+  "story": "M03-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "The merged front end lets Pradeep (Corporate Ops, Investors seat root) in on the Investors side, contradicting the acceptance line and TC-E03-004; in Zoho he is refused only because the CEO role uses the Administrator profile.",
+  "refs": [
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.94,
+  "probs": {
+   "confirm": 0.02,
+   "reverse": 0.96,
+   "owner": 0.02
+  },
+  "cost": 0.44
+ },
+ {
+  "ticked": false,
+  "id": "M03-S01-NOTE-4",
+  "story": "M03-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "TC-E03-001 and TC-E03-002 (six people, Harsha refused) contradict the merged front end and the acceptance line 'Finance (Harsha) is admitted'; the cases need rewriting.",
+  "refs": [
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.24,
+  "probs": {
+   "confirm": 0.44,
+   "reverse": 0.5,
+   "owner": 0.06
+  },
+  "cost": 0.45
+ },
+ {
+  "ticked": false,
+  "id": "M10-S07-NOTE-3",
+  "story": "M10-S07",
+  "kind": "PROVISIONAL",
+  "text": "After a Receipt write the backend re-reads Payment_Status from Zoho and also computes it from Matched receipts (Refund out) against units x unit price, returning both and flagging a mismatch, never writing it (Jev 0.5); receipts are create-only, so a wrong allotment is fixed by reversal plus a new receipt (Jev 0.77).",
+  "refs": [
+   "D70",
+   "D54",
+   "D21",
+   "D45"
+  ],
+  "choice": "reverse",
+  "conf": 0.27,
+  "probs": {
+   "confirm": 0.41,
+   "reverse": 0.51,
+   "owner": 0.08
+  },
+  "cost": 0.74
+ },
+ {
+  "ticked": false,
+  "id": "M19-S02-NOTE-4",
+  "story": "M19-S02",
+  "kind": "PROVISIONAL",
+  "text": "The staging runner resets once per case, not per fixture (Jev 0.91); it uses the existing /api/test/fixture and /api/test/reset endpoints, which need Zoho sandbox seeding behind them on staging (M19-S03); Zoho login autofill uses #login_id/#nextbtn/#password with a manual fallback.",
+  "refs": [
+   "D62",
+   "D63"
+  ],
+  "choice": "confirm",
+  "conf": 0.22,
+  "probs": {
+   "reverse": 0.44,
+   "owner": 0.08,
+   "confirm": 0.48
+  },
+  "cost": 0.33
+ },
+ {
+  "ticked": false,
+  "id": "M01-S01-NOTE-4",
+  "story": "M01-S01",
+  "kind": "PROVISIONAL",
+  "text": "'Farm ops' has no D80 role and is covered as Finance Operations (Investors seat ops); owner to confirm which Zoho role is Farm ops. Viewer, BU Owner and channel partner are refused on every page until grants exist (M03-S02).",
+  "refs": [
+   "D80",
+   "D26",
+   "D27",
+   "D28",
+   "D33",
+   "D40",
+   "D60",
+   "D68"
+  ],
+  "choice": "owner",
+  "conf": 0.47,
+  "probs": {
+   "reverse": 0.25,
+   "confirm": 0.1,
+   "owner": 0.65
+  },
+  "cost": 0.42
+ },
+ {
+  "ticked": false,
+  "id": "M01-S04-NOTE-1",
+  "story": "M01-S04",
+  "kind": "PROVISIONAL",
+  "text": "Planes B and C are stored as append-only daily JSONL files under LOG_DIR (LOG_STORE=jsonl; Jev 0.93 over a Postgres table or S3 Object Lock, per C-07); Sahil to confirm and to decide when scanned day files ship to a locked archive bucket.",
+  "refs": [
+   "D47",
+   "D53"
+  ],
+  "choice": "owner",
+  "conf": 0.18,
+  "probs": {
+   "reverse": 0.31,
+   "confirm": 0.24,
+   "owner": 0.45
+  },
+  "cost": 0.57
+ },
+ {
+  "ticked": false,
+  "id": "M01-S01-NOTE-3",
+  "story": "M01-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "The rail (lib/selectors/access.ts navFor/MERGE) gives Finance no Transfers or Profile and gives KAM/Head of AM extra Numbers and Teams with no Profile, unlike the acceptance; the server guard enforces the rail as built, so Finance is refused /xfer and those seats /me until the rail or the acceptance changes.",
+  "refs": [
+   "D26",
+   "D27",
+   "D28",
+   "D33",
+   "D40",
+   "D60",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.75,
+  "probs": {
+   "reverse": 0.84,
+   "owner": 0.06,
+   "confirm": 0.1
+  },
+  "cost": 0.35
+ },
+ {
+  "ticked": false,
+  "id": "M07-S05-NOTE-5",
+  "story": "M07-S05",
+  "kind": "PROVISIONAL",
+  "text": "When Zoho accepts the email but recording the touch fails, the answer is still sent with a Plane B touch-not-recorded line and a notice to use Log a contact (Jev 0.94); only IR, channel-partner and IR Manager seats may send, a manager only on leads they own or cover.",
+  "refs": [
+   "D55",
+   "D17",
+   "D57",
+   "D60",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.72,
+  "probs": {
+   "reverse": 0.8200000000000001,
+   "owner": 0.06,
+   "confirm": 0.12
+  },
+  "cost": 0.5
+ },
+ {
+  "ticked": false,
+  "id": "M03-S09-NOTE-1",
+  "story": "M03-S09",
+  "kind": "PROVISIONAL",
+  "text": "IR investor scope uses the filter plus a read-only record share at hand-off (Jev 1.00); refused Investors-side reads go to Plane B now and to Plane C through a hook awaiting a scope-refused action in server/identity/plane-c.ts.",
+  "refs": [
+   "D45",
+   "D52",
+   "D53",
+   "D68",
+   "D69"
+  ],
+  "choice": "reverse",
+  "conf": 0.22,
+  "probs": {
+   "reverse": 0.48,
+   "owner": 0.05,
+   "confirm": 0.47
+  },
+  "cost": 0.4
+ },
+ {
+  "ticked": false,
+  "id": "M19-S04-NOTE-2",
+  "story": "M19-S04",
+  "kind": "PROVISIONAL",
+  "text": "A seeded-wrong case ending REVIEW warns but does not fail the gate, and mutations a person checked and found still true are excluded from the 1% rule through --reviewed (D63's baseline had 6 of 494 facts over 0.80).",
+  "refs": [
+   "D63"
+  ],
+  "choice": "reverse",
+  "conf": 0.74,
+  "probs": {
+   "confirm": 0.15,
+   "reverse": 0.83,
+   "owner": 0.02
+  },
+  "cost": 0.36
+ },
+ {
+  "ticked": false,
+  "id": "M09-S01-NOTE-2",
+  "story": "M09-S01",
+  "kind": "PROVISIONAL",
+  "text": "KYC 'NA' is reported as its own value and not counted as not passed; Paid counts only receipts that stand (refunds out); Due is units x price minus what stands on Reserved allotments, as the Payments register works it out.",
+  "refs": [
+   "D45",
+   "D48",
+   "D53",
+   "D70"
+  ],
+  "choice": "owner",
+  "conf": 0.16,
+  "probs": {
+   "owner": 0.44,
+   "reverse": 0.21,
+   "confirm": 0.35
+  },
+  "cost": 0.81
+ },
+ {
+  "ticked": false,
+  "id": "M01-S10-NOTE-4",
+  "story": "M01-S10",
+  "kind": "PROVISIONAL",
+  "text": "Step-up windows, failure counts and locks are kept in process memory, so a restart lifts locks; there is no unlock route yet (StepUp.unlock exists for Digital Infrastructure).",
+  "refs": [
+   "D13",
+   "D19",
+   "D21",
+   "D22",
+   "D47",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.24,
+  "probs": {
+   "confirm": 0.33,
+   "reverse": 0.5,
+   "owner": 0.17
+  },
+  "cost": 0.6
+ },
+ {
+  "ticked": false,
+  "id": "M03-S02-NOTE-2",
+  "story": "M03-S02",
+  "kind": "PROVISIONAL",
+  "text": "Grants are kept in an app-side append-only store (GRANT_STORE=jsonl, GRANT_DIR) per Jev (1.00) while OD9 stays open; production must set both or grants are lost on restart and granted-only seats are refused.",
+  "refs": [
+   "D40",
+   "D60",
+   "D69"
+  ],
+  "choice": "reverse",
+  "conf": 0.39,
+  "probs": {
+   "confirm": 0.22,
+   "reverse": 0.59,
+   "owner": 0.19
+  },
+  "cost": 0.64
+ },
+ {
+  "ticked": false,
+  "id": "M09-S03-NOTE-3",
+  "story": "M09-S03",
+  "kind": "PROVISIONAL",
+  "text": "An IR's record offers only Who they are, What they hold and Journey (IR_SECTIONS in server/investors/record.ts) until the owner names the sections allowed for IRs.",
+  "refs": [
+   "D26",
+   "D35",
+   "D45",
+   "D48",
+   "D69",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.29,
+  "probs": {
+   "confirm": 0.53,
+   "reverse": 0.06,
+   "owner": 0.41
+  },
+  "cost": 0.28
+ },
+ {
+  "ticked": false,
+  "id": "M09-S02-NOTE-3",
+  "story": "M09-S02",
+  "kind": "PROVISIONAL",
+  "text": "With no active-KAM reader wired, only an account with no KAM counts as 'No manager'; an account whose KAM has left counts once a reader of current KAM seats is wired.",
+  "refs": [
+   "D12",
+   "D40",
+   "D52",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.13,
+  "probs": {
+   "owner": 0.32,
+   "reverse": 0.42,
+   "confirm": 0.26
+  },
+  "cost": 0.32
+ },
+ {
+  "ticked": false,
+  "id": "M06-S05-NOTE-2",
+  "story": "M06-S05",
+  "kind": "PROVISIONAL",
+  "text": "The search cache holds only the in-book result count under the leads scope and a per-process HMAC of the term; hit rows are never cached (Jev 0.83).",
+  "refs": [
+   "D69",
+   "D52",
+   "D53",
+   "D47"
+  ],
+  "choice": "confirm",
+  "conf": 0.62,
+  "probs": {
+   "reverse": 0.23,
+   "confirm": 0.75,
+   "owner": 0.02
+  },
+  "cost": 0.21
+ },
+ {
+  "ticked": false,
+  "id": "M10-S21-NOTE-2",
+  "story": "M10-S21",
+  "kind": "PROVISIONAL",
+  "text": "Unlock writes only App_Access (Hold -> Invite) and leaves App_Welcome_At/App_Welcome_Channel to the app sync (Jev 0.81); 'Locked' is worked out as Hold after an invite, and the lock reason is saved as a Note on the Contact.",
+  "refs": [
+   "D10",
+   "D73",
+   "D93"
+  ],
+  "choice": "reverse",
+  "conf": 0.48,
+  "probs": {
+   "reverse": 0.65,
+   "owner": 0.06,
+   "confirm": 0.29
+  },
+  "cost": 0.52
+ },
+ {
+  "ticked": false,
+  "id": "M08-S07-NOTE-2",
+  "story": "M08-S07",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Set LIFECYCLE_FIELD in server/investors/lifecycle.ts to the blueprint's Contacts field once T01 creates it; until then the state label is derived from allotments and Said_Yes_At.",
+  "refs": [
+   "D11",
+   "D43",
+   "D52",
+   "D53",
+   "D69",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.26,
+  "probs": {
+   "reverse": 0.34,
+   "owner": 0.15,
+   "confirm": 0.51
+  },
+  "cost": 0.5
+ },
+ {
+  "ticked": false,
+  "id": "M09-S09-NOTE-2",
+  "story": "M09-S09",
+  "kind": "PROVISIONAL",
+  "text": "The allotment is Issued when the amount covers units x price and Reserved with a 30-day Hold_Until otherwise, although the story's Zoho line says Issued always (Jev 0.87); the money paid becomes one Pending receipt through the allotment-receipts guard, not receipt-replay (Jev 0.47, low).",
+  "refs": [
+   "D45",
+   "D52",
+   "D93"
+  ],
+  "choice": "reverse",
+  "conf": 0.5,
+  "probs": {
+   "confirm": 0.09,
+   "reverse": 0.67,
+   "owner": 0.24
+  },
+  "cost": 0.75
+ },
+ {
+  "ticked": false,
+  "id": "M11-S01-NOTE-2",
+  "story": "M11-S01",
+  "kind": "PROVISIONAL",
+  "text": "The one-LLP detail reads the LLP's company PAN and GST on the viewer's token and masks them before they leave the server, never cached or logged (Jev 0.94); Sahil to confirm the no-PAN rule does not cover a company PAN.",
+  "refs": [
+   "D45",
+   "D54",
+   "D68",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.24,
+  "probs": {
+   "reverse": 0.49,
+   "owner": 0.38,
+   "confirm": 0.13
+  },
+  "cost": 0.36
+ },
+ {
+  "ticked": false,
+  "id": "M08-S05-NOTE-1",
+  "story": "M08-S05",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Per D44 a named secondary now gets no lead access unless a cover window runs (or the owner is away on the roster); the unconditional secondary access was removed from server/leads book, search, email, followup, journey and updates (TC-E08-017).",
+  "refs": [
+   "D44",
+   "D49",
+   "D51",
+   "D52"
+  ],
+  "choice": "confirm",
+  "conf": 0.77,
+  "probs": {
+   "confirm": 0.85,
+   "reverse": 0.14,
+   "owner": 0.01
+  },
+  "cost": 0.58
+ },
+ {
+  "ticked": false,
+  "id": "M08-S02-NOTE-1",
+  "story": "M08-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Leads.advance_confirmed_at, balance_confirmed_at, supp_verified_at and allotted_at (zoho/field-register.json) do not exist in live Zoho; gates read Receipts.Match_State, allotment units x unit price, Supplementary_Verified_At and Lead.NDA_Verified_At instead. Create the fields or retire them from the register.",
+  "refs": [
+   "D44",
+   "D45",
+   "D52",
+   "D68",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.31,
+  "probs": {
+   "owner": 0.23,
+   "confirm": 0.54,
+   "reverse": 0.23
+  },
+  "cost": 0.66
+ },
+ {
+  "ticked": false,
+  "id": "M11-S01-NOTE-1",
+  "story": "M11-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "server/data/projections.ts and adapters.ts select Unit_Price, Insurer and Insured_Till, which LLP_Creation_Module lacks (it has Pet_Unit_Price, Insurance_Provider, Insurance_expiry_date), parse the '20%' yield picklist as 0 and map Fully Subscribed/On Hold to Draft; switch to the names and mapping in server/farms/shelf.ts.",
+  "refs": [
+   "D45",
+   "D54",
+   "D68",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.22,
+  "probs": {
+   "reverse": 0.37,
+   "confirm": 0.48,
+   "owner": 0.15
+  },
+  "cost": 0.36
+ },
+ {
+  "ticked": false,
+  "id": "M13-S01-NOTE-1",
+  "story": "M13-S01",
+  "kind": "PROVISIONAL",
+  "text": "The envelope gains an optional sent_at stamped on each send attempt (Jev 0.2, low); investor updates are not pushed because contracts/ has no schema for them (Jev 0.24, low).",
+  "refs": [
+   "D6",
+   "D45",
+   "D47",
+   "D73"
+  ],
+  "choice": "reverse",
+  "conf": 0.27,
+  "probs": {
+   "confirm": 0.45,
+   "reverse": 0.51,
+   "owner": 0.04
+  },
+  "cost": 0.29
+ },
+ {
+  "ticked": false,
+  "id": "M14-S01-NOTE-2",
+  "story": "M14-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Leads.Event_Name does not exist; the link is the lookup Leads.Lead_Event -> Lead_Events, and event staff come from Lead_Events_X_Users (userlookup221_3).",
+  "refs": [
+   "D45",
+   "D53",
+   "D59",
+   "D69",
+   "D84"
+  ],
+  "choice": "confirm",
+  "conf": 0.56,
+  "probs": {
+   "reverse": 0.1,
+   "confirm": 0.71,
+   "owner": 0.19
+  },
+  "cost": 0.37
+ },
+ {
+  "ticked": false,
+  "id": "M13-S02-NOTE-1",
+  "story": "M13-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Cases has no Contact_Name or Category field; the investor is Related_To and the category Ticket_Category, so server/data/projections.ts cases should change as server/cases/register.ts reads them.",
+  "refs": [
+   "D12",
+   "D45",
+   "D53"
+  ],
+  "choice": "owner",
+  "conf": 0.09,
+  "probs": {
+   "reverse": 0.35,
+   "owner": 0.39,
+   "confirm": 0.26
+  },
+  "cost": 0.45
+ },
+ {
+  "ticked": false,
+  "id": "M13-S02-NOTE-3",
+  "story": "M13-S02",
+  "kind": "PROVISIONAL",
+  "text": "With no subtree reader the Head of AM's Cases read uses Owner-is-anyone on their own token under Zoho's role hierarchy; ownerWhere in server/cases/predicate.ts is proposed as the shared team predicate.",
+  "refs": [
+   "D12",
+   "D45",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.7,
+  "probs": {
+   "confirm": 0.16,
+   "reverse": 0.81,
+   "owner": 0.03
+  },
+  "cost": 0.26
+ },
+ {
+  "ticked": false,
+  "id": "M15-S03-NOTE-4",
+  "story": "M15-S03",
+  "kind": "PROVISIONAL",
+  "text": "The Auditor's Finance people come from ZOHO_FINANCE_USER_IDS; the module-to-kind table in server/activity/kinds.ts is ours; team ids for IR Manager/Head of AM need a subtree reader not yet wired.",
+  "refs": [
+   "D40",
+   "D44",
+   "D45",
+   "D47",
+   "D68",
+   "D13"
+  ],
+  "choice": "owner",
+  "conf": 0.15,
+  "probs": {
+   "confirm": 0.35,
+   "reverse": 0.22,
+   "owner": 0.43
+  },
+  "cost": 0.37
+ },
+ {
+  "ticked": false,
+  "id": "M03-S04-NOTE-5",
+  "story": "M03-S04",
+  "kind": "PROVISIONAL",
+  "text": "Contacts return to the pool (KAM, KAM_Since, KAM_Intro_At cleared) on the seat-changer's token after an org-scope service read (Jev 0.98); crossing the sign-in line is filed as Plane C access-granted/access-ended (Jev 0.97); lead-side seat changes are not handled by PUT /api/users.",
+  "refs": [
+   "D40",
+   "D47",
+   "D53",
+   "D60"
+  ],
+  "choice": "confirm",
+  "conf": 0.28,
+  "probs": {
+   "reverse": 0.42,
+   "owner": 0.06,
+   "confirm": 0.52
+  },
+  "cost": 0.53
+ },
+ {
+  "ticked": false,
+  "id": "M09-S04-NOTE-2",
+  "story": "M09-S04",
+  "kind": "PROVISIONAL",
+  "text": "The console PUT writes only KAM and KAM_Since and leaves KAM_Intro_At to the Zoho workflow (Jev 0.28, low); 'logged with both names' is a Plane C line with user ids only, names coming from Zoho field history (Jev 1.00).",
+  "refs": [
+   "D12",
+   "D40",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.44,
+  "probs": {
+   "owner": 0.08,
+   "reverse": 0.63,
+   "confirm": 0.29
+  },
+  "cost": 0.53
+ },
+ {
+  "ticked": false,
+  "id": "M11-S02-NOTE-4",
+  "story": "M11-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "The story names LLP_Lookup, committed units and Agreement_Signed; the org's allotment module has LLP, Reserved_Units/Issued_Units and Supplementary_Verified_At, which the code uses.",
+  "refs": [
+   "D45",
+   "D54",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.38,
+  "probs": {
+   "confirm": 0.59,
+   "reverse": 0.36,
+   "owner": 0.05
+  },
+  "cost": 0.7
+ },
+ {
+  "ticked": false,
+  "id": "M10-S08-NOTE-2",
+  "story": "M10-S08",
+  "kind": "PROVISIONAL",
+  "text": "Blocks are one per allotment, not merged per LLP; totals are cross-checked against register.ts and allotment-receipts.ts (record.ts does not subtract matched refunds and should be aligned).",
+  "refs": [
+   "D70",
+   "D48"
+  ],
+  "choice": "confirm",
+  "conf": 0.23,
+  "probs": {
+   "reverse": 0.41,
+   "owner": 0.1,
+   "confirm": 0.49
+  },
+  "cost": 0.78
+ },
+ {
+  "ticked": false,
+  "id": "M08-S03-NOTE-1",
+  "story": "M08-S03",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "There is no Payment_Claims module (D82 agrees), so the IR's payment report is a Receipts record with Match_State = Claimed.",
+  "refs": [
+   "D82",
+   "D19",
+   "D21",
+   "D45",
+   "D47",
+   "D48",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.43,
+  "probs": {
+   "reverse": 0.36,
+   "owner": 0.02,
+   "confirm": 0.62
+  },
+  "cost": 0.72
+ },
+ {
+  "ticked": false,
+  "id": "M08-S03-NOTE-2",
+  "story": "M08-S03",
+  "kind": "PROVISIONAL",
+  "text": "A claim's Receipts.UTR holds a unique key CLAIM-<leadId>-<n> (Jev 0.73), the IR's reference is kept only masked in the Note, paise are refused, and kind 'other' is stored as Part with a note; a Claim_Ref field would free UTR for bank references.",
+  "refs": [
+   "D19",
+   "D21",
+   "D45",
+   "D47",
+   "D48",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.22,
+  "probs": {
+   "confirm": 0.17,
+   "reverse": 0.48,
+   "owner": 0.35
+  },
+  "cost": 0.71
+ },
+ {
+  "ticked": false,
+  "id": "M10-S09-NOTE-2",
+  "story": "M10-S09",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "server/data/projections.ts holdings/arlTransactions use Contact, Instrument_Type, Amount_Invested, Invested_On, Interest_Rate, Maturity_On, Date, but the org has Investor, Instrument_Class, Invested_Amount, Invested_Date, Interest_Rate_Pct, Maturity_Date, Txn_Date (holdings.ts uses the org's names).",
+  "refs": [
+   "D70",
+   "D45",
+   "D52"
+  ],
+  "choice": "confirm",
+  "conf": 0.26,
+  "probs": {
+   "reverse": 0.29,
+   "owner": 0.2,
+   "confirm": 0.51
+  },
+  "cost": 0.32
+ },
+ {
+  "ticked": false,
+  "id": "M13-S03-NOTE-1",
+  "story": "M13-S03",
+  "kind": "PROVISIONAL",
+  "text": "A reply is stored as a Note on the Case and pushed as case.replied; requestToCase now writes Related_To and Case_Origin (the org's names).",
+  "refs": [
+   "D12",
+   "D48",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.53,
+  "probs": {
+   "owner": 0.2,
+   "reverse": 0.6799999999999999,
+   "confirm": 0.12
+  },
+  "cost": 0.61
+ },
+ {
+  "ticked": false,
+  "id": "M14-S03-NOTE-1",
+  "story": "M14-S03",
+  "kind": "PROVISIONAL",
+  "text": "Until a Google/Zoho Sheet reader exists, the page posts parsed intake rows to POST /api/events/[id]/sheet and the loader re-checks every row (Jev 0.95); 'All to one person' must be the loader, the event's staff or a roster-eligible user.",
+  "refs": [
+   "D45",
+   "D59",
+   "D60",
+   "D68",
+   "D84"
+  ],
+  "choice": "reverse",
+  "conf": 0.6,
+  "probs": {
+   "owner": 0.07,
+   "reverse": 0.73,
+   "confirm": 0.2
+  },
+  "cost": 0.5
+ },
+ {
+  "ticked": false,
+  "id": "M14-S02-NOTE-1",
+  "story": "M14-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Removal clears Leads.Lead_Event (not Event_Name) and staff are written through Lead_Events.Event_Staff (rows in Lead_Events_X_Users).",
+  "refs": [
+   "D45",
+   "D48",
+   "D59",
+   "D68",
+   "D84"
+  ],
+  "choice": "reverse",
+  "conf": 0.24,
+  "probs": {
+   "confirm": 0.35,
+   "reverse": 0.5,
+   "owner": 0.15
+  },
+  "cost": 0.58
+ },
+ {
+  "ticked": false,
+  "id": "M14-S03-NOTE-3",
+  "story": "M14-S03",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Leads have no Event_Name/Event_Date/Event_Channel; loaded leads carry the lookup Leads.Lead_Event.",
+  "refs": [
+   "D45",
+   "D59",
+   "D60",
+   "D68",
+   "D84"
+  ],
+  "choice": "reverse",
+  "conf": 0.62,
+  "probs": {
+   "confirm": 0.23,
+   "reverse": 0.74,
+   "owner": 0.03
+  },
+  "cost": 0.64
+ },
+ {
+  "ticked": false,
+  "id": "M13-S06-NOTE-1",
+  "story": "M13-S06",
+  "kind": "PROVISIONAL",
+  "text": "contracts/update.published.json is added and each update is pushed as one signed event per investor in the segment (Jev 0.82); a Notice is written as Category Other (Jev 0.24, low).",
+  "refs": [
+   "D12",
+   "D45",
+   "D53",
+   "D70",
+   "D73"
+  ],
+  "choice": "confirm",
+  "conf": 0.36,
+  "probs": {
+   "reverse": 0.36,
+   "confirm": 0.57,
+   "owner": 0.07
+  },
+  "cost": 0.82
+ },
+ {
+  "ticked": false,
+  "id": "M10-S22-NOTE-1",
+  "story": "M10-S22",
+  "kind": "PROVISIONAL",
+  "text": "The app preview shows payout dates and states to every seat with the record, amounts only to seats with Money (Jev 0.75).",
+  "refs": [
+   "D52",
+   "D73",
+   "D93"
+  ],
+  "choice": "reverse",
+  "conf": 0.59,
+  "probs": {
+   "confirm": 0.17,
+   "reverse": 0.73,
+   "owner": 0.1
+  },
+  "cost": 0.33
+ },
+ {
+  "ticked": false,
+  "id": "M10-S23-NOTE-1",
+  "story": "M10-S23",
+  "kind": "PROVISIONAL",
+  "text": "The one-time test link comes from a TestLinkIssuer interface that answers 503 not-configured until MA1 names the app's endpoint (Jev 0.25, low); only a reason length code is logged and the words stay in the in-process register (Jev 0.54).",
+  "refs": [
+   "D52",
+   "D93"
+  ],
+  "choice": "reverse",
+  "conf": 0.38,
+  "probs": {
+   "confirm": 0.31,
+   "owner": 0.1,
+   "reverse": 0.59
+  },
+  "cost": 0.16
+ },
+ {
+  "ticked": false,
+  "id": "M13-S06-NOTE-2",
+  "story": "M13-S06",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Add Notice to Investor_Updates.Category, NRI only to Audience, and a text field Audience_Predicate; until then an NRI-only publish is refused.",
+  "refs": [
+   "D12",
+   "D45",
+   "D53",
+   "D70",
+   "D73"
+  ],
+  "choice": "confirm",
+  "conf": 0.08,
+  "probs": {
+   "reverse": 0.31,
+   "owner": 0.3,
+   "confirm": 0.39
+  },
+  "cost": 0.56
+ },
+ {
+  "ticked": false,
+  "id": "M10-S02-NOTE-1",
+  "story": "M10-S02",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Leads has no gate field; gates.ts reads matched Receipts, so the match itself opens the gate and money.confirmed goes to the investor app only.",
+  "refs": [
+   "D10",
+   "D19",
+   "D21",
+   "D22",
+   "D70",
+   "D73"
+  ],
+  "choice": "reverse",
+  "conf": 0.8,
+  "probs": {
+   "owner": 0.02,
+   "reverse": 0.87,
+   "confirm": 0.11
+  },
+  "cost": 0.81
+ },
+ {
+  "ticked": false,
+  "id": "M10-S03-NOTE-1",
+  "story": "M10-S03",
+  "kind": "PROVISIONAL",
+  "text": "With no answer fields on Receipts both answers move the Claimed report to Match_State 'Not found' and record which answer by a Zoho Note; the confirmed receipt's Note names the report (Jev 0.59).",
+  "refs": [
+   "D21",
+   "D45",
+   "D49",
+   "D68",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.81,
+  "probs": {
+   "reverse": 0.88,
+   "confirm": 0.07,
+   "owner": 0.05
+  },
+  "cost": 0.57
+ },
+ {
+  "ticked": false,
+  "id": "M10-S03-NOTE-2",
+  "story": "M10-S03",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Add Receipts fields Claim_Of (lookup Receipts), Claim_Answer (Found/Not there) and Claim_Answer_Reason so a found report does not read as not found in gates.ts.",
+  "refs": [
+   "D21",
+   "D45",
+   "D49",
+   "D68",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.69,
+  "probs": {
+   "owner": 0.07,
+   "reverse": 0.14,
+   "confirm": 0.79
+  },
+  "cost": 0.6
+ },
+ {
+  "ticked": false,
+  "id": "M10-S02-NOTE-2",
+  "story": "M10-S02",
+  "kind": "PROVISIONAL",
+  "text": "On an investor's first matched money match.ts writes Contacts.App_Access empty->Hold (guarded) beside account.opened tentative (Jev 0.54); the first matched Advance on a Reserved allotment sets Hold_Until = IST match day + 30 only when empty or earlier (Jev 0.56).",
+  "refs": [
+   "D10",
+   "D19",
+   "D21",
+   "D22",
+   "D70",
+   "D73"
+  ],
+  "choice": "reverse",
+  "conf": 0.25,
+  "probs": {
+   "confirm": 0.37,
+   "reverse": 0.49,
+   "owner": 0.14
+  },
+  "cost": 0.74
+ },
+ {
+  "ticked": false,
+  "id": "M11-S03-NOTE-1",
+  "story": "M11-S03",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "LLP Units_Reserved/Units_Issued/Units_Released are plain integer fields, so the shelf counts allotted and reserved-or-paid from allotments and flags recordedDiffers where the typed fields disagree.",
+  "refs": [
+   "D15",
+   "D45",
+   "D54",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.42,
+  "probs": {
+   "confirm": 0.61,
+   "reverse": 0.33,
+   "owner": 0.06
+  },
+  "cost": 0.68
+ },
+ {
+  "ticked": false,
+  "id": "M09-S07-NOTE-1",
+  "story": "M09-S07",
+  "kind": "PROVISIONAL",
+  "text": "Investor search queries Contacts with COQL, the seat's scope in the WHERE and LIKE per token, not the Search API (Jev 0.76).",
+  "refs": [
+   "D69",
+   "D53",
+   "D52"
+  ],
+  "choice": "confirm",
+  "conf": 0.21,
+  "probs": {
+   "confirm": 0.47,
+   "owner": 0.08,
+   "reverse": 0.45
+  },
+  "cost": 0.22
+ },
+ {
+  "ticked": false,
+  "id": "M12-S01-NOTE-1",
+  "story": "M12-S01",
+  "kind": "PROVISIONAL",
+  "text": "Personal-scope documents are listed for Finance, Head of Finance, Compliance, Digital Infrastructure, KAM (own book) and Head of AM; audit, exec and bu see none (Jev 0.39, low); an IR gets allotment paperwork counts only, never personal documents (Jev 0.92); /api/documents is a session route with scopes decided in server/documents/scope.ts.",
+  "refs": [
+   "D45",
+   "D52",
+   "D53",
+   "D68",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.28,
+  "probs": {
+   "confirm": 0.44,
+   "owner": 0.04,
+   "reverse": 0.52
+  },
+  "cost": 0.45
+ },
+ {
+  "ticked": false,
+  "id": "M12-S01-NOTE-2",
+  "story": "M12-S01",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "D70 lets the originating IR see personal documents but M12-S01 AC6 says an IR never does; the code follows AC6.",
+  "refs": [
+   "D70",
+   "D45",
+   "D52",
+   "D53",
+   "D68"
+  ],
+  "choice": "confirm",
+  "conf": 0.4,
+  "probs": {
+   "owner": 0.01,
+   "confirm": 0.6,
+   "reverse": 0.39
+  },
+  "cost": 0.39
+ },
+ {
+  "ticked": false,
+  "id": "M17-S01-NOTE-2",
+  "story": "M17-S01",
+  "kind": "PROVISIONAL",
+  "text": "A Zoho user whose status is not 'active' is treated as left (seated from the role they still hold); confirm the deactivated status value and that GET /users?type=AllUsers returns them on the sandbox.",
+  "refs": [
+   "D60",
+   "D59",
+   "D53",
+   "D40",
+   "D33",
+   "D68"
+  ],
+  "choice": "owner",
+  "conf": 0.29,
+  "probs": {
+   "confirm": 0.38,
+   "reverse": 0.09,
+   "owner": 0.53
+  },
+  "cost": 0.26
+ },
+ {
+  "ticked": false,
+  "id": "M10-S20-NOTE-1",
+  "story": "M10-S20",
+  "kind": "PROVISIONAL",
+  "text": "The 60-month payout schedule is anchored on the allotment's Investment_Date until an issue-date field exists (Jev 0.14, low); LLP_UnitAllocation_Module has no Issued_On, and the data layer now reads Investment_Date instead.",
+  "refs": [
+   "D82",
+   "D81"
+  ],
+  "choice": "owner",
+  "conf": 0.24,
+  "probs": {
+   "reverse": 0.22,
+   "confirm": 0.28,
+   "owner": 0.5
+  },
+  "cost": 0.85
+ },
+ {
+  "ticked": false,
+  "id": "M13-S05-NOTE-2",
+  "story": "M13-S05",
+  "kind": "PROVISIONAL",
+  "text": "The Contact check requires actor.kind investor and actor.investor_contact_id equal to the request's Contact, and arl_code (when sent) equal to ARL_ID; a mismatch answers 422 (Jev 0.97). Request kinds map to Ticket_Category bank_change/payout_mandate Bank, exit Compliance, nominee/details/statement Records, other Query, Medium, 5 working days.",
+  "refs": [
+   "D17",
+   "D45",
+   "D53",
+   "D73"
+  ],
+  "choice": "reverse",
+  "conf": 0.05,
+  "probs": {
+   "confirm": 0.34,
+   "reverse": 0.36,
+   "owner": 0.3
+  },
+  "cost": 0.44
+ },
+ {
+  "ticked": false,
+  "id": "M13-S05-NOTE-3",
+  "story": "M13-S05",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "contracts/request.executed.json gains state 'received' and an optional case_id so the app can link case.replied to its request (Jev 0.96); the investor app must accept it (MA1).",
+  "refs": [
+   "D17",
+   "D45",
+   "D53",
+   "D73"
+  ],
+  "choice": "confirm",
+  "conf": 0.38,
+  "probs": {
+   "confirm": 0.59,
+   "reverse": 0.31,
+   "owner": 0.1
+  },
+  "cost": 0.68
+ },
+ {
+  "ticked": false,
+  "id": "M08-S04-NOTE-2",
+  "story": "M08-S04",
+  "kind": "PROVISIONAL",
+  "text": "'Extend the hold' is one guarded edit of Hold_Until (old deadline + days) with the request fields, held by Zoho's approval process (Jev 0.89).",
+  "refs": [
+   "D19",
+   "D21",
+   "D22",
+   "D48",
+   "D55",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.17,
+  "probs": {
+   "owner": 0.29,
+   "reverse": 0.44,
+   "confirm": 0.27
+  },
+  "cost": 0.56
+ },
+ {
+  "ticked": false,
+  "id": "M08-S04-NOTE-4",
+  "story": "M08-S04",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Receipts.Kind has no Forfeit value, so the lapse carries the forfeit in the Refund receipt's Note; add Forfeit to the picklist to list forfeits as rows.",
+  "refs": [
+   "D19",
+   "D21",
+   "D22",
+   "D48",
+   "D55",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.27,
+  "probs": {
+   "confirm": 0.2,
+   "reverse": 0.51,
+   "owner": 0.29
+  },
+  "cost": 0.67
+ },
+ {
+  "ticked": false,
+  "id": "M08-S08-NOTE-3",
+  "story": "M08-S08",
+  "kind": "PROVISIONAL",
+  "text": "The first matched money also writes App_Account_Mark=Tentative and App_Mark_At with App_Access=Hold, only when empty, retrying with App_Access alone if Zoho refuses the mark (Jev 0.56); any first matched inbound money opens the account (D10), only an Advance starts the hold.",
+  "refs": [
+   "D10",
+   "D19",
+   "D21",
+   "D52",
+   "D73",
+   "D93"
+  ],
+  "choice": "reverse",
+  "conf": 0.89,
+  "probs": {
+   "confirm": 0.06,
+   "reverse": 0.92,
+   "owner": 0.02
+  },
+  "cost": 0.67
+ },
+ {
+  "ticked": false,
+  "id": "M11-S04-NOTE-4",
+  "story": "M11-S04",
+  "kind": "PROVISIONAL",
+  "text": "Release and take-back write only Units_Released (Total_Units or 0) and leave LLP_Status untouched (Jev 0.56); Sahil cannot release while his seat is an Administrator profile.",
+  "refs": [
+   "D15",
+   "D48",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.46,
+  "probs": {
+   "owner": 0.07,
+   "confirm": 0.29,
+   "reverse": 0.64
+  },
+  "cost": 0.62
+ },
+ {
+  "ticked": false,
+  "id": "M12-S02-NOTE-3",
+  "story": "M12-S02",
+  "kind": "PROVISIONAL",
+  "text": "Upload seats until OD8 - Finance, Head of Finance and DI on all Investors-side scopes, Compliance on personal papers only, IR/channel partner/IR Manager only the lead NDA on leads they own or cover.",
+  "refs": [
+   "D45",
+   "D48",
+   "D53",
+   "D70",
+   "D71"
+  ],
+  "choice": "owner",
+  "conf": 0.45,
+  "probs": {
+   "confirm": 0.12,
+   "reverse": 0.25,
+   "owner": 0.63
+  },
+  "cost": 0.68
+ },
+ {
+  "ticked": false,
+  "id": "M13-S04-NOTE-2",
+  "story": "M13-S04",
+  "kind": "PROVISIONAL",
+  "text": "The KAM stays the watcher through Handed_By with lookup sharing; the register reads Owner = me or Handed_By = me (Jev 0.62).",
+  "refs": [
+   "D12",
+   "D13",
+   "D53",
+   "D70"
+  ],
+  "choice": "confirm",
+  "conf": 0.31,
+  "probs": {
+   "reverse": 0.39,
+   "owner": 0.06,
+   "confirm": 0.55
+  },
+  "cost": 0.34
+ },
+ {
+  "ticked": false,
+  "id": "M12-S09-NOTE-3",
+  "story": "M12-S09",
+  "kind": "PROVISIONAL",
+  "text": "An IR Manager reads lead emails only on leads they own or cover until a team (subtree) reader exists.",
+  "refs": [
+   "D17",
+   "D45",
+   "D53",
+   "D69",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.21,
+  "probs": {
+   "owner": 0.26,
+   "reverse": 0.47,
+   "confirm": 0.27
+  },
+  "cost": 0.22
+ },
+ {
+  "ticked": false,
+  "id": "M12-S03-NOTE-1",
+  "story": "M12-S03",
+  "kind": "PROVISIONAL",
+  "text": "Jev chose reading Zoho Sign with the service token (0.07), which breaks D53, so rows come from CRM *_Sign_Req_Id/*_Signed_Via/*_Verified_At fields and a per-viewer Sign reader hook is left unwired; Send/Verify only for fin, head, di and ops until OD8.",
+  "refs": [
+   "D53",
+   "D45",
+   "D48",
+   "D70",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.99,
+  "probs": {
+   "confirm": 0,
+   "owner": 0.01,
+   "reverse": 0.99
+  },
+  "cost": 0.78
+ },
+ {
+  "ticked": false,
+  "id": "M12-S05-NOTE-3",
+  "story": "M12-S05",
+  "kind": "PROVISIONAL",
+  "text": "A valid webhook writes nothing for sent/viewed/declined/expired/recalled and runs the filing only on a re-read 'completed' (D77, Jev 0.81).",
+  "refs": [
+   "D77",
+   "D45",
+   "D47",
+   "D48",
+   "D72"
+  ],
+  "choice": "confirm",
+  "conf": 0.58,
+  "probs": {
+   "confirm": 0.72,
+   "reverse": 0.27,
+   "owner": 0.01
+  },
+  "cost": 0.77
+ },
+ {
+  "ticked": false,
+  "id": "M12-S04-NOTE-5",
+  "story": "M12-S04",
+  "kind": "PROVISIONAL",
+  "text": "Send, remind, recall, verify and block seats are fin, head, ops and di on every paper plus comp on the FEMA declaration, until OD8.",
+  "refs": [
+   "D17",
+   "D45",
+   "D48",
+   "D52",
+   "D68",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.48,
+  "probs": {
+   "confirm": 0.09,
+   "reverse": 0.65,
+   "owner": 0.26
+  },
+  "cost": 0.75
+ },
+ {
+  "ticked": false,
+  "id": "M12-S04-NOTE-3",
+  "story": "M12-S04",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Per D77 only *_Sign_Req_Id and *_Signed_Via are written; status and sent time are read live from Zoho Sign instead of being written to the record.",
+  "refs": [
+   "D77",
+   "D17",
+   "D45",
+   "D48",
+   "D52",
+   "D68",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.49,
+  "probs": {
+   "owner": 0.01,
+   "reverse": 0.67,
+   "confirm": 0.32
+  },
+  "cost": 0.61
+ },
+ {
+  "ticked": false,
+  "id": "M17-S02-NOTE-3",
+  "story": "M17-S02",
+  "kind": "PROVISIONAL",
+  "text": "A manager change is refused when the new manager is neither the changer nor someone they manage (the prototype only checks that the manager exists).",
+  "refs": [
+   "D60",
+   "D61",
+   "D53",
+   "D22",
+   "D47",
+   "D68"
+  ],
+  "choice": "reverse",
+  "conf": 0.68,
+  "probs": {
+   "reverse": 0.79,
+   "owner": 0.07,
+   "confirm": 0.14
+  },
+  "cost": 0.17
+ },
+ {
+  "ticked": false,
+  "id": "M12-S07-NOTE-1",
+  "story": "M12-S07",
+  "kind": "PROVISIONAL",
+  "text": "The block reason is a Zoho Note on the record and the slot's request id, method and verified fields are cleared, because no blocked or reason field exists (Jev 0.78).",
+  "refs": [
+   "D19",
+   "D52",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.8,
+  "probs": {
+   "confirm": 0.11,
+   "owner": 0.02,
+   "reverse": 0.87
+  },
+  "cost": 0.66
+ },
+ {
+  "ticked": false,
+  "id": "M12-S08-NOTE-1",
+  "story": "M12-S08",
+  "kind": "PROVISIONAL",
+  "text": "Requests are created without is_embedded so the email path always works; embedtoken answers 409 'sign from the email' if Zoho refuses (Jev 0.83); embedtoken and the Contact read run on the provider-callback service credential because the investor has no Zoho token.",
+  "refs": [
+   "D6",
+   "D72",
+   "D73"
+  ],
+  "choice": "reverse",
+  "conf": 0.94,
+  "probs": {
+   "reverse": 0.96,
+   "owner": 0.01,
+   "confirm": 0.03
+  },
+  "cost": 0.64
+ },
+ {
+  "ticked": false,
+  "id": "M12-S06-NOTE-2",
+  "story": "M12-S06",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Contacts.Agreement_signed (Yes/No picklist) exists but is not written; the signed stamp stays Supplementary_Verified_At - confirm or retire the legacy picklist.",
+  "refs": [
+   "D19",
+   "D22",
+   "D45",
+   "D52",
+   "D70",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.91,
+  "probs": {
+   "reverse": 0.94,
+   "confirm": 0.04,
+   "owner": 0.02
+  },
+  "cost": 0.75
+ },
+ {
+  "ticked": false,
+  "id": "M12-S07-NOTE-2",
+  "story": "M12-S07",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Add *_Blocked_At and *_Blocked_Reason per paper slot so the Documents list can show a blocked row and its reason.",
+  "refs": [
+   "D19",
+   "D52",
+   "D72"
+  ],
+  "choice": "confirm",
+  "conf": 0.75,
+  "probs": {
+   "confirm": 0.84,
+   "owner": 0.08,
+   "reverse": 0.08
+  },
+  "cost": 0.67
+ },
+ {
+  "ticked": false,
+  "id": "M05-S08-NOTE-3",
+  "story": "M05-S08",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "Conversations are stored in Touches against the origin Lead, not on the Contact as AC4 says; accept Touches-on-Lead or add a Contact lookup to Touches.",
+  "refs": [
+   "D12",
+   "D40",
+   "D53"
+  ],
+  "choice": "reverse",
+  "conf": 0.71,
+  "probs": {
+   "confirm": 0.08,
+   "reverse": 0.8,
+   "owner": 0.12
+  },
+  "cost": 0.58
+ },
+ {
+  "ticked": false,
+  "id": "M18-S01-NOTE-3",
+  "story": "M18-S01",
+  "kind": "PROVISIONAL",
+  "text": "The daily credit projection assumes the header first appears at half the daily allowance (D47) and projects to Kolkata midnight, an early-warning estimate; the load-test page-to-API map must be checked against the front end's calls.",
+  "refs": [
+   "D47",
+   "D45",
+   "D46",
+   "D53"
+  ],
+  "choice": "confirm",
+  "conf": 0.08,
+  "probs": {
+   "confirm": 0.38,
+   "reverse": 0.28,
+   "owner": 0.34
+  },
+  "cost": 0.23
+ },
+ {
+  "ticked": false,
+  "id": "M05-S08-NOTE-4",
+  "story": "M05-S08",
+  "kind": "PROVISIONAL",
+  "text": "Tickets open on the KAM are a tile and a separate list, not queue rows, matching the front end's mineQueue (Jev 0.75); the KAM access re-check is copied from server/data/live.ts and should be exported from there.",
+  "refs": [
+   "D12",
+   "D40",
+   "D53"
+  ],
+  "choice": "confirm",
+  "conf": 0.33,
+  "probs": {
+   "confirm": 0.56,
+   "reverse": 0.22,
+   "owner": 0.22
+  },
+  "cost": 0.18
+ },
+ {
+  "ticked": false,
+  "id": "M16-S08-NOTE-2",
+  "story": "M16-S08",
+  "kind": "PROVISIONAL",
+  "text": "COQL rejects PAN_Proof/Bank_Proof in criteria, so a proof slot counts as missing while its *_Verified_At is empty (Jev 0.95); Collection counts matched receipts only (D21, as Today) and differs from the register's netBanked until the register follows D21.",
+  "refs": [
+   "D21",
+   "D40",
+   "D45",
+   "D53",
+   "D70",
+   "D72"
+  ],
+  "choice": "confirm",
+  "conf": 0.23,
+  "probs": {
+   "reverse": 0.35,
+   "confirm": 0.48,
+   "owner": 0.17
+  },
+  "cost": 0.51
+ },
+ {
+  "ticked": false,
+  "id": "M11-S05-NOTE-6",
+  "story": "M11-S05",
+  "kind": "PROVISIONAL",
+  "text": "The letter's verification stamp is written before the transition because the blueprint condition reads it, so a refused allotment leaves the letter verified.",
+  "refs": [
+   "D19",
+   "D45",
+   "D48",
+   "D54",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.58,
+  "probs": {
+   "reverse": 0.72,
+   "owner": 0.06,
+   "confirm": 0.22
+  },
+  "cost": 0.84
+ },
+ {
+  "ticked": false,
+  "id": "M10-S08-NOTE-3",
+  "story": "M10-S08",
+  "kind": "PROVISIONAL",
+  "text": "By-allotment and the investor record count matched money only with a per-block recorded figure for Pending receipts (Jev 0.67).",
+  "refs": [
+   "D70",
+   "D48"
+  ],
+  "choice": "reverse",
+  "conf": 0.7,
+  "probs": {
+   "confirm": 0.09,
+   "reverse": 0.8,
+   "owner": 0.11
+  },
+  "cost": 0.78
+ },
+ {
+  "ticked": false,
+  "id": "M12-S11-NOTE-2",
+  "story": "M12-S11",
+  "kind": "PROVISIONAL",
+  "text": "IR chases are a per-round count plus last-chase stamp and channel on the Lead with detail in the Touch and Note (Jev 0.26, low); every IR step of both rounds lives on the Lead (Jev 0.73); the IR's word for Finance is the round's Said_At/Said_By matched by round (Jev 0.73).",
+  "refs": [
+   "D41",
+   "D45",
+   "D52",
+   "D53",
+   "D60",
+   "D61",
+   "D72"
+  ],
+  "choice": "reverse",
+  "conf": 0.36,
+  "probs": {
+   "confirm": 0.35,
+   "reverse": 0.58,
+   "owner": 0.07
+  },
+  "cost": 0.64
+ },
+ {
+  "ticked": false,
+  "id": "M11-S05-NOTE-4",
+  "story": "M11-S05",
+  "kind": "FACT CHANGE PROPOSED",
+  "text": "The story says rung 7 ticks from the allotment, but journey.ts numbers it rung 8 'Allocated' and its alloc gate does not read Allocation_Status Issued or allotment.done.",
+  "refs": [
+   "D19",
+   "D45",
+   "D48",
+   "D54",
+   "D70"
+  ],
+  "choice": "reverse",
+  "conf": 0.53,
+  "probs": {
+   "confirm": 0.24,
+   "reverse": 0.68,
+   "owner": 0.08
+  },
+  "cost": 0.36
+ },
+ {
+  "ticked": false,
+  "id": "M08-S08-NOTE-6",
+  "story": "M08-S08",
+  "kind": "PROVISIONAL",
+  "text": "Add-paid leaves App_Access empty; the account opens On hold only when a second person matches its Pending receipt (Jev 0.85).",
+  "refs": [
+   "D10",
+   "D19",
+   "D21",
+   "D52",
+   "D73",
+   "D93"
+  ],
+  "choice": "reverse",
+  "conf": 0.58,
+  "probs": {
+   "reverse": 0.72,
+   "owner": 0.03,
+   "confirm": 0.25
+  },
+  "cost": 0.58
+ }
+]
