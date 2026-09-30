@@ -67,6 +67,12 @@ export function lpPickStep(d: LpDraft, t: string, channelFor: (t: string) => str
   return { ...d, t, nch: (["msg", "email", "call", "visit"].includes(m) && allowed(m) ? m : "other") as LpDraft["nch"], keep: false, noNext: false };
 }
 
+/* Saving with the scheduled step kept must not fall back to a default "Call back" (lpPickStep resets keep). */
+export const lpNeedsStep = (d: LpDraft): boolean => !d.t && !d.keep;
+/* fuValidate: a next step dated today needs a time still ahead — the flow says so and saves nothing. */
+export const lpStepPast = (nd: string | undefined, tm: string, now: Date): boolean =>
+  !!tm && !!nd && new Date(nd + "T" + tm + ":00") < now;
+
 /* ---- the email composer — EMTPL, EMMAT, emTplOK, emTplFor ---- */
 export const EMTPL: Record<string, { t: string; s: string; b: string }> = {
   intro: { t: "Introduction", s: "Growize — managed aeroponic farm units", b: "Dear {first},\n\nThank you for your time. As discussed, Growize offers managed, tray-based aeroponic farm units with ARL handling operations end to end.\n\nI'd be glad to walk you through the numbers on a short call this week. What time suits you?\n\nRegards,\n{me}" },

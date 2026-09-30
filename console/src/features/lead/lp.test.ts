@@ -5,7 +5,7 @@ import { initialState, reducer } from "@/lib/state";
 import type { ConsoleState } from "@/lib/state";
 import type { LeadId, PersonKey } from "@/domain";
 import { lost } from "@/lib/selectors";
-import { emTpls, lpNextChoices, lpPrefSlot, zKind, type LpDraft } from "./lp";
+import { emTpls, lpNeedsStep, lpNextChoices, lpPrefSlot, lpStepPast, zKind, type LpDraft } from "./lp";
 import { lpSnap } from "./reducer";
 
 const as = (k: string) => reducer(initialState(demoBook()), { type: "signIn", k: k as PersonKey });
@@ -68,5 +68,21 @@ describe("lpLose — the contact and the loss in one write (ir-merged.js 5127)",
     expect((s1.ui.LPNOTICE as { msg: string }).msg).toBe("Closed as lost — Price too high");
     const s0 = as("rohit");
     expect(reducer(s0, { type: "lpLose", id: "L6" as LeadId, d: draft({ outcome: "Not interested" }), why: "Price too high" })).toBe(s0);
+  });
+});
+
+describe("keeping the scheduled step, and a next-step time already past (M19-S12)", () => {
+  it("a save that keeps the appointment does not ask for a default next step", () => {
+    expect(lpNeedsStep(draft({ t: "", keep: true }))).toBe(false);
+    expect(lpNeedsStep(draft({ t: "", keep: false }))).toBe(true);
+    const s1 = reducer(as("rohit"), { type: "lpFinish", id: "L4" as LeadId, d: draft({ t: "", keep: true, complete: false }) });
+    expect(lead(s1, "L4").nx).toEqual(lead(as("rohit"), "L4").nx);
+  });
+  it("09:00 is refused at 15:36 on the same day; 18:00 and a later day are not", () => {
+    const now = new Date("2026-08-28T15:36:00");
+    expect(lpStepPast("2026-08-28", "09:00", now)).toBe(true);
+    expect(lpStepPast("2026-08-28", "18:00", now)).toBe(false);
+    expect(lpStepPast("2026-08-29", "09:00", now)).toBe(false);
+    expect(lpStepPast("2026-08-28", "", now)).toBe(false);
   });
 });

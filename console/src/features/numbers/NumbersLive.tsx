@@ -243,7 +243,7 @@ export function NumbersLive({ sec }: { sec: string }) {
 
       {S("lost") && (
         <div className="card fill"><Hd t="Why we lose" right={
-          <span className="sm">{gone.length} closed · {lostUnits} unit{lostUnits === 1 ? "" : "s"} · {money(lostUnits * UNIT)} of demand</span>} />
+          <span className="sm">{gone.length} closed · {lostUnits} unit{lostUnits === 1 ? "" : "s"}{seeMoney(state) ? ` · ${money(lostUnits * UNIT)} of demand` : ""}</span>} />
           <div className="cb">
             {lostRows.length ? (<>
               {lostRows.map(r => (
