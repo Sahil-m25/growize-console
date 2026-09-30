@@ -22,7 +22,8 @@ import { EMMAT, emTplOK, lpPaperName, LPPCH, needOf, UNDOWHY, ZLABEL, zKind, typ
 export type LpSnap = {
   l: unknown; i: unknown; c: unknown; n: unknown; p: unknown; s: unknown; k: unknown; logN: number;
 };
-export type LpNotice = { who: string; id: string; msg: string; snap: LpSnap | null; label: string; t: number };
+/* undoToken: live mode (M12-S11-W1) — the route's signed 10-second token, in place of a snapshot */
+export type LpNotice = { who: string; id: string; msg: string; snap: LpSnap | null; label: string; t: number; undoToken?: string | null };
 
 export type LeadPageAction =
   | { type: "lpFinish"; id: LeadId; d: LpDraft }

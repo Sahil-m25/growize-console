@@ -12,7 +12,8 @@ import { useState } from "react";
 import { EDIT_H, GOALS, SENDABLE } from "@/domain";
 import type { Sendable } from "@/domain";
 import { agoStr } from "@/lib/format";
-import { canWork, fresh, ndaOK, whyLocked } from "@/lib/selectors";
+import { canWork, fresh, whyLocked } from "@/lib/selectors";
+import { useNda } from "../nda";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 
@@ -25,11 +26,12 @@ function MaterialBody({ lead }: DrawerProps) {
   const l = lead!;
   const sent = state.SENT[l.id] || {};
   const can = canWork(state, l);
+  const nda = useNda(l);
   const [refusal, setRefusal] = useState<string | null>(null);
 
   const mat = (d: Sendable) => {
     const at = sent[d];
-    if (!at && !ndaOK(state, l)) return setRefusal(NDAFIRST);
+    if (!at && !nda) return setRefusal(NDAFIRST);
     if (!can) return;
     if (!at && !l.consent) return setRefusal(NOCONSENT);
     if (at && !fresh(at, state.NOW))
@@ -50,7 +52,7 @@ function MaterialBody({ lead }: DrawerProps) {
     <>
       {/* ir-console-redesigned.html:12280: the upfront gate note, said before the ticks rather than
          only after a click is refused. */}
-      {!ndaOK(state, l) ? (
+      {!nda ? (
         <>
           <div className="note due" style={{ margin: "0 0 12px" }}>The signed NDA is required before sending material.</div>
           <button type="button" className="act" onClick={() => dispatch({ type: "openDrawer", k: "paper", id: l.id })}>Open paperwork</button>
