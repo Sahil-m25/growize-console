@@ -5,17 +5,20 @@
    and the app preview (M10-S22). Same frame, classes and gates as the prototype's drawers; their
    form fields live in ui.MX, written with {type:"mset"}. */
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import {
-  I, PAYOUT_MODES, TESTLINK_MIN, addInvestorGate, allotDue, allotAmount, allotOf, allotPayStatus, allotTxns, allotUnits,
-  allotsOnLlp, dupEmail, fmtAt, fmtDate, inr, llpCounts, llpName, llpOf, llps, may,
-  money, nowDay, onSale, openAllots, payoutNet, payoutOf, prePick, qrCells, testLinkState, testLinks, who, ymd, nowFull, notFin,
+  I, PAYOUT_MODES, TESTLINK_MIN, addInvestorGate, allotDue, allotAmount, allotPayStatus, allotTxns, allotUnits,
+  allotsOnLlp, dupEmail, fmtDate, inr, llpCounts, llpName, llpOf, llps, may,
+  money, nowDay, onSale, openAllots, payoutNet, prePick, qrCells, ymd, notFin,
 } from "@/lib/im";
 import type { ImMoneyDrawerKey, ImPayoutMode } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { AppPreview } from "./preview";
-import { useApiRead } from "@/lib/data/api";
+import { newIdempotencyKey, useApiRead, useApiWrite } from "@/lib/data/api";
 import { farmOne } from "@/lib/data/endpoints/farms";
+import { investorRecord } from "@/lib/data/endpoints/investors";
+import { payoutPaid, payoutQueue, payoutSchedule } from "@/lib/data/endpoints/payouts";
+import { appCard, appLock, testLinkList, testLinkMake, type MadeLink } from "@/lib/data/endpoints/app";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -23,32 +26,51 @@ interface DrawerDef { w: number; t: string; sub: Part; body: Part; foot: Part }
 
 const mx = (c: Ctx, k: string): string => (c.s.ui.MX || {})[k] || "";
 const setMx = (c: Ctx, k: string, v: string) => c.dispatch({ type: "mset", k, v });
-const nameOf = ({ s, me, id }: Ctx): string => (I(s, me, id) || { n: "" }).n || "";
+/** the investor's name is the record's (GET /api/investors/[id]/record), never a lookup in the book */
+function InvName({ s, me, id }: Ctx) {
+  const r = useApiRead(investorRecord, { s, me }, id);
+  return <>{r.state === "ok" ? r.data.record.investor.n : ""}</>;
+}
+const nameOf = (c: Ctx): ReactNode => <InvName {...c} />;
+const useInvName = (c: Ctx): string => { const r = useApiRead(investorRecord, { s: c.s, me: c.me }, c.id); return r.state === "ok" ? r.data.record.investor.n : ""; };
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
   <span className={`tag ${c}`}><span className="dot" />{children}</span>;
 export const payTagClass = (st: string) => (st === "Full" ? "go" : st === "Partial" ? "due" : "");
 export const poTagClass = (st: string) =>
   st === "Paid" ? "go" : st === "Failed" ? "late" : st === "Held" ? "due" : st === "Cancelled" ? "" : "br";
 
-/* ---- payout: Mark paid (M10-S20) ---- */
-function payoutSub(c: Ctx): string {
-  const p = payoutOf(c.s, c.id), a = p && allotOf(c.s, p.Allotment);
-  return a ? (I(c.s, c.me, a.Customer) || { n: a.Customer }).n + " · " + llpName(c.s, a) : "";
+/* ---- payout: Mark paid (M10-S20) ----
+   M10-S20-W1: the payout is its line on the allotment's schedule (GET /api/payouts/allotments/[id]); the queue and the
+   Payouts tab put the allotment id in "po:al" before opening the drawer. Mark paid is POST /api/payouts/[id]/paid with an
+   Idempotency-Key per press (kept while the same press is retried). The UTR is only ever shown masked. */
+function usePayoutLine(c: Ctx) {
+  const al = mx(c, "po:al") || null;
+  const r = useApiRead(payoutSchedule, { s: c.s, me: c.me }, al);
+  return { r, line: r.state === "ok" ? r.data.payouts.find(p => p.id === c.id) ?? null : null };
 }
-function payoutBody(c: Ctx): ReactNode {
-  const { s } = c; const p = payoutOf(s, c.id); if (!p) return null;
-  const tds = mx(c, "po:tds") === "" ? p.TDS_Amount : Math.max(0, +mx(c, "po:tds") || 0);
+function PayoutSub(c: Ctx) {
+  const q = useApiRead(payoutQueue, { s: c.s, me: c.me }, undefined);
+  const l = q.state === "ok" ? q.data.due.concat(q.data.overdue).find(p => p.id === c.id) : null;
+  return <>{l ? (l.investor.name ?? l.investor.id) + " · " + (l.farm.name ?? l.farm.id) : mx(c, "po:al")}</>;
+}
+function PayoutBody(c: Ctx) {
+  const { s } = c; const { r, line: p } = usePayoutLine(c);
+  if (r.state === "idle") return null;
+  if (r.state === "loading") return <p className="sm" style={{ margin: 0 }}>Reading the payout…</p>;
+  if (r.state === "error") return <p className="sm" role="alert" style={{ margin: 0 }}>{r.err.error}</p>;
+  if (!p) return <p className="sm" role="alert" style={{ margin: 0 }}>Not found, or not yours to open.</p>;
+  const tds = mx(c, "po:tds") === "" ? p.tds : Math.max(0, +mx(c, "po:tds") || 0);
   const mode = (mx(c, "po:mode") || "NEFT") as ImPayoutMode;
   const on = mx(c, "po:on") || ymd(nowDay(s.data.NOW));
-  if (p.Payout_State === "Paid") return (
+  if (p.state === "Paid") return (
     <>
       <dl className="kv" style={{ marginTop: 0 }}>
-        <dt>Instalment</dt><dd>{p.Instalment_No} of 60 · {fmtDate(p.Period_Month)}</dd>
+        <dt>Instalment</dt><dd>{p.instalment} of 60 · {fmtDate(p.month)}</dd>
         <dt>State</dt><dd><TagDot c="go">Paid</TagDot></dd>
-        <dt>Paid on</dt><dd className="mono">{fmtDate(p.Paid_On)}</dd>
-        <dt>How</dt><dd>{p.Payout_Mode} <span className="mono">{p.Payout_UTR}</span></dd>
-        <dt>Paid by</dt><dd>{who(s, p.Paid_By).n}</dd>
-        <dt>Gross · TDS · net</dt><dd className="mono">{inr(p.Gross_Amount)} · {inr(p.TDS_Amount)} · <b>{inr(p.Net_Amount)}</b></dd>
+        <dt>Paid on</dt><dd className="mono">{fmtDate(p.paidOn)}</dd>
+        <dt>How</dt><dd>{p.mode} <span className="mono">{p.utrMasked}</span></dd>
+        <dt>Paid by</dt><dd>{p.paidBy?.name ?? "—"}</dd>
+        <dt>Gross · TDS · net</dt><dd className="mono">{inr(p.gross)} · {inr(p.tds)} · <b>{inr(p.net)}</b></dd>
       </dl>
       <p className="sm" style={{ margin: "12px 0 0" }}>A payout is paid once. This one is on the record and cannot be marked again.</p>
     </>
@@ -56,10 +78,10 @@ function payoutBody(c: Ctx): ReactNode {
   return (
     <>
       <dl className="kv" style={{ marginTop: 0, marginBottom: 12 }}>
-        <dt>Instalment</dt><dd>{p.Instalment_No} of 60 · {fmtDate(p.Period_Month)}</dd>
-        <dt>Due on</dt><dd className="mono">{fmtDate(p.Due_On)}</dd>
-        <dt>State</dt><dd><TagDot c={poTagClass(p.Payout_State)}>{p.Payout_State}</TagDot>{p.Payout_Note ? <div className="sm">{p.Payout_Note}</div> : null}</dd>
-        <dt>Gross</dt><dd className="mono">{inr(p.Gross_Amount)}</dd>
+        <dt>Instalment</dt><dd>{p.instalment} of 60 · {fmtDate(p.month)}</dd>
+        <dt>Due on</dt><dd className="mono">{fmtDate(p.dueOn)}</dd>
+        <dt>State</dt><dd><TagDot c={poTagClass(p.state ?? "")}>{p.state}</TagDot></dd>
+        <dt>Gross</dt><dd className="mono">{inr(p.gross)}</dd>
       </dl>
       <label className="fi"><span>Paid on</span>
         <input className="inp" type="date" id="po-on" value={on} max={ymd(nowDay(s.data.NOW))}
@@ -71,25 +93,33 @@ function payoutBody(c: Ctx): ReactNode {
         <input className="inp" id="po-utr" placeholder="the bank's reference for the transfer" value={mx(c, "po:utr")}
           onChange={e => setMx(c, "po:utr", e.target.value)} /></label>
       <label className="fi" style={{ marginTop: 14 }}><span>TDS deducted (₹)</span>
-        <input className="inp" id="po-tds" inputMode="numeric" value={mx(c, "po:tds") === "" ? String(p.TDS_Amount) : mx(c, "po:tds")}
+        <input className="inp" id="po-tds" inputMode="numeric" value={mx(c, "po:tds") === "" ? String(p.tds) : mx(c, "po:tds")}
           onChange={e => setMx(c, "po:tds", e.target.value.replace(/[^\d]/g, ""))} /></label>
       <p className="sm" style={{ margin: "7px 0 0" }}>Typed by Finance, ₹0 unless something was deducted. The console never works TDS out.</p>
       <div className="drwsec"><dl className="kv" style={{ marginTop: 0 }}>
-        <dt>Net to the investor</dt><dd className="mono"><b>{inr(payoutNet(p.Gross_Amount, tds))}</b> <span className="sm">= {inr(p.Gross_Amount)} − {inr(tds)}</span></dd>
+        <dt>Net to the investor</dt><dd className="mono"><b>{inr(payoutNet(p.gross, tds))}</b> <span className="sm">= {inr(p.gross)} − {inr(tds)}</span></dd>
       </dl></div>
     </>
   );
 }
-function payoutFoot(c: Ctx): ReactNode {
-  const { s, me, dispatch } = c; const p = payoutOf(s, c.id);
-  if (!p || !may(s, me, "pay") || p.Payout_State === "Paid" || p.Payout_State === "Cancelled") return null;
+function PayoutFoot(c: Ctx) {
+  const { s, me, dispatch } = c; const { line: p } = usePayoutLine(c);
+  const write = useApiWrite(payoutPaid, { s, me }, dispatch);
+  const key = useRef(newIdempotencyKey());
+  if (!p || !may(s, me, "pay") || p.state === "Cancelled") return null;
+  if (p.state === "Paid") return <span className="sm">Paid — nothing more to do here.</span>;
   const utr = mx(c, "po:utr").trim();
-  const tds = mx(c, "po:tds") === "" ? p.TDS_Amount : +mx(c, "po:tds") || 0;
-  return (
-    <button className="act" disabled={!utr} title={utr ? undefined : "The bank's UTR first"}
-      onClick={utr ? () => dispatch({ type: "markPayoutPaid", id: p.id, utr, tds, mode: (mx(c, "po:mode") || "NEFT") as ImPayoutMode,
-        paidOn: mx(c, "po:on") || ymd(nowDay(s.data.NOW)) }) : undefined}>Mark paid</button>
-  );
+  const tds = mx(c, "po:tds") === "" ? p.tds : +mx(c, "po:tds") || 0;
+  const press = () => {
+    void write({ id: p.id, utr, tds, mode: (mx(c, "po:mode") || "NEFT") as ImPayoutMode, paidOn: mx(c, "po:on") || ymd(nowDay(s.data.NOW)),
+      modifiedTime: p.modifiedTime }, { idempotencyKey: key.current }).then(r => {
+      if (!r.ok) return;                       /* a refusal is already the page note; the same key retries the same press */
+      key.current = newIdempotencyKey();
+      for (const k of ["po:utr", "po:tds", "po:on", "po:mode"]) setMx(c, k, "");
+      dispatch({ type: "closeDrawer" });
+    });
+  };
+  return <button className="act" disabled={!utr} title={utr ? undefined : "The bank's UTR first"} onClick={utr ? press : undefined}>Mark paid</button>;
 }
 
 /* ---- llp: one farm LLP (M11-S01, M11-S02, M10-S07) ----
@@ -199,12 +229,14 @@ function addFoot(c: Ctx): ReactNode {
   );
 }
 
-/* ---- applock: Lock app access (M10-S21) ---- */
-function lockBody(c: Ctx): ReactNode {
-  const x = I(c.s, c.me, c.id); if (!x) return null;
+/* ---- applock: Lock app access (M10-S21) ----
+   M10-S21-W1: DELETE /api/investors/[id]/unlock { reason, expectedModifiedTime } — the card's modifiedTime goes back (D44). */
+function LockBody(c: Ctx) {
+  const n = useInvName(c);
+  if (!c.id) return null;
   return (
     <>
-      <p className="sm" style={{ margin: "0 0 12px" }}>Sign-in is blocked from the moment you confirm. {x.n}&apos;s data stays in the app and nothing is emailed.
+      <p className="sm" style={{ margin: "0 0 12px" }}>Sign-in is blocked from the moment you confirm. {n}&apos;s data stays in the app and nothing is emailed.
         The reason goes on the record with your name, and on their Activity.</p>
       <label className="fi"><span>Why</span>
         <textarea className="nta" id="lock-why" rows={3} placeholder="e.g. the investor asked us to pause access"
@@ -212,10 +244,17 @@ function lockBody(c: Ctx): ReactNode {
     </>
   );
 }
-function lockFoot(c: Ctx): ReactNode {
+function LockFoot(c: Ctx) {
+  const card = useApiRead(appCard, { s: c.s, me: c.me }, c.id);
+  const write = useApiWrite(appLock, { s: c.s, me: c.me }, c.dispatch);
   const why = mx(c, "lock:" + c.id).trim();
-  return c.id ? <button className="act" disabled={!why} title={why ? undefined : "Say why first"}
-    onClick={why ? () => c.dispatch({ type: "lockApp", id: c.id!, why }) : undefined}>Lock app access</button> : null;
+  if (!c.id) return null;
+  const press = () => void write({ id: c.id!, reason: why, expectedModifiedTime: card.state === "ok" ? card.data.card.modifiedTime : null }).then(r => {
+    if (!r.ok) return;
+    setMx(c, "lock:" + c.id, "");
+    c.dispatch({ type: "closeDrawer" });
+  });
+  return <button className="act" disabled={!why} title={why ? undefined : "Say why first"} onClick={why ? press : undefined}>Lock app access</button>;
 }
 
 /* ---- testlink: a one-time test sign-in link (M10-S23) ---- */
@@ -228,52 +267,74 @@ function Qr({ text }: { text: string }) {
     </svg>
   );
 }
-function linkBody(c: Ctx): ReactNode {
-  const { s } = c; const x = I(s, c.me, c.id); if (!x) return null;
-  const l = testLinks(s).find(t => t.id === mx(c, "tl:" + x.id));
+/* M10-S23-W1: POST /api/investors/[id]/test-link { why, confirm } — for a real investor the first press is answered 409
+   confirm-needed with the warning, which the drawer shows before it asks again with confirm. The link itself (url) exists only
+   in the POST's answer, so it is kept in the drawer's own form state ("tlmade:<id>") — GET lists the earlier ones. */
+const madeOf = (c: Ctx): MadeLink | null => { try { const v = mx(c, "tlmade:" + c.id); return v ? JSON.parse(v) as MadeLink : null; } catch { return null; } };
+const fmtMs = (t: number): string => fmtDate(new Date(t + 5.5 * 3_600_000).toISOString().slice(0, 10)).slice(0, 6) + " "
+  + new Date(t + 5.5 * 3_600_000).toISOString().slice(11, 16);
+function LinkBody(c: Ctx) {
+  const n = useInvName(c);
+  const old = useApiRead(testLinkList, { s: c.s, me: c.me }, c.id);
+  if (!c.id) return null;
+  const l = madeOf(c);
+  const ask = mx(c, "tlask:" + c.id);
+  const earlier = old.state === "ok" ? old.data.links.filter(e => !l || e.id !== l.id) : [];
+  const history = earlier.length ? (
+    <div className="drwsec"><p className="lbl">Earlier links for {n || "this investor"}</p>
+      {earlier.map(e => <div className="led" key={e.id}><span className={`tag ${e.state === "live" ? "go" : ""}`}>{e.state}</span>
+        <span style={{ minWidth: 0 }}><span className="sm mono">{fmtMs(e.at)}</span><div className="sm">{e.why}</div></span></div>)}</div>) : null;
   if (l) {
-    const st = testLinkState(l, nowFull(s.data.NOW));
     return (
       <>
-        <div className="note warn" style={{ marginBottom: 12 }}><b>This is the full app as {x.n}.</b> It works once, until {fmtAt(l.expires)}. Nothing was emailed to them.</div>
+        <div className="note warn" style={{ marginBottom: 12 }}><b>This is the full app as {n}.</b> It works once, until {fmtMs(l.expiresAt)}. Nothing was emailed to them.</div>
         <p className="lbl">One-time link</p>
         <p className="mono" style={{ margin: "0 0 12px", wordBreak: "break-all" }}>{l.url}</p>
         <Qr text={l.url} />
         <p className="sm" style={{ margin: "7px 0 12px" }}>Placeholder QR — phase 1 draws it from the link; the app mints the real one.</p>
         <dl className="kv" style={{ marginTop: 0 }}>
-          <dt>State</dt><dd><TagDot c={st === "live" ? "go" : "late"}>{st === "live" ? "live — one use" : st}</TagDot></dd>
-          <dt>Made</dt><dd className="mono">{fmtAt(l.at)}</dd>
-          <dt>Expires</dt><dd className="mono">{fmtAt(l.expires)} <span className="sm">or at first use</span></dd>
+          <dt>State</dt><dd><TagDot c={l.state === "live" ? "go" : "late"}>{l.state === "live" ? "live — one use" : l.state}</TagDot></dd>
+          <dt>Made</dt><dd className="mono">{fmtMs(l.at)}</dd>
+          <dt>Expires</dt><dd className="mono">{fmtMs(l.expiresAt)} <span className="sm">or at first use</span></dd>
           <dt>Why</dt><dd>{l.why}</dd>
         </dl>
+        {history}
       </>
     );
   }
   return (
     <>
-      <p className="sm" style={{ margin: "0 0 12px" }}>A one-time sign-in to the real investor app on another device, to check what {x.n} sees.
+      <p className="sm" style={{ margin: "0 0 12px" }}>A one-time sign-in to the real investor app on another device, to check what {n} sees.
         It lasts {TESTLINK_MIN} minutes or one use, whichever comes first. Nothing is emailed to them; the link and a QR code show here.</p>
       <label className="fi"><span>Why you need it</span>
         <textarea className="nta" id="tl-why" rows={3} placeholder="e.g. check the payouts screen after the schedule changed"
-          value={mx(c, "tlwhy:" + x.id)} onChange={e => setMx(c, "tlwhy:" + x.id, e.target.value)} /></label>
-      <p className="sm" style={{ margin: "9px 0 0" }}>Who, whom, when and why go on System and on {x.n}&apos;s Activity.</p>
+          value={mx(c, "tlwhy:" + c.id)} onChange={e => setMx(c, "tlwhy:" + c.id, e.target.value)} /></label>
+      <p className="sm" style={{ margin: "9px 0 0" }}>Who, whom, when and why go on System and on {n}&apos;s Activity.</p>
+      {ask ? <div className="note warn" role="alert" style={{ marginTop: 12, whiteSpace: "pre-line" }}>{ask}</div> : null}
+      {history}
     </>
   );
 }
-function linkFoot(c: Ctx): ReactNode {
-  const x = I(c.s, c.me, c.id); if (!x || mx(c, "tl:" + x.id)) return null;
-  const why = mx(c, "tlwhy:" + x.id).trim();
-  return <button className="act" disabled={!why} title={why ? undefined : "Say why first"}
-    onClick={why ? () => c.dispatch({ type: "createTestLink", id: x.id, why }) : undefined}>Create test sign-in link</button>;
+function LinkFoot(c: Ctx) {
+  const write = useApiWrite(testLinkMake, { s: c.s, me: c.me }, c.dispatch);
+  if (!c.id) return null;
+  if (madeOf(c)) return <span className="sm">The link works once.</span>;
+  const why = mx(c, "tlwhy:" + c.id).trim(), asked = !!mx(c, "tlask:" + c.id);
+  const press = () => void write({ id: c.id!, why, confirm: asked }).then(r => {
+    if (r.ok) { setMx(c, "tlask:" + c.id, ""); setMx(c, "tlmade:" + c.id, JSON.stringify(r.data)); setMx(c, "tlwhy:" + c.id, ""); return; }
+    if (r.code === "confirm-needed") setMx(c, "tlask:" + c.id, r.ask ?? r.error);   /* the route's warning, before the second press */
+  });
+  return <button className="act" disabled={!why} title={why ? undefined : "Say why first"} onClick={why ? press : undefined}>
+    {asked ? "Make the link" : "Create test sign-in link"}</button>;
 }
 
 /* ---- the registry, spread into DRAWERS ---- */
 export const MONEY_DRAWER_DEFS: Record<ImMoneyDrawerKey, DrawerDef> = {
-  payout: { w: 430, t: "Mark a payout paid", sub: payoutSub, body: payoutBody, foot: payoutFoot },
+  payout: { w: 430, t: "Mark a payout paid", sub: c => <PayoutSub {...c} />, body: c => <PayoutBody {...c} />, foot: c => <PayoutFoot {...c} /> },
   llp: { w: 450, t: "Farm LLP", sub: c => <LlpName {...c} />, body: c => <LlpBody {...c} />, foot: () => null },
   addinv: { w: 450, t: "Add an investor who already paid", sub: () => "no email goes to them", body: addBody, foot: addFoot },
-  applock: { w: 430, t: "Lock app access", sub: nameOf, body: lockBody, foot: lockFoot },
-  testlink: { w: 430, t: "Test sign-in link", sub: nameOf, body: linkBody, foot: linkFoot },
+  applock: { w: 430, t: "Lock app access", sub: nameOf, body: c => <LockBody {...c} />, foot: c => <LockFoot {...c} /> },
+  testlink: { w: 430, t: "Test sign-in link", sub: nameOf, body: c => <LinkBody {...c} />, foot: c => <LinkFoot {...c} /> },
   preview: { w: 420, t: "App preview", sub: nameOf, body: c => (c.id ? <AppPreview s={c.s} me={c.me} dispatch={c.dispatch} id={c.id} /> : null), foot: () => null },
 };
 

@@ -123,6 +123,8 @@ export type ImMoneyDrawerKey = "payout" | "llp" | "addinv" | "applock" | "testli
 export type ImMoneyAction =
   | { type: "mset"; k: string; v: string }
   | { type: "markPayoutPaid"; id: string; paidOn: string; mode: ImPayoutMode; utr: string; tds: number }
+  /** M10-S20-W1: the schedule job's fixture half — the missing of an Issued allotment's 60 payouts (POST /api/payouts/schedule) */
+  | { type: "schedulePayouts"; ids: string[] }
   | { type: "sendWelcome"; id: string }
   | { type: "welcomeDelivered"; id: string }
   | { type: "lockApp"; id: string; why: string }
