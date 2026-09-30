@@ -31,7 +31,7 @@ import { Icon } from "@/components/ui/Icon";
 import { fuPreference } from "./followupContext";
 import {
   DEAD, EMMAT, EMTPL, emTplFor, emTplOK, emTpls, emUse, HESITANT, LP_SHORT, LP_SLOTS, LP_WHEN, lpNextChoices,
-  lpPaperName, LPPCH, lpPickStep, lpPrefSlot, needOf, RUNGASK, zKind,
+  lpNeedsStep, lpPaperName, LPPCH, lpPickStep, lpPrefSlot, lpStepPast, needOf, RUNGASK, zKind,
   type EmDraft, type LpDraft, type LpFlow,
 } from "./lp";
 import type { LpNotice } from "./reducer";
@@ -104,7 +104,7 @@ function useLp(l: Lead) {
     },
     finish: (d: LpDraft) => {
       let x = d;
-      if (!x.t) x = pick(x, "Call back");
+      if (lpNeedsStep(x)) x = pick(x, "Call back");
       if (!x.keep && !x.nd) x = { ...x, nd: iso(nowT(state.NOW)) };
       dispatch({ type: "lpFinish", id: l.id, d: x });
     },
@@ -121,6 +121,11 @@ function useLp(l: Lead) {
     time: (tm: string) => {
       if (!f) return;
       const d = { ...f.d, ntm: tm || "" };
+      /* fuValidate: a next step needs a time still ahead — said in the flow, nothing is saved */
+      if (lpStepPast(d.nd, tm, nowT(state.NOW))) {
+        setFlow({ ...f, d: { ...f.d, error: "The next step needs a time that is still ahead." } });
+        return;
+      }
       dispatch({ type: "lpFinish", id: l.id, d: d.t ? d : pick(d, "Call back") });
     },
     lose: (why: string) => { if (f) dispatch({ type: "lpLose", id: l.id, d: f.d, why }); },

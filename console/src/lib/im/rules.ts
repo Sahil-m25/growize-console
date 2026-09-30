@@ -58,9 +58,7 @@ export function recordPayGate(s: ImCtx, WHO: string, id: string, kind: "advance"
   if (x.st === "lapsed")
     return no(x.n + "'s reservation lapsed and the units went back on the shelf.\n\nMoney arriving now "
       + "is a fresh sale, not a receipt against this one — the land has to be reserved again first.");
-  if (roundOf(s, WHO, id, "supp").state !== "done")
-    return no("The supplementary agreement is not signed and verified.\n\nNothing is recorded against "
-      + "an investor until the agreement the money is for exists.");
+  /* D21 / rule 3: recording money is always allowed — an unverified supplementary only holds the MATCH (matchGate) */
   const due = dueBy(s, WHO, id);
   if (due <= 0) return no(x.n + " is paid in full. There is nothing outstanding to record.");
   const amt = kind === "advance" ? Math.round(x.units * UNIT * 0.1) : due;

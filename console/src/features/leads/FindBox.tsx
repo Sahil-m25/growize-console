@@ -123,7 +123,7 @@ export function FindBox() {
                 const d = fqPhoneOK(state, l) ? digits(l.ph) : "";
                 const m = l.own ? fqTeamOf(state, l.own) : null;
                 return (
-                  <div
+                  <a
                     className="d60b-opt"
                     role="option"
                     id={"fqo-" + i}
@@ -152,7 +152,7 @@ export function FindBox() {
                         )}
                       </span>
                     </div>
-                  </div>
+                  </a>
                 );
               })
             ) : (

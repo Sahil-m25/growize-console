@@ -98,12 +98,10 @@ describe("PII masking and reveals", () => {
 });
 
 describe("money gates", () => {
-  it("records nothing before the supplementary agreement is verified", () => {
+  it("records a receipt before the supplementary agreement is verified (D21, M08-S03, rule 3)", () => {
     const s = kit();
     expect(roundOf(s, "fin", "N1", "supp").state).toBe("none");
-    const g = recordPayGate(s, "fin", "N1", "advance");
-    expect(g.ok).toBe(false);
-    expect(!g.ok && g.msg).toMatch(/^The supplementary agreement is not signed and verified\./);
+    expect(recordPayGate(s, "fin", "N1", "advance").ok).toBe(true);
   });
   it("takes 10% as the advance, refuses a second advance and anything on a settled account", () => {
     const s = kit();

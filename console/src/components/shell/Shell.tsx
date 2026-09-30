@@ -28,6 +28,7 @@ import { ImDrawer, DRAWERS as IMDRAWERS } from "@/features/im/drawers";
 import { useDocked } from "./useDocked";
 import { Live } from "./Live";
 import { LeadPage } from "@/features/lead/LeadPage";
+import { EventPage } from "@/features/events";
 import TodayRoute from "@/app/today/page";
 import LeadsRoute from "@/app/leads/page";
 import ActivityRoute from "@/app/activity/page";
@@ -330,7 +331,13 @@ export function Shell({ children }: { children: ReactNode }) {
   const pendingView = !pendingLead && wantView && (!view || wantView !== parentOf(view)) && PENDING[wantView] && mayReach(state, wantView)
     ? wantView : null;
   const Pending = pendingView ? PENDING[pendingView]! : null;
-  const heading = !!(pendingLead || pendingView);
+  /* an event opened from the Events list is drawn by the shell both while its route is on the way and
+     after it lands (the lead page's idiom), so the arrival does not remount the page and wipe what
+     the person has already typed or picked on it */
+  const evPend = state.ui.EVPEND as { id: string; seq: unknown } | null | undefined;
+  const pendingEvent = view !== "event" && !blocked && evPend && evPend.seq === (state.ui.NAVSEQ ?? 0) && state.EVENTS.some((x) => x.id === evPend.id)
+    ? evPend.id : null;
+  const heading = !!(pendingLead || pendingView || pendingEvent);
   useEffect(() => {
     if (blocked && !heading) router.replace(pathOf(land, land === "lead" || land === "event" ? id ?? undefined : undefined));
   }, [blocked, heading, land, id, router]);
@@ -359,6 +366,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <MNote />
             <DataErrorBlock />
             {nav.length === 0 && view !== "me" ? <NoScreens /> : blocked && !Pending ? null : pendingLead || (shown === "lead" && id) ? <LeadPage id={(pendingLead || id)!} />
+              : pendingEvent || (view === "event" && id) ? <EventPage id={(pendingEvent || id)!} />
               : shown && PENDING[shown] ? (() => { const C = PENDING[shown]!; return <C />; })() : children}
           </main>
         </div>
