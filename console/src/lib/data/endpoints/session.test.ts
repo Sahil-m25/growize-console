@@ -31,7 +31,7 @@ describe("GET /api/session — pick", () => {
     expect(sessionRead.pick({ session: null, signedOut: "whatever" })).toEqual({ session: null });
   });
   it("live: reads the route", async () => {
-    const f = vi.fn(async () => json(200, { session: { who: ZID, seat: "ir" }, access: IR }));
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { session: { who: ZID, seat: "ir" }, access: IR }));
     const r = await liveRead(sessionRead, "/api/session", { fetch: f });
     expect(f.mock.calls[0]).toBeTruthy();
     expect(r).toEqual({ state: "ok", data: { session: { who: ZID, seat: "ir" }, access: IR } });

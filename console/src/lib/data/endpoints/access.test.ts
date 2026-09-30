@@ -15,19 +15,19 @@ const spy = () => { const seen: Action[] = []; return { seen, d: (a: Action) => 
 
 describe("grants — POST / DELETE /api/grants", () => {
   it("live: add posts {whom, page, cap}; remove deletes it; a page reset sends no cap", async () => {
-    const f = vi.fn(async () => json(200, { whom: "1", page: "leads", grants: {}, consoleAccount: true }));
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { whom: "1", page: "leads", grants: {}, consoleAccount: true }));
     const { d } = spy();
     const r = await runWrite("live", grantAdd, as("sahil"), d, { whom: "jhalak", page: "leads", cap: "view" }, { fetch: f });
     expect(r).toEqual({ ok: true, data: { whom: "1", page: "leads" } });
     expect(f.mock.calls[0][0]).toBe("/api/grants");
-    expect(f.mock.calls[0][1].method).toBe("POST");
-    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ whom: "jhalak", page: "leads", cap: "view" });
+    expect(f.mock.calls[0][1]!.method).toBe("POST");
+    expect(JSON.parse(f.mock.calls[0][1]!.body as string)).toEqual({ whom: "jhalak", page: "leads", cap: "view" });
     await runWrite("live", grantRemove, as("sahil"), d, { whom: "jhalak", page: "leads" }, { fetch: f });
-    expect(f.mock.calls[1][1].method).toBe("DELETE");
-    expect(JSON.parse(f.mock.calls[1][1].body)).toEqual({ whom: "jhalak", page: "leads" });
+    expect(f.mock.calls[1][1]!.method).toBe("DELETE");
+    expect(JSON.parse(f.mock.calls[1][1]!.body as string)).toEqual({ whom: "jhalak", page: "leads" });
   });
   it("live: the route's refusal comes back as its own message", async () => {
-    const f = vi.fn(async () => json(403, { error: "You cannot hand out what you do not hold yourself.", code: "not-held" }));
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(403, { error: "You cannot hand out what you do not hold yourself.", code: "not-held" }));
     const r = await runWrite("live", grantAdd, as("tasneem"), spy().d, { whom: "rohit", page: "system", cap: "view" }, { fetch: f });
     expect(r).toMatchObject({ ok: false, status: 403, code: "not-held", error: "You cannot hand out what you do not hold yourself." });
   });
@@ -58,18 +58,18 @@ describe("grants — POST / DELETE /api/grants", () => {
 
 describe("seats — PUT /api/users/{id}", () => {
   it("live: an Investors seat sends {seat}; a lead seat {seat, side: 'lead'}", async () => {
-    const f = vi.fn(async () => json(200, { whom: "7", from: "kam", to: "amlead", returned: 4 }));
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { whom: "7", from: "kam", to: "amlead", returned: 4 }));
     const seen: ImAction[] = [];
     const r = await runWrite("live", imSeatChange, { s: im(), me: "divya" }, (a: ImAction) => seen.push(a), { whom: "imran", seat: "amlead" }, { fetch: f });
     expect(r).toEqual({ ok: true, data: { whom: "7", to: "amlead" } });
     expect(f.mock.calls[0][0]).toBe("/api/users/imran");
-    expect(f.mock.calls[0][1].method).toBe("PUT");
-    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ seat: "amlead" });
+    expect(f.mock.calls[0][1]!.method).toBe("PUT");
+    expect(JSON.parse(f.mock.calls[0][1]!.body as string)).toEqual({ seat: "amlead" });
     await runWrite("live", leadSeatChange, as("sahil"), spy().d, { whom: "rohit", seat: "conv" }, { fetch: f });
-    expect(JSON.parse(f.mock.calls[1][1].body)).toEqual({ seat: "conv", side: "lead" });
+    expect(JSON.parse(f.mock.calls[1][1]!.body as string)).toEqual({ seat: "conv", side: "lead" });
   });
   it("live: 403 step-up lands in the page note with the route's message (M17-S02)", async () => {
-    const f = vi.fn(async () => json(403, { error: "Confirm it is you with a fresh Zoho sign-in first.", code: "step-up" }));
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(403, { error: "Confirm it is you with a fresh Zoho sign-in first.", code: "step-up" }));
     const seen: ImAction[] = [];
     const r = await runWrite("live", imSeatChange, { s: im(), me: "divya" }, (a: ImAction) => seen.push(a), { whom: "imran", seat: "amlead" }, { fetch: f });
     expect(r).toMatchObject({ ok: false, code: "step-up" });
@@ -93,10 +93,10 @@ describe("seats — PUT /api/users/{id}", () => {
 
 describe("managers — PUT /api/users/{id}/manager", () => {
   it("live: sends {manager}; a 409 loop is the route's message", async () => {
-    const f = vi.fn(async () => json(409, { error: "That would make a loop: the new manager already sits under them, which leaves neither with a ceiling. Nothing changed.", code: "loop" }));
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(409, { error: "That would make a loop: the new manager already sits under them, which leaves neither with a ceiling. Nothing changed.", code: "loop" }));
     const r = await runWrite("live", managerChange, as("sahil"), spy().d, { whom: "tasneem", manager: "rohit" }, { fetch: f });
     expect(f.mock.calls[0][0]).toBe("/api/users/tasneem/manager");
-    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ manager: "rohit" });
+    expect(JSON.parse(f.mock.calls[0][1]!.body as string)).toEqual({ manager: "rohit" });
     expect(r).toMatchObject({ ok: false, status: 409, code: "loop" });
   });
   it("fixture: a loop is refused before the reducer; a good move runs setMgr", async () => {
