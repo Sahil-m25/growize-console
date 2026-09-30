@@ -23,6 +23,8 @@ import { Teams } from "./Teams";
 import { psel } from "./reducer";
 import { tSeen } from "./helpers";
 import "./drawers";
+import { useApiRead } from "@/lib/data/api";
+import { teamsRead } from "@/lib/data/endpoints/teams";
 
 /* D59 (g8): Members is the page. The org chart and what has been lent are rarer jobs, so they
    sit behind ONE row of doors instead of three view chips. The panels render the same vTeams and
@@ -63,6 +65,8 @@ registerDrawer("p:people.access" as DrawerKind, {
 
 export function PeoplePage() {
   const { state, dispatch } = useConsole();
+  /* M17-S01-W1: the members and the count come from GET /api/teams (fixture: the same rows from the book) */
+  const r = useApiRead(teamsRead, state, undefined);
   const edit = own(state, "people", "seats");   /* authority over people is never borrowed */
   const scope = g8Scope(state);
   const clashes = scope.filter((k) => state.PEOPLE[k].on && clashOf(state.PEOPLE, k).length).length;
@@ -75,7 +79,7 @@ export function PeoplePage() {
       <div className="ph rd-page-heading">
         <div>
           <h1>Teams</h1>
-          <p className="sub">{scope.filter((k) => state.PEOPLE[k].on).length} active members</p>
+          <p className="sub">{r.state === "ok" ? r.data.view.activeMembers + " active members" : r.state === "loading" ? "Reading the team…" : ""}</p>
         </div>
         <div className="sp" />
         {edit ? (
@@ -92,7 +96,8 @@ export function PeoplePage() {
           { k: "people.access", t: "Temporary access", i: "lock", v: live ? live + " live" : "none live" },
         ]}
       />
-      <Members scope={scope} />
+      {r.state === "error" ? <p className="note bad" role="alert">{r.err.error}</p>
+        : r.state === "ok" && r.data.view.members ? <Members rows={r.data.view.members} /> : null}
     </>
   );
 }

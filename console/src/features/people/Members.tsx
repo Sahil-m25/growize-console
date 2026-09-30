@@ -5,23 +5,19 @@
    ONE of them opens in the drawer, so this screen never splits into two columns the eye has to
    choose between. */
 
-import { PAGECAPS, SEAT } from "@/domain";
+import { PAGECAPS } from "@/domain";
 import type { PersonKey } from "@/domain";
 import { Pname } from "@/components/ui";
-import {
-  avail,
-  canManage,
-  clashOf,
-  mgrOf,
-  P,
-  teamName,
-  teamOfPerson,
-} from "@/lib/selectors";
+import { avail, clashOf } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { capDev, devWhy, openPerson, screensOf } from "./helpers";
+import type { MemberRow } from "@/lib/data/endpoints/teams";
+import { capDev, devWhy, openPerson } from "./helpers";
 import { LockIcon } from "./icons";
 
-export function Members({ scope }: { scope: PersonKey[] }) {
+/* M17-S01-W1: the rows are GET /api/teams' members (endpoints/teams). The availability, clash and "changed"
+   tags still read the book, and only where it holds the person (fixture mode; live they are absent until
+   their own units wire them). */
+export function Members({ rows }: { rows: MemberRow[] }) {
   const { state, dispatch } = useConsole();
 
   return (
@@ -47,17 +43,18 @@ export function Members({ scope }: { scope: PersonKey[] }) {
               </tr>
             </thead>
             <tbody>
-              {scope.map((k) => {
-                const pp = state.PEOPLE[k];
-                const t = teamOfPerson(state.PEOPLE, k);
-                const cl = clashOf(state.PEOPLE, k);
-                const dev = capDev(state, k);
-                const open = pp.on && canManage(state, k);
-                const mgr = mgrOf(state.PEOPLE, k);
+              {rows.map((row) => {
+                const k = row.id as PersonKey;
+                const inBook = !!state.PEOPLE[k];
+                const cl = inBook ? clashOf(state.PEOPLE, k) : [];
+                const dev = inBook ? capDev(state, k) : [];
+                const on = row.status === "active";
+                const open = row.canOpen;
+                const name = inBook ? <Pname k={k} b nw /> : <b>{row.name}</b>;
                 return (
                   <tr
                     key={k}
-                    style={pp.on ? undefined : { opacity: 0.5 }}
+                    style={on ? undefined : { opacity: 0.5 }}
                     className={open ? "k" : ""}
                     {...(open ? { onClick: () => dispatch(openPerson(k)) } : {})}
                   >
@@ -67,21 +64,21 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                           type="button"
                           className="row-open g8-open"
                           id={`pm-${k}`}
-                          aria-label={`Open ${P(state.PEOPLE, k).n}`}
+                          aria-label={`Open ${row.name}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             dispatch(openPerson(k));
                           }}
                         >
-                          <Pname k={k} b nw />
+                          {name}
                         </button>
                       ) : (
-                        <Pname k={k} b nw />
+                        name
                       )}
-                      {pp.on ? null : <> <span className="tag">left</span></>}
-                      {k === state.WHO ? <> <span className="tag br">you</span></> : null}
-                      {!avail(state, k) && pp.on ? <> <span className="tag cov">out</span></> : null}
-                      {pp.ext ? (
+                      {on ? null : <> <span className="tag">left</span></>}
+                      {row.you ? <> <span className="tag br">you</span></> : null}
+                      {inBook && on && !avail(state, k) ? <> <span className="tag cov">out</span></> : null}
+                      {row.investorsSide ? (
                         <>
                           {" "}
                           <span
@@ -92,20 +89,21 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                           </span>
                         </>
                       ) : null}
+                      {on && !row.loginHere ? <> <span className="tag">no login here</span></> : null}
                     </td>
-                    <td className="sm">{SEAT[pp.seat]}</td>
+                    <td className="sm">{row.seatLabel}</td>
                     <td className="sm">
-                      {t ? (
+                      {row.team ? (
                         <>
-                          {teamName(state.PEOPLE, t)}{" "}
-                          <span>· {mgr ? P(state.PEOPLE, mgr).n.split(" ")[0] : "manager"}</span>
+                          {row.team}{" "}
+                          <span>· {row.managerName ? row.managerName.split(" ")[0] : "manager"}</span>
                         </>
                       ) : (
                         "—"
                       )}
                     </td>
                     <td className="sm">
-                      {screensOf(state, k).length} screens
+                      {row.pages} screens
                       {cl.length ? (
                         <>
                           {" "}
@@ -128,9 +126,9 @@ export function Members({ scope }: { scope: PersonKey[] }) {
                         </>
                       ) : null}
                     </td>
-                    <td className="n">{state.LEADS.filter((l) => l.own === k).length}</td>
+                    <td className="n">{row.leads ?? "—"}</td>
                     <td style={{ textAlign: "right" }}>
-                      {pp.on && !canManage(state, k) && k !== state.WHO ? (
+                      {on && !row.canOpen && !row.you ? (
                         <span className="tag" title="Above your own access" aria-label="Above your own access">
                           <LockIcon />
                         </span>
