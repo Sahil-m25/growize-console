@@ -59,6 +59,9 @@ export type ImTxn = {
   /** Receipts.Allotment — the allotment (investor × farm LLP) this receipt belongs to (D70, M10-S07).
    *  Absent on the prototype's receipts: they belong to the investor's only allotment. */
   Allotment?: string;
+  /** Receipts.Modified_Time as the row was read (live rows only; the demo book has none) — sent back as
+   *  expectedModifiedTime by Match it (M10-S02-W1) */
+  version?: string | null;
 };
 export type ImDocState = "signed" | "awaiting" | "issued" | "blocked";
 export type ImDoc = {
@@ -229,5 +232,7 @@ export type ImAction =
   /* the page note (the prototype's alert/confirm) */
   | { type: "confirmYes" }
   | { type: "noteClose" }
+  /* a live /api refusal shown in the same in-page note (lib/data/endpoints/im imLiveError) — UI only, writes no record */
+  | { type: "note"; msg: string }
   /* uploads, signature reminders and recalls (M12-S02, M12-S05) — paper2-types.ts */
   | Paper2Action;

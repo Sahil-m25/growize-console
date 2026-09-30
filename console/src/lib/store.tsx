@@ -30,6 +30,7 @@ import { reducer, initialState, LEAD_WRITES } from "./state";
 import type { Action, ConsoleState } from "./state";
 import type { SaveEntry, SaveResult } from "./save-queue";
 import { createConsoleWriter } from "./console-save";
+import { ApiModeProvider } from "@/lib/data/api";
 import { consoleAccount, scopeOf } from "@/lib/selectors";
 import { pinClock } from "@/lib/format";
 import type { Ctx as SelectorCtx } from "@/lib/selectors";
@@ -171,7 +172,9 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     retrySave: (key: string) => { writer.retry(key); },
     dataRead, reloadData: () => { void loadRef.current(); },
   }), [state, writer, saves, browserOnline, lastLocalUpdate, dataRead]);
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  /* phase 2b (D104): a wired screen's reads and writes go through @/lib/data/api, which serves the demo book
+     only when the hydrated payload says fixture mode — otherwise the /api routes */
+  return <Ctx.Provider value={value}><ApiModeProvider fixtures={state.FIXTURES}>{children}</ApiModeProvider></Ctx.Provider>;
 }
 
 export function useConsole(): ConsoleCtx {

@@ -8,12 +8,14 @@
 import type { ReactNode } from "react";
 import {
   I, PAYOUT_MODES, TESTLINK_MIN, addInvestorGate, allotDue, allotAmount, allotOf, allotPayStatus, allotTxns, allotUnits,
-  allotsOnLlp, dupEmail, fmtAt, fmtDate, inr, isSuper, llpAcres, llpCounts, llpName, llpOf, llps, maskId, may,
+  allotsOnLlp, dupEmail, fmtAt, fmtDate, inr, llpCounts, llpName, llpOf, llps, may,
   money, nowDay, onSale, openAllots, payoutNet, payoutOf, prePick, qrCells, testLinkState, testLinks, who, ymd, nowFull, notFin,
 } from "@/lib/im";
 import type { ImMoneyDrawerKey, ImPayoutMode } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { AppPreview } from "./preview";
+import { useApiRead } from "@/lib/data/api";
+import { farmOne } from "@/lib/data/endpoints/farms";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -90,32 +92,43 @@ function payoutFoot(c: Ctx): ReactNode {
   );
 }
 
-/* ---- llp: one farm LLP (M11-S01, M11-S02, M10-S07) ---- */
-function llpBody(c: Ctx): ReactNode {
-  const { s, me, dispatch } = c; const l = llpOf(s, c.id); if (!l) return null;
-  const n = llpCounts(s, l), rows = allotsOnLlp(s, me, l.id), fin = !notFin(s, me);
+/* ---- llp: one farm LLP (M11-S01, M11-S02, M10-S07) ----
+   M11-S01-W1: the LLP itself is GET /api/farms/[id] (lib/data/endpoints/farms). "Who holds units here" is still
+   the book's allotments until M11-S02-W1 wires GET /api/farms/[id]/allotments. */
+function LlpName({ s, me, id }: Ctx) {
+  const r = useApiRead(farmOne, { s, me }, id);
+  return <>{r.state === "ok" ? r.data.farm.name : ""}</>;
+}
+function LlpBody(c: Ctx) {
+  const { s, me, dispatch } = c;
+  const r = useApiRead(farmOne, { s, me }, c.id);
+  if (r.state === "idle") return null;
+  if (r.state === "loading") return <p className="sm" style={{ margin: 0 }}>Reading the farm…</p>;
+  if (r.state === "error") return <p className="sm" role="alert" style={{ margin: 0 }}>{r.err.error}</p>;
+  const { farm: l, superUser } = r.data;
+  const rows = allotsOnLlp(s, me, l.id), fin = !notFin(s, me);
   const matched = rows.flatMap(a => allotTxns(s, me, a)).filter(t => t.rec === "matched" && t.kind !== "refund" && t.kind !== "forfeit")
     .reduce((a, t) => a + t.amt, 0);
   return (
     <>
-      {isSuper(s, me) ? <div className="note su" style={{ marginBottom: 12 }}><b>Super user.</b> You see every LLP. PAN and GST stay masked here too.</div> : null}
+      {superUser ? <div className="note su" style={{ marginBottom: 12 }}><b>Super user.</b> You see every LLP. PAN and GST stay masked here too.</div> : null}
       <dl className="kv" style={{ marginTop: 0 }}>
-        <dt>Status</dt><dd><TagDot c={onSale(l) ? "go" : l.LLP_Status === "Draft" ? "due" : "br"}>{l.LLP_Status}</TagDot>
-          {l.LLP_Status === "Draft" ? <span className="sm"> not on sale — takes no reservation</span> : null}</dd>
-        <dt>Acreage</dt><dd>{llpAcres(s, l)} acres</dd>
-        <dt>Units</dt><dd>{n.issued} issued · {n.reserved} reserved · <b>{n.free}</b> free</dd>
-        <dt>Unit price</dt><dd className="mono">{money(l.Unit_Price)}</dd>
-        <dt>Yield</dt><dd>{l.Annual_Rental_Yield}% a year, paid monthly</dd>
-        <dt>PAN</dt><dd><span className="pii"><span className="v hid">{maskId(l.PAN)}</span></span></dd>
-        <dt>GST</dt><dd><span className="pii"><span className="v hid">{maskId(l.GST)}</span></span></dd>
+        <dt>Status</dt><dd><TagDot c={l.onSale ? "go" : l.status === "Draft" ? "due" : "br"}>{l.status}</TagDot>
+          {l.status === "Draft" ? <span className="sm"> not on sale — takes no reservation</span> : null}</dd>
+        <dt>Acreage</dt><dd>{l.acres ?? "—"} acres</dd>
+        <dt>Units</dt><dd>{l.issuedUnits} issued · {l.reservedUnits} reserved · <b>{l.freeUnits ?? "—"}</b> free</dd>
+        <dt>Unit price</dt><dd className="mono">{l.unitPrice == null ? "—" : money(l.unitPrice)}</dd>
+        <dt>Yield</dt><dd>{l.yieldPct == null ? "—" : l.yieldPct + "% a year, paid monthly"}</dd>
+        <dt>PAN</dt><dd><span className="pii"><span className="v hid">{l.pan ?? "not visible"}</span></span></dd>
+        <dt>GST</dt><dd><span className="pii"><span className="v hid">{l.gst ?? "not visible"}</span></span></dd>
       </dl>
       <div className="drwsec"><p className="lbl">SPOCs</p>
-        {l.SPOCs.length ? l.SPOCs.map(p => (
-          <div className="led" key={p.n + p.role}><span className="tag">{p.role}</span>
-            <span style={{ minWidth: 0 }}><b>{p.n}</b><div className="sm mono">{p.ph}</div></span></div>
+        {l.spocs.length ? l.spocs.map((p, i) => (
+          <div className="led" key={p.name + i}><span className="tag">SPOC {i + 1}</span>
+            <span style={{ minWidth: 0 }}><b>{p.name}</b><div className="sm mono">{p.phone ?? "—"}</div></span></div>
         )) : <p className="sm" style={{ margin: 0 }}>Nobody named yet.</p>}</div>
       <div className="drwsec"><p className="lbl">Insurance</p>
-        {l.Insurer ? <p className="sm" style={{ margin: 0 }}>{l.Insurer} · <span className="mono">{l.Insurance_Policy_No}</span> · insured till {fmtDate(l.Insured_Till)}</p>
+        {l.insurance.provider ? <p className="sm" style={{ margin: 0 }}>{l.insurance.provider} · <span className="mono">{l.insurance.policyNo ?? "—"}</span> · insured till {fmtDate(l.insurance.till)}</p>
           : <p className="sm" style={{ margin: 0 }}>No policy on file.</p>}</div>
       <div className="drwsec"><p className="lbl">Who holds units here</p>
         {rows.length ? rows.map(a => {
@@ -129,8 +142,8 @@ function llpBody(c: Ctx): ReactNode {
                 <div className="sm">{allotUnits(a)} unit{allotUnits(a) === 1 ? "" : "s"}{fin ? " · " + money(allotAmount(a)) + " · " + allotPayStatus(s, a) : ""}</div></span>
             </div>
           );
-        }) : <p className="sm" style={{ margin: 0 }}>Nobody holds units on this farm{isSuper(s, me) || fin ? "" : " that you look after"}.</p>}
-        {fin && rows.length ? <p className="sm" style={{ margin: "9px 0 0" }}>Matched receipts on this farm: <b>{money(matched)}</b> — the same total Payments shows for {l.Name.split(" — ")[0]}.</p> : null}
+        }) : <p className="sm" style={{ margin: 0 }}>Nobody holds units on this farm{superUser || fin ? "" : " that you look after"}.</p>}
+        {fin && rows.length ? <p className="sm" style={{ margin: "9px 0 0" }}>Matched receipts on this farm: <b>{money(matched)}</b> — the same total Payments shows for {l.name.split(" — ")[0]}.</p> : null}
       </div>
     </>
   );
@@ -257,7 +270,7 @@ function linkFoot(c: Ctx): ReactNode {
 /* ---- the registry, spread into DRAWERS ---- */
 export const MONEY_DRAWER_DEFS: Record<ImMoneyDrawerKey, DrawerDef> = {
   payout: { w: 430, t: "Mark a payout paid", sub: payoutSub, body: payoutBody, foot: payoutFoot },
-  llp: { w: 450, t: "Farm LLP", sub: c => (llpOf(c.s, c.id) || { Name: "" }).Name, body: llpBody, foot: () => null },
+  llp: { w: 450, t: "Farm LLP", sub: c => <LlpName {...c} />, body: c => <LlpBody {...c} />, foot: () => null },
   addinv: { w: 450, t: "Add an investor who already paid", sub: () => "no email goes to them", body: addBody, foot: addFoot },
   applock: { w: 430, t: "Lock app access", sub: nameOf, body: lockBody, foot: lockFoot },
   testlink: { w: 430, t: "Test sign-in link", sub: nameOf, body: linkBody, foot: linkFoot },

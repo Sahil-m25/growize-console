@@ -74,6 +74,7 @@ export function imAlign(data: ImData, people: Record<string, { n: string; i: str
 /* ---- the reducer ---- */
 export function imReducer(s: ImState, WHO: string, a: ImAction): ImState {
   if (a.type === "noteClose") return s.ui.NOTE ? { ...s, ui: { ...s.ui, NOTE: null, PENDING: null } } : s;
+  if (a.type === "note") return { ...s, ui: { ...s.ui, NOTE: { kind: "refuse", msg: a.msg }, PENDING: null } };
   if (a.type === "confirmYes") {
     const p = s.ui.NOTE && s.ui.NOTE.kind === "ask" ? s.ui.PENDING : null;
     if (!p) return s;

@@ -349,7 +349,8 @@ export const MONEY_DRAWERS: ImDrawerKey[] = ["payout", "llp", "addinv", "applock
 export function moneyDrawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string | null | undefined): boolean {
   switch (k) {
     case "payout": { const p = payoutOf(s, id); const a = p && allotOf(s, p.Allotment); return !!a && payoutsOf(s, WHO, a.id).length > 0; }
-    case "llp": return pageReadable(s, WHO, "farms") && !!llpOf(s, id);
+    /* M11-S01-W1: whether the LLP exists is the route's answer (GET /api/farms/[id] → 404 in the drawer), not the book's */
+    case "llp": return pageReadable(s, WHO, "farms") && !!id;
     case "addinv": return mayAddInvestor(s, WHO);
     case "applock": return mayAccess(s, WHO) && !!id && !!accessOf(s, WHO, id);
     case "testlink": return mayTestLink(s, WHO) && !!id && !!I(s, WHO, id);

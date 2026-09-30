@@ -6,22 +6,28 @@
 
 import type { MouseEvent, ReactNode } from "react";
 import {
-  I, allotOf, auditText, mayPayouts, fmtAt, fmtDate, inr, isSuper, llpAcres, llpCounts, llpName, llps, may, mayAddInvestor, mayMatch,
-  matchWhy, money, nowFull, onSale, payoutsDue, testLinkState, testLinks, thisMonth,
+  I, allotOf, auditText, mayPayouts, fmtAt, fmtDate, inr, llpName, may, mayAddInvestor, mayMatch,
+  matchWhy, money, nowFull, payoutsDue, testLinkState, testLinks, thisMonth,
 } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
+import { useApiRead, useApiWrite } from "@/lib/data/api";
+import { receiptMatch } from "@/lib/data/endpoints/receipts";
+import { farmList } from "@/lib/data/endpoints/farms";
 
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
   <span className={`tag ${c}`}><span className="dot" />{children}</span>;
 
 /* ---- Payments: the second hand on a not-reconciled row (M10-S02) ---- */
 export function MatchCell({ s, me, dispatch, t }: ImPageProps & { t: ImTxn }) {
+  /* M10-S02-W1: the match is POST /api/receipts/[id]/match (lib/data/endpoints/receipts); a refusal or a 409
+     lands in the page note. Whether to offer it is still the book's second-hand rule until M10-S01-W1 wires the rows. */
+  const match = useApiWrite(receiptMatch, { s, me }, dispatch);
   if (t.rec !== "pending") return null;
   const stop = (e: MouseEvent) => e.stopPropagation();
   if (mayMatch(s, me, t)) return (
     <div className="chips" style={{ marginTop: 5 }} onClick={stop}>
-      <button className="chip on" onClick={e => { e.stopPropagation(); dispatch({ type: "matchReceipt", tid: t.id }); }}>Match it</button></div>
+      <button className="chip on" onClick={e => { e.stopPropagation(); void match({ id: t.id, expectedModifiedTime: t.version ?? null }); }}>Match it</button></div>
   );
   const why = matchWhy(s, me, t);
   return why ? <div className="sm" style={{ marginTop: 4 }}>{why}</div> : null;
@@ -60,28 +66,32 @@ export function PayoutsDue({ s, me, dispatch }: ImPageProps) {
 
 /* ---- Farms: one row per farm LLP (M11-S01) ---- */
 export function FarmLlps({ s, me, dispatch }: ImPageProps) {
-  const rows = llps(s);
+  /* M11-S01-W1: the rows are GET /api/farms (lib/data/endpoints/farms) — never the store's LLP records */
+  const r = useApiRead(farmList, { s, me }, undefined);
+  if (r.state === "idle" || r.state === "loading") return <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading the farm LLPs…</p></div></div>;
+  if (r.state === "error") return r.err.status === 403 ? null
+    : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>Farm LLPs: {r.err.error}</p></div></div>;
+  const { rows, superUser } = r.data;
   if (!rows.length) return null;
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>Farm LLPs</h3><div className="sp" />
-      <span className="sm">{isSuper(s, me) ? "super user — every LLP, PAN masked" : "one record per farm, as Zoho holds it"}</span></div>
+      <span className="sm">{superUser ? "super user — every LLP, PAN masked" : "one record per farm, as Zoho holds it"}</span></div>
       <div className="tw"><table>
         <thead><tr><th>LLP</th><th className="n">Acres</th><th className="n">Total</th><th className="n">Reserved</th><th className="n">Issued</th>
           <th className="n">Free</th><th className="n">Unit price</th><th>Status</th></tr></thead>
         <tbody>{rows.map(l => {
-          const n = llpCounts(s, l);
           const open = () => dispatch({ type: "openDrawer", k: "llp", id: l.id });
           return (
             <tr key={l.id} className="k" tabIndex={0} onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
-              <td><b>{l.Name}</b><div className="sm mono">{l.id}</div></td>
-              <td className="n">{llpAcres(s, l)}</td>
-              <td className="n">{n.free + n.reserved + n.issued}</td>
-              <td className="n">{n.reserved}</td>
-              <td className="n">{n.issued}</td>
-              <td className="n"><b>{n.free}</b></td>
-              <td className="n mono">{money(l.Unit_Price)}</td>
-              <td><TagDot c={onSale(l) ? "go" : l.LLP_Status === "Draft" ? "due" : "br"}>{l.LLP_Status}</TagDot>
-                {l.LLP_Status === "Draft" ? <div className="sm">not on sale</div> : null}</td>
+              <td><b>{l.name}</b><div className="sm mono">{l.id}</div></td>
+              <td className="n">{l.acres ?? "—"}</td>
+              <td className="n">{l.totalUnits ?? "—"}</td>
+              <td className="n">{l.reservedUnits}</td>
+              <td className="n">{l.issuedUnits}</td>
+              <td className="n"><b>{l.freeUnits ?? "—"}</b></td>
+              <td className="n mono">{l.unitPrice == null ? "—" : money(l.unitPrice)}</td>
+              <td><TagDot c={l.onSale ? "go" : l.status === "Draft" ? "due" : "br"}>{l.status}</TagDot>
+                {l.status === "Draft" ? <div className="sm">not on sale</div> : null}</td>
             </tr>
           );
         })}</tbody></table></div>

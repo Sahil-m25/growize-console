@@ -20,15 +20,23 @@ import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
 import { SignCell } from "../paper2/SignCell";
 import { InvUploads } from "../paper2/Upload";
+import { useApiRead } from "@/lib/data/api";
+import { investorRecord } from "@/lib/data/endpoints/investors";
+import type { InvestorRecord, RecordSection } from "@/server/investors/record";
 
 const blocksText = (x: ImInvestor) => Object.entries(x.blocks).map(([k, n]) => "Block " + k + " ×" + n).join(", ");
 
 /* ImInv — vInv: the record when SEL names a readable investor, otherwise the list */
 export function ImInv(p: ImPageProps) {
   const { s, me } = p;
+  /* M09-S03-W1: the record is GET /api/investors/[id]/record (lib/data/endpoints/investors) */
+  const one = useApiRead(investorRecord, { s, me }, s.ui.SEL);
   if (!pageReadable(s, me, "inv")) return null;
-  const one = s.ui.SEL ? I(s, me, s.ui.SEL) : null;
-  if (one) return <VOne {...p} x={one} />;
+  if (one.state === "ok") return <VOne {...p} x={one.data.record.investor} rec={one.data.record} />;
+  if (one.state === "loading") return <div className="empty">Reading the record…</div>;
+  if (one.state === "error" && one.err.status !== 404 && one.err.status !== 403) return (
+    <><div className="note bad" role="alert" style={{ marginBottom: 8 }}>{one.err.error}</div><VInv {...p} /></>
+  );
   return <VInv {...p} />;
 }
 
@@ -98,16 +106,23 @@ function VInv({ s, me, dispatch }: ImPageProps) {
 }
 
 /* vOne(x) — imx.js 1531–1842 */
-function VOne(p: ImPageProps & { x: ImInvestor }) {
-  const { s, me, dispatch, x } = p;
-  if (!x || !I(s, me, x.id) || !pageReadable(s, me, "inv")) return null;
-  const am = isAM(s, me), o = overdue(s, me, x), due = dueBy(s, me, x.id), got = gotBy(s, me, x.id);
-  const SECS: ImSec[] = ([{ k: "who", t: "Who they are" }, { k: "hold", t: "What they hold" }] as ImSec[])
-    .concat(cared(x) ? [{ k: "care", t: "Care", n: quiet(s, me, x) ? 1 : 0, warn: true }] : [])
-    .concat(am ? [] : [{ k: "money", t: "Money", n: due ? 1 : 0 },
-      { k: "paper", t: "Paper", n: roundsFor(s, me, x.id).filter(r => r.state !== "done").length, warn: true }])
-    .concat([{ k: "jrn", t: "Journey" },
-      { k: "tkt", t: "Tickets", n: tkOf(s, me, x.id).filter(t => t.state !== "closed").length }]);
+/* The record's header, banners and section bar come from the record the route answered (M09-S03-W1). The badge
+   counts on Care, Paper and Tickets are still the book's until their own units wire them. */
+function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
+  const { s, me, dispatch, x, rec } = p;
+  if (!x) return null;
+  const am = isAM(s, me), o = overdue(s, me, x), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
+  const showMoney = rec.sections.includes("money");
+  const SECT: Record<RecordSection, () => ImSec> = {
+    who: () => ({ k: "who", t: "Who they are" }),
+    hold: () => ({ k: "hold", t: "What they hold" }),
+    care: () => ({ k: "care", t: "Care", n: quiet(s, me, x) ? 1 : 0, warn: true }),
+    money: () => ({ k: "money", t: "Money", n: due ? 1 : 0 }),
+    paper: () => ({ k: "paper", t: "Paper", n: roundsFor(s, me, x.id).filter(r => r.state !== "done").length, warn: true }),
+    jrn: () => ({ k: "jrn", t: "Journey" }),
+    tkt: () => ({ k: "tkt", t: "Tickets", n: tkOf(s, me, x.id).filter(t => t.state !== "closed").length }),
+  };
+  const SECS: ImSec[] = rec.sections.map(k => SECT[k]());
   const v = "inv:" + x.id;
   const S = secOf(s.ui.SEC, v, SECS);
   const T = tierOf(x)!;
@@ -119,16 +134,16 @@ function VOne(p: ImPageProps & { x: ImInvestor }) {
       <div className="ph">
         <button className="btn" onClick={() => dispatch({ type: "go", v: "inv", id: null })} aria-label="Back to the list">←</button>
         <h1>{x.n}</h1><span className="mono sm">{x.id}</span>
-        <StTag x={x} />{am ? null : <KycTag x={x} />}{x.nri ? <span className="tag">NRI</span> : null}
+        <StTag x={x} />{showMoney ? <KycTag x={x} /> : null}{x.nri ? <span className="tag">NRI</span> : null}
         {cared(x) ? <span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span> : null}
         <div className="sp" />
-        <span className="sm">{x.units + " unit" + plural(x.units) + (am ? "" : " · " + money(x.units * UNIT))}</span></div>
+        <span className="sm">{x.units + " unit" + plural(x.units) + (showMoney ? " · " + money(x.units * UNIT) : "")}</span></div>
 
       {am && quiet(s, me, x) ? <div className="note bad" style={{ marginBottom: 8 }}><b>{"Gone quiet — " + o + " day" + (o === 1 ? "" : "s") + " past the " + T.t + " cadence."}</b>
         {" " + (x.kam ? "" : "And nobody is named on it. ") + "An account nobody has spoken to since "
           + (lc ? day6(lc.at) : "it was allotted") + " is the one that is surprised by everything."}</div> : null}
 
-      {x.fema === "outstanding" ? <div className="note bad" style={{ marginBottom: 8 }}><b>FEMA declaration outstanding.</b> An NRI holding cannot be allotted without one, whatever the money says. The declaration is out for signature and <ProvIR t="the IR is chasing it" />.</div> : null}
+      {rec.fema === "outstanding" ? <div className="note bad" style={{ marginBottom: 8 }}><b>FEMA declaration outstanding.</b> An NRI holding cannot be allotted without one, whatever the money says. The declaration is out for signature and <ProvIR t="the IR is chasing it" />.</div> : null}
       {x.st === "reserved" && hd != null ? <div className={`note ${hd <= 7 ? "bad" : "warn"}`} style={{ marginBottom: 8 }}>
         <b>{money(due) + " " + (hd < 0 ? "is overdue — the hold ran out " + (-hd) + " day" + (hd === -1 ? "" : "s") + " ago"
           : "due in " + hd + " day" + (hd === 1 ? "" : "s")) + "."}</b>
