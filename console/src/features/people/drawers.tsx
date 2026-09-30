@@ -53,6 +53,9 @@ import {
   capsFor,
 } from "@/lib/selectors";
 import { useConsole, type ConsoleState } from "@/lib/store";
+import { useState } from "react";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { grantAdd, grantRemove, leadSeatChange, managerChange } from "@/lib/data/endpoints/access";
 import { titleOf as imAwareTitle } from "@/components/shell/SignIn";
 import {
   absOpen,
@@ -539,6 +542,13 @@ registerDrawer("p:leaver", {
 function PersonBody({ id }: DrawerProps) {
   const { state, dispatch: dispatchable } = useConsole();
   const k = id as PersonKey;
+  /* M17-S02-W1 / M03-S04-W1 / M03-S02-W1: the manager, the seat and a page reset go through their routes
+     (endpoints/access); a refusal is the route's own message, shown here */
+  const [err, setErr] = useState<string | null>(null);
+  const setMgr = useApiWrite(managerChange, state, dispatchable);
+  const setSeat = useApiWrite(leadSeatChange, state, dispatchable);
+  const resetPage = useApiWrite(grantRemove, state, dispatchable);
+  const said = (r: { ok: boolean; error?: string }) => setErr(r.ok ? null : r.error ?? null);
   if (!state.PEOPLE[k]) return null;
 
   const edit = own(state, "people", "seats") && canManage(state, k);
@@ -642,6 +652,8 @@ function PersonBody({ id }: DrawerProps) {
         </div>
       ) : null}
 
+      {err ? <p className="note bad" role="alert" style={{ marginTop: "12px" }}>{err}</p> : null}
+
       {edit ? (
         <details className="ux-disclosure" data-ux-key={`person-role-${k}`}>
           <summary>Role and reporting manager</summary>
@@ -652,9 +664,7 @@ function PersonBody({ id }: DrawerProps) {
               id="pmgr"
               aria-label="Reports to"
               value={mgr ?? ""}
-              onChange={(e) =>
-                dispatchable({ type: "setMgr", k, m: (e.target.value || null) as PersonKey | null })
-              }
+              onChange={(e) => void setMgr({ whom: k, manager: (e.target.value || null) as PersonKey | null }).then(said)}
             >
               <option value="">Nobody — they sit at the top</option>
               {opts.map((x) => {
@@ -687,13 +697,7 @@ function PersonBody({ id }: DrawerProps) {
               id="pseat"
               aria-label="Position"
               value={roleOf(state.PEOPLE, k) ?? ""}
-              onChange={(e) =>
-                dispatchable({
-                  type: "setSeat",
-                  seat: e.target.value as SeatKey,
-                  who: k,
-                } as Parameters<typeof dispatchable>[0])
-              }
+              onChange={(e) => void setSeat({ whom: k, seat: e.target.value as SeatKey }).then(said)}
             >
               {(Object.keys(SEAT) as SeatKey[]).filter((seat) => !(NOSIGN as readonly string[]).includes(seat) || roleOf(state.PEOPLE, k) === seat).map((seat) => {
                 const bad = seatClash(state.PEOPLE, k, seat);
@@ -789,20 +793,7 @@ function PersonBody({ id }: DrawerProps) {
                     <button
                       type="button"
                       className="chip"
-                      onClick={() =>
-                        dispatchable({
-                          type: "toggleCap",
-                          k,
-                          p: pg,
-                          c: "",
-                          /* not on the Action union (see crossOwnerRequests: store.tsx should grow
-                             a dedicated resetCap action) — carried only so console-save.ts's scope
-                             key (`fields.f`) tells this page-reset apart from a capSave on the same
-                             person, the way the prototype's protectLocalSave keys do ("access-"+k
-                             vs "access-page-"+k, 13517-13518). Never read by the reducer. */
-                          f: "reset",
-                        } as Parameters<typeof dispatchable>[0])
-                      }
+                      onClick={() => void resetPage({ whom: k, page: pg }).then(said)}   /* DELETE /api/grants {whom, page} */
                     >
                       Reset this page to role
                     </button>
@@ -1024,6 +1015,16 @@ function CapFoot({ id }: DrawerProps) {
   const { state, dispatch } = useConsole();
   const [k, p, c] = String(id).split("|") as [PersonKey, NavKey, Cap];
   const has = capsFor(state, k, p).includes(c);
+  /* M03-S02-W1: POST / DELETE /api/grants {whom, page, cap}; the route's refusal is shown here */
+  const mode = useApiMode();
+  const give = useApiWrite(grantAdd, state, dispatch);
+  const take = useApiWrite(grantRemove, state, dispatch);
+  const [err, setErr] = useState<string | null>(null);
+  const press = () => void (has ? take : give)({ whom: k, page: p, cap: c }).then((r) => {
+    if (!r.ok) { setErr(r.error); return; }
+    /* fixture: the reducer's capSave already went back to the person; live: the route answered, go back */
+    if (mode === "live") dispatch({ type: "openDrawer", k: "person", id: k });
+  });
   const first = P(state.PEOPLE, k).n.split(" ")[0];
   const label =
     c === "view"
@@ -1035,7 +1036,8 @@ function CapFoot({ id }: DrawerProps) {
         : `Give ${first} “${CAPT[c]}”`;
   return (
     <>
-      <button type="button" className="act" onClick={() => dispatch({ type: "toggleCap", k, p, c })}>
+      {err ? <p className="note bad" role="alert">{err}</p> : null}
+      <button type="button" className="act" onClick={press}>
         {label}
       </button>
       <button type="button" className="chip" onClick={() => dispatch({ type: "openDrawer", k: "person", id: k })}>
