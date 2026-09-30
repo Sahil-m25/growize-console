@@ -55,7 +55,7 @@ const PAGES = PAGECAPS as unknown as Record<string, { t: string } | undefined>;
 const pageTitle = (p: string) => PAGES[p]?.t ?? p;
 
 export function TopBar({ side = "ir", view }: { side?: "ir" | "im" | "mix"; view?: NavKey }) {
-  const { state, dispatch, saves = [], browserOnline = null, lastLocalUpdate = null, retrySave } = useConsole();
+  const { state, dispatch, saves = [], browserOnline = null, lastLocalUpdate = null, retrySave, dataRead = { at: null, failed: false, source: null } } = useConsole();
   const router = useRouter();
   const me = state.WHO;
   const p = P(state.PEOPLE, me);
@@ -114,8 +114,9 @@ export function TopBar({ side = "ir", view }: { side?: "ir" | "im" | "mix"; view
       <div id="save-status" className="save-status" role="status" aria-live="polite">
         <span className={`save-dot ${saveTone}`} aria-hidden="true" />
         <span>
-          <b>{`Browser ${browserOnline ? "online" : "offline"} · Local demo`}</b>
-          <small>{saveSummary || (state.FIXTURES ? "Demo fixtures · no live source connected" : "No live source connected")}</small>
+          {/* M01-S09-W1: the source is what GET /api/data's fresh block said (dataRead.source) */}
+          <b>{`Browser ${browserOnline ? "online" : "offline"} · ${dataRead.source === "zoho" ? "Zoho" : "Local demo"}`}</b>
+          <small>{saveSummary || (state.FIXTURES ? "Demo fixtures · no live source connected" : dataRead.source === "zoho" ? "Live from Zoho, on your own sign-in" : "No live source connected")}</small>
           <DataFresh />
         </span>
         {failedSaves.length > 0 ? (

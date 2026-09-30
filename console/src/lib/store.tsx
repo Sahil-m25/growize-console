@@ -31,6 +31,7 @@ import type { Action, ConsoleState } from "./state";
 import type { SaveEntry, SaveResult } from "./save-queue";
 import { createConsoleWriter } from "./console-save";
 import { ApiModeProvider, apiFetch } from "@/lib/data/api";
+import { nextDataRead, type DataRead } from "@/lib/data/freshness";
 import { sessionRead, withSessionAccess, type SessionAnswer } from "@/lib/data/endpoints/session";
 import { consoleAccount, scopeOf } from "@/lib/selectors";
 import { pinClock } from "@/lib/format";
@@ -48,7 +49,7 @@ type ConsoleCtx = {
   retrySave: (key: string) => void;
   /** M01-S03: when the last GET /api/data succeeded (epoch ms, null before the first), and whether
    *  the most recent one failed; reloadData() reads it again */
-  dataRead: { at: number | null; failed: boolean };
+  dataRead: DataRead;
   reloadData: () => void;
   /** M01-S02-W1: what GET /api/session said on load when nobody was signed in — the sign-in screen's refusal
    *  (read once: the route clears it) and a session that ended on its own (expired / revoked) */
@@ -68,7 +69,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
   const [saves, setSaves] = useState<SaveEntry[]>([]);
   const [browserOnline, setBrowserOnline] = useState<boolean | null>(null);
   const [lastLocalUpdate, setLastLocalUpdate] = useState<number | null>(null);
-  const [dataRead, setDataRead] = useState<{ at: number | null; failed: boolean }>({ at: null, failed: false });
+  const [dataRead, setDataRead] = useState<DataRead>({ at: null, failed: false, source: null });
   const loadRef = useRef<() => Promise<unknown>>(() => Promise.resolve(null));
   const [sessionNote, setSessionNote] = useState<ConsoleCtx["sessionNote"]>(null);
   /* the first paint's records came with the page (the same payload GET /api/data serves): that read
@@ -117,10 +118,12 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     const load = async (): Promise<DataPayload | null> => {
       const r = await fetch("/api/data", { cache: "no-store" }).catch(() => null);
       if (dead) return null;
-      const p = r && r.ok ? ((await r.json().catch(() => null)) as DataPayload | null) : null;
+      /* M01-S09-W1: the body is read on a 503 too — it carries the route's `fresh` block (source, last good read) */
+      const body: unknown = r ? await r.json().catch(() => null) : null;
       if (dead) return null;
-      if (!p) { setDataRead(d => ({ ...d, failed: true })); return null; }
-      setDataRead({ at: Date.now(), failed: false });
+      const p = r && r.ok && body && typeof body === "object" && "ds" in body ? (body as DataPayload) : null;
+      setDataRead(d => nextDataRead(d, !!p, body, Date.now()));
+      if (!p) return null;
       pinClock(p.ds.CLOCKPIN);
       held.last = p;
       writer.apply({ type: "hydrate", ds: onBook(p), version: p.version, fixtures: p.fixtures });

@@ -45,3 +45,32 @@ export function freshness(at: number | null, failed: boolean, now: number, fmt: 
       + (at != null ? " — what you see was read at " + fmt(at) + " and may be out of date." : "."),
   };
 }
+
+/* ---- M01-S09-W1: the store's record of its reads, from GET /api/data's own `fresh` block ------------ */
+/** where the book came from, as /api/data says (server/data/freshness ServedFreshness.source); null = not said yet */
+export type DataSourceKind = "zoho" | "fixtures" | "none";
+export type DataRead = { at: number | null; failed: boolean; source: DataSourceKind | null };
+/** the part of /api/data's `fresh` block the store reads */
+export type FreshBlock = { source: DataSourceKind; at: number | null; failed: boolean };
+
+const freshOf = (body: unknown): FreshBlock | null => {
+  const f = body && typeof body === "object" ? (body as { fresh?: unknown }).fresh : null;
+  if (!f || typeof f !== "object") return null;
+  const { source, at, failed } = f as Record<string, unknown>;
+  if (source !== "zoho" && source !== "fixtures" && source !== "none") return null;
+  return { source, at: typeof at === "number" ? at : null, failed: failed === true };
+};
+
+/**
+ * One GET /api/data answered (`ok` = a 2xx carrying a book; `body` = its JSON, or null when nothing came back).
+ * `failed` is the route's own `fresh.failed` (a secondary book lost is a failed read even on a 200); a live
+ * read's time is the route's last read that fully succeeded for this person; `source: "none"` is no live
+ * source connected — nothing is claimed current. An answer without the block keeps the old client-side rule.
+ */
+export function nextDataRead(prev: DataRead, ok: boolean, body: unknown, now: number): DataRead {
+  const f = freshOf(body);
+  if (!f) return ok ? { at: now, failed: false, source: prev.source } : { ...prev, failed: true };
+  if (f.source === "none") return { at: null, failed: false, source: "none" };
+  if (f.source === "fixtures") return ok ? { at: now, failed: f.failed, source: "fixtures" } : { ...prev, failed: true, source: "fixtures" };
+  return { at: f.at ?? prev.at, failed: f.failed || !ok, source: "zoho" };
+}
