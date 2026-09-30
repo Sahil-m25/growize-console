@@ -30,12 +30,12 @@ import { reducer, initialState, LEAD_WRITES } from "./state";
 import type { Action, ConsoleState } from "./state";
 import type { SaveEntry, SaveResult } from "./save-queue";
 import { createConsoleWriter } from "./console-save";
-import { ApiModeProvider } from "@/lib/data/api";
+import { ApiModeProvider, apiFetch } from "@/lib/data/api";
+import { sessionRead, withSessionAccess, type SessionAnswer } from "@/lib/data/endpoints/session";
 import { consoleAccount, scopeOf } from "@/lib/selectors";
 import { pinClock } from "@/lib/format";
 import type { Ctx as SelectorCtx } from "@/lib/selectors";
 import type { DataPayload } from "@/lib/data/types";
-import type { Session } from "@/lib/data/session";
 import type { Lead, Person, PersonKey, Scope, SeatKey } from "@/domain";
 import type { SignOutWhy } from "@/domain";
 
@@ -104,6 +104,12 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     /* a fixture's client actions arrive with every load while it stays applied; each runs once
        (a fresh load of "/" clears the fixtures and remounts this provider, so the set starts empty) */
     const ran = new Set<string>();
+    /* M01-S01-W1: live mode only — the signed-in person's own one-person book from GET /api/session (the live
+       book has no people, D45); put on every live payload so the seat rules (rail, Investors who/pageReadable)
+       answer for them. Fixture mode never sets it: the demo book already holds everyone. */
+    let seat: { who: PersonKey; access: NonNullable<SessionAnswer["access"]> } | null = null;
+    const onBook = (p: DataPayload): DataPayload["ds"] => (seat && !p.fixtures ? withSessionAccess(p.ds, seat.who, seat.access) : p.ds);
+    const held: { last: DataPayload | null } = { last: null };
     const load = async (): Promise<DataPayload | null> => {
       const r = await fetch("/api/data", { cache: "no-store" }).catch(() => null);
       if (dead) return null;
@@ -112,7 +118,8 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
       if (!p) { setDataRead(d => ({ ...d, failed: true })); return null; }
       setDataRead({ at: Date.now(), failed: false });
       pinClock(p.ds.CLOCKPIN);
-      writer.apply({ type: "hydrate", ds: p.ds, version: p.version, fixtures: p.fixtures });
+      held.last = p;
+      writer.apply({ type: "hydrate", ds: onBook(p), version: p.version, fixtures: p.fixtures });
       for (const x of p.actions as { fx: string; a: Action }[]) {
         if (!x || ran.has(x.fx)) continue;
         ran.add(x.fx);
@@ -128,9 +135,14 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     void (async () => {
       const [p, sess] = await Promise.all([
         load(),
-        fetch("/api/session", { cache: "no-store" }).then((r) => r.json() as Promise<{ session: Session | null }>).catch(() => ({ session: null })),
+        apiFetch("GET", "/api/session").then((r): SessionAnswer => (r.ok ? sessionRead.pick(r.data) : { session: null })),
       ]);
       if (dead) return;
+      if (sess.session && sess.access) {
+        seat = { who: sess.session.who, access: sess.access };
+        const l = held.last;
+        if (l) writer.apply({ type: "hydrate", ds: onBook(l), version: l.version, fixtures: l.fixtures });
+      }
       if (sess.session && !stateRef.current.authed) {
         writer.apply({ type: "signIn", k: sess.session.who });
         /* a session this book no longer admits is not a session */
