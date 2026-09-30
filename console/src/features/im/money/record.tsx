@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  I, accessOf, accessView, agreementSigned, allotAmount, allotDue, allotPaid, allotPayStatus, allotTxns, allotUnits, allotsOf,
+  I, accessOf, accessView, allotAmount, allotDue, allotOf, allotPaid, allotPayStatus, allotTxns, allotUnits, allotsOf,
   arlTxnsOf, day6, fmtDate, holdingsOf, inr, isSuper, llpName, llpOf, may, mayAccess, mayHoldings, mayPayouts, mayPreview,
   mayTestLink, money, notFin, payoutsOf, thisMonth, unlinkedTxns, who,
 } from "@/lib/im";
@@ -18,6 +18,7 @@ import { ImPname, type ImPageProps } from "../common";
 import { payTagClass, poTagClass } from "./drawers";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { appAccount, appUnlock } from "@/lib/data/endpoints/app-account";
+import { investorAllotments } from "@/lib/data/endpoints/allotments";
 
 type P = ImPageProps & { x: ImInvestor };
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
@@ -41,9 +42,14 @@ function TxLine({ s, t }: { s: ImPageProps["s"]; t: ReturnType<typeof allotTxns>
 /* ---- Allotments card on "What they hold" ---- */
 export function AllotCard(p: P) {
   const { s, me, dispatch, x } = p;
-  const rows = allotsOf(s, me, x.id);
-  if (!rows.length) return null;
-  const fin = !notFin(s, me);
+  /* M11-S02-W1: the rows are GET /api/investors/[id]/allotments (lib/data/endpoints/allotments). The Receipts and Payouts
+     tabs still read the book's receipts and payouts until M10-S08-W1 / M10-S20 wire them, so they show only where the book holds the allotment. */
+  const r = useApiRead(investorAllotments, { s, me }, x.id);
+  if (r.state === "loading") return <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading the allotments…</p></div></div>;
+  if (r.state === "error") return r.err.status === 403 || r.err.status === 404 ? null
+    : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>Allotments: {r.err.error}</p></div></div>;
+  if (r.state !== "ok" || !r.data.allotments.length) return null;
+  const rows = r.data.allotments, fin = r.data.money;
   const open = mxOf(p, "al:" + x.id);             /* "<allotment id>|receipts" or "<allotment id>|payouts" */
   const [oid, otab] = open.split("|");
   const toggle = (id: string, tab: string) => dispatch({ type: "mset", k: "al:" + x.id, v: oid === id && otab === tab ? "" : id + "|" + tab });
@@ -53,43 +59,44 @@ export function AllotCard(p: P) {
       <div className="tw"><table>
         <thead><tr><th>Farm (LLP)</th><th className="n">Units</th>{fin ? <th className="n">Amount</th> : null}<th>Allocation</th>
           <th>Agreement</th>{fin ? <th>Payment</th> : null}<th></th></tr></thead>
-        <tbody>{rows.map(a => {
-          const l = llpOf(s, a.LLP_Lookup);
-          const n = allotTxns(s, me, a).length, po = payoutsOf(s, me, a.id);
+        <tbody>{rows.map(l => {
+          const a = allotOf(s, l.id);
+          const n = a ? allotTxns(s, me, a).length : 0, po = a ? payoutsOf(s, me, a.id) : [];
+          const llpId = l.llp.id;
           return (
-            <AllotRow key={a.id} {...p} a={a} fin={fin}
+            <AllotRow key={l.id} {...p} a={a} fin={fin}
               cells={<>
-                <td><a className="lnk" role="button" tabIndex={0} onClick={() => l && dispatch({ type: "openDrawer", k: "llp", id: l.id })}
-                  onKeyDown={e => { if (e.key === "Enter" && l) dispatch({ type: "openDrawer", k: "llp", id: l.id }); }}>{llpName(s, a)}</a>
-                  <div className="sm mono">{a.id}</div></td>
-                <td className="n">{allotUnits(a)}</td>
-                {fin ? <td className="n mono">{money(allotAmount(a))}<div className="sm">{money(a.Unit_Price)} a unit, as recorded</div></td> : null}
-                <td><TagDot c={allocTag(a.Allocation_Status)}>{a.Allocation_Status}</TagDot></td>
-                <td className="sm">{agreementSigned(s, a) ? "Signed" : "Not signed"}</td>
-                {fin ? <td><span className={`tag ${payTagClass(allotPayStatus(s, a))}`}>{allotPayStatus(s, a)}</span></td> : null}
-                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{fin ? <>
-                  <button className={`chip ${oid === a.id && otab === "receipts" ? "on" : ""}`} onClick={() => toggle(a.id, "receipts")}>Receipts <span className="u">{n}</span></button>{" "}
-                  {mayPayouts(s, me) ? <button className={`chip ${oid === a.id && otab === "payouts" ? "on" : ""}`} onClick={() => toggle(a.id, "payouts")}>Payouts <span className="u">{po.length}</span></button> : null}
+                <td><a className="lnk" role="button" tabIndex={0} onClick={() => llpId && dispatch({ type: "openDrawer", k: "llp", id: llpId })}
+                  onKeyDown={e => { if (e.key === "Enter" && llpId) dispatch({ type: "openDrawer", k: "llp", id: llpId }); }}>{l.llp.name ?? "—"}</a>
+                  <div className="sm mono">{l.id}</div></td>
+                <td className="n">{l.committedUnits}</td>
+                {fin ? <td className="n mono">{l.amount == null ? "—" : money(l.amount)}<div className="sm">{l.unitPrice == null ? "" : money(l.unitPrice) + " a unit, as recorded"}</div></td> : null}
+                <td><TagDot c={allocTag(l.status)}>{l.status}</TagDot></td>
+                <td className="sm">{l.agreementSigned == null ? "—" : l.agreementSigned ? "Signed" : "Not signed"}</td>
+                {fin ? <td>{l.paymentStatus ? <span className={`tag ${payTagClass(l.paymentStatus)}`}>{l.paymentStatus}</span> : "—"}</td> : null}
+                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{fin && a ? <>
+                  <button className={`chip ${oid === l.id && otab === "receipts" ? "on" : ""}`} onClick={() => toggle(l.id, "receipts")}>Receipts <span className="u">{n}</span></button>{" "}
+                  {mayPayouts(s, me) ? <button className={`chip ${oid === l.id && otab === "payouts" ? "on" : ""}`} onClick={() => toggle(l.id, "payouts")}>Payouts <span className="u">{po.length}</span></button> : null}
                 </> : null}</td>
               </>}
-              open={oid === a.id ? otab : ""} />
+              open={oid === l.id ? otab : ""} />
           );
         })}</tbody></table></div>
       {fin ? <div className="cb"><p className="sm" style={{ margin: 0 }}>An allotment is one investor on one farm. Its receipts and its monthly payouts belong to it, so each farm&apos;s money adds up from the same records.</p></div> : null}
     </div>
   );
 }
-function AllotRow(p: P & { a: ImAllot; fin: boolean; cells: ReactNode; open: string }) {
+function AllotRow(p: P & { a: ImAllot | null; fin: boolean; cells: ReactNode; open: string }) {
   const { s, me, dispatch, a, fin, cells, open } = p;
   const cols = fin ? 7 : 4;
   return (
     <>
       <tr>{cells}</tr>
-      {open === "receipts" ? <tr><td colSpan={cols}>
+      {a && open === "receipts" ? <tr><td colSpan={cols}>
         {allotTxns(s, me, a).length ? allotTxns(s, me, a).map(t => <TxLine key={t.id} s={s} t={t} />)
           : <div className="empty">No receipt is linked to this allotment yet.</div>}
       </td></tr> : null}
-      {open === "payouts" ? <tr><td colSpan={cols}><Payouts s={s} me={me} dispatch={dispatch} a={a} /></td></tr> : null}
+      {a && open === "payouts" ? <tr><td colSpan={cols}><Payouts s={s} me={me} dispatch={dispatch} a={a} /></td></tr> : null}
     </>
   );
 }

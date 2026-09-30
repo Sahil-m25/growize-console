@@ -5,7 +5,7 @@
    and the app preview (M10-S22). Same frame, classes and gates as the prototype's drawers; their
    form fields live in ui.MX, written with {type:"mset"}. */
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   I, PAYOUT_MODES, TESTLINK_MIN, addInvestorGate, allotDue, allotAmount, allotOf, allotPayStatus, allotTxns, allotUnits,
   allotsOnLlp, dupEmail, fmtAt, fmtDate, inr, llpCounts, llpName, llpOf, llps, may,
@@ -14,8 +14,10 @@ import {
 import type { ImMoneyDrawerKey, ImPayoutMode } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { AppPreview } from "./preview";
+import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { farmOne } from "@/lib/data/endpoints/farms";
-import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { farmAllotments } from "@/lib/data/endpoints/allotments";
+import { addPaid } from "@/lib/data/endpoints/investors";
 import { appLock } from "@/lib/data/endpoints/app-account";
 import { useReload } from "@/lib/store";
 
@@ -104,12 +106,15 @@ function LlpName({ s, me, id }: Ctx) {
 function LlpBody(c: Ctx) {
   const { s, me, dispatch } = c;
   const r = useApiRead(farmOne, { s, me }, c.id);
+  /* M11-S02-W1: "who holds units here" is GET /api/farms/[id]/allotments */
+  const who_ = useApiRead(farmAllotments, { s, me }, c.id);
   if (r.state === "idle") return null;
   if (r.state === "loading") return <p className="sm" style={{ margin: 0 }}>Reading the farm…</p>;
   if (r.state === "error") return <p className="sm" role="alert" style={{ margin: 0 }}>{r.err.error}</p>;
   const { farm: l, superUser } = r.data;
-  const rows = allotsOnLlp(s, me, l.id), fin = !notFin(s, me);
-  const matched = rows.flatMap(a => allotTxns(s, me, a)).filter(t => t.rec === "matched" && t.kind !== "refund" && t.kind !== "forfeit")
+  const held = who_.state === "ok" ? who_.data : null;
+  const rows = held ? held.allotments : [], fin = held ? held.money : false;
+  const matched = allotsOnLlp(s, me, l.id).flatMap(a => allotTxns(s, me, a)).filter(t => t.rec === "matched" && t.kind !== "refund" && t.kind !== "forfeit")
     .reduce((a, t) => a + t.amt, 0);
   return (
     <>
@@ -133,18 +138,17 @@ function LlpBody(c: Ctx) {
         {l.insurance.provider ? <p className="sm" style={{ margin: 0 }}>{l.insurance.provider} · <span className="mono">{l.insurance.policyNo ?? "—"}</span> · insured till {fmtDate(l.insurance.till)}</p>
           : <p className="sm" style={{ margin: 0 }}>No policy on file.</p>}</div>
       <div className="drwsec"><p className="lbl">Who holds units here</p>
-        {rows.length ? rows.map(a => {
-          const x = I(s, me, a.Customer);
-          return (
-            <div className="led" key={a.id}>
-              <span className={`tag ${a.Allocation_Status === "Issued" ? "go" : a.Allocation_Status === "Cancelled" ? "late" : "hold"}`}>{a.Allocation_Status}</span>
-              <span style={{ minWidth: 0 }}><a className="lnk" role="button" tabIndex={0}
-                onClick={() => dispatch({ type: "go", v: "inv", id: a.Customer })}
-                onKeyDown={e => { if (e.key === "Enter") dispatch({ type: "go", v: "inv", id: a.Customer }); }}>{x ? x.n : a.Customer}</a>
-                <div className="sm">{allotUnits(a)} unit{allotUnits(a) === 1 ? "" : "s"}{fin ? " · " + money(allotAmount(a)) + " · " + allotPayStatus(s, a) : ""}</div></span>
-            </div>
-          );
-        }) : <p className="sm" style={{ margin: 0 }}>Nobody holds units on this farm{superUser || fin ? "" : " that you look after"}.</p>}
+        {who_.state === "loading" ? <p className="sm" style={{ margin: 0 }}>Reading who holds units…</p> : null}
+        {who_.state === "error" ? <p className="sm" role="alert" style={{ margin: 0 }}>{who_.err.error}</p> : null}
+        {who_.state === "ok" ? (rows.length ? rows.map(a => (
+          <div className="led" key={a.id}>
+            <span className={`tag ${a.status === "Issued" ? "go" : a.status === "Cancelled" ? "late" : "hold"}`}>{a.status}</span>
+            <span style={{ minWidth: 0 }}><a className="lnk" role="button" tabIndex={0}
+              onClick={() => dispatch({ type: "go", v: "inv", id: a.investor.id })}
+              onKeyDown={e => { if (e.key === "Enter") dispatch({ type: "go", v: "inv", id: a.investor.id }); }}>{a.investor.name ?? a.investor.id}</a>
+              <div className="sm">{a.committedUnits} unit{a.committedUnits === 1 ? "" : "s"}{fin && a.amount != null ? " · " + money(a.amount) + " · " + a.paymentStatus : ""}</div></span>
+          </div>
+        )) : <p className="sm" style={{ margin: 0 }}>Nobody holds units on this farm{superUser || fin ? "" : " that you look after"}.</p>) : null}
         {fin && rows.length ? <p className="sm" style={{ margin: "9px 0 0" }}>Matched receipts on this farm: <b>{money(matched)}</b> — the same total Payments shows for {l.name.split(" — ")[0]}.</p> : null}
       </div>
     </>
@@ -164,11 +168,16 @@ function addBody(c: Ctx): ReactNode {
         and their receipt — and no email: their app opens <b>on hold</b> until Finance sends the welcome.</p>
       {AI.map(([k, t, ph]) => (
         <label key={k} className="fi" style={{ marginBottom: 11 }}><span>{t}</span>
-          <input className="inp" id={"ai-" + k} placeholder={ph} value={mx(c, "ai:" + k)} onChange={e => setMx(c, "ai:" + k, e.target.value)} /></label>
+          <input className="inp" id={"ai-" + k} placeholder={ph} value={mx(c, "ai:" + k)}
+          onChange={e => { setMx(c, "ai:" + k, e.target.value); if (k === "em" && mx(c, "ai:dup")) setMx(c, "ai:dup", ""); }} /></label>
       ))}
       {dup ? <div className="note bad" style={{ margin: "0 0 11px" }}><b>{dup.em} is already on the book.</b> It belongs to{" "}
         <a className="lnk" role="button" tabIndex={0} onClick={() => dispatch({ type: "go", v: "inv", id: dup.id })}
           onKeyDown={e => { if (e.key === "Enter") dispatch({ type: "go", v: "inv", id: dup.id }); }}>{dup.n} ({dup.id})</a>
+        {" "}— open their record instead of adding them twice.</div> : null}
+      {mx(c, "ai:dup") && !dup ? <div className="note bad" style={{ margin: "0 0 11px" }} role="alert"><b>{mx(c, "ai:em")} is already on the book.</b> It belongs to{" "}
+        <a className="lnk" role="button" tabIndex={0} onClick={() => dispatch({ type: "go", v: "inv", id: mx(c, "ai:dup") })}
+          onKeyDown={e => { if (e.key === "Enter") dispatch({ type: "go", v: "inv", id: mx(c, "ai:dup") }); }}>{mx(c, "ai:dup")}</a>
         {" "}— open their record instead of adding them twice.</div> : null}
       <label className="fi" style={{ marginBottom: 11 }}><span>Farm (LLP)</span>
         <select className="selw" id="ai-llp" value={mx(c, "ai:llp")} onChange={e => setMx(c, "ai:llp", e.target.value)}>
@@ -189,17 +198,31 @@ function addBody(c: Ctx): ReactNode {
     </>
   );
 }
-function addFoot(c: Ctx): ReactNode {
+/* M09-S09-W1: the button is POST /api/investors/add-paid (lib/data/endpoints/investors) with an Idempotency-Key per press
+   (kept for a retry of the same press). A 409 keeps the drawer open and links to the investor the email already belongs to. */
+function AddHere({ c }: { c: Ctx }) {
   const { s, me, dispatch } = c;
-  const f = { n: mx(c, "ai:n"), em: mx(c, "ai:em"), ph: mx(c, "ai:ph"), llp: mx(c, "ai:llp"), units: +mx(c, "ai:units") || 0,
-    paid: +mx(c, "ai:paid") || 0, on: mx(c, "ai:on") };
-  const dup = !!dupEmail(s, f.em);
-  const g = addInvestorGate(s, me, f);
+  const mode = useApiMode();
+  const add = useApiWrite(addPaid, { s, me }, dispatch);
+  const press1 = useRef<{ sig: string; key: string } | null>(null);
+  const f = { name: mx(c, "ai:n"), email: mx(c, "ai:em"), mobile: mx(c, "ai:ph"), llpId: mx(c, "ai:llp"), units: +mx(c, "ai:units") || 0,
+    amountPaid: +mx(c, "ai:paid") || 0, investmentDate: mx(c, "ai:on") };
+  const dup = !!dupEmail(s, f.email);
+  const g = addInvestorGate(s, me, { n: f.name, em: f.email, ph: f.mobile, llp: f.llpId, units: f.units, paid: f.amountPaid, on: f.investmentDate });
+  const press = async () => {
+    /* one key per press of the same form: a retry after a network error replays, an edited form is a new request */
+    const sig = JSON.stringify(f);
+    if (!press1.current || press1.current.sig !== sig) press1.current = { sig, key: newIdempotencyKey() };
+    const r = await add(f, { idempotencyKey: press1.current.key });
+    if (r.ok && mode === "live") dispatch({ type: "closeDrawer" });
+    else if (!r.ok && r.status === 409 && r.recordId) setMx(c, "ai:dup", r.recordId);
+  };
   return (
     <button className="act" disabled={dup} title={dup ? "That email is already on the book" : g.ok ? undefined : g.msg || undefined}
-      onClick={dup ? undefined : () => dispatch({ type: "addInvestor", ...f })}>Add the investor</button>
+      onClick={dup ? undefined : () => void press()}>Add the investor</button>
   );
 }
+function addFoot(c: Ctx): ReactNode { return <AddHere c={c} />; }
 
 /* ---- applock: Lock app access (M10-S21) ---- */
 function lockBody(c: Ctx): ReactNode {

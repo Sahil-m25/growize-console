@@ -21,9 +21,11 @@ import type { ImDrafts, ImDrawerKey, ImInvestor } from "@/lib/im";
 import { Icon } from "@/components/ui/Icon";
 import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
 import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
-import { newIdempotencyKey, useApiMode, useApiWrite } from "@/lib/data/api";
+import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { receiptPrepare, receiptRecord } from "@/lib/data/endpoints/claims";
 import { useReload } from "@/lib/store";
+import { investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
+import { investorAllot, investorAllotments } from "@/lib/data/endpoints/allotments";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -87,15 +89,27 @@ function kamBody(c: Ctx): ReactNode {
     </>
   );
 }
-function kamFoot(c: Ctx): ReactNode {
-  const { s, me, id, dispatch } = c; const x = I(s, me, id); const { KSEL } = draft(c);
-  if (!may(s, me, "assign") || !x || !id) return null;
-  const same = KSEL === (x.kam || null);
+/* M09-S04-W1: naming or moving a manager is PUT /api/investors/[id]/kam (lib/data/endpoints/investors), guarded by the
+   record's version. The reducer's own note still speaks in fixture mode; a live refusal lands in the same note. */
+function KamHand({ c, id, same }: { c: Ctx; id: string; same: boolean }) {
+  const { s, me, dispatch } = c; const { KSEL } = draft(c);
+  const mode = useApiMode();
+  const rec = useApiRead(investorRecord, { s, me }, id);
+  const assign = useApiWrite(kamAssign, { s, me }, dispatch);
+  const press = async () => {
+    const r = await assign({ id, kam: KSEL, expectedModifiedTime: rec.state === "ok" ? rec.data.record.version : null });
+    if (r.ok && mode === "live") dispatch({ type: "closeDrawer" });
+  };
   return (
     <button className="act" disabled={same} title={same ? "That is who holds it already" : undefined}
-      onClick={same ? undefined : () => dispatch({ type: "assignKam", id, k: KSEL })}>
+      onClick={same ? undefined : () => void press()}>
       {KSEL ? "Hand it to them" : "Return it to the pool"}</button>
   );
+}
+function kamFoot(c: Ctx): ReactNode {
+  const { s, me, id } = c; const x = I(s, me, id); const { KSEL } = draft(c);
+  if (!may(s, me, "assign") || !x || !id) return null;
+  return <KamHand c={c} id={id} same={KSEL === (x.kam || null)} />;
 }
 
 /* ---- talk — imx.js 2639–2672 ---- */
@@ -329,11 +343,29 @@ function verifyBody(c: Ctx): ReactNode {
     </>
   );
 }
+/* M11-S05-W1: on the Allocation letter, "the signed copy is here" verifies AND allots through
+   POST /api/investors/[id]/allot (lib/data/endpoints/allotments); its refusals (facts missing, oversell, changed) land in the
+   page note. Any other document is still the reducer's verifyDoc until the Paper section is wired (M12-S01). */
+function VerifyHere({ c, id, inv, letter }: { c: Ctx; id: string; inv: string; letter: boolean }) {
+  const { s, me, dispatch } = c; const { DREF } = draft(c);
+  const mode = useApiMode();
+  const al = useApiRead(investorAllotments, { s, me }, letter ? inv : null);
+  const allot = useApiWrite(investorAllot, { s, me }, dispatch);
+  const pending = al.state === "ok" ? al.data.allotments.filter(a => a.status === "Reserved") : [];
+  const press = async () => {
+    if (!letter) { dispatch({ type: "verifyDoc", did: id, ref: DREF }); return; }
+    const r = await allot({ id: inv, did: id, allotmentId: pending[0] ? pending[0].id : "", reference: DREF, expectedModifiedTime: null });
+    /* live: one letter allots one allotment; the drawer stays while another waits */
+    if (r.ok && mode === "live" && pending.length < 2) dispatch({ type: "closeDrawer" });
+  };
+  return <button className="act" onClick={() => void press()}>The signed copy is here</button>;
+}
 function verifyFoot(c: Ctx): ReactNode {
-  const { s, me, id, dispatch } = c; const { DREF } = draft(c);
+  const { s, me, id, dispatch } = c;
+  const d = id ? s.data.DOCS.find(y => y.id === id) : null;
   return may(s, me, "doc") && id ? (
     <>
-      <button className="act" onClick={() => dispatch({ type: "verifyDoc", did: id, ref: DREF })}>The signed copy is here</button>{" "}
+      {d ? <VerifyHere c={c} id={id} inv={d.inv} letter={d.t === "Allocation letter"} /> : null}{" "}
       <button className="act ghost" onClick={() => dispatch({ type: "blockDoc", did: id, why: "Nothing has come back signed" })}>Nothing has come back</button>
     </>
   ) : null;

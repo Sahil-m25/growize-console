@@ -4,11 +4,11 @@
    record. The record is built as one page with sections rather than a wall: who they are, what
    they hold, what they have paid, what paper exists, and the journey that got them here. */
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { StepUp } from "../stepup";
 import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
-  invRows, isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
+  isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
   tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView, fmtDay,
 } from "@/lib/im";
@@ -23,7 +23,7 @@ import { InvEmails } from "../paper2/Emails";
 import { SignCell } from "../paper2/SignCell";
 import { InvUploads } from "../paper2/Upload";
 import { useApiRead, useApiWrite, type Read } from "@/lib/data/api";
-import { investorRecord } from "@/lib/data/endpoints/investors";
+import { amBook, investorRecord, investorSearch } from "@/lib/data/endpoints/investors";
 import { holdExtend, holdOne, holdRelease, type HoldOne } from "@/lib/data/endpoints/holds";
 import type { InvestorRecord, RecordSection } from "@/server/investors/record";
 
@@ -44,27 +44,47 @@ export function ImInv(p: ImPageProps) {
 }
 
 /* vInv — imx.js 1474–1529 */
+/** a value that follows `v` after it has stood still for `ms` (the search box's 200 ms debounce, M09-S07-W1) */
+function useDebounced<T>(v: T, ms: number): T {
+  const [d, setD] = useState(v);
+  useEffect(() => { const h = setTimeout(() => setD(v), ms); return () => clearTimeout(h); }, [v, ms]);
+  return d;
+}
+
 function VInv({ s, me, dispatch }: ImPageProps) {
   const am = isAM(s, me), base = am ? myBook(s, me).filter(cared) : s.data.INV;
+  /* M09-S02-W1: "N under care" and "No manager" are GET /api/investors/am; M09-S07-W1: the box is GET /api/investors/search */
+  const amR = useApiRead(amBook, { s, me }, am);
+  const dq = useDebounced(s.ui.IQ, 200);
+  const sr = useApiRead(investorSearch, { s, me }, { q: dq, farm: null });
   const EXC = invExceptions(s, me);
   /* the prototype clears an IFILT this seat has no cut for; the render simply reads it as none */
   const IFILT = s.ui.IFILT && EXC[s.ui.IFILT] ? s.ui.IFILT : null;
-  const rows = invRows(s, me);
+  const cut = IFILT ? EXC[IFILT][1] : null;
+  const hits = sr.state === "ok" ? sr.data.hits : null;
+  /* a term the route finds too short is no search at all; anything else it refuses is said in the page */
+  const searchErr = sr.state === "error" && sr.err.status !== 400 ? sr.err.error : null;
+  const rows = base.filter(x => (!cut || cut(x)) && (!hits || hits.some(h => h.id === x.id)));
+  /* hits the book does not hold (live: the Investors book is not read yet) still open their record */
+  const stubs = hits && !cut ? hits.filter(h => !base.some(x => x.id === h.id)) : [];
+  const shown = amR.state === "ok" ? amR.data.summary : null;
+  const count = (k: string, n: number) => (k === "nokam" && shown ? shown.noManager : n);
   const go = (id: string) => dispatch({ type: "go", v: "inv", id });
   return (
     <>
       <div className="ph"><h1>{am ? (who(s, me).r === "kam" ? "My accounts" : "Accounts") : "Investors"}</h1>
-        <span className="sub" id="inv-sub">{base.length + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (allocated(s) + reserved(s)) + " units")}</span>
+        <span className="sub" id="inv-sub">{(am ? (shown ? shown.underCare : "…") : base.length) + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (allocated(s) + reserved(s)) + " units")}</span>
         <div className="sp" />
         <AddInvestorButton s={s} me={me} dispatch={dispatch} />
         <input className="inp" style={{ width: 210 }} placeholder="Name, ARL ID, city…" value={s.ui.IQ}
           /* named by the heading row's own subtitle, as the prototype's unlabeled box is read */
           aria-labelledby="inv-sub"
           id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
+      {searchErr ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{searchErr}</div> : null}
       <div className="secbar">
-        <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{base.length}</i></button>
+        <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{am && shown ? shown.underCare : base.length}</i></button>
         {Object.entries(EXC).map(([k, [t, f]]) => {
-          const n = base.filter(f).length;
+          const n = count(k, base.filter(f).length);
           return n ? (
             <button key={k} className={`sc ${IFILT === k ? "on" : ""}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: k } })}>{t}{" "}
               <i className={["kyc", "fema", "quiet", "nokam", "conc"].includes(k) ? "warn" : ""}>{n}</i></button>
@@ -76,7 +96,7 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           {am ? <><th>Tier</th><th>Manager</th><th>Last heard</th><th>Next owed</th><th>Land</th></>
             : <><th>Land</th><th>State</th><th>KYC</th><th className="n">Paid</th><th className="n">Due</th><th>IR</th></>}
         </tr></thead>
-        <tbody>{rows.length ? rows.map(x => {
+        <tbody>{rows.length || stubs.length ? rows.map(x => {
           const l = lastC(s, me, x.id), o = overdue(s, me, x), T = tierOf(x)!, due = dueBy(s, me, x.id);
           return (
             <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
@@ -100,7 +120,13 @@ function VInv({ s, me, dispatch }: ImPageProps) {
               </>}
             </tr>
           );
-        }) : <tr><td colSpan={am ? 8 : 9}><div className="empty">Nobody matches that.{s.ui.IQ.trim()
+        }).concat(stubs.map(h => (
+          <tr key={h.id} className="k" tabIndex={0} onClick={() => go(h.id)} onKeyDown={e => { if (e.key === "Enter") go(h.id); }}>
+            <td><b>{h.name}</b><div className="sm">{h.city ?? ""}</div></td>
+            <td className="mono sm">{h.code}</td>
+            <td className="sm" colSpan={am ? 6 : 7}>{h.phoneLast4 ? "mobile ····" + h.phoneLast4 : "—"}</td>
+          </tr>))) : sr.state === "loading" ? <tr><td colSpan={am ? 8 : 9}><div className="empty">Searching…</div></td></tr>
+        : <tr><td colSpan={am ? 8 : 9}><div className="empty">Nobody matches that.{s.ui.IQ.trim()
           ? <div className="sm">{"No investor you can open matches “" + s.ui.IQ.trim() + "”"
             + (IFILT ? " under " + EXC[IFILT][0] : "") + "."}</div> : null}</div></td></tr>}
         </tbody></table></div></div></div>
