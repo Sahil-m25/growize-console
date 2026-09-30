@@ -4,7 +4,8 @@
    record. The record is built as one page with sections rather than a wall: who they are, what
    they hold, what they have paid, what paper exists, and the journey that got them here. */
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
+import { StepUp } from "../stepup";
 import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   invRows, isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
@@ -260,6 +261,7 @@ function SecWho(p: ImPageProps & { x: ImInvestor }) {
 /* vOne → "hold", and the app account — imx.js 1619–1681 */
 function SecHold(p: ImPageProps & { x: ImInvestor }) {
   const { s, me, dispatch, x } = p;
+  const [release, setRelease] = useState(false);   /* M01-S10-W1: waiting on a step-up for "release" */
   const hd = holdDays(s, x), due = dueBy(s, me, x.id);
   const a = appOf(s, me, x.id);
   return (
@@ -285,7 +287,9 @@ function SecHold(p: ImPageProps & { x: ImInvestor }) {
         </dl>
         <div className="note">An advance reserves; it does not allot. Until the balance is in, these units are held against a liability and the portal says so on every screen that shows them — which is why <b>reserved</b> and <b>allocated</b> are different words here and never used loosely.</div>
         {x.st === "reserved" && may(s, me, "refund") && hd != null && hd < 0 ? <div className="drwsec">
-          <button className="chip" onClick={() => dispatch({ type: "lapseHold", id: x.id })}>Release the reservation</button>
+          <button className="chip" onClick={() => { setRelease(true); dispatch({ type: "lapseHold", id: x.id }); }}>Release the reservation</button>
+          {/* M01-S10-W1: a release is behind a fresh step-up (the route, /api/auth/step-up/release, refuses without one) */}
+          <StepUp action={release ? "release" : null} onOpen={() => setRelease(false)} onCancel={() => setRelease(false)} />
           <p className="sm" style={{ margin: "8px 0 0" }}>{"The hold ran out " + (-hd) + " day" + (hd === -1 ? "" : "s") + " ago."}</p>
         </div> : null}
       </div></div>
