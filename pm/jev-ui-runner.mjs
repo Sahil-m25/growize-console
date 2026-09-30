@@ -10,17 +10,20 @@
 // Writing cases: one action per step, using the visible label ("Press 'Assign to me' on Ritu Anand's row", "Type 'Rahul' in the find-an-investor box");
 // expected = a list of separate facts about what the screen shows after the steps (no "no longer", no internal names).
 // Calibration: cases with expect_fail are deliberately wrong; a run where any of them PASSES is not trusted.
-// Key: TYPESAFE_API_KEY, or TS_KEY_FILE, or growize/.typesafe-key (never commit it).
+// Key: TYPESAFE_API_KEY, or TS_KEY_FILE, or .typesafe-key at the repo root (never commit it) — looked up by jev/client.mjs.
 // Result per case: PASS (p ≥ PASS_AT, default 0.80 — see calibration note below) · FAIL (p ≤ 0.10) · REVIEW (between, or a step Jev was unsure about: top choice < 0.60).
 import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { createClient, findKey } from "../jev/client.mjs";
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 let chromium; for (const m of ["playwright", path.resolve("node_modules/playwright"), path.resolve(here, "..", "console", "node_modules", "playwright")]) { try { ({ chromium } = require(m)); break; } catch {} }
 if (!chromium) { console.error("playwright not found: run scripts/setup (console/node_modules/playwright)"); process.exit(2); }
-const keyFile = [process.env.TS_KEY_FILE, path.join(here, "..", ".typesafe-key")].find(f => f && fs.existsSync(f));
-const KEY = process.env.TYPESAFE_API_KEY || (keyFile && fs.readFileSync(keyFile, "utf8").trim());
-if (!KEY) throw new Error("No TypeSafe key");
+// D107 (M19-S13): the fetch goes through the one Jev client (key lookup, retry, cache, log in jev/logs/calls.jsonl).
+// Only the fetch moved: the questions below, STEP_MIN, PASS_AT and the verdict logic are unchanged
+// (jev/questions/pick-control.mjs and judge-fact.mjs hold byte-identical copies, checked by jev/test/questions.test.mjs).
+if (!findKey()) throw new Error("No TypeSafe key");
+const client = createClient({ retries: 4, backoffMs: 2000 });
 const [casesFile, target, outArg] = process.argv.slice(2);
 const cases = JSON.parse(fs.readFileSync(casesFile, "utf8")).cases;
 const url = /^https?:/.test(target) ? target : "file://" + path.resolve(target);
@@ -33,18 +36,7 @@ const FIX = process.env.FIXTURES && fs.existsSync(process.env.FIXTURES) ? JSON.p
 for (const k of Object.keys(FIX)) if (k.startsWith("IM:") && !FIX[k.slice(3)]) FIX[k.slice(3)] = FIX[k];
 const wrap = code => `(async()=>{ ${code && /\breturn\b/.test(code) ? code : (code || "")} })()`;
 
-async function jev(state, questions) {
-  for (let a = 0; ; a++) {
-    try {
-      const r = await fetch("https://api.typesafe.ai/v1/systemone", { method: "POST",
-        headers: { Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "jev-latest", state, questions }) });
-      if (r.ok) return (await r.json()).answers;
-      if (r.status !== 429 && r.status < 500) throw new Error(r.status + " " + (await r.text()).slice(0, 200));
-    } catch (e) { if (a === 4) throw e; }
-    await new Promise(s => setTimeout(s, 2000 * (a + 1)));
-  }
-}
+const jev = (state, questions) => client.ask(state, questions, { caller: "ui-runner", def: "pick" in questions ? "pick-control@1" : "judge-fact@1" });
 
 // What a person can see and use right now: controls with their visible name and the row they sit in.
 async function controls(page) {

@@ -6,7 +6,7 @@ depends on a user-level install. Secrets never live in the repo.
 
 | Tool | Job | How it gets here | Source |
 |---|---|---|---|
-| **Jev** (TypeSafe System One) | The gate: judges each story's UI cases (`autopilot/test-story.mjs` → `pm/jev-ui-runner.mjs`) and design/mapping checks (`pm/plan-merged/jev-batch.mjs`) | In repo. Key from `TYPESAFE_API_KEY` (cloud secret) or `.typesafe-key` (gitignored). Never print it | typesafe.ai |
+| **Jev** (TypeSafe System One) | The gate: judges each story's UI cases (`autopilot/test-story.mjs` → `pm/jev-ui-runner.mjs`) and design/mapping checks (`pm/plan-merged/jev-batch.mjs`); every build-workflow judgment goes through `node jev/cli.mjs` (D107: one client, grounding, versioned questions, calibrated thresholds) | In repo. Key from `TYPESAFE_API_KEY` (cloud secret) or `.typesafe-key` (gitignored). Never print it | typesafe.ai |
 | **reticle** | Runtime perception inside the running dev app: failed requests, state mismatches, console errors that never reach the screen; pass/fail with file locations | Plugin `reticle@reticlehq` (MCP server + skill). The in-app SDK is added once with `npx @reticlehq/server init` and committed (dev-only) | github.com/reticlehq/reticle |
 | **graphify** | AST code map; query `tools/graphify/graphify-out/graph.json` instead of re-reading files | `pip install graphifyy` + `graphify extract . --out tools/graphify` in setup; the PostToolUse hook refreshes it after code edits and never blocks | pypi graphifyy |
 | **ponytail** | Write-less-code ladder (does it need to exist → already here → stdlib → platform → existing dep → one-liner → minimal code). Also stated in CLAUDE.md | Plugin `ponytail@ponytail` | github.com/DietrichGebert/ponytail |

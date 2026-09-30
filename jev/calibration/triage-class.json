@@ -1,0 +1,507 @@
+{
+ "source": "hand-labelled failed runs, three per class. No saved M19-S12 triage with known classes exists in this repo; case_outdated items carry the decision that changed the expectation in `decisions_note` (sent as state.later_decisions).",
+ "items": [
+  {
+   "id": "H1",
+   "answer": "harness",
+   "case": {
+    "title": "Leads page lists Rohit's leads",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Leads' in the menu"
+    ],
+    "expected": [
+     "The page lists Sanjay Menon."
+    ]
+   },
+   "run": {
+    "steps": [],
+    "false_facts": [
+     "The page lists Sanjay Menon."
+    ],
+    "error": "unknown fixture DEMO_LEADS_V2"
+   }
+  },
+  {
+   "id": "H2",
+   "answer": "harness",
+   "case": {
+    "title": "Today shows the IR's calls",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Today' in the menu"
+    ],
+    "expected": [
+     "The page shows 'Calls due today'."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": null,
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "The page shows 'Calls due today'."
+    ],
+    "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3001/"
+   }
+  },
+  {
+   "id": "H3",
+   "answer": "harness",
+   "case": {
+    "title": "Payments page opens",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Payments' in the menu"
+    ],
+    "expected": [
+     "The page shows a Payments heading."
+    ]
+   },
+   "run": {
+    "steps": [],
+    "false_facts": [
+     "The page shows a Payments heading."
+    ],
+    "error": "TypeError: Cannot read properties of undefined (reading 'seat') — page error at load"
+   }
+  },
+  {
+   "id": "C1",
+   "answer": "control_missing",
+   "case": {
+    "title": "IR exports the lead list",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Leads' in the menu",
+     "Press 'Export to CSV'"
+    ],
+    "expected": [
+     "A CSV download starts."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     },
+     {
+      "step": "Press 'Leads' in the menu",
+      "pressed": "Leads",
+      "problem": null
+     },
+     {
+      "step": "Press 'Export to CSV'",
+      "pressed": null,
+      "problem": "no matching control"
+     }
+    ],
+    "false_facts": [
+     "A CSV download starts."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "C2",
+   "answer": "control_missing",
+   "case": {
+    "title": "Manager sets a team target",
+    "steps": [
+     "Press Tasneem Qureshi on the sign-in screen",
+     "Press 'Plan' in the menu",
+     "Type '40' in the Team target box"
+    ],
+    "expected": [
+     "The Team target shows 40."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Tasneem Qureshi on the sign-in screen",
+      "pressed": "Tasneem Qureshi",
+      "problem": null
+     },
+     {
+      "step": "Press 'Plan' in the menu",
+      "pressed": "Plan",
+      "problem": null
+     },
+     {
+      "step": "Type '40' in the Team target box",
+      "pressed": null,
+      "problem": "no matching control"
+     }
+    ],
+    "false_facts": [
+     "The Team target shows 40."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "C3",
+   "answer": "control_missing",
+   "case": {
+    "title": "Finance opens the Receipts register",
+    "steps": [
+     "Press Harsha Bhat on the sign-in screen",
+     "Press 'Receipts register' in the menu"
+    ],
+    "expected": [
+     "The page lists receipts by allotment."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Harsha Bhat on the sign-in screen",
+      "pressed": "Harsha Bhat",
+      "problem": null
+     },
+     {
+      "step": "Press 'Receipts register' in the menu",
+      "pressed": null,
+      "problem": "no matching control"
+     }
+    ],
+    "false_facts": [
+     "The page lists receipts by allotment."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "L1",
+   "answer": "label_differs",
+   "case": {
+    "title": "IR takes an unassigned lead",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Leads' in the menu",
+     "Press 'Assign to me' on Ritu Anand's row"
+    ],
+    "expected": [
+     "Ritu Anand's row shows Rohit as owner."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     },
+     {
+      "step": "Press 'Leads' in the menu",
+      "pressed": "Leads",
+      "problem": null
+     },
+     {
+      "step": "Press 'Assign to me' on Ritu Anand's row",
+      "pressed": null,
+      "problem": "no matching control — Ritu Anand's row offers 'Take this lead'"
+     }
+    ],
+    "false_facts": [
+     "Ritu Anand's row shows Rohit as owner."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "L2",
+   "answer": "label_differs",
+   "case": {
+    "title": "IR adds a lead",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Add lead'"
+    ],
+    "expected": [
+     "The panel shows a Full name box."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     },
+     {
+      "step": "Press 'Add lead'",
+      "pressed": null,
+      "problem": "no matching control — the top bar offers 'New lead'"
+     }
+    ],
+    "false_facts": [
+     "The panel shows a Full name box."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "L3",
+   "answer": "label_differs",
+   "case": {
+    "title": "IR signs out",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Your account'",
+     "Press 'Sign out'"
+    ],
+    "expected": [
+     "The sign-in screen is shown."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     },
+     {
+      "step": "Press 'Your account'",
+      "pressed": "Your account",
+      "problem": null
+     },
+     {
+      "step": "Press 'Sign out'",
+      "pressed": null,
+      "problem": "no matching control — the menu offers 'Log out'"
+     }
+    ],
+    "false_facts": [
+     "The sign-in screen is shown."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "B1",
+   "answer": "behaviour_wrong",
+   "case": {
+    "title": "Saving a call note shows it on the lead",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Sanjay Menon'",
+     "Press 'Log a call'",
+     "Type 'Asked for the brochure' in the Note box",
+     "Press 'Save'"
+    ],
+    "expected": [
+     "The Activity feed shows 'Asked for the brochure'."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     },
+     {
+      "step": "Press 'Sanjay Menon'",
+      "pressed": "Sanjay Menon",
+      "problem": null
+     },
+     {
+      "step": "Press 'Log a call'",
+      "pressed": "Log a call",
+      "problem": null
+     },
+     {
+      "step": "Type 'Asked for the brochure' in the Note box",
+      "pressed": "Note",
+      "problem": null
+     },
+     {
+      "step": "Press 'Save'",
+      "pressed": "Save",
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "The Activity feed shows 'Asked for the brochure'."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "B2",
+   "answer": "behaviour_wrong",
+   "case": {
+    "title": "Filter narrows the lead list",
+    "steps": [
+     "Press Tasneem Qureshi on the sign-in screen",
+     "Press 'Leads' in the menu",
+     "Choose 'Hot' in the Temperature dropdown"
+    ],
+    "expected": [
+     "Only hot leads are listed.",
+     "The line under the heading reads '4 of 18'."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Tasneem Qureshi on the sign-in screen",
+      "pressed": "Tasneem Qureshi",
+      "problem": null
+     },
+     {
+      "step": "Press 'Leads' in the menu",
+      "pressed": "Leads",
+      "problem": null
+     },
+     {
+      "step": "Choose 'Hot' in the Temperature dropdown",
+      "pressed": "Temperature",
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "Only hot leads are listed.",
+     "The line under the heading reads '4 of 18'."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "B3",
+   "answer": "behaviour_wrong",
+   "case": {
+    "title": "Undo restores the step",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen",
+     "Press 'Sanjay Menon'",
+     "Press 'Mark engagement done'",
+     "Press 'Undo'"
+    ],
+    "expected": [
+     "The step reads 'Engagement pending'."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     },
+     {
+      "step": "Press 'Sanjay Menon'",
+      "pressed": "Sanjay Menon",
+      "problem": null
+     },
+     {
+      "step": "Press 'Mark engagement done'",
+      "pressed": "Mark engagement done",
+      "problem": null
+     },
+     {
+      "step": "Press 'Undo'",
+      "pressed": "Undo",
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "The step reads 'Engagement pending'."
+    ],
+    "error": null
+   }
+  },
+  {
+   "id": "O1",
+   "answer": "case_outdated",
+   "case": {
+    "title": "The seat picker lists every seat",
+    "steps": [
+     "Open the console"
+    ],
+    "expected": [
+     "The page shows a seat picker listing IR, IR Manager, Finance and Marketing."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Open the console",
+      "pressed": null,
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "The page shows a seat picker listing IR, IR Manager, Finance and Marketing."
+    ],
+    "error": null
+   },
+   "decisions_note": "D30: the console has a sign-in screen; the seat picker is gone"
+  },
+  {
+   "id": "O2",
+   "answer": "case_outdated",
+   "case": {
+    "title": "Updates is a page in the menu",
+    "steps": [
+     "Press Rohit Deshpande on the sign-in screen"
+    ],
+    "expected": [
+     "The menu shows Updates."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Press Rohit Deshpande on the sign-in screen",
+      "pressed": "Rohit Deshpande",
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "The menu shows Updates."
+    ],
+    "error": null
+   },
+   "decisions_note": "D31: Updates moves into a bell"
+  },
+  {
+   "id": "O3",
+   "answer": "case_outdated",
+   "case": {
+    "title": "The sign-in screen offers only the six lead-side people",
+    "steps": [
+     "Open the console"
+    ],
+    "expected": [
+     "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
+     "It does not offer Harsha Bhat."
+    ]
+   },
+   "run": {
+    "steps": [
+     {
+      "step": "Open the console",
+      "pressed": null,
+      "problem": null
+     }
+    ],
+    "false_facts": [
+     "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
+     "It does not offer Harsha Bhat."
+    ],
+    "error": null
+   },
+   "decisions_note": "D68/D98: the merged console signs in Finance (Harsha) and the Investors side too"
+  }
+ ]
+}

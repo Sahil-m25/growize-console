@@ -1,0 +1,69 @@
+{
+ "source": "D109: the flagged rows a person read. M02-S13 drifted (the story text lags D79); M19-S01 incomplete (a11y not in CI); M02-S11/M02-S03 are the owner's own D75/D77 ruling and the waiting stories only wait on the sandbox or a person (aligned); rounds whose only note is a Jev pass count are unclear. Posed against the progress.json of this commit.",
+ "items": [
+  {
+   "story": "M02-S13",
+   "answer": "drifted"
+  },
+  {
+   "story": "M19-S01",
+   "answer": "incomplete"
+  },
+  {
+   "story": "M02-S11",
+   "answer": "aligned"
+  },
+  {
+   "story": "M02-S03",
+   "answer": "aligned"
+  },
+  {
+   "story": "M05-S04",
+   "answer": "aligned"
+  },
+  {
+   "story": "M17-S06",
+   "answer": "aligned"
+  },
+  {
+   "story": "M02-S02",
+   "answer": "aligned"
+  },
+  {
+   "story": "M09-S04",
+   "answer": "aligned"
+  },
+  {
+   "story": "M20-S07",
+   "answer": "aligned"
+  },
+  {
+   "story": "M20-S08",
+   "answer": "aligned"
+  },
+  {
+   "story": "M01-S06",
+   "answer": "unclear"
+  },
+  {
+   "story": "M04-S03",
+   "answer": "unclear"
+  },
+  {
+   "story": "M05-S03",
+   "answer": "unclear"
+  },
+  {
+   "story": "M07-S02",
+   "answer": "unclear"
+  },
+  {
+   "story": "M07-S07",
+   "answer": "unclear"
+  },
+  {
+   "story": "M16-S07",
+   "answer": "unclear"
+  }
+ ]
+}

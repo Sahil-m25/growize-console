@@ -1,0 +1,95 @@
+{
+ "source": "hand-labelled: notes that plainly follow (confirm) or contradict (reverse) a decision or rule, and business calls no decision settles (owner)",
+ "items": [
+  {
+   "kind": "PROVISIONAL",
+   "story": "M10-S07",
+   "note": "A receipt is recorded even though the investor's KYC switch is off; matching stays blocked until KYC is set (D21).",
+   "answer": "confirm"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M01-S09",
+   "note": "The top bar says 'Could not refresh — showing nothing' when a Zoho fetch fails past the five-minute cache expiry, instead of showing the old numbers (D45).",
+   "answer": "confirm"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M07-S02",
+   "note": "In the logging flow the channel asked in step one is never asked again later in the flow (D57).",
+   "answer": "confirm"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M12-S06",
+   "note": "The signed PDF from Zoho Sign is filed to the allotment record, not to the Contact (D72).",
+   "answer": "confirm"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M14-S01",
+   "note": "Events are read from the Lead Events module; no Event_Name/Event_Date fields are written on the Lead (D85).",
+   "answer": "confirm"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M16-S03",
+   "note": "Lead-side Numbers are served from one global cache shared by every user, because the totals are the same for everyone (D53).",
+   "answer": "reverse"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M01-S02",
+   "note": "Screens for viewer seats read Zoho through the integration user's service token, since viewers never write (D53, D52).",
+   "answer": "reverse"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M04-S01",
+   "note": "New leads are written to a Supabase table first and synced to Zoho every ten minutes (D45).",
+   "answer": "reverse"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M08-S07",
+   "note": "The investor Contact is created only at Onboarded, after full payment, not at 'said yes' (D11).",
+   "answer": "reverse"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M07-S02",
+   "note": "An automated welcome email sent by a workflow rule is logged as the IR's conversation touch (rule 6).",
+   "answer": "reverse"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M10-S07",
+   "note": "The refund for a cancelled allotment is set at 95% of units × price; the owner has not said what is kept back.",
+   "answer": "owner"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M12-S06",
+   "note": "The allocation letter's legal wording was drafted by the build from the prototype's placeholder text; no signed template exists yet.",
+   "answer": "owner"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M03-S01",
+   "note": "Two more Enterprise seats are assumed for the Compliance team; buying them is not decided.",
+   "answer": "owner"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M09-S02",
+   "note": "The KAM book assumes each KAM carries at most 40 investors; the owner has not set a staffing ratio.",
+   "answer": "owner"
+  },
+  {
+   "kind": "PROVISIONAL",
+   "story": "M11-S07",
+   "note": "The unit price of a farm unit is hard-coded at the last LLP's price until Finance supplies the new price list.",
+   "answer": "owner"
+  }
+ ]
+}

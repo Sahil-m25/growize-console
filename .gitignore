@@ -38,3 +38,7 @@ ops/tracker/.slack-token
 autopilot/.phase
 autopilot/console/progress.view.json
 autopilot/console/context/
+
+# Jev layer (D107): the content-hash cache and the call log are regenerable and may hold screen text
+jev/.cache/
+jev/logs/

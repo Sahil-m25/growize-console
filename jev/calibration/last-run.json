@@ -1,0 +1,3510 @@
+{
+ "at": "2026-09-30T07:45:35.841Z",
+ "stats": {
+  "calls": 0,
+  "cached": 415,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "errors": 0
+ },
+ "detail": {
+  "decide": [
+   {
+    "id": "D21",
+    "right": true,
+    "conf": 0.48,
+    "got": "a",
+    "want": "a",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D21",
+    "right": true,
+    "conf": 0.99,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D45",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D53",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D53",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D60",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D68",
+    "right": false,
+    "conf": 0.25,
+    "got": "b",
+    "want": "a",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D77",
+    "right": true,
+    "conf": 0.99,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D77",
+    "right": true,
+    "conf": 0.9,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D76",
+    "right": true,
+    "conf": 0.94,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D82",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D84",
+    "right": true,
+    "conf": 0.69,
+    "got": "a",
+    "want": "a",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D93",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D47",
+    "right": true,
+    "conf": 0.91,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D44",
+    "right": true,
+    "conf": 0.99,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D58",
+    "right": true,
+    "conf": 0.97,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D15",
+    "right": true,
+    "conf": 0.99,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D28",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D28 and D33",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D110",
+    "right": true,
+    "conf": 0.93,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D110",
+    "right": true,
+    "conf": 0.9,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D10",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D24",
+    "right": true,
+    "conf": 0.96,
+    "got": "b",
+    "want": "b",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D52",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D3",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D30",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D29",
+    "right": true,
+    "conf": 0.77,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D57",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D55",
+    "right": true,
+    "conf": 0.99,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D71",
+    "right": true,
+    "conf": 0.99,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D13",
+    "right": true,
+    "conf": 0.42,
+    "got": "b",
+    "want": "b",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D14",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D9",
+    "right": true,
+    "conf": 1,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D11",
+    "right": true,
+    "conf": 0.99,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D64",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   },
+   {
+    "id": "D85",
+    "right": true,
+    "conf": 0.95,
+    "got": "b",
+    "want": "b",
+    "policy": "OK"
+   },
+   {
+    "id": "D73",
+    "right": true,
+    "conf": 0.26,
+    "got": "a",
+    "want": "a",
+    "policy": "OWNER"
+   },
+   {
+    "id": "D17",
+    "right": true,
+    "conf": 1,
+    "got": "a",
+    "want": "a",
+    "policy": "OK"
+   }
+  ],
+  "ruling": [
+   {
+    "id": "A receipt is recorded even though the in",
+    "right": true,
+    "conf": 0.86,
+    "got": "confirm",
+    "want": "confirm"
+   },
+   {
+    "id": "The top bar says 'Could not refresh — sh",
+    "right": true,
+    "conf": 0.68,
+    "got": "confirm",
+    "want": "confirm"
+   },
+   {
+    "id": "In the logging flow the channel asked in",
+    "right": true,
+    "conf": 0.84,
+    "got": "confirm",
+    "want": "confirm"
+   },
+   {
+    "id": "The signed PDF from Zoho Sign is filed t",
+    "right": true,
+    "conf": 0.9,
+    "got": "confirm",
+    "want": "confirm"
+   },
+   {
+    "id": "Events are read from the Lead Events mod",
+    "right": true,
+    "conf": 0.74,
+    "got": "confirm",
+    "want": "confirm"
+   },
+   {
+    "id": "Lead-side Numbers are served from one gl",
+    "right": true,
+    "conf": 0.99,
+    "got": "reverse",
+    "want": "reverse"
+   },
+   {
+    "id": "Screens for viewer seats read Zoho throu",
+    "right": true,
+    "conf": 0.99,
+    "got": "reverse",
+    "want": "reverse"
+   },
+   {
+    "id": "New leads are written to a Supabase tabl",
+    "right": true,
+    "conf": 1,
+    "got": "reverse",
+    "want": "reverse"
+   },
+   {
+    "id": "The investor Contact is created only at ",
+    "right": true,
+    "conf": 0.97,
+    "got": "reverse",
+    "want": "reverse"
+   },
+   {
+    "id": "An automated welcome email sent by a wor",
+    "right": true,
+    "conf": 0.99,
+    "got": "reverse",
+    "want": "reverse"
+   },
+   {
+    "id": "The refund for a cancelled allotment is ",
+    "right": true,
+    "conf": 0.98,
+    "got": "owner",
+    "want": "owner"
+   },
+   {
+    "id": "The allocation letter's legal wording wa",
+    "right": true,
+    "conf": 0.73,
+    "got": "owner",
+    "want": "owner"
+   },
+   {
+    "id": "Two more Enterprise seats are assumed fo",
+    "right": true,
+    "conf": 0.77,
+    "got": "owner",
+    "want": "owner"
+   },
+   {
+    "id": "The KAM book assumes each KAM carries at",
+    "right": true,
+    "conf": 0.89,
+    "got": "owner",
+    "want": "owner"
+   },
+   {
+    "id": "The unit price of a farm unit is hard-co",
+    "right": true,
+    "conf": 0.7,
+    "got": "owner",
+    "want": "owner"
+   }
+  ],
+  "triage-class": [
+   {
+    "id": "H1",
+    "right": true,
+    "conf": 0.98,
+    "got": "harness",
+    "want": "harness"
+   },
+   {
+    "id": "H2",
+    "right": true,
+    "conf": 1,
+    "got": "harness",
+    "want": "harness"
+   },
+   {
+    "id": "H3",
+    "right": true,
+    "conf": 1,
+    "got": "harness",
+    "want": "harness"
+   },
+   {
+    "id": "C1",
+    "right": true,
+    "conf": 0.96,
+    "got": "control_missing",
+    "want": "control_missing"
+   },
+   {
+    "id": "C2",
+    "right": true,
+    "conf": 0.99,
+    "got": "control_missing",
+    "want": "control_missing"
+   },
+   {
+    "id": "C3",
+    "right": true,
+    "conf": 0.93,
+    "got": "control_missing",
+    "want": "control_missing"
+   },
+   {
+    "id": "L1",
+    "right": true,
+    "conf": 0.97,
+    "got": "label_differs",
+    "want": "label_differs"
+   },
+   {
+    "id": "L2",
+    "right": true,
+    "conf": 0.97,
+    "got": "label_differs",
+    "want": "label_differs"
+   },
+   {
+    "id": "L3",
+    "right": true,
+    "conf": 0.97,
+    "got": "label_differs",
+    "want": "label_differs"
+   },
+   {
+    "id": "B1",
+    "right": true,
+    "conf": 0.86,
+    "got": "behaviour_wrong",
+    "want": "behaviour_wrong"
+   },
+   {
+    "id": "B2",
+    "right": true,
+    "conf": 0.49,
+    "got": "behaviour_wrong",
+    "want": "behaviour_wrong"
+   },
+   {
+    "id": "B3",
+    "right": true,
+    "conf": 0.85,
+    "got": "behaviour_wrong",
+    "want": "behaviour_wrong"
+   },
+   {
+    "id": "O1",
+    "right": true,
+    "conf": 0.53,
+    "got": "case_outdated",
+    "want": "case_outdated"
+   },
+   {
+    "id": "O2",
+    "right": true,
+    "conf": 0.86,
+    "got": "case_outdated",
+    "want": "case_outdated"
+   },
+   {
+    "id": "O3",
+    "right": false,
+    "conf": 0.58,
+    "got": "harness",
+    "want": "case_outdated"
+   }
+  ],
+  "relevance": [
+   {
+    "id": "M03-S01→console/src/server/access/signin-list.ts",
+    "p": 0.9900000000000001,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9900000000000001
+   },
+   {
+    "id": "M03-S01→console/src/components/shell/SignIn.tsx",
+    "p": 0.9866666666666667,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9866666666666667
+   },
+   {
+    "id": "M03-S01→console/src/server/money/match.ts",
+    "p": 0.02666666666666667,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.02666666666666667
+   },
+   {
+    "id": "M03-S01→console/src/features/events/sheet.ts",
+    "p": 0.013333333333333334,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.013333333333333334
+   },
+   {
+    "id": "M04-S01→console/src/features/add/AddPage.tsx",
+    "p": 0.9500000000000001,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9500000000000001
+   },
+   {
+    "id": "M04-S01→console/src/server/zoho-sign/webhook.ts",
+    "p": 0.13666666666666666,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.13666666666666666
+   },
+   {
+    "id": "M10-S07→console/src/server/money/allotment-receipts.ts",
+    "p": 0.9199999999999999,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9199999999999999
+   },
+   {
+    "id": "M10-S07→console/src/components/shell/ThemeButton.tsx",
+    "p": 0.0033333333333333335,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.0033333333333333335
+   },
+   {
+    "id": "M12-S06→console/src/server/zoho-sign/file.ts",
+    "p": 0.9700000000000001,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9700000000000001
+   },
+   {
+    "id": "M12-S06→console/src/features/add/csv.ts",
+    "p": 0.03,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.03
+   },
+   {
+    "id": "M14-S01→console/src/features/events/EventsPage.tsx",
+    "p": 0.9866666666666667,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9866666666666667
+   },
+   {
+    "id": "M14-S01→console/src/server/money/record-receipt.ts",
+    "p": 0.01,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.01
+   },
+   {
+    "id": "M17-S05→console/src/features/me/ProfilePage.tsx",
+    "p": 0.9900000000000001,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.9900000000000001
+   },
+   {
+    "id": "M17-S05→console/src/server/zoho-sign/embed.ts",
+    "p": 0.043333333333333335,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.043333333333333335
+   },
+   {
+    "id": "M01-S09→console/src/components/shell/DataStatus.tsx",
+    "p": 0.8933333333333334,
+    "want": true,
+    "got": true,
+    "right": true,
+    "conf": 0.8933333333333334
+   },
+   {
+    "id": "M01-S09→console/src/server/money/statement-parse.ts",
+    "p": 0.043333333333333335,
+    "want": false,
+    "got": false,
+    "right": true,
+    "conf": 0.043333333333333335
+   }
+  ],
+  "decisions-audit": [
+   {
+    "id": "D2",
+    "right": true,
+    "conf": 0.89,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D52 D20 D23 D46 D58 D69 D72 D77"
+   },
+   {
+    "id": "D3",
+    "right": true,
+    "conf": 0.79,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D45 D6 D42 D52 D69 D79 D93 D9"
+   },
+   {
+    "id": "D4",
+    "right": true,
+    "conf": 0.91,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D45 D17 D24 D13 D74 D78 D79 D84"
+   },
+   {
+    "id": "D10",
+    "right": true,
+    "conf": 0.96,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D108 D110 D93 D61 D68 D12 D21 D22"
+   },
+   {
+    "id": "D15",
+    "right": true,
+    "conf": 0.97,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D108 D110 D69 D66 D68 D74 D78 D79"
+   },
+   {
+    "id": "D24",
+    "right": true,
+    "conf": 0.52,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D108 D110 D79 D93 D46 D4 D42 D45"
+   },
+   {
+    "id": "D28",
+    "right": true,
+    "conf": 0.41,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D30 D60 D33 D55 D68 D81 D83 D93"
+   },
+   {
+    "id": "D74",
+    "right": true,
+    "conf": 0.92,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D75 D77 D79 D85 D76 D82 D52 D55"
+   },
+   {
+    "id": "D83",
+    "right": true,
+    "conf": 0.81,
+    "got": "superseded",
+    "want": "superseded",
+    "related": "D85 D82 D84 D35 D55 D60 D65 D69"
+   },
+   {
+    "id": "D1",
+    "right": false,
+    "conf": 0.28,
+    "got": "superseded",
+    "want": "consistent",
+    "related": "D72 D6 D17 D20 D24 D37 D45 D58"
+   },
+   {
+    "id": "D9",
+    "right": true,
+    "conf": 0.52,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D60 D43 D82 D11 D15 D20 D22 D29"
+   },
+   {
+    "id": "D14",
+    "right": true,
+    "conf": 0.43,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D45 D47 D46 D57 D17 D22 D24 D26"
+   },
+   {
+    "id": "D19",
+    "right": true,
+    "conf": 0.62,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D63 D107 D22 D64 D82 D20 D21 D36"
+   },
+   {
+    "id": "D21",
+    "right": true,
+    "conf": 0.19,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D22 D68 D108 D20 D23 D49 D51 D52"
+   },
+   {
+    "id": "D33",
+    "right": false,
+    "conf": 0.46,
+    "got": "superseded",
+    "want": "consistent",
+    "related": "D29 D56 D61 D82 D93 D28 D39 D55"
+   },
+   {
+    "id": "D45",
+    "right": true,
+    "conf": 0.7,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D47 D46 D14 D71 D74 D77 D93 D55"
+   },
+   {
+    "id": "D52",
+    "right": true,
+    "conf": 0.71,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D54 D51 D60 D74 D11 D20 D69 D79"
+   },
+   {
+    "id": "D53",
+    "right": true,
+    "conf": 0.68,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D108 D54 D81 D110 D22 D37 D51 D59"
+   },
+   {
+    "id": "D57",
+    "right": true,
+    "conf": 0.85,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D56 D60 D58 D59 D107 D63 D14 D22"
+   },
+   {
+    "id": "D71",
+    "right": true,
+    "conf": 0.4,
+    "got": "consistent",
+    "want": "consistent",
+    "related": "D72 D47 D74 D77 D78 D79 D45 D46"
+   }
+  ],
+  "build-audit": [
+   {
+    "id": "M02-S13",
+    "right": true,
+    "conf": 0.72,
+    "got": "drifted",
+    "want": "drifted"
+   },
+   {
+    "id": "M19-S01",
+    "right": true,
+    "conf": 0.71,
+    "got": "incomplete",
+    "want": "incomplete"
+   },
+   {
+    "id": "M02-S11",
+    "right": false,
+    "conf": 0.74,
+    "got": "drifted",
+    "want": "aligned"
+   },
+   {
+    "id": "M02-S03",
+    "right": false,
+    "conf": 0.62,
+    "got": "drifted",
+    "want": "aligned"
+   },
+   {
+    "id": "M05-S04",
+    "right": false,
+    "conf": 0.32,
+    "got": "drifted",
+    "want": "aligned"
+   },
+   {
+    "id": "M17-S06",
+    "right": false,
+    "conf": 0.35,
+    "got": "drifted",
+    "want": "aligned"
+   },
+   {
+    "id": "M02-S02",
+    "right": false,
+    "conf": 0.42,
+    "got": "incomplete",
+    "want": "aligned"
+   },
+   {
+    "id": "M09-S04",
+    "right": false,
+    "conf": 0.44,
+    "got": "incomplete",
+    "want": "aligned"
+   },
+   {
+    "id": "M20-S07",
+    "right": false,
+    "conf": 0.21,
+    "got": "incomplete",
+    "want": "aligned"
+   },
+   {
+    "id": "M20-S08",
+    "right": false,
+    "conf": 0.4,
+    "got": "incomplete",
+    "want": "aligned"
+   },
+   {
+    "id": "M01-S06",
+    "right": false,
+    "conf": 0.33,
+    "got": "incomplete",
+    "want": "unclear"
+   },
+   {
+    "id": "M04-S03",
+    "right": true,
+    "conf": 0.66,
+    "got": "unclear",
+    "want": "unclear"
+   },
+   {
+    "id": "M05-S03",
+    "right": true,
+    "conf": 0.34,
+    "got": "unclear",
+    "want": "unclear"
+   },
+   {
+    "id": "M07-S02",
+    "right": true,
+    "conf": 0.57,
+    "got": "unclear",
+    "want": "unclear"
+   },
+   {
+    "id": "M07-S07",
+    "right": true,
+    "conf": 0.46,
+    "got": "unclear",
+    "want": "unclear"
+   },
+   {
+    "id": "M16-S07",
+    "right": true,
+    "conf": 0.47,
+    "got": "unclear",
+    "want": "unclear"
+   }
+  ],
+  "pick-control": [
+   {
+    "id": "TC-E01-001#0",
+    "how": "label",
+    "right": true,
+    "conf": 0.91,
+    "got": "e1",
+    "want": "e1"
+   },
+   {
+    "id": "TC-E01-005#3",
+    "how": "label",
+    "right": true,
+    "conf": 0.98,
+    "got": "e12",
+    "want": "e12"
+   },
+   {
+    "id": "TC-E03-001#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e33",
+    "want": "e33"
+   },
+   {
+    "id": "TC-E06-002#0",
+    "how": "label",
+    "right": true,
+    "conf": 0.76,
+    "got": "e5",
+    "want": "e5"
+   },
+   {
+    "id": "TC-E08-001#0",
+    "how": "label",
+    "right": true,
+    "conf": 0.93,
+    "got": "e2",
+    "want": "e2"
+   },
+   {
+    "id": "TC-E09-001#1",
+    "how": "label",
+    "right": true,
+    "conf": 0.88,
+    "got": "e2",
+    "want": "e2"
+   },
+   {
+    "id": "TC-IM04-002#0",
+    "how": "label",
+    "right": true,
+    "conf": 0.88,
+    "got": "e6",
+    "want": "e6"
+   },
+   {
+    "id": "TC-IM06-001#1",
+    "how": "label",
+    "right": true,
+    "conf": 0.93,
+    "got": "e4",
+    "want": "e4"
+   },
+   {
+    "id": "TC-E03-011#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.99,
+    "got": "e30",
+    "want": "e30"
+   },
+   {
+    "id": "TC-E03-011#5",
+    "how": "label",
+    "right": true,
+    "conf": 0.97,
+    "got": "e44",
+    "want": "e44"
+   },
+   {
+    "id": "TC-E03-011#8",
+    "how": "label",
+    "right": true,
+    "conf": 0.88,
+    "got": "e6",
+    "want": "e6"
+   },
+   {
+    "id": "TC-E04-006#3",
+    "how": "label",
+    "right": true,
+    "conf": 0.98,
+    "got": "e30",
+    "want": "e30"
+   },
+   {
+    "id": "TC-E07-007#4",
+    "how": "label",
+    "right": true,
+    "conf": 0.99,
+    "got": "e19",
+    "want": "e19"
+   },
+   {
+    "id": "TC-E07-013#5",
+    "how": "label",
+    "right": true,
+    "conf": 0.88,
+    "got": "e16",
+    "want": "e16"
+   },
+   {
+    "id": "TC-E08-012#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.9,
+    "got": "e24",
+    "want": "e24"
+   },
+   {
+    "id": "TC-E09-021#1",
+    "how": "label",
+    "right": true,
+    "conf": 0.98,
+    "got": "e6",
+    "want": "e6"
+   },
+   {
+    "id": "TC-E10-007#7",
+    "how": "label",
+    "right": true,
+    "conf": 0.97,
+    "got": "e37",
+    "want": "e37"
+   },
+   {
+    "id": "TC-E11-010#1",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e5",
+    "want": "e5"
+   },
+   {
+    "id": "TC-E13-002#1",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e11",
+    "want": "e11"
+   },
+   {
+    "id": "TC-IM01-009#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.99,
+    "got": "e22",
+    "want": "e22"
+   },
+   {
+    "id": "TC-IM01-009#6",
+    "how": "label",
+    "right": true,
+    "conf": 0.97,
+    "got": "e29",
+    "want": "e29"
+   },
+   {
+    "id": "TC-IM02-012#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.97,
+    "got": "e22",
+    "want": "e22"
+   },
+   {
+    "id": "TC-IM02-021#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.99,
+    "got": "e22",
+    "want": "e22"
+   },
+   {
+    "id": "TC-IM10-001#1",
+    "how": "label",
+    "right": true,
+    "conf": 0.88,
+    "got": "e10",
+    "want": "e10"
+   },
+   {
+    "id": "TC-IM04-008#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.9,
+    "got": "e16",
+    "want": "e16"
+   },
+   {
+    "id": "TC-IM05-008#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e21",
+    "want": "e21"
+   },
+   {
+    "id": "TC-IM05-014#3",
+    "how": "label",
+    "right": true,
+    "conf": 0.99,
+    "got": "e15",
+    "want": "e15"
+   },
+   {
+    "id": "TC-IM06-012#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.94,
+    "got": "e34",
+    "want": "e34"
+   },
+   {
+    "id": "TC-IM06-012#5",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e31",
+    "want": "e31"
+   },
+   {
+    "id": "TC-IM07-009#3",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e17",
+    "want": "e17"
+   },
+   {
+    "id": "TC-IM07-016#3",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e20",
+    "want": "e20"
+   },
+   {
+    "id": "TC-IM07-016#6",
+    "how": "label",
+    "right": true,
+    "conf": 0.96,
+    "got": "e16",
+    "want": "e16"
+   },
+   {
+    "id": "TC-IM11-004#2",
+    "how": "label",
+    "right": true,
+    "conf": 0.98,
+    "got": "e34",
+    "want": "e34"
+   },
+   {
+    "id": "TC-E01-001#0-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.8,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E01-005#3-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.75,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E03-001#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.76,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E06-002#0-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.91,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E08-001#0-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.95,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E09-001#1-none",
+    "how": "removed",
+    "right": false,
+    "conf": 0.74,
+    "got": "e0",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM04-002#0-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.9,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM06-001#1-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.94,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E03-011#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.89,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E03-011#5-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.49,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E03-011#8-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.79,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E04-006#3-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.8,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E07-007#4-none",
+    "how": "removed",
+    "right": false,
+    "conf": 0.38,
+    "got": "e21",
+    "want": "none"
+   },
+   {
+    "id": "TC-E07-013#5-none",
+    "how": "removed",
+    "right": false,
+    "conf": 0.67,
+    "got": "e19",
+    "want": "none"
+   },
+   {
+    "id": "TC-E08-012#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.85,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E09-021#1-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.64,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E10-007#7-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.8,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E11-010#1-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.39,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E13-002#1-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.63,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM01-009#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.96,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM01-009#6-none",
+    "how": "removed",
+    "right": false,
+    "conf": 0.45,
+    "got": "e20",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM02-012#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.97,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM02-021#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.94,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM10-001#1-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.72,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM04-008#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.88,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM05-008#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.96,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM05-014#3-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.47,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM06-012#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.97,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM06-012#5-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.62,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM07-009#3-none",
+    "how": "removed",
+    "right": false,
+    "conf": 0.38,
+    "got": "e8",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM07-016#3-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.85,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM07-016#6-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.3,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-IM11-004#2-none",
+    "how": "removed",
+    "right": true,
+    "conf": 0.93,
+    "got": "none",
+    "want": "none"
+   },
+   {
+    "id": "TC-E04-001#2",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.96,
+    "got": "e26",
+    "want": "e26"
+   },
+   {
+    "id": "TC-E04-001#3",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 1,
+    "got": "e27",
+    "want": "e27"
+   },
+   {
+    "id": "TC-E04-001#4",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.99,
+    "got": "e30",
+    "want": "e30"
+   },
+   {
+    "id": "TC-E07-001#1",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.93,
+    "got": "e2",
+    "want": "e2"
+   },
+   {
+    "id": "TC-E08-001#1",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.86,
+    "got": "e2",
+    "want": "e2"
+   },
+   {
+    "id": "TC-E03-003#0",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.94,
+    "got": "look_only",
+    "want": "look_only"
+   },
+   {
+    "id": "TC-E04-006#2",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.99,
+    "got": "e27",
+    "want": "e27"
+   },
+   {
+    "id": "TC-E06-011#1",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.99,
+    "got": "e9",
+    "want": "e9"
+   },
+   {
+    "id": "TC-E07-007#3",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.93,
+    "got": "e16",
+    "want": "e16"
+   },
+   {
+    "id": "TC-E08-005#3",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.97,
+    "got": "e21",
+    "want": "e21"
+   },
+   {
+    "id": "TC-E08-012#4",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.96,
+    "got": "e28",
+    "want": "e28"
+   },
+   {
+    "id": "TC-E08-012#5",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.98,
+    "got": "e30",
+    "want": "e30"
+   },
+   {
+    "id": "TC-E08-012#6",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.98,
+    "got": "e31",
+    "want": "e31"
+   },
+   {
+    "id": "TC-E09-002#3",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.79,
+    "got": "e23",
+    "want": "e23"
+   },
+   {
+    "id": "TC-E09-021#2",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.98,
+    "got": "e14",
+    "want": "e14"
+   },
+   {
+    "id": "TC-E11-001#1",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.99,
+    "got": "e11",
+    "want": "e11"
+   },
+   {
+    "id": "TC-E12-006#2",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.9,
+    "got": "e31",
+    "want": "e31"
+   },
+   {
+    "id": "TC-E15-006#1",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 1,
+    "got": "e9",
+    "want": "e9"
+   },
+   {
+    "id": "TC-IM10-009#1",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.94,
+    "got": "e2",
+    "want": "e2"
+   },
+   {
+    "id": "TC-IM07-016#2",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.93,
+    "got": "e16",
+    "want": "e16"
+   },
+   {
+    "id": "TC-IM08-007#2",
+    "how": "jev-pass",
+    "right": true,
+    "conf": 0.97,
+    "got": "e15",
+    "want": "e15"
+   }
+  ],
+  "judge-fact": [
+   {
+    "id": "TC-E01-001",
+    "how": "original",
+    "fact": "The menu shows Today, Leads, Activity, Events, Payments and Documents.",
+    "truth": true,
+    "p": 0.92,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "negate",
+    "fact": "The menu does not show Today, Leads, Activity, Events, Payments and Documents.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "original",
+    "fact": "The menu does not show Teams.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "negate",
+    "fact": "The menu shows Teams.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "original",
+    "fact": "The menu does not show Plan.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "negate",
+    "fact": "The menu shows Plan.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "original",
+    "fact": "The menu does not show Transfers.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "negate",
+    "fact": "The menu shows Transfers.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "original",
+    "fact": "The menu does not show Numbers.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "negate",
+    "fact": "The menu shows Numbers.",
+    "truth": false,
+    "p": 0.11,
+    "right": true,
+    "conf": 0.89
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "original",
+    "fact": "The menu does not show System.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-001",
+    "how": "negate",
+    "fact": "The menu shows System.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E01-005",
+    "how": "original",
+    "fact": "The sign-in screen is showing.",
+    "truth": true,
+    "p": 0.87,
+    "right": true,
+    "conf": 0.87
+   },
+   {
+    "id": "TC-E01-005",
+    "how": "original",
+    "fact": "It says 'You are signed out.'",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E01-005",
+    "how": "original",
+    "fact": "It says 'Nothing you had recorded was lost.'",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E01-005",
+    "how": "original",
+    "fact": "Sanjay Menon's lead page is not showing.",
+    "truth": true,
+    "p": 0.93,
+    "right": true,
+    "conf": 0.93
+   },
+   {
+    "id": "TC-E04-001",
+    "how": "original",
+    "fact": "The Add lead panel says 'Anjali Deshmukh was added — Rohit Deshpande carries it'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E04-001",
+    "how": "original",
+    "fact": "The panel offers 'Add another name'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E04-001",
+    "how": "negate",
+    "fact": "The panel does not offer 'Add another name'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E04-001",
+    "how": "original",
+    "fact": "The panel offers 'Open Anjali'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E04-001",
+    "how": "negate",
+    "fact": "The panel does not offer 'Open Anjali'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E06-002",
+    "how": "original",
+    "fact": "The line under the Leads heading reads '15 of 18 in the team's book · 3 closed as lost, held back'.",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E06-002",
+    "how": "number",
+    "fact": "The line under the Leads heading reads '22 of 18 in the team's book · 3 closed as lost, held back'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E06-002",
+    "how": "original",
+    "fact": "The Owner dropdown offers 'Kavya Nair · 6', 'Rohit Deshpande · 4', 'Ananya Iyer · 4' and 'Nikhil Rao · 2'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E06-002",
+    "how": "negate",
+    "fact": "The Owner dropdown does not offer 'Kavya Nair · 6', 'Rohit Deshpande · 4', 'Ananya Iyer · 4' and 'Nikhil Rao · 2'.",
+    "truth": false,
+    "p": 0.04,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E06-002",
+    "how": "number",
+    "fact": "The Owner dropdown offers 'Kavya Nair · 13', 'Rohit Deshpande · 4', 'Ananya Iyer · 4' and 'Nikhil Rao · 2'.",
+    "truth": false,
+    "p": 0.05,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "original",
+    "fact": "Sanjay Menon's lead page is open.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "original",
+    "fact": "The page shows 'Last contact: WhatsApp · Message sent · 24 Aug 09:40'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "negate",
+    "fact": "The page does not show 'Last contact: WhatsApp · Message sent · 24 Aug 09:40'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "number",
+    "fact": "The page shows 'Last contact: WhatsApp · Message sent · 31 Aug 09:40'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "original",
+    "fact": "The page shows the latest note 'Asked us not to call before 6pm. Evenings only.' written by Rohit, with an 'All notes' link.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "negate",
+    "fact": "The page does not show the latest note 'Asked us not to call before 6pm. Evenings only.' written by Rohit, with an 'All notes' link.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "original",
+    "fact": "The page offers the buttons Call, WhatsApp, Email and 'Log a contact'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E07-001",
+    "how": "negate",
+    "fact": "The page does not offer the buttons Call, WhatsApp, Email and 'Log a contact'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E08-001",
+    "how": "original",
+    "fact": "The journey shows nine steps: Captured, First touch, Qualified, Engaged, Said yes, 10% in, Paid, Allocated, Onboarded.",
+    "truth": true,
+    "p": 0.9,
+    "right": true,
+    "conf": 0.9
+   },
+   {
+    "id": "TC-E08-001",
+    "how": "negate",
+    "fact": "The journey does not show nine steps: Captured, First touch, Qualified, Engaged, Said yes, 10% in, Paid, Allocated, Onboarded.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-E08-001",
+    "how": "number",
+    "fact": "The journey shows nine steps: Captured, First touch, Qualified, Engaged, Said yes, 17% in, Paid, Allocated, Onboarded.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-E08-001",
+    "how": "original",
+    "fact": "Captured, First touch, Qualified and Engaged each have a tick.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E08-001",
+    "how": "original",
+    "fact": "Step 5 'Said yes' is the first step without a tick.",
+    "truth": true,
+    "p": 0.92,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-E08-001",
+    "how": "number",
+    "fact": "Step 12 'Said yes' is the first step without a tick.",
+    "truth": false,
+    "p": 0.43,
+    "right": true,
+    "conf": 0.5700000000000001
+   },
+   {
+    "id": "TC-E09-001",
+    "how": "original",
+    "fact": "Under 'Paperwork' the page reads 'NDA is in their inbox — how did you tell them?'",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-001",
+    "how": "original",
+    "fact": "Besides the action bar (Call, WhatsApp, Email, Log a contact), the page offers a second group of buttons 'Call', 'WhatsApp' and 'Email' without 'Log a contact'.",
+    "truth": true,
+    "p": 0.94,
+    "right": true,
+    "conf": 0.94
+   },
+   {
+    "id": "TC-E09-001",
+    "how": "negate",
+    "fact": "Besides the action bar (Call, WhatsApp, Email, Log a contact), the page does not offer a second group of buttons 'Call', 'WhatsApp' and 'Email' without 'Log a contact'.",
+    "truth": false,
+    "p": 0.1,
+    "right": true,
+    "conf": 0.9
+   },
+   {
+    "id": "TC-E09-001",
+    "how": "original",
+    "fact": "No button on the page is labelled 'Open'.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-001",
+    "how": "original",
+    "fact": "Under 'Paperwork' the page shows 'Deck goes after the NDA is signed'.",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E09-001",
+    "how": "negate",
+    "fact": "Under 'Paperwork' the page does not show 'Deck goes after the NDA is signed'.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-E10-002",
+    "how": "original",
+    "fact": "The Completed events table lists Prestige Falcon City, Koramangala Club, Brigade Cornerstone and AgriTech Expo.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E10-002",
+    "how": "original",
+    "fact": "The table has columns Leads, 'vs need 86', Qualified and Reserved.",
+    "truth": true,
+    "p": 0.91,
+    "right": true,
+    "conf": 0.91
+   },
+   {
+    "id": "TC-E10-002",
+    "how": "number",
+    "fact": "The table has columns Leads, 'vs need 93', Qualified and Reserved.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-E10-002",
+    "how": "original",
+    "fact": "The table has no 'Cost / qual' column.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E10-002",
+    "how": "original",
+    "fact": "A line says cost per qualified appears once an event's captured leads are all tagged.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "original",
+    "fact": "The list shows 2 investors.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "negate",
+    "fact": "The list does not show 2 investors.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "number",
+    "fact": "The list shows 9 investors.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "original",
+    "fact": "Prakash Bhat's row reads ₹2.5 L paid and ₹22.5 L due.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "number",
+    "fact": "Prakash Bhat's row reads ₹9.5 L paid and ₹22.5 L due.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "original",
+    "fact": "Joseph Mathew's row reads ₹10 L paid and ₹90 L due.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM04-002",
+    "how": "number",
+    "fact": "Joseph Mathew's row reads ₹17 L paid and ₹90 L due.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "original",
+    "fact": "The subtitle reads '8.0 acres · 208 units · 96 released'.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "number",
+    "fact": "The subtitle reads '15.0 acres · 208 units · 96 released'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "original",
+    "fact": "Released — deliverable reads 96.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "number",
+    "fact": "Released — deliverable reads 103.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "original",
+    "fact": "Allotted reads 35.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "number",
+    "fact": "Allotted reads 42.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "original",
+    "fact": "Reserved or paid reads 5.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "number",
+    "fact": "Reserved or paid reads 12.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "original",
+    "fact": "Free to sell reads 56.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM06-001",
+    "how": "number",
+    "fact": "Free to sell reads 63.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M01-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M03-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M06-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E03-003",
+    "how": "original",
+    "fact": "The sign-in screen does not offer Gokul S.",
+    "truth": true,
+    "p": 0.88,
+    "right": true,
+    "conf": 0.88
+   },
+   {
+    "id": "TC-E03-003",
+    "how": "negate",
+    "fact": "The sign-in screen offers Gokul S.",
+    "truth": false,
+    "p": 0.1,
+    "right": true,
+    "conf": 0.9
+   },
+   {
+    "id": "TC-E03-003",
+    "how": "original",
+    "fact": "No console page is showing.",
+    "truth": true,
+    "p": 0.82,
+    "right": true,
+    "conf": 0.82
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "original",
+    "fact": "Sanjay Menon's lead page is showing.",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "original",
+    "fact": "The menu shows Leads.",
+    "truth": true,
+    "p": 0.93,
+    "right": true,
+    "conf": 0.93
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "negate",
+    "fact": "The menu does not show Leads.",
+    "truth": false,
+    "p": 0.1,
+    "right": true,
+    "conf": 0.9
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "original",
+    "fact": "The menu does not show Today, Activity, Events, Payments, Documents, Teams, Numbers or System.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "negate",
+    "fact": "The menu shows Today, Activity, Events, Payments, Documents, Teams, Numbers or System.",
+    "truth": false,
+    "p": 0.05,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "original",
+    "fact": "The lead page does not offer 'Log a contact'.",
+    "truth": true,
+    "p": 0.87,
+    "right": true,
+    "conf": 0.87
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "negate",
+    "fact": "The lead page offers 'Log a contact'.",
+    "truth": false,
+    "p": 0.08,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "original",
+    "fact": "The lead page does not offer 'Mark done' or 'Email'.",
+    "truth": true,
+    "p": 0.88,
+    "right": true,
+    "conf": 0.88
+   },
+   {
+    "id": "TC-E03-011",
+    "how": "negate",
+    "fact": "The lead page offers 'Mark done' or 'Email'.",
+    "truth": false,
+    "p": 0.1,
+    "right": true,
+    "conf": 0.9
+   },
+   {
+    "id": "TC-E03-018",
+    "how": "original",
+    "fact": "The members list shows Rohit Deshpande, Kavya Nair, Nikhil Rao and Ananya Iyer.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E03-018",
+    "how": "negate",
+    "fact": "The members list does not show Rohit Deshpande, Kavya Nair, Nikhil Rao and Ananya Iyer.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E03-018",
+    "how": "original",
+    "fact": "The members list does not show Sahil Mohite.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E03-018",
+    "how": "negate",
+    "fact": "The members list shows Sahil Mohite.",
+    "truth": false,
+    "p": 0.04,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E04-006",
+    "how": "original",
+    "fact": "The Add lead panel says this number is already on the book, in a record you cannot open.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E04-006",
+    "how": "original",
+    "fact": "The panel does not show the name Rahul Sethi.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E04-006",
+    "how": "negate",
+    "fact": "The panel shows the name Rahul Sethi.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E04-006",
+    "how": "original",
+    "fact": "The panel says the duplicate was flagged to Tasneem Qureshi.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E04-006",
+    "how": "original",
+    "fact": "In place of a flag button, the panel says 'Flagged to Tasneem Qureshi' and 'Carry on with the next name.'",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E06-003",
+    "how": "original",
+    "fact": "The table lists Preethi Nayak as Closed as lost.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E06-003",
+    "how": "original",
+    "fact": "The line under the Leads heading is '6 in your book'.",
+    "truth": true,
+    "p": 0.92,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-E06-003",
+    "how": "number",
+    "fact": "The line under the Leads heading is '13 in your book'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E06-011",
+    "how": "original",
+    "fact": "Meera Krishnan's lead page is open.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E06-011",
+    "how": "original",
+    "fact": "The lead page shows the phone +91 98450 12277.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E06-011",
+    "how": "negate",
+    "fact": "The lead page does not show the phone +91 98450 12277.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E06-011",
+    "how": "number",
+    "fact": "The lead page shows the phone +98 98450 12277.",
+    "truth": false,
+    "p": 0.19,
+    "right": true,
+    "conf": 0.81
+   },
+   {
+    "id": "TC-E07-007",
+    "how": "original",
+    "fact": "The question shown is 'What's next?' (the 'What held them back?' question is not on screen).",
+    "truth": true,
+    "p": 0.89,
+    "right": true,
+    "conf": 0.89
+   },
+   {
+    "id": "TC-E07-007",
+    "how": "original",
+    "fact": "The summary line reads 'Call · Not now · just now · completes “Call back”'.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E08-005",
+    "how": "original",
+    "fact": "A 'Qualified' panel for Sanjay Menon is open.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E08-005",
+    "how": "original",
+    "fact": "The panel asks to confirm the qualification scorecard ('The scorecard is filled in — budget, timeline and who signs').",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E08-005",
+    "how": "original",
+    "fact": "The panel says a dated next step is needed ('No next action and no date').",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E08-005",
+    "how": "original",
+    "fact": "The lead page behind the panel still shows 'First touch made · step 2 of 9'.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E08-005",
+    "how": "negate",
+    "fact": "The lead page behind the panel still does not show 'First touch made · step 2 of 9'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E08-005",
+    "how": "number",
+    "fact": "The lead page behind the panel still shows 'First touch made · step 9 of 9'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E08-012",
+    "how": "original",
+    "fact": "The 'Report an investor payment' panel is still open and shows 'Enter the amount the investor reported, greater than zero, with at most two decimal places.'.",
+    "truth": true,
+    "p": 0.88,
+    "right": true,
+    "conf": 0.88
+   },
+   {
+    "id": "TC-E08-012",
+    "how": "negate",
+    "fact": "The 'Report an investor payment' panel is still open and does not show 'Enter the amount the investor reported, greater than zero, with at most two decimal places.'.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-E08-012",
+    "how": "original",
+    "fact": "The page does not show 'Payment reported — waiting for Finance'.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E08-012",
+    "how": "negate",
+    "fact": "The page shows 'Payment reported — waiting for Finance'.",
+    "truth": false,
+    "p": 0.04,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "original",
+    "fact": "A notice says 'Saved · NDA — told them by WhatsApp' and offers 'Undo'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "negate",
+    "fact": "A notice says 'Saved · NDA — told them by WhatsApp' and does not offer 'Undo'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "original",
+    "fact": "Under 'Paperwork' the page reads 'NDA — waiting for their signature · no reminders yet'.",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "original",
+    "fact": "The page offers a 'Reminded by call' button.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "negate",
+    "fact": "The page does not offer a 'Reminded by call' button.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "original",
+    "fact": "The page offers a 'Reminded by WhatsApp' button.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "negate",
+    "fact": "The page does not offer a 'Reminded by WhatsApp' button.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "original",
+    "fact": "The page offers a 'Reminded by email' button.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "negate",
+    "fact": "The page does not offer a 'Reminded by email' button.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "original",
+    "fact": "The page offers a 'They say it's signed' button.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E09-002",
+    "how": "negate",
+    "fact": "The page does not offer a 'They say it's signed' button.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-014",
+    "how": "original",
+    "fact": "Under 'Paperwork' the page reads 'NDA — waiting for their signature'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E09-014",
+    "how": "original",
+    "fact": "The page does not mention 'Supplementary agreement'.",
+    "truth": true,
+    "p": 0.94,
+    "right": true,
+    "conf": 0.94
+   },
+   {
+    "id": "TC-E09-014",
+    "how": "original",
+    "fact": "The page does not offer 'Draft sent'.",
+    "truth": true,
+    "p": 0.94,
+    "right": true,
+    "conf": 0.94
+   },
+   {
+    "id": "TC-E09-014",
+    "how": "negate",
+    "fact": "The page offers 'Draft sent'.",
+    "truth": false,
+    "p": 0.04,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-E09-021",
+    "how": "original",
+    "fact": "Meera Krishnan's lead page is open.",
+    "truth": true,
+    "p": 0.88,
+    "right": true,
+    "conf": 0.88
+   },
+   {
+    "id": "TC-E09-021",
+    "how": "original",
+    "fact": "Under 'Paperwork' the page reads 'NDA — waiting for their signature · 1 reminder'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E09-021",
+    "how": "number",
+    "fact": "Under 'Paperwork' the page reads 'NDA — waiting for their signature · 8 reminder'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E09-021",
+    "how": "original",
+    "fact": "Under 'Paperwork' the page lists the button 'They say it's signed'.",
+    "truth": true,
+    "p": 0.92,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "original",
+    "fact": "The Updates page reads 'last 7 days on your leads · 2 new'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "number",
+    "fact": "The Updates page reads 'last 14 days on your leads · 2 new'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "original",
+    "fact": "It shows 'Finance confirmed something on 1 lead'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "negate",
+    "fact": "It does not show 'Finance confirmed something on 1 lead'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "number",
+    "fact": "It shows 'Finance confirmed something on 8 lead'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "original",
+    "fact": "It shows 'Worked by somebody else — 1 lead'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "negate",
+    "fact": "It does not show 'Worked by somebody else — 1 lead'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E11-001",
+    "how": "number",
+    "fact": "It shows 'Worked by somebody else — 8 lead'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E12-006",
+    "how": "original",
+    "fact": "A list titled 'Missed first touch' is open.",
+    "truth": true,
+    "p": 0.87,
+    "right": true,
+    "conf": 0.87
+   },
+   {
+    "id": "TC-E12-006",
+    "how": "original",
+    "fact": "It names Farida Contractor.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-E13-002",
+    "how": "original",
+    "fact": "August 2026 shows '9 units · ₹2.25 Cr'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E13-002",
+    "how": "negate",
+    "fact": "August 2026 does not show '9 units · ₹2.25 Cr'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E13-002",
+    "how": "number",
+    "fact": "August 2033 shows '9 units · ₹2.25 Cr'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-E13-002",
+    "how": "original",
+    "fact": "July 2026 shows '1 unit · ₹25 L'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E13-002",
+    "how": "negate",
+    "fact": "July 2026 does not show '1 unit · ₹25 L'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E13-002",
+    "how": "number",
+    "fact": "July 2033 shows '1 unit · ₹25 L'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-E15-006",
+    "how": "original",
+    "fact": "The search results list is headed 'Your book'.",
+    "truth": true,
+    "p": 0.93,
+    "right": true,
+    "conf": 0.93
+   },
+   {
+    "id": "TC-E15-006",
+    "how": "original",
+    "fact": "The search results say no investor matches “Anand Pillai”.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E15-006",
+    "how": "original",
+    "fact": "The search results say only your own book is searched.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-E15-006",
+    "how": "original",
+    "fact": "The search results do not list Anand Pillai.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM02-012",
+    "how": "original",
+    "fact": "A panel titled 'KYC' for Joseph Mathew is open.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM02-012",
+    "how": "original",
+    "fact": "The panel offers 'Pass it'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM02-012",
+    "how": "negate",
+    "fact": "The panel does not offer 'Pass it'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM02-012",
+    "how": "original",
+    "fact": "The panel offers 'Fail it'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM02-012",
+    "how": "negate",
+    "fact": "The panel does not offer 'Fail it'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM10-009",
+    "how": "original",
+    "fact": "The page says '0 accessible entries'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM10-009",
+    "how": "number",
+    "fact": "The page says '7 accessible entries'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM10-009",
+    "how": "original",
+    "fact": "The page says 'Nothing in this cut.'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM10-009",
+    "how": "original",
+    "fact": "The page does not show 'Recorded a receipt'.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM10-009",
+    "how": "negate",
+    "fact": "The page shows 'Recorded a receipt'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "original",
+    "fact": "The subtitle reads '15 on the book · 40 units'.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "number",
+    "fact": "The subtitle reads '22 on the book · 40 units'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "original",
+    "fact": "The list shows 15 investors.",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "negate",
+    "fact": "The list does not show 15 investors.",
+    "truth": false,
+    "p": 0.08,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "number",
+    "fact": "The list shows 22 investors.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "original",
+    "fact": "The filters read Everyone 15, KYC not passed 1, Balance outstanding 2, NRI 1, FEMA outstanding 1.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-001",
+    "how": "number",
+    "fact": "The filters read Everyone 22, KYC not passed 1, Balance outstanding 2, NRI 1, FEMA outstanding 1.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-008",
+    "how": "original",
+    "fact": "The record has five section tabs: Who they are, What they hold, Care 1, Journey and Tickets 2.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-008",
+    "how": "number",
+    "fact": "The record has five section tabs: Who they are, What they hold, Care 8, Journey and Tickets 2.",
+    "truth": false,
+    "p": 0.05,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-IM04-008",
+    "how": "original",
+    "fact": "The page does not offer a Money tab.",
+    "truth": true,
+    "p": 0.93,
+    "right": true,
+    "conf": 0.93
+   },
+   {
+    "id": "TC-IM04-008",
+    "how": "negate",
+    "fact": "The page offers a Money tab.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-IM04-008",
+    "how": "original",
+    "fact": "The page does not offer a Paper tab.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-IM04-008",
+    "how": "negate",
+    "fact": "The page offers a Paper tab.",
+    "truth": false,
+    "p": 0.04,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-IM04-015",
+    "how": "original",
+    "fact": "Manager reads Imran Sheikh, since 25 Jul.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-015",
+    "how": "number",
+    "fact": "Manager reads Imran Sheikh, since 32 Jul.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM04-015",
+    "how": "original",
+    "fact": "The page offers 'Log a conversation'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM04-015",
+    "how": "negate",
+    "fact": "The page does not offer 'Log a conversation'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM04-015",
+    "how": "original",
+    "fact": "The page does not offer 'Name a manager' or 'Move the account'.",
+    "truth": true,
+    "p": 0.92,
+    "right": true,
+    "conf": 0.92
+   },
+   {
+    "id": "TC-IM04-015",
+    "how": "negate",
+    "fact": "The page offers 'Name a manager' or 'Move the account'.",
+    "truth": false,
+    "p": 0.07,
+    "right": true,
+    "conf": 0.9299999999999999
+   },
+   {
+    "id": "TC-IM05-008",
+    "how": "original",
+    "fact": "The Money section reads '₹2.5 L of ₹25 L · ₹22.5 L due'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM05-008",
+    "how": "number",
+    "fact": "The Money section reads '₹9.5 L of ₹25 L · ₹22.5 L due'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM05-008",
+    "how": "original",
+    "fact": "A line reads 'Read only — Finance Operations and the Head of Finance record money.'",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM05-008",
+    "how": "original",
+    "fact": "The page does not offer 'The balance'.",
+    "truth": true,
+    "p": 0.86,
+    "right": true,
+    "conf": 0.86
+   },
+   {
+    "id": "TC-IM05-008",
+    "how": "negate",
+    "fact": "The page offers 'The balance'.",
+    "truth": false,
+    "p": 0.17,
+    "right": true,
+    "conf": 0.83
+   },
+   {
+    "id": "TC-IM05-014",
+    "how": "original",
+    "fact": "A banner reads '₹22.5 L due in 21 days. The hold ends 23 Sep. A lapse forfeits ₹50,000 and puts 1 unit back on the shelf.'",
+    "truth": true,
+    "p": 0.96,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-IM05-014",
+    "how": "number",
+    "fact": "A banner reads '₹29.5 L due in 21 days. The hold ends 23 Sep. A lapse forfeits ₹50,000 and puts 1 unit back on the shelf.'",
+    "truth": false,
+    "p": 0.04,
+    "right": true,
+    "conf": 0.96
+   },
+   {
+    "id": "TC-IM05-014",
+    "how": "original",
+    "fact": "State reads 'Reserved against the advance. Not allotted until the balance lands.'",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM06-004",
+    "how": "original",
+    "fact": "The subtitle reads '8.0 acres · 208 units · 150 released'.",
+    "truth": true,
+    "p": 0.95,
+    "right": true,
+    "conf": 0.95
+   },
+   {
+    "id": "TC-IM06-004",
+    "how": "number",
+    "fact": "The subtitle reads '15.0 acres · 208 units · 150 released'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-004",
+    "how": "original",
+    "fact": "Free to sell reads 110.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM06-004",
+    "how": "number",
+    "fact": "Free to sell reads 117.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM06-004",
+    "how": "original",
+    "fact": "Block C reads '0 allotted · 54 free'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM06-004",
+    "how": "number",
+    "fact": "Block C reads '7 allotted · 54 free'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM07-016",
+    "how": "original",
+    "fact": "Everything on file lists Joseph Mathew's FEMA declaration as blocked.",
+    "truth": true,
+    "p": 0.93,
+    "right": true,
+    "conf": 0.93
+   },
+   {
+    "id": "TC-IM08-007",
+    "how": "original",
+    "fact": "The 'Change the bank account for payouts' row shows 'handed to Meena by Imran'.",
+    "truth": true,
+    "p": 0.98,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM08-007",
+    "how": "negate",
+    "fact": "The 'Change the bank account for payouts' row does not show 'handed to Meena by Imran'.",
+    "truth": false,
+    "p": 0.03,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM08-007",
+    "how": "original",
+    "fact": "The row says Imran can see where it has got to but cannot work it.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM08-007",
+    "how": "original",
+    "fact": "The row does not offer 'Close it'.",
+    "truth": true,
+    "p": 0.84,
+    "right": true,
+    "conf": 0.84
+   },
+   {
+    "id": "TC-IM08-007",
+    "how": "negate",
+    "fact": "The row offers 'Close it'.",
+    "truth": false,
+    "p": 0.33,
+    "right": true,
+    "conf": 0.6699999999999999
+   },
+   {
+    "id": "TC-IM12-008",
+    "how": "original",
+    "fact": "The page lists 3 tickets.",
+    "truth": true,
+    "p": 0.97,
+    "right": true,
+    "conf": 0.97
+   },
+   {
+    "id": "TC-IM12-008",
+    "how": "number",
+    "fact": "The page lists 10 tickets.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-IM12-008",
+    "how": "original",
+    "fact": "The 'Change the bank account for payouts' row offers 'Hand it to Finance'.",
+    "truth": true,
+    "p": 0.99,
+    "right": true,
+    "conf": 0.99
+   },
+   {
+    "id": "TC-IM12-008",
+    "how": "negate",
+    "fact": "The 'Change the bank account for payouts' row does not offer 'Hand it to Finance'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M04-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M05-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M07-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M08-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   },
+   {
+    "id": "TC-M12-CAL1",
+    "how": "seeded",
+    "fact": "A red banner across the top reads 'All investor records were deleted'.",
+    "truth": false,
+    "p": 0.02,
+    "right": true,
+    "conf": 0.98
+   }
+  ]
+ }
+}
