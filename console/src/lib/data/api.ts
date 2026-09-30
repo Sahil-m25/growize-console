@@ -29,6 +29,8 @@ export type ApiErr = {
   /** the in-page message: the route's own `error`, never a Zoho body */
   error: string;
   recordId?: string | null;
+  /** a route's question to put to the person (test-link 409 confirm-needed: the warning to read before confirming) */
+  ask?: string;
 };
 export type ApiResult<T> = ApiOk<T> | ApiErr;
 
@@ -94,22 +96,25 @@ export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 /** One call to a route. Never throws. A non-2xx becomes ApiErr carrying the route's `error` and `code`. */
 export async function apiFetch(method: "GET" | Method, path: string, opts: { body?: unknown; idempotencyKey?: string; signal?: AbortSignal; fetch?: Fetch } = {}): Promise<ApiResult<unknown>> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  /* a FormData body (the bank statement upload) goes as multipart: the browser sets the boundary header itself */
+  const multipart = typeof FormData !== "undefined" && opts.body instanceof FormData;
+  if (opts.body !== undefined && !multipart) headers["Content-Type"] = "application/json";
   if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
   let r: Response;
   try {
     r = await (opts.fetch ?? fetch)(path, { method, headers, cache: "no-store", credentials: "same-origin", signal: opts.signal,
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
+      body: opts.body === undefined ? undefined : multipart ? (opts.body as FormData) : JSON.stringify(opts.body) });
   } catch {
     return fail(0, "network", UNREACHABLE);
   }
   const json: unknown = await r.json().catch(() => null);
   if (r.ok) return ok(json);
-  const b = (json && typeof json === "object" ? json : {}) as { error?: unknown; code?: unknown; recordId?: unknown };
+  const b = (json && typeof json === "object" ? json : {}) as { error?: unknown; code?: unknown; recordId?: unknown; ask?: unknown };
   const code = typeof b.code === "string" ? b.code : String(r.status);
   const error = r.status === 409 && /changed$/.test(code) ? CHANGED
     : typeof b.error === "string" && b.error ? b.error : `Refused (${r.status}).`;
-  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}) };
+  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}),
+    ...(typeof b.ask === "string" ? { ask: b.ask } : {}) };
 }
 
 export const newIdempotencyKey = (): string =>

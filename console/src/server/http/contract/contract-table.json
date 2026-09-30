@@ -621,6 +621,11 @@
     ]
    }
   },
+  "/api/payments": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (Receipts and the allotments, filtered); the double answers a Zoho error"
+   }
+  },
   "/api/payouts": {
    "GET": {
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
