@@ -16,6 +16,7 @@
    drops it with the component (D45).
    ────────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { sendErrorBeacon } from "@/lib/zoho/error-beacon";
 import { createContext, createElement, useCallback, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
 /* ---- results --------------------------------------------------------------------------------- */
@@ -29,6 +30,8 @@ export type ApiErr = {
   /** the in-page message: the route's own `error`, never a Zoho body */
   error: string;
   recordId?: string | null;
+  /** the failed call's x-request-id, when the route sent one (fed to the error beacon) */
+  requestId?: string;
 };
 export type ApiResult<T> = ApiOk<T> | ApiErr;
 
@@ -109,7 +112,8 @@ export async function apiFetch(method: "GET" | Method, path: string, opts: { bod
   const code = typeof b.code === "string" ? b.code : String(r.status);
   const error = r.status === 409 && /changed$/.test(code) ? CHANGED
     : typeof b.error === "string" && b.error ? b.error : `Refused (${r.status}).`;
-  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}) };
+  const requestId = r.headers?.get?.("x-request-id") ?? undefined;
+  return { ok: false, status: r.status, code, error, ...(typeof b.recordId === "string" ? { recordId: b.recordId } : {}), ...(requestId ? { requestId } : {}) };
 }
 
 export const newIdempotencyKey = (): string =>
@@ -124,6 +128,14 @@ export async function liveRead<B, A, T>(ep: ReadEndpoint<B, A, T>, path: string,
   return asRead(r.ok ? ok(ep.pick(r.data)) : r);
 }
 
+/** M18-S04-W1: a write the console could not carry out (unreachable, or a 5xx) feeds the failed-saves alert. A 4xx is the
+ *  route's own refusal of the request (validation, 403, 409) — the person is told in the page, and it is not a fault. Ids only. */
+function reportFailedWrite(r: ApiErr): void {
+  if (r.status === 0) sendErrorBeacon({ source: "fetch-failed", route: typeof window !== "undefined" ? window.location.pathname : undefined });
+  else if (r.status >= 500) sendErrorBeacon({ source: "save-failed", route: typeof window !== "undefined" ? window.location.pathname : undefined,
+    requestId: r.requestId, zohoStatus: r.status, zohoCode: r.code });
+}
+
 /** One press of a write in either mode. Live: Idempotency-Key when the endpoint asks for one; a success re-reads every live read. */
 export async function runWrite<B, A, T, D>(mode: ApiMode, ep: WriteEndpoint<B, A, T, D>, book: B, dispatch: D, args: A,
   opts: { idempotencyKey?: string; fetch?: Fetch } = {}): Promise<ApiResult<T>> {
@@ -132,7 +144,7 @@ export async function runWrite<B, A, T, D>(mode: ApiMode, ep: WriteEndpoint<B, A
     body: ep.body?.(args), fetch: opts.fetch,
     idempotencyKey: ep.idempotent ? opts.idempotencyKey ?? newIdempotencyKey() : undefined,
   });
-  if (!r.ok) { ep.onLiveError?.(dispatch, r); return r; }
+  if (!r.ok) { ep.onLiveError?.(dispatch, r); reportFailedWrite(r); return r; }
   bumpLive();
   return ok(ep.pick(r.data));
 }

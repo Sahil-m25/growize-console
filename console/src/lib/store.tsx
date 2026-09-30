@@ -31,6 +31,7 @@ import type { Action, ConsoleState } from "./state";
 import type { SaveEntry, SaveResult } from "./save-queue";
 import { createConsoleWriter } from "./console-save";
 import { ApiModeProvider } from "@/lib/data/api";
+import { installErrorBeacon, sendErrorBeacon } from "@/lib/zoho/error-beacon";
 import { consoleAccount, scopeOf } from "@/lib/selectors";
 import { pinClock } from "@/lib/format";
 import type { Ctx as SelectorCtx } from "@/lib/selectors";
@@ -91,6 +92,10 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     onChange: change => {
       setSaves(change.entries);
       if (change.kind === "completed") setLastLocalUpdate(Date.now());
+      /* M18-S04-W1: a save the queue gave up on feeds the failed-saves alert (≥3 in 10 minutes). Only the source and the
+         page route go — never the message or the typed text (error-beacon allow-list). Live mode only: the demo book has no Zoho. */
+      if (change.kind === "failed" && !stateRef.current.FIXTURES && typeof window !== "undefined")
+        sendErrorBeacon({ source: "save-failed", route: window.location.pathname });
     },
   }));
   /* THE DATA HALF AND THE SESSION. Records arrive from GET /api/data (one interface, @/lib/data);
@@ -153,6 +158,9 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
       if (timer) clearInterval(timer);
     };
   }, [writer]);
+  /* M18-S04-W1: uncaught errors and unhandled rejections in the browser reach Plane B (live mode, once a payload has said so) */
+  const beaconOn = dataRead.at !== null && !state.FIXTURES;
+  useEffect(() => (beaconOn ? installErrorBeacon() : undefined), [beaconOn]);
   useEffect(() => {
     const connection = () => {
       onlineRef.current = navigator.onLine;
