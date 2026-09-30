@@ -42,8 +42,22 @@ class Refused extends Error { constructor(readonly code: string) { super(code); 
 export function createInboundEndpoint(deps: InboundDeps) {
   const clock = deps.clock ?? Date.now;
   // One receiver per call, so the Case id of one request never answers another running beside it.
-  const receiverFor = (out: { caseId?: string | null }) => createStubReceiver({
-    schemas: deps.schemas, keys: deps.keys, seen: deps.seen, accepts: INBOUND_TYPES, newId: deps.newId, clock,
+  // M12-S05-H5: an id is marked seen only after it is applied, so two concurrent deliveries would both apply it. The claim
+  // below is made in the same synchronous step as the check (after the await), and released when the call ends.
+  const inFlight = new Set<string>();
+  const receiverFor = (out: { caseId?: string | null }, claimed: string[]) => createStubReceiver({
+    schemas: deps.schemas, keys: deps.keys,
+    seen: {
+      has: async (id) => {
+        if (inFlight.has(id)) return true;
+        if (await deps.seen.has(id)) return true;
+        if (inFlight.has(id)) return true;
+        inFlight.add(id); claimed.push(id);
+        return false;
+      },
+      add: (id) => deps.seen.add(id),
+    },
+    accepts: INBOUND_TYPES, newId: deps.newId, clock,
     async record(event) {
       if (event.type === "request.raised") {
         const r = await deps.onRequest(event);
@@ -61,10 +75,11 @@ export function createInboundEndpoint(deps: InboundDeps) {
     async handle(rawBody: string, signature: unknown): Promise<InboundResult> {
       const out: { caseId?: string | null } = {};
       let r: ReceiveResult;
-      try { r = await receiverFor(out).receive(rawBody, signature); } catch (e) {
+      const claimed: string[] = [];
+      try { r = await receiverFor(out, claimed).receive(rawBody, signature); } catch (e) {
         if (e instanceof Refused) { refuse(e.code); return { status: 422, reason: e.code }; }
         throw e;
-      }
+      } finally { for (const id of claimed) inFlight.delete(id); }
       if (r.status !== 200) { refuse(r.reason); return r; }
       if (out.caseId !== undefined) return { ...r, caseId: out.caseId };
       if (!r.applied && deps.caseFor) {
