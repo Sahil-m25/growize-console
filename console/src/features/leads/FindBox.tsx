@@ -54,7 +54,8 @@ export function FindBox() {
   const shown: SeatHit[] = res ? res.hits : [];
   const leads = shown.filter((h) => h.kind === "lead");
   const invs = shown.filter((h) => h.kind === "investor");
-  const both = !!res && res.book !== null && res.investorBook !== null;
+  /* the kind chip, where both kinds are in the list (D110: org seats search leads AND investors) */
+  const both = leads.length > 0 && invs.length > 0;
   const order = [...leads, ...invs];
   const i0 = Math.min(FQI, Math.max(0, order.length - 1));
   const org = !!res && (res.book === "all" || (res.book === null && res.investorBook !== null && res.investorBook !== "own-book" && res.investorBook !== "own-lead"));
@@ -201,7 +202,7 @@ export function FindBox() {
                       No investor matches “{q}”.{res.book === "yours" ? " Only your own book is searched." : ""}
                     </div>
                   ) : null}
-                  {res.investorBook !== null ? <div className="d60b-hd">{INV_HEAD[res.investorBook] ?? "Investors"}</div> : null}
+                  {res.investorBook !== null && (invs.length || res.book === null) ? <div className="d60b-hd">{INV_HEAD[res.investorBook] ?? "Investors"}</div> : null}
                   {invs.map((h, j) => h.kind === "investor" ? opt(h, leads.length + j, (
                     <>
                       <div className="d60b-l1">
@@ -215,7 +216,7 @@ export function FindBox() {
                       </div>
                     </>
                   )) : null)}
-                  {res.investorBook !== null && !invs.length ? <div className="d60b-none">No investor record matches “{q}”.</div> : null}
+                  {res.investorBook !== null && res.book === null && !invs.length ? <div className="d60b-none">No investor matches “{q}”.</div> : null}
                 </>
               ) : null}
             {more > 0 ? <div className="d60b-more">{more} more — keep typing to narrow it down</div> : null}
