@@ -2,17 +2,22 @@
 
 /* ── D60 b · FIND INVESTOR — the top-bar box. ir-merged.js 10898–10997, markup 2828–2831 ───────
    Typing lists the matches under it; Enter (or a press) opens one. It never moves you until you
-   choose. The scope and the matching are `@/lib/selectors/find`; this is only the combobox. */
+   choose. M06-S03-W2 (D110): the results are GET /api/leads/search's (endpoints/search topSearch) and
+   their scope follows the seat — an IR their own book, an IR Manager the team, Digital Infrastructure and
+   the business owner leads AND investors (each hit carries its kind and opens its record), Finance/KAM/
+   Head of AM investors within their scope. This is only the combobox. */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { LeadId, NavKey } from "@/domain";
-import { LADDER } from "@/domain";
 import { norm } from "@/lib/format";
-import { digits, lost, numeric, P, teamName } from "@/lib/selectors";
-import { FQMAX, fqFind, fqPhoneOK, fqPool, fqTeamOf, orgSearchScope } from "@/lib/selectors/find";
+import { numeric, P, teamName } from "@/lib/selectors";
+import { fqPool, fqTeamOf } from "@/lib/selectors/find";
 import { useConsole } from "@/lib/store";
+import { useApiMode, useApiRead } from "@/lib/data/api";
+import { topSearch } from "@/lib/data/endpoints/search";
+import type { SeatHit } from "@/server/leads/seat-search";
 
 /* fqMark — the match, shown; a numeric query marks nothing (the phone is shown as its last four) */
 function fqMark(s: string, FQ: string): ReactNode[] {
@@ -25,20 +30,35 @@ function fqMark(s: string, FQ: string): ReactNode[] {
   return s.split(re).map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : p));
 }
 
+const LEAD_HEAD = { all: "All leads in the organisation", team: "Your team's leads", yours: "Your book" } as const;
+const INV_HEAD: Record<string, string> = { all: "All investors", org: "All investors", subtree: "Your team's accounts", "own-book": "Your accounts", "own-lead": "Your investors" };
+
 export function FindBox() {
   const { state, dispatch } = useConsole();
   const router = useRouter();
+  const mode = useApiMode();
   const [FQ, setFQ] = useState("");
   const [FQI, setFQI] = useState(0);
   const [focused, setFocused] = useState(false);
 
   const q = FQ.trim();
-  const all = q ? fqFind(state, q) : [];
-  const shown = all.slice(0, FQMAX);
-  const FQHITS = shown.map((x) => x.l.id);
-  const i0 = Math.min(FQI, Math.max(0, shown.length - 1));
-  const org = orgSearchScope(state);
-  const more = all.length - shown.length;
+  /* live: one request per pause in typing (200 ms), not per key; fixture: at once, as the prototype */
+  const [dq, setDq] = useState("");
+  useEffect(() => {
+    if (mode === "fixture") return;
+    const t = setTimeout(() => setDq(q), 200);
+    return () => clearTimeout(t);
+  }, [q, mode]);
+  const r = useApiRead(topSearch, state, mode === "fixture" ? q : dq);
+  const res = r.state === "ok" ? r.data : null;
+  const shown: SeatHit[] = res ? res.hits : [];
+  const leads = shown.filter((h) => h.kind === "lead");
+  const invs = shown.filter((h) => h.kind === "investor");
+  const both = !!res && res.book !== null && res.investorBook !== null;
+  const order = [...leads, ...invs];
+  const i0 = Math.min(FQI, Math.max(0, order.length - 1));
+  const org = !!res && (res.book === "all" || (res.book === null && res.investorBook !== null && res.investorBook !== "own-book" && res.investorBook !== "own-lead"));
+  const more = res ? res.more : 0;
   const open = !!q && focused;
 
   const fqClose = (blur: boolean) => {
@@ -46,9 +66,18 @@ export function FindBox() {
     setFQI(0);
     if (blur) (document.getElementById("fq") as HTMLInputElement | null)?.blur();
   };
-  /* fqOpen — the lead page, remembering where it was opened from */
-  const fqOpen = (id: LeadId) => {
-    if (!fqPool(state).some((x) => x.id === id)) return;
+  /* fqOpen — the record, remembering where it was opened from. A lead opens its lead page; an investor
+     (D110: org and Investors seats) opens its record on the Investors page. */
+  const fqOpen = (h: SeatHit) => {
+    if (h.kind === "investor") {
+      fqClose(true);
+      dispatch({ type: "im", a: { type: "go", v: "inv", id: h.id } });
+      router.push("/inv");
+      return;
+    }
+    const id = h.id as LeadId;
+    /* fixture: only a lead the prototype's pool holds; live: the route already cut the hits to the book */
+    if (mode === "fixture" && !fqPool(state).some((x) => x.id === id)) return;
     const onLead = typeof window !== "undefined" && window.location.pathname.startsWith("/leads/");
     const from = (onLead ? state.ui.FROM || "leads" : state.VIEW) as NavKey;
     fqClose(true);
@@ -59,13 +88,13 @@ export function FindBox() {
   const fqKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      if (!FQHITS.length) return;
-      setFQI((i0 + (e.key === "ArrowDown" ? 1 : -1) + FQHITS.length) % FQHITS.length);
+      if (!order.length) return;
+      setFQI((i0 + (e.key === "ArrowDown" ? 1 : -1) + order.length) % order.length);
       return;
     }
     if (e.key === "Enter") {
       e.preventDefault();
-      if (FQHITS[i0]) fqOpen(FQHITS[i0]);
+      if (order[i0]) fqOpen(order[i0]);
       return;
     }
     if (e.key === "Escape") {
@@ -74,6 +103,21 @@ export function FindBox() {
       fqClose(true);
     }
   };
+  const opt = (h: SeatHit, i: number, children: ReactNode) => (
+    <a
+      className="d60b-opt"
+      role="option"
+      id={"fqo-" + i}
+      key={h.kind + h.id}
+      aria-selected={i === i0}
+      data-id={h.id}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => fqOpen(h)}
+      onMouseMove={() => (i === i0 ? null : setFQI(i))}
+    >
+      {children}
+    </a>
+  );
 
   return (
     <div
@@ -96,7 +140,7 @@ export function FindBox() {
         aria-expanded={open}
         aria-controls="fqlist"
         aria-autocomplete="list"
-        aria-activedescendant={open && shown.length ? "fqo-" + i0 : undefined}
+        aria-activedescendant={open && order.length ? "fqo-" + i0 : undefined}
         autoComplete="off"
         spellCheck={false}
         enterKeyHint="go"
@@ -116,50 +160,64 @@ export function FindBox() {
       <div id="fqlist" className="d60b-res" role="listbox" aria-label="Matching investors" hidden={!open}>
         {open ? (
           <>
-            <div className="d60b-hd">{org ? "All leads in the organisation" : "Your book"}</div>
-            {shown.length ? (
-              shown.map((x, i) => {
-                const l = x.l;
-                const d = fqPhoneOK(state, l) ? digits(l.ph) : "";
-                const m = l.own ? fqTeamOf(state, l.own) : null;
-                return (
-                  <a
-                    className="d60b-opt"
-                    role="option"
-                    id={"fqo-" + i}
-                    key={l.id}
-                    aria-selected={i === i0}
-                    data-id={l.id}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => fqOpen(l.id)}
-                    onMouseMove={() => (i === i0 ? null : setFQI(i))}
-                  >
-                    <div className="d60b-l1">
-                      <b>{fqMark(l.n, FQ)}</b>
-                      {d ? <span className="d60b-ph">•• {d.slice(-4)}</span> : null}
-                      {x.mine ? null : <span className="tag d60b-ro">View only</span>}
+            {r.state === "loading" || (mode !== "fixture" && dq !== q) ? <div className="d60b-none">Searching…</div>
+              : r.state === "error" ? (
+                <div className="d60b-none" role="alert">
+                  {r.err.code === "term-too-short" ? "Keep typing — two letters or three digits." : r.err.error}
+                </div>
+              ) : res ? (
+                <>
+                  {res.book !== null ? <div className="d60b-hd">{LEAD_HEAD[res.book]}</div> : null}
+                  {leads.map((h, i) => h.kind === "lead" ? opt(h, i, (() => {
+                    const m = h.ownerId && state.PEOPLE[h.ownerId] ? fqTeamOf(state, h.ownerId) : null;
+                    return (
+                      <>
+                        <div className="d60b-l1">
+                          <b>{fqMark(h.name, FQ)}</b>
+                          {h.phoneLast4 ? <span className="d60b-ph">•• {h.phoneLast4}</span> : null}
+                          {both ? <span className="tag d60b-kind">Lead</span> : null}
+                          {h.mine ? null : <span className="tag d60b-ro">View only</span>}
+                        </div>
+                        <div className="d60b-l2">
+                          {h.stage ? <span className="tag">{h.stage}</span> : null}
+                          <span className="d60b-own">
+                            {h.ownerId ? (
+                              state.PEOPLE[h.ownerId] ? (
+                                <>
+                                  {P(state.PEOPLE, h.ownerId).n}
+                                  {org ? <span className="d60b-team"> · {m ? teamName(state.PEOPLE, m) : "No team"}</span> : null}
+                                </>
+                              ) : "Owned in Zoho"
+                            ) : (
+                              "No owner yet"
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()) : null)}
+                  {res.book !== null && !leads.length ? (
+                    <div className="d60b-none">
+                      No investor matches “{q}”.{res.book === "yours" ? " Only your own book is searched." : ""}
                     </div>
-                    <div className="d60b-l2">
-                      <span className="tag">{lost(l) ? "Closed as lost" : LADDER[Math.max(0, l.done - 1)].t}</span>
-                      <span className="d60b-own">
-                        {l.own ? (
-                          <>
-                            {P(state.PEOPLE, l.own).n}
-                            {org ? <span className="d60b-team"> · {m ? teamName(state.PEOPLE, m) : "No team"}</span> : null}
-                          </>
-                        ) : (
-                          "No owner yet"
-                        )}
-                      </span>
-                    </div>
-                  </a>
-                );
-              })
-            ) : (
-              <div className="d60b-none">
-                No investor matches “{q}”.{org ? "" : " Only your own book is searched."}
-              </div>
-            )}
+                  ) : null}
+                  {res.investorBook !== null ? <div className="d60b-hd">{INV_HEAD[res.investorBook] ?? "Investors"}</div> : null}
+                  {invs.map((h, j) => h.kind === "investor" ? opt(h, leads.length + j, (
+                    <>
+                      <div className="d60b-l1">
+                        <b>{fqMark(h.name, FQ)}</b>
+                        {h.phoneLast4 ? <span className="d60b-ph">•• {h.phoneLast4}</span> : null}
+                        <span className="tag d60b-kind">Investor</span>
+                      </div>
+                      <div className="d60b-l2">
+                        <span className="tag">{h.code}</span>
+                        {h.city ? <span className="d60b-own">{h.city}</span> : null}
+                      </div>
+                    </>
+                  )) : null)}
+                  {res.investorBook !== null && !invs.length ? <div className="d60b-none">No investor record matches “{q}”.</div> : null}
+                </>
+              ) : null}
             {more > 0 ? <div className="d60b-more">{more} more — keep typing to narrow it down</div> : null}
           </>
         ) : null}

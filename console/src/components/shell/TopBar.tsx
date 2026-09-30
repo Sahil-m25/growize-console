@@ -50,6 +50,7 @@ import { titleOf as mergedTitleOf } from "./SignIn";
 import { sidesOf } from "@/lib/selectors/access";
 import { imReadOnly } from "@/lib/im";
 import { DataFresh } from "./DataStatus";   /* M01-S03 */
+import { topPlan } from "@/lib/data/endpoints/search";   /* M06-S03-W2 */
 
 const PAGES = PAGECAPS as unknown as Record<string, { t: string } | undefined>;
 const pageTitle = (p: string) => PAGES[p]?.t ?? p;
@@ -102,7 +103,9 @@ export function TopBar({ side = "ir", view }: { side?: "ir" | "im" | "mix"; view
   return (
     <header className="top rd-top">
       {/* D60 b · the top-bar Find investor is a real search box — FindBox (features/leads) */}
-      {navFor(state).some((n) => n.k === "leads") ? <FindBox /> : null}
+      {/* M06-S03-W2 (D110): the box is there for every seat whose search covers something — leads, or (Finance,
+          KAM, Head of AM) investors within their scope */}
+      {navFor(state).some((n) => n.k === "leads") || topPlan(state).investors ? <FindBox /> : null}
 
       <div className="sp" />
 
