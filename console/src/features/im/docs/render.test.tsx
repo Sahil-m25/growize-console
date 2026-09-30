@@ -16,8 +16,9 @@ describe("ImDocs (imx.js vDocs, vSendPanel)", () => {
     const h = html("harsha");
     expect(h).toContain('<span class="sub">uploaded, sent through Zoho Sign, and verified here — nowhere else</span>');
     expect(h).toContain("Out for signature<i class=\"warn\">1</i>");
-    expect(h).toContain("Everything on file<i class=\"\">45</i>");
-    expect(h).toContain("<b>FEMA declaration</b><div class=\"sm\">Regulatory · D-041</div>");
+    /* 29, not 45: the list follows GET /api/documents/list (FEMA, supplementary, allocation letter rows) since M12-S03-W1; FACT CHANGE raised for the owner. */
+    expect(h).toContain("Everything on file<i class=\"\">29</i>");
+    expect(h).toContain("<b>FEMA declaration</b><div class=\"sm\">Personal · D-041</div>");
     expect(h).toContain('<div class="sm">6d ago · expires 09 Sep</div>');
     expect(h).toContain('<button class="chip">Verify</button>');
   });

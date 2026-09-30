@@ -1,5 +1,5 @@
 /* M19-S06-T01 — first-touch SLA and the overdue definition, off the lead's own stamps (no second clock). */
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { demoBook } from "@fixtures/book";
 import { initialState, reducer } from "@/lib/state";
 import { TOUCHSLA, ST, type Lead, type PersonKey } from "@/domain";
@@ -27,6 +27,9 @@ describe("first-touch SLA", () => {
 });
 
 describe("overdue", () => {
+  /* "due today" vs "overdue" turns on the time of day; pin 10:00 IST so the suite does not fail after 16:30 (D109 build audit). */
+  beforeAll(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-08-28T04:30:00Z")); });
+  afterAll(() => { vi.useRealTimers(); });
   it("a dated next step due today is 'today', tomorrow is 'upcoming', and neither is late", () => {
     const s = as("rohit");
     expect(workGroup(s, lead(s, "L4"))).toBe("today");
