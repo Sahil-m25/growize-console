@@ -1,0 +1,85 @@
+{
+ "source": "hand-labelled story \u2192 file pairs (relevant = the story builds or changes that file)",
+ "items": [
+  {
+   "story": "M03-S01",
+   "file": "console/src/server/access/signin-list.ts",
+   "relevant": true
+  },
+  {
+   "story": "M03-S01",
+   "file": "console/src/components/shell/SignIn.tsx",
+   "relevant": true
+  },
+  {
+   "story": "M03-S01",
+   "file": "console/src/server/money/match.ts",
+   "relevant": false
+  },
+  {
+   "story": "M03-S01",
+   "file": "console/src/features/events/sheet.ts",
+   "relevant": false
+  },
+  {
+   "story": "M04-S01",
+   "file": "console/src/features/add/AddPage.tsx",
+   "relevant": true
+  },
+  {
+   "story": "M04-S01",
+   "file": "console/src/server/zoho-sign/webhook.ts",
+   "relevant": false
+  },
+  {
+   "story": "M10-S07",
+   "file": "console/src/server/money/allotment-receipts.ts",
+   "relevant": true
+  },
+  {
+   "story": "M10-S07",
+   "file": "console/src/components/shell/ThemeButton.tsx",
+   "relevant": false
+  },
+  {
+   "story": "M12-S06",
+   "file": "console/src/server/zoho-sign/file.ts",
+   "relevant": true
+  },
+  {
+   "story": "M12-S06",
+   "file": "console/src/features/add/csv.ts",
+   "relevant": false
+  },
+  {
+   "story": "M14-S01",
+   "file": "console/src/features/events/EventsPage.tsx",
+   "relevant": true
+  },
+  {
+   "story": "M14-S01",
+   "file": "console/src/server/money/record-receipt.ts",
+   "relevant": false
+  },
+  {
+   "story": "M17-S05",
+   "file": "console/src/features/me/ProfilePage.tsx",
+   "relevant": true
+  },
+  {
+   "story": "M17-S05",
+   "file": "console/src/server/zoho-sign/embed.ts",
+   "relevant": false
+  },
+  {
+   "story": "M01-S09",
+   "file": "console/src/components/shell/DataStatus.tsx",
+   "relevant": true
+  },
+  {
+   "story": "M01-S09",
+   "file": "console/src/server/money/statement-parse.ts",
+   "relevant": false
+  }
+ ]
+}

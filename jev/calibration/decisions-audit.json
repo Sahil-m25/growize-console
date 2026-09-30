@@ -1,0 +1,85 @@
+{
+ "source": "D108/D110: rows a person read. Superseded rows are posed with their 'Superseded by' marker removed (answer = superseded); controls D15 (Jev scored 0.23 in D108) and D33 (D108 called it superseded by the earlier D28).",
+ "items": [
+  {
+   "id": "D2",
+   "answer": "superseded"
+  },
+  {
+   "id": "D3",
+   "answer": "superseded"
+  },
+  {
+   "id": "D4",
+   "answer": "superseded"
+  },
+  {
+   "id": "D10",
+   "answer": "superseded"
+  },
+  {
+   "id": "D15",
+   "answer": "superseded"
+  },
+  {
+   "id": "D24",
+   "answer": "superseded"
+  },
+  {
+   "id": "D28",
+   "answer": "superseded"
+  },
+  {
+   "id": "D74",
+   "answer": "superseded"
+  },
+  {
+   "id": "D83",
+   "answer": "superseded"
+  },
+  {
+   "id": "D1",
+   "answer": "consistent"
+  },
+  {
+   "id": "D9",
+   "answer": "consistent"
+  },
+  {
+   "id": "D14",
+   "answer": "consistent"
+  },
+  {
+   "id": "D19",
+   "answer": "consistent"
+  },
+  {
+   "id": "D21",
+   "answer": "consistent"
+  },
+  {
+   "id": "D33",
+   "answer": "consistent"
+  },
+  {
+   "id": "D45",
+   "answer": "consistent"
+  },
+  {
+   "id": "D52",
+   "answer": "consistent"
+  },
+  {
+   "id": "D53",
+   "answer": "consistent"
+  },
+  {
+   "id": "D57",
+   "answer": "consistent"
+  },
+  {
+   "id": "D71",
+   "answer": "consistent"
+  }
+ ]
+}

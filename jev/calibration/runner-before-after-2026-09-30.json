@@ -1,0 +1,159 @@
+{
+ "story": "M19-S13 (D107)",
+ "what": "pm/jev-ui-runner.mjs before (own fetch, commit afda4bf) and after (jev/client.mjs fetch, JEV_CACHE=0) on console/prototype/growize-console-merged.html, FIXTURES=pm/merge-audit/ui-sahil/fixtures-merged.json",
+ "identical_verdicts": true,
+ "cases": [
+  {
+   "id": "TC-E01-001",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.92,
+   "p_after": 0.94,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E01-005",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.9,
+   "p_after": 0.89,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E03-001",
+   "before": "FAIL",
+   "after": "FAIL",
+   "p_before": 0.02,
+   "p_after": 0.03,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E04-001",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.97,
+   "p_after": 0.98,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E05-004",
+   "before": "FAIL",
+   "after": "FAIL",
+   "p_before": 0.04,
+   "p_after": 0.04,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E06-002",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.96,
+   "p_after": 0.95,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E07-001",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.98,
+   "p_after": 0.98,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E08-001",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.93,
+   "p_after": 0.91,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E09-001",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.95,
+   "p_after": 0.94,
+   "same_picks": true
+  },
+  {
+   "id": "TC-E10-002",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.91,
+   "p_after": 0.91,
+   "same_picks": true
+  },
+  {
+   "id": "TC-IM04-002",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.98,
+   "p_after": 0.98,
+   "same_picks": true
+  },
+  {
+   "id": "TC-IM06-001",
+   "before": "PASS",
+   "after": "PASS",
+   "p_before": 0.97,
+   "p_after": 0.97,
+   "same_picks": true
+  },
+  {
+   "id": "TC-M01-CAL1",
+   "before": "FAIL",
+   "after": "FAIL",
+   "p_before": 0.02,
+   "p_after": 0.02,
+   "same_picks": true
+  },
+  {
+   "id": "TC-M03-CAL1",
+   "before": "FAIL",
+   "after": "FAIL",
+   "p_before": 0.02,
+   "p_after": 0.02,
+   "same_picks": true
+  },
+  {
+   "id": "TC-M06-CAL1",
+   "before": "FAIL",
+   "after": "FAIL",
+   "p_before": 0.02,
+   "p_after": 0.02,
+   "same_picks": true
+  }
+ ],
+ "gate": {
+  "before": {
+   "trusted": true,
+   "seeded_wrong": {
+    "total": 3,
+    "caught": 3,
+    "passed": [],
+    "review": []
+   },
+   "near_miss": {
+    "mutated": 30,
+    "false_passes": 0,
+    "excused_by_review": 0,
+    "rate": 0
+   }
+  },
+  "after": {
+   "trusted": true,
+   "seeded_wrong": {
+    "total": 3,
+    "caught": 3,
+    "passed": [],
+    "review": []
+   },
+   "near_miss": {
+    "mutated": 30,
+    "false_passes": 0,
+    "excused_by_review": 0,
+    "rate": 0
+   }
+  }
+ }
+}

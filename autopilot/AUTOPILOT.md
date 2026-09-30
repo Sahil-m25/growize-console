@@ -4,17 +4,19 @@ You are the autopilot for the Growize build (D65). You work **one round**: one s
 The driver (`autopilot/run.ps1` / `run.sh`) starts the next round with a fresh context. Read `CLAUDE.md` first as always;
 this file adds the loop. The queue name is given in the prompt as `QUEUE=…`; since D69–D73 (25 Sep) there is one queue, `console`, built from `pm/plan-merged/growize-console-plan.json` (the old `ir`/`im` queues are retired).
 
-## Jev first (D101) — small judgments go to Jev, not to you
+## Jev first (D101, one CLI since D107) — small judgments go to Jev, not to you
 
-Tokens are for writing code. Hand these judgments to Jev (`autopilot/jev.mjs`, a few seconds each) and act on the answer:
+Tokens are for writing code. Hand these judgments to Jev through the **one CLI, `node jev/cli.mjs`** (a few seconds each) and act on the answer. Every command shares one client (key, retry, pool, cache, log), one grounding (cited decisions + their successors, related decisions, the nine rules, the story's acceptance, the seat table), a versioned question library and one policy (`jev/policy.mjs`, thresholds from `jev/calibration/thresholds.json`).
 
 | When | Run | Then |
 |---|---|---|
-| Right after the packet | `node autopilot/jev.mjs context <STORY>` | Read **only** the prototype line ranges, code files and Zoho fields it lists (Read with offset/limit). Never read or grep the whole 17,500-line prototype; open more only if a named gap remains. |
-| A UI test run failed | `node autopilot/jev.mjs triage <result.json>` | Fix by group: `harness` first, then `control_missing`, `label_differs`, `behaviour_wrong`. `case_outdated` → FACT CHANGE PROPOSED. Open raw result entries only for `unsure_look_yourself`. |
-| Any either/or choice: an open owner decision, a default, which status to record, which of two prototype behaviours to copy | `node autopilot/jev.mjs decide "<question>" "a=<meaning>" "b=<meaning>" --state "<the facts>"` | Take the choice. If it prints LOW CONFIDENCE, build it anyway and record `PROVISIONAL: <question> → <choice>` with `done.mjs --human`. Do not deliberate at length. |
+| Right after the packet | `node jev/cli.mjs context <STORY>` | Read **only** the prototype line ranges, code files and Zoho fields it lists (Read with offset/limit). Never read or grep the whole 17,500-line prototype; open more only if a named gap remains. |
+| A UI test run failed | `node jev/cli.mjs triage <result.json>` | Fix by group: `harness` first, then `control_missing`, `label_differs`, `behaviour_wrong`. `case_outdated` → FACT CHANGE PROPOSED. Open raw result entries only for `unsure_look_yourself`. |
+| Any either/or choice: an open owner decision, a default, which status to record, which of two prototype behaviours to copy | `node jev/cli.mjs decide "<question>" "a=<meaning>" "b=<meaning>" --state "<the facts>" [--story <STORY>]` — cite the D-numbers you know in the question | `status` OK → take the choice. **PROVISIONAL** → build it anyway and record `PROVISIONAL: <question> → <choice>` with `done.mjs --human`. **OWNER** (money amounts/refunds, legal or signed-document wording, field-level security, seats/profiles/sharing, licences — or low confidence with the governing decision in front of Jev) → do not pick: record the line it prints with `done.mjs --human`, and if the work cannot wait build only the smallest reversible version. Do not deliberate at length. |
+| Owner asks for a rulings sheet or an audit | `node jev/cli.mjs rulings` · `decisions-audit` · `build-audit` | Reports land in `docs/reports/`. A person reads every flagged row. |
+| After a question wording changes, or monthly | `node jev/cli.mjs calibrate [type]` | Re-measures each type on its control set (`jev/calibration/<type>.json`) and rewrites `thresholds.json`; an untrusted type's answers are PROVISIONAL/REVIEW whatever the confidence. |
 
-Jev never writes code and never overrides a rule in CLAUDE.md or a failing test. Calls are logged in `autopilot/logs/jev.log`.
+`autopilot/jev.mjs` only forwards to the CLI; `rulings.mjs`, `decisions-audit.mjs` and `build-audit.mjs` are retired. The UI runner (`pm/jev-ui-runner.mjs`) uses the same client for its fetch; its questions, STEP_MIN 0.60 and PASS_AT 0.80 are unchanged (D63/D64). Jev never writes code and never overrides a rule in CLAUDE.md or a failing test. Every call is logged in `jev/logs/calls.jsonl` (question name + version, choice, probabilities, tokens); repeated identical questions are served from `jev/.cache`.
 
 `npm test` (in `console/`) runs every `*.test.cjs` in its own process; cancelled tests count as failures.
 

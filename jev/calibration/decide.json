@@ -136,10 +136,215 @@
  },
  {
   "cite": "D58",
-  "question": "A next step 'call back at 16:30' \u2014 where does it go in Zoho?",
+  "question": "A next step 'call back at 16:30' — where does it go in Zoho?",
   "options": {
    "a": "a Zoho Call with a reminder",
    "b": "a Task with a due date only"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D15",
+  "question": "Where do farms and investor allotments live?",
+  "options": {
+   "a": "in Zoho, as LLP records with their allotments",
+   "b": "outside Zoho: farm progress arrives by webhook into a separate investors store and nothing farm-related goes to Zoho"
+  },
+  "answer": "a",
+  "note": "control (D108 miss): D15 is superseded by D110"
+ },
+ {
+  "cite": "D28",
+  "question": "How should a console page handle content that does not fit on the screen?",
+  "options": {
+   "a": "the page scrolls; there is no fixed one-screen frame",
+   "b": "each page is one screen; what does not fit opens from a door"
+  },
+  "answer": "b",
+  "note": "control (D108 miss): D28's one-screen half is superseded by D33, not the other way round"
+ },
+ {
+  "cite": "D28 and D33",
+  "question": "Two decisions speak to console page layout. Which one governs the layout today?",
+  "options": {
+   "a": "D33: every page is one screen and what left it opens from a door",
+   "b": "D28: the console is a page that scrolls"
+  },
+  "answer": "a",
+  "note": "control: direction of supersession D28 → D33"
+ },
+ {
+  "cite": "D110",
+  "question": "A Digital Infrastructure user types in the top-bar search. What should it search?",
+  "options": {
+   "a": "only the leads in their own book",
+   "b": "org-wide, leads and investors, on their own token"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D110",
+  "question": "An IR types in the top-bar search. What should it search?",
+  "options": {
+   "a": "the leads in their own book",
+   "b": "every lead and investor in the org"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D10",
+  "question": "When does an investor's app account open?",
+  "options": {
+   "a": "automatically and tentatively at the first confirmed money",
+   "b": "On hold, with sign-in locked until Finance unlocks it from the console"
+  },
+  "answer": "b",
+  "note": "D10 superseded by D93"
+ },
+ {
+  "cite": "D24",
+  "question": "A read-only staff member only views records. What Zoho identity do they get?",
+  "options": {
+   "a": "a portal login with no CRM licence",
+   "b": "a full Enterprise seat of their own"
+  },
+  "answer": "b",
+  "note": "D24 superseded by D53"
+ },
+ {
+  "cite": "D52",
+  "question": "Leads and investors: how many Zoho orgs?",
+  "options": {
+   "a": "one Enterprise org for both",
+   "b": "two orgs, Leads and Investor"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D3",
+  "question": "Should the console keep a read-model copy of Zoho records in Supabase?",
+  "options": {
+   "a": "yes, a read model per side",
+   "b": "no, it reads Zoho live and keeps no second store"
+  },
+  "answer": "b",
+  "note": "D3 superseded by D45"
+ },
+ {
+  "cite": "D30",
+  "question": "How does a person get into the console?",
+  "options": {
+   "a": "through a sign-in screen",
+   "b": "through a seat picker listing every seat"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D29",
+  "question": "A door on the lead page (e.g. the full paperwork view) is pressed. How does it open?",
+  "options": {
+   "a": "in its own browser window",
+   "b": "inside the drawer on the same page"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D57",
+  "question": "Inside the logging flow, how are the questions presented?",
+  "options": {
+   "a": "all questions on one form at once",
+   "b": "one question at a time, answered steps collapsing to one line"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D55",
+  "question": "An IR composes an email on the lead page. When is it sent?",
+  "options": {
+   "a": "automatically as soon as it is composed",
+   "b": "only when the owner presses Send, via Zoho"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D71",
+  "question": "How do staff upload an investor's file?",
+  "options": {
+   "a": "straight from the console to Zoho on their own token",
+   "b": "in the Zoho UI"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D13",
+  "question": "How is an investor's Aadhaar number kept?",
+  "options": {
+   "a": "the full number in an encrypted Zoho field",
+   "b": "the full number is never stored"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D14",
+  "question": "What is the backup target?",
+  "options": {
+   "a": "AWS S3 with Object Lock",
+   "b": "an office NAS as the primary backup"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D9",
+  "question": "Finance confirms money on a lead. Who owns the lead afterwards?",
+  "options": {
+   "a": "ownership transfers to Finance",
+   "b": "the IR keeps owning and moving the lead; nothing transfers"
+  },
+  "answer": "b"
+ },
+ {
+  "cite": "D11",
+  "question": "When is the investor's Contact created?",
+  "options": {
+   "a": "at 'said yes'",
+   "b": "at Onboarded, after full payment"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D64",
+  "question": "What probability must each expected fact reach for a UI case to PASS?",
+  "options": {
+   "a": "0.80 or more per fact",
+   "b": "0.50 or more per fact"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D85",
+  "question": "Where are lead-capture events stored?",
+  "options": {
+   "a": "three fields on the Lead",
+   "b": "a Lead Events module in Zoho with the lead's Lead_Event lookup"
+  },
+  "answer": "b",
+  "note": "D83 superseded by D84/D85"
+ },
+ {
+  "cite": "D73",
+  "question": "How do investor tickets and updates reach the investor app?",
+  "options": {
+   "a": "pushed to the app through the signed contracts",
+   "b": "the app reads Zoho directly"
+  },
+  "answer": "a"
+ },
+ {
+  "cite": "D17",
+  "question": "A workflow rule sends an automated email to a lead. Does it count as a touch by the IR?",
+  "options": {
+   "a": "no, it is logged as a system touch",
+   "b": "yes, it counts as a conversation"
   },
   "answer": "a"
  }
