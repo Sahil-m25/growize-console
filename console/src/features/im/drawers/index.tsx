@@ -165,7 +165,7 @@ function ClaimBody(c: Ctx) {
     <>
       {cl.superUserNote ? <div className="note su" style={{ marginBottom: 12 }}>{cl.superUserNote}</div> : null}
       <div className="note ir"><b>{cl.byName || cl.byId} wrote this on the lead side</b>
-        {" "}<span className="mono">{cl.saidOn}</span>.<br />{cl.words}</div>
+        {" "}<span className="mono">{cl.saidOn}</span>. <span className="sm">Written in the IR console.</span><br />{cl.words}</div>
       <p className="sm" style={{ margin: "12px 0 0" }}>It is not a receipt and it has moved nothing. You are the
         only person who can say whether the money is actually in the account, and saying so here is
         what writes the receipt — the IR never types one and never will.</p>
