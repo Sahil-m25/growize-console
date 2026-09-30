@@ -76,6 +76,9 @@ export function sniffMime(b: Uint8Array): UploadMime | null {
 }
 const EXT: Readonly<Record<string, UploadMime>> = Object.freeze({ pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" });
 const DECLARED: Readonly<Record<string, UploadMime>> = Object.freeze({ "application/pdf": "application/pdf", "image/png": "image/png", "image/jpeg": "image/jpeg", "image/jpg": "image/jpeg" });
+/** M18-S15-H4: the Content-Type allow-list (the route refuses anything else 415 before reading a byte). */
+export const isAllowedUploadType = (contentType: string | null): boolean =>
+  contentType !== null && Object.hasOwn(DECLARED, contentType.split(";")[0]!.trim().toLowerCase());
 
 export type UploadRefusal =
   | "invalid-request" | "idempotency-key-invalid" | "idempotency-key-reused" | "seat-denied" | "unknown-slot"

@@ -11,6 +11,7 @@ import type { OpsSink } from "../../lib/zoho/log";
 import { createErrorLog } from "../http/error-log";
 import { sharedErrorSink } from "../logs/factory";
 import { createErrorCapture } from "../http/error-capture";
+import { requestGate } from "../http/request-gate";
 import { fixtureModeOn } from "../../lib/fixture-mode";
 
 export const errorLines = sharedErrorSink();
@@ -55,9 +56,11 @@ export function startProcessHooks(env: NodeJS.ProcessEnv = process.env,
   void loadSign().then((m) => m.ensureSignCheck()).catch(() => { /* retried by the next webhook (it calls ensureSignCheck too) */ });
 }
 
-/** Every route handler, wrapped: Plane B error lines (M18-S04-T01) and the process-start hooks above. */
+/** Every route handler, wrapped: Plane B error lines (M18-S04-T01), the process-start hooks above, and the request
+ *  gate (M18-S15-H2/H3: rate limits, then the Origin check on writes) — inside the capture, so a 403/429 still
+ *  carries its x-request-id, and before the handler (and any guardApi inside it), so a refused write runs nothing. */
 export const withErrorCapture: typeof capture = (handler, route) => {
-  const wrapped = capture(handler, route);
+  const wrapped = capture(requestGate(handler, route), route);
   return (request, context) => {
     try { startProcessHooks(); } catch { /* a hook never fails a request */ }
     return wrapped(request, context);

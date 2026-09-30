@@ -50,6 +50,7 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `GZ_LOCAL_BUILD` | V | **—** | **—** | lib/fixture-mode.ts, stub-user.ts |
 | `JEV_SEED_TOKEN` | **S** | set: guards `/api/test/*` | **—** (test API must not be reachable) | scripts/jev-staging-seed.mjs sends it |
 | `NEXT_PUBLIC_RETICLE_TOKEN` / `_URL` / `_ROOT` | V | **—** | **—** (dev-only Reticle bridge) | app/reticle-dev.tsx |
+| `GZ_RATE_LIMITS` | V | **—** | **—** (`on` only forces the limits on under `NODE_ENV=test`; every other mode enforces them) | server/http/request-gate.ts |
 
 ### CI / test tooling (GitHub Environment `staging` only)
 
@@ -83,5 +84,14 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 - Only `NEXT_PUBLIC_*` reaches the browser; none of the secrets above may be renamed to it. CI's
   `bundle secret scan` step builds and greps `.next/static` for `client_secret`, `refresh_token` and each
   secret's value (TC-E01-018).
+- **Rate limits are in-process (M18-S15-H3).** `console/src/server/http/request-gate.ts` keeps one token bucket
+  per client IP + session in the Node process's memory (`RATE_LIMITS`: sign-in `/api/auth/*`, `/api/*/search`,
+  `/api/documents/upload`, `/api/webhooks/*`). That is correct only for **one instance**. A host that runs
+  more than one instance (autoscaling, several regions, serverless functions — AP4 is not chosen) divides the
+  limit by nothing and multiplies it by the instance count: before going multi-instance, move the buckets to a
+  shared store (e.g. Redis/Upstash `INCR` + `EXPIRE`) behind the same `RateLimiter` interface.
+- **The client IP comes from the proxy.** The limiter reads the right-most `X-Forwarded-For` hop (else
+  `X-Real-IP`) — the address the host's own edge appended. Confirm the chosen host sets it that way (one trusted
+  hop); with no proxy header every caller shares one "unknown" bucket per session.
 - Local development: copy `.env.example` to `console/.env.local` (git-ignored) and fill what you need, or
   use `npm run dev:local` (fixtures, no Zoho).
