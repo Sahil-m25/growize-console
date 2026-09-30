@@ -15,8 +15,10 @@ import { ActLegend, Ag, Pname } from "@/components/ui";
 import { pathOf } from "@/components/shell/routes";
 import { registerDrawer } from "@/components/shell/drawers/registry";
 import type { DrawerKind } from "@/lib/store";
-import { logNote, may, openable, own, P, systemRows } from "@/lib/selectors";
+import { may, openable, own, P, systemRows } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import { useApiRead, type Read } from "@/lib/data/api";
+import { logsRead } from "@/lib/data/endpoints/logs";
 import { DoorRow } from "@/features/today/doors";
 import { ckDays, ckFromT } from "./checks";
 import "./drawers";
@@ -129,14 +131,21 @@ function GridBody() {
   );
 }
 
+/* "2026-09-28T11:30:00+05:30" (the route) as "28 Sep 11:30"; the demo trail's own stamps pass through */
+const whenText = (w: string) => {
+  const m = /^\d{4}-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(w);
+  return m ? `${m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+m[1]! - 1]} ${m[3]}` : w;
+};
+
+/* M15-S05-W1: the rows, the actor chips, the reveal count, the headroom and the sign-in note come from GET /api/logs */
 function LogBody() {
   const { state, dispatch } = useConsole();
   const router = useRouter();
-  const logs = systemRows(state);
   const book = openable(state);
   const LOGWHO = state.ui.LOGWHO as PersonKey | null;
-  const actors = Array.from(new Set(logs.map((e) => e.who)));
-  const rows = logs.filter((e) => !LOGWHO || e.who === LOGWHO);
+  const r: Read<import("@/lib/data/endpoints/logs").LogsView> = useApiRead(logsRead, state, { actor: LOGWHO });
+  if (r.state !== "ok") return r.state === "error" ? <div className="note" role="alert">{r.err.error}</div> : <p className="sm" style={{ margin: "8px 0" }}>Loading…</p>;
+  const d = r.data, rows = d.rows, actors = Object.keys(d.byActor);
   return (
     <>
             <div>
@@ -151,11 +160,17 @@ function LogBody() {
                   <option value="">Accessible activity</option>
                   {actors.map((k) => (
                     <option value={k} key={k}>
-                      {P(state.PEOPLE, k).n}
+                      {P(state.PEOPLE, k as PersonKey).n}
                     </option>
                   ))}
                 </select>
               </label>
+              {d.identityReveals ? (
+                <span className="tag late" style={{ marginLeft: "10px" }}>
+                  <span className="dot" />
+                  {d.identityReveals} identity reveal{d.identityReveals === 1 ? "" : "s"}
+                </span>
+              ) : null}
             </div>
             <div className="tw">
               <table>
@@ -171,26 +186,27 @@ function LogBody() {
                 <tbody>
                   {rows.length ? (
                     rows.slice(0, 60).map((e, i) => {
-                      const l = book.find((x) => x.id === e.lead);
-                      const note = logNote(state, e);
+                      const id = e.recordIds[0] ?? null;
+                      const l = id ? book.find((x) => x.id === id) : undefined;
+                      const note = e.note ?? "";
                       return (
                         <tr
-                          key={`${e.at}-${i}`}
+                          key={`${e.when}-${i}`}
                           {...(l
-                            ? { className: "k", tabIndex: 0, onClick: () => router.push(pathOf("lead", e.lead as string)) }
+                            ? { className: "k", tabIndex: 0, onClick: () => router.push(pathOf("lead", l.id)) }
                             : {})}
                         >
                           <td className="sm mono" style={{ width: "110px" }}>
-                            {e.at}
+                            {whenText(e.when)}
                           </td>
                           <td style={{ width: "24px" }}>
-                            <Ag k={e.kind} t={e.what} />
+                            <Ag k={e.kind} t={e.label ?? e.action} />
                           </td>
                           <td className="sm">
-                            <Pname k={e.who as PersonKey} nw cls="xs" />
+                            <Pname k={e.actorId as PersonKey} nw cls="xs" />
                           </td>
                           <td>
-                            <b>{e.what}</b>
+                            <b>{e.label ?? e.action}</b>
                             {note ? <div className="sm">{note}</div> : null}
                           </td>
                           <td className="sm">{l ? l.n : "—"}</td>
@@ -228,6 +244,12 @@ function LogBody() {
           <ActLegend />
         </div>
       ) : null}
+      <p className="sm" style={{ paddingTop: "8px" }}>
+        Zoho calls in this range: {d.headroom.calls}
+        {d.headroom.r429 ? ` · ${d.headroom.r429} refused for rate (429)` : ""}
+        {d.headroom.creditsWarning ? ` · credits remaining ${d.headroom.lastCreditsRemaining ?? "low"} — past half the day's allowance` : ""}
+        {" · "}Sign-in history is not here: {d.signInHistory.where} ({d.signInHistory.who}).
+      </p>
     </>
   );
 }
