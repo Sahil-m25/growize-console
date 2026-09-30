@@ -1,0 +1,786 @@
+{
+ "_doc": "M18-S14-H1. Hand-kept half of the API contract table; the generated half (routes, methods, guard, seats) is contract-table.cjs. A route without a row here fails api-contract-table.test.cjs. `body`: type json|bytes|multipart|none, required fields, where the schema is written. `masked`: extra names for that route's answer beyond the global list. `needsSandbox`: on a GET, why the suite cannot get a 2xx body without Zoho.",
+ "routes": {
+  "/api/activity": {
+   "GET": {}
+  },
+  "/api/activity/history": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
+   }
+  },
+  "/api/cases": {
+   "GET": {},
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "investorId",
+      "category",
+      "subject"
+     ],
+     "schema": "route doc + server/cases/writes.ts open()"
+    }
+   }
+  },
+  "/api/cases/[id]": {
+   "PATCH": {
+    "body": {
+     "type": "json",
+     "required": [
+      "to"
+     ],
+     "schema": "route doc (to: waiting|closed)"
+    }
+   }
+  },
+  "/api/cases/[id]/deliveries": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/cases/[id]/handover": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [],
+     "schema": "route doc (expectedModifiedTime optional)"
+    }
+   }
+  },
+  "/api/cases/[id]/reply": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "message"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/claims": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/claims/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/claims/[id]/confirm": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "ref"
+     ],
+     "schema": "route doc (Idempotency-Key header)"
+    }
+   }
+  },
+  "/api/claims/[id]/not-there": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "reason"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/contracts/deliveries": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
+   }
+  },
+  "/api/data": {
+   "GET": {}
+  },
+  "/api/data/version": {
+   "GET": {}
+  },
+  "/api/documents/farm/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/documents/investor/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/documents/list": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/documents/sign/block": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "paper",
+      "recordId",
+      "reason",
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/documents/sign/dead-letters": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/documents/sign/prefill": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
+   }
+  },
+  "/api/documents/sign/recall": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "paper",
+      "recordId",
+      "reason"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/documents/sign/remind": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "paper",
+      "recordId"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/documents/sign/send": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "paper",
+      "recordId",
+      "method",
+      "templateId",
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc (or application/pdf bytes + query)",
+     "alsoAccepts": "application/pdf"
+    }
+   }
+  },
+  "/api/documents/sign/verify": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "paper",
+      "recordId",
+      "method",
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/documents/upload": {
+   "POST": {
+    "body": {
+     "type": "bytes",
+     "required": [],
+     "schema": "route doc: bytes \u2264 20 MB; query scope,id,slot,name,expected; Content-Type = the file's",
+     "maxBytes": 20971520,
+     "accept": [
+      "application/pdf",
+      "image/jpeg",
+      "image/png"
+     ]
+    }
+   }
+  },
+  "/api/emails/[kind]/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/emails/[kind]/[id]/[messageId]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/events": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   },
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "name",
+      "startsOn",
+      "endsOn",
+      "city",
+      "kind",
+      "channel",
+      "state",
+      "cost",
+      "staffIds"
+     ],
+     "schema": "route doc",
+     "maxBytes": 8192
+    }
+   }
+  },
+  "/api/events/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   },
+   "PATCH": {
+    "body": {
+     "type": "json",
+     "required": [
+      "name"
+     ],
+     "schema": "route doc (the event draft + modifiedTime)",
+     "maxBytes": 8192
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (?confirm=1)"
+    }
+   }
+  },
+  "/api/events/[id]/sheet": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "rule",
+      "rows"
+     ],
+     "schema": "route doc",
+     "maxBytes": 524288
+    }
+   }
+  },
+  "/api/farms": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/farms/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/farms/[id]/allotments": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/farms/[id]/release": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "version"
+     ],
+     "schema": "route doc"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "json",
+     "required": [
+      "version"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/farms/shelf": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/grants": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "whom",
+      "page",
+      "cap"
+     ],
+     "schema": "route doc"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "json",
+     "required": [
+      "whom",
+      "page"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/holds": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/holds/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/holds/[id]/extend": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "days",
+      "reason"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/holds/[id]/release": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (no body; live step-up)"
+    }
+   }
+  },
+  "/api/holds/land": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/investors/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/[id]/allot": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "allotmentId"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/[id]/allotments": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/[id]/holdings": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/[id]/kam": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "kamUserId",
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/[id]/money": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/[id]/preview": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/investors/[id]/record": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/[id]/test-link": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   },
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "why",
+      "confirm"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/[id]/unlock": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   },
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "json",
+     "required": [
+      "reason",
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/add-paid": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "name",
+      "email",
+      "mobile",
+      "llpId",
+      "units",
+      "amountPaid",
+      "investmentDate"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/am": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/finance": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/investors/search": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
+   }
+  },
+  "/api/leads/[id]/claim": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "kind",
+      "mode",
+      "amount",
+      "said_on"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/cover": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "duration"
+     ],
+     "schema": "route doc"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/email": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "template",
+      "subject",
+      "message"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/gate": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/leads/[id]/hints": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/leads/[id]/paperwork": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the module or secret it needs is not configured in the suite (503 not-configured)"
+   },
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "round",
+      "beat",
+      "rowToken"
+     ],
+     "schema": "route doc (or { undoToken })"
+    }
+   }
+  },
+  "/api/leads/search": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
+   }
+  },
+  "/api/logs": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/numbers/investors-side": {
+   "GET": {
+    "rupee": [
+     {
+      "kind": "sections-exclude",
+      "key": "sections",
+      "values": [
+       "cash",
+       "risk"
+      ],
+      "seatsMaySee": [
+       "head",
+       "fin",
+       "comp"
+      ]
+     }
+    ]
+   }
+  },
+  "/api/numbers/investors-today": {
+   "GET": {
+    "rupee": [
+     {
+      "kind": "tile-hidden",
+      "key": "money",
+      "seatsMaySee": [
+       "head",
+       "fin",
+       "comp"
+      ]
+     }
+    ]
+   }
+  },
+  "/api/payouts": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/payouts/[id]/paid": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "mode",
+      "utr"
+     ],
+     "schema": "route doc (Idempotency-Key header)"
+    }
+   }
+  },
+  "/api/payouts/allotments/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   }
+  },
+  "/api/payouts/schedule": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "allotmentIds"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/queues/investors": {
+   "GET": {}
+  },
+  "/api/receipts": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "allotmentId",
+      "kind",
+      "mode",
+      "ref"
+     ],
+     "schema": "route doc (Idempotency-Key header)"
+    }
+   }
+  },
+  "/api/receipts/[id]/match": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [],
+     "schema": "route doc (expectedModifiedTime optional)"
+    }
+   }
+  },
+  "/api/receipts/prepare": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "allotmentId"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/session": {
+   "GET": {},
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "who"
+     ],
+     "schema": "route doc (fixture mode only)"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/sign/embed": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [],
+     "schema": "contracts/sign.embed.json \u2014 HMAC over the exact body (X-Signature)",
+     "hmac": true
+    }
+   }
+  },
+  "/api/statements": {
+   "GET": {},
+   "POST": {
+    "body": {
+     "type": "multipart",
+     "required": [
+      "file"
+     ],
+     "schema": "route doc: multipart field file, CSV \u2264 2 MB",
+     "maxBytes": 2097152
+    }
+   }
+  },
+  "/api/teams": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads the Zoho user directory (GET /users) \u2014 not in the recorded fixtures"
+   }
+  },
+  "/api/teams/[id]": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads the Zoho user directory (GET /users) \u2014 not in the recorded fixtures"
+   }
+  },
+  "/api/updates": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   },
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "headline",
+      "kind",
+      "audience",
+      "body"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/users/[id]": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "seat"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/users/[id]/manager": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "manager"
+     ],
+     "schema": "route doc"
+    }
+   }
+  }
+ }
+}

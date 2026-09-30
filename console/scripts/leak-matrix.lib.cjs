@@ -55,6 +55,36 @@ function unmaskedIdentity(text) {
   return hits;
 }
 
+
+/* ---- M18-S14-H3: the masked-field list by NAME as well as by value shape ------------------------------------ */
+/* Field names that never carry their full value in any GET answer, for any seat (D13: a reveal is a second, logged
+   call behind step-up; every read shows last four at most). `masked` = only X * • . - and up to four trailing chars. */
+const MASKED_NAMES = Object.freeze({
+  pan: /^(pan|pan_?number|pan_?no)$/i,
+  bank_account: /^(bank_?account(_?number)?|account_?number|acct|acct_?no)$/i,
+  Aadhaar_Number: /^(aadhaar(_?number)?|aadhar(_?number)?)$/i,
+  utr: /^(utr|payout_?utr|bank_?ref(erence)?_?no)$/i,
+  dob: /^(dob|date_?of_?birth|birth_?date)$/i,
+});
+const looksMasked = (v) => typeof v === 'string' && /^[X*•·.\- ]{2,}[A-Za-z0-9]{0,4}$/.test(v.trim());
+
+/** Every masked-by-name field in a JSON body whose value is present and not masked, with its path. Also value shapes of the text. */
+function maskedFindings(body, text) {
+  const hits = [];
+  (function walk(v, p) {
+    if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${p}[${i}]`));
+    else if (v && typeof v === 'object') {
+      for (const [k, x] of Object.entries(v)) {
+        const kind = Object.keys(MASKED_NAMES).find((n) => MASKED_NAMES[n].test(k));
+        if (kind && x !== null && x !== '' && x !== undefined && typeof x !== 'object' && !looksMasked(String(x))) hits.push({ kind, path: `${p}.${k}` });
+        else walk(x, `${p}.${k}`);
+      }
+    }
+  })(body, '$');
+  if (typeof text === 'string') for (const h of unmaskedIdentity(text)) if (!hits.some((x) => x.kind === h.kind)) hits.push({ kind: h.kind, path: 'text' });
+  return hits;
+}
+
 const cacheHeaderOk = (headers) => /no-store|private/i.test(headers['cache-control'] || '');
 
 /**
@@ -117,4 +147,4 @@ function cookieFromStorageState(state, baseUrl) {
     .map((c) => `${c.name}=${c.value}`).join('; ');
 }
 
-module.exports = { discoverRoutes, collectIds, unmaskedIdentity, judge, planCalls, cookieFromStorageState, cacheHeaderOk, EXCLUDED, ZOHO_ID };
+module.exports = { MASKED_NAMES, maskedFindings, discoverRoutes, collectIds, unmaskedIdentity, judge, planCalls, cookieFromStorageState, cacheHeaderOk, EXCLUDED, ZOHO_ID };
