@@ -86,6 +86,8 @@ export type ImTicket = {
   id: string; inv: string; t: string; cat: string; opened: string; by: string; own: string;
   pri: "high" | "normal"; state: ImTktState; d: string; sla: string; closed?: string;
   handed?: { by: string; at: string };
+  /** Cases.Modified_Time as the row was read (live rows, once the register serves it) — sent back as expectedModifiedTime (M13-S03-W1) */
+  version?: string | null;
 };
 export type ImField = { id: string; blk: string; at: string; by: string; st: string; head: string; d: string };
 export type ImUpdTo = "all" | "allocated" | "nri";

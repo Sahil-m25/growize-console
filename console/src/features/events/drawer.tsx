@@ -17,16 +17,19 @@
 import type { ConsoleState } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell";
 import { EventDropBody, EventDropFoot, EventEditorBody, EventEditorFoot } from "./EventEditor";
+import { uiEVD } from "./eventDraft";
 
-const eventFor = (state: ConsoleState, id: string | null) => (id ? state.EVENTS.find((x) => x.id === id) ?? null : null);
+/* M14-S02-W1: the record is read from GET /api/events/[id] by the body itself (the route answers 404), so the
+   registry no longer looks the id up in the book; the drawer names it from the draft it was opened with. */
+const askOf = (state: ConsoleState, id: string | null) => { const a = (state.ui as { EVASK?: { id: string; eventName: string } }).EVASK; return a && a.id === id ? a : null; };
 
 registerDrawer("p:event.edit", {
   w: 540,
   /* stale (and the drawer closes itself) once the id it opened for stops naming a record — an
      id of null ("Add event") is always fine. drwCheck's own rule, 03-app.js:6181. */
-  ok: (state, id) => id === null || !!eventFor(state, id),
-  title: (state, { id }) => (eventFor(state, id) ? "Edit event" : "Add event"),
-  sub: (state, { id }) => eventFor(state, id)?.n ?? "Choose dates and who will work it",
+  ok: () => true,
+  title: (_state, { id }) => (id ? "Edit event" : "Add event"),
+  sub: (state, { id }) => (id ? uiEVD(state.ui).n : "Choose dates and who will work it"),
   Body: EventEditorBody,
   Foot: EventEditorFoot,
 });
@@ -35,10 +38,10 @@ registerDrawer("p:event.edit", {
    Always about a record: stale (and closed) the moment its event stops existing. */
 registerDrawer("p:event.drop", {
   w: 440,
-  ok: (state, id) => !!eventFor(state, id),
+  ok: (state, id) => !!askOf(state, id),
   title: (state, { id }) => {
-    const e = eventFor(state, id);
-    return e ? `Remove ${e.n} from the diary` : "Unavailable";
+    const e = askOf(state, id);
+    return e ? `Remove ${e.eventName} from the diary` : "Unavailable";
   },
   Body: EventDropBody,
   Foot: EventDropFoot,

@@ -22,25 +22,36 @@
    "Changed the event" / "Added event"; `dropEvent` clears `l.ev` off every tagged lead and logs
    "Removed event". Both close the drawer on success. */
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PersonKey } from "@/domain";
-import { eventCount, P, assignees, evLeads, may } from "@/lib/selectors";
+import { eventCount, P, assignees, may } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { askedOf, changedNote, eventChange, eventCreate, eventList, eventOne, eventRecOf, eventRemove, type EventArgs } from "@/lib/data/endpoints/events";
 import type { DrawerProps } from "@/components/shell";
 import { pathOf } from "@/components/shell";
 import { Icon, Pav } from "@/components/ui";
-import { EVCH, EVTYPES, evDateText, evGaps, evISODate, evNextId, uiEVD, type EventDraft } from "./eventDraft";
+import { EVCH, EVTYPES, evDateText, evGaps, evISODate, uiEVD, type EventDraft } from "./eventDraft";
+
+/** The drawer's draft as the endpoints' args (the same fields the reducer reads off ui.EVD). */
+const argsOf = (d: EventDraft): EventArgs => ({ id: d.id, n: d.n, type: d.type, ch: d.ch, from: d.from, to: d.to, city: d.city, cost: d.cost, state: d.state, off: d.off, staff: d.staff });
 
 export function EventEditorBody(props: DrawerProps) {
   const { state, dispatch } = useConsole();
-  const event = props.id ? state.EVENTS.find((x) => x.id === props.id) ?? null : null;
+  /* M14-S02-W1: the record under edit is GET /api/events/[id], and the city suggestions come off GET /api/events */
+  const one = useApiRead(eventOne, state, props.id);
+  const list = useApiRead(eventList, state, undefined);
+  const row = one.state === "ok" ? one.data.event : null;
+  const event = row ? eventRecOf(row) : null;
   const edit = may(state, "events", "edit");
   const d = uiEVD(state.ui);
   const ran = !!event && event.state === "done";
-  const tag = event ? evLeads(state, event.id).length : 0;
+  const tag = row ? row.stats.tagged : 0;
+  const nameOf = (k: string) => row?.staff.find((x) => x.id === k)?.name ?? P(state.PEOPLE, k).n;
   /* irsOf(d.staff) — 03-app.js ~3789: only the drafted staff who still carry a book get dealt to. */
   const irs = d.staff.filter((k) => assignees(state).includes(k));
-  const cities = [...new Set(state.EVENTS.map((x) => x.city).filter(Boolean))].sort();
+  const cities = [...new Set((list.state === "ok" ? [...list.data.upcoming, ...list.data.completed] : []).map((x) => x.city).filter(Boolean) as string[])].sort();
   const eligible = (k: PersonKey) => assignees(state).includes(k);
   /* EVWHO() — everyone who may be named: who carries a book, plus anyone already on this event
      who no longer does, so a name can come off a past night as well as go on a coming one. ~3812 */
@@ -53,6 +64,8 @@ export function EventEditorBody(props: DrawerProps) {
   };
 
   if (!edit) return <p className="sm">This drawer is unavailable.</p>;
+  if (props.id && one.state === "loading") return <p className="sm">Reading the event…</p>;
+  if (props.id && one.state === "error") return <p className="sm" role="alert">{one.err.error}</p>;
 
   const f = evISODate(d.from), t = evISODate(d.to);
   const dateError = d.from && !f ? "Choose a valid start date."
@@ -134,7 +147,7 @@ export function EventEditorBody(props: DrawerProps) {
             onChange={(e) => { if (e.target.value) toggleStaff(e.target.value as PersonKey); }}>
             <option value="">Choose an IR team member…</option>
             {staffPool.filter((k) => !d.staff.includes(k)).map((k) => (
-              <option key={k} value={k}>{P(state.PEOPLE, k).n}{eligible(k) ? "" : " · no active book"}</option>
+              <option key={k} value={k}>{nameOf(k)}{eligible(k) ? "" : " · no active book"}</option>
             ))}
           </select>
         </label>
@@ -142,9 +155,9 @@ export function EventEditorBody(props: DrawerProps) {
           ? (
             <div className="ux-event-staff" id="evstaff">
               {d.staff.map((k) => (
-                <button key={k} type="button" className="chip" aria-label={`Remove ${P(state.PEOPLE, k).n} from event staff`}
+                <button key={k} type="button" className="chip" aria-label={`Remove ${nameOf(k)} from event staff`}
                   onClick={() => toggleStaff(k)}>
-                  <Pav k={k} size="xs" /><span>{P(state.PEOPLE, k).n}</span><Icon name="x" />
+                  <Pav k={k} size="xs" /><span>{nameOf(k)}</span><Icon name="x" />
                 </button>
               ))}
             </div>
@@ -152,7 +165,7 @@ export function EventEditorBody(props: DrawerProps) {
           : <p className="sm">No staff selected. Imported leads will wait for an owner.</p>}
         {irs.length > 0 && (
           <p className="sm ux-event-help">
-            Leads are shared evenly in this order: {irs.map((k) => P(state.PEOPLE, k).n).join(", ")}. The first member receives any remainder.
+            Leads are shared evenly in this order: {irs.map(nameOf).join(", ")}. The first member receives any remainder.
           </p>
         )}
       </div>
@@ -168,35 +181,59 @@ export function EventEditorBody(props: DrawerProps) {
 export function EventEditorFoot(props: DrawerProps) {
   const { state, dispatch } = useConsole();
   const router = useRouter();
-  const event = props.id ? state.EVENTS.find((x) => x.id === props.id) ?? null : null;
+  const mode = useApiMode();
+  const one = useApiRead(eventOne, state, props.id);
+  /* M14-S02-W1: 'Add event' is POST /api/events, 'Save event' is PATCH /api/events/[id]; a refusal reads beside the button */
+  const create = useApiWrite(eventCreate, state, dispatch);
+  const change = useApiWrite(eventChange, state, dispatch);
+  const remove = useApiWrite(eventRemove, state, dispatch);
+  const [err, setErr] = useState<string | null>(null);
+  const row = one.state === "ok" ? one.data.event : null;
+  const event = row ? eventRecOf(row) : null;
   const edit = may(state, "events", "edit");
   if (!edit) return null;
   const d = uiEVD(state.ui);
   const eligible = (k: PersonKey) => assignees(state).includes(k);
   const gaps = evGaps(d, event, eligible);
+  const nameOf = (k: string) => row?.staff.find((x) => x.id === k)?.name ?? P(state.PEOPLE, k).n;
 
-  /* saveEvent() reads the draft off ui.EVD itself (same idiom as saveNext/saveTouch) and closes
-     the drawer on success. saveEvent() — ir-console-redesigned.html:3835 — sets `EVID=id;
-     VIEW='event'` only for a brand-new event, so this is the one place that opens the record it
-     just created; an edit of an existing one stays put, same as the prototype. `evNextId` is read
-     before dispatch because the reducer computes the very same id off the very same EVENTS list —
-     not a guess, the write's own arithmetic run once more, read-only. */
-  const save = () => {
+  /* The reducer wrote its own activity line in the demo book; a live write words the line from the route's answer
+     ("Changed the event": what moved, and how many leads stay tagged) and closes the drawer itself. */
+  const save = async () => {
     if (gaps.length) return;
-    const newId = event ? null : evNextId(state.EVKEY + 1);
-    dispatch({ type: "saveEvent" });
-    if (newId) {
-      /* drawn at once, ahead of its route — EventsPage's pending press (EVPEND) */
-      dispatch({ type: "setUi", patch: { EVPEND: { id: newId, seq: state.ui.NAVSEQ ?? 0 } } });
-      router.push(pathOf("event", newId));
+    setErr(null);
+    if (event) {
+      const r = await change({ ...argsOf(d), id: event.id, modifiedTime: null });
+      if (!r.ok) { setErr(r.error); return; }
+      if (mode === "live") {
+        dispatch({ type: "log", what: "Changed the event", lead: null, kind: "admin", note: changedNote(r.data.name, r.data.moved, r.data.taggedStay, nameOf) });
+        dispatch({ type: "closeDrawer" });
+      }
+      return;
     }
+    const r = await create(argsOf(d));
+    if (!r.ok) { setErr(r.error); return; }
+    if (mode === "live") {
+      const irs = r.data.staffIds.filter(eligible);
+      dispatch({ type: "log", what: "Added event", lead: null, kind: "admin",
+        note: r.data.name + " · " + evDateText(r.data.startsOn, r.data.endsOn) + " · " + r.data.city + " · "
+          + (irs.length ? irs.map((k) => nameOf(k).split(" ")[0]).join(", ") + " working it" : "nobody named to work it") });
+      dispatch({ type: "closeDrawer" });
+    }
+    /* drawn at once, ahead of its route — EventsPage's pending press (EVPEND) */
+    dispatch({ type: "setUi", patch: { EVPEND: { id: r.data.eventId, seq: state.ui.NAVSEQ ?? 0 } } });
+    router.push(pathOf("event", r.data.eventId));
   };
-  /* drop() no longer removes the event itself — that is the one write in this drawer with no way
-     back, so it stops at `askFirst`'s door instead: ir-console-redesigned.html:3881's dropEvent()
-     opens DRAWERS.ask before it ever touches EVENTS. Here that door is `p:event.drop` (./drawer),
-     which reads the same `evLeads` count and dispatches the same `dropEvent` once confirmed. */
-  const drop = () => {
+  /* Remove is the one write here with no way back, so it stops at a confirmation first — and what the confirmation says
+     (how many leads lose the tag) is the route's own 428 answer, nothing written yet: DELETE without ?confirm=1. */
+  const drop = async () => {
     if (!event) return;
+    setErr(null);
+    const r = await remove({ id: event.id, confirm: false });
+    if (r.ok) return;
+    const ask = askedOf(r);
+    if (!ask) { setErr(r.error); return; }
+    dispatch({ type: "setUi", patch: { EVASK: { id: event.id, ...ask } } });
     dispatch({ type: "openDrawer", k: "p:event.drop", id: event.id });
   };
 
@@ -205,14 +242,15 @@ export function EventEditorFoot(props: DrawerProps) {
       <button type="button" className="act" id="evsave"
         disabled={gaps.length > 0}
         title={gaps.length ? "Complete: " + gaps.join(", ") : undefined}
-        onClick={save}>
+        onClick={() => { void save(); }}>
         {event ? "Save event" : "Add event"}
       </button>
       {event && (
-        <button type="button" className="act ghost" id="evdrop" onClick={drop}>
+        <button type="button" className="act ghost" id="evdrop" onClick={() => { void drop(); }}>
           Remove event
         </button>
       )}
+      {err ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{err}</p> : null}
     </>
   );
 }
@@ -222,11 +260,16 @@ export function EventEditorFoot(props: DrawerProps) {
    no generic "ask" drawer yet (see crossOwnerRequests), so `dropEvent` gets its confirm door here,
    registered as the panel `p:event.drop` (./drawer.tsx). Body and Foot read the event straight off
    `props.id` — nothing rides in a draft, because nothing here is edited, only confirmed or not. */
+type Ask = { id: string; taggedLeads: number; eventName: string };
+const askOf = (ui: unknown, id: string | null): Ask | null => { const a = (ui as { EVASK?: Ask }).EVASK; return a && a.id === id ? a : null; };
+
 export function EventDropBody(props: DrawerProps) {
   const { state } = useConsole();
-  const event = props.id ? state.EVENTS.find((x) => x.id === props.id) ?? null : null;
-  if (!event) return <p className="sm">This drawer is unavailable.</p>;
-  const tag = evLeads(state, event.id).length;
+  const list = useApiRead(eventList, state, undefined);
+  const ask = askOf(state.ui, props.id);
+  if (!ask) return <p className="sm">This drawer is unavailable.</p>;
+  const tag = ask.taggedLeads;
+  const inDiary = list.state === "ok" ? list.data.upcoming.length + list.data.completed.length : 0;
   return (
     <>
       <p className="lbl">What this does</p>
@@ -242,8 +285,8 @@ export function EventDropBody(props: DrawerProps) {
           </>
         ) : (
           <>
-            The date comes out of the diary, and out of the {state.EVENTS.length} the plan counts
-            against the {eventCount(state.PLAN)} it budgets — so the shortfall on this page goes up
+            The date comes out of the diary, and out of the {inDiary} the plan counts against the{" "}
+            {eventCount(state.PLAN)} it budgets — so the shortfall on this page goes up
             by one.
           </>
         )}
@@ -268,23 +311,35 @@ export function EventDropBody(props: DrawerProps) {
 
 export function EventDropFoot(props: DrawerProps) {
   const { state, dispatch } = useConsole();
-  const event = props.id ? state.EVENTS.find((x) => x.id === props.id) ?? null : null;
-  if (!event) return null;
-  /* askGo() — ir-console-redesigned.html:4204 — clears ASK and closes before running the write;
-     `dropEvent` here closes the drawer itself (store.tsx), and VIEW='events' becomes this push,
-     because standing on the URL of a record that no longer exists is not a state this port keeps. */
-  const run = () => {
-    dispatch({ type: "dropEvent", id: event.id });
+  const mode = useApiMode();
+  const remove = useApiWrite(eventRemove, state, dispatch);
+  const [err, setErr] = useState<string | null>(null);
+  const ask = askOf(state.ui, props.id);
+  if (!ask) return null;
+  /* askGo() — ir-console-redesigned.html:4204 — clears ASK and closes before running the write; the reducer closes the
+     drawer itself in the demo book, a live removal closes it here and words the activity line from the route's answer.
+     VIEW='events' becomes this push, because standing on the URL of a record that no longer exists is not a state this port keeps. */
+  const run = async () => {
+    setErr(null);
+    const r = await remove({ id: ask.id, confirm: true });
+    if (!r.ok) { setErr(r.error); return; }
+    if (mode === "live") {
+      const n = r.data.leadsUntagged;
+      dispatch({ type: "log", what: "Removed event", lead: null, kind: "admin",
+        note: r.data.name + " — " + (n ? n + " lead" + (n === 1 ? "" : "s") + " left with no event named" : "nothing was tagged to it") });
+      dispatch({ type: "closeDrawer" });
+    }
     /* the prototype's VIEW='events' is synchronous; Next 15 folds a native pushState into
        usePathname at once, so the shell draws the list now rather than when a route fetch lands */
     window.history.pushState(null, "", pathOf("events"));
   };
   return (
     <>
-      <button type="button" className="act" onClick={run}>Remove {event.n}</button>
+      <button type="button" className="act" onClick={() => { void run(); }}>Remove {ask.eventName}</button>
       <button type="button" className="act ghost" onClick={() => dispatch({ type: "closeDrawer" })}>
         Leave it as it is
       </button>
+      {err ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{err}</p> : null}
     </>
   );
 }

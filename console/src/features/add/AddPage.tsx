@@ -28,6 +28,8 @@ import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { Chip, Field } from "@/components/ui";
+import { useApiRead } from "@/lib/data/api";
+import { eventDates, eventPicker } from "@/lib/data/endpoints/events";
 import { AddBulk } from "./AddBulk";
 import {
   addDraft, addGaps, addIntroducers, addUnits, addWho, CONHOW, conOK, customOK, dupeOf, emOK, phOK,
@@ -68,6 +70,8 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
   const { state, dispatch } = useConsole();
   const router = useRouter();
   const d = addDraft(state.ui, state);
+  /* M14-S03-W1: the events a lead can be captured from are GET /api/events (the ones that have run) */
+  const events = useApiRead(eventPicker, state, d.ADDSRC === "Events");
   const set = (patch: Partial<UiState>) => dispatch({ type: "setUi", patch });
 
   /* ADRAFT.seen and the caret's field — kept locally: they decide only when an error is worth
@@ -222,8 +226,8 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                   <select className="selw" id="aev" value={d.ADDEV ?? ""}
                     onChange={(e) => set({ ADDEV: (e.target.value || null) as EventId | null })}>
                     <option value="">Choose the event…</option>
-                    {state.EVENTS.filter((e) => e.state === "done").map((e) => (
-                      <option key={e.id} value={e.id}>{e.n} — {e.date}</option>
+                    {(events.state === "ok" ? events.data.completed : []).map((e) => (
+                      <option key={e.id} value={e.id}>{e.name} — {eventDates(e, state.NOW.getFullYear())}</option>
                     ))}
                   </select>
                 </Field>
