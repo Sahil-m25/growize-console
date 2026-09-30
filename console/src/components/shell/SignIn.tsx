@@ -40,14 +40,20 @@ export function mergedPages(state: ConsoleState, k: PersonKey): number {
 }
 
 export function SignIn() {
-  const { state } = useConsole();
-  const { signIn } = useSession();
+  const { state, sessionNote } = useConsole();
+  const { signIn, signOut } = useSession();
   const [hint, setHint] = useState<string | null>(null);
   const h1 = useRef<HTMLHeadingElement>(null);
   const m0 = state.SIGNOUT ? SIGNOUTMSG[state.SIGNOUT] : null;
   const m = m0 && state.SIGNOUT === "revoked" ? [m0[0], revokedLine(state.PEOPLE)] as const : m0;
   /* D60: exactly the people who hold console access right now — both sides */
   const who = state.FIXTURES ? admitted({ PEOPLE: state.PEOPLE, GRANT: state.CAPS, SIGNINS: state.SIGNINS, im: state.IM }) : [];
+
+  /* M01-S02-W1: a session that ended on its own (GET /api/session signedOut) says why, as signOut(why) does */
+  const ended = sessionNote?.signedOut ?? null;
+  useEffect(() => {
+    if (ended && !state.SIGNOUT) signOut(ended);
+  }, [ended]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* signOut() claims the heading so a keyboard or screen-reader user lands on the door */
   useEffect(() => {
@@ -58,7 +64,12 @@ export function SignIn() {
      cannot re-enter a seat by guessing; until it is wired it says what it is waiting for. */
   const zoho = async () => {
     const r = await fetch("/api/auth/zoho", { method: "POST" }).catch(() => null);
-    const body = r ? ((await r.json().catch(() => null)) as { wired?: boolean; message?: string } | null) : null;
+    const body = r ? ((await r.json().catch(() => null)) as { wired?: boolean; message?: string; redirect?: string } | null) : null;
+    /* M01-S02-W1: Zoho sign-in is configured — the route names the OAuth start; the whole page goes there */
+    if (body?.redirect && body.redirect.startsWith("/")) {
+      window.location.assign(body.redirect);
+      return;
+    }
     /* signed in (phase 1: the dev stub; phase 2: the OAuth callback) — the page loads again, as the
        OAuth redirect will, and comes back with the session and the book it serves */
     if (body?.wired) {
@@ -84,6 +95,9 @@ export function SignIn() {
           <br />
           <span className="sm">{m[1]}</span>
         </div>
+      ) : null}
+      {sessionNote?.refusal ? (
+        <div className="note bad" role="alert" style={{ marginBottom: 16 }}>{sessionNote.refusal.message}</div>
       ) : null}
       <h1 ref={h1} tabIndex={-1}>Sign in to the Growize Console</h1>
       <p className="sisub">Use your Growize work account.</p>

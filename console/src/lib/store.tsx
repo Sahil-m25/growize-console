@@ -50,6 +50,9 @@ type ConsoleCtx = {
    *  the most recent one failed; reloadData() reads it again */
   dataRead: { at: number | null; failed: boolean };
   reloadData: () => void;
+  /** M01-S02-W1: what GET /api/session said on load when nobody was signed in — the sign-in screen's refusal
+   *  (read once: the route clears it) and a session that ended on its own (expired / revoked) */
+  sessionNote: Pick<SessionAnswer, "signedOut" | "refusal"> | null;
 };
 
 const Ctx = createContext<ConsoleCtx | null>(null);
@@ -67,6 +70,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
   const [lastLocalUpdate, setLastLocalUpdate] = useState<number | null>(null);
   const [dataRead, setDataRead] = useState<{ at: number | null; failed: boolean }>({ at: null, failed: false });
   const loadRef = useRef<() => Promise<unknown>>(() => Promise.resolve(null));
+  const [sessionNote, setSessionNote] = useState<ConsoleCtx["sessionNote"]>(null);
   /* the first paint's records came with the page (the same payload GET /api/data serves): that read
      succeeded when the page arrived, so it counts as the last good read until the next one */
   const hadInitial = useRef(!!initial);
@@ -138,6 +142,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
         apiFetch("GET", "/api/session").then((r): SessionAnswer => (r.ok ? sessionRead.pick(r.data) : { session: null })),
       ]);
       if (dead) return;
+      if (!sess.session && (sess.signedOut || sess.refusal)) setSessionNote({ signedOut: sess.signedOut, refusal: sess.refusal });
       if (sess.session && sess.access) {
         seat = { who: sess.session.who, access: sess.access };
         const l = held.last;
@@ -182,8 +187,8 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
   }, [writer]);
   const value = useMemo(() => ({ state, dispatch: writer.apply, saves, browserOnline, lastLocalUpdate,
     retrySave: (key: string) => { writer.retry(key); },
-    dataRead, reloadData: () => { void loadRef.current(); },
-  }), [state, writer, saves, browserOnline, lastLocalUpdate, dataRead]);
+    dataRead, reloadData: () => { void loadRef.current(); }, sessionNote,
+  }), [state, writer, saves, browserOnline, lastLocalUpdate, dataRead, sessionNote]);
   /* phase 2b (D104): a wired screen's reads and writes go through @/lib/data/api, which serves the demo book
      only when the hydrated payload says fixture mode — otherwise the /api routes */
   return <Ctx.Provider value={value}><ApiModeProvider fixtures={state.FIXTURES}>{children}</ApiModeProvider></Ctx.Provider>;
