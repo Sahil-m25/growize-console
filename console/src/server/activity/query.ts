@@ -7,8 +7,8 @@
  *
  * Scope, per seat (the prototype's activityActors/actActors):
  *   Lead side       IR, channel partner → self · IR Manager → self + team · Digital Infrastructure → all
- *   Investors side  KAM, Finance, Head of Finance, Compliance, Executive, BU owner → self · Head of AM → self +
- *                   team · Auditor → the Finance people · Digital Infrastructure → all, investor details withheld
+ *   Investors side  KAM, Finance, Head of Finance, Executive, BU owner → self · Head of AM → self +
+ *                   team · Auditor / Compliance & Audit (D78) → the Finance people and themselves · Digital Infrastructure → all, investor details withheld
  * A row about a record is kept only if the reader can open that record: one COQL `id in (…)` per module and
  * ≤100 ids, on the reader's OWN token (D53) — Zoho's sharing answers, not ours. A record in a module that
  * cannot be checked, or a check that failed, drops the row (fail closed) and says so (`partial`).
@@ -35,8 +35,10 @@ export interface ActivityRow {
 
 type Reach = "self" | "team" | "finance" | "all";
 const LEAD_REACH: Readonly<Record<string, Reach>> = Object.freeze({ ir: "self", cp: "self", conv: "team", ops: "all", di: "all" });
+/* D78 merged Compliance and Auditor into one seat (Zoho "Compliance and Audit" signs in as `comp`), so `comp` carries the
+   Auditor's reach: the Finance trail, read only (M15-S03-NOTE-4); `audit` is the prototype's separate seat. */
 const INVESTOR_REACH: Readonly<Record<string, Reach>> = Object.freeze({
-  kam: "self", fin: "self", head: "self", comp: "self", exec: "self", bu: "self", amlead: "team", audit: "finance", ops: "all", di: "all",
+  kam: "self", fin: "self", head: "self", comp: "finance", exec: "self", bu: "self", amlead: "team", audit: "finance", ops: "all", di: "all",
 });
 const reachOf = (seat: string, side: Side): Reach | null => {
   const t = side === "lead" ? LEAD_REACH : INVESTOR_REACH;
@@ -155,7 +157,7 @@ export async function queryActivity(reader: { readonly seat: string; readonly us
     else rows = rows.filter((r) => r.byId === reader.userId || r.recordId !== null); // PROVISIONAL: Zoho's hierarchy limits it below
   } else if (reach === "finance") {
     const fin = deps.financeUserIds ? await deps.financeUserIds() : null;
-    if (fin) { const ids = new Set(fin); rows = rows.filter((r) => ids.has(r.byId)); }
+    if (fin) { const ids = new Set([...fin, reader.userId]); rows = rows.filter((r) => ids.has(r.byId)); }
     else rows = rows.filter((r) => r.kind === "money" || r.kind === "doc" || r.kind === "kyc");
   }
 

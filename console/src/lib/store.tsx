@@ -17,6 +17,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useEffect,
@@ -30,11 +31,13 @@ import { reducer, initialState, LEAD_WRITES } from "./state";
 import type { Action, ConsoleState } from "./state";
 import type { SaveEntry, SaveResult } from "./save-queue";
 import { createConsoleWriter } from "./console-save";
+import type { SaveSpec } from "./receipt-queue";
 import { ApiModeProvider, apiFetch } from "@/lib/data/api";
 import { nextDataRead, type DataRead } from "@/lib/data/freshness";
 import { sessionRead, withSessionAccess, type SessionAnswer } from "@/lib/data/endpoints/session";
 import { installErrorBeacon, sendErrorBeacon } from "@/lib/zoho/error-beacon";
 import { consoleAccount, scopeOf } from "@/lib/selectors";
+import { imAccount } from "@/lib/data/admission";
 import { pinClock } from "@/lib/format";
 import type { Ctx as SelectorCtx } from "@/lib/selectors";
 import type { DataPayload } from "@/lib/data/types";
@@ -48,6 +51,11 @@ type ConsoleCtx = {
   browserOnline: boolean | null;
   lastLocalUpdate: number | null;
   retrySave: (key: string) => void;
+  /** M01-S08: queue one business save that is not a lead-side reducer action (the Investors side's receipt) on the same
+   *  in-memory queue (D41). undefined → nobody is signed in as a console seat. */
+  enqueueSave: (spec: SaveSpec<ConsoleState>) => SaveResult | undefined;
+  /** the browser's connection as the queue sees it right now */
+  isOnline: () => boolean;
   /** M01-S03: when the last GET /api/data succeeded (epoch ms, null before the first), and whether
    *  the most recent one failed; reloadData() reads it again */
   dataRead: DataRead;
@@ -59,6 +67,10 @@ type ConsoleCtx = {
 
 const Ctx = createContext<ConsoleCtx | null>(null);
 
+/** Who the save queue serves: a console account, or (M01-S08) an Investors-side seat such as Finance, which the lead door never admits. */
+const queueAccount = (st: ConsoleState): boolean =>
+  consoleAccount(st.PEOPLE, st.WHO, st.CAPS) || imAccount(st.PEOPLE, st.IM, st.WHO);
+
 export function ConsoleProvider({ children, initial }: { children: ReactNode; initial?: DataPayload }) {
   const [state, setState] = useState(() => {
     const s0 = initialState();
@@ -67,6 +79,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     return reducer(s0, { type: "hydrate", ds: initial.ds, version: initial.version, fixtures: initial.fixtures });
   });
   const stateRef = useRef(state), sessionRef = useRef(0), onlineRef = useRef(false);
+  const retryHooks = useRef(new Map<string, () => void>());
   const [saves, setSaves] = useState<SaveEntry[]>([]);
   const [browserOnline, setBrowserOnline] = useState<boolean | null>(null);
   const [lastLocalUpdate, setLastLocalUpdate] = useState<number | null>(null);
@@ -84,7 +97,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     setTimer: (callback, delay) => setTimeout(callback, delay),
     clearTimer: handle => clearTimeout(handle as ReturnType<typeof setTimeout>),
     isOnline: () => onlineRef.current,
-    currentSession: () => consoleAccount(stateRef.current.PEOPLE, stateRef.current.WHO, stateRef.current.CAPS)
+    currentSession: () => queueAccount(stateRef.current)
       ? { actor: stateRef.current.WHO, session: sessionRef.current } : null,
     read: () => stateRef.current,
     write: next => {
@@ -96,6 +109,7 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
     leadWrites: LEAD_WRITES,
     onChange: change => {
       setSaves(change.entries);
+      if (retryHooks.current.size) { const live = new Set(change.entries.map(e => e.key)); for (const k of retryHooks.current.keys()) if (!live.has(k)) retryHooks.current.delete(k); }
       if (change.kind === "completed") setLastLocalUpdate(Date.now());
       /* M18-S04-W1: a save the queue gave up on feeds the failed-saves alert (≥3 in 10 minutes). Only the source and the
          page route go — never the message or the typed text (error-beacon allow-list). Live mode only: the demo book has no Zoho. */
@@ -196,10 +210,22 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
       writer.reset();
     };
   }, [writer]);
-  const value = useMemo(() => ({ state, dispatch: writer.apply, saves, browserOnline, lastLocalUpdate,
-    retrySave: (key: string) => { writer.retry(key); },
+  const enqueueSave = useCallback((spec: SaveSpec<ConsoleState>): SaveResult | undefined => {
+    const cur = stateRef.current;
+    if (!queueAccount(cur)) return undefined;
+    const session = { actor: cur.WHO, session: sessionRef.current };
+    if (spec.onRetry) retryHooks.current.set(spec.key, spec.onRetry);
+    const r = writer.enqueue({ ...session, key: spec.key, id: spec.id, label: spec.label,
+      validate: () => stateRef.current.WHO === session.actor && queueAccount(stateRef.current) && spec.validate(stateRef.current),
+      execute: () => spec.execute(() => stateRef.current) });
+    if (!r.accepted && r.status === "rejected") retryHooks.current.delete(spec.key);
+    return r;
+  }, [writer]);
+  const value = useMemo(() => ({ state, dispatch: writer.apply, saves, browserOnline, lastLocalUpdate, enqueueSave, isOnline: () => onlineRef.current,
+    /* an explicit retry is a new press (M01-S08-NOTE-8): its hook mints a new idempotency key before the queue runs it again */
+    retrySave: (key: string) => { retryHooks.current.get(key)?.(); writer.retry(key); },
     dataRead, reloadData: () => { void loadRef.current(); }, sessionNote,
-  }), [state, writer, saves, browserOnline, lastLocalUpdate, dataRead, sessionNote]);
+  }), [state, writer, saves, browserOnline, lastLocalUpdate, enqueueSave, dataRead, sessionNote]);
   /* phase 2b (D104): a wired screen's reads and writes go through @/lib/data/api, which serves the demo book
      only when the hydrated payload says fixture mode — otherwise the /api routes */
   return <Ctx.Provider value={value}><ApiModeProvider fixtures={state.FIXTURES}>{children}</ApiModeProvider></Ctx.Provider>;
@@ -217,6 +243,12 @@ export function useConsole(): ConsoleCtx {
 export function useReload(): () => void {
   const c = useContext(Ctx);
   return c ? c.reloadData : () => {};
+}
+
+/** The save queue for a write that is not a reducer action, or null where there is no provider (the render tests mount bare). */
+export function useSaveQueue(): Pick<ConsoleCtx, "enqueueSave" | "isOnline" | "saves"> | null {
+  const c = useContext(Ctx);
+  return c ? { enqueueSave: c.enqueueSave, isOnline: c.isOnline, saves: c.saves } : null;
 }
 
 export function useMe(): Person {

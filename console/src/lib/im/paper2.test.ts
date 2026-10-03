@@ -197,3 +197,16 @@ describe("M09-S07 investor search", () => {
     expect(rows("imran", "Radhika")).toEqual(["Radhika Menon"]);
   });
 });
+
+describe("M15-S03 the Auditor reads the Finance trail (TC-IM10-008)", () => {
+  it("lists the Finance people's entries, read only, with a Person view; other seats are unchanged", async () => {
+    const { activityBase, activityActors, finSeats } = await import("@/lib/im");
+    const s = demo();
+    const rows = activityBase(s, "latha");
+    expect(rows).toHaveLength(12); // the demo book: Meena, Fahad and Harsha
+    const fin = new Set([...finSeats(s), "latha"]);
+    expect(rows.every(e => fin.has(e.who))).toBe(true);
+    expect(activityActors(s, "latha").has("meena")).toBe(true);
+    expect(activityActors(s, "imran").has("meena")).toBe(false);
+  });
+});

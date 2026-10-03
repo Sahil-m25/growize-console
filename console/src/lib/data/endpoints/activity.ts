@@ -6,7 +6,7 @@
 
 import type { ActivityResult, ActivityRow, Tally } from "@/server/activity/query";
 import type { HistoryEntry } from "@/server/activity/sources";
-import { activityBase, isSys, KINDS, logFor, may, pageReadable, safeNote } from "@/lib/im";
+import { activityBase, isAuditor, isSys, KINDS, logFor, may, pageReadable, safeNote } from "@/lib/im";
 import { KINDS as LEAD_KINDS } from "@/domain";
 import { activityRows, isHumanTouch, logNote, may as leadMay } from "@/lib/selectors";
 import { fail, ok, type ReadEndpoint } from "../api";
@@ -31,7 +31,7 @@ export const activityRead: ReadEndpoint<ImBook, ActivityArgs, ActivityView> = {
   fixture({ s, me }, a) {
     if (!a) return fail(400, "invalid-request", "Nothing to read.");
     if (!pageReadable(s, me, "act")) return fail(403, "no-activity", "Activity is not part of this seat.");
-    const all = activityBase(s, me), solo = !may(s, me, "log"), adminView = isSys(s, me) && may(s, me, "log");
+    const all = activityBase(s, me), solo = !may(s, me, "log") && !isAuditor(s, me), adminView = isSys(s, me) && may(s, me, "log");
     const rowOf = (e: (typeof all)[number]): ActivityRowView => ({ at: e.at, day: e.at.slice(0, 6), byId: e.who, side: "investors", kind: e.kind, what: e.what,
       module: "", recordId: e.inv, source: "archive", withheld: adminView && /^Investor details withheld/.test(e.note), detail: safeNote(s, me, e.note) });
     const cut = all.filter(e => (!a.person || (!solo && e.who === a.person)) && (!a.kind || e.kind === a.kind));

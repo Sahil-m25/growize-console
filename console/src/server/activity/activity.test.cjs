@@ -190,6 +190,19 @@ test('TC-IM10-006/008/009: Finance reads their own work; the Auditor the Finance
   assert.equal(imran.total, 0);
 });
 
+test('TC-IM10-008 (D78): the merged Compliance & Audit seat (`comp`) reads the Finance trail, read only, and never someone else\'s', async () => {
+  const a = await archived();
+  const { d } = deps(a.archive);
+  const comp = await queryActivity({ seat: 'comp', userId: U.latha }, SEP, d);
+  assert.deepEqual(comp.rows.map((x) => x.byId).sort(), [U.harsha, U.meena].sort(), 'Finance people, not self-only (was 0 rows)');
+  assert.equal(comp.solo, false);
+  assert.deepEqual(comp.sides, ['investors']);
+  const other = await queryActivity({ seat: 'comp', userId: U.latha }, SEP, deps(a.archive, { finance: [U.meena] }).d);
+  assert.ok(other.rows.every((x) => x.byId === U.meena), 'only the configured Finance ids (plus self)');
+  const unset = await queryActivity({ seat: 'comp', userId: U.latha }, SEP, { ...d, financeUserIds: async () => null });
+  assert.ok(unset.rows.every((x) => ['money', 'doc', 'kyc'].includes(x.kind)), 'Finance kinds stand in when ZOHO_FINANCE_USER_IDS is unset');
+});
+
 test('TC-IM10-007 / AC: Digital Infrastructure sees both sides on one page; the Investors side withholds investor details', async () => {
   const a = await archived();
   const { d, visCalls } = deps(a.archive);
