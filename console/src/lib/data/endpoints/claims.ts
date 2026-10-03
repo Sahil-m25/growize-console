@@ -1,4 +1,5 @@
 /* M08-S03-W1 — money in.
+     leadClaimRead   GET  /api/leads/[id]/claim     (server/leads/claim)    the latest report and Finance's answer (M10-S03)
      leadClaim       POST /api/leads/[id]/claim     (server/leads/claim)    the IR reports "the investor says they paid"
      receiptPrepare  POST /api/receipts/prepare     (server/money/record-receipt)  seal the allotment's live context
      receiptRecord   POST /api/receipts             (server/money/record-receipt)  Finance records the receipt, per-press Idempotency-Key
@@ -6,11 +7,11 @@
    the record's answer carries `matchable` / `matchNote` and the page says matching waits.
    (endpoints/receipts.ts stays the Match pilot; the record drawer's two writes live here so that file is untouched.) */
 
-import type { ClaimView } from "@/server/leads/claim";
+import type { ClaimStateView, ClaimView } from "@/server/leads/claim";
 import type { Prepared, RecordedReceipt } from "@/server/money/record-receipt";
 import { claimFieldsError, claimOf, claimOpen, canClaim, claimWhy, openable } from "@/lib/selectors";
 import { may, roundOf } from "@/lib/im";
-import { fail, ok, type WriteEndpoint } from "../api";
+import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
 import { consoleFixtureWrite, NOT_YOURS, type ConsoleBook, type ConsoleDispatch } from "./lead";
 
@@ -35,6 +36,22 @@ export const leadClaim: WriteEndpoint<ConsoleBook, ClaimArgs, Reported, ConsoleD
       next => (claimOf(next, a.id) ? null : fail(409, "not-reportable", "Nothing was reported.")),
       next => ({ claimId: claimOf(next, a.id)!.id, state: "waiting" as const,
         says: "Payment reported — waiting for Finance to find it in the bank." as const, row: "Waiting on Finance" as const }));
+  },
+};
+
+/* M10-S03: what the lead page shows once Finance has answered. `answer: "not-found"` carries the reason in `says`
+   ("Finance did not find it: <reason>"); a found answer says nothing (the gate's `payment.notFound` is true for both). */
+export type ClaimRead = ClaimStateView;
+export const leadClaimRead: ReadEndpoint<ConsoleBook, string | null, ClaimRead> = {
+  path: id => (id ? `/api/leads/${encodeURIComponent(id)}/claim` : null),
+  pick: j => (j as { claim: ClaimRead }).claim,
+  fixture(state, id) {
+    const l = state.LEADS.find(x => x.id === id);
+    if (!l || !openable(state).some(x => x.id === l.id)) return NOT_YOURS();
+    const c = claimOf(state, l.id);
+    const answer = c && c.state === "notfound" ? "not-found" as const : c && c.state === "confirmed" ? "found" as const : null;
+    return ok({ leadId: l.id, claimId: c ? c.id : null, state: !c ? "none" as const : c.state === "waiting" ? "waiting" as const : "answered" as const,
+      answer, reason: answer === "not-found" ? c!.why || null : null, says: answer === "not-found" ? `Finance did not find it: ${c!.why || ""}` : null });
   },
 };
 

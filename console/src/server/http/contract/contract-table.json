@@ -508,6 +508,9 @@
    }
   },
   "/api/leads/[id]/claim": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
+   },
    "POST": {
     "body": {
      "type": "json",
