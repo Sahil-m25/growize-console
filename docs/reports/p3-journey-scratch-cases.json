@@ -1,0 +1,241 @@
+{
+ "cases": [
+  {
+   "id": "P3-M09-S09-A",
+   "story": "M09-S09",
+   "seat": "harsha",
+   "title": "Add investor form asks only the seven facts",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Investors'",
+    "Press '\uff0b Add investor'"
+   ],
+   "expected": [
+    "The drawer asks for Name, Email, Mobile, Farm (LLP), Units, Amount paid and Investment date.",
+    "The drawer says no email goes to the investor and the app opens on hold.",
+    "The drawer asks for nothing else, such as a PAN or bank account."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M09-S09-B",
+   "story": "M09-S09",
+   "seat": "harsha",
+   "title": "Adding a paid investor opens their new record",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Investors'",
+    "Press '\uff0b Add investor'",
+    "Type 'Ravi Menon' in the Name box",
+    "Type 'ravi.menon@example.com' in the Email box",
+    "Type '+91 98450 11122' in the Mobile box",
+    "Choose 'Block B \u2014 Doddaballapura \u2014 23 free \u00b7 \u20b925 L a unit' in the Farm (LLP) dropdown",
+    "Type '1' in the Units box",
+    "Type '2500000' in the Amount paid box",
+    "Type '2026-08-20' in the Investment date box",
+    "Press 'Add the investor'"
+   ],
+   "expected": [
+    "Ravi Menon's record opens with ARL ID ARL-INV-0220.",
+    "The record reads 1 unit \u00b7 \u20b925 L.",
+    "No error or refusal is shown."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M09-S09-C",
+   "story": "M09-S09",
+   "seat": "harsha",
+   "title": "A used email is refused with a link to the investor",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Investors'",
+    "Press '\uff0b Add investor'",
+    "Type 'Joseph Two' in the Name box",
+    "Type 'joseph.m@gulfmail.ae' in the Email box"
+   ],
+   "expected": [
+    "A note says joseph.m@gulfmail.ae is already on the book and belongs to Joseph Mathew.",
+    "The note links to Joseph Mathew's record.",
+    "The note says to open their record instead of adding them twice."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M09-S09-D",
+   "story": "M09-S09",
+   "seat": "imran",
+   "title": "A KAM is not offered Add investor",
+   "steps": [
+    "Choose 'Imran Sheikh \u2014 Key Account Manager' in the 'Signed in as' dropdown",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The page does not show a '\uff0b Add investor' button."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S01-A",
+   "story": "M11-S01",
+   "seat": "harsha",
+   "title": "Farms shows one row per LLP with status",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Farms'"
+   ],
+   "expected": [
+    "The Farm LLPs table has a row for each of Block A, B, C, D and E with acres, total units, reserved, issued, free units and unit price.",
+    "Block C and Block D read Draft with 'not on sale' under it.",
+    "Block B reads Open for Issuance and Block E reads Open for Reservation."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S01-B",
+   "story": "M11-S01",
+   "seat": "harsha",
+   "title": "An LLP opens with masked PAN",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Farms'",
+    "Press 'Block B'"
+   ],
+   "expected": [
+    "A Farm LLP panel opens for Block B.",
+    "The PAN is shown masked, with only its last characters visible.",
+    "The panel lists SPOCs and insurance."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S01-C",
+   "story": "M11-S01",
+   "seat": "sahil",
+   "title": "Sahil sees the super user note",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Press 'Farms'",
+    "Press 'Block B'"
+   ],
+   "expected": [
+    "A note reads Super user and says he sees every LLP.",
+    "The PAN stays masked."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S01-D",
+   "story": "M11-S01",
+   "seat": "rohit",
+   "title": "An IR is not offered Farms",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Look at the menu"
+   ],
+   "expected": [
+    "The menu does not list Farms."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S02-A",
+   "story": "M11-S02",
+   "seat": "harsha",
+   "title": "Joseph Mathew holds allotments on two farms",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Investors'",
+    "Press 'Joseph Mathew'",
+    "Press 'What they hold'"
+   ],
+   "expected": [
+    "Two allotments are listed, one on Block B and one on Block A.",
+    "Each allotment shows its units and amount."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "MONEY_DEMO"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S02-B",
+   "story": "M11-S02",
+   "seat": "harsha",
+   "title": "A farm lists who holds units in it",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Farms'",
+    "Press 'Block B'"
+   ],
+   "expected": [
+    "The Farm LLP panel lists the investors who hold units in Block B with their units."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-M11-S02-C",
+   "story": "M11-S02",
+   "seat": "imran",
+   "title": "A KAM sees only their own investors",
+   "steps": [
+    "Choose 'Imran Sheikh \u2014 Key Account Manager' in the 'Signed in as' dropdown",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The list includes Radhika Menon and Sanjay Kulkarni.",
+    "The list does not include Prakash Bhat or Joseph Mathew."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3"
+  },
+  {
+   "id": "P3-CAL1",
+   "story": null,
+   "seat": "harsha",
+   "title": "calibration",
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Farms'"
+   ],
+   "expected": [
+    "A red banner reads 'All farms were deleted'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "P3",
+   "expect_fail": true
+  }
+ ]
+}
