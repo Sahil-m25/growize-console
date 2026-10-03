@@ -43,6 +43,8 @@ test('day files replay: torn and foreign lines are skipped; newest first; Planes
   assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].at >= x.at), 'newest first');
   assert.equal(r.signInHistory.where, 'Zoho Directory → Security Control → Login History');
   assert.equal(SIGN_IN_HISTORY.runbook, 'ops/runbooks/sign-in-history.md');
+  const rb = fs.readFileSync(path.resolve(__dirname, '..', '..', '..', '..', SIGN_IN_HISTORY.runbook), 'utf8'); // M15-S05-T03: the page the Logs screen points at exists
+  assert.ok(rb.includes('Login History') && rb.includes(SIGN_IN_HISTORY.who) && /How often/.test(rb), 'the runbook names where, who and how often');
   assert.equal(r.rows.some((x) => x.kind === 'sign-in' && x.actorId === MEENA), false, "yesterday's file is outside today's range");
   assert.equal(q('di', { from: '2026-09-27' }).total, 14);
 });
