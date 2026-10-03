@@ -1,0 +1,312 @@
+{
+ "note": "PROPOSED Jev UI cases for stories with none (D98). Not in ui-cases.json (read-only for builders). Run: ONLY=<ids> node pm/jev-ui-runner.mjs docs/reports/p3-money-proposed-ui-cases.json <url> <out>",
+ "cases": [
+  {
+   "id": "P3-M10-S07-A",
+   "story": "M10-S07",
+   "seat": "harsha",
+   "title": "Two allotments: one money block per farm",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Joseph Mathew' in the investors list",
+    "Press the 'Money' tab"
+   ],
+   "expected": [
+    "The Money section shows one block for each of Joseph Mathew's two farms.",
+    "A line reads 'Total across 2 farms'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S07-B",
+   "story": "M10-S07",
+   "seat": "meena",
+   "title": "Two allotments: the receipt needs a farm picked",
+   "steps": [
+    "Press Meena Raghavan on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Joseph Mathew' in the investors list",
+    "Press the 'Money' tab",
+    "Press the button that records a receipt for the balance"
+   ],
+   "expected": [
+    "The panel asks which farm, 'pick one'.",
+    "The panel says a receipt belongs to one allotment and is not saved until a farm is picked."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S07-C",
+   "story": "M10-S07",
+   "seat": "meena",
+   "title": "One allotment: the farm is already picked",
+   "steps": [
+    "Press Meena Raghavan on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Prakash Bhat' in the investors list",
+    "Press the 'Money' tab",
+    "Press 'The balance'"
+   ],
+   "expected": [
+    "The panel says 'Their only allotment \u2014 the receipt is linked to it.'"
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S09-A",
+   "story": "M10-S09",
+   "seat": "harsha",
+   "title": "Finance sees the ARL holdings panel, read only",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list",
+    "Press the 'What they hold' tab"
+   ],
+   "expected": [
+    "The record shows an 'ARL holdings' panel marked read only that lists a CCD holding.",
+    "The ARL holdings panel offers no Add, Edit or Delete button."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S09-B",
+   "story": "M10-S09",
+   "seat": "imran",
+   "title": "A KAM is not shown the ARL holdings panel",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list",
+    "Press the 'What they hold' tab"
+   ],
+   "expected": [
+    "The record has no 'ARL holdings' panel."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S20-A",
+   "story": "M10-S20",
+   "seat": "harsha",
+   "title": "Finance sees the payouts due this month with Mark paid",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Payments' in the menu"
+   ],
+   "expected": [
+    "The page shows a queue of payouts due this month, reading '13 scheduled in Sep 2026'.",
+    "The queue offers 'Mark paid' on its rows."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S20-B",
+   "story": "M10-S20",
+   "seat": "latha",
+   "title": "The Auditor is offered no payouts queue",
+   "steps": [
+    "Press Latha Prabhu on the sign-in screen",
+    "Press 'Payments' in the menu"
+   ],
+   "expected": [
+    "The page shows no queue of payouts due this month.",
+    "No row offers 'Mark paid'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S21-A",
+   "story": "M10-S21",
+   "seat": "harsha",
+   "title": "An account on hold offers Send welcome and unlock",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Joseph Mathew' in the investors list",
+    "Press the 'What they hold' tab"
+   ],
+   "expected": [
+    "The App account card reads 'On hold \u2014 data synced, sign-in locked, no email sent'.",
+    "The card offers 'Send welcome and unlock'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S21-B",
+   "story": "M10-S21",
+   "seat": "imran",
+   "title": "A KAM reads the card and cannot change it",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Radhika Menon' in the investors list",
+    "Press the 'What they hold' tab"
+   ],
+   "expected": [
+    "The App account card says 'Finance controls app access.'",
+    "The card shows no 'Lock app access' button."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S22-A",
+   "story": "M10-S22",
+   "seat": "harsha",
+   "title": "Preview app opens a labelled mock-up",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Radhika Menon' in the investors list",
+    "Press the 'What they hold' tab",
+    "Press 'Preview app'"
+   ],
+   "expected": [
+    "A phone-sized panel opens labelled 'Preview \u2014 mock-up, not the live app'.",
+    "The panel greets Radhika by name."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S23-A",
+   "story": "M10-S23",
+   "seat": "sahil",
+   "title": "The super user is offered the test sign-in link",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Radhika Menon' in the investors list",
+    "Press the 'What they hold' tab"
+   ],
+   "expected": [
+    "The buttons on the page include 'Preview app' and 'Test sign-in link'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-M10-S23-B",
+   "story": "M10-S23",
+   "seat": "harsha",
+   "title": "Any other seat is not offered the test sign-in link",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Radhika Menon' in the investors list",
+    "Press the 'What they hold' tab"
+   ],
+   "expected": [
+    "The App account card offers a 'Preview app' button and no 'Test sign-in link' button."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "TC-M10-CAL1",
+   "story": null,
+   "seat": "harsha",
+   "title": "Calibration for M10: must FAIL",
+   "expect_fail": true,
+   "steps": [
+    "Choose 'Harsha Bhat \u2014 Head of Finance' in the 'Signed in as' dropdown",
+    "Press 'Transactions'"
+   ],
+   "expected": [
+    "A red banner across the top reads 'All investor records were deleted'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "P3-E12-005",
+   "story": "M16-S02",
+   "seat": "tasneem",
+   "title": "Tapping an IR opens the breakdown (TC-E12-005 ui-todo)",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Numbers from the menu",
+    "Press Kavya's row in the Assignments by IR table"
+   ],
+   "expected": [
+    "Under Kavya's row a breakdown lists ten lines in this order: Attempted only \u2014 never reached; Reached the investor; Qualified or further; Said yes or further; 10% in or paid; Closed as lost; Worked, no next step; Next step overdue; Touches per worked lead; Assignment to first touch (median).",
+    "Kavya's totals read: Reached the investor 5, Qualified or further 4, Said yes or further 3, Closed as lost 1."
+   ],
+   "fixtures": [],
+   "group": "M16"
+  },
+  {
+   "id": "P3-E12-007",
+   "story": "M16-S02",
+   "seat": "tasneem",
+   "title": "A zero count is not a button (TC-E12-007 ui-todo)",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Numbers from the menu"
+   ],
+   "expected": [
+    "In the Assignments by IR table every zero count is plain text, and no button reads 0."
+   ],
+   "fixtures": [],
+   "group": "M16"
+  },
+  {
+   "id": "P3-E12-014",
+   "story": "M16-S04",
+   "seat": "tasneem",
+   "title": "The IR Manager cannot change the plan (TC-E12-014 ui-todo)",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Plan from the menu"
+   ],
+   "expected": [
+    "The Plan page is marked 'Read only' and has no 'Edit periods' button."
+   ],
+   "fixtures": [],
+   "group": "M16"
+  }
+ ]
+}
