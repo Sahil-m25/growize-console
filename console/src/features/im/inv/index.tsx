@@ -10,7 +10,7 @@ import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView, fmtDay,
+  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView, fmtDay, fmtStamp, mid, nowDay, when, DAY,
 } from "@/lib/im";
 import { EXTDAYS } from "@/domain";
 import type { ImInvestor } from "@/lib/im";
@@ -23,7 +23,8 @@ import { InvEmails } from "../paper2/Emails";
 import { SignCell } from "../paper2/SignCell";
 import { BlockIt } from "../paper2/BlockIt";
 import { InvUploads } from "../paper2/Upload";
-import { useApiRead, useApiWrite, type Read } from "@/lib/data/api";
+import { useApiMode, useApiRead, useApiWrite, type Read } from "@/lib/data/api";
+import { appCard } from "@/lib/data/endpoints/app";
 import { amBook, investorRecord, investorSearch } from "@/lib/data/endpoints/investors";
 import { holdExtend, holdOne, holdRelease, type HoldOne } from "@/lib/data/endpoints/holds";
 import type { InvestorRecord, RecordSection } from "@/server/investors/record";
@@ -183,7 +184,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         {/* M12-S09 — the record's emails sit under "Who they are" rather than as a section of their own,
             so the record keeps exactly the prototype's sections */}
         {S === "who" ? <InvEmails s={s} me={me} id={x.id} /> : null}
-        {S === "hold" ? <SecHold {...p} ho={ho} /> : null}
+        {S === "hold" ? <SecHold {...p} ho={ho} rec={rec} /> : null}
         {S === "care" ? <SecCare {...p} /> : null}
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
@@ -342,11 +343,61 @@ function HoldActions({ s, me, dispatch, h }: ImPageProps & { h: HoldOne["hold"] 
   );
 }
 
+/* The app account's mark — imx.js 1619–1681. M08-S08-W2 (D93): the account opens On hold with a Tentative mark at the first matched
+   receipt; what the panel reads (opened, the welcome line, the mark and when it was set) is GET /api/investors/[id]/unlock, the
+   same card App access draws. Permanent is Zoho's to set (the console writes Tentative, once, at the first match), so live there is
+   no button for it; the demo's reducer still offers the two buttons in the fixture. */
+const IST_MS = 5.5 * 3_600_000;
+/** a card time: Zoho's datetime ("2026-09-28T14:05:00+05:30") or the demo's own "28 Sep 14:05", as the page prints it */
+const wall = (s: ImPageProps["s"], at: string | null): number | null => (!at ? null : /^\d{4}-\d{2}-\d{2}/.test(at) ? (Number.isNaN(Date.parse(at)) ? null : Date.parse(at) + IST_MS) : when(s.data.NOW, at));
+const stampText = (s: ImPageProps["s"], at: string | null): string => { const w = wall(s, at); return w == null ? (at ?? "—") : fmtStamp(w); };
+
+function AppAccount({ s, me, dispatch, x, due }: ImPageProps & { x: ImInvestor; due: number | null }) {
+  const r = useApiRead(appCard, { s, me }, x.id);
+  const mode = useApiMode();
+  const card = r.state === "ok" ? r.data.card : null;
+  if (r.state === "idle" || r.state === "loading") return <p className="sm" style={{ margin: "8px 0" }}>Reading the app account…</p>;
+  if (!card) return r.state === "error" && r.err.status !== 403 ? <p className="sm" role="alert" style={{ margin: "8px 0" }}>The app account: {r.err.error}</p> : null;
+  if (!card.access && !card.mark) return <p className="sm" style={{ margin: "8px 0" }}>The app account opens when the first receipt is matched — recording a receipt does not open it.</p>;
+  const perm = card.mark === "Permanent";
+  const w = wall(s, card.markAt), age = w == null ? null : Math.floor((nowDay(s.data.NOW) - mid(w)!) / DAY);
+  const lock = perm && age != null && age >= APPLOCK, left = age == null ? null : Math.max(0, APPLOCK - age);
+  return (
+    <div className="card fill" style={{ marginTop: 8 }}><div className="ch"><h3>The app account</h3>
+      <div className="sp" /><span className={`tag ${perm ? "go" : "due"}`}><span className="dot" />{perm ? "permanent" : "tentative"}</span></div><div className="cb">
+      <dl className="kv" style={{ marginTop: 0 }}>
+        <dt>Created</dt><dd><span className="mono">{stampText(s, card.openedAt)}</span>{" "}
+          <span className="sm">automatically, on the first confirmed receipt</span></dd>
+        <dt>Welcome</dt><dd>{card.access === "Hold" || !card.welcomeAt
+          ? <span className="sm">{card.text}</span> /* D93: the welcome waits for Finance */
+          : <><span className="tag go"><span className="dot" />sent</span>{" "}
+            <span className="mono">{stampText(s, card.welcomeAt)}</span> <span className="sm">by {(card.welcomeChannel || "Email").toLowerCase()}, with the login</span></>}</dd>
+        <dt>How sure</dt><dd><b>{perm ? "Permanent" : "Tentative"}</b>{" "}
+          <span className="sm">{card.markAt ? <>since <span className="mono">{stampText(s, card.markAt)}</span> · automatic</> : null}</span>
+          <div className="sm">{perm
+            ? (lock ? "Locked — it stood for " + age + " days and cannot be taken back."
+              : left == null ? "" : left + " day" + (left === 1 ? "" : "s") + " left in which this can be taken back.")
+            : due == null ? "It turns permanent by itself when the balance is confirmed."
+              : due > 0 ? money(due) + " outstanding. It turns permanent by itself when the balance is confirmed."
+                : "Nothing outstanding — this should be permanent."}</div></dd>
+      </dl>
+      {mode === "live" ? <p className="sm" style={{ margin: "11px 0 0" }}>The console marks an account Tentative once, at the first matched receipt. Permanent is set in Zoho, not here.</p>
+        : may(s, me, "pay") ? (
+          <div className="drwsec"><div className="chips">
+            <button className={`chip ${perm ? "" : "on"}`} disabled={!perm || lock} title={perm && lock ? `Locked after ${APPLOCK} days` : undefined}
+              onClick={perm && !lock ? () => dispatch({ type: "setMark", id: x.id, to: "tentative" }) : undefined}>Take it back to tentative</button>
+            <button className={`chip ${perm ? "on" : ""}`} disabled={perm}
+              onClick={perm ? undefined : () => dispatch({ type: "setMark", id: x.id, to: "permanent" })}>Mark it permanent</button>
+          </div>
+            <p className="sm" style={{ margin: "9px 0 0" }}>The week exists because the week after a large payment is when a mistake surfaces — the wrong investor, the wrong amount, a transfer the bank reverses. After it, the record stands: a thing that can always be un-made is not a record, and putting it right becomes a correction with a reason and a refund behind it.</p></div>
+        ) : <p className="sm" style={{ margin: "11px 0 0" }}>Finance sets this. It says what the app shows this investor and what a report counts them as, which is why it is not a note.</p>}
+    </div></div>
+  );
+}
+
 /* vOne → "hold", and the app account — imx.js 1619–1681 */
-function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne> }) {
-  const { s, me, dispatch, x, ho } = p;
-  const due = dueBy(s, me, x.id);
-  const a = appOf(s, me, x.id);
+function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne>; rec: InvestorRecord }) {
+  const { s, me, dispatch, x, ho, rec } = p;
   return (
     <>
       <div className="card"><div className="ch"><h3>What they hold</h3><div className="sp" />
@@ -373,46 +424,7 @@ function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne> }) {
         {ho.state === "ok" ? <HoldActions {...p} h={ho.data.hold} /> : null}
       </div></div>
       <AllotCard {...p} />
-      {!a ? (
-        <p className="sm" style={{ margin: "8px 0" }}>The app account opens when the first receipt is matched — recording a receipt does not open it.</p>
-      ) : (() => {
-        const lock = markLocked(s, me, x.id), left = markLeft(s, me, x.id), perm = a.mark === "permanent";
-        return (
-          <div className="card fill" style={{ marginTop: 8 }}><div className="ch"><h3>The app account</h3>
-            <div className="sp" /><span className={`tag ${perm ? "go" : "due"}`}><span className="dot" />{perm ? "permanent" : "tentative"}</span></div><div className="cb">
-            <dl className="kv" style={{ marginTop: 0 }}>
-              <dt>Created</dt><dd><span className="mono">{a.at}</span>{" "}
-                <span className="sm">automatically, on the first confirmed receipt</span></dd>
-              <dt>Welcome</dt><dd>{(() => { const acc = accessOf(s, me, x.id); return acc && (acc.App_Access === "Hold" || !acc.App_Welcome_At)
-                ? <span className="sm">{accessView(acc).t}</span> /* D93: the welcome waits for Finance */
-                : <><span className="tag go"><span className="dot" />sent</span>{" "}
-                <span className="mono">{a.welcome.at}</span> <span className="sm">by email, with the login</span></>; })()}</dd>
-              <dt>How sure</dt><dd><b>{perm ? "Permanent" : "Tentative"}</b>{" "}
-                <span className="sm">since <span className="mono">{a.markAt}</span>{a.markBy ? " · " + who(s, a.markBy).n : ""}</span>
-                <div className="sm">{perm
-                  ? (lock ? "Locked — it stood for " + markAge(s, me, x.id) + " days and cannot be taken back."
-                    : left + " day" + (left === 1 ? "" : "s") + " left in which this can be taken back.")
-                  : due > 0 ? money(due) + " outstanding. It turns permanent by itself when the balance is confirmed."
-                    : "Nothing outstanding — this should be permanent."}</div></dd>
-            </dl>
-            {may(s, me, "pay") ? (
-              <div className="drwsec"><div className="chips">
-                <button className={`chip ${perm ? "" : "on"}`} disabled={!perm || lock} title={perm && lock ? `Locked after ${APPLOCK} days` : undefined}
-                  onClick={perm && !lock ? () => dispatch({ type: "setMark", id: x.id, to: "tentative" }) : undefined}>Take it back to tentative</button>
-                <button className={`chip ${perm ? "on" : ""}`} disabled={perm}
-                  onClick={perm ? undefined : () => dispatch({ type: "setMark", id: x.id, to: "permanent" })}>Mark it permanent</button>
-              </div>
-                <p className="sm" style={{ margin: "9px 0 0" }}>The week exists because the week after a large payment is when a mistake surfaces — the wrong investor, the wrong amount, a transfer the bank reverses. After it, the record stands: a thing that can always be un-made is not a record, and putting it right becomes a correction with a reason and a refund behind it.</p></div>
-            ) : <p className="sm" style={{ margin: "11px 0 0" }}>Finance sets this. It says what the app shows this investor and what a report counts them as, which is why it is not a note.</p>}
-            {a.hist.length ? <div className="drwsec"><p className="lbl">Every change</p>
-              {a.hist.map((h, i) => (
-                <div className="led" key={i}><span className="tag">{h.to}</span>
-                  <span style={{ minWidth: 0 }}><span className="sm"><span className="mono">{h.from}</span>{" → "}
-                    <span className="mono">{h.until}</span>{h.by ? " · set by " + who(s, h.by).n : " · automatic"}</span></span></div>
-              ))}</div> : null}
-          </div></div>
-        );
-      })()}
+      <AppAccount {...p} due={rec.money ? rec.money.due : null} />
       <AppAccessCard {...p} />
       <ArlHoldings {...p} />
     </>

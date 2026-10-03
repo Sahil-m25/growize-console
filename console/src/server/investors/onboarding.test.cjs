@@ -324,6 +324,38 @@ test('card: an account on hold, with its history, for Finance; read-only for eve
   assert.equal(r.writes().length, 0);
 });
 
+test('M08-S08: the card carries the account\'s mark — Tentative from the first matched receipt, Permanent once Zoho says so; opened = the oldest App_Access change', async () => {
+  let r = rig({ contact: 'contact.hold-tentative' });
+  let res = await r.app.card(principal(), CONTACT);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([res.value.mark, res.value.markAt, res.value.openedAt, res.value.state], ['Tentative', '2026-09-20T11:00:00+05:30', '2026-09-20T11:00:00+05:30', 'hold']);
+  const read = r.calls.find((c) => c[0] === 'GET' && c[1] === `/Contacts/${CONTACT}`);
+  assert.match(read[2].fields, /App_Account_Mark,App_Mark_At/, 'the mark is read with the card, on the person\'s token');
+  r = rig({ contact: 'contact.hold-permanent' });
+  res = await r.app.card(principal(), CONTACT);
+  assert.deepEqual([res.value.mark, res.value.markAt], ['Permanent', '2026-09-21T10:00:00+05:30']);
+  r = rig();
+  res = await r.app.card(principal(), CONTACT);
+  assert.deepEqual([res.value.mark, res.value.markAt], [null, null], 'no mark on the Contact (empty): the card says none, not tentative');
+});
+
+test('M08-S08: a Zoho that refuses a mark field does not take the card down — it is read again without the mark', async () => {
+  const r = rig({ contact: (n) => (n === 0 ? 'contact.read-invalid-field' : 'contact.hold') });
+  const res = await r.app.card(principal(), CONTACT);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([res.value.state, res.value.mark, res.value.markAt], ['hold', null, null]);
+  const reads = r.calls.filter((c) => c[0] === 'GET' && c[1] === `/Contacts/${CONTACT}`);
+  assert.equal(reads.length, 2);
+  assert.doesNotMatch(reads[1][2].fields, /App_Account_Mark|App_Mark_At/);
+});
+
+test('M08-S08: if the card cannot be read even without the mark, it is a source error — never an empty account', async () => {
+  const r = rig({ contact: 'contact.read-invalid-field' });
+  const res = await r.app.card(principal(), CONTACT);
+  assert.deepEqual([res.ok, res.kind], [false, 'source-error']);
+  assert.equal(r.calls.filter((c) => c[0] === 'GET' && c[1] === `/Contacts/${CONTACT}`).length, 2, 'asked twice, then the source error stands');
+});
+
 test('Send welcome and unlock: App_Access Hold → Invite, guarded by Modified_Time, and nothing mailed from the console', async () => {
   const r = rig({ contact: (n) => (n === 0 ? 'contact.hold' : 'contact.invite'), timeline: 'timeline.unlocked' });
   const res = await r.app.unlock(principal(), CONTACT, T1);
