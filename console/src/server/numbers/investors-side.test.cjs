@@ -234,3 +234,41 @@ test('a token Zoho refuses on Receipts (no Receipts read) is refused as money-hi
   assert.deepEqual(got, { ok: false, kind: 'refused', reason: 'money-hidden' });
   assert.equal(r.planeSink.events().length, 1);
 });
+
+/* M16-S08-T02 — Service: the AM service's view, served through the same door (the reader itself is tested in
+   ../investors/am-service.test.cjs); here the door's rules: who may ask, what is refused, what never carries money. */
+const svcView = { book: 'head', team: 3, tiles: { goneQuiet: 4, insideCadencePct: 50, ticketsPastWindow: 3, endedOnConcern: 1 }, tiers: { A: 2, B: 4, C: 2 },
+  load: { perMonth: 3.1, poolPerMonth: 0.5 }, managers: [{ id: KAM, name: 'Imran Sheikh', left: false, accounts: 4, tierA: 1, goneQuiet: 2, conversations: 9, openTickets: 3, onConcern: 1 }],
+  pool: { accounts: 2, tierA: 0, goneQuiet: 0, shouldBeNamed: 1 }, accounts: [{ id: 'x', name: 'row not served here' }], problems: [], asOf: NOW };
+const withService = (r, service) => createInvestorsSide({ crm: r.crm, cache: r.cache, log: createOpsLog(createMemorySink()), clock: () => NOW, service });
+
+test('M16-S08 Service: the Head of AM and a KAM read it; the answer is the tiles, tiers, load, managers and pool — no row, no rupee', async () => {
+  const r = await rig();
+  let asked = 0;
+  const side = withService(r, async () => { asked++; return { ok: true, view: svcView }; });
+  for (const [id, seat] of [[AMLEAD, 'amlead'], [KAM, 'kam']]) {
+    const got = await side.read({ credential: await r.cred(id), seat }, 'svc');
+    assert.equal(got.ok, true, seat);
+    assert.deepEqual(Object.keys(got.value).sort(), ['asOf', 'book', 'load', 'managers', 'pool', 'problems', 'section', 'stale', 'team', 'tiers', 'tiles']);
+    assert.equal(got.value.section, 'svc');
+    assert.doesNotMatch(JSON.stringify(got.value), /"(accounts":\[|amount|banked|outstanding|Unit_Price)/);
+  }
+  assert.equal(asked, 2);
+  assert.equal(r.queries.length, 0, 'Service spends no Receipts or Contacts query of its own');
+});
+
+test('M16-S08 Service: an IR has no Investors side; a seat that is not Account Management is refused no-book by the AM service; no service wired is an invalid request', async () => {
+  const r = await rig();
+  const side = withService(r, async () => ({ ok: false, kind: 'refused', reason: 'seat-denied' }));
+  assert.equal((await side.read({ credential: await r.cred(IR), seat: 'ir' }, 'svc')).reason, 'no-book');
+  assert.deepEqual(await side.read({ credential: await r.cred(HEAD), seat: 'head' }, 'svc'), { ok: false, kind: 'refused', reason: 'no-book' });
+  assert.equal((await r.side.read({ credential: await r.cred(HEAD), seat: 'head' }, 'svc')).reason, 'invalid-request');
+});
+
+test('M16-S08 Service: a Zoho failure is a source error with its kind, never an empty Service', async () => {
+  const r = await rig();
+  const side = withService(r, async () => ({ ok: false, kind: 'source-error', errorKind: 'network', retryable: true }));
+  assert.deepEqual(await side.read({ credential: await r.cred(AMLEAD), seat: 'amlead' }, 'svc'), { ok: false, kind: 'source-error', errorKind: 'network', retryable: true, lastGoodAt: null });
+  const boom = withService(r, async () => { throw new Error('x'); });
+  assert.equal((await boom.read({ credential: await r.cred(AMLEAD), seat: 'amlead' }, 'svc')).kind, 'source-error');
+});

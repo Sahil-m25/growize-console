@@ -1,20 +1,22 @@
 /* M16-S08-W1 / M16-S09-W1 — Numbers, Investors side: which sections this seat is offered and each section's figures
-   (GET /api/numbers/investors-side, then ?section=cash|risk|paper|comp).
+   (GET /api/numbers/investors-side, then ?section=cash|risk|paper|comp|svc). Service (M16-S08-W2) is the AM service's
+   answer (server/investors/am-service): the four tiles, tier counts, load, managers and pool — a KAM or the Head of AM only;
+   a seat that is not Account Management is refused 403 no-book (live and fixture alike).
    Live: the route (money sections refused 403 money-hidden to a seat without Receipts read; Collection is a scope-keyed aggregate).
-   Fixture: the same answers projected from the demo book. Service has no route (SERVED = cash, risk, paper, comp): it stays
-   on the book — PROVISIONAL. */
+   Fixture: the same answers projected from the demo book. */
 
 import type { InvestorsSideAccess, InvestorsSideSection, InvestorsSideValue } from "@/server/numbers/investors-side";
 import {
-  aged, banked, I, isAM, nowFull, when, pageReadable, PROGRAMME_UNITS, stuckDocs, UNIT, who,
+  aged, banked, cared, I, isAM, KAMS, lastC, may, nowFull, overdue, poolBook, quiet, readBook, ROLE, tierOf, when, pageReadable, PROGRAMME_UNITS, stuckDocs, UNIT, who,
 } from "@/lib/im";
 import { fail, ok, type ReadEndpoint } from "../api";
 import type { ImBook } from "./im";
+import { amManagersView } from "./investors";
 import { outstandingMatched } from "./today";
 
 const IST_MS = 5.5 * 3_600_000;
 export type SideOffer = { side: InvestorsSideAccess | null };
-type Served = Exclude<InvestorsSideSection, "svc">;
+type Served = InvestorsSideSection;
 export type SectionValue<K extends Served = Served> = Extract<InvestorsSideValue, { section: K }> & { asOf: number; stale: boolean };
 export type AnySection = SectionValue;
 
@@ -30,13 +32,28 @@ export const investorsSideOffer: ReadEndpoint<ImBook, void, SideOffer> = {
   },
 };
 
-/** null (or "svc", which no route serves) → nothing to read. */
+/** null → nothing to read. */
 export const investorsSection: ReadEndpoint<ImBook, InvestorsSideSection | null, AnySection> = {
-  path: k => (k && k !== "svc" ? `/api/numbers/investors-side?section=${encodeURIComponent(k)}` : null),
+  path: k => (k ? `/api/numbers/investors-side?section=${encodeURIComponent(k)}` : null),
   pick: j => j as AnySection,
   fixture({ s, me }, k) {
-    if (!k || k === "svc") return fail(400, "invalid-request", "That is not a Numbers section.");
+    if (!k) return fail(400, "invalid-request", "That is not a Numbers section.");
     if (!pageReadable(s, me, "ins")) return NO_BOOK();
+    if (k === "svc") {
+      /* PROVISIONAL: the route serves Service to a KAM or the Head of AM (the AM book is theirs to read); the demo also shows it to the
+         money seats whose token reads the whole book, as the screen did before the route — live they are refused until that reader exists. */
+      const am = amManagersView(s, me);
+      const book = readBook(s, me).filter(cared), late = book.filter(x => quiet(s, me, x));
+      const kept = book.filter(x => { const o = overdue(s, me, x); return o != null && o <= 0; }).length;
+      const tk = s.data.TKT.filter(t => I(s, me, t.inv) && (!isAM(s, me) || (may(s, me, "assign") ? (ROLE[(s.data.P[t.own] || { r: "audit" }).r] || {}).tm === "am" : t.own === me))).filter(t => t.state !== "closed");
+      const tiers = { A: 0, B: 0, C: 0 }; book.forEach(x => { tiers[tierOf(x)!.k as "A" | "B" | "C"]++; });
+      const load = (b: typeof book) => Math.round(b.reduce((a, y) => a + 30 / tierOf(y)!.every, 0) * 10) / 10;
+      return ok({ section: "svc", asOf: nowFull(s.data.NOW) - IST_MS, stale: false, book: may(s, me, "assign") ? "head" : "kam", managers: am.managers, pool: am.pool, team: KAMS(s).length, tiers,
+        load: { perMonth: load(book), poolPerMonth: load(poolBook(s, me)) }, problems: [],
+        tiles: { goneQuiet: late.length, insideCadencePct: book.length ? Math.round(kept / book.length * 100) : 100,
+          ticketsPastWindow: tk.filter(t => (aged(s.data.NOW, t.opened) || 0) > (t.pri === "high" ? 2 : 5)).length,
+          endedOnConcern: book.filter(x => lastC(s, me, x.id)?.mood === "concern").length } });
+    }
     if (isAM(s, me)) return k === "cash" || k === "risk" ? MONEY_HIDDEN() : NO_BOOK();
     const asOf = nowFull(s.data.NOW) - IST_MS, at = { asOf, stale: false };
     if (k === "cash") {

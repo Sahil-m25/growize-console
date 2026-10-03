@@ -1,12 +1,14 @@
-/* GET /api/numbers/investors-side[?section=cash|risk|paper|comp] — the Investors side of Numbers (M16-S08-T01,
+/* GET /api/numbers/investors-side[?section=cash|risk|paper|comp|svc] — the Investors side of Numbers (M16-S08-T01,
    M16-S09-T01). Without a section: the sections this seat is offered (null = no Investors side switch). With one:
-   that section, live from Zoho on the person's own token; Collection is a scope-keyed cached aggregate (D53).
+   that section, live from Zoho on the person's own token (svc = Service, M16-S08-T02: the AM service's tiles, tiers, load and managers); Collection is a scope-keyed cached aggregate (D53).
    A money section asked for by a seat without Receipts read (KAM, Head of AM) is refused server-side, before any
    cache or Zoho read, and the refusal is written to Plane C. */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { NO_STORE, routeContext } from "@/server/cases/http";
 import { authorityEvents } from "@/server/identity/authority";
+import { amServiceContext } from "@/server/investors/am-runtime";
+import type { AmService } from "@/server/investors/am-service";
 import { createInvestorsSide, investorsSideFor } from "@/server/numbers/investors-side";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +27,13 @@ async function get(req: Request) {
   const { dataRuntime } = await import("@/server/data/zoho-source");
   const { documentsSignStatus } = await import("@/server/documents/runtime");
   const a = authorityEvents();
-  const r = await createInvestorsSide({ crm: c.ctx.crm, cache: c.ctx.cache, log: dataRuntime().log, signStatus: documentsSignStatus(), refusedAction: (w, s, x) => a.refusedAction(w, s, x) })
+  let service: ((signal?: AbortSignal) => ReturnType<AmService["read"]>) | undefined;
+  if (section === "svc") {
+    const sc = await amServiceContext();
+    if (!sc.ok) return sc.response;
+    service = (signal) => sc.service.read(sc.principal, signal);
+  }
+  const r = await createInvestorsSide({ service, crm: c.ctx.crm, cache: c.ctx.cache, log: dataRuntime().log, signStatus: documentsSignStatus(), refusedAction: (w, s, x) => a.refusedAction(w, s, x) })
     .read({ credential: c.ctx.credential, seat: c.ctx.seat }, section, req.signal);
   if (r.ok) return Response.json(r.value, { headers: NO_STORE });
   if (r.kind === "refused") {

@@ -5,34 +5,25 @@
    of Numbers. The money view, and only the money view — the funnel belongs to the lead side. */
 
 import type { KeyboardEvent } from "react";
-import {
-  bookOf, cadence, cared, cOf_all, fmtDay, I, inr, isAM, KAMS, lastC, may,
-  money, needsKam, overdue, pageReadable, poolBook, quiet,
-  readBook, ROLE, secOf, tierOf, TIERS, FORFEIT, aged,
-} from "@/lib/im";
-import type { ImInvestor, ImState } from "@/lib/im";
+import { fmtDay, inr, isAM, money, pageReadable, secOf, TIERS, FORFEIT } from "@/lib/im";
 import { useApiRead, type Read } from "@/lib/data/api";
 import { investorsSection, investorsSideOffer, type SectionValue } from "@/lib/data/endpoints/numbers";
 import type { InvestorsSideSection } from "@/server/numbers/investors-side";
 import { ImPname, ImSecBar, ProvIR, type ImPageProps } from "../common";
+import type { ImState } from "@/lib/im";
 
-/* amCards(book, mine) — imx.js 1394–1411 */
-function AmCards({ s, me, book, mine }: { s: ImState; me: string; book: ImInvestor[]; mine: boolean }) {
-  const nK = KAMS(s).length;
-  const l = Math.round(book.reduce((a, y) => a + 30 / cadence(y), 0) * 10) / 10;
-  const pl = Math.round(poolBook(s, me).reduce((a, y) => a + 30 / cadence(y), 0) * 10) / 10;
+/* amCards(book, mine) — imx.js 1394–1411. M16-S08-W2: the tier counts, the manager count and the monthly load are the Service route's. */
+function AmCards({ v, mine }: { v: Extract<SectionValue, { section: "svc" }>; mine: boolean }) {
+  const nK = v.team ?? v.managers.filter(m => !m.left).length, l = v.load.perMonth, pl = v.load.poolPerMonth;
   return (
     <div>
       <div className="card"><div className="ch"><h3>The cadence</h3><div className="sp"></div>
         <span className="sm">{mine ? "your book, by tier" : "the whole book, by tier"}</span></div><div className="cb">
-        {TIERS.map(t => {
-          const n = book.filter(x => (tierOf(x) || { k: "" }).k === t.k).length;
-          return (
-            <div className="led" key={t.k}><span className={`tag ${t.k === "A" ? "br" : ""}`}>{t.t}</span>
-              <span style={{ minWidth: 0 }}><b>{t.min}{t.k === "A" ? "+" : t.k === "B" ? "–3" : ""} unit{t.min > 1 ? "s" : ""}</b>
-                <div className="sm">{t.t2}</div></span><span className="amt">{n}</span></div>
-          );
-        })}
+        {TIERS.map(t => (
+          <div className="led" key={t.k}><span className={`tag ${t.k === "A" ? "br" : ""}`}>{t.t}</span>
+            <span style={{ minWidth: 0 }}><b>{t.min}{t.k === "A" ? "+" : t.k === "B" ? "–3" : ""} unit{t.min > 1 ? "s" : ""}</b>
+              <div className="sm">{t.t2}</div></span><span className="amt">{v.tiers[t.k as "A" | "B" | "C"]}</span></div>
+        ))}
         <p className="sm" style={{ margin: "10px 0 0" }}>{"A tier is not a judgement about the investor. It is a statement about what "
           + nK + " " + (nK === 1 ? "person" : "people") + " can deliver, written down before it is promised — which is the only version of a service promise anybody keeps. "
           + (mine ? "That is" : "Across the whole book that is") + " "
@@ -57,18 +48,18 @@ export function ImIns({ s, me, dispatch }: ImPageProps) {
   const sections = offer.state === "ok" && offer.data.side ? offer.data.side.sections : [];
   const S = secOf(s.ui.SEC, "ins", sections.map(k => ({ k })));
   /* Compliance is read whenever it is offered (its tab carries the count); the open section is read on its own */
-  const compRead = useApiRead(investorsSection, book, sections.includes("comp") ? "comp" : null);
-  const secRead = useApiRead(investorsSection, book, S === "comp" ? null : (S as InvestorsSideSection));
-  if (!pageReadable(s, me, "ins")) return null;
   const am = isAM(s, me);
-  const D = s.data;
-  const SECS = sections.map(k => k === "svc" ? { k, t: LABEL[k], n: readBook(s, me).filter(x => cared(x) && quiet(s, me, x)).length, warn: true }
+  const compRead = useApiRead(investorsSection, book, sections.includes("comp") ? "comp" : null);
+  /* Service (M16-S08-W2) is read for its tab's count by an Account Management seat; any seat that opens it is told by the route */
+  const svcRead = useApiRead(investorsSection, book, sections.includes("svc") && (am || S === "svc") ? "svc" : null);
+  const secRead = useApiRead(investorsSection, book, S === "comp" || S === "svc" ? null : (S as InvestorsSideSection));
+  if (!pageReadable(s, me, "ins")) return null;
+  const SECS = sections.map(k => k === "svc" ? { k, t: LABEL[k], ...(svcRead.state === "ok" && svcRead.data.section === "svc" ? { n: svcRead.data.tiles.goneQuiet } : {}), warn: true }
     : k === "comp" ? { k, t: LABEL[k], ...(compRead.state === "ok" && compRead.data.section === "comp" ? { n: compRead.data.count } : {}), warn: true }
       : { k, t: LABEL[k] });
   const goTxn = () => dispatch({ type: "go", v: "txn" });
   const goInv = (id: string) => dispatch({ type: "go", v: "inv", id });
-  const r: Read<SectionValue> = S === "comp" ? compRead : secRead;
-  void D;
+  const r: Read<SectionValue> = S === "comp" ? compRead : S === "svc" ? svcRead : secRead;
 
   return (
     <>
@@ -78,7 +69,8 @@ export function ImIns({ s, me, dispatch }: ImPageProps) {
       {offer.state !== "ok" ? <Wait r={offer} /> : null}
       {SECS.length ? <ImSecBar s={s} dispatch={dispatch} v="ins" list={SECS} /> : null}
       <div className="secw">
-        {S === "svc" ? <Svc s={s} me={me} /> : SECS.length && r.state !== "ok" ? <Wait r={r} />
+        {SECS.length && r.state !== "ok" ? <Wait r={r} />
+          : r.state === "ok" && r.data.section === "svc" ? <Svc v={r.data} s={s} me={me} am={am} />
           : r.state === "ok" && r.data.section === "cash" ? <Cash v={r.data} goTxn={goTxn} />
             : r.state === "ok" && r.data.section === "risk" ? <Risk v={r.data} />
               : r.state === "ok" && r.data.section === "paper" ? <Paper v={r.data} goInv={goInv} />
@@ -153,26 +145,20 @@ function Paper({ v, goInv }: { v: Extract<SectionValue, { section: "paper" }>; g
   );
 }
 
-function Svc({ s, me }: { s: ImState; me: string }) {
+function Svc({ v, s, am }: { v: Extract<SectionValue, { section: "svc" }>; s: ImState; me: string; am: boolean }) {
   /* Scoped the same way the queue is. A quiet-account list a manager cannot act on is not
-     oversight, it is a list of other people's problems with a link on each row. */
-  const D = s.data;
-  const mgr = may(s, me, "assign"), book = readBook(s, me).filter(cared);
-  const late = book.filter(x => quiet(s, me, x));
-  const moodOf = (x: ImInvestor) => { const l = lastC(s, me, x.id); return l ? l.mood : "never"; };
-  const MOODN: Record<string, number> = { good: 0, ok: 0, concern: 0, never: 0 };
-  book.forEach(x => { MOODN[moodOf(x)]++; });
-  const kept = book.filter(x => { const o = overdue(s, me, x); return o != null && o <= 0; }).length;
-  const tk = D.TKT.filter(t => I(s, me, t.inv) && (!isAM(s, me) || (mgr ? (ROLE[(D.P[t.own] || { r: "audit" }).r] || {}).tm === "am" : t.own === me)))
-    .filter(t => t.state !== "closed");
-  const slaLate = tk.filter(t => (aged(D.NOW, t.opened) || 0) > (t.pri === "high" ? 2 : 5)).length;
+     oversight, it is a list of other people's problems with a link on each row.
+     M16-S08-W2: every figure is GET /api/numbers/investors-side?section=svc (the Head of AM gets the manager table). */
+  const mgr = v.book === "head", t = v.tiles;
+  const person = (id: string, name: string | null) => (s.data.P[id] ? <ImPname s={s} k={id} b /> : <b>{name ?? "A manager"}</b>);
+  const flag = (n: number, text: string, key: string) => (n ? <span key={key} className="tag late">{n + " " + text}</span> : null);
   return (
     <>
       <div className="stats">
-        <div className={`stat ${late.length ? "bad" : ""}`}><b>{late.length}</b><span>accounts gone quiet</span></div>
-        <div className="stat"><b>{book.length ? Math.round(kept / book.length * 100) : 100}%</b><span>inside their cadence</span></div>
-        <div className={`stat ${slaLate ? "bad" : ""}`}><b>{slaLate}</b><span>tickets past their window</span></div>
-        <div className={`stat ${MOODN.concern ? "bad" : ""}`}><b>{MOODN.concern}</b><span>ended on a concern</span></div>
+        <div className={`stat ${t.goneQuiet ? "bad" : ""}`}><b>{t.goneQuiet}</b><span>accounts gone quiet</span></div>
+        <div className="stat"><b>{t.insideCadencePct}%</b><span>inside their cadence</span></div>
+        <div className={`stat ${t.ticketsPastWindow ? "bad" : ""}`}><b>{t.ticketsPastWindow ?? "—"}</b><span>tickets past their window</span></div>
+        <div className={`stat ${t.endedOnConcern ? "bad" : ""}`}><b>{t.endedOnConcern}</b><span>ended on a concern</span></div>
       </div>
       {mgr ? (
         <div className="card"><div className="ch"><h3>By manager</h3><div className="sp"></div>
@@ -180,32 +166,29 @@ function Svc({ s, me }: { s: ImState; me: string }) {
           <thead><tr><th>Manager</th><th className="n">Accounts</th><th className="n">Tier A</th>
             <th className="n">Gone quiet</th><th className="n">Conversations</th><th className="n">Open tickets</th>
             <th>Read of the book</th></tr></thead>
-          <tbody>{KAMS(s).concat(["__pool"]).map(k => {
-            const b = k === "__pool" ? poolBook(s, me) : bookOf(s, me, k);
-            if (!b.length && k === "__pool") return null;
-            const q = b.filter(y => quiet(s, me, y)).length, a = b.filter(y => (tierOf(y) || { k: "" }).k === "A").length;
-            const cs = cOf_all(s, me).filter(c => k !== "__pool" && c.by === k).length;
-            const conc = b.filter(y => { const l = lastC(s, me, y.id); return !!l && l.mood === "concern"; }).length;
-            const nk = b.filter(needsKam).length;
-            const flags = [conc ? <span key="c" className="tag late">{conc} on a concern</span> : null,
-              nk ? <span key="n" className="tag late">{nk} should be named</span> : null].filter(Boolean);
+          <tbody>{v.managers.filter(m => !m.left).map(m => {
+            const flags = [flag(m.onConcern, "on a concern", "c")].filter(Boolean);
             return (
-              <tr key={k}><td>{k === "__pool" ? <><b>The shared pool</b><div className="sm">no named manager</div></>
-                : <ImPname s={s} k={k} b />}</td>
-                <td className="n">{b.length}</td><td className="n">{a}</td>
-                <td className="n"><span className={`tag ${q ? "late" : "go"}`}>{q || "none"}</span></td>
-                <td className="n">{k === "__pool" ? "—" : cs}</td>
-                <td className="n">{k === "__pool" ? "—" : D.TKT.filter(t => I(s, me, t.inv) && t.state !== "closed" && t.own === k).length}</td>
-                <td className="sm">{flags.length ? (flags.length === 2 ? <>{flags[0]} {flags[1]}</> : flags[0])
-                  : (b.length ? <span className="tag go">nothing flagged</span> : "—")}</td></tr>
+              <tr key={m.id}><td>{person(m.id, m.name)}</td>
+                <td className="n">{m.accounts}</td><td className="n">{m.tierA}</td>
+                <td className="n"><span className={`tag ${m.goneQuiet ? "late" : "go"}`}>{m.goneQuiet || "none"}</span></td>
+                <td className="n">{m.conversations ?? "—"}</td><td className="n">{m.openTickets ?? "—"}</td>
+                <td className="sm">{flags.length ? flags[0] : (m.accounts ? <span className="tag go">nothing flagged</span> : "—")}</td></tr>
             );
           })}
+          {v.pool && v.pool.accounts ? (
+            <tr key="__pool"><td><b>The shared pool</b><div className="sm">no named manager</div></td>
+              <td className="n">{v.pool.accounts}</td><td className="n">{v.pool.tierA}</td>
+              <td className="n"><span className={`tag ${v.pool.goneQuiet ? "late" : "go"}`}>{v.pool.goneQuiet || "none"}</span></td>
+              <td className="n">—</td><td className="n">—</td>
+              <td className="sm">{v.pool.shouldBeNamed ? flag(v.pool.shouldBeNamed, "should be named", "n") : <span className="tag go">nothing flagged</span>}</td></tr>
+          ) : null}
           </tbody></table></div>
           <div className="cb" style={{ paddingTop: "9px" }}><p className="sm" style={{ margin: 0 }}><b>What this measures,
             and what it does not.</b>{" Every column here is service — was the conversation had, was the ticket answered, did the account end the call warm. None of it is outcome: a manager can score perfectly on this table while not one of their accounts ever buys a second unit. That is a deliberate choice for now, and it is the same objection that was put to the lead side before it started naming the work — worth revisiting once this team has a year behind it."}</p>
           </div></div>
       ) : null}
-      {isAM(s, me) ? <AmCards s={s} me={me} book={book} mine={!mgr} /> : null}
+      {am ? <AmCards v={v} mine={!mgr} /> : null}
     </>
   );
 }
