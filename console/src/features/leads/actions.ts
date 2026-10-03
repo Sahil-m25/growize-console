@@ -53,13 +53,13 @@ export function useTick(): (l: Lead) => Refusal {
   );
 }
 
-/* untick(id) — 03-app.js:1432. Two refusals and one confirmation, in that order. The confirmation
-   is the browser's, as the prototype's is: there is no dialog in the design system, and inventing
-   one would be a new pattern rather than a port. */
-export function useUntick(): (l: Lead) => Refusal {
+/* untick(id) — 03-app.js:1432. Two refusals and one confirmation, in that order. The confirmation is
+   asked in the page (M01-S07-T04, no native dialog): the first call returns the question as text, the
+   screen shows it, and calls again with `confirmed` true. */
+export function useUntick(): (l: Lead, confirmed?: boolean) => Refusal {
   const { state, dispatch } = useConsole();
   return useCallback(
-    (l: Lead) => {
+    (l: Lead, confirmed = false) => {
       if (!l || l.done <= 1) return null;
       const u = undoStage(state, l);
       if (!u.ok)
@@ -74,13 +74,8 @@ export function useUntick(): (l: Lead) => Refusal {
           money(p.got) +
           " held against a lead that is not reserved.\n\nThe payment has to be reversed or the reservation lapsed first."
         );
-      if (
-        typeof window !== "undefined" &&
-        !window.confirm(
-          'Un-tick "' + LADDER[l.done - 1].t + '"? This is logged with your name and needs a reason.',
-        )
-      )
-        return null;
+      if (!confirmed)
+        return 'Un-tick "' + LADDER[l.done - 1].t + '"? This is logged with your name and needs a reason.';
       dispatch({ type: "untick", id: l.id });
       return null;
     },

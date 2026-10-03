@@ -76,6 +76,10 @@ jobs:
       - name: Accessibility lint
         run: npm run lint:a11y
 
+      # M01-S07-T04: no alert( / confirm( / prompt( in app code; refusals and questions are asked in the page.
+      - name: No native dialogs (grep gate)
+        run: npm run check:dialogs
+
       - name: Server tests (node --test, src/**/*.test.cjs)
         run: node scripts/run-tests.cjs
 
