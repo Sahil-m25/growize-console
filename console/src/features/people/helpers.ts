@@ -21,6 +21,7 @@ import {
   acting,
   active,
   canManage,
+  capDevOf,
   hasCap,
   lost,
   outFor,
@@ -34,6 +35,7 @@ import {
   roleOf,
   secOK,
 } from "@/lib/selectors";
+import type { CapDeviation, Grants } from "@/lib/selectors";
 import type { Action, ConsoleState } from "@/lib/store";
 
 /* a borrowed page is never lent onward, so this reads `own` and never `may` */
@@ -68,11 +70,12 @@ export const absOpen = (s: ConsoleState, k: PersonKey): Action => {
 };
 
 /* opening one member: the drawer, and the selection the seat control reads. 03-app.js:5504 */
-export const openPerson = (k: PersonKey): Action => ({
+export const openPerson = (k: PersonKey, row?: { name: string; seatLabel: string }): Action => ({
   type: "openDrawer",
   k: "person",
   id: k,
-  seed: { PSEL: k },
+  /* live the book holds nobody, so the row names who it opens (the drawer's title and line under it) */
+  seed: { PSEL: k, ...(row ? { PNAME: row.name, PSUB: row.seatLabel } : {}) },
 });
 
 /** how many of the fourteen pages there are — `Object.keys(PAGECAPS).length` */
@@ -91,24 +94,13 @@ export function screensOf(s: ConsoleState, k: PersonKey): NavKey[] {
 export const screenCount = (): number =>
   (Object.keys(PAGECAPS) as NavKey[]).filter((p) => !PAGECAPS[p]!.nopage).length;
 
-/** the part of somebody's access that nobody's seat gave them. 03-app.js (redesigned):2944 */
-export type CapDeviation = { p: NavKey; off: Cap[]; on: Cap[]; gone: boolean };
-export function capDev(s: ConsoleState, k: PersonKey): CapDeviation[] {
-  const grant = s.CAPS[k] || {};
-  const out: CapDeviation[] = [];
-  (Object.keys(grant) as NavKey[]).forEach((p) => {
-    if (!(PAGECAPS as Record<string, unknown>)[p] || reachBase(s.PEOPLE, k, s.CAPS).indexOf(p) < 0) return;
-    const seat = ((SEATCAPS as Record<string, Record<string, Cap[]>>)[roleOf(s.PEOPLE, k) || ""] || {})[p] || [];
-    const now = grant[p] || [];
-    const off = seat.filter((c) => now.indexOf(c) < 0);
-    const on = now.filter((c) => seat.indexOf(c) < 0);
-    if (off.length || on.length) out.push({ p, off, on, gone: now.indexOf("view") < 0 });
-  });
-  return out;
-}
+/** the part of somebody's access that nobody's seat gave them (the one read is @/lib/selectors capDevOf) */
+export type { CapDeviation };
+export const capDev = (s: ConsoleState, k: PersonKey): CapDeviation[] => capDevOf(s.PEOPLE, s.CAPS as Grants, k);
 /** the same deviation in words, so the row, the hover and the grid all say it the same way */
-export function devWhy(s: ConsoleState, k: PersonKey): string {
-  return capDev(s, k)
+export const devWhy = (s: ConsoleState, k: PersonKey): string => devWords(capDev(s, k));
+export function devWords(devs: readonly CapDeviation[]): string {
+  return devs
     .map((d) => {
       const t = (PAGECAPS as Record<string, { t: string }>)[d.p]?.t ?? d.p;
       if (d.gone) return t + ": taken away";

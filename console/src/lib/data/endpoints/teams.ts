@@ -3,12 +3,13 @@
    sees herself and her reporting chain, Finance/AM/KAM/viewers the Investors side seats, Digital Infrastructure
    everyone). Fixture: the same rows projected from the demo book with the selectors the screens used. */
 
-import type { NavKey, SeatKey } from "@/domain";
+import type { NavKey, PersonKey, SeatKey } from "@/domain";
 import { PAGECAPS, SEAT } from "@/domain";
 import type { ConsoleState } from "@/lib/state";
-import { canManage, consoleAccount, hasCap, manageable, mgrOf, navFor, P, reachOf, teamName, teamOfPerson } from "@/lib/selectors";
+import { canManage, capDevOf, clashOf, consoleAccount, hasCap, manageable, mgrOf, navFor, P, reachOf, teamName, teamOfPerson, type CapDeviation, type Grants } from "@/lib/selectors";
+import { availCover, availStatus } from "@/features/people/helpers";
 import { bookOf, isSys, may, maySeat, pageReadable, role, ROLE, teamOf, who, type ImCan, type ImRoleKey, type ImState } from "@/lib/im";
-import type { GridColumn, InvestorsSeatRow, LeadMemberRow, TeamsView } from "@/server/teams/teams";
+import type { GridColumn, InvestorsSeatRow, LeadMemberRow, MemberDetail, TeamsView } from "@/server/teams/teams";
 import { fail, ok, type ReadEndpoint } from "../api";
 import type { ImBook } from "./im";
 
@@ -27,6 +28,9 @@ export type TeamsAnswer = {
    non-Administrator Zoho role), less the super user's. The Auditor and Administrator seats have no D80 role. */
 const WRITABLE: readonly ImRoleKey[] = ["head", "ops", "comp", "amlead", "kam"];
 
+/** The screens they reach (features/people screensOf: the reach, less no-page routes, where they hold "view"). */
+const pagesOf = (s: ConsoleState, k: PersonKey): number => reachOf(s, k).filter((p) => !PAGECAPS[p as NavKey]?.nopage && hasCap(s, k, p, "view")).length;
+
 /** The lead side's Members rows: the viewer and everyone they manage (vMembers' scope). */
 export function fixtureMembers(s: ConsoleState): MemberRow[] | null {
   if (!s.PEOPLE[s.WHO] || !navFor(s).some((n) => n.k === "people")) return null;
@@ -39,7 +43,7 @@ export function fixtureMembers(s: ConsoleState): MemberRow[] | null {
       status: pp.on ? "active" : "left", you: k === s.WHO, canOpen: !!pp.on && canManage(s, k),
       investorsSide: !!pp.ext, loginHere: !!pp.on && consoleAccount(s.PEOPLE, k, s.CAPS),
       /* the screens they reach (features/people screensOf: the reach, less no-page routes, where they hold "view") */
-      pages: reachOf(s, k).filter((p) => !PAGECAPS[p as NavKey]?.nopage && hasCap(s, k, p, "view")).length,
+      pages: pagesOf(s, k),
       leads: s.LEADS.filter((l) => l.own === k).length,
     };
   });
@@ -103,5 +107,46 @@ export const teamSeats: ReadEndpoint<ImBook, void, SeatsAnswer> = {
     const rows = fixtureSeats(s, me);
     return rows ? ok({ investorsSide: rows, grid: fixtureGrid() })
       : fail(403, "no-teams", "Teams is for the people who look after seats and teams. Your manager can tell you who is on your team.");
+  },
+};
+
+
+/* M17-S01-W2 — the person drawer: GET /api/teams/{id}. Live: the route, on the viewer's own token (server/teams memberDetail: only
+   themselves, someone they manage, or an Investors seat they may read — anyone else 403 cannot-open). Fixture: the same answer from the
+   demo book with the selectors the drawer used (availStatus/availCover, clashOf, capDevOf).
+   PROVISIONAL (live): availability is only "Left the company" or "No absence is recorded" — Zoho keeps no absences (needs a source, D49);
+   "Carries … as secondary" is not served. */
+export type PersonView = {
+  id: string; side: "lead" | "investors"; name: string; seatLabel: string; team: string | null; managerName: string | null; email: string | null;
+  /** leads they own; null = not counted (the Investors side holds none) */
+  leads: number | null;
+  /** the lead screens they reach now */
+  screens: number;
+  clash: string[]; changed: CapDeviation[];
+  availability: MemberDetail["availability"];
+};
+const NOT_OPENABLE = () => fail(403, "cannot-open", "You can open only the people inside your own access.");
+
+export const teamMember: ReadEndpoint<ConsoleState, string | null, PersonView> = {
+  path: (id) => (id ? `/api/teams/${encodeURIComponent(id)}` : null),
+  pick(j) {
+    const d = j as MemberDetail;
+    const lead = d.side === "lead" ? (d.row as LeadMemberRow) : null;
+    return {
+      id: d.row.id, side: d.side, name: d.row.name, seatLabel: d.row.seatLabel, team: d.row.team, managerName: lead ? lead.managerName : null,
+      email: d.email, leads: lead ? lead.leads : null, screens: d.pages.length, clash: [...d.clash], changed: d.changed.map((c) => ({ ...c, off: [...c.off], on: [...c.on] })),
+      availability: d.availability,
+    };
+  },
+  fixture(s, id) {
+    const k = id as PersonKey;
+    if (!id || !s.PEOPLE[k] || !s.PEOPLE[k]!.on || !(k === s.WHO || canManage(s, k))) return NOT_OPENABLE();
+    const t = teamOfPerson(s.PEOPLE, k), m = mgrOf(s.PEOPLE, k), a = availStatus(s, k);
+    return ok({
+      id: k, side: "lead", name: P(s.PEOPLE, k).n, seatLabel: SEAT[s.PEOPLE[k]!.seat as SeatKey] ?? "", team: t ? teamName(s.PEOPLE, t) : null,
+      managerName: m ? P(s.PEOPLE, m).n : null, email: P(s.PEOPLE, k).em || null, leads: s.LEADS.filter((l) => l.own === k).length, screens: pagesOf(s, k),
+      clash: clashOf(s.PEOPLE, k), changed: capDevOf(s.PEOPLE, s.CAPS as Grants, k),
+      availability: { out: a.out, soon: a.soon, detail: a.detail, cover: availCover(s, k) },
+    });
   },
 };

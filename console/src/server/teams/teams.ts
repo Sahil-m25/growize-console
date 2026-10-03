@@ -28,7 +28,7 @@ import type { Cap, CapGrid, Person, PersonKey, SeatKey } from "../../domain";
 import { NOSIGN, SEAT } from "../../domain";
 import { CAN, emptyImData, maySeat, may as imMay, pageReadable, ROLE, TEAM, type ImCan, type ImRoleKey } from "../../lib/im";
 import { EMPTY_PLAN } from "../../lib/data/empty";
-import { canManage, chainOf, consoleAccount, manageable, reachBase, teamName, teamOfPerson, type Grants } from "../../lib/selectors/access";
+import { canManage, capDevOf, chainOf, clashOf, consoleAccount, manageable, reachBase, teamName, teamOfPerson, type CapDeviation, type Grants } from "../../lib/selectors/access";
 import type { Ctx } from "../../lib/selectors/ctx";
 import type { ZohoProfileRow, ZohoRoleRow } from "../../lib/zoho/client";
 import { reachForSides, seatPresets } from "../access/guard-core";
@@ -342,6 +342,12 @@ export interface MemberDetail {
   /** their managers, nearest first: ids and names (the shape of the org is not a secret) */
   readonly chain: readonly { readonly id: string; readonly name: string }[];
   readonly email: string | null;
+  /** M17-S01-W2 — the lead pages their seat asks for that their managers cannot reach (page keys; empty = no clash) */
+  readonly clash: readonly string[];
+  /** M17-S01-W2 — what was changed from their seat by name, per page (the "N changed from the seat" tag) */
+  readonly changed: readonly CapDeviation[];
+  /** M17-S01-W2 — PROVISIONAL: Zoho records no absences, so only a leaver reads "out"; needs a Zoho source for availability (D49) */
+  readonly availability: { readonly out: boolean; readonly soon: boolean; readonly detail: string; readonly cover: string };
 }
 
 export type DetailResult = { readonly ok: true; readonly detail: MemberDetail } | { readonly ok: false; readonly code: "cannot-open"; readonly message: string };
@@ -371,6 +377,11 @@ export function memberDetail(a: Extract<TeamsAccess, { ok: true }>, org: Org, gr
       grants: Object.freeze(own),
       chain: Object.freeze(chain),
       email: id === a.viewer || view.canChangeSeats ? m.email || null : null,
+      clash: Object.freeze(m.left ? [] : clashOf(ctx.PEOPLE, id)),
+      changed: Object.freeze(m.left ? [] : capDevOf(ctx.PEOPLE, ctx.CAPS as Grants, id).map((d) => Object.freeze({ ...d, off: Object.freeze([...d.off]) as Cap[], on: Object.freeze([...d.on]) as Cap[] }))),
+      availability: Object.freeze(m.left
+        ? { out: true, soon: false, detail: "Left the company", cover: "" }
+        : { out: false, soon: false, detail: "No absence is recorded", cover: "" }),
     }),
   };
 }

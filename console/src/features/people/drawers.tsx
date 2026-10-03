@@ -25,7 +25,6 @@ import {
   canRosterFor,
   capsBase,
   chainOf,
-  clashOf,
   consoleAccount,
   gone,
   isMgr,
@@ -54,15 +53,13 @@ import {
 } from "@/lib/selectors";
 import { useConsole, type ConsoleState } from "@/lib/store";
 import { useState } from "react";
-import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { grantAdd, grantRemove, leadSeatChange, managerChange } from "@/lib/data/endpoints/access";
+import { teamMember, type PersonView } from "@/lib/data/endpoints/teams";
 import { titleOf as imAwareTitle } from "@/components/shell/SignIn";
 import {
   absOpen,
-  availCover,
-  availStatus,
-  capDev,
-  devWhy,
+  devWords,
   leaverMayManage,
   leaverPlan,
   leaverSuccessors,
@@ -539,9 +536,81 @@ registerDrawer("p:leaver", {
    dropped, and a capability you do not hold yourself is locked rather than merely inert.
    ir-console-redesigned.html:12605-12664 */
 
+/* M17-S01-W2: the drawer's availability, clash and "changed from the seat" are GET /api/teams/{id} (endpoints/teams teamMember).
+   The edit controls below still read the book, so they show only where the book holds the person (the demo); live the member is
+   drawn read only from the route alone. */
+const AVAIL_CLASH = (pv: PersonView) => pv.clash.map((x) => (PAGECAPS as Record<string, { t: string }>)[x]?.t ?? x).join(", ");
+
+function AvailBlock({ pv, k }: { pv: PersonView; k: PersonKey }) {
+  const { state } = useConsole();
+  return (
+    <div className="ux-availability">
+      <div className="ux-account-person">
+        {state.PEOPLE[k] ? <Pav k={k} size="lg" /> : null}
+        <div>
+          <b>{pv.name}</b>
+          <span>{pv.email || "No address on file"}</span>
+        </div>
+      </div>
+      <section className="ux-account-availability">
+        <div>
+          <b>Availability</b>
+          <span className={`tag ${pv.availability.out ? "cov" : "go"}`}>
+            <span className="dot" />
+            {pv.availability.out ? "Out" : "In"}
+          </span>
+        </div>
+        <p>{pv.availability.detail}</p>
+        {pv.availability.cover ? <p>{pv.availability.cover}</p> : null}
+      </section>
+    </div>
+  );
+}
+
+function ClashNote({ pv }: { pv: PersonView }) {
+  return pv.clash.length ? (
+    <div className="note bad" style={{ marginTop: "12px" }}>
+      Their seat asks for <b>{AVAIL_CLASH(pv)}</b>, which {pv.managerName ?? "their team"} cannot reach — so neither can they.
+      Either move them to a manager who reaches it, or change the seat.
+    </div>
+  ) : null;
+}
+
+/** The member from the route alone (live: the book holds nobody). Read only. */
+function LiveMember({ pv }: { pv: PersonView }) {
+  return (
+    <>
+      <AvailBlock pv={pv} k={pv.id} />
+      <dl className="kv" style={{ marginTop: 0 }}>
+        <dt>Seat</dt>
+        <dd>{pv.seatLabel || "—"}</dd>
+        <dt>Team</dt>
+        <dd>{pv.team ?? "—"}{pv.managerName ? <> · under {pv.managerName}</> : null}</dd>
+        {pv.leads !== null ? (
+          <>
+            <dt>Carries</dt>
+            <dd>{pv.leads} lead{pv.leads === 1 ? "" : "s"}</dd>
+          </>
+        ) : null}
+        {pv.side === "lead" ? (
+          <>
+            <dt>Reaches</dt>
+            <dd>
+              {pv.screens} of {screenCount()} screens
+              {pv.changed.length ? <>{" "}<span className="tag br" title={devWords(pv.changed)}>{pv.changed.length} changed from the seat</span></> : null}
+            </dd>
+          </>
+        ) : null}
+      </dl>
+      <ClashNote pv={pv} />
+    </>
+  );
+}
+
 function PersonBody({ id }: DrawerProps) {
   const { state, dispatch: dispatchable } = useConsole();
   const k = id as PersonKey;
+  const member = useApiRead(teamMember, state, id);
   /* M17-S02-W1 / M03-S04-W1 / M03-S02-W1: the manager, the seat and a page reset go through their routes
      (endpoints/access); a refusal is the route's own message, shown here */
   const [err, setErr] = useState<string | null>(null);
@@ -549,10 +618,12 @@ function PersonBody({ id }: DrawerProps) {
   const setSeat = useApiWrite(leadSeatChange, state, dispatchable);
   const resetPage = useApiWrite(grantRemove, state, dispatchable);
   const said = (r: { ok: boolean; error?: string }) => setErr(r.ok ? null : r.error ?? null);
-  if (!state.PEOPLE[k]) return null;
+  if (member.state === "idle" || member.state === "loading") return <p className="sm">Reading the member…</p>;
+  if (member.state === "error") return <p className="note bad" role="alert">{member.err.error}</p>;
+  const pv = member.data;
+  if (!state.PEOPLE[k]) return <LiveMember pv={pv} />;
 
   const edit = own(state, "people", "seats") && canManage(state, k);
-  const cl = clashOf(state.PEOPLE, k);
   const t = teamOfPerson(state.PEOPLE, k);
   const mgr = mgrOf(state.PEOPLE, k);
   const opts = [state.WHO]
@@ -561,10 +632,8 @@ function PersonBody({ id }: DrawerProps) {
     )
     .filter((x, i, a) => a.indexOf(x) === i && x !== k);
   const mine = state.LEADS.filter((l) => l.own === k).length;
-  const availability = availStatus(state, k);
-  const cover = availCover(state, k);
   const lent = tempFor(state, k);
-  const deviations = capDev(state, k);
+  const deviations = pv.changed;
   const byg = (BYGRANT as readonly string[]).includes(roleOf(state.PEOPLE, k) || "");
   const acct = consoleAccount(state.PEOPLE, k, state.CAPS);
   const ceil = reachCeil(state.PEOPLE, k);
@@ -572,26 +641,7 @@ function PersonBody({ id }: DrawerProps) {
 
   return (
     <>
-      <div className="ux-availability">
-        <div className="ux-account-person">
-          <Pav k={k} size="lg" />
-          <div>
-            <b>{P(state.PEOPLE, k).n}</b>
-            <span>{P(state.PEOPLE, k).em || "No address on file"}</span>
-          </div>
-        </div>
-        <section className="ux-account-availability">
-          <div>
-            <b>Availability</b>
-            <span className={`tag ${availability.out ? "cov" : "go"}`}>
-              <span className="dot" />
-              {availability.t}
-            </span>
-          </div>
-          <p>{availability.detail}</p>
-          {cover ? <p>{cover}</p> : null}
-        </section>
-      </div>
+      <AvailBlock pv={pv} k={k} />
 
       <dl className="kv" style={{ marginTop: 0 }}>
         <dt>Seat</dt>
@@ -634,7 +684,7 @@ function PersonBody({ id }: DrawerProps) {
           {byg ? " · by grant" : deviations.length ? (
             <>
               {" "}
-              <span className="tag br" title={devWhy(state, k)}>
+              <span className="tag br" title={devWords(deviations)}>
                 {deviations.length} changed from the seat
               </span>
             </>
@@ -643,14 +693,7 @@ function PersonBody({ id }: DrawerProps) {
         </dd>
       </dl>
 
-      {cl.length ? (
-        <div className="note bad" style={{ marginTop: "12px" }}>
-          Their seat asks for{" "}
-          <b>{cl.map((x) => (PAGECAPS as Record<string, { t: string }>)[x]?.t ?? x).join(", ")}</b>,
-          which {mgr ? P(state.PEOPLE, mgr).n : "their team"} cannot reach — so neither can they.
-          Either move them to a manager who reaches it, or change the seat.
-        </div>
-      ) : null}
+      <ClashNote pv={pv} />
 
       {err ? <p className="note bad" role="alert" style={{ marginTop: "12px" }}>{err}</p> : null}
 
@@ -934,11 +977,13 @@ registerDrawer("person", {
   w: 470,
   ok: (state, k) =>
     !!k &&
-    !!state.PEOPLE[k as PersonKey] &&
-    state.PEOPLE[k as PersonKey].on &&
-    (k === state.WHO || canManage(state, k as PersonKey)),
-  title: (state, a) => P(state.PEOPLE, a.id as PersonKey).n,
-  sub: (state, a) => imAwareTitle(state, a.id as PersonKey),
+    (!Object.keys(state.PEOPLE).length ||   /* live: the route decides (see canOpenDrawer) */
+      (!!state.PEOPLE[k as PersonKey] &&
+        state.PEOPLE[k as PersonKey].on &&
+        (k === state.WHO || canManage(state, k as PersonKey)))),
+  /* live the book holds nobody: the row that opened the drawer seeded the name and the seat (openPerson) */
+  title: (state, a) => (state.PEOPLE[a.id as PersonKey] ? P(state.PEOPLE, a.id as PersonKey).n : String(state.ui.PNAME ?? "Member")),
+  sub: (state, a) => (state.PEOPLE[a.id as PersonKey] ? imAwareTitle(state, a.id as PersonKey) : String(state.ui.PSUB ?? "")),
   Body: PersonBody,
   Foot: PersonFoot,
 });

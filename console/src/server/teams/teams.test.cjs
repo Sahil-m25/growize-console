@@ -254,3 +254,26 @@ test('rights grid: one column per seat from Zoho roles and profiles; drift named
   assert.equal(pin.ok, true); assert.equal(pin.grid.source, 'pinned'); assert.equal(pin.grid.columns.length, 12);
   assert.deepEqual(rightsGrid(null, null, pinned).columns.map((c) => c.drift), new Array(12).fill(false));
 });
+
+test('M17-S01-W2: the person drawer\'s clash, changed-from-the-seat and availability come with the member (no new read, no identity)', async () => {
+  const grants = createGrantStore();
+  grants.set({ at: T0, by: U('04'), whom: U('05'), page: 'leads', caps: ['view'] });
+  const r = rig({ grants });
+  const cred = await credentialOf(U('04'));
+  const one = await r.svc.member(cred, { who: U('04'), seat: 'conv' }, U('05'));
+  assert.equal(one.ok, true);
+  const d = one.detail;
+  assert.deepEqual(d.changed.map((c) => c.p), ['leads']);
+  assert.equal(d.changed[0].gone, false);
+  assert.deepEqual([...d.changed[0].off], ['edit'], 'the grant took Edit off their seat');
+  assert.deepEqual(d.changed[0].on, []);
+  assert.deepEqual(d.clash, [], 'their manager reaches every page their seat asks for');
+  assert.deepEqual({ ...d.availability }, { out: false, soon: false, detail: 'No absence is recorded', cover: '' });
+  // the same call reads the same Zoho as the list did: users, roles, profiles, one count — nothing for availability
+  assert.ok(r.calls.every((c) => ['/crm/v8/users', '/crm/v8/settings/roles', '/crm/v8/settings/profiles', '/crm/v8/coql'].includes(c.path)));
+  // a member nobody changed has nothing to flag
+  const plain = await rig().svc.member(cred, { who: U('04'), seat: 'conv' }, U('14'));
+  assert.equal(plain.ok, true);
+  assert.deepEqual([plain.detail.changed.length, plain.detail.clash.length], [0, 0]);
+  assert.ok(!/@example\.invalid|\+91/.test(JSON.stringify(plain.detail)), 'no email or phone for someone whose seat the viewer does not change');
+});
