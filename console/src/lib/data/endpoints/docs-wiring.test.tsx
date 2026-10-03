@@ -2,8 +2,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { imDemoData } from "@fixtures/im/demo";
 import { initialImUi, type ImAction, type ImState } from "@/lib/im";
+import { initialState, reducer } from "@/lib/state";
+import type { PersonKey } from "@/domain";
+import { demoBook } from "@fixtures/book";
 import { runWrite } from "../api";
-import { documentUpload, documentsList } from "./documents";
+import { documentUpload, documentsList, leadDocumentsList } from "./documents";
 import { signBlock, signPrefill, signRemind, signSend } from "./sign";
 import { emailOpen } from "./emails";
 
@@ -57,5 +60,26 @@ describe("live halves", () => {
     expect(init.body).toBeInstanceOf(Blob);
     expect(new Headers(init.headers).get("Content-Type")).toBe("application/pdf");
     expect(new Headers(init.headers).get("Idempotency-Key")).toBe("K2");
+  });
+});
+
+describe("documents list — Lead side (M12-S03-W2)", () => {
+  const as = (k: string) => reducer(initialState(demoBook()), { type: "signIn", k: k as PersonKey });
+  it("an IR reads the NDA rows of their own leads: 'all' lists the signed one, 'out' none; the route's paths", () => {
+    const all = leadDocumentsList.fixture(as("rohit"), "all"), out = leadDocumentsList.fixture(as("rohit"), "out");
+    expect(all.ok && out.ok).toBe(true);
+    if (!all.ok || !out.ok) return;
+    expect(all.data.side).toBe("lead");
+    expect(all.data.rows.length).toBeGreaterThan(0);
+    expect(all.data.rows.every(r => r.paper === "nda" && r.module === "Leads" && r.state === "verified")).toBe(true);
+    expect(out.data.rows).toEqual([]);
+    expect(out.data.outCount).toBe(0);
+    expect(all.data.actions).toEqual({ send: false, verify: false });
+    expect(leadDocumentsList.path("all")).toBe("/api/documents/list?cut=all");
+    expect(leadDocumentsList.path(null)).toBeNull();
+  });
+  it("a seat with no Documents page is refused (403)", () => {
+    const r = leadDocumentsList.fixture(as("jhalak"), "all");
+    expect(!r.ok && r.status).toBe(403);
   });
 });

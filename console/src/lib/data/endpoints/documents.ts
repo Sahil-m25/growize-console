@@ -11,8 +11,10 @@ import type { AllotmentPapers, FarmDocuments, InvestorDocuments } from "@/server
 import type { AttachmentLine } from "@/server/documents/attachments";
 import type { UploadDone } from "@/server/documents/upload";
 import { I, allotsOf, llpOf, llps, may, pageReadable, signChip, who, type ImScope, type ImUpload, type ImDoc } from "@/lib/im";
+import { financeBook, financeDocuments, irPaperStep, may as leadMay } from "@/lib/selectors";
 import { fail, ok, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, type ImBook, type ImDispatch } from "./im";
+import type { ConsoleBook } from "./lead";
 
 const NOT_YOURS = () => fail(403, "not-visible", "This investor is not part of your book.");
 
@@ -139,6 +141,39 @@ export const documentsList: ReadEndpoint<ImBook, DocsCut | null, DocsList> = {
     return ok({
       side: "investors" as const, cut, rows, outCount: rows.filter(r => r.state !== "verified" && !r.key.startsWith("blocked:")).length,
       files: cut === "all" ? filesOf(b) : null, actions: { send: acting, verify: acting }, truncated: false,
+      fresh: { source: "fixtures" as const, at: 0, failed: false, tone: "live" as const, ceilingMs: 0, servedAt: 0, problems: [] },
+    });
+  },
+};
+
+/* ---- M12-S03 the Documents page, Lead side ------------------------------------------------------------ */
+/** The same route on the lead side: an IR / channel partner / IR Manager reads only the NDA rows on leads they own, each with
+ *  "your move". Fixture: the demo book's Finance documents of the leads the seat may read (financeBook / financeDocuments),
+ *  NDA only — what the route lists. `recordId` is the lead id, `requestId` the book's document id. The route carries no
+ *  document class and no "issued"/"filed" rows — PROVISIONAL (see the report). */
+const NDA_TITLE = /non-disclosure|^nda\b/i;
+const STATE_WORDS: Readonly<Record<string, string>> = { awaiting: "Awaiting signature", sent: "Sent", blocked: "Blocked", expired: "Expired" };
+export const leadDocumentsList: ReadEndpoint<ConsoleBook, DocsCut | null, DocsList> = {
+  path: cut => (cut ? `/api/documents/list?cut=${cut}` : null),
+  pick: j => (j as { documents: DocsList }).documents,
+  fixture(state, cut) {
+    if (!cut) return fail(400, "invalid-request", "Unknown view.");
+    if (!leadMay(state, "docs", "view")) return fail(403, "seat-denied", "Your seat has no Documents page.");
+    const ACT = ["blocked", "expired", "awaiting", "sent"];
+    const rows = financeBook(state, "docs").flatMap(l => financeDocuments(state, l).filter(d => NDA_TITLE.test(d.title)).map((d): DocRow => {
+      const out = ACT.includes(d.state), st = out ? irPaperStep(state, l) : null;
+      return {
+        key: `${d.state === "blocked" ? "blocked" : "nda"}:${d.id || l.id + d.title}`, paper: "nda", label: d.title, scope: "lead", module: "Leads", recordId: l.id,
+        party: l.n, contactId: null, llpId: null, requestId: d.id || "", method: d.signatureMethod,
+        state: out ? "sent" : "verified", verifiedAt: out ? null : d.completedOn,
+        sign: out ? { status: d.state, sentAt: d.sentOn, sentBy: d.sentByName, expiresAt: d.expiresOn, label: STATE_WORDS[d.state] ?? d.state }
+          : { status: "completed", sentAt: d.sentOn, sentBy: d.sentByName, expiresAt: d.expiresOn, label: "Signed" },
+        yourMove: st ? st.t : null,
+      };
+    })).filter(r => cut === "all" || r.state !== "verified");
+    return ok({
+      side: "lead" as const, cut, rows, outCount: rows.filter(r => r.state !== "verified" && !r.key.startsWith("blocked:")).length,
+      files: null, actions: { send: false, verify: false }, truncated: false,
       fresh: { source: "fixtures" as const, at: 0, failed: false, tone: "live" as const, ceilingMs: 0, servedAt: 0, problems: [] },
     });
   },
