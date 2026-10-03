@@ -144,7 +144,10 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/auth/step-up": { kind: "session" },
   "/api/farms": { kind: "page", page: "farms" },
   "/api/events": { kind: "page", page: "events" },
+  "/api/events/[id]/sheet": { kind: "page", page: "events" },   /* M14-S03-W2 the loaded sheet's state (GET) and its one load (POST): the load right is decided inside */
   "/api/cases": { kind: "page", page: "tkt" },
+  "/api/cases/deliveries": { kind: "page", page: "tkt" },   /* M13-S05-W1 the list form of a ticket's deliveries: one read for the register's open rows, scope decided inside */
+  "/api/cases/[id]/messages": { kind: "page", page: "tkt" },   /* M13-S05-W1 the ticket thread: the Notes on a Case, same reach as the register */
   "/api/updates": { kind: "page", page: "invupd" },
   "/api/session": { kind: "open", why: "the sign-in door itself: GET answers who is signed in, DELETE signs out" },
   "/api/errors": { kind: "open", why: "the client error beacon: carries no data and reports from the sign-in screen too" },

@@ -9,10 +9,8 @@
 
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
 import type { InvestorEvents } from "../data/events";
-import { scopesFor } from "../data/scope";
 import type { DeliveryState } from "../contracts/outbox";
-import { idOf, RECORD_ID } from "./predicate";
-import { CASES_MODULE } from "./register";
+import { readableCases } from "./reach";
 
 export interface ReplyDelivery {
   readonly eventId: string;
@@ -36,34 +34,47 @@ export type CaseDeliveriesResult =
   | { readonly ok: false; readonly kind: "refused"; readonly reason: "no-book" | "not-found" | "invalid-request" }
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
 
-const retryable = (k: string) => k === "network" || k === "server" || k === "busy" || k === "concurrency-exceeded";
 /** The ticket's one line: the worst state among its replies (anything undelivered wins over delivered). */
 const RANK: Readonly<Record<DeliveryState["status"], number>> = Object.freeze({ dead: 3, retrying: 2, queued: 2, delivered: 1 });
 
+/** A list form (M13-S05-W1): the deliveries of every Case asked for, in one read — a Case the person may not read is absent. */
+export type CaseDeliveriesList =
+  | { readonly ok: true; readonly cases: Readonly<Record<string, { readonly replies: readonly ReplyDelivery[]; readonly label: string | null }>> }
+  | { readonly ok: false; readonly kind: "refused"; readonly reason: "no-book" | "invalid-request" }
+  | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
+
+function deliveriesOf(deps: Pick<CaseDeliveriesDeps, "deliveries">, id: string): { readonly replies: readonly ReplyDelivery[]; readonly label: string | null } {
+  const replies = deps.deliveries(id, "case.replied").map((d): ReplyDelivery => Object.freeze({
+    eventId: d.eventId, status: d.status, label: d.label, attempts: d.attempts, reason: d.lastReason, deliveredAt: d.deliveredAt,
+  }));
+  const worst = replies.reduce<ReplyDelivery | null>((w, d) => (!w || RANK[d.status] > RANK[w.status] ? d : w), null);
+  return { replies, label: worst ? worst.label : null };
+}
+
 export function createCaseDeliveries(deps: CaseDeliveriesDeps) {
   return Object.freeze({
+    /** Deliveries for up to MAX_CASE_IDS Cases at once (the register's open rows): one Cases read, no per-row GET. */
+    async forCases(p: { readonly credential: UserCredential; readonly seat: string }, ids: readonly unknown[], signal?: AbortSignal): Promise<CaseDeliveriesList> {
+      const seen = await readableCases(deps, p, ids, signal);
+      if (!seen.ok) {
+        if (seen.kind === "refused" && seen.reason === "no-book") deps.events.refusal(p.credential.userId, "case-deliveries", "seat-denied");
+        return seen;
+      }
+      const cases: Record<string, ReturnType<typeof deliveriesOf>> = {};
+      for (const id of ids as string[]) if (seen.ids.has(id)) cases[id] = deliveriesOf(deps, id);
+      return { ok: true, cases };
+    },
+
     async forCase(p: { readonly credential: UserCredential; readonly seat: string }, id: unknown, signal?: AbortSignal): Promise<CaseDeliveriesResult> {
       const me = p.credential.userId;
-      if (typeof id !== "string" || !RECORD_ID.test(id)) return { ok: false, kind: "refused", reason: "invalid-request" };
-      const scope = scopesFor(p.seat, me).cases;
-      if (scope.kind === "none") { deps.events.refusal(me, "case-deliveries", "seat-denied"); return { ok: false, kind: "refused", reason: "no-book" }; }
-      let r;
-      try { r = await deps.crm.coql(p.credential, `select id, Owner from ${CASES_MODULE} where id = '${id}' limit 0, 1`, { signal }); } catch { return { ok: false, kind: "source-error", errorKind: "unexpected", retryable: false }; }
-      if (!r.ok) return { ok: false, kind: "source-error", errorKind: r.error.kind, retryable: retryable(r.error.kind) };
-      const rec = r.value.records[0];
-      const owner = rec ? idOf(rec.Owner) : null;
-      let mine = !!rec && rec.id === id;
-      if (mine && scope.kind === "own-book") mine = owner === me;
-      if (mine && scope.kind === "subtree" && deps.subtreeOf) {
-        const team = await deps.subtreeOf(scope.managerId, signal);
-        if (team) mine = !!owner && [scope.managerId, ...team].includes(owner);
+      const seen = await readableCases(deps, p, [id], signal);
+      if (!seen.ok) {
+        if (seen.kind === "refused" && seen.reason === "no-book") deps.events.refusal(me, "case-deliveries", "seat-denied");
+        return seen;
       }
-      if (!mine) { deps.events.refusal(me, "case-deliveries", "not-found", [id]); return { ok: false, kind: "refused", reason: "not-found" }; }
-      const replies = deps.deliveries(id, "case.replied").map((d): ReplyDelivery => Object.freeze({
-        eventId: d.eventId, status: d.status, label: d.label, attempts: d.attempts, reason: d.lastReason, deliveredAt: d.deliveredAt,
-      }));
-      const worst = replies.reduce<ReplyDelivery | null>((w, d) => (!w || RANK[d.status] > RANK[w.status] ? d : w), null);
-      return { ok: true, caseId: id, replies, label: worst ? worst.label : null };
+      if (!seen.ids.has(id as string)) { deps.events.refusal(me, "case-deliveries", "not-found", [id as string]); return { ok: false, kind: "refused", reason: "not-found" }; }
+      const one = deliveriesOf(deps, id as string);
+      return { ok: true, caseId: id as string, ...one };
     },
   });
 }

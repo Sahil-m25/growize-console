@@ -60,15 +60,21 @@ function splitOf(n: number, own: (i: number) => PersonKey | null): { k: PersonKe
   }
   return o.map(k => ({ k, n: t[k]! }));
 }
-export const splitNames = (ctx: Ctx, n: number, own: (i: number) => PersonKey | null): string => {
+/** `splitNames` with the name of each person given, not looked up — an event page that holds the staff by the route's answer
+ *  (M14-S03-W2) deals and words its preview with the same arithmetic. */
+export const splitNamesBy = (n: number, own: (i: number) => PersonKey | null, nameOf: (k: PersonKey) => string): string => {
   const s = splitOf(n, own), had = s.reduce((a, x) => a + x.n, 0);
   return s.length
-    ? s.map(x => P(ctx.PEOPLE, x.k).n.split(" ")[0] + " " + x.n).join(", ") + (had < n ? ", " + (n - had) + " with no owner" : "")
+    ? s.map(x => nameOf(x.k).split(" ")[0] + " " + x.n).join(", ") + (had < n ? ", " + (n - had) + " with no owner" : "")
     : "";
 };
-export const splitLine = (ctx: Ctx, n: number, own: (i: number) => PersonKey | null): string =>
+export const splitLineBy = (n: number, own: (i: number) => PersonKey | null, nameOf: (k: PersonKey) => string): string =>
   n + " lead" + (n === 1 ? "" : "s") + " — "
-  + (splitNames(ctx, n, own) || "nobody named, so " + (n === 1 ? "it waits" : "they wait") + " for an owner");
+  + (splitNamesBy(n, own, nameOf) || "nobody named, so " + (n === 1 ? "it waits" : "they wait") + " for an owner");
+export const splitNames = (ctx: Ctx, n: number, own: (i: number) => PersonKey | null): string =>
+  splitNamesBy(n, own, k => P(ctx.PEOPLE, k).n);
+export const splitLine = (ctx: Ctx, n: number, own: (i: number) => PersonKey | null): string =>
+  splitLineBy(n, own, k => P(ctx.PEOPLE, k).n);
 
 /* ---- reading the file itself --------------------------------------------------------------- */
 

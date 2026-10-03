@@ -277,6 +277,9 @@
      "schema": "route doc",
      "maxBytes": 524288
     }
+   },
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
    }
   },
   "/api/farms": {
@@ -793,6 +796,16 @@
      ],
      "schema": "route doc"
     }
+   }
+  },
+  "/api/cases/deliveries": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/cases/[id]/messages": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
    }
   }
  }

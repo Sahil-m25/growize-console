@@ -34,8 +34,8 @@ test('Completed stats come from one group-by: captured, tagged, qualified, reser
   const rig = await makeRig(load, route);
   const r = await createEventsService(rig).list({ credential: await rig.cred(IR), seat: 'ir' });
   const [kora, prestige] = r.completed;
-  assert.deepEqual({ ...prestige.stats }, { captured: 3, tagged: 3, qualified: 2, reserved: 1, costPerQualified: 30000, costHiddenWhy: null });
-  assert.deepEqual({ ...kora.stats }, { captured: 5, tagged: 3, qualified: 1, reserved: 0, costPerQualified: null, costHiddenWhy: 'untagged' });
+  assert.deepEqual({ ...prestige.stats }, { captured: 3, tagged: 3, qualified: 2, reserved: 1, paid: 0, investor: 0, costPerQualified: 30000, costHiddenWhy: null });
+  assert.deepEqual({ ...kora.stats }, { captured: 5, tagged: 3, qualified: 1, reserved: 0, paid: 0, investor: 0, costPerQualified: null, costHiddenWhy: 'untagged' });
   const aggs = rig.queries.filter((q) => /COUNT\(id\)/.test(q));
   assert.equal(aggs.length, 1);
   assert.match(aggs[0], /from Leads where Lead_Event is not null group by Lead_Event, Lead_Status/);
@@ -74,6 +74,21 @@ test('M14-S02: the list and one event carry Lead_Events.Modified_Time (selected 
   for (const q of rig.queries.filter((x) => /from Lead_Events where/.test(x))) assert.match(q, /, Modified_Time from Lead_Events/);
 });
 
+test('M14-S01-W2: Fully paid and Investor (allocated or on) are their own counts, read off the same one group-by', () => {
+  const rows = [['Reserved - 10% in', 4], ['Fully paid', 3], ['Allocated', 2], ['Onboarded', 1]].map(([st, n]) => ({ Lead_Event: PRESTIGE, Lead_Status: st, 'COUNT(id)': n }));
+  const st = statsOf(PRESTIGE, 10, 100000, stageBuckets(rows));
+  assert.deepEqual([st.tagged, st.reserved, st.paid, st.investor], [10, 10, 6, 3]);
+});
+
+test('M14-S01-W2: the leads the viewer may open carry their owner and units of interest; no phone, e-mail or other identity field is read or served', async () => {
+  const rig = await makeRig(load, route);
+  const r = await createEventsService(rig).one({ credential: await rig.cred(IR), seat: 'ir' }, PRESTIGE);
+  assert.deepEqual({ ...r.leads[0] }, { id: `${P}740996101`, name: 'Meera Krishnan', status: 'Qualified', ownerId: IR, ownerName: 'Rohit', units: 2 });
+  const q = rig.queries.find((x) => /from Leads where \(Lead_Event = /.test(x));
+  assert.match(q, /select id, First_Name, Last_Name, Lead_Status, Owner, Units_Interested from Leads/);
+  assert.ok(!/Mobile|Phone|Email|PAN|Aadhaar/i.test(q));
+});
+
 test('an IR Manager with a subtree reader names the team\'s leads (the shared owner predicate)', async () => {
   const rig = await makeRig(load, route);
   const svc = createEventsService({ ...rig, subtreeOf: async () => [IR] });
@@ -101,7 +116,7 @@ test('when the count fails the list still answers, stats are zero and the page i
 
 test('stage buckets and stats are pure', () => {
   const b = stageBuckets([{ Lead_Event: PRESTIGE, Lead_Status: 'Allocated', 'COUNT(id)': 2 }, { Lead_Event: null, Lead_Status: 'Qualified', 'COUNT(id)': 9 }]);
-  assert.deepEqual(b, [{ key: `${PRESTIGE}|q`, count: 2 }, { key: `${PRESTIGE}|r`, count: 2 }, { key: `${PRESTIGE}|t`, count: 2 }]);
+  assert.deepEqual(b, [{ key: `${PRESTIGE}|i`, count: 2 }, { key: `${PRESTIGE}|p`, count: 2 }, { key: `${PRESTIGE}|q`, count: 2 }, { key: `${PRESTIGE}|r`, count: 2 }, { key: `${PRESTIGE}|t`, count: 2 }]);
   assert.equal(statsOf(PRESTIGE, null, 100, b).costHiddenWhy, 'no-capture');
   assert.equal(statsOf(PRESTIGE, 2, null, b).costHiddenWhy, 'no-cost');
 });

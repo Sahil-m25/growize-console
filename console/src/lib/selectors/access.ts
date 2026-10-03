@@ -149,6 +149,24 @@ export const clashOf = (PEOPLE: People, k: PersonKey): string[] => {
   return seatReach(PEOPLE, k).filter(p => !has.has(p));
 };
 
+/* the part of somebody's access that nobody's seat gave them: per page, what their seat holds that was taken off, what was added, and
+   whether the page itself (its "view") was taken away. Pure over the people and the grants, so the person drawer's "N changed from the
+   seat" is the same count whether the book is the demo's or GET /api/teams/{id}'s (M17-S01-W2). 03-app.js (redesigned):2944 */
+export type CapDeviation = { p: NavKey; off: Cap[]; on: Cap[]; gone: boolean };
+export function capDevOf(PEOPLE: People, GRANT: Grants, k: PersonKey): CapDeviation[] {
+  const grant = (GRANT[k] || {}) as Record<string, readonly string[]>;
+  const out: CapDeviation[] = [];
+  (Object.keys(grant) as NavKey[]).forEach((p) => {
+    if (!(PAGECAPS as Record<string, unknown>)[p] || reachBase(PEOPLE, k, GRANT).indexOf(p) < 0) return;
+    const seat = ((SEATCAPS as Record<string, Record<string, Cap[]>>)[roleOf(PEOPLE, k) || ""] || {})[p] || [];
+    const now = (grant[p] || []) as Cap[];
+    const off = seat.filter((c) => now.indexOf(c) < 0);
+    const on = now.filter((c) => seat.indexOf(c) < 0);
+    if (off.length || on.length) out.push({ p, off, on, gone: now.indexOf("view") < 0 });
+  });
+  return out;
+}
+
 /* ---- TEMPORARY ACCESS =======================================================================
    Somebody is out and something has to be done from their screen. The way every office solves that
    is a shared password, and a shared password destroys the one thing this console exists for:
@@ -475,6 +493,9 @@ export function canOpenDrawer(ctx: Ctx, kind: string, id: string | null): boolea
   if (kind === "updates") return may(ctx, "updates", "view");
   if (kind.startsWith("p:")) return true;
   if (kind === "presence") return may(ctx, "me", "view");
+  /* a book that holds nobody (live: the people are GET /api/teams, not the store) leaves the member to GET /api/teams/{id}, which answers 403
+     cannot-open for anyone the viewer may not open — the row only offers a name the list let them open (M17-S01-W2) */
+  if (kind === "person" && !Object.keys(ctx.PEOPLE).length) return !!id;
   if (kind === "person") return !!id && !!ctx.PEOPLE[id]?.on
     && (id === me(ctx) ? may(ctx, "me", "view") : may(ctx, "people", "view") && canManage(ctx, id));
   if (kind === "absence") return !!id && !!ctx.PEOPLE[id]?.on

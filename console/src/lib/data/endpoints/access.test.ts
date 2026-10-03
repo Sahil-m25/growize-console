@@ -4,9 +4,9 @@ import { demoBook } from "@fixtures/book";
 import { imDemoData } from "@fixtures/im/demo";
 import { initialImUi, type ImAction, type ImState } from "@/lib/im";
 import { initialState, reducer, type Action, type ConsoleState } from "@/lib/state";
-import { runWrite } from "../api";
+import { liveRead, runWrite } from "../api";
 import { grantAdd, grantRemove, imSeatChange, leadSeatChange, managerChange } from "./access";
-import { teamSeats, teamsRead } from "./teams";
+import { teamMember, teamSeats, teamsRead } from "./teams";
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const as = (k: string): ConsoleState => reducer(reducer(initialState(), { type: "hydrate", ds: demoBook(), version: 1, fixtures: true }), { type: "signIn", k });
@@ -139,5 +139,44 @@ describe("Teams rows — GET /api/teams", () => {
       grid: { columns: [{ im: "head", imLabel: "Head of Finance", rights: ["view"] }, { im: null, imLabel: null, rights: [] }, { im: "head", imLabel: "x", rights: [] }] },
     });
     expect(a.grid.columns).toEqual([{ im: "head", imLabel: "Head of Finance", rights: ["view"] }]);
+  });
+});
+
+describe("Teams person drawer — GET /api/teams/{id} (M17-S01-W2)", () => {
+  it("the route is per member; nothing is read without an id", () => {
+    expect(teamMember.path(null)).toBeNull();
+    expect(teamMember.path("rohit")).toBe("/api/teams/rohit");
+  });
+  it("fixture: the IR Manager opens her IR — seat, team, manager, leads, screens, availability, no clash", () => {
+    const r = teamMember.fixture(as("tasneem"), "rohit");
+    if (!r.ok) throw new Error(r.error);
+    expect(r.data).toMatchObject({ id: "rohit", side: "lead", name: "Rohit Deshpande", managerName: "Tasneem Qureshi", clash: [] });
+    expect(r.data.leads).toBeGreaterThan(0);
+    expect(r.data.screens).toBeGreaterThan(0);
+    expect(r.data.availability).toMatchObject({ out: expect.any(Boolean), detail: expect.any(String) });
+  });
+  it("fixture: someone outside her chain, a person who has left and an unknown id are refused as the route refuses them", () => {
+    expect(teamMember.fixture(as("tasneem"), "jhalak")).toMatchObject({ ok: false, status: 403, code: "cannot-open" });
+    expect(teamMember.fixture(as("tasneem"), "nobody")).toMatchObject({ ok: false, status: 403 });
+    expect(teamMember.fixture(as("kavya"), "rohit")).toMatchObject({ ok: false, status: 403 });
+  });
+  it("fixture: what was changed from the seat and a clash are the same reads the drawer made", () => {
+    const s = as("sahil");
+    const changed = { ...s, CAPS: { ...s.CAPS, rohit: { leads: ["view"] } } } as ConsoleState;
+    const r = teamMember.fixture(changed, "rohit");
+    if (!r.ok) throw new Error(r.error);
+    expect(r.data.changed).toEqual([{ p: "leads", off: ["edit"], on: [], gone: false }]);
+  });
+  it("live: the member from the route's detail, the drawer's fields only (no grants, no chain, no ids of others)", async () => {
+    const detail = {
+      row: { id: "7", name: "Rohit Deshpande", seat: "investor-relations", seatLabel: "Investor Relations", team: "IR", managerId: "4", managerName: "Tasneem Qureshi", status: "active", you: false, canOpen: true,
+        investorsSide: false, loginHere: true, pages: 5, leads: 12, handover: false },
+      side: "lead", pages: ["leads", "today"], grants: { leads: ["view"] }, chain: [{ id: "4", name: "Tasneem Qureshi" }], email: null,
+      clash: ["numbers"], changed: [{ p: "leads", off: ["edit"], on: [], gone: false }], availability: { out: false, soon: false, detail: "No absence is recorded", cover: "" },
+    };
+    const r = await liveRead(teamMember, "/api/teams/7", { fetch: vi.fn(async () => json(200, detail)) });
+    expect(r).toEqual({ state: "ok", data: {
+      id: "7", side: "lead", name: "Rohit Deshpande", seatLabel: "Investor Relations", team: "IR", managerName: "Tasneem Qureshi", email: null, leads: 12, screens: 2,
+      clash: ["numbers"], changed: [{ p: "leads", off: ["edit"], on: [], gone: false }], availability: { out: false, soon: false, detail: "No absence is recorded", cover: "" } } });
   });
 });

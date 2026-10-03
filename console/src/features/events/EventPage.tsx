@@ -20,23 +20,31 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ASSIGNRULE } from "@/domain";
+import { ASSIGNRULE, UNIT } from "@/domain";
+import { money } from "@/lib/format";
 import {
   P, assignees, canAssign, isIR, may,
 } from "@/lib/selectors";
-import { dealTo, splitLine } from "@/features/add";
+import { dealTo, splitLineBy } from "@/features/add";
 import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
-import { eventOne, eventRecOf, ruleOf, sheetLoad } from "@/lib/data/endpoints/events";
+import { eventOne, eventRecOf, ruleOf, sheetLoad, sheetState } from "@/lib/data/endpoints/events";
 import { pathOf } from "@/components/shell";
 import { evDraftOf, evTitleDates } from "./eventDraft";
-import { intakeRows, sheetRows } from "./sheet";
+import { intakeRows, parseIntake, sheetRows } from "./sheet";
 import { UxDetails } from "./UxDetails";
 import { EventsPage } from "./EventsPage";
 
 /* Zoho's Lead_Status → whether the lead has reached a reservation (the card's "go" tag) */
 const REACHED = /^(Reserved|Fully paid|Allocated|Onboarded|Converted)/;
+
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** a stamp as the card prints it: the route's naive IST "2026-09-28T11:30" as "28 Sep 11:30"; the demo book's own stamp is already text */
+const stampText = (t: string | null | undefined): string => {
+  const m = t ? /^\d{4}-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(t) : null;
+  return m ? `${+m[2]!} ${MON[+m[1]! - 1]} ${m[3]}` : t ?? "";
+};
 
 export function EventPage({ id }: { id: string }) {
   const { state, dispatch } = useConsole();
@@ -48,6 +56,10 @@ export function EventPage({ id }: { id: string }) {
   /* M14-S03-W1: 'Load N leads' is POST /api/events/[id]/sheet {rule, rows}; a refusal reads under the button */
   const load = useApiWrite(sheetLoad, state, dispatch);
   const [loadErr, setLoadErr] = useState<string | null>(null);
+  /* M14-S03-W2: the sheet card is GET /api/events/[id]/sheet (Lead_Events' Load_State, the counts the loader wrote back, who loaded it,
+     the staff in named order, the load log), never state.SHEET. Live, the rows to load are the intake sheet pasted below (PROVISIONAL). */
+  const sheet = useApiRead(sheetState, state, id);
+  const [paste, setPaste] = useState("");
 
   /* dropEvent() sets VIEW='events' the moment the record is gone (ir-console-redesigned.html:3910)
      — you cannot stand on a URL naming a record that no longer exists. This port has no VIEW to
@@ -88,6 +100,7 @@ export function EventPage({ id }: { id: string }) {
   /* D59 · Captured and Qualified always; a later stage only once something reached it */
   const steps = ([
     ["Captured", captured], ["Qualified", st.qualified], ["Reserved", st.reserved],
+    ["Fully paid", st.paid], ["Investor", st.investor],
   ] as [string, number][]).filter(([, v], i) => i < 2 || v > 0);
   /* the DIVISOR is floored, never the value — a zero must never paint a bar */
   const max = Math.max(1, captured);
@@ -100,30 +113,33 @@ export function EventPage({ id }: { id: string }) {
   const first = (k: string) => P(state.PEOPLE, k).n.split(" ")[0];
   const staffName = (k: string) => row.staff.find((x) => x.id === k)?.name ?? P(state.PEOPLE, k).n;
 
-  const sh = state.SHEET[e.id];
-  const ready = !!sh && sh.state === "ready";
-  const mayLoad = ready && may(state, "events", "load");
+  const sv = sheet.state === "ok" ? sheet.data : null;
+  const ready = !!sv && sv.state === "ready";
+  const mayLoad = ready && sv.mayLoad;
+  /* the route's counts when it has them (the demo book); else (live) the rows pasted below */
+  const fromRoute = !!sv && sv.willLoad !== null;
+  const pasted = parseIntake(paste);
+  const nLoad = !sv ? 0 : fromRoute ? sv.willLoad! : pasted.rows.length;
   const AR = state.ui.AR ?? "roster";
   const ARWHO = state.ui.ARWHO ?? null;
+  /* who a round-robin deals to, in the order they are named: the staff who still carry a book (the demo book) or the route's staff (live) */
+  const dealers = !sv ? [] : mode === "live" ? sv.staff.map((x) => x.id) : e.staff.filter((k) => assignees(state).includes(k));
+  const owners = !sv ? [] : mode === "live" ? sv.staff.map((x) => x.id) : assignees(state);
+  const nameOf = (k: string) => sv?.staff.find((x) => x.id === k)?.name ?? staffName(k);
   /* sheetOwner(e,i) — who carries row i under the rule the chips are on */
   const sheetOwner = (i: number): string | null =>
-    AR === "self" ? state.WHO : AR === "one" ? ARWHO : AR === "none" ? null : dealTo(state, e, i);
+    AR === "self" ? state.WHO : AR === "one" ? ARWHO : AR === "none" ? null : mode === "live" ? (dealers.length ? dealers[i % dealers.length]! : null) : dealTo(state, e, i);
   const goLead = (lid: string) => router.push(pathOf("lead", lid));
   /* back to the list — also drops a pending press, which is what is drawing this page if the
      /events/[id] route has not landed yet (EventsPage) */
   const back = () => { set({ EVPEND: null }); router.push(pathOf("events")); };
   const doLoad = async () => {
-    if (!sh) return;
+    if (!sv) return;
     setLoadErr(null);
-    const r = await load({ eventId: e.id, rule: ruleOf(AR, ARWHO), rows: intakeRows(state, e.id, sh, e.city) });
-    if (!r.ok) { setLoadErr(r.error); return; }
-    /* the reducer wrote its own line in the demo book; a live load words it from the route's answer */
-    if (mode === "live") {
-      const l = r.data;
-      dispatch({ type: "log", what: "Loaded the event sheet", lead: null, kind: "admin",
-        note: e.n + " — " + l.loaded + " leads" + (l.duplicates ? ", " + l.duplicates + " refused as duplicates" : "") + ", "
-          + (ASSIGNRULE[AR] ?? "").toLowerCase() + (AR === "one" && ARWHO ? " (" + staffName(ARWHO) + ")" : "") });
-    }
+    const rows = fromRoute ? intakeRows(state, e.id, { ok: sv.willLoad! }, e.city) : pasted.rows;
+    const r = await load({ eventId: e.id, rule: ruleOf(AR, ARWHO), rows });
+    /* a live load re-reads the sheet card by itself (the adapter's tick); the demo book's reducer wrote its own line */
+    if (!r.ok) setLoadErr(r.error);
   };
 
   return (
@@ -142,7 +158,11 @@ export function EventPage({ id }: { id: string }) {
 
       <section className="ux-event ux-section">
         <div className="ux-section">
-          {!sh ? (
+          {sheet.state === "idle" || sheet.state === "loading" ? (
+            <div className="card"><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading the sheet…</p></div></div>
+          ) : !sv ? (
+            sheet.state === "error" ? <div className="card"><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>{sheet.err.error}</p></div></div> : null
+          ) : sv.state === "none" ? (
             <div className="card">
               <div className="ch"><h3>Event leads sheet</h3></div>
               <div className="cb">
@@ -163,11 +183,27 @@ export function EventPage({ id }: { id: string }) {
               <div className="cb">
                 {ready ? (
                   <>
-                    <p className="sm g4-sheet-sum">
-                      <b>{sh.ok} of {sh.rows} rows will load</b> · {sh.dupe} already here ·{" "}
-                      <span className={sh.bad ? "g4-bad" : undefined}>{sh.bad} missing a required field</span><br />
-                      Filled by {first(sh.by)} · {sh.at}
-                    </p>
+                    {fromRoute ? (
+                      <p className="sm g4-sheet-sum">
+                        <b>{sv.willLoad} of {sv.inFile ?? sv.willLoad} rows will load</b> · {sv.duplicates ?? 0} already here ·{" "}
+                        <span className={sv.refused ? "g4-bad" : undefined}>{sv.refused ?? 0} missing a required field</span>
+                        {sv.filledBy ? <><br />Filled by {(sv.filledBy.name ?? "").split(" ")[0]} · {stampText(sv.filledAt)}</> : null}
+                      </p>
+                    ) : mayLoad ? (
+                      <>
+                        <label className="fi" style={{ marginBottom: "8px" }}>
+                          <span>Paste the tablet sheet</span>
+                          <textarea className="nta" id="sheet-paste" rows={4} value={paste} onChange={(ev) => setPaste(ev.target.value)}
+                            placeholder={"Name, Mobile, WhatsApp, Call, Email, City, Units\nAsha Kulkarni, 9876501234, yes, yes, , Bengaluru, 1"} />
+                        </label>
+                        <p className="sm g4-sheet-sum">
+                          <b>{pasted.rows.length} rows pasted</b>
+                          {sv.inFile !== null ? ` · ${sv.inFile} on the sheet` : ""}
+                          {pasted.skipped ? <> · <span className="g4-bad">{pasted.skipped} without a name or mobile</span></> : null}
+                          {pasted.err ? <><br /><span className="g4-bad" role="alert">{pasted.err}</span></> : null}
+                        </p>
+                      </>
+                    ) : null}
                     {mayLoad ? (
                       <>
                         <label className="fi" style={{ marginBottom: "8px" }}>
@@ -184,22 +220,22 @@ export function EventPage({ id }: { id: string }) {
                             <span>Lead owner</span>
                             <select className="selw" id="sheet-owner" value={ARWHO ?? ""} onChange={(ev) => set({ ARWHO: ev.target.value || null })}>
                               <option value="">Choose an owner…</option>
-                              {assignees(state).map((k) => <option key={k} value={k}>{P(state.PEOPLE, k).n}</option>)}
+                              {owners.map((k) => <option key={k} value={k}>{nameOf(k)}</option>)}
                             </select>
                           </label>
                         )}
                         <p className="sm" id="shsplit" style={{ margin: "0 0 10px" }}>
-                          <b>{splitLine(state, sheetRows(e.id, sh, state.LEADS).length, sheetOwner)}</b>
-                          {AR === "roster" && evIRs.length > 1
+                          <b>{splitLineBy(fromRoute ? sheetRows(e.id, { ok: sv.willLoad! }, state.LEADS).length : nLoad, sheetOwner, nameOf)}</b>
+                          {AR === "roster" && dealers.length > 1
                             ? " — in the order they are named on the event, so a remainder goes to the first named."
                             : ""}
                         </p>
                         <div className="g4-load">
                           <button type="button" className="act"
-                            disabled={AR === "one" && !ARWHO}
-                            title={AR === "one" && !ARWHO ? "Pick who carries them first" : undefined}
+                            disabled={(AR === "one" && !ARWHO) || nLoad === 0}
+                            title={AR === "one" && !ARWHO ? "Pick who carries them first" : nLoad === 0 ? "There are no rows to load yet" : undefined}
                             onClick={() => { void doLoad(); }}>
-                            Load {sh.ok} leads
+                            Load {nLoad} leads
                           </button>
                           <span className="sm">They keep this event as their source. Contact permission comes from the intake form; email permission is not assumed.</span>
                         </div>
@@ -211,13 +247,18 @@ export function EventPage({ id }: { id: string }) {
                   </>
                 ) : (
                   <p className="sm" style={{ margin: 0 }}>
-                    {sh.ok} of {sh.rows} rows loaded
-                    {sh.loadedBy ? " by " + staffName(sh.loadedBy) + " · " + sh.loadedAt : ""}
-                    {sh.rule ? " · " + sh.rule.toLowerCase() : ""}, {sh.dupe} skipped as duplicates
-                    {sh.bad ? ", " + sh.bad + " left on the sheet" : ""}. A sheet loads once — corrections go through the
+                    {sv.loaded ?? 0} of {sv.inFile ?? sv.loaded ?? 0} rows loaded
+                    {sv.loadedBy ? " by " + (sv.loadedBy.name ?? "someone") + " · " + stampText(sv.loadedAt) : ""}
+                    {sv.rule ? " · " + sv.rule.toLowerCase() : ""}, {sv.duplicates ?? 0} skipped as duplicates
+                    {sv.refused ? ", " + sv.refused + " left on the sheet" : ""}. A sheet loads once — corrections go through the
                     lead, so the console stays the record.
                   </p>
                 )}
+                {sv.log.map((l, i) => (
+                  <p key={i} className="sm" style={{ margin: "8px 0 0", color: "var(--ink-3)" }}>
+                    {stampText(l.at)} · {l.what} — {l.note.startsWith(row.name + " — ") ? l.note.slice(row.name.length + 3) : l.note}
+                  </p>
+                ))}
               </div>
             </div>
           )}
@@ -230,21 +271,25 @@ export function EventPage({ id }: { id: string }) {
             <div className="tw scroll"><table>
               <thead><tr>
                 <th scope="col">Lead</th><th scope="col">Stage</th>
+                <th scope="col" style={{ textAlign: "right" }}>Total</th>
               </tr></thead>
               <tbody>
                 {L.length ? L.map((l) => (
                   <tr key={l.id} className="g4-row" onClick={() => goLead(l.id)}>
                     <th scope="row">
                       <button type="button" className="g4-name" onClick={(ev) => { ev.stopPropagation(); goLead(l.id); }}><b>{l.name}</b></button>
+                      <div className="sm">{l.ownerName ?? "no owner"}</div>
                     </th>
                     <td>
                       <span className={`tag ${REACHED.test(l.status ?? "") ? "go" : ""}`}>
                         {l.status ?? "—"}
                       </span>
                     </td>
+                    {/* PROVISIONAL: Units_Interested × the unit price; the allotment's own value is an investor-side read (D69) */}
+                    <td className="n">{l.units ? money(l.units * UNIT) : "—"}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={2} className="empty">
+                  <tr><td colSpan={3} className="empty">
                     {st.tagged
                       ? `None of this event's ${st.tagged} lead${st.tagged === 1 ? "" : "s"} ${st.tagged === 1 ? "is" : "are"} in your book. ${st.tagged === 1 ? "It is" : "They are"} counted in the event's results — a lead is named only to the person who may open it.`
                       : "No lead has been tagged to this event yet. A lead joins this list when this event is chosen as its source at capture, or when the event's sheet is loaded above."}
@@ -260,7 +305,7 @@ export function EventPage({ id }: { id: string }) {
                   </td></tr>
                 )}
                 {!!hid && !!L.length && (
-                  <tr><td colSpan={2} className="sm" style={{ color: "var(--ink-3)" }}>
+                  <tr><td colSpan={3} className="sm" style={{ color: "var(--ink-3)" }}>
                     and {hid} more, in somebody else&apos;s book
                   </td></tr>
                 )}
@@ -302,7 +347,7 @@ export function EventPage({ id }: { id: string }) {
                   </span>
                 )) : <span className="sm">Nobody is named on this one yet.</span>}
               </div>
-              {!sh && (
+              {sv?.state === "none" && (
                 <p className="sm" style={{ margin: "8px 0 0" }}>
                   {evIRs.length
                     ? `Anything loaded against this event is dealt round ${evIRs.map(first).join(", ")} in that order, evenly, and lands already carried.`

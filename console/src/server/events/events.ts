@@ -36,6 +36,9 @@ export const EVENT_FIELDS = Object.freeze(["id", "Name", "Starts_On", "Ends_On",
 
 const QUALIFIED_OR_BEYOND: ReadonlySet<string> = new Set(["Qualified", "Engagement done", "Investor said yes", "Reserved - 10% in", "Fully paid", "Allocated", "Onboarded", "Converted"]);
 const RESERVED_OR_BEYOND: ReadonlySet<string> = new Set(["Reserved - 10% in", "Fully paid", "Allocated", "Onboarded", "Converted"]);
+/** M14-S01-W2: the event page's two later bars — Fully paid (the prototype's st.paid) and Investor (st.done: allocated or on). */
+const PAID_OR_BEYOND: ReadonlySet<string> = new Set(["Fully paid", "Allocated", "Onboarded", "Converted"]);
+const INVESTOR_OR_BEYOND: ReadonlySet<string> = new Set(["Allocated", "Onboarded", "Converted"]);
 
 export type EventState = "planned" | "done" | "cancelled" | "unknown";
 export interface EventStats {
@@ -43,6 +46,10 @@ export interface EventStats {
   readonly tagged: number;
   readonly qualified: number;
   readonly reserved: number;
+  /** at Fully paid or beyond (M14-S01-W2) */
+  readonly paid: number;
+  /** at Allocated or beyond — the event page's "Investor" bar (M14-S01-W2) */
+  readonly investor: number;
   readonly costPerQualified: number | null;
   /** Why cost per qualified is not given: "untagged" (captured names not all tagged), "no-cost", "no-qualified", "no-capture". */
   readonly costHiddenWhy: "untagged" | "no-cost" | "no-qualified" | "no-capture" | null;
@@ -62,7 +69,14 @@ export interface EventRow {
   /** Lead_Events.Modified_Time as read — the correction (PATCH) sends it back as `modifiedTime`. */
   readonly modifiedTime: string | null;
 }
-export interface EventLead { readonly id: string; readonly name: string; readonly status: string | null }
+/** A lead the viewer may open. Staff and money only — never a phone, e-mail or any identity field (M14-S01-W2). */
+export interface EventLead {
+  readonly id: string; readonly name: string; readonly status: string | null;
+  /** the lead's owner (a staff user); null = unowned */
+  readonly ownerId: string | null; readonly ownerName: string | null;
+  /** Leads.Units_Interested — null when not recorded. PROVISIONAL: the page's Total is this × the unit price; the allotment's own value is an investor-side read (D69) */
+  readonly units: number | null;
+}
 
 export type StatsRead = CacheFresh<readonly CountBucket[]> | CacheStale<readonly CountBucket[]> | CacheError<readonly CountBucket[]>;
 export interface EventsPrincipal { readonly credential: UserCredential; readonly seat: string }
@@ -80,7 +94,7 @@ export interface EventsDeps {
 
 const STATE: Readonly<Record<string, EventState>> = Object.freeze({ Planned: "planned", Done: "done", Cancelled: "cancelled" });
 
-/** Group-by rows → buckets "<eventId>|t|q|r" (tagged, qualified, reserved). Pure: exported for tests. */
+/** Group-by rows → buckets "<eventId>|t|q|r|p|i" (tagged, qualified, reserved, fully paid, investor). Pure: exported for tests. */
 export function stageBuckets(rows: readonly Readonly<Record<string, string | number | null>>[]): CountBucket[] {
   const m = new Map<string, number>();
   const add = (k: string, n: number) => m.set(k, (m.get(k) ?? 0) + n);
@@ -92,16 +106,18 @@ export function stageBuckets(rows: readonly Readonly<Record<string, string | num
     add(`${ev}|t`, n);
     if (QUALIFIED_OR_BEYOND.has(st)) add(`${ev}|q`, n);
     if (RESERVED_OR_BEYOND.has(st)) add(`${ev}|r`, n);
+    if (PAID_OR_BEYOND.has(st)) add(`${ev}|p`, n);
+    if (INVESTOR_OR_BEYOND.has(st)) add(`${ev}|i`, n);
   }
   return [...m.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([key, count]) => ({ key, count }));
 }
 
 export function statsOf(eventId: string, captured: number | null, cost: number | null, buckets: readonly CountBucket[] | null): EventStats {
   const get = (s: string) => buckets?.find((b) => b.key === `${eventId}|${s}`)?.count ?? 0;
-  const tagged = get("t"), qualified = get("q"), reserved = get("r");
+  const tagged = get("t"), qualified = get("q"), reserved = get("r"), paid = get("p"), investor = get("i");
   const why: EventStats["costHiddenWhy"] =
     captured === null ? "no-capture" : tagged < captured ? "untagged" : cost === null || cost <= 0 ? "no-cost" : qualified === 0 ? "no-qualified" : null;
-  return Object.freeze({ captured, tagged, qualified, reserved, costPerQualified: why === null ? Math.round(cost! / qualified) : null, costHiddenWhy: why });
+  return Object.freeze({ captured, tagged, qualified, reserved, paid, investor, costPerQualified: why === null ? Math.round(cost! / qualified) : null, costHiddenWhy: why });
 }
 
 const eventOf = (r: ZohoRecord, staff: ReadonlyMap<string, readonly { id: string; name: string | null }[]>, buckets: readonly CountBucket[] | null): EventRow | null => {
@@ -190,7 +206,7 @@ export function createEventsService(deps: EventsDeps) {
       const mine = ownerWhere(scope, { secondaryOwner: true, team });
       if (!mine) return noBook(p, "events-open");
       const [s, leads, st] = [await staffOf(p, [id], signal),
-        await pagedSelect(deps.crm, p.credential, ["id", "First_Name", "Last_Name", "Lead_Status"], "Leads", `Lead_Event = '${id}' and ${mine}`, "id asc", signal, deps.maxPages),
+        await pagedSelect(deps.crm, p.credential, ["id", "First_Name", "Last_Name", "Lead_Status", "Owner", "Units_Interested"], "Leads", `Lead_Event = '${id}' and ${mine}`, "id asc", signal, deps.maxPages),
         await stats(p, scope, signal)];
       if (!s.ok) return failed(s);
       if (!leads.ok) return failed(leads);
@@ -198,6 +214,7 @@ export function createEventsService(deps: EventsDeps) {
       const event = eventOf(rec, s.staff, buckets)!;
       const named = leads.rows.filter((x) => idOf(x.id)).map((x): EventLead => Object.freeze({
         id: x.id, name: [str(x, "First_Name", 80), str(x, "Last_Name", 80)].filter(Boolean).join(" "), status: str(x, "Lead_Status", 40),
+        ownerId: idOf(x.Owner), ownerName: nameOf(x.Owner), units: num(x, "Units_Interested"),
       }));
       // Others = the event's tagged count (the cached group-by) less the named. Unknown when the count failed.
       const othersCount = buckets === null ? null : Math.max(0, event.stats.tagged - named.length);

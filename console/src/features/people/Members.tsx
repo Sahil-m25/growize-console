@@ -15,8 +15,8 @@ import { capDev, devWhy, openPerson } from "./helpers";
 import { LockIcon } from "./icons";
 
 /* M17-S01-W1: the rows are GET /api/teams' members (endpoints/teams). The availability, clash and "changed"
-   tags still read the book, and only where it holds the person (fixture mode; live they are absent until
-   their own units wire them). */
+   tags still read the book, and only where it holds the person (fixture mode; live they are absent in the
+   rows — the person drawer carries them from GET /api/teams/{id}, M17-S01-W2). */
 export function Members({ rows }: { rows: MemberRow[] }) {
   const { state, dispatch } = useConsole();
 
@@ -56,7 +56,7 @@ export function Members({ rows }: { rows: MemberRow[] }) {
                     key={k}
                     style={on ? undefined : { opacity: 0.5 }}
                     className={open ? "k" : ""}
-                    {...(open ? { onClick: () => dispatch(openPerson(k)) } : {})}
+                    {...(open ? { onClick: () => dispatch(openPerson(k, row)) } : {})}
                   >
                     <td>
                       {open ? (
@@ -67,7 +67,7 @@ export function Members({ rows }: { rows: MemberRow[] }) {
                           aria-label={`Open ${row.name}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            dispatch(openPerson(k));
+                            dispatch(openPerson(k, row));
                           }}
                         >
                           {name}
