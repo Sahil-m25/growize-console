@@ -5,9 +5,9 @@ import { initialImUi, type ImAction, type ImState } from "@/lib/im";
 import { initialState, reducer } from "@/lib/state";
 import type { PersonKey } from "@/domain";
 import { demoBook } from "@fixtures/book";
-import { runWrite } from "../api";
+import { liveRead, runWrite } from "../api";
 import { documentUpload, documentsList, leadDocumentsList } from "./documents";
-import { signBlock, signPrefill, signRemind, signSend } from "./sign";
+import { signBlock, signPrefill, signRemind, signSend, signTemplates } from "./sign";
 import { emailOpen } from "./emails";
 
 const demo = (): ImState => ({ data: imDemoData(), ui: initialImUi() });
@@ -81,5 +81,30 @@ describe("documents list — Lead side (M12-S03-W2)", () => {
   it("a seat with no Documents page is refused (403)", () => {
     const r = leadDocumentsList.fixture(as("jhalak"), "all");
     expect(!r.ok && r.status).toBe(403);
+  });
+});
+
+describe("sign template picker (M12-S04-W2)", () => {
+  it("live: reads GET /api/documents/sign/templates and picks the list; the send then carries the chosen templateId", async () => {
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { templates: [{ templateId: "90071992547409970", name: "Supplementary" }] }));
+    const r = await liveRead(signTemplates, signTemplates.path(true)!, { fetch: f });
+    expect(f.mock.calls[0][0]).toBe("/api/documents/sign/templates");
+    expect(r.state === "ok" && r.data).toEqual([{ templateId: "90071992547409970", name: "Supplementary" }]);
+    expect(signTemplates.path(false)).toBeNull();
+    const g = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { sent: { paper: "supplementary", recordId: "1", requestId: "r", state: "sent", label: "Sent" } }));
+    await runWrite("live", signSend, { s: demo(), me: "harsha" }, () => {},
+      { paper: "supplementary", recordId: "1", method: "aadhaar", templateId: "90071992547409970", expectedModifiedTime: "t", book: { inv: "x", tpl: "y", sig: "z" } }, { idempotencyKey: "K3", fetch: g });
+    expect(JSON.parse(g.mock.calls[0][1]!.body as string).templateId).toBe("90071992547409970");
+  });
+  it("fixture: a sending seat reads an empty list (the demo has no Zoho Sign templates); a seat that does not send is refused", () => {
+    const ok = signTemplates.fixture({ s: demo(), me: "harsha" }, true);
+    expect(ok.ok && ok.data).toEqual([]);
+    const no = signTemplates.fixture({ s: demo(), me: "latha" }, true);
+    expect(!no.ok && no.status).toBe(403);
+  });
+  it("a refused read carries the route's own words (403 on a seat that sends nothing)", async () => {
+    const f = vi.fn(async () => json(403, { error: "Sending belongs to Finance Operations, Compliance and the Head of Finance.", code: "seat-denied" }));
+    const r = await liveRead(signTemplates, "/api/documents/sign/templates", { fetch: f });
+    expect(r.state === "error" && r.err.status).toBe(403);
   });
 });

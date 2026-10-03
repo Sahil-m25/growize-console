@@ -141,6 +141,11 @@
     "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
    }
   },
+  "/api/documents/sign/templates": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the list is read from Zoho Sign on the person's own token; no recorded fixture for Sign"
+   }
+  },
   "/api/documents/sign/recall": {
    "POST": {
     "body": {

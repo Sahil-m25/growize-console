@@ -138,6 +138,24 @@ test('S04 AC1/AC6: Harsha sends the supplementary template with Aadhaar eSign â€
   noPii(r);
 });
 
+test('S04 template picker: the templates come from Zoho Sign on the sender\'s own token â€” ids and names, bad rows dropped; a seat that sends nothing is refused before any call', async () => {
+  const r = rig((c) => (c.host === 'sign' && c.method === 'GET' && c.url.includes('/api/v1/templates?data=') ? 'sign.templates.list' : null));
+  const sender = createSignSender({ crm: r.crm, sign: r.sign, log: r.log, clock: () => NOW });
+  const ok = await sender.templates(who(HARSHA, 'fin'));
+  assert.equal(ok.ok, true, JSON.stringify(ok));
+  assert.deepEqual(ok.value.map((t) => [t.templateId, t.name]), [[TPL, 'Synthetic supplementary'], ['90071992547409971', 'Synthetic allocation letter']]);
+  const call = signCalls(r, /templates\?data=/)[0];
+  assert.equal(call.headers.Authorization, `Zoho-oauthtoken synthetic-${HARSHA}`, 'her own token (D53)');
+  const data = JSON.parse(new URL(call.url).searchParams.get('data'));
+  assert.equal(data.page_context.sort_column, 'template_name');
+  const none = rig(() => null);
+  const refused = await createSignSender({ crm: none.crm, sign: none.sign, log: none.log, clock: () => NOW }).templates(who(LATHA, 'audit'));
+  assert.equal(refused.ok, false);
+  assert.equal(refused.reasonCode, 'seat-denied');
+  assert.equal(none.calls.length, 0);
+  noPii(r);
+});
+
 test('S04 AC2/AC4: the send panel prefills name and email from the Contact; for an NRI only email OTP is offered, with the reason', async () => {
   const r = rig((c) => (c.host === 'crm' && c.url.includes(`/Contacts/${JOSEPH}`) ? 'crm.contact.joseph-nri' : null)
     || (c.host === 'sign' && c.method === 'GET' && c.url.endsWith(`/requests/${REQ2}`) ? 'sign.get.joseph-inprogress' : null));
@@ -543,7 +561,7 @@ test('S08 T02: the sign.embed contract validates, and the stub receiver accepts 
 
 test('routes: every new route is named in API_ROUTES and wrapped withErrorCapture(guardApi(...)); /api/sign/embed is open (HMAC)', () => {
   const api = path.join(srcRoot, 'app', 'api');
-  for (const r of ['documents/sign/send', 'documents/sign/prefill', 'documents/sign/remind', 'documents/sign/recall', 'documents/sign/block', 'documents/sign/verify', 'documents/sign/dead-letters', 'sign/embed', 'webhooks/zoho-sign']) {
+  for (const r of ['documents/sign/send', 'documents/sign/prefill', 'documents/sign/templates', 'documents/sign/remind', 'documents/sign/recall', 'documents/sign/block', 'documents/sign/verify', 'documents/sign/dead-letters', 'sign/embed', 'webhooks/zoho-sign']) {
     const src = fs.readFileSync(path.join(api, r, 'route.ts'), 'utf8');
     assert.ok(apiRuleOf('/api/' + r), r);
     assert.match(src, /export const (GET|POST) = withErrorCapture\(guardApi\(/, r);

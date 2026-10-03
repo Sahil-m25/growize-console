@@ -5,6 +5,7 @@
  * the console needs, on the credential D53 names for each act:
  *
  *   act                                   endpoint (India DC, sign.zoho.in, /api/v1)               credential
+ *   list the templates to pick from      GET /templates                                              the person (Finance)
  *   send from a template                  GET /templates/{id} → POST /templates/{id}/createdocument   the person (Finance)
  *   send an uploaded PDF                  POST /requests (multipart) → POST /requests/{id}/submit      the person
  *   read a request                        GET /requests/{id}                                          the person, or provider-callback
@@ -54,6 +55,9 @@ export interface SignRequestDetail {
   readonly actions: readonly SignAction[];
   readonly documentIds: readonly string[];
 }
+/** One of Finance's Zoho Sign templates (MA2) — what the send panel offers. */
+export interface SignTemplate { readonly templateId: string; readonly name: string }
+export const MAX_TEMPLATES = 100;
 export interface SignDownload { readonly bytes: Uint8Array; readonly contentType: "application/pdf" }
 
 export interface SignFetchResponse {
@@ -77,6 +81,8 @@ export interface SignApiOptions {
 interface Call { readonly signal?: AbortSignal }
 
 export interface SignApi {
+  /** Finance's templates, on the person's own token: GET /templates (up to MAX_TEMPLATES, by name). */
+  listTemplates(as: UserCredential, o?: Call): Promise<ZohoResult<readonly SignTemplate[]>>;
   createFromTemplate(as: UserCredential, t: { readonly templateId: string; readonly requestName: string; readonly recipient: SignRecipient; readonly method: SignMethod }, o?: Call): Promise<ZohoResult<{ readonly requestId: string }>>;
   createFromPdf(as: UserCredential, p: { readonly file: UploadFile; readonly requestName: string; readonly recipient: SignRecipient; readonly method: SignMethod; readonly field: SignField }, o?: Call): Promise<ZohoResult<{ readonly requestId: string }>>;
   getRequest(as: SignCredential, requestId: string, o?: Call): Promise<ZohoResult<SignRequestDetail>>;
@@ -255,6 +261,20 @@ export function createSignApi(options: SignApiOptions): SignApi {
   const checkId = (id: string, what = "request"): void => { if (typeof id !== "string" || !SIGN_ID.test(id)) throw new TypeError(`Invalid Zoho Sign ${what} id.`); };
 
   const api: SignApi = {
+    async listTemplates(as, o = {}) {
+      userOnly(as);
+      const page = { page_context: { row_count: MAX_TEMPLATES, start_index: 1, search_columns: {}, sort_column: "template_name", sort_order: "ASC" } };
+      const r = await json(as, "signTemplateList", "GET", `/templates?data=${encodeURIComponent(JSON.stringify(page))}`, "/templates", [], null, o.signal);
+      if (!r.ok) return fail(r.failure);
+      if (!Array.isArray(r.body.templates)) return malformed(r.status);
+      const out: SignTemplate[] = [];
+      for (const t of r.body.templates.slice(0, MAX_TEMPLATES)) {
+        const x = obj(t), templateId = idText(x?.template_id), name = typeof x?.template_name === "string" ? x.template_name.trim().slice(0, 200) : "";
+        if (templateId && name) out.push(Object.freeze({ templateId, name }));
+      }
+      return done(Object.freeze(out), r.status);
+    },
+
     async createFromTemplate(as, t, o = {}) {
       userOnly(as);
       checkId(t.templateId, "template");

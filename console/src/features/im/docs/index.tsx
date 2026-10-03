@@ -14,6 +14,7 @@ import type { DocRow, Paper } from "@/server/documents/list";
 import { DocTag, ImSecBar, type ImPageProps, type ImSec } from "../common";
 import { ReadNote } from "../paper2/ReadNote";
 import { SignRowCell } from "../paper2/SignCell";
+import { TemplatePick, useTemplatePick } from "../paper2/TemplatePick";
 import { UploadList, UploadPanel } from "../paper2/Upload";
 
 const first = (n: string | null | undefined): string => String(n || "—").split(" ")[0]!;
@@ -78,7 +79,7 @@ function recordFor(paper: Paper | null, x: { id: string; lead?: string } | null,
 
 /** vSendPanel — imx.js 1994–2027 */
 export function SendPanel({ s, me, dispatch }: ImPageProps) {
-  const { SEL } = s.ui, { DTPL, DSIG } = s.ui.drafts;
+  const { SEL } = s.ui, { DTPL, DSIG, DTID } = s.ui.drafts;
   const cands = readBook(s, me).filter(x => x.st !== "lapsed");
   /* read, never write: the pane picks the first candidate without reassigning SEL */
   const pick = (SEL && I(s, me, SEL)) ? SEL : (cands[0] ? cands[0].id : null);
@@ -86,18 +87,19 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
   const paper = t ? PAPER_OF_TEMPLATE[t.t] ?? null : null;
   const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: paper && x ? recordFor(paper, x, allotmentOf({ s, me }, x.id)) : null });
   const send = useApiWrite(signSend, { s, me }, dispatch);
+  const pickT = useTemplatePick(s, me, paper, DTID);
   const press = useRef<string | null>(null);
   if (!pageReadable(s, me, "docs")) return null;
   if (!may(s, me, "doc")) return <div className="card"><div className="empty">Sending belongs to Finance
     Operations, Compliance and the Head of Finance.</div></div>;
   const aadhaarOff = paper ? pre.state === "ok" && !pre.data.methods.includes("aadhaar") : !!(x && x.nri);
   const blocked = !!x && aadhaarOff && DSIG === "Aadhaar OTP";
-  const can = !!x && !!DTPL && !blocked && (!paper || (pre.state === "ok" && pre.data.maySend));
+  const can = !!x && !!DTPL && !blocked && pickT.ready && (!paper || (pre.state === "ok" && pre.data.maySend));
   const go = () => {
     if (!x || !DTPL || !pick) return;
     press.current ??= newIdempotencyKey();
     void send({ paper: paper ?? "other", recordId: (paper && recordFor(paper, x, allotmentOf({ s, me }, x.id))) || x.id, method: METHOD_OF[DSIG] ?? "email-otp",
-      templateId: "", expectedModifiedTime: pre.state === "ok" ? pre.data.modifiedTime ?? "" : "", book: { inv: pick, tpl: DTPL, sig: DSIG } },
+      templateId: pickT.tid, expectedModifiedTime: pre.state === "ok" ? pre.data.modifiedTime ?? "" : "", book: { inv: pick, tpl: DTPL, sig: DSIG } },
     { idempotencyKey: press.current }).then(r => { if (r.ok) press.current = null; });
   };
   return (
@@ -119,6 +121,7 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
         <p className="lbl">Signing</p>
         <div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg => <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`}
           onClick={() => dispatch({ type: "setDraft", patch: { DSIG: sg } })}>{sg}</button>)}</div></>}
+      <TemplatePick paper={paper} pick={pickT} DTID={DTID} onPick={v => dispatch({ type: "setDraft", patch: { DTID: v } })} />
       {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}
       {paper && pre.state === "ok" && pre.data.recipient
         ? <p className="sm" style={{ margin: "0 0 10px" }}>{"To " + pre.data.recipient.name + " · " + pre.data.recipient.email}</p> : null}
