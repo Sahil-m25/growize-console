@@ -7,8 +7,11 @@
 import type { ActivityResult, ActivityRow, Tally } from "@/server/activity/query";
 import type { HistoryEntry } from "@/server/activity/sources";
 import { activityBase, isSys, KINDS, logFor, may, pageReadable, safeNote } from "@/lib/im";
+import { KINDS as LEAD_KINDS } from "@/domain";
+import { activityRows, isHumanTouch, logNote, may as leadMay } from "@/lib/selectors";
 import { fail, ok, type ReadEndpoint } from "../api";
 import type { ImBook } from "./im";
+import type { ConsoleBook } from "./lead";
 
 type Ok = Extract<ActivityResult, { ok: true }>;
 export type ActivityRowView = ActivityRow & { readonly detail?: string | null };
@@ -59,5 +62,53 @@ export const recordHistory: ReadEndpoint<ImBook, { module: string; id: string | 
     const rows = logFor(s, me, a.id);
     if (!rows.length && !s.data.INV.some(x => x.id === a.id)) return fail(404, "not-found", "This record's history is not available to you.");
     return ok({ entries: rows.map(e => ({ at: e.at, byId: e.who, action: e.what, fields: [] })), more: false });
+  },
+};
+
+/* M15-S03-W2 — Activity, Lead side: the same route with side=lead, month-scoped (the route's own unit).
+   Fixture: the demo book's log through the same gate the page used (activityRows = the seat's actors and the leads it can open),
+   cut to the month / day / person / kind exactly as the route cuts them. The route's rows carry no note, touch count or lead name;
+   the page shows them, so the view type adds optional `detail`, `touch`, `human` the fixture fills and the live half leaves empty
+   — PROVISIONAL (see the report). */
+export type LeadActivityRowView = ActivityRow & { readonly detail?: string | null; readonly touch?: number | null; readonly human?: boolean };
+export type LeadActivityView = Omit<Ok, "ok" | "rows"> & { readonly rows: readonly LeadActivityRowView[] };
+export type LeadActivityArgs = { month: string; day: string | null; person: string | null; kind: string | null };
+
+export const leadActivityRead: ReadEndpoint<ConsoleBook, LeadActivityArgs, LeadActivityView> = {
+  path: a => {
+    const q = new URLSearchParams({ side: "lead", month: a.month, limit: "200" });
+    if (a.day) q.set("day", a.day);
+    if (a.person) q.set("person", a.person);
+    if (a.kind) q.set("kind", a.kind);
+    return `/api/activity?${q}`;
+  },
+  pick: j => j as LeadActivityView,
+  fixture(state, a) {
+    if (!leadMay(state, "activity", "view")) return fail(403, "no-activity", "Activity is not part of this seat.");
+    const solo = !leadMay(state, "activity", "others");
+    const stamp = (e: { d: string; at: string }) => `${e.d}T${e.at.slice(-5)}:00+05:30`;
+    const inMonth = activityRows(state).filter(e => e.d.startsWith(a.month + "-"));
+    const people = [...new Set(inMonth.map(e => e.who))].sort();
+    const day = a.day && a.day.startsWith(a.month + "-") ? a.day : null;
+    const person = a.person && !solo && people.includes(a.person) ? a.person : null;
+    const kind = a.kind && Object.hasOwn(LEAD_KINDS, a.kind) ? a.kind : null;
+    const cut = inMonth.filter(e => (!day || e.d === day) && (!person || e.who === person) && (!kind || e.kind === kind))
+      .sort((x, y) => stamp(y).localeCompare(stamp(x)));
+    const tally = (by: "person" | "day"): Tally[] => {
+      const g = new Map<string, { key: string; total: number; kinds: Record<string, number> }>();
+      for (const e of cut) {
+        const key = by === "person" ? e.who : e.d;
+        const t = g.get(key) ?? { key, total: 0, kinds: {} };
+        t.total++; t.kinds[e.kind] = (t.kinds[e.kind] ?? 0) + 1; g.set(key, t);
+      }
+      return [...g.values()].sort((x, y) => (by === "person" ? y.total - x.total || x.key.localeCompare(y.key) : y.key.localeCompare(x.key)));
+    };
+    return ok({
+      side: "lead", sides: ["lead"], solo, adminView: false, month: a.month, day, person, kind, ignored: [], kinds: LEAD_KINDS,
+      people, total: cut.length, offset: 0, limit: 200,
+      rows: cut.slice(0, 200).map((e): LeadActivityRowView => ({ at: stamp(e), day: e.d, byId: e.who, side: "lead", kind: e.kind, what: e.what, module: "Leads",
+        recordId: e.lead, source: "archive", withheld: false, detail: logNote(state, e), touch: e.touch ?? null, human: isHumanTouch(e) })),
+      byPerson: solo ? [] : tally("person"), byDay: tally("day"), partial: false,
+    });
   },
 };
