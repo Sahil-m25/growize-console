@@ -51,6 +51,26 @@ export function piiView(s: ImState, WHO: string, x: ImInvestor, f: "pan" | "acct
 }
 
 /* ============================ money gates (imx.js 934–1008, 1255–1271) ============================ */
+/** M11-S07 (D54, TC-IM06-012): money that OPENS a reservation is a claim on units, and units are not sold twice. An investor who
+ *  holds nothing yet claims their blocks' units the moment the first receipt lands: if a block has fewer free units than they want
+ *  (released − what OTHERS hold, reserved / paid / allotted — the server's heldOn), it is refused naming the block and its free
+ *  units, in server/farms/oversell's words. Money against a reservation that already exists is never refused here (D21, rule 3:
+ *  recording is always allowed; the units were claimed when it was opened). */
+const HOLDS_UNITS: ReadonlySet<string> = new Set(["reserved", "paid", "allocated"]);
+export function oversellGate(s: ImCtx, x: ImInvestor): Gate {
+  if (HOLDS_UNITS.has(x.st)) return OK;
+  for (const [k, n] of Object.entries(x.blocks)) {
+    const f = s.data.FARMS.find(y => y.k === k);
+    if (!f || !(n > 0)) continue;
+    const others = s.data.INV.filter(y => y.id !== x.id && HOLDS_UNITS.has(y.st)).reduce((a, y) => a + (y.blocks[k] || 0), 0);
+    const free = Math.max(0, f.released - others), label = "Block " + k, forWhom = x.n + "'s " + n + " unit" + (n === 1 ? "" : "s");
+    if (f.released === 0) return no(label + " is not released for sale, so it has no free units for " + forWhom + ".");
+    if (n > free) return no(free <= 0 ? label + " has no free units for " + forWhom + "."
+      : label + " has only " + free + " free unit" + (free === 1 ? "" : "s") + " for " + forWhom + ".");
+  }
+  return OK;
+}
+
 /** recordPay's checks, in its order. On ok, `amt` is what the receipt will be for. */
 export function recordPayGate(s: ImCtx, WHO: string, id: string, kind: "advance" | "balance"): Gate & { amt?: number } {
   if (!may(s, WHO, "pay")) return no();
@@ -64,6 +84,8 @@ export function recordPayGate(s: ImCtx, WHO: string, id: string, kind: "advance"
   const amt = kind === "advance" ? Math.round(x.units * UNIT * 0.1) : due;
   if (kind === "advance" && gotBy(s, WHO, id) > 0)
     return no("An advance is already held against " + x.n + ". Record the balance instead.");
+  const claim = oversellGate(s, x);
+  if (!claim.ok) return claim;
   return { ok: true, amt };
 }
 /** setMark's checks. `ask` is the confirm() text when the flip needs a second press. */
