@@ -35,7 +35,7 @@ const AM_SEAT_ROLE: Readonly<Partial<Record<ZohoSeat, { role: ZohoRoleName; prof
   "key-account-manager": { role: "Key Account Manager", profile: "KAM" },
   "head-of-account-management": { role: "Head of Account Management", profile: "AM Head" },
 });
-function kamAccess(start: ConsoleSession, seatIds: SeatIds | undefined,
+export function kamAccess(start: ConsoleSession, seatIds: SeatIds | undefined,
   recheck: (sid: string) => Promise<{ credential: UserCredential; session: ConsoleSession } | null>): KamBookAccessAuthority {
   return {
     async recheck(cred, sid) {
