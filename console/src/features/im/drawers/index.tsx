@@ -11,8 +11,8 @@
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
 import { SignRowCell } from "../paper2/SignCell";
-import { useRef, useState, type ReactNode } from "react";
-import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { newIdempotencyKey, runWrite, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { dayOf, documentUpload, documentsList } from "@/lib/data/endpoints/documents";
 import { leadHints, NO_WORD } from "@/lib/data/endpoints/paperwork";
 import { allotmentOf, HAND_METHODS, METHOD_OF, NOTHING_CAME_BACK, PAPER_OF_TEMPLATE, signBlock, signPrefill, signSend, signVerify, type HandMethod } from "@/lib/data/endpoints/sign";
@@ -29,9 +29,11 @@ import { caseOpen } from "@/lib/data/endpoints/cases";
 import { audienceOf, updateList, updatePublish } from "@/lib/data/endpoints/updates";
 import { ImPname, KycTag, Pii, type ImPageProps } from "../common";
 import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
-import { receiptPrepare, receiptRecord } from "@/lib/data/endpoints/claims";
+import { receiptPrepare, receiptRecord, type Recorded } from "@/lib/data/endpoints/claims";
 import { claimConfirm, claimNotThere, claimOne } from "@/lib/data/endpoints/receipts";
-import { useReload } from "@/lib/store";
+import { useReload, useSaveQueue, type ConsoleState } from "@/lib/store";
+import { NOT_SAVED_WAITING, offlineGate, PREPARE_RENEW_MS, receiptQueueKey, receiptSave, type HeldPrepare } from "@/lib/receipt-queue";
+import type { Prepared } from "@/server/money/record-receipt";
 import { investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
 import { investorAllot } from "@/lib/data/endpoints/allotments";
 
@@ -267,29 +269,91 @@ function payBody(c: Ctx): ReactNode {
   );
 }
 /* M08-S03-W1: Record it is POST /api/receipts/prepare, then POST /api/receipts with one Idempotency-Key per press
-   (lib/data/endpoints/claims). Recording is never refused for unsigned paper — the answer says matching waits (D21). */
+   (lib/data/endpoints/claims). Recording is never refused for unsigned paper — the answer says matching waits (D21).
+   M01-S08 (D41, NOTE-8): the press goes through the console's one save queue in both modes. The preparation is renewed
+   while the drawer is open and online (every 4 minutes); offline it is queued only while that preparation is under 5
+   minutes old, with queuedAt = the server's preparedAt + monotonic elapsed time; the drawer stays open saying "Not saved
+   yet" and nothing on the record changes until the queue replays it. A retry is a new press (new key, fresh preparation). */
+const mono = (): number => (typeof performance !== "undefined" ? performance.now() : Date.now());
 function PayFoot(c: Ctx) {
   const { s, me, id, dispatch } = c; const { PKIND, PMODE, PUTR } = draft(c);
   const prepare = useApiWrite(receiptPrepare, { s, me }, dispatch), record = useApiWrite(receiptRecord, { s, me }, dispatch);
   const reloadData = useReload();
-  const live = useApiMode() === "live";
+  const q = useSaveQueue();
+  const apiMode = useApiMode();
+  const live = apiMode === "live";
   const [busy, setBusy] = useState(false);
-  if (!may(s, me, "pay") || !id) return null;
+  const allot = id ? pickedAllot(s, me, id) || null : null;
+  const book = useRef({ s, me }); book.current = { s, me };
+  const held = useRef<HeldPrepare<Prepared> | null>(null);
+  const mayPay = may(s, me, "pay") && !!id;
+  /* keep a preparation: now, and again every four minutes, while this footer is up and the browser can reach the server.
+     A renewal is quiet — it never raises a note (an offline press says why itself). */
+  useEffect(() => {
+    held.current = null;
+    if (!mayPay || !q) return;
+    const run = async () => {
+      if (live && !q.isOnline()) return;
+      const r = await runWrite(apiMode, receiptPrepare, book.current, () => {}, { allotmentId: allot });
+      if (r.ok) held.current = { p: r.data, preparedAt: r.data.preparedAt, mono: mono() };
+    };
+    void run();
+    const t = setInterval(() => void run(), PREPARE_RENEW_MS);
+    return () => clearInterval(t);
+  }, [mayPay, allot, apiMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!mayPay || !id) return null;
+  const say = (msg: string) => dispatch({ type: "note", msg });
   const press = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      const allot = pickedAllot(s, me, id) || null, key = newIdempotencyKey();
-      const p = await prepare({ allotmentId: allot });
-      if (!p.ok) return;
-      const r = await record({ inv: id, allotmentId: allot, kind: PKIND, mode: PMODE, ref: PUTR, prepared: p.data }, { idempotencyKey: key });
-      if (!r.ok) return;
-      /* fixture: the reducer's recordPay has closed the drawer and cleared the draft; live: the page does */
-      if (live) { dispatch({ type: "setDraft", patch: { PUTR: "" } }); dispatch({ type: "closeDrawer" }); reloadData(); }
-      if (r.data.matchNote) dispatch({ type: "note", msg: r.data.matchNote });
+      if (!q) { /* no console around it (a bare render): the direct two calls */
+        const key = newIdempotencyKey();
+        const p = await prepare({ allotmentId: allot });
+        if (!p.ok) return;
+        const r = await record({ inv: id, allotmentId: allot, kind: PKIND, mode: PMODE, ref: PUTR, prepared: p.data }, { idempotencyKey: key });
+        if (r.ok && r.data.matchNote) say(r.data.matchNote);
+        return;
+      }
+      const offline = !q.isOnline();
+      let h = held.current;
+      if (offline && !live && !h) { /* the demo has no network to wait for: prepare against the book */
+        const p = await runWrite(apiMode, receiptPrepare, book.current, () => {}, { allotmentId: allot });
+        if (p.ok) h = { p: p.data, preparedAt: p.data.preparedAt, mono: mono() };
+      }
+      if (offline) { const why = offlineGate(h, mono()); if (why) { say(why); return; } }
+      const intent = { inv: id, allotmentId: allot, kind: PKIND, mode: PMODE, ref: PUTR };
+      const r = q.enqueueSave(receiptSave<Prepared, Recorded, ConsoleState>({
+        key: receiptQueueKey({ actor: me, session: "receipt" }, intent), inv: id, offline, held: h, mono, newKey: newIdempotencyKey,
+        prepare: async () => { const p = await runWrite(apiMode, receiptPrepare, book.current, dispatch, { allotmentId: allot }); return p.ok ? p : { ok: false, error: p.error }; },
+        record: async (prepared, extra) => {
+          const x = await runWrite(apiMode, receiptRecord, book.current, dispatch, { ...intent, kind: PKIND, prepared, queuedAt: extra.queuedAt },
+            { idempotencyKey: extra.idempotencyKey });
+          return x.ok ? x : { ok: false, error: x.error };
+        },
+        validate: st => { const cs = { data: st.IM, ui: st.IMUI }; return may(cs, st.WHO, "pay") && (live || !!I(cs, st.WHO, id)); }, /* live: the route checks the record on the person's own token */
+        saved: (data, read) => {
+          /* fixture: the reducer's recordPay has closed the drawer and cleared the draft; live: the page does — only if that
+             same drawer is still the one open (a replay may land after the person has moved on) */
+          const cur = read().IMUI.DRW;
+          if (live && cur && cur.k === "pay" && cur.id === id) { dispatch({ type: "setDraft", patch: { PUTR: "" } }); dispatch({ type: "closeDrawer" }); }
+          if (live) reloadData();
+          if (data.matchNote) say(data.matchNote);
+        },
+      }));
+      if (!r || r.status === "rejected") say("Not saved yet — this change could not be queued. Nothing on the record changed.");
     } finally { setBusy(false); }
   };
-  return <button className="act" disabled={busy} onClick={() => void press()}>Record it</button>;
+  /* the honest state of THIS press, from the queue itself: waiting for a connection, or failed (the top bar offers Retry) */
+  const mine = q?.saves.find(e => e.key === receiptQueueKey({ actor: me, session: "receipt" }, { inv: id, allotmentId: allot, kind: PKIND, mode: PMODE, ref: PUTR }));
+  const status = mine?.status === "pending" ? NOT_SAVED_WAITING
+    : mine?.status === "failed" ? `Not saved yet — ${mine.error || "the save was not confirmed."} Use Retry in the top bar.` : null;
+  return (
+    <div style={{ flex: "1 1 100%" }}>
+      <button className="act" disabled={busy} onClick={() => void press()}>Record it</button>
+      {status ? <p className="sm" role="status" style={{ margin: "8px 0 0" }}><b>Not saved yet.</b> {status.replace(/^Not saved yet — /, "")}</p> : null}
+    </div>
+  );
 }
 const payFoot = (c: Ctx): ReactNode => <PayFoot {...c} />;
 

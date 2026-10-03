@@ -130,7 +130,8 @@ export function createConsoleWriter(options: SaveQueueOptions & {
       return undefined;
     }
     const session = options.currentSession();
-    if (!session) return undefined;
+    /* M01-S08: the queue also admits an Investors-side seat (receipts), but a lead-side write is still only for a console account */
+    if (!session || !accountAllowed(state)) return undefined;
     const captured = clone(action), oldTarget = json({ record: target(state, captured), recipients: recipients(state, captured) }), oldDraft = json(draft(state, captured));
     const id = "id" in captured ? String(captured.id) : undefined;
     const key = saveKey(json([session.actor, session.session, captured, oldDraft, oldTarget]));

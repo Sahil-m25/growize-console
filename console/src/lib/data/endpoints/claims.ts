@@ -40,7 +40,8 @@ export const leadClaim: WriteEndpoint<ConsoleBook, ClaimArgs, Reported, ConsoleD
 
 /* ---- Record a receipt: prepare, then record ---------------------------------------------------- */
 export type PrepareArgs = { allotmentId: string | null };
-/* the fixture has no allotment context to seal: its `expected` is a placeholder the fixture record never reads */
+/* the fixture has no allotment context to seal: its `expected` is a placeholder the fixture record never reads; its preparedAt is the local clock
+   (M01-S08: the demo's stand-in for the server's, so the five-minute offline rule behaves the same in both modes) */
 export const receiptPrepare: WriteEndpoint<ImBook, PrepareArgs, Prepared, ImDispatch> = {
   method: "POST",
   path: () => "/api/receipts/prepare",
@@ -48,12 +49,12 @@ export const receiptPrepare: WriteEndpoint<ImBook, PrepareArgs, Prepared, ImDisp
   pick: j => (j as { prepared: Prepared }).prepared,
   fixture: ({ s, me }) => {
     if (!may(s, me, "pay")) return fail(403, "read-only", "Read only — Finance Operations and the Head of Finance record money.");
-    return ok({ preparedAt: 0, contextToken: "fixture", expected: {} as Prepared["expected"], amountDueRupees: 0, matchable: true, matchNote: null });
+    return ok({ preparedAt: Date.now(), contextToken: "fixture", expected: {} as Prepared["expected"], amountDueRupees: 0, matchable: true, matchNote: null });
   },
   onLiveError: imLiveError,
 };
 
-export type RecordArgs = { inv: string; allotmentId: string | null; kind: "advance" | "balance"; mode: string; ref: string; prepared: Prepared };
+export type RecordArgs = { inv: string; allotmentId: string | null; kind: "advance" | "balance"; mode: string; ref: string; prepared: Prepared; queuedAt?: number | null };
 export type Recorded = Pick<RecordedReceipt, "receiptId" | "state" | "matchable" | "matchNote">;
 /** record-receipt MATCH_BLOCKED_TEXT — the same words (a client module cannot import the server's value) */
 const MATCH_BLOCKED = "Recorded. It cannot be matched until the supplementary agreement is signed and verified.";
@@ -61,7 +62,7 @@ const MATCH_BLOCKED = "Recorded. It cannot be matched until the supplementary ag
 export const receiptRecord: WriteEndpoint<ImBook, RecordArgs, Recorded, ImDispatch> = {
   method: "POST",
   path: () => "/api/receipts",
-  body: a => ({ allotmentId: a.allotmentId, kind: a.kind, mode: a.mode, ref: a.ref, prepared: a.prepared }),
+  body: a => ({ allotmentId: a.allotmentId, kind: a.kind, mode: a.mode, ref: a.ref, prepared: a.prepared, ...(a.queuedAt != null ? { queuedAt: a.queuedAt } : {}) }),
   idempotent: true,
   pick: j => (j as { receipt: RecordedReceipt }).receipt,
   fixture(b, d, a) {
