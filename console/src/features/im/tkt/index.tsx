@@ -9,17 +9,34 @@ import {
 } from "@/lib/im";
 import type { ImTicket } from "@/lib/im";
 import { useApiRead, useApiWrite } from "@/lib/data/api";
-import { caseDeliveries, caseHandover, caseList, caseMove, caseReply, deliveryLine } from "@/lib/data/endpoints/cases";
+import { caseDeliveryList, caseHandover, caseList, caseMessages, caseMove, caseReply, DELIVERY_LIST_MAX, deliveryLine } from "@/lib/data/endpoints/cases";
 import { ImPname, type ImPageProps } from "../common";
 
-/* M13-S05-W1 — 'Reply to the investor': the reply is POST /api/cases/[id]/reply and the line under it is
-   GET /api/cases/[id]/deliveries ("Delivered" only after the app's push.delivered; else "Reply not delivered yet"). */
-function TkReply({ s, me, dispatch, t }: ImPageProps & { t: ImTicket }) {
+/* M13-S05-W1 — the ticket thread: GET /api/cases/[id]/messages, the Notes on the Case oldest first. Read only once it is opened,
+   so a register of many tickets makes no per-row call. A reply is a Note titled "Reply to the investor" (kind "reply"). */
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** the route's naive IST "2026-09-28T11:40" as "28 Sep 11:40" */
+const stampOf = (at: string): string => { const m = /^\d{4}-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(at); return m ? `${+m[2]!} ${MON[+m[1]! - 1]} ${m[3]}` : at; };
+function TkThread({ s, me, t }: { s: ImPageProps["s"]; me: string; t: ImTicket }) {
+  const m = useApiRead(caseMessages, { s, me }, t.id);
+  if (m.state === "idle" || m.state === "loading") return <p className="sm" style={{ margin: "6px 0 0" }}>Reading the thread…</p>;
+  if (m.state === "error") return <p className="sm" role="alert" style={{ margin: "6px 0 0" }}>{m.err.error}</p>;
+  const rows = m.data.messages;
+  return rows.length ? (
+    <ul className="sm" aria-label={`Thread on ${t.t}`} style={{ margin: "6px 0 0", paddingLeft: 16 }}>
+      {rows.map(x => <li key={x.id}><span className={`tag ${x.kind === "reply" ? "go" : ""}`}>{x.kind === "reply" ? "reply" : "note"}</span>{" "}
+        {x.text} <span className="mono">{stampOf(x.at)}</span>{x.by?.name ? " · " + x.by.name.split(" ")[0] : ""}</li>)}
+    </ul>
+  ) : <p className="sm" style={{ margin: "6px 0 0" }}>Nothing on the thread yet.</p>;
+}
+
+/* M13-S05-W1 — 'Reply to the investor': the reply is POST /api/cases/[id]/reply; the line under it is the register's one
+   GET /api/cases/deliveries?ids= ("Delivered" only after the app's push.delivered; else "Reply not delivered yet"). */
+function TkReply({ s, me, dispatch, t, label }: ImPageProps & { t: ImTicket; label: string | null }) {
   const [open, setOpen] = useState(false), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState<string | null>(null), [err, setErr] = useState<string | null>(null);
+  const [sent, setSent] = useState<string | null>(null), [err, setErr] = useState<string | null>(null), [thread, setThread] = useState(false);
   const reply = useApiWrite(caseReply, { s, me }, dispatch);
-  const d = useApiRead(caseDeliveries, { s, me }, t.state === "closed" ? null : t.id);
-  const line = deliveryLine(sent ?? (d.state === "ok" ? d.data.label : null));
+  const line = deliveryLine(sent ?? label);
   const send = async () => {
     setBusy(true); setErr(null);
     const r = await reply({ id: t.id, message: msg });
@@ -38,13 +55,15 @@ function TkReply({ s, me, dispatch, t }: ImPageProps & { t: ImTicket }) {
             <button className="chip" onClick={() => { setOpen(false); setErr(null); }}>Not now</button>
           </div>
         </div>
-      ) : <div className="chips" style={{ marginTop: 6 }}><button className="chip" onClick={() => setOpen(true)}>Reply to the investor</button></div>}
+      ) : <div className="chips" style={{ marginTop: 6 }}><button className="chip" onClick={() => setOpen(true)}>Reply to the investor</button>
+        <button className="chip" aria-expanded={thread} onClick={() => setThread(x => !x)}>{thread ? "Hide thread" : "Show thread"}</button></div>}
+      {thread ? <TkThread s={s} me={me} t={t} /> : null}
       {err ? <p className="sm" role="alert" style={{ margin: "6px 0 0" }}>{err}</p> : null}
     </div>
   );
 }
 
-export function TkRow({ s, me, dispatch, t, watched }: ImPageProps & { t: (ImTicket & { number?: string | null }) | null | undefined; watched?: boolean }) {
+export function TkRow({ s, me, dispatch, t, watched, delivery = null }: ImPageProps & { t: (ImTicket & { number?: string | null }) | null | undefined; watched?: boolean; delivery?: string | null }) {
   /* M13-S03-W1 / S04-W1: move and hand-over are PATCH /api/cases/[id] and POST /api/cases/[id]/handover; a refusal lands in the page note */
   const move = useApiWrite(caseMove, { s, me }, dispatch);
   const hand = useApiWrite(caseHandover, { s, me }, dispatch);
@@ -77,7 +96,7 @@ export function TkRow({ s, me, dispatch, t, watched }: ImPageProps & { t: (ImTic
                 <button className="chip on" onClick={e => { e.stopPropagation();
                   void move({ id: t.id, to: "closed", expectedModifiedTime: t.version ?? null }); }}>Close it</button>
               </div>}
-      {t.state !== "closed" && !watched && canWork ? <TkReply s={s} me={me} dispatch={dispatch} t={t} /> : null}
+      {t.state !== "closed" && !watched && canWork ? <TkReply s={s} me={me} dispatch={dispatch} t={t} label={delivery} /> : null}
     </div>
   );
 }
@@ -86,6 +105,9 @@ export function TkRow({ s, me, dispatch, t, watched }: ImPageProps & { t: (ImTic
    The seat rules on each row (who may close, hand on, reply) are still the book's own until the Investors seat book is wired. */
 export function ImTkt({ s, me, dispatch }: ImPageProps) {
   const r = useApiRead(caseList, { s, me }, undefined);
+  /* M13-S05-W1: whether replies reached the app, for every open row in ONE read (never a GET per row) */
+  const openIds = r.state === "ok" ? r.data.rows.filter(t => t.state !== "closed").map(t => t.id).slice(0, DELIVERY_LIST_MAX) : [];
+  const dl = useApiRead(caseDeliveryList, { s, me }, openIds);
   const KFILT = s.ui.KFILT;
   if (r.state === "idle" || r.state === "loading") return <div className="empty">Reading the tickets…</div>;
   if (r.state === "error") return r.err.status === 403 ? null : <div className="note bad" role="alert">{r.err.error}</div>;
@@ -117,7 +139,8 @@ export function ImTkt({ s, me, dispatch }: ImPageProps) {
         <button key={k} className={`sc ${f === k ? "on" : ""}`}
           onClick={() => dispatch({ type: "setFilter", patch: { KFILT: k } })}>{t}<i>{n}</i></button>)}</div>
       <div className="secw"><div className="card fill"><div className="cb">
-        {rows.length ? rows.map(t => <TkRow key={t.id} s={s} me={me} dispatch={dispatch} t={t} watched={!!t.watched} />)
+        {rows.length ? rows.map(t => <TkRow key={t.id} s={s} me={me} dispatch={dispatch} t={t} watched={!!t.watched}
+          delivery={dl.state === "ok" ? dl.data.cases[t.id]?.label ?? null : null} />)
           : <div className="empty">{isAM(s, me)
             ? "Nothing assigned to you. A ticket on one of your accounts can still be Finance's — a bank change or a FIRC is a compliance job — and those do not appear here."
             : "Nothing in this cut."}</div>}

@@ -5,6 +5,8 @@
      POST /api/cases/[id]/handover        a KAM hands a Bank/Compliance ticket to Finance and keeps watching
      POST /api/cases/[id]/reply           answer the investor (a Note on the Case, pushed as case.replied)
      GET  /api/cases/[id]/deliveries      whether the replies reached the investor app
+     GET  /api/cases/deliveries?ids=      the same for many tickets at once (the register's open rows — no GET per row)
+     GET  /api/cases/[id]/messages        the ticket thread: the Notes on the Case, oldest first
    Live: the routes, on the person's own token. Fixture: the same answers projected from the demo book, and each write
    runs the reducer action it replaces (newTicket, moveTicket, handToFinance). The reply has no reducer action — the
    demo book keeps no thread — so its fixture answers "Not delivered yet", the honest state of a push nobody acknowledged. */
@@ -12,6 +14,7 @@
 import type { cacheView } from "@/server/cases/http";
 import type { CaseCuts, CaseRow } from "@/server/cases/register";
 import type { ReplyDelivery } from "@/server/cases/deliveries";
+import type { CaseMessage } from "@/server/cases/messages";
 import { I, imReducer, may, mayTkt, pageReadable, ticketBook, watchedTkt, isAM, type ImAction, type ImTicket } from "@/lib/im";
 import { fail, ok, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
@@ -26,6 +29,8 @@ export type CaseMoved = { row: CaseRow; already: boolean; modifiedTime: string |
 export type CaseHanded = { row: CaseRow; to: string; already: boolean };
 export type CaseReplied = { caseId: string; noteId: string; delivery: { eventId: string; label: string } };
 export type CaseDeliveries = { caseId: string; replies: ReplyDelivery[]; label: string | null };
+export type CaseDeliveryList = { cases: Record<string, { replies: ReplyDelivery[]; label: string | null }> };
+export type CaseThread = { caseId: string; messages: CaseMessage[]; truncated: boolean };
 
 const NO_PAGE = () => fail(403, "no-book", "This page is not part of your seat.");
 const READ_ONLY = () => fail(403, "read-only", "This seat reads tickets; it does not work them.");
@@ -137,6 +142,35 @@ export const caseDeliveries: ReadEndpoint<ImBook, string | null, CaseDeliveries>
     const t = b.s.data.TKT.find(x => x.id === id);
     if (!t || !I(b.s, b.me, t.inv)) return NOT_FOUND();
     return ok({ caseId: t.id, replies: [], label: null });   /* the demo book keeps no thread */
+  },
+};
+
+/** The most tickets one list read asks about (server/cases/reach MAX_CASE_IDS). */
+export const DELIVERY_LIST_MAX = 100;
+/** Every id's delivery in one read. Fixture: the demo book keeps no thread, so no ticket has a reply yet. */
+export const caseDeliveryList: ReadEndpoint<ImBook, readonly string[], CaseDeliveryList> = {
+  path: ids => (ids.length ? `/api/cases/deliveries?ids=${ids.slice(0, DELIVERY_LIST_MAX).map(encodeURIComponent).join(",")}` : null),
+  pick: j => j as CaseDeliveryList,
+  fixture(b, ids) {
+    if (!pageReadable(b.s, b.me, "tkt")) return NO_PAGE();
+    const cases: CaseDeliveryList["cases"] = {};
+    for (const id of ids.slice(0, DELIVERY_LIST_MAX)) {
+      const t = b.s.data.TKT.find(x => x.id === id);
+      if (t && I(b.s, b.me, t.inv)) cases[id] = { replies: [], label: null };
+    }
+    return ok({ cases });
+  },
+};
+
+/** One ticket's thread. Fixture: the demo book keeps no thread (no reducer action writes a Note), so it is empty. */
+export const caseMessages: ReadEndpoint<ImBook, string | null, CaseThread> = {
+  path: id => (id ? `/api/cases/${encodeURIComponent(id)}/messages` : null),
+  pick: j => j as CaseThread,
+  fixture(b, id) {
+    if (!pageReadable(b.s, b.me, "tkt")) return NO_PAGE();
+    const t = b.s.data.TKT.find(x => x.id === id);
+    if (!t || !I(b.s, b.me, t.inv)) return NOT_FOUND();
+    return ok({ caseId: t.id, messages: [], truncated: false });
   },
 };
 

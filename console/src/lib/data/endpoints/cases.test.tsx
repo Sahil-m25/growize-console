@@ -2,9 +2,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { imDemoData } from "@fixtures/im/demo";
 import { initialImUi, type ImAction, type ImState } from "@/lib/im";
-import { runWrite } from "../api";
+import { liveRead, runWrite } from "../api";
 import type { ImBook } from "./im";
-import { caseDeliveries, caseHandover, caseList, caseMove, caseOpen, caseReply, deliveryLine } from "./cases";
+import { caseDeliveries, caseDeliveryList, caseHandover, caseList, caseMessages, caseMove, caseOpen, caseReply, deliveryLine } from "./cases";
 import { updateList, updatePublish } from "./updates";
 
 const demo = (): ImState => ({ data: imDemoData(), ui: initialImUi() });
@@ -130,5 +130,43 @@ describe("M13-S06-W1 — investor updates", () => {
     expect(seen).toEqual([{ type: "publish", t: "Quarterly statement — Oct to Dec", cat: "Statement", d: "b", to: "all" }]);
     expect(r).toMatchObject({ ok: true, data: { count: 15, row: { kind: "Statement", by: "meena", toText: "everyone on the book" } } });
     expect(await runWrite("fixture", updatePublish, book("imran"), () => {}, { headline: "x", kind: "Statement", audience: "all", body: "" })).toMatchObject({ ok: false, status: 403, code: "kind-not-yours" });
+  });
+});
+
+describe("M13-S05-W1 — the ticket thread and the list of deliveries", () => {
+  it("the thread route is per ticket and reads nothing without an id; the demo book keeps no thread", () => {
+    expect(caseMessages.path("5001")).toBe("/api/cases/5001/messages");
+    expect(caseMessages.path(null)).toBeNull();
+    expect(caseMessages.fixture(book("imran"), "TK-0116")).toMatchObject({ ok: true, data: { caseId: "TK-0116", messages: [], truncated: false } });
+    expect(caseMessages.fixture(book("neha"), "TK-0114")).toMatchObject({ ok: false, status: 404 });
+    expect(caseMessages.fixture(book("pradeep"), "TK-0116")).toMatchObject({ ok: false, status: 403 });
+  });
+  it("live: the thread is the route's messages, as the route answered them", async () => {
+    const m = { id: "9", kind: "reply", text: "We have updated it.", at: "2026-09-28T11:40", by: { id: "7", name: "Imran Sheikh" } };
+    const f = fetchOf(200, { caseId: "5001", messages: [m], truncated: false });
+    const r = await liveRead(caseMessages, "/api/cases/5001/messages", { fetch: f });
+    expect(r).toEqual({ state: "ok", data: { caseId: "5001", messages: [m], truncated: false } });
+    expect(f).toHaveBeenCalledWith("/api/cases/5001/messages", expect.anything());
+  });
+  it("one list read asks for every open row; nothing to ask, nothing read", () => {
+    expect(caseDeliveryList.path([])).toBeNull();
+    expect(caseDeliveryList.path(["5001", "5002"])).toBe("/api/cases/deliveries?ids=5001,5002");
+    const ids = Array.from({ length: 150 }, (_, i) => String(1000 + i));
+    expect(caseDeliveryList.path(ids)!.split("=")[1]!.split(",")).toHaveLength(100);
+  });
+  it("the fixture answers an entry only for tickets this seat may open, none with a reply yet", () => {
+    const b = book("imran");
+    const ids = list("imran").rows.map(t => t.id);
+    const r = caseDeliveryList.fixture(b, [...ids, "TK-0114"]);
+    if (!r.ok) throw new Error(r.error);
+    expect(Object.keys(r.data.cases).sort()).toEqual(ids.sort());
+    expect(Object.values(r.data.cases).every(c => c.label === null && c.replies.length === 0)).toBe(true);
+    expect(caseDeliveryList.fixture(book("pradeep"), ids)).toMatchObject({ ok: false, status: 403 });
+  });
+  it("live: the list is the route's map, one request", async () => {
+    const f = fetchOf(200, { cases: { "5001": { replies: [], label: "Not delivered yet" } } });
+    const r = await liveRead(caseDeliveryList, "/api/cases/deliveries?ids=5001", { fetch: f });
+    expect(r).toMatchObject({ state: "ok", data: { cases: { "5001": { label: "Not delivered yet" } } } });
+    expect(f).toHaveBeenCalledTimes(1);
   });
 });
