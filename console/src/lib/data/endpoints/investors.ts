@@ -79,8 +79,8 @@ export const amBook: ReadEndpoint<ImBook, boolean, AmAnswer> = {
    fixture's is the demo seat key (the same word the reducer's assignKam takes). */
 export type AmManagers = Pick<AmServiceView, "book" | "managers" | "pool" | "accounts">;
 
-const IST_MS = 5.5 * 3_600_000;
-const stampOf = (s: ImState, at: string): string | null => { const ms = when(s.data.NOW, at); return ms == null ? null : new Date(ms + IST_MS).toISOString().slice(0, 16); };
+/** the demo's "26 Aug 10:00" as the route's naive IST "2026-08-26T10:00" (the demo clock is IST wall time kept as UTC ms) */
+const stampOf = (s: ImState, at: string): string | null => { const ms = when(s.data.NOW, at); return ms == null ? null : new Date(ms).toISOString().slice(0, 16); };
 const tierCount = (b: ImInvestor[]) => { const t = { A: 0, B: 0, C: 0 }; b.forEach(x => { t[tierOf(x)!.k as "A" | "B" | "C"]++; }); return t; };
 const perMonth = (b: ImInvestor[]) => Math.round(b.reduce((a, y) => a + 30 / tierOf(y)!.every, 0) * 10) / 10;
 

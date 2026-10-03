@@ -2,7 +2,7 @@
    Head of AM, a KAM and a refused seat, asserting the figures TC-IM04-014 reads off the manager dropdown ("Neha Bhandari — 4 accounts"). */
 import { describe, expect, it } from "vitest";
 import { imDemoData } from "@fixtures/im/demo";
-import { initialImUi, type ImState } from "@/lib/im";
+import { I, initialImUi, lastC, tierOf, type ImState } from "@/lib/im";
 import type { ApiResult } from "../api";
 import { amManagers } from "./investors";
 
@@ -22,6 +22,18 @@ describe("the account-management list", () => {
     expect(d.pool?.shouldBeNamed).toBe(1);
     expect(d.accounts).toHaveLength(13);
     expect(d.accounts.find(a => a.name === "Vikram Anand")).toMatchObject({ kamUserId: null, tier: "B" });
+  });
+  it("a row's last heard is the conversation's own wall time (naive IST), its tier the front end's rule", () => {
+    const b = book("divya");
+    const d = data(amManagers.fixture(b, true));
+    const heard = d.accounts.filter(a => a.lastHeardAt);
+    expect(heard.length).toBeGreaterThan(0);
+    for (const a of heard) {
+      expect(a.lastHeardAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+      const l = lastC(b.s, "divya", a.id)!;
+      expect(a.lastHeardAt!.slice(11)).toBe(l.at.slice(7, 12));
+      expect(a.tier).toBe(tierOf(I(b.s, "divya", a.id))!.k);
+    }
   });
   it("Imran (KAM): his own row and no pool; his four accounts, none of them Prakash Bhat", () => {
     const d = data(amManagers.fixture(book("imran"), true));
