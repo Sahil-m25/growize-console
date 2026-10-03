@@ -126,7 +126,7 @@ export const HOT: ImView[] = ["dash", "tkt"];
 
 /* ---- the drafts' blank shape (resetDrawerDraft) ---- */
 export const BLANK_DRAFTS: ImDrafts = {
-  PUTR: "", DREF: "", DTPL: null, DSIG: "Aadhaar OTP", PKIND: "advance", PMODE: "RTGS", DET: {}, KSEL: null,
+  PUTR: "", DREF: "", DTPL: null, DSIG: "Aadhaar OTP", DTID: "", PKIND: "advance", PMODE: "RTGS", DET: {}, KSEL: null,
   TK: { inv: null, cat: "Query", t: "", d: "", pri: "normal" },
   CT: { ch: "call", mood: "good", note: "", next: "" },
   UP: { t: "", cat: "Produce", d: "", to: "all" },

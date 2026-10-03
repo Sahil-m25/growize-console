@@ -69,7 +69,7 @@ export function createDocumentsReader(deps: DocumentsDeps) {
 
   /** One allotment's papers as the seat may see them (files, or the count only). */
   const allotmentPapers = async (cred: UserCredential, access: AllotmentAccess, a: HolderRow & { id: string }, signal?: AbortSignal): Promise<AllotmentPapers | AttachmentList> => {
-    const l = await listAttachments(deps.crm, cred, "allotment", a.id, signal);
+    const l = await listAttachments(deps.crm, cred, "allotment", a.id, signal, { slots: true });
     if (!l.ok) return l;
     return Object.freeze({ allotmentId: a.id, contactId: a.Customer, llpId: a.LLP_Lookup, files: access === "files" ? l.files : null, count: l.files.length });
   };
@@ -85,7 +85,7 @@ export function createDocumentsReader(deps: DocumentsDeps) {
     let truncated = false;
     let personal: readonly AttachmentLine[] | null = null;
     if (access.personal) {
-      const p = await listAttachments(deps.crm, cred, "personal", contactId, signal);
+      const p = await listAttachments(deps.crm, cred, "personal", contactId, signal, { slots: true });
       if (!p.ok) return srcErr(p.errorKind);
       personal = p.files; truncated ||= p.truncated;
     }
@@ -104,7 +104,7 @@ export function createDocumentsReader(deps: DocumentsDeps) {
     if (access.project) {
       farms = [];
       for (const llpId of heldLlps(allots, contactId).filter((x) => RECORD_ID.test(x))) {
-        const f = await listAttachments(deps.crm, cred, "project", llpId, signal);
+        const f = await listAttachments(deps.crm, cred, "project", llpId, signal, { slots: true });
         if (!f.ok) return srcErr(f.errorKind);
         farms.push(Object.freeze({ llpId, files: f.files })); truncated ||= f.truncated;
       }
@@ -139,7 +139,7 @@ export function createDocumentsReader(deps: DocumentsDeps) {
     if (typeof llpId !== "string" || !RECORD_ID.test(llpId)) return guard.refuse(me, seat, action, "invalid-request", []);
     const access = docAccessFor(seat, me);
     if (!access.project) return guard.refuse(me, seat, action, "seat-denied", [llpId]);
-    const p = await listAttachments(deps.crm, cred, "project", llpId, signal);
+    const p = await listAttachments(deps.crm, cred, "project", llpId, signal, { slots: true });
     if (!p.ok) return p.forbidden ? guard.refuse(me, seat, action, "not-visible", [llpId]) : srcErr(p.errorKind);
     let truncated = p.truncated;
     const perAllot: AllotmentPapers[] = [];

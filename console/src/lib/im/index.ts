@@ -23,7 +23,7 @@
                 maskPan maskAcct safeNote auditText withholdKnown activityActors activityBase
                 activityRows · page reads: kamLoad outstandingReserved forfeitExposure publishCount
                 invExceptions invRows TXNF tktFilters farmShelf ageing stuckDocs sysChecks journey
-   RULES        mayReveal piiView recordPayGate setMarkGate matchGate holdExpired lapseGate oversold
+   RULES        mayReveal piiView recordPayGate oversellGate setMarkGate matchGate holdExpired lapseGate oversold
                 blockOver holdBlockGate sendDocGate allotGate logContactGate (Gate = {ok}|{ok:false,msg})
    DATES/MONEY  when gap aged ago stamp day6 plusDays mid nowDay nowFull fmtDay fmtStamp inr money
    CONSTANTS    TEAM ROLE CAN PRIMARY DAY MON UNIT FORFEIT PROGRAMME_UNITS SECRETS REVWHY

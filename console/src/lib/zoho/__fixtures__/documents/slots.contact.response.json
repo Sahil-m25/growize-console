@@ -1,0 +1,22 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "9007199254740997301",
+    "PAN_Proof": [
+     {
+      "File_Id__s": "synthetic-file-pan-1",
+      "File_Name__s": "PAN scan ABCDE1234F.jpg",
+      "File_Size__s": 50000
+     }
+    ],
+    "Bank_Proof": [],
+    "FEMA_Declaration": null
+   }
+  ]
+ }
+}

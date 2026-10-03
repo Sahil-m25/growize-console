@@ -178,9 +178,9 @@ export function UploadList({ s, me, inv, title }: { s: ImPageProps["s"]; me: str
         <div className="tw"><table><thead><tr><th>File</th><th>Filed on</th><th>Added</th></tr></thead>
           <tbody>{rows.length ? rows.map((u, i) => (
             <tr key={u.id + i}>
-              <td><b>{u.name}</b><div className="sm">{u.size == null ? "" : fileSize(u.size)}</div></td>
+              <td><b>{u.name}</b><div className="sm">{[u.slot, u.size == null ? null : fileSize(u.size)].filter(Boolean).join(" · ")}</div></td>
               <td className="sm">{u.where}</td>
-              <td className="sm mono">{u.at || "—"}</td>
+              <td className="sm mono">{u.at || "—"}{u.by ? <div className="sm">{u.by}</div> : null}</td>
             </tr>
           )) : <tr><td colSpan={3}><div className="empty">{r.state === "loading" ? "Reading…" : "Nothing uploaded yet."}</div></td></tr>}</tbody></table></div></div>
     </>

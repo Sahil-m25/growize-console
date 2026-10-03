@@ -57,7 +57,9 @@ const navSec = (k: string) => NAVSECOF[k] ?? "work";
 export function Rail({ view }: { view: View | null }) {
   const { state, dispatch } = useConsole();
   /* M12-S03-W1: the Documents badge on the Investors side is the route's outCount (fixture: the book's own count) */
-  const docsIm = sidesOf(state, "docs").im && !sidesOf(state, "docs").ir;
+  /* one side only (a seat holding both is read as the Investors side by the route, so its badge stays the book's count);
+     the lead side's badge is the same route's outCount — the NDA rows still out (M12-S03-W2) */
+  const docsIm = sidesOf(state, "docs").im !== sidesOf(state, "docs").ir;
   const docsOut = useApiRead(documentsOutCount, count(state, "docs"), docsIm);
   const railMin = state.ui.RAILMIN;
   /* setRail(on) — 03-app.js:7082. A furniture choice for this visit, not domain state: it is NOT

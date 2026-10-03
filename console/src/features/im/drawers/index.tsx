@@ -11,6 +11,7 @@
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
 import { SignRowCell } from "../paper2/SignCell";
+import { TemplatePick, useTemplatePick } from "../paper2/TemplatePick";
 import { useRef, useState, type ReactNode } from "react";
 import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { dayOf, documentUpload, documentsList } from "@/lib/data/endpoints/documents";
@@ -299,16 +300,17 @@ const payFoot = (c: Ctx): ReactNode => <PayFoot {...c} />;
 const sendBlocked = (x: ImInvestor | null, DSIG: string): boolean => !!x && x.nri && DSIG === "Aadhaar OTP";
 function useSendFacts(c: Ctx) {
   const { s, me, id } = c; const x = I(s, me, id);
-  const { DTPL, DSIG } = draft(c);
+  const { DTPL, DSIG, DTID } = draft(c);
   const paper = DTPL ? PAPER_OF_TEMPLATE[DTPL] ?? null : null;
   const rid = paper && x ? (paper === "fema" ? x.id : paper === "nda" ? x.lead ?? x.id : allotmentOf({ s, me }, x.id) ?? x.id) : null;
   const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: rid });
   /* Aadhaar is offered only where the route says so; a template that is not one of the four papers has no prefill: the book's NRI flag */
   const off = paper ? pre.state === "ok" && !pre.data.methods.includes("aadhaar") : !!(x && x.nri);
-  return { x, DTPL, DSIG, paper, rid, pre, blocked: !!x && off && DSIG === "Aadhaar OTP" };
+  const pick = useTemplatePick(s, me, paper, DTID);
+  return { x, DTPL, DSIG, DTID, paper, rid, pre, pick, blocked: !!x && off && DSIG === "Aadhaar OTP" };
 }
 function SendBody(c: Ctx) {
-  const { s, id } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, blocked, pre, paper } = f;
+  const { s, id } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, DTID, blocked, pre, paper, pick } = f;
   if (!x || !id) return null;
   const t = TPL.find(y => y.t === DTPL);
   return (
@@ -325,6 +327,7 @@ function SendBody(c: Ctx) {
       {t && t.noSign ? <p className="sm" style={{ margin: "0 0 12px" }}>A receipt is issued, not signed.</p>
         : <><p className="lbl">Signing</p><div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg =>
           <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`} onClick={() => set(c, { DSIG: sg })}>{sg}</button>)}</div></>}
+      <TemplatePick paper={paper} pick={pick} DTID={DTID} onPick={v => set(c, { DTID: v })} />
       {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}
       {paper && pre.state === "ok" && pre.data.recipient
         ? <p className="sm" style={{ margin: "0 0 12px" }}>{"To " + pre.data.recipient.name + " · " + pre.data.recipient.email}</p> : null}
@@ -340,20 +343,20 @@ function SendBody(c: Ctx) {
   );
 }
 function SendFoot(c: Ctx) {
-  const { s, me, id, dispatch } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, blocked, pre, paper, rid } = f;
+  const { s, me, id, dispatch } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, blocked, pre, paper, rid, pick } = f;
   const send = useApiWrite(signSend, { s, me }, dispatch);
   const press = useRef<string | null>(null);
   if (!may(s, me, "doc") || !id) return null;
-  const ok = !!DTPL && !blocked && (!paper || (pre.state === "ok" && pre.data.maySend));
+  const ok = !!DTPL && !blocked && pick.ready && (!paper || (pre.state === "ok" && pre.data.maySend));
   const go = () => {
     if (!x || !DTPL) return;
     press.current ??= newIdempotencyKey();
-    void send({ paper: paper ?? "other", recordId: rid || x.id, method: METHOD_OF[DSIG] ?? "email-otp", templateId: "",
+    void send({ paper: paper ?? "other", recordId: rid || x.id, method: METHOD_OF[DSIG] ?? "email-otp", templateId: pick.tid,
       expectedModifiedTime: pre.state === "ok" ? pre.data.modifiedTime ?? "" : "", book: { inv: id, tpl: DTPL, sig: DSIG } },
     { idempotencyKey: press.current }).then(r => { if (r.ok) press.current = null; });
   };
   return (
-    <button className="act" disabled={!ok} title={ok ? undefined : "Pick a template"} onClick={ok ? go : undefined}>Send it</button>
+    <button className="act" disabled={!ok} title={ok ? undefined : pick.ready ? "Pick a template" : "Pick the Zoho Sign template"} onClick={ok ? go : undefined}>Send it</button>
   );
 }
 

@@ -21,9 +21,9 @@
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
-import type { SignApi, SignField, SignMethod, SignRecipient } from "./api";
+import type { SignApi, SignField, SignMethod, SignRecipient, SignTemplate } from "./api";
 import {
-  DATETIME, isLive, isPaper, mayActOnPaper, PAPER_FIELDS, primaryDoerNote, RECORD_ID, reqIdOf, SEND_BELONGS_TO, SIGNED_VIA, signStateOf,
+  DATETIME, isLive, isPaper, mayActOnPaper, PAPER_FIELDS, PAPER_KEYS, primaryDoerNote, RECORD_ID, reqIdOf, SEND_BELONGS_TO, SIGNED_VIA, signStateOf,
   STATE_LABEL, verifiedOf, type Paper, type PaperFields, type SignState,
 } from "./papers";
 
@@ -90,9 +90,11 @@ export interface Prefill {
 }
 export type PrefillResult = { readonly ok: true; readonly value: Prefill } | { readonly ok: false; readonly kind: "refused" | "source-error"; readonly reasonCode: string; readonly message: string };
 
+export type TemplatesResult = { readonly ok: true; readonly value: readonly SignTemplate[] } | { readonly ok: false; readonly kind: "refused" | "source-error"; readonly reasonCode: string; readonly message: string };
+
 export interface SendDeps {
   readonly crm: Pick<ZohoClient, "getRecord" | "update">;
-  readonly sign: Pick<SignApi, "createFromTemplate" | "createFromPdf" | "getRequest" | "recall">;
+  readonly sign: Pick<SignApi, "createFromTemplate" | "createFromPdf" | "getRequest" | "recall"> & Partial<Pick<SignApi, "listTemplates">>;
   readonly log: OpsLog;
   readonly clock?: () => number;
 }
@@ -197,6 +199,23 @@ export function createSignSender(deps: SendDeps) {
   }
 
   return Object.freeze({
+    /** The templates the send panel offers (M12-S04): Finance's, read on the sender's own Sign token (D53). Only a seat that
+     *  sends some paper may ask; the list holds ids and names, never a recipient or a file. */
+    async templates(principal: { readonly credential: unknown; readonly seat: string }, signal?: AbortSignal): Promise<TemplatesResult> {
+      const cred = principal?.credential;
+      if (!isUserCredential(cred)) return { ok: false, kind: "refused", reasonCode: "invalid-request", message: SEND_MESSAGE["invalid-request"] };
+      const seat = String(principal.seat ?? "");
+      if (!PAPER_KEYS.some((p) => mayActOnPaper(seat, p))) {
+        refuse(cred.userId, "seat-denied");
+        return { ok: false, kind: "refused", reasonCode: "seat-denied", message: SEND_BELONGS_TO };
+      }
+      if (!deps.sign.listTemplates) return { ok: false, kind: "source-error", reasonCode: "not-configured", message: "Zoho Sign is not answering. Try again." };
+      let r: Awaited<ReturnType<SignApi["listTemplates"]>>;
+      try { r = await deps.sign.listTemplates(cred, { signal }); } catch { return { ok: false, kind: "source-error", reasonCode: "unexpected", message: "Zoho Sign is not answering. Try again." }; }
+      if (!r.ok) return { ok: false, kind: "source-error", reasonCode: r.error.kind, message: "Zoho Sign is not answering. Try again." };
+      return { ok: true, value: r.value };
+    },
+
     /** The send panel's facts (AC2): recipient from the record, NRI, the methods on offer, what is already out. */
     async prefill(principal: { readonly credential: unknown; readonly seat: string }, paper: unknown, recordId: unknown, signal?: AbortSignal): Promise<PrefillResult> {
       const cred = principal?.credential;

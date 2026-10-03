@@ -146,7 +146,9 @@ export type ImView = "dash" | "inv" | "farms" | "txn" | "docs" | "tkt" | "upd" |
 export type ImDrawerKey = "kam" | "talk" | "claim" | "pay" | "send" | "verify" | "kyc" | "tkt" | "upd" | "field" | "details"
   | ImMoneyDrawerKey;
 export type ImDrafts = {
-  PUTR: string; DREF: string; DTPL: string | null; DSIG: string; PKIND: "advance" | "balance";
+  PUTR: string; DREF: string; DTPL: string | null; DSIG: string;
+  /** the Zoho Sign template picked for the send, as "<paper>:<templateId>" — a pick made for one paper never rides onto another (M12-S04-W2) */
+  DTID: string; PKIND: "advance" | "balance";
   PMODE: string; DET: Partial<Record<"n" | "ph" | "em" | "city" | "addr" | "nominee", string>>;
   KSEL: string | null;
   TK: { inv: string | null; cat: string; t: string; d: string; pri: "high" | "normal" };

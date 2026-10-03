@@ -55,11 +55,26 @@ export const signPrefill: ReadEndpoint<ImBook, PrefillArgs, Prefill> = {
   },
 };
 
+/* ---- the template picker (M12-S04-W2) ---------------------------------------------------------------- */
+/** One of Finance's Zoho Sign templates: GET /api/documents/sign/templates, read on the sender's own Sign token. */
+export type SignTemplateView = { templateId: string; name: string };
+/** `true` = the seat sends and a paper is picked; `false` reads nothing. Fixture: the demo has no Zoho Sign account, so it holds
+ *  no templates and the panel shows no picker (the reducer's send needs none) — the same shape, an empty list. */
+export const signTemplates: ReadEndpoint<ImBook, boolean, readonly SignTemplateView[]> = {
+  path: on => (on ? "/api/documents/sign/templates" : null),
+  pick: j => (j as { templates: SignTemplateView[] }).templates,
+  fixture(b, on) {
+    if (!on) return fail(400, "invalid-request", "Nothing to read.");
+    if (!may(b.s, b.me, "doc")) return fail(403, "seat-denied", "Sending belongs to Finance Operations, Compliance and the Head of Finance.");
+    return ok([]);
+  },
+};
+
 /* ---- send (M12-S04-W1) ------------------------------------------------------------------------------- */
 export type SendArgs = {
   /** "other": a template that is not one of the four papers (a receipt, a power of attorney) — the route refuses it */
   paper: Paper | "other"; recordId: string; method: "aadhaar" | "email-otp";
-  /** the Zoho Sign template (live) — the panel does not pick one yet, so the route answers "the send is incomplete" until it does */
+  /** the Zoho Sign template (live), picked in the panel (signTemplates); "" in the demo, which sends nothing to Zoho */
   templateId: string; expectedModifiedTime: string;
   /** the book's own words for the reducer action the fixture runs */
   book: { inv: string; tpl: string; sig: string };

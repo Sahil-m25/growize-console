@@ -209,7 +209,7 @@ export function createDocumentsList(deps: DocumentsListDeps) {
         if (seen.has(k)) continue;
         if (seen.size >= MAX_ATTACHMENT_RECORDS) { truncated = true; break; }
         seen.add(k);
-        const l = await listAttachments(deps.crm, cred, scope, row.recordId, signal);
+        const l = await listAttachments(deps.crm, cred, scope, row.recordId, signal, { slots: true });
         if (!l.ok) { if (l.forbidden) continue; return fail(l.errorKind); }
         truncated ||= l.truncated;
         files.push(Object.freeze({ scope, recordId: row.recordId, files: l.files }));

@@ -13,15 +13,15 @@
    `activityFilters` (./logic) is this feature's own layering of the toolbar's filters on top of
    `activityRows` (selectors/activity.ts), the actor- and record-access gate. */
 
-import { KINDS } from "@/domain";
-import type { LogEntry, PersonKey } from "@/domain";
+import type { ActKind, PersonKey } from "@/domain";
 import { MON } from "@/lib/format";
-import { P, isHumanTouch, logNote, openable } from "@/lib/selectors";
+import { P, openable } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import type { LeadActivityView } from "@/lib/data/endpoints/activity";
 import { Ag, Chip } from "@/components/ui";
 import { useGoLead } from "@/features/leads/nav";
-import { actSummary } from "./csv";
-import { activityFilters } from "./logic";
+import { actSummary, type ActRow } from "./csv";
+import { activityUi, scopeLabel, useLeadActivity } from "./logic";
 import "./drawers";
 /* the declare-module block in ./state augments UiState with ACTKIND/ACTVIEW/ACTLIMIT; tsc picks
    it up from tsconfig's include, so nothing here needs to import it for side effects. */
@@ -44,8 +44,12 @@ export function ActivityPage() {
     ACTKIND?: string | null; ACTVIEW?: "log" | "person" | "day"; ACTLIMIT?: number }) =>
     dispatch({ type: "setUi", patch });
 
-  const f = activityFilters(state);
-  const { solo, actors, ACTDAY, ACTWHO, ACTKIND, ACTVIEW, ACTLIMIT, mkey, days, rows, cuts, scopeLabel } = f;
+  const f = activityUi(state);
+  const { ACTDAY, ACTWHO, ACTKIND, ACTVIEW, ACTLIMIT, mkey, days, cuts } = f;
+  const reads = useLeadActivity(state, f);
+  const D: LeadActivityView | null = reads.view.state === "ok" ? reads.view.data : null;
+  const solo = D ? D.solo : true, rows: readonly ActRow[] = D ? D.rows : [], kinds = D ? D.kinds : {};
+  const actors = (D ? [...D.people] : []).sort((a, b) => P(state.PEOPLE, a as PersonKey).n.localeCompare(P(state.PEOPLE, b as PersonKey).n));
   const historyOpen = !!(state.DRW && state.DRW.k === "p:activity.allhistory");
 
   return (
@@ -83,7 +87,7 @@ export function ActivityPage() {
               <Chip key={k} on={ACTVIEW === k} onClick={() => set({ ACTVIEW: k, ACTLIMIT: 40 })}>{t}</Chip>
             ))}
           </div>
-          <span className="sm rd-result-count" role="status">{rows.length} action{rows.length === 1 ? "" : "s"}</span>
+          <span className="sm rd-result-count" role="status">{D ? D.total : 0} action{D && D.total === 1 ? "" : "s"}</span>
           <details className="rd-activity-filter-options" data-ux-key="activity-filters">
             <summary>Filters{cuts ? " · " + cuts : ""}</summary>
             <div className="ux-activity-filter-grid rd-activity-filters">
@@ -102,7 +106,7 @@ export function ActivityPage() {
                     ACTWHO: (e.target.value || null) as PersonKey | null, ACTLIMIT: 40,
                   })}>
                     <option value="">All people</option>
-                    {actors.map((k) => <option key={k} value={k}>{P(state.PEOPLE, k).n}</option>)}
+                    {actors.map((k) => <option key={k} value={k}>{P(state.PEOPLE, k as PersonKey).n}</option>)}
                   </select>
                 </label>
               )}
@@ -111,8 +115,8 @@ export function ActivityPage() {
                 <select className="selw" id="actkind" value={ACTKIND ?? ""}
                   onChange={(e) => set({ ACTKIND: e.target.value || null, ACTLIMIT: 40 })}>
                   <option value="">All actions</option>
-                  {Object.keys(KINDS).map((k) => (
-                    <option key={k} value={k}>{KINDS[k as keyof typeof KINDS]}</option>
+                  {Object.keys(kinds).map((k) => (
+                    <option key={k} value={k}>{kinds[k]}</option>
                   ))}
                 </select>
               </label>
@@ -122,7 +126,7 @@ export function ActivityPage() {
 
         {(ACTDAY || ACTWHO || ACTKIND) && (
           <div className="ux-activity-active">
-            <span className="sm">{scopeLabel()}</span>
+            <span className="sm">{scopeLabel(state, f, D)}</span>
             <button type="button" className="chip" onClick={() => set({ ACTWHO: null, ACTDAY: null, ACTKIND: null, ACTLIMIT: 40 })}>
               Clear day, person and action
             </button>
@@ -130,15 +134,17 @@ export function ActivityPage() {
         )}
 
         <div className="card ux-activity-results">
-          {ACTVIEW === "log"
-            ? <ActLog state={state} solo={solo} rows={rows} limit={ACTLIMIT} onMore={() => set({ ACTLIMIT: ACTLIMIT + 40 })} />
-            : <ActTally state={state} rows={rows} view={ACTVIEW} />}
+          {reads.view.state === "error" ? <div className="note" role="alert" style={{ margin: 12 }}>{reads.view.err.error}</div>
+            : !D ? <p className="sm" style={{ margin: 12 }}>Loading…</p>
+            : ACTVIEW === "log"
+              ? <ActLog state={state} solo={solo} rows={rows} kinds={kinds} total={D.total} limit={ACTLIMIT} onMore={() => set({ ACTLIMIT: ACTLIMIT + 40 })} />
+              : <ActTally state={state} rows={rows} kinds={kinds} view={ACTVIEW} />}
         </div>
       </section>
 
-      {rows.some((e) => isHumanTouch(e) && e.touch) && (
+      {rows.some((e) => e.human && e.touch) && (
         <details className="ux-disclosure" data-ux-key="activity-repeats">
-          <summary>Repeat contacts · {rows.filter((e) => isHumanTouch(e) && (e.touch ?? 0) >= 4).length} fourth or later</summary>
+          <summary>Repeat contacts · {rows.filter((e) => e.human && (e.touch ?? 0) >= 4).length} fourth or later</summary>
           <ActTouch rows={rows} />
         </details>
       )}
@@ -149,8 +155,9 @@ export function ActivityPage() {
 /* actLog() — ir-merged.js:9160. D59 g3: a seat that only sees itself gets no Person column —
    every row would read its own name. */
 function ActLog({
-  state, solo, rows, limit, onMore,
-}: { state: ReturnType<typeof useConsole>["state"]; solo: boolean; rows: LogEntry[]; limit: number; onMore: () => void }) {
+  state, solo, rows, kinds, total, limit, onMore,
+}: { state: ReturnType<typeof useConsole>["state"]; solo: boolean; rows: readonly ActRow[]; kinds: Readonly<Record<string, string>>;
+  total: number; limit: number; onMore: () => void }) {
   const goLead = useGoLead("activity");
   const book = openable(state);
   const shown = rows.slice(0, limit);
@@ -174,24 +181,24 @@ function ActLog({
           </thead>
           <tbody>
             {shown.length ? shown.map((e, i) => {
-              const l = book.find((x) => x.id === e.lead);
-              const note = logNote(state, e);
-              const day = e.d.slice(8), mon = MON[Number(e.d.slice(5, 7)) - 1] || e.d, tm = e.at.slice(-5);
+              const l = book.find((x) => x.id === e.recordId);
+              const note = e.detail || "";
+              const day = e.day.slice(8), mon = MON[Number(e.day.slice(5, 7)) - 1] || e.day, tm = e.at.slice(11, 16);
               return (
-                <tr key={e.d + e.at + i}>
+                <tr key={e.at + i}>
                   <td className="sm nw">
-                    <time className="rd-log-stamp" dateTime={`${e.d}T${tm}`} title={`${e.d} ${tm}`}>
+                    <time className="rd-log-stamp" dateTime={`${e.day}T${tm}`} title={`${e.day} ${tm}`}>
                       {day} {mon} <span>· {tm}</span>
                     </time>
                   </td>
                   <td>
-                    <b className="rd-log-description"><Ag k={e.kind} t={e.what} /> <span>{e.what}</span></b>
+                    <b className="rd-log-description"><Ag k={e.kind as ActKind} t={e.what} /> <span>{e.what}</span></b>
                     {note ? <div className="sm rd-log-note">{note}</div> : null}
                   </td>
-                  {!solo && <td>{P(state.PEOPLE, e.who).n}</td>}
+                  {!solo && <td>{P(state.PEOPLE, e.byId as PersonKey).n}</td>}
                   <td>
-                    {l ? (
-                      <button type="button" className="chip" onClick={() => goLead(l.id)}>{l.n}</button>
+                    {e.recordId ? (
+                      <button type="button" className="chip" onClick={() => goLead(e.recordId!)}>{l ? l.n : e.recordId}</button>
                     ) : "—"}
                   </td>
                 </tr>
@@ -209,7 +216,7 @@ function ActLog({
       </div>
       {shown.length < rows.length && (
         <div className="ux-activity-page">
-          <span className="sm">Showing {shown.length} of {rows.length} actions</span>
+          <span className="sm">Showing {shown.length} of {total} actions</span>
           <button type="button" className="chip" onClick={onMore}>Show {Math.min(40, rows.length - shown.length)} more</button>
         </div>
       )}
@@ -219,9 +226,9 @@ function ActLog({
 
 /* actTally() — 03-app.js(redesigned):11424. By person or by day, whichever the toolbar picked. */
 function ActTally({
-  state, rows, view,
-}: { state: ReturnType<typeof useConsole>["state"]; rows: LogEntry[]; view: "person" | "day" }) {
-  const kinds = Object.keys(KINDS).filter((k) => rows.some((e) => e.kind === k));
+  state, rows, kinds: kindNames, view,
+}: { state: ReturnType<typeof useConsole>["state"]; rows: readonly ActRow[]; kinds: Readonly<Record<string, string>>; view: "person" | "day" }) {
+  const kinds = Object.keys(kindNames).filter((k) => rows.some((e) => e.kind === k));
   const groups = actSummary(state, rows, view);
   return (
     <div className="tw">
@@ -229,7 +236,7 @@ function ActTally({
         <thead>
           <tr>
             <th>{view === "person" ? "Person" : "Day"}</th>
-            {kinds.map((k) => <th className="n" key={k}>{KINDS[k as keyof typeof KINDS]}</th>)}
+            {kinds.map((k) => <th className="n" key={k}>{kindNames[k]}</th>)}
             <th className="n">Total</th>
           </tr>
         </thead>
@@ -255,8 +262,8 @@ function ActTally({
 }
 
 /* actTouch() — 03-app.js(redesigned):11460 */
-function ActTouch({ rows }: { rows: LogEntry[] }) {
-  const touch = rows.filter(isHumanTouch);
+function ActTouch({ rows }: { rows: readonly ActRow[] }) {
+  const touch = rows.filter((e) => e.human);
   return (
     <div className="tw">
       <table>

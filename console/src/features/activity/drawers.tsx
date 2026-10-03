@@ -13,21 +13,27 @@
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { actExportData, downloadActivityCSV } from "./csv";
-import { activityFilters } from "./logic";
+import { activityUi, exportName, scopeLabel, useLeadActivity } from "./logic";
+
+const NONE = { rows: [], kinds: {}, solo: true, person: null, total: 0 } as const;
+function useRead() {
+  const { state, dispatch } = useConsole();
+  const f = activityUi(state), r = useLeadActivity(state, f);
+  return { state, dispatch, f, v: r.view.state === "ok" ? r.view.data : NONE, a: r.all.state === "ok" ? r.all.data : NONE };
+}
 
 function Body(_props: DrawerProps) {
-  const { state } = useConsole();
-  const f = activityFilters(state);
-  const view = actExportData(state, f.rows, f.ACTVIEW), all = f.allTime;
-  const dates = all.map((e) => e.d).sort();
+  const { state, f, v, a } = useRead();
+  const view = actExportData(state, v.rows, f.ACTVIEW, v.kinds), all = a.rows;
+  const dates = all.map((e) => e.day).sort();
   const vname = f.ACTVIEW === "log" ? "Log" : f.ACTVIEW === "person" ? "By person" : "By day";
   return (
     <section className="ux-activity-refined ux-section">
       <dl className="kv">
         <dt>This view</dt>
-        <dd>{f.scopeLabel()} · {vname} · {view.body.length} rows</dd>
-        <dt>All history</dt>
-        <dd>{dates.length ? `${dates[0]} to ${dates[dates.length - 1]} · ${all.length} actions` : "No matching history"}</dd>
+        <dd>{scopeLabel(state, f, v)} · {vname} · {view.body.length} rows</dd>
+        <dt>Whole month</dt>
+        <dd>{dates.length ? `${dates[0]} to ${dates[dates.length - 1]} · ${a.total} actions` : "No matching history"}</dd>
       </dl>
       <p className="sm">Both use the page&apos;s person, action and view. The export is recorded in the activity log.</p>
     </section>
@@ -35,17 +41,16 @@ function Body(_props: DrawerProps) {
 }
 
 function Foot(_props: DrawerProps) {
-  const { state, dispatch } = useConsole();
-  const f = activityFilters(state);
+  const { state, dispatch, f, v, a } = useRead();
   return (
     <>
-      <button type="button" className="act ghost" disabled={!f.rows.length}
-        onClick={() => downloadActivityCSV(state, f.rows, f.ACTVIEW, f.exportName(false, f.ACTVIEW), dispatch)}>
+      <button type="button" className="act ghost" disabled={!v.rows.length}
+        onClick={() => downloadActivityCSV(state, v.rows, f.ACTVIEW, exportName(f, v, false, f.ACTVIEW), v.kinds, dispatch)}>
         Export this view
       </button>
-      <button type="button" className="act" disabled={!f.allTime.length}
-        onClick={() => downloadActivityCSV(state, f.allTime, f.ACTVIEW, f.exportName(true, f.ACTVIEW), dispatch)}>
-        Export all history
+      <button type="button" className="act" disabled={!a.rows.length}
+        onClick={() => downloadActivityCSV(state, a.rows, f.ACTVIEW, exportName(f, a, true, f.ACTVIEW), a.kinds, dispatch)}>
+        Export whole month
       </button>
     </>
   );
@@ -54,7 +59,7 @@ function Foot(_props: DrawerProps) {
 registerDrawer("p:activity.allhistory", {
   w: 560,
   title: () => "Export",
-  sub: (state) => activityFilters(state).scopeLabel(),
+  sub: (state) => scopeLabel(state, activityUi(state), null),
   Body,
   Foot,
 });

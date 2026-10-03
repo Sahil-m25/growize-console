@@ -1,0 +1,17 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "code": 0,
+  "status": "success",
+  "templates": [
+   { "template_id": "90071992547409970", "template_name": "Synthetic supplementary", "owner_email": "synthetic@example.invalid" },
+   { "template_id": "90071992547409971", "template_name": "Synthetic allocation letter" },
+   { "template_id": "not-an-id", "template_name": "Dropped: no valid id" },
+   { "template_id": "90071992547409972", "template_name": "  " }
+  ],
+  "page_context": { "row_count": 4, "has_more_rows": false }
+ }
+}
