@@ -129,7 +129,7 @@ export function MNote() {
   ));
   return (
     <div className={`note mnote ${n.kind}`} role={n.kind === "ask" ? "alertdialog" : "alert"} aria-live="assertive">
-      <div className="mnt">{n.kind === "ask" ? <><b>Check before you go on.</b><br /></> : <><b>Not done.</b> </>}{body}</div>
+      <div className="mnt">{n.kind === "ask" ? <><b>Check before you go on.</b><br /></> : /^Recorded\./.test(n.msg) ? null : <><b>Not done.</b> </>}{body}</div>
       <div className="mna">
         {n.kind === "ask" ? (
           <>
