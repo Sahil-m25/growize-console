@@ -330,8 +330,12 @@ export function drawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string
 }
 
 /* ============================ 14. activity ============================ */
+/** the read-only Auditor seat: sees the Finance trail, not the whole org log */
+export const isAuditor = (s: ImCtx, WHO: string): boolean => !!s.data.P[WHO] && s.data.P[WHO].r === "audit";
 export function activityActors(s: ImCtx, WHO: string): Set<string> {
   const actors = new Set<string>([WHO]);
+  /* M15-S03 / D78: the Auditor reads the Finance trail, read only — no "log" right, but the Finance people's own work (TC-IM10-008) */
+  if (isAuditor(s, WHO)) finSeats(s).forEach(k => actors.add(k));
   if (may(s, WHO, "log")) {
     if (isSys(s, WHO) || who(s, WHO).r === "di") s.data.SIGNINS.concat(s.data.LOG.map(e => e.who)).forEach(k => actors.add(k));
     else {
