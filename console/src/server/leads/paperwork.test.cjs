@@ -233,6 +233,22 @@ test('TC-E09-006: a write without the row\'s token, or with another beat\'s, is 
   assert.ok(r.refusals().every((x) => x.reason === 'not-from-row'));
 });
 
+test('TC-E05-010: paperwork cannot be written from Today — a direct "they say it\'s signed" with no row token is refused, nothing reaches Zoho, the NDA still waits', async () => {
+  const r = rig({});
+  for (const rowToken of [undefined, '', 'today', null]) {
+    const res = await r.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'said', rowToken });
+    assert.equal(res.ok, false);
+    assert.equal(res.reasonCode, 'not-from-row');
+  }
+  assert.equal(r.calls.length, 0);
+  const after = rig({ [LEAD_GET]: 'lead.nda-told' });
+  const row = await after.svc.read(principal(), LEAD);
+  const nda = row.value.rounds.find((x) => x.round === 'nda');
+  assert.equal(nda.said, null);
+  assert.equal(nda.next.k, 'said');
+  assert.equal(after.writes().length, 0);
+});
+
 test('TC-E09-007: Finance beats (send, verify…) are refused with a Plane B line; nothing is read or written', async () => {
   const r = rig({});
   for (const beat of ['sent', 'send', 'ok', 'verify', 'bounce']) {
