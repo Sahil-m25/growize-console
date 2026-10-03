@@ -1,8 +1,8 @@
 /* The one mount point. ConsoleProvider wraps everything and the Shell is what every route renders
    into — the rail, the top bar, the pane and the drawer, exactly as 02-body.html has them.
 
-   The two fonts are loaded the way the prototype loads them, with a <link>, so the console reads
-   the same here as it does there and nothing is fetched at build time. */
+   Fonts: Inter is embedded in console.css (a data: URL) and the mono stack falls back to the system
+   monospace. No <link> to a font host (TC-IM01-001, M01-S01-T08): the console loads offline. */
 
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
@@ -38,14 +38,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     /* the redesigned markup's own attributes, line 2: en-IN, and light unless Dark was saved —
        see useThemeSync, which never removes this attribute, only overwrites it */
     <html lang="en-IN" data-theme="light">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
-        />
-      </head>
       {/* ux-refined / ux-redesign — the redesigned prototype's own <body class>, ~2356. Most of
           console.css's redesigned rules are scoped under one or both of these; without the class
           here they are simply inert. */}
