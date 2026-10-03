@@ -56,7 +56,7 @@ export function UploadPanel({ s, me, dispatch, inv }: ImPageProps & { inv?: stri
   const wheres: Where[] = scope === "Project"
     ? (farms.state === "ok" ? farms.data.rows.map(f => ({ value: f.block || f.id, label: f.name, id: f.id, version: f.version })) : [])
     : scope === "Allotment" && rec.state === "ok"
-      ? rec.data.record.holdings.map(h => ({ value: h.block, label: h.llpName, id: h.id, version: null }))
+      ? rec.data.record.holdings.map(h => ({ value: h.block, label: h.llpName, id: h.id, version: h.version }))
       : [];
   const w = scope === "Personal" ? null : wheres.find(y => y.value === farm) || wheres[0] || null;
   const llp = w ? w.value : null;

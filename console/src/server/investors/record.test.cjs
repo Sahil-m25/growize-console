@@ -129,6 +129,9 @@ test('TC-IM04-007 (data): Prakash Bhat for Finance — one GET, allotment with L
   assert.deepEqual([x.investor.n, x.state, x.kyc.status, x.investor.kyc, x.investor.units], ['Prakash Bhat', 'reserved', 'passed', 'passed', 1]);
   assert.deepEqual(x.holdings.map((h) => [h.llpName, h.committed, h.issued, h.status, h.agreementSigned, h.paymentStatus]),
     [['EKA LLP', 1, 0, 'Reserved', false, 'Partial']]);
+  // M12-S02: the allotment's Modified_Time rides on the holding, for a typed-slot upload on it to send back as `expected`
+  assert.equal(x.holdings[0].version, '2026-09-20T11:00:00+05:30');
+  assert.ok(r.calls.some((q) => /, Modified_Time from LLP_UnitAllocation_Module where/.test(q)), "selected explicitly");
   assert.deepEqual([x.money.paid, x.money.due, x.money.receipts.length], [250000, 2250000, 1], '₹22.5 L due');
   assert.deepEqual(x.hold, { until: '2026-09-23', extension: null }, 'the hold ends 23 Sep');
   assert.deepEqual([x.paper.personal.length, x.paper.allotments.length, x.paper.allotments[0].files.length, x.paper.farms.length, x.paper.farms[0].files.length], [1, 1, 1, 1, 1]);

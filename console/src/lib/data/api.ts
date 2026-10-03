@@ -124,7 +124,7 @@ export async function apiFetch(method: "GET" | Method, path: string, opts: { bod
   if (r.ok) return ok(json);
   const b = (json && typeof json === "object" ? json : {}) as { error?: unknown; code?: unknown; recordId?: unknown; ask?: unknown; existing?: { contactId?: unknown } };
   const code = typeof b.code === "string" ? b.code : String(r.status);
-  const error = r.status === 409 && /changed$/.test(code) ? CHANGED
+  const error = r.status === 409 && /changed$|^conflict$/.test(code) ? CHANGED
     : typeof b.error === "string" && b.error ? b.error : `Refused (${r.status}).`;
   const requestId = r.headers?.get?.("x-request-id") ?? undefined;
   /* a duplicate names the record it collided with (add-paid: existing.contactId) — the page links to it */

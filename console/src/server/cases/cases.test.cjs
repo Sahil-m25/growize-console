@@ -34,6 +34,15 @@ test('Head of Finance: Open shows 6, two high priority, rows in Zoho order; the 
   assert.match(rig.queries.find((q) => !/COUNT/.test(q)), /from Cases where \(id is not null\)/);
 });
 
+test('M13-S02/S03/S04: every register row carries Cases.Modified_Time as version (selected explicitly), for PATCH and the handover to send back', async () => {
+  const rig = await makeRig(load, route);
+  const r = await createCasesRegister(rig).list({ credential: await rig.cred(HARSHA), seat: 'head' });
+  assert.equal(r.ok, true);
+  assert.equal(r.rows[0].version, '2026-09-20T11:00:00+05:30');
+  assert.ok(r.rows.every((x) => typeof x.version === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(x.version)));
+  assert.match(rig.queries.find((q) => !/COUNT/.test(q)), /, Modified_Time from Cases where/);
+});
+
 test('a KAM sees exactly their own 3 tickets (Owner = me), not FIRC; no Mine cut', async () => {
   const rig = await makeRig(load, route);
   const r = await createCasesRegister(rig).list({ credential: await rig.cred(KAM), seat: 'kam' });

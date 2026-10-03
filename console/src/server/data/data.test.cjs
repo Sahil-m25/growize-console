@@ -202,6 +202,10 @@ test('a signed-in IR\'s Leads come from COQL with the IR\'s own credential throu
   assert.equal(b.unitsKnown, false);
   assert.match(r.queries[0], new RegExp(`^select .* from Leads where \\(Owner = '${IR}'`));
   assert.match(r.queries[1], /from Leads where \(id in|from Leads where id in/);
+  // M07-S05 / M08-S05 stale-edit guard: the detail read selects Modified_Time explicitly and the lead carries it as mt
+  assert.match(r.queries[1], /, Modified_Time from Leads where/);
+  assert.equal(a.mt, '2026-09-25T10:00:00+05:30');
+  assert.equal(b.mt, '2026-09-26T10:01:00+05:30');
   // the IR's own-lead investors (D69)
   assert.deepEqual(ds.im.INV.map((i) => i.id), [`${P}740997101`]);
   assert.ok(r.queries.some((q) => new RegExp(`from Contacts where \\(Originating_IR = '${IR}' and Origin_Lead is not null\\)`).test(q)));

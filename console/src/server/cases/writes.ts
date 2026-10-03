@@ -116,7 +116,7 @@ export function createCaseWrites(deps: CaseWritesDeps) {
   async function readCase(cred: UserCredential, id: string, signal?: AbortSignal):
     Promise<{ ok: true; rec: ZohoRecord | null } | { ok: false; kind: string }> {
     try {
-      const r = await deps.crm.coql(cred, `select ${[...CASE_FIELDS, "Modified_Time"].join(", ")} from ${CASES_MODULE} where id = '${id}' limit 0, 1`, { signal });
+      const r = await deps.crm.coql(cred, `select ${CASE_FIELDS.join(", ")} from ${CASES_MODULE} where id = '${id}' limit 0, 1`, { signal });
       if (!r.ok) return { ok: false, kind: r.error.kind };
       return { ok: true, rec: r.value.records[0] ?? null };
     } catch { return { ok: false, kind: "unexpected" }; }
@@ -215,7 +215,7 @@ export function createCaseWrites(deps: CaseWritesDeps) {
         return c ? { ok: false, kind: "conflict", recordId: c.recordId, reason: c.reason } : zohoFail(put.error.kind);
       }
       await dropCuts();
-      const row: CaseRow = Object.freeze({ ...w.row, state: to, ...(to === "closed" ? { closed: istIso(now).slice(0, 16) } : {}) });
+      const row: CaseRow = Object.freeze({ ...w.row, state: to, ...(to === "closed" ? { closed: istIso(now).slice(0, 16) } : {}), version: put.value.modifiedTime ?? null });
       return { ok: true, row, already: false, modifiedTime: put.value.modifiedTime };
     },
 

@@ -203,7 +203,7 @@ export function createEventWrites(deps: EventWriteDeps) {
 
   /** The event as it stands now, with Modified_Time and its staff links; null = not visible. */
   const readEvent = async (cred: UserCredential, id: string, signal?: AbortSignal): Promise<{ ok: true; event: ExistingEvent | null } | SourceError | Refused> => {
-    const r = await pagedSelect(crm, cred, [...EVENT_FIELDS, "Modified_Time"], EVENTS_MODULE, `id = '${id}'`, "id asc", signal, 1);
+    const r = await pagedSelect(crm, cred, EVENT_FIELDS, EVENTS_MODULE, `id = '${id}'`, "id asc", signal, 1);
     if (!r.ok) return r.kind === "refused" ? refuse(cred.userId, "events-read", "source-invalid", {}, [id]) : srcErr(r.errorKind);
     const rec = r.rows.find((x) => x.id === id);
     if (!rec) return { ok: true, event: null };

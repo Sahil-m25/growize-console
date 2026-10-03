@@ -107,7 +107,9 @@ export function zohoSeatOf(token: string): ZohoSeat | null {
 const SOURCES: ReadonlySet<string> = new Set(["Events", "Founder network", "Referral — investor", "Channel partner", "Website", "LinkedIn", "Walk-in or call-in", "Other"]);
 const LOST_BY_ZOHO: Readonly<Record<string, string>> = Object.freeze(Object.fromEntries(Object.entries(LOST_REASONS).map(([k, v]) => [v, k])));
 const RUNG_FIELDS = RUNGS.map((r) => r.field);
-const LEAD_DETAIL = Object.freeze(["id", ...RUNG_FIELDS, "Lost_Reason", "Next_Step", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit"]);
+const LEAD_DETAIL = Object.freeze(["id", ...RUNG_FIELDS, "Lost_Reason", "Next_Step", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit",
+  // Modified_Time: the lead as read — a wired write (email, cover) sends it back as expectedModifiedTime (D44). Not identity (rule 7).
+  "Modified_Time"]);
 const CONSENT: Readonly<Record<Channel, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call", visit: "Consent_Visit" };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -155,6 +157,7 @@ export function leadOf(row: LeadRow, detail: ZohoRecord | undefined): Lead {
     consent: false, con,
     reply: row.lastReplyAt ? stampOf(row.lastReplyAt) : null,
     lost: row.lostAt ? { why: lostWhy as LostWhy, note: "", at: stampOf(row.lostAt), by: row.ownerId ?? "", stage: done } : null,
+    mt: typeof detail?.Modified_Time === "string" && detail.Modified_Time ? detail.Modified_Time : null,
     ...(skipped ? { skipped: true } : {}),
     ...(row.coverById ? { cov: { by: row.coverById, to: row.coverUntil ? stampOf(row.coverUntil + "T00:00:00+05:30").slice(0, 6) : "", why: "" } } : {}),
   };

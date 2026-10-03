@@ -15,6 +15,7 @@ import type { ReplyDelivery } from "@/server/cases/deliveries";
 import { I, imReducer, may, mayTkt, pageReadable, ticketBook, watchedTkt, isAM, type ImAction, type ImTicket } from "@/lib/im";
 import { fail, ok, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
+import { FIXTURE_VERSION } from "./version";
 
 export type CaseList = {
   rows: CaseRow[]; truncated: boolean; cuts: ReturnType<typeof cacheView<CaseCuts>>;
@@ -31,9 +32,9 @@ const NO_PAGE = () => fail(403, "no-book", "This page is not part of your seat."
 const READ_ONLY = () => fail(403, "read-only", "This seat reads tickets; it does not work them.");
 const NOT_FOUND = () => fail(404, "not-found", "Not found, or not yours to open.");
 
-/** One demo ticket as the route's CaseRow (the ticket number is the demo id; watched = handed on by me). */
+/** One demo ticket as the route's CaseRow (the ticket number is the demo id; watched = handed on by me; a stable version). */
 export function fixtureCaseRow(b: ImBook, t: ImTicket): CaseRow {
-  return { ...t, number: t.id, ...(watchedTkt(b.s, b.me, t) ? { watched: true } : {}) };
+  return { ...t, number: t.id, version: t.version ?? FIXTURE_VERSION, ...(watchedTkt(b.s, b.me, t) ? { watched: true } : {}) };
 }
 
 export const caseList: ReadEndpoint<ImBook, void, CaseList> = {

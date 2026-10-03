@@ -123,7 +123,7 @@ export function createCaseHandover(deps: HandoverDeps) {
 
       let got;
       try {
-        got = await deps.crm.coql(p.credential, `select ${[...CASE_FIELDS, "Modified_Time"].join(", ")} from ${CASES_MODULE} where id = '${id}' limit 0, 1`, { signal });
+        got = await deps.crm.coql(p.credential, `select ${CASE_FIELDS.join(", ")} from ${CASES_MODULE} where id = '${id}' limit 0, 1`, { signal });
       } catch { return zohoFail("unexpected"); }
       if (!got.ok) return zohoFail(got.error.kind);
       const rec: ZohoRecord | undefined = got.value.records[0];
@@ -164,7 +164,7 @@ export function createCaseHandover(deps: HandoverDeps) {
       if (!moved.ok) return zohoFail(moved.error.kind);
       await dropCuts();
       const handed = Object.freeze({ by: me, at: at.slice(0, 16) });
-      return { ok: true, to, already: false, row: Object.freeze({ ...row, own: to, handed, watched: true }) };
+      return { ok: true, to, already: false, row: Object.freeze({ ...row, own: to, handed, watched: true, version: null }) };   // change_owner moved Modified_Time again: unknown until re-read
     },
   });
 }

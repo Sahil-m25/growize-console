@@ -203,7 +203,7 @@ export function EventEditorFoot(props: DrawerProps) {
     if (gaps.length) return;
     setErr(null);
     if (event) {
-      const r = await change({ ...argsOf(d), id: event.id, modifiedTime: null });
+      const r = await change({ ...argsOf(d), id: event.id, modifiedTime: row?.modifiedTime ?? null });
       if (!r.ok) { setErr(r.error); return; }
       if (mode === "live") {
         dispatch({ type: "log", what: "Changed the event", lead: null, kind: "admin", note: changedNote(r.data.name, r.data.moved, r.data.taggedStay, nameOf) });

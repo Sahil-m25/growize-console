@@ -30,7 +30,9 @@ export const EVENTS_MODULE = "Lead_Events";
 export const STAFF_MODULE = "Lead_Events_X_Users";
 export const STAFF_EVENT = "Event_Staff";
 export const STAFF_USER = "userlookup221_3";
-export const EVENT_FIELDS = Object.freeze(["id", "Name", "Starts_On", "Ends_On", "Event_City", "Event_Type", "Event_Channel", "Event_State", "Event_Cost", "Names_Taken"]);
+export const EVENT_FIELDS = Object.freeze(["id", "Name", "Starts_On", "Ends_On", "Event_City", "Event_Type", "Event_Channel", "Event_State", "Event_Cost", "Names_Taken",
+  // the event's version: PATCH /api/events/[id] sends it back as modifiedTime (409 conflict when stale, M14-S02)
+  "Modified_Time"]);
 
 const QUALIFIED_OR_BEYOND: ReadonlySet<string> = new Set(["Qualified", "Engagement done", "Investor said yes", "Reserved - 10% in", "Fully paid", "Allocated", "Onboarded", "Converted"]);
 const RESERVED_OR_BEYOND: ReadonlySet<string> = new Set(["Reserved - 10% in", "Fully paid", "Allocated", "Onboarded", "Converted"]);
@@ -57,6 +59,8 @@ export interface EventRow {
   readonly cost: number | null;
   readonly staff: readonly { readonly id: string; readonly name: string | null }[];
   readonly stats: EventStats;
+  /** Lead_Events.Modified_Time as read — the correction (PATCH) sends it back as `modifiedTime`. */
+  readonly modifiedTime: string | null;
 }
 export interface EventLead { readonly id: string; readonly name: string; readonly status: string | null }
 
@@ -108,6 +112,7 @@ const eventOf = (r: ZohoRecord, staff: ReadonlyMap<string, readonly { id: string
     id: r.id, name: str(r, "Name", 120) ?? "", startsOn: day(str(r, "Starts_On", 20)), endsOn: day(str(r, "Ends_On", 20)),
     city: str(r, "Event_City", 80), type: str(r, "Event_Type", 30), channel: str(r, "Event_Channel", 30), state, cost,
     staff: Object.freeze([...(staff.get(r.id) ?? [])]), stats: statsOf(r.id, captured, cost, buckets),
+    modifiedTime: str(r, "Modified_Time", 40),
   });
 };
 const bySoonest = (a: EventRow, b: EventRow) => (a.startsOn ?? "9999") < (b.startsOn ?? "9999") ? -1 : (a.startsOn ?? "9999") > (b.startsOn ?? "9999") ? 1 : a.name.localeCompare(b.name);

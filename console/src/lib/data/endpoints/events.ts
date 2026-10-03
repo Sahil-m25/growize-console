@@ -20,6 +20,7 @@ import { reducer, type Action, type ConsoleState } from "@/lib/state";
 import { evDateRange, evDateText, evGaps, evISODate, evNextId } from "@/features/events/eventDraft";
 import { assignees } from "@/lib/selectors";
 import { fail, ok, type ApiErr, type ReadEndpoint, type WriteEndpoint } from "../api";
+import { FIXTURE_VERSION } from "./version";
 
 export type LeadDispatch = (a: Action) => unknown;
 
@@ -47,6 +48,7 @@ export function fixtureEventRow(c: ConsoleState, e: EventRec): EventRow {
     staff: e.staff.map(k => ({ id: k, name: P(c.PEOPLE, k).n })),
     stats: { captured: st.captured, tagged: st.tagged, qualified: st.qual, reserved: st.res,
       costPerQualified: why === null ? Math.round(e.cost / st.qual) : null, costHiddenWhy: why },
+    modifiedTime: FIXTURE_VERSION,
   };
 }
 /** The book's own record back from a row (the sheet card's split preview deals from it). */

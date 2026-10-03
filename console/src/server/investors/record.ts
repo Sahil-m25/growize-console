@@ -76,6 +76,8 @@ export interface HoldingLine {
   /** Payment_Status from matched receipts (money/allotment-receipts); null where Money is hidden. */
   readonly paymentStatus: PaymentStatus | null;
   readonly holdUntil: string | null;
+  /** The allotment's Modified_Time as read: a typed-slot upload on it sends this back as `expected` (M12-S02). */
+  readonly version: string | null;
 }
 
 export type { AttachmentLine };
@@ -185,6 +187,7 @@ export function createInvestorRecordReader(deps: RecordDeps) {
         status: a.Allocation_Status, agreementSigned: paper ? !!a.agreementSignedAt : null,
         paymentStatus: money ? moneyOfAllot.get(a.id)!.paymentStatus : null,
         holdUntil: a.holdUntil,
+        version: a.modifiedTime,
       });
     });
     const paid = live.reduce((t, a) => t + moneyOfAllot.get(a.id)!.paid, 0);

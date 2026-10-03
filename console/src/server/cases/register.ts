@@ -31,6 +31,8 @@ export const CASE_FIELDS = checkProjection(CASES_MODULE, [
   "Created_Time", "Ticket_Category", "SLA_Due", "Closed_At",
   // M13-S04: the watcher (user lookup) and when it was handed on. Zoho config: created by Sahil (HUMAN).
   "Handed_By", "Handed_At",
+  // Modified_Time: the row's version — PATCH /api/cases/[id] and the handover send it back as expectedModifiedTime (409 when stale).
+  "Modified_Time",
 ]);
 /** Seats that read the register and may never act on it (the Auditor). */
 export const READ_ONLY_SEATS: ReadonlySet<string> = new Set(["audit"]);
@@ -92,6 +94,7 @@ export function caseOf(x: ZohoRecord): CaseRow | null {
     state: stateOf(str(x, "Status", 20)), d: str(x, "Description", 2000) ?? "", sla: istStamp(str(x, "SLA_Due", 40)) ?? "",
     ...(closed ? { closed } : {}),
     ...(handed ? { handed } : {}),
+    version: str(x, "Modified_Time", 40),
   });
 }
 

@@ -63,6 +63,17 @@ test('one event names only the viewer\'s leads and counts the rest as somebody e
   assert.ok(!rig.queries.some((q) => /from Contacts|LLP_UnitAllocation|Receipts/.test(q)));
 });
 
+test('M14-S02: the list and one event carry Lead_Events.Modified_Time (selected explicitly) for the correction to send back', async () => {
+  const rig = await makeRig(load, route);
+  const svc = createEventsService(rig);
+  const l = await svc.list({ credential: await rig.cred(IR), seat: 'ir' });
+  assert.equal(l.ok, true);
+  assert.ok([...l.upcoming, ...l.completed].every((e) => typeof e.modifiedTime === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(e.modifiedTime)));
+  const o = await svc.one({ credential: await rig.cred(IR), seat: 'ir' }, PRESTIGE);
+  assert.equal(o.event.modifiedTime, '2026-09-20T11:00:00+05:30');
+  for (const q of rig.queries.filter((x) => /from Lead_Events where/.test(x))) assert.match(q, /, Modified_Time from Lead_Events/);
+});
+
 test('an IR Manager with a subtree reader names the team\'s leads (the shared owner predicate)', async () => {
   const rig = await makeRig(load, route);
   const svc = createEventsService({ ...rig, subtreeOf: async () => [IR] });

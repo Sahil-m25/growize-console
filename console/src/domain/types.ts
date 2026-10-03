@@ -370,7 +370,8 @@ export interface Lead {
    *  known (ir-console-redesigned.html:3136). */
   unitsKnown?: boolean;
   /** Zoho's Modified_Time as the page loaded the lead — a wired write (email, cover) sends it back as
-   *  `expectedModifiedTime` (D44). Absent in the demo book; the live lead book does not map it yet. */
+   *  `expectedModifiedTime` (D44). Live: Leads.Modified_Time from the lead book's detail read (server/data/live leadOf);
+   *  absent in the demo book, whose fixture writes do not read it. */
   mt?: string | null;
   /** Free-text contact instructions, the details drawer's own writer (ir-console-redesigned.html:
    *  11910,12020) — `fuPreference` reads this before falling back to its stock sentence. */

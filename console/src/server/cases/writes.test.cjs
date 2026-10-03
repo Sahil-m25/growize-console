@@ -93,6 +93,8 @@ test('Meena closes "Add a nominee": Status Closed and Closed_At, conditional on 
   assert.equal(r.row.state, 'closed');
   assert.equal(r.row.closed, '2026-09-28T11:30');
   assert.equal(r.modifiedTime, '2026-09-28T11:31:00+05:30');
+  assert.equal(r.row.version, '2026-09-28T11:31:00+05:30', 'the answered row carries the new version');
+  assert.ok(rig.calls.filter((c) => c.path === '/coql').every((c) => (c.query.match(/Modified_Time/g) || []).length === 1), 'Modified_Time selected once');
   const [put] = rig.writes();
   assert.equal(put.method, 'PUT');
   assert.equal(put.path, `/Cases/${P}740998406`);

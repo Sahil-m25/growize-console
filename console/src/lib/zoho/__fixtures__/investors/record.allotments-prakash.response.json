@@ -26,7 +26,8 @@
         "Annual_Rental_Yield": 8,
         "Hold_Until": "2026-09-23",
         "Hold_Extension_State": null,
-        "Supplementary_Verified_At": null
+        "Supplementary_Verified_At": null,
+        "Modified_Time": "2026-09-20T11:00:00+05:30"
       }
     ],
     "info": {

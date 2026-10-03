@@ -12,6 +12,7 @@ import type { InvestorSearchResult } from "@/server/investors/search";
 import { I, allotsOf, cared, dueBy, dupEmail, gotBy, invMatch, isAM, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId, pageReadable } from "@/lib/im";
 import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
+import { FIXTURE_VERSION } from "./version";
 
 type InvestorSearchValue = Extract<InvestorSearchResult, { ok: true }>["value"];
 
@@ -34,7 +35,7 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
     const holdings = allotsOf(s, me, x.id).map(a => {
       const l = llpOf(s, a.LLP_Lookup);
       return { id: a.id, llpId: a.LLP_Lookup, llpName: llpName(s, a), block: l ? l.Block_Code : "", committed: a.Committed_Units, issued: a.Issued_Units,
-        status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null };
+        status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION };
     });
     return ok({ record: {
       id: x.id, version: null, sections, investor: x,

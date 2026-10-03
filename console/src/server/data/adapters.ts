@@ -63,6 +63,8 @@ export interface AllotmentRow extends ImAllot {
   readonly holdExtension: string | null;
   /** Supplementary_Verified_At — the supplementary agreement was signed and verified then (Agreement_Signed). */
   readonly agreementSignedAt: string | null;
+  /** Modified_Time as read — a guarded write to the allotment (typed-slot upload) sends it back (If-Unmodified-Since). */
+  readonly modifiedTime: string | null;
 }
 
 export interface CaseRow extends ImTicket {
@@ -226,6 +228,7 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
           token: money ? n(x, "Token_Advance_Amount") : null,
           holdUntil: day(s(x, "Hold_Until", 40)), holdExtension: s(x, "Hold_Extension_State", 20),
           agreementSignedAt: stamp(s(x, "Supplementary_Verified_At", 40)),
+          modifiedTime: s(x, "Modified_Time", 40),
         });
       });
       if (!r.ok || !own) return r;

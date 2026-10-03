@@ -24,7 +24,8 @@
     "Created_Time": "2026-09-10T10:00:00+05:30",
     "Ticket_Category": "Bank",
     "SLA_Due": "2026-09-12T10:00:00+05:30",
-    "Closed_At": null
+    "Closed_At": null,
+    "Modified_Time": "2026-09-20T11:00:00+05:30"
    },
    {
     "id": "9007199254740998402",
@@ -45,7 +46,8 @@
     "Created_Time": "2026-09-10T10:00:00+05:30",
     "Ticket_Category": "Records",
     "SLA_Due": "2026-09-12T10:00:00+05:30",
-    "Closed_At": null
+    "Closed_At": null,
+    "Modified_Time": "2026-09-21T11:07:00+05:30"
    },
    {
     "id": "9007199254740998403",
@@ -66,7 +68,8 @@
     "Created_Time": "2026-09-10T10:00:00+05:30",
     "Ticket_Category": "Records",
     "SLA_Due": "2026-09-12T10:00:00+05:30",
-    "Closed_At": null
+    "Closed_At": null,
+    "Modified_Time": "2026-09-22T11:14:00+05:30"
    },
    {
     "id": "9007199254740998405",
@@ -87,7 +90,8 @@
     "Created_Time": "2026-09-10T10:00:00+05:30",
     "Ticket_Category": "Compliance",
     "SLA_Due": "2026-09-12T10:00:00+05:30",
-    "Closed_At": null
+    "Closed_At": null,
+    "Modified_Time": "2026-09-23T11:21:00+05:30"
    }
   ],
   "info": {

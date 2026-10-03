@@ -81,12 +81,14 @@ export const PROJECTIONS: Readonly<Record<ModuleKey, readonly string[]>> = Objec
     "id", "Customer", "LLP", "Allocation_Status", "Issued_Units", "Reserved_Units", "Unit_Price",
     "Token_Advance_Amount", "Total_Amount_Received", "Total_Amount_Receivable", "Investment_Date", "Annual_Rental_Yield",
     "Hold_Until", "Hold_Extension_State", "Supplementary_Verified_At",
+    // the allotment's version: a typed-slot upload (M12-S02) sends it back as `expected` (If-Unmodified-Since). Not identity.
+    "Modified_Time",
   ]),
   // M09-S08-T02: an IR's own-lead investors — the same no-money allotment read as the AM book (farms and units,
   // no price, no amount, no receipt): an IR sees no Paid or Due (D69). Same list, one wall.
   // M09-S02-T02: the AM book's allotments — units, farm, status and hold; no price, no amount, no receipt.
   amAllotments: checkAmProjection(MODULES.amAllotments, [
-    "id", "Customer", "LLP", "Allocation_Status", "Issued_Units", "Reserved_Units", "Investment_Date", "Hold_Until",
+    "id", "Customer", "LLP", "Allocation_Status", "Issued_Units", "Reserved_Units", "Investment_Date", "Hold_Until", "Modified_Time",
   ]),
   receipts: checkProjection(MODULES.receipts, [
     "id", "Allotment", "Kind", "Amount", "Mode", "UTR", "Received_On", "Match_State", "Reversal_Of", "Created_By",
@@ -94,6 +96,7 @@ export const PROJECTIONS: Readonly<Record<ModuleKey, readonly string[]>> = Objec
   cases: checkProjection(MODULES.cases, [
     "id", "Case_Number", "Subject", "Description", "Related_To", "Owner", "Priority", "Status", "Case_Origin",
     "Created_Time", "Ticket_Category", "SLA_Due", "Closed_At",
+    "Modified_Time",
   ]),
   holdings: checkProjection(MODULES.holdings, [
     "id", "Contact", "Instrument_Type", "Amount_Invested", "Invested_On", "Interest_Rate", "Maturity_On",
