@@ -19,3 +19,4 @@ The eleven canaries in Build Book §22 each point at one of these.
 | MONEY · the ledger and the statement disagree | [money-mismatch.md](money-mismatch.md) |
 | PLATFORM · the Zoho API budget is running out | [api-budget.md](api-budget.md) |
 | PII · an identity field got past the wall | [pii-leak.md](pii-leak.md) |
+| ROUTINE · who signed in, from where, who failed (no console screen; Zoho Directory) | [sign-in-history.md](sign-in-history.md) |
