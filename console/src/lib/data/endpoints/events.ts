@@ -3,6 +3,7 @@
      GET    /api/events/[id]           one event: the leads the viewer may open, and a count of the rest
      POST   /api/events                add     PATCH /api/events/[id]  correct     DELETE /api/events/[id]?confirm=1  remove
                                        (without confirm the route answers 428 { taggedLeads, eventName } and writes nothing)
+     GET    /api/events/[id]/sheet     the sheet's state on Lead_Events (counts, who loaded it, staff in named order, the load log)
      POST   /api/events/[id]/sheet     load the tablet sheet once ({rule, rows})
    Live: the routes, on the person's own token. Fixture: the same answers projected from the demo book (EVENTS, SHEET, LEADS),
    and a write runs the reducer action it replaces (saveEvent, dropEvent, loadSheet). The reducer reads its draft from
@@ -12,6 +13,7 @@ import type { cacheView } from "@/server/cases/http";
 import type { EventLead, EventRow } from "@/server/events/events";
 import type { Moved } from "@/server/events/writes";
 import type { LoadSummary } from "@/server/events/loader";
+import type { SheetState } from "@/server/events/sheet-state";
 import type { CountBucket } from "@/lib/zoho/cache";
 import type { EventRec } from "@/domain";
 import { LADDER } from "@/domain";
@@ -45,7 +47,7 @@ export function fixtureEventRow(c: ConsoleState, e: EventRec): EventRow {
   return {
     id: e.id, name: e.n, startsOn: iso(r.from), endsOn: iso(r.to), city: e.city, type: e.type, channel: e.ch, state: e.state, cost: e.cost,
     staff: e.staff.map(k => ({ id: k, name: P(c.PEOPLE, k).n })),
-    stats: { captured: st.captured, tagged: st.tagged, qualified: st.qual, reserved: st.res,
+    stats: { captured: st.captured, tagged: st.tagged, qualified: st.qual, reserved: st.res, paid: st.paid ?? 0, investor: st.done ?? 0,
       costPerQualified: why === null ? Math.round(e.cost / st.qual) : null, costHiddenWhy: why },
   };
 }
@@ -99,7 +101,7 @@ export const eventOne: ReadEndpoint<ConsoleState, string | null, EventOne> = {
     if (!e) return GONE();
     const all = evLeads(c, e.id), open = openable(c);
     const named = all.filter(l => open.some(x => x.id === l.id));
-    return ok({ event: fixtureEventRow(c, e), leads: named.map(l => ({ id: l.id, name: l.n, status: statusOf(l.done) })), othersCount: all.length - named.length, truncated: false });
+    return ok({ event: fixtureEventRow(c, e), leads: named.map(l => ({ id: l.id, name: l.n, status: statusOf(l.done), ownerId: l.own, ownerName: l.own ? P(c.PEOPLE, l.own).n : null, units: l.units })), othersCount: all.length - named.length, truncated: false });
   },
 };
 
@@ -200,6 +202,33 @@ const RULE_OF: Record<string, SheetRule["kind"]> = { roster: "round-robin", self
 export const ruleOf = (ar: string, who: string | null): SheetRule => {
   const kind = RULE_OF[ar] ?? "round-robin";
   return kind === "one" ? { kind, ownerId: who } : { kind } as SheetRule;
+};
+
+/* The card's state. Live: GET /api/events/[id]/sheet. Fixture: the demo book's SheetRec and the load lines the reducer wrote.
+   PROVISIONAL (live): willLoad, filledBy/At and rule are null — Lead_Events needs Sheet_Rows, Sheet_Filled_By/At and Load_Rule. */
+export type SheetView = Pick<SheetState, "eventId" | "state" | "inFile" | "willLoad" | "duplicates" | "refused" | "loaded" | "filledBy" | "filledAt"
+  | "loadedBy" | "loadedAt" | "rule" | "mayLoad"> & { staff: SheetState["staff"][number][]; log: SheetState["log"][number][] };
+
+export const sheetState: ReadEndpoint<ConsoleState, string | null, SheetView> = {
+  path: id => (id ? `/api/events/${encodeURIComponent(id)}/sheet` : null),
+  pick: j => { const o = (j as { sheet: SheetState }).sheet; return { ...o, staff: [...o.staff], log: [...o.log] }; },
+  fixture(c, id) {
+    if (!canReach(c, "events")) return NO_PAGE();
+    const e = c.EVENTS.find(x => x.id === id);
+    if (!e) return GONE();
+    const sh = c.SHEET[e.id];
+    const who = (k: string) => ({ id: k, name: P(c.PEOPLE, k).n });
+    const state = !sh ? "none" : sh.state;
+    const done = sh?.state === "loaded";
+    return ok({
+      eventId: e.id, state,
+      inFile: sh ? sh.rows : null, willLoad: sh && !done ? sh.ok : null, duplicates: sh ? sh.dupe : null, refused: sh ? sh.bad : null,
+      loaded: done ? sh.ok : null, filledBy: sh ? who(sh.by) : null, filledAt: sh ? sh.at : null,
+      loadedBy: done && sh.loadedBy ? who(sh.loadedBy) : null, loadedAt: done ? sh.loadedAt ?? null : null, rule: done ? sh.rule ?? null : null,
+      staff: e.staff.map(who), mayLoad: may(c, "events", "load"),
+      log: c.LOG.filter(l => l.what === "Loaded the event sheet" && l.note.startsWith(e.n + " — ")).map(l => ({ at: l.at, what: l.what, by: who(l.who), note: l.note })),
+    });
+  },
 };
 
 export const sheetLoad: WriteEndpoint<ConsoleState, SheetArgs, SheetLoaded, LeadDispatch> = {

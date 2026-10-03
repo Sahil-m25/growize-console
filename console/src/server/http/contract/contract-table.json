@@ -277,6 +277,9 @@
      "schema": "route doc",
      "maxBytes": 524288
     }
+   },
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
    }
   },
   "/api/farms": {

@@ -42,6 +42,7 @@ export function eventServices(ctx: RouteContext, env: NodeJS.ProcessEnv = proces
   const authority = sessionEventsAuthority(env);
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX ?? "";
   return {
+    authority,
     writes: createEventWrites({ crm: ctx.crm, authority, events: ctx.events, recordIdPrefix, cache: ctx.cache }),
     loader: createSheetLoader({ crm: ctx.crm, authority, events: ctx.events, recordIdPrefix, cache: ctx.cache }),
   };

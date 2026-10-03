@@ -4,8 +4,8 @@ import { demoBook } from "@fixtures/book";
 import type { PersonKey } from "@/domain";
 import { initialState, reducer, type Action, type ConsoleState } from "@/lib/state";
 import { evDraft } from "@/features/events/eventDraft";
-import { runWrite } from "../api";
-import { askedOf, changedNote, eventChange, eventCreate, eventDates, eventList, eventOne, eventPicker, eventRemove, ruleOf, sheetLoad } from "./events";
+import { liveRead, runWrite } from "../api";
+import { askedOf, changedNote, eventChange, eventCreate, eventDates, eventList, eventOne, eventPicker, eventRemove, ruleOf, sheetLoad, sheetState } from "./events";
 
 const as = (k: string): ConsoleState => reducer(initialState(demoBook()), { type: "signIn", k: k as PersonKey });
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -145,5 +145,53 @@ describe("M14-S03-W1 — the sheet card", () => {
     expect(await runWrite("fixture", sheetLoad, s, () => {}, { eventId: id, rule: { kind: "one", ownerId: null }, rows: [] })).toMatchObject({ ok: false, status: 422, code: "owner-missing" });
     const dev = ready("pradeep");
     expect(await runWrite("fixture", sheetLoad, dev.s, () => {}, { eventId: dev.id, rule: { kind: "round-robin" }, rows: [] })).toMatchObject({ ok: false, status: 403 });
+  });
+});
+
+describe("M14-S03-W2 — the sheet card's state, and the event page's Owner, Total and later bars", () => {
+  const prestige = (who: string) => { const s = as(who); return { s, id: s.EVENTS.find(e => e.n === "Prestige Falcon City")!.id }; };
+  const view = (s: ConsoleState, id: string) => { const r = sheetState.fixture(s, id); if (!r.ok) throw new Error(r.error); return r.data; };
+  it("the route is per event; nothing is read without an id", () => {
+    expect(sheetState.path(null)).toBeNull();
+    expect(sheetState.path("E-04")).toBe("/api/events/E-04/sheet");
+  });
+  it("fixture, a ready sheet: the counts the card prints, who filled it, the staff in named order, and the load right (TC-E10-010/012/013)", () => {
+    const { s, id } = ready("rohit");
+    const v = view(s, id);
+    const sh = s.SHEET[id]!;
+    expect(v).toMatchObject({ state: "ready", inFile: sh.rows, willLoad: sh.ok, duplicates: sh.dupe, refused: sh.bad, loaded: null, mayLoad: true, filledAt: sh.at });
+    expect(v.filledBy?.id).toBe(sh.by);
+    expect(v.staff.map(x => x.id)).toEqual(s.EVENTS.find(e => e.id === id)!.staff);
+    const dev = ready("pradeep");
+    expect(sheetState.fixture(dev.s, dev.id)).toMatchObject({ ok: false, status: 403 });   // a seat without the Events page
+    function ready(who: string) { const x = as(who); return { s: x, id: Object.keys(x.SHEET).find(k => x.SHEET[k]!.state === "ready")! }; }
+  });
+  it("fixture, a loaded sheet: loaded by, the rule, skipped as duplicates and the log line the reducer wrote; an event with no sheet says none", async () => {
+    const x = as("rohit");
+    const id = Object.keys(x.SHEET).find(k => x.SHEET[k]!.state === "ready")!;
+    let s = x;
+    await runWrite("fixture", sheetLoad, s, (a: Action) => { s = reducer(s, a); }, { eventId: id, rule: { kind: "round-robin" }, rows: [] });
+    const v = view(s, id);
+    expect(v).toMatchObject({ state: "loaded", loaded: s.SHEET[id]!.ok, willLoad: null, rule: "Round-robin across who staffed it", loadedBy: { id: "rohit" } });
+    expect(v.log).toHaveLength(1);
+    expect(v.log[0]).toMatchObject({ what: "Loaded the event sheet", note: expect.stringContaining("leads") });
+    const none = x.EVENTS.find(e => !x.SHEET[e.id])!;
+    expect(view(x, none.id)).toMatchObject({ state: "none", inFile: null, willLoad: null, log: [] });
+    expect(sheetState.fixture(x, "E-99")).toMatchObject({ ok: false, status: 404 });
+  });
+  it("live: the route's sheet, the staff and the log as arrays", async () => {
+    const sheet = { eventId: "7", eventName: "Prestige", state: "loaded", inFile: 38, willLoad: null, duplicates: 4, refused: 3, loaded: 31, filledBy: null, filledAt: null,
+      loadedBy: { id: "u1", name: "Rohit" }, loadedAt: "2026-09-28T11:30", rule: null, staff: [{ id: "u1", name: "Rohit" }], mayLoad: true, log: [] };
+    const f = fetchOf(200, { sheet });
+    const r = await liveRead(sheetState, "/api/events/7/sheet", { fetch: f });
+    expect(r).toEqual({ state: "ok", data: sheet });
+  });
+  it("the event page's lead rows carry the owner and units; the stats carry Fully paid and Investor (TC-E10-003)", () => {
+    const { s, id } = prestige("rohit");
+    const r = eventOne.fixture(s, id);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.data.leads[0]).toMatchObject({ name: "Meera Krishnan", ownerId: expect.any(String), ownerName: expect.any(String), units: expect.any(Number) });
+    expect(r.data.event.stats).toMatchObject({ paid: expect.any(Number), investor: expect.any(Number) });
+    expect(Object.keys(r.data.leads[0]!).sort()).toEqual(["id", "name", "ownerId", "ownerName", "status", "units"]);   // no phone, e-mail or any identity field
   });
 });

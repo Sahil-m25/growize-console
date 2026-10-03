@@ -15,6 +15,6 @@ export {
 export { capWhy, grantorOf } from "./cap";
 export {
   csvGood, csvRead, csvRows, dealTo, dupeOf as csvDupeOf, emailOK, evIRs, phoneKey, phoneOK,
-  splitLine, splitNames,
+  splitLine, splitLineBy, splitNames, splitNamesBy,
   type CsvField, type CsvFieldKey, type CsvRow, type CsvState,
 } from "./csv";
