@@ -340,6 +340,19 @@ test('a duplicate in the IR\'s own book offers Open <first name>', async () => {
   assert.deepEqual(res, { ok: true, value: { status: 'own', leadId: `${P}740996002`, firstName: 'Synthetic' } });
 });
 
+test('TC-E04-005/006: +91, leading 0, 91 prefix and spaces all find the same own-book lead; a number outside the book answers nothing but a refusal', async () => {
+  for (const typed of ['9845033021', '+91 98450 33021', '098450 33021', '91 98450 33021', '+91 98450-33021']) {
+    const r = rig('coql.duplicate-own');
+    const res = await r.dupes.lookup(principal(IR), typed);
+    assert.deepEqual(res.value, { status: 'own', leadId: `${P}740996002`, firstName: 'Synthetic' }, typed);
+    assert.match(r.calls[0].body.select_query, /'\+919845033021'/, typed);
+  }
+  const out = rig('lead.duplicate-mobile');
+  const res = await out.service.createLead(principal(IR), { ...BASE, Mobile: '098450 33021' });
+  assert.equal(res.reasonCode, 'duplicate-mobile');
+  assert.ok(!/Synthetic|740996444/.test(JSON.stringify(res)), 'out-of-book duplicate hides name and id');
+});
+
 test('a lead the manager sees in their team is "visible", not "own"', async () => {
   const r = rig('coql.duplicate-team');
   const res = await r.dupes.lookup(principal(MANAGER), '9845033021');
@@ -723,6 +736,39 @@ test('good rows land tagged to the event, round-robin across its staff, with no 
   assert.equal(res.value.added, 2);
   assert.deepEqual(res.value.rows.map((v) => [v.row, v.status, v.reason ?? '']),
     [[0, 'added', ''], [1, 'refused', 'duplicate-on-book'], [2, 'added', ''], [3, 'refused', 'name'], [4, 'refused', 'mobile'], [5, 'refused', 'email'], [6, 'refused', 'duplicate-in-file']]);
+});
+
+const SAMPLE = Object.freeze([ // leads.csv: good, 1-char name, dup on book, dup in file, bad email, intl mobile (TC-E04-010)
+  { name: 'Asha Rao', mobile: '9000000201', email: 'asha@example.com', consent: 'yes' },
+  { name: 'K', mobile: '9000000202' },
+  { name: 'Sanjay Menon', mobile: '9000000203' },
+  { name: 'Asha Again', mobile: '+91 90000 00201' },
+  { name: 'Bad Email', mobile: '9000000204', email: 'bad@' },
+  { name: 'OK Two', mobile: '+919000000205' },
+]);
+
+test('TC-E04-010: each sample row gets its own verdict; the consent column is ignored; 2 of 6 are added', async () => {
+  const pre = checkRows(SAMPLE);
+  assert.deepEqual(pre.refused.map((r) => [r.row, r.reason]), [[1, 'name'], [3, 'duplicate-in-file'], [4, 'email']]);
+  const r = importRig('import.partial');
+  const res = await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'me' }, SAMPLE);
+  assert.deepEqual(res.value.rows.map((v) => [v.row, v.status, v.reason ?? '']),
+    [[0, 'added', ''], [1, 'refused', 'name'], [2, 'refused', 'duplicate-on-book'], [3, 'refused', 'duplicate-in-file'], [4, 'refused', 'email'], [5, 'added', '']]);
+  assert.equal(res.value.added, 2);
+  assert.equal(res.value.rows.length, 6);
+  assert.ok(r.calls[0].data.every((x) => !Object.keys(x).some((k) => /consent/i.test(k))));
+});
+
+test('TC-E04-011: no event, nothing is added; with an event the two good rows are tagged Events and split between two people', async () => {
+  const none = importRig('import.partial');
+  assert.equal((await none.svc.load(principal(MANAGER), '', { kind: 'me' }, SAMPLE)).reasonCode, 'event-missing');
+  assert.equal(none.calls.length, 0);
+  const r = importRig('import.partial');
+  const res = await r.svc.load(principal(MANAGER), EVENT_ID, { kind: 'round-robin', staffIds: [IR, OTHER_IR] }, SAMPLE);
+  assert.equal(res.value.added, 2);
+  assert.deepEqual(r.calls[0].data.map((x) => x.Owner.id), [IR, OTHER_IR, IR]);
+  assert.ok(r.calls[0].data.every((x) => x.Lead_Source === 'Events' && x.Lead_Event.id === EVENT_ID));
+  assert.ok(r.calls[0].data.every((x) => !('Consent_Call' in x) && !('Consent_WhatsApp' in x) && !('Consent_Email' in x)));
 });
 
 test('a retry after a part-way failure writes no row twice: Zoho returns the landed rows as duplicates', async () => {
