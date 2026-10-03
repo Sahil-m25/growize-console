@@ -72,10 +72,12 @@ export const recordHistory: ReadEndpoint<ImBook, { module: string; id: string | 
    — PROVISIONAL (see the report). */
 export type LeadActivityRowView = ActivityRow & { readonly detail?: string | null; readonly touch?: number | null; readonly human?: boolean };
 export type LeadActivityView = Omit<Ok, "ok" | "rows"> & { readonly rows: readonly LeadActivityRowView[] };
-export type LeadActivityArgs = { month: string; day: string | null; person: string | null; kind: string | null };
+/** null → nothing to read (the whole-month read is the same read when no day is picked) */
+export type LeadActivityArgs = { month: string; day: string | null; person: string | null; kind: string | null } | null;
 
 export const leadActivityRead: ReadEndpoint<ConsoleBook, LeadActivityArgs, LeadActivityView> = {
   path: a => {
+    if (!a) return null;
     const q = new URLSearchParams({ side: "lead", month: a.month, limit: "200" });
     if (a.day) q.set("day", a.day);
     if (a.person) q.set("person", a.person);
@@ -84,6 +86,7 @@ export const leadActivityRead: ReadEndpoint<ConsoleBook, LeadActivityArgs, LeadA
   },
   pick: j => j as LeadActivityView,
   fixture(state, a) {
+    if (!a) return fail(400, "invalid-request", "Nothing to read.");
     if (!leadMay(state, "activity", "view")) return fail(403, "no-activity", "Activity is not part of this seat.");
     const solo = !leadMay(state, "activity", "others");
     const stamp = (e: { d: string; at: string }) => `${e.d}T${e.at.slice(-5)}:00+05:30`;

@@ -29,7 +29,7 @@ export type ActivityUi = {
   mkey: string;
   days: number;
   cuts: number;
-  args: LeadActivityArgs;
+  args: NonNullable<LeadActivityArgs>;
 };
 
 export function activityUi(state: ConsoleState): ActivityUi {
