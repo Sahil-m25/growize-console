@@ -186,4 +186,38 @@ async function call(mod, method, url, { seat = null, body, contentType, headers 
   } finally { current = null; }
 }
 
-module.exports = { setMode, consoleRoot, srcRoot, load, call, routeFile, installRuntime, SEATS, WHO, CANARY, zoho };
+/* ---- M12-S10: reader-level rigs (extension; the isolation suite uses these, nothing else is added) ----------------- */
+/* The real readers (documents, emails, cases reach, searches, embed) take a ZohoClient on a person's own credential. `rig(route)`
+   builds one on a fetch that hands every call to `route({method,url,q,body,headers})`, which returns a recorded response
+   ({status,headers,body}) or [dir,name] naming src/lib/zoho/__fixtures__/<dir>/<name>.response.json. It counts the calls, keeps
+   Plane B in memory and mints credentials. Nothing reaches Zoho; an unrouted call throws (the suite fails, never guesses). */
+const P_PREFIX = '9007199254';
+const NOW = Date.parse('2026-09-28T06:00:00Z');
+const recorded = (dir, name) => JSON.parse(fs.readFileSync(path.join(FIX, dir, `${name}.response.json`), 'utf8'));
+const toResponse = (r) => new Response(r.status === 204 ? null : (r.text !== undefined ? r.text : JSON.stringify(r.body)), { status: r.status, headers: r.headers || {} });
+const immediateGate = () => ({ async acquire() { return { waitedMs: 0, release() {} }; }, async run(_c, t) { return t(); }, snapshot() { return {}; } });
+function rig(route) {
+  const { createMemorySink, createOpsLog } = load('lib/zoho/log.ts');
+  const { createZohoClient, userCredential } = load('lib/zoho/client.ts');
+  const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-c.ts');
+  const { createInvestorEvents } = load('server/data/events.ts');
+  const { createScopedCache } = load('lib/zoho/cache.ts');
+  const sink = createMemorySink(); const log = createOpsLog(sink);
+  const events = createInvestorEvents({ log, planeC: createPlaneCLog(createPlaneCMemorySink()), clock: () => NOW });
+  const calls = [];
+  const crm = createZohoClient({ recordIdPrefix: P_PREFIX, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
+    fetch: async (url, init) => {
+      const c = { method: init.method, url: decodeURIComponent(String(url)), q: typeof init.body === 'string' && init.body.startsWith('{') ? (JSON.parse(init.body).select_query ?? null) : null, body: init.body, headers: init.headers };
+      calls.push(c);
+      const r = route(c);
+      if (!r) throw new Error('unrouted ' + c.method + ' ' + (c.q || c.url));
+      return toResponse(Array.isArray(r) ? recorded(r[0], r[1]) : r);
+    } });
+  const cred = (id) => userCredential({ access_token: `synthetic-${id}`, api_domain: 'https://www.zohoapis.in', expires_in: 3_600 },
+    { recordIdPrefix: P_PREFIX, gate: immediateGate(), log: createOpsLog(createMemorySink()), clock: () => NOW,
+      fetch: async () => toResponse({ status: 200, body: { users: [{ id, status: 'active' }] } }) });
+  const refusals = () => sink.records().filter((x) => x.kind === 'refusal');
+  return { calls, sink, log, events, crm, cred, cache: createScopedCache({ clock: () => NOW }), refusals, logText: () => JSON.stringify(sink.records()), P: P_PREFIX, NOW };
+}
+
+module.exports = { setMode, consoleRoot, srcRoot, load, call, routeFile, installRuntime, SEATS, WHO, CANARY, zoho, rig, recorded, toResponse, immediateGate, FIX, NOW };
