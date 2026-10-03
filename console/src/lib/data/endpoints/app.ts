@@ -9,7 +9,7 @@ import type { AppAccessCard } from "@/server/investors/unlock";
 import type { AppPreview, PreviewPayout } from "@/server/investors/preview";
 import type { TestLinkEntry, TestLinkState } from "@/server/investors/test-link";
 import {
-  I, PREVIEW_TABS, accessOf, accessView, allotPayStatus, docOf, isAM, llpName, llpOf, mayAccess, mayTestLink, newTestLink,
+  I, PREVIEW_TABS, accessOf, appOf, when, accessView, allotPayStatus, docOf, isAM, llpName, llpOf, mayAccess, mayTestLink, newTestLink,
   nowFull, portfolioOf, testLinkGate, testLinkState, testLinks,
 } from "@/lib/im";
 import type { ImAccess, ImTestLink } from "@/lib/im";
@@ -22,9 +22,17 @@ const enc = encodeURIComponent;
 /* ── the App account card (M10-S21) ───────────────────────────────────────────────────────── */
 export type CardAnswer = { card: AppAccessCard; already: boolean; noteSaved?: boolean };
 
+/** the demo book's "02 Sep 14:20" as the route's Zoho datetime ("2026-09-02T14:20:00+05:30"); null for none */
+const zdt = (b: ImBook, at: string | null | undefined): string | null => {
+  const t = at ? when(b.s.data.NOW, at) : null;
+  /* the demo clock is IST wall time kept as UTC milliseconds, so no offset is added back */
+  return t == null ? null : new Date(t).toISOString().slice(0, 19) + "+05:30";
+};
 const cardOf = (b: ImBook, id: string, a: ImAccess | null): AppAccessCard => {
-  const v = accessView(a);
+  const v = accessView(a), app = appOf(b.s, b.me, id);
   return {
+    /* M08-S08-W2: the mark (D93: the account opens On hold with a Tentative mark at the first matched receipt) */
+    mark: app ? (app.mark === "permanent" ? "Permanent" : "Tentative") : null, markAt: app ? zdt(b, app.markAt) : null, openedAt: app ? zdt(b, app.at) : null,
     contactId: id, code: null, access: a ? a.App_Access : null, state: v.k, text: v.t,
     welcomeAt: a ? a.App_Welcome_At : null, welcomeChannel: a ? a.App_Welcome_Channel : null,
     /* the demo book has no Modified_Time; live sends it back as expectedModifiedTime (D44) */

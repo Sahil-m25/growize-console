@@ -50,6 +50,7 @@ const SESSION = 'session_fixture_claim_0001';
 const NOW = Date.parse('2026-08-29T10:00:00+05:30');
 const REF = 'EMIR2708001';
 
+const answers = path.join(srcRoot, 'lib', 'zoho', '__fixtures__', 'claim-answers');
 const recorded = (name) => JSON.parse(fs.readFileSync(path.join(fixtures, `${name}.response.json`), 'utf8'));
 const toResponse = (r) => new Response(r.status === 204 ? null : JSON.stringify(r.body), { status: r.status, headers: r.headers || {} });
 const immediateGate = () => ({ async acquire() { return { waitedMs: 0, release() {} }; } });
@@ -92,11 +93,12 @@ function rig(o = {}) {
         await new Promise((r) => setTimeout(r, 5));
         return toResponse(recorded(f.insert));
       }
+      if (init.method === 'GET' && u.includes('/Notes') && f.notes) { calls.push({ op: 'notes', u }); return toResponse(JSON.parse(fs.readFileSync(path.join(answers, `${f.notes}.response.json`), 'utf8'))); }
       calls.push({ op: init.method, u });
       throw new Error(`unexpected ${init.method} ${u}`);
     } });
   const gates = createGates({ crm, access, log, recordIdPrefix: P, clock: () => NOW });
-  const svc = createPaymentClaims({ crm, gates, log, recordIdPrefix: P, clock: () => NOW,
+  const svc = createPaymentClaims({ crm: o.noNotes ? { coql: crm.coql.bind(crm), insert: crm.insert.bind(crm) } : crm, gates, log, recordIdPrefix: P, clock: () => NOW,
     authority: { async mayReport() { return o.mayReport ?? true; } } });
   return { svc, calls, sink, inserts: () => calls.filter((c) => c.op === 'insert') };
 }
@@ -237,4 +239,33 @@ test('maskRef keeps the last four only', () => {
   assert.equal(maskRef('EMIR 2708 001'), '••••8001');
   assert.equal(maskRef('AB1'), '••••');
   assert.equal(maskRef(''), null);
+});
+
+test('M10-S03: the lead page reads the latest report — none, waiting, found, not found with Finance\'s reason', async () => {
+  const none = await rig().svc.read(principal(), L7);
+  assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null });
+  const waiting = await rig({ claims: 'claims.open' }).svc.read(principal(), L7);
+  assert.equal(waiting.value.state, 'waiting');
+  assert.equal(waiting.value.says, null);
+  const nf = rig({ claims: 'claims.not-found', notes: 'notes.not-found' });
+  const n = await nf.svc.read(principal(), L7);
+  assert.equal(n.ok, true, JSON.stringify(n));
+  assert.equal(n.value.state, 'answered');
+  assert.equal(n.value.answer, 'not-found');
+  assert.ok(n.value.reason && n.value.reason.length > 0);
+  assert.equal(n.value.says, `Finance did not find it: ${n.value.reason}`);
+  assert.equal(nf.inserts().length, 0, 'a read writes nothing');
+  const f = await rig({ claims: 'claims.not-found', notes: 'notes.found' }).svc.read(principal(), L7);
+  assert.equal(f.value.answer, 'found');
+  assert.equal(f.value.says, null, 'a found answer never says "did not find it"');
+  const quiet = await rig({ claims: 'claims.not-found', notes: 'notes.none' }).svc.read(principal(), L7);
+  assert.equal(quiet.value.state, 'answered');
+  assert.equal(quiet.value.answer, null);
+});
+
+test('M10-S03: the read refuses an unseen lead and a bad id, and a Zoho failure says so', async () => {
+  assert.equal((await rig().svc.read(principal(), 'nope')).reasonCode, 'invalid-request');
+  const bad = await rig({ claims: 'source.server-error' }).svc.read(principal(), L7);
+  assert.equal(bad.ok, false);
+  assert.equal(bad.kind, 'source-error');
 });

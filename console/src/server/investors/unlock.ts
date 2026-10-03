@@ -36,6 +36,8 @@ import type { OpsLog } from "../../lib/zoho/log";
 export const CONTACTS_MODULE = "Contacts";
 export const APP_ACCESS_FIELD = "App_Access";
 export const APP_ACCESS_FIELDS = Object.freeze(["ARL_ID", APP_ACCESS_FIELD, "App_Welcome_At", "App_Welcome_Channel", "Modified_Time"]);
+/** M08-S08-T03: the account's mark, written once by money/match at the first matched receipt (Tentative, App_Mark_At = that time). */
+export const APP_MARK_FIELDS = Object.freeze(["App_Account_Mark", "App_Mark_At"]);
 export const LOCK_REASON_MAX = 500;
 const RECORD_ID = /^\d{15,22}$/;
 const RECORD_PREFIX = /^\d{6,16}$/;
@@ -59,6 +61,11 @@ export interface AppAccessCard {
   readonly welcomeChannel: string | null;
   /** send back as expectedModifiedTime on unlock / lock (D44) */
   readonly modifiedTime: string | null;
+  /** M08-S08-T03: App_Account_Mark as Zoho holds it (null: empty, or Zoho would not read the field) and App_Mark_At */
+  readonly mark: "Tentative" | "Permanent" | null;
+  readonly markAt: string | null;
+  /** when the account opened: the oldest App_Access change on the timeline, else the mark's time */
+  readonly openedAt: string | null;
   /** App_Access changes, newest first, from the Zoho timeline: who and when (for Activity) */
   readonly history: readonly AppAccessChange[];
   /** false: read-only, "Finance controls app access" */
@@ -160,7 +167,9 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
   };
 
   const readContact = async (cred: UserCredential, id: string, signal?: AbortSignal): Promise<ZohoRecord | null> => {
-    const r = await crm.getRecord(cred, CONTACTS_MODULE, id, { fields: APP_ACCESS_FIELDS, signal });
+    let r = await crm.getRecord(cred, CONTACTS_MODULE, id, { fields: [...APP_ACCESS_FIELDS, ...APP_MARK_FIELDS], signal });
+    /* PROVISIONAL: if Zoho refuses a mark field (App_Mark_At may not exist yet) the card still stands, without the mark */
+    if (!r.ok && r.error.kind !== "not-found" && r.error.kind !== "forbidden") r = await crm.getRecord(cred, CONTACTS_MODULE, id, { fields: APP_ACCESS_FIELDS, signal });
     if (!r.ok) {
       if (r.error.kind === "not-found" || r.error.kind === "forbidden") return null;
       throw new SourceFail(r.error.kind);
@@ -184,10 +193,12 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
     const welcomeChannel = typeof rec.App_Welcome_Channel === "string" && CHANNELS.has(rec.App_Welcome_Channel) ? rec.App_Welcome_Channel : null;
     const h = hist ?? [];
     const s = cardState(access, welcomeAt, welcomeChannel, h);
+    const mark = rec.App_Account_Mark === "Tentative" || rec.App_Account_Mark === "Permanent" ? rec.App_Account_Mark : null;
+    const markAt = typeof rec.App_Mark_At === "string" && (ZOHO_DATETIME.test(rec.App_Mark_At) || /^\d{4}-\d{2}-\d{2}$/.test(rec.App_Mark_At)) ? rec.App_Mark_At : null;
     return Object.freeze({
       contactId: rec.id,
       code: typeof rec.ARL_ID === "string" && /^ARL-INV-\d{4}$/.test(rec.ARL_ID) ? rec.ARL_ID : null,
-      access, state: s.state, text: s.text, welcomeAt, welcomeChannel,
+      access, state: s.state, text: s.text, welcomeAt, welcomeChannel, mark, markAt, openedAt: h.length ? h[h.length - 1]!.at : markAt,
       modifiedTime: typeof rec.Modified_Time === "string" && ZOHO_DATETIME.test(rec.Modified_Time) ? rec.Modified_Time : null,
       history: Object.freeze([...h]), mayChange: may, historyRead: hist !== null,
     });

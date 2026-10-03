@@ -90,10 +90,22 @@ describe("Numbers — the Investors side (M16-S08-W1, M16-S09-W1)", () => {
     const c = data(investorsSection.fixture(book("fahad"), "comp"));
     expect(c.section === "comp" && [c.count, c.rows[0]!.name, c.rows[0]!.kyc, c.rows[0]!.missing.includes("fema")]).toEqual([1, "Joseph Mathew", "pending", true]);
   });
-  it("the path encodes the section; Service and no section read nothing", () => {
+  it("the path encodes the section — Service too (M16-S08-W2); no section reads nothing", () => {
     expect(investorsSection.path("comp")).toBe("/api/numbers/investors-side?section=comp");
-    expect(investorsSection.path("svc")).toBeNull();
+    expect(investorsSection.path("svc")).toBe("/api/numbers/investors-side?section=svc");
     expect(investorsSection.path(null)).toBeNull();
+  });
+  it("Service (M16-S08-W2): Divya reads the tiles, tiers, load and the manager rows; Imran his own row and no pool; the Auditor reads the tiles only", () => {
+    const d = data(investorsSection.fixture(book("divya"), "svc"));
+    if (d.section !== "svc") throw new Error("not svc");
+    expect([d.book, d.tiles.goneQuiet, d.team, d.managers.length, d.pool?.accounts, d.pool?.shouldBeNamed]).toEqual(["head", 2, 2, 2, 5, 1]);
+    expect(d.tiers.A + d.tiers.B + d.tiers.C).toBe(13);
+    const k = data(investorsSection.fixture(book("imran"), "svc"));
+    if (k.section !== "svc") throw new Error("not svc");
+    expect([k.book, k.managers.map(m => m.id), k.pool, k.managers[0]!.accounts]).toEqual(["kam", ["imran"], null, 4]);
+    expect(k.load.perMonth).toBe(3.3);
+    const a = data(investorsSection.fixture(book("latha"), "svc"));
+    expect(a.section === "svc" && a.book).toBe("kam");
   });
 });
 

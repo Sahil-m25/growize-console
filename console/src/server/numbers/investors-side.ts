@@ -44,13 +44,14 @@ import { commitmentOf, dayOf, dueOf, INBOUND_KINDS, istDay, matchedMoneyOf } fro
 import { sectionsFor } from "../investors/record";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "../money/register";
 import type { OpsLog } from "../../lib/zoho/log";
+import type { AmServiceResult, AmServiceView } from "../investors/am-service";
 
 export const INVESTORS_SIDE_SECTIONS = ["cash", "risk", "paper", "comp", "svc"] as const;
 export type InvestorsSideSection = (typeof INVESTORS_SIDE_SECTIONS)[number];
 /** Sections that carry a rupee figure (M16-S09). */
 export const MONEY_SECTIONS: ReadonlySet<InvestorsSideSection> = new Set(["cash", "risk"]);
-/** Sections this module serves (Service is the AM book's, read elsewhere). */
-const SERVED: ReadonlySet<InvestorsSideSection> = new Set(["cash", "risk", "paper", "comp"]);
+/** Sections this module serves. Service (M16-S08-T02) is read by the AM service (../investors/am-service), injected as `service`. */
+const SERVED: ReadonlySet<InvestorsSideSection> = new Set(["cash", "risk", "paper", "comp", "svc"]);
 
 export const COLLECTION_TTL_MS = 45_000;
 const PAGE = 2_000;
@@ -167,7 +168,10 @@ export interface ComplianceRow {
   readonly blocks: "allotment" | null;
 }
 
+/** Service: the four tiles, the tier counts and the load, and — for the Head of AM — the managers and the pool. No money. */
+export type ServiceSection = Pick<AmServiceView, "book" | "tiles" | "tiers" | "load" | "managers" | "pool" | "team" | "problems">;
 export type InvestorsSideValue =
+  | ({ readonly section: "svc" } & ServiceSection)
   | { readonly section: "cash"; readonly collection: Collection }
   | { readonly section: "risk"; readonly rows: readonly AgeingRow[]; readonly due: number }
   | { readonly section: "paper"; readonly rows: readonly PaperRow[]; readonly truncated: boolean }
@@ -185,6 +189,8 @@ export interface InvestorsSideDeps {
   /** Plane C: the access layer refused an action (identity/authority refusedAction). */
   readonly refusedAction?: (who: string, seat: string | null, action: string) => void;
   readonly signStatus?: SignStatusReader;
+  /** The AM service read on the person's own token (Service section); absent → Service is not served. */
+  readonly service?: (signal?: AbortSignal) => Promise<AmServiceResult>;
   readonly clock?: () => number;
 }
 
@@ -392,6 +398,14 @@ export function createInvestorsSide(deps: InvestorsSideDeps) {
           : { ok: false, kind: "source-error", errorKind: kind, retryable: kind !== "source-invalid" && kind !== "truncated", lastGoodAt };
       const scopes = scopesFor(p.seat, me);
 
+      if (sec === "svc") {
+        if (!deps.service) return refuse("invalid-request");
+        const r = await deps.service(signal).catch(() => null);
+        if (!r) return fail("unexpected");
+        if (!r.ok) return r.kind === "refused" ? refuse("no-book") : fail(r.errorKind);
+        const { book, tiles, tiers, load, managers, pool, team, problems } = r.view;
+        return { ok: true, value: Object.freeze({ section: "svc" as const, book, tiles, tiers, load, managers, pool, team, problems, asOf: r.view.asOf, stale: false }) };
+      }
       if (sec === "cash") {
         const got = await deps.cache.readSettled<Readonly<Record<string, number>>>(
           scopedKey<Readonly<Record<string, number>>>(scopes.money, "numbers.investors.cash"), () => collection(p.credential, signal), { ttlMs: COLLECTION_TTL_MS },

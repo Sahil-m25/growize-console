@@ -1,4 +1,8 @@
-/* POST /api/leads/[id]/claim — "the investor says they paid" (M08-S03-T01).
+/* GET /api/leads/[id]/claim — the latest report on this lead and Finance's answer (M10-S03).
+   200 → { claim: { leadId, claimId, state: "none"|"waiting"|"answered", answer: "found"|"not-found"|null, reason, says } }
+   says is "Finance did not find it: <reason>" only for a not-found answer. Read on the person's own token.
+
+   POST /api/leads/[id]/claim — "the investor says they paid" (M08-S03-T01).
    Body: { kind, mode, amount, said_on, ref?, note?, allotmentId? }
    Writes ONE Receipts record with Match_State "Claimed" (D82: there is no Payment_Claims module) against the
    investor's allotment, on the signed-in person's own token; the lead and its stage are not touched.
@@ -69,4 +73,21 @@ async function post_(req: Request, { params }: { params: Promise<{ id: string }>
   return Response.json({ error: r.message, code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
 }
 
+async function get_(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!leadsConfigured()) return Response.json({ error: "Payment reports are read from Zoho once sign-in is connected." }, { status: 503, headers: NO_STORE });
+  const s = await sessionCredential();
+  if (!s.ok) return s.response;
+  const { id } = await params;
+  const sid = (await cookies()).get(SID_COOKIE)?.value ?? "";
+  const r = await (await claims()).read({ credential: s.credential, sessionId: sid }, id, req.signal);
+  if (r.ok) return Response.json({ claim: r.value }, { headers: NO_STORE });
+  if (r.kind === "refused") return Response.json({ error: r.message, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
+  if (r.kind === "source-error") {
+    if (r.errorKind !== "unexpected") noteZohoFailure({ kind: r.errorKind, status: null } as never);
+    return Response.json({ error: r.message, code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
+  }
+  return Response.json({ error: r.message, code: "unknown-outcome" }, { status: 503, headers: NO_STORE });
+}
+
+export const GET = withErrorCapture(guardApi("/api/leads", get_), "/api/leads/[id]/claim");
 export const POST = withErrorCapture(guardApi("/api/leads", post_), "/api/leads/[id]/claim");

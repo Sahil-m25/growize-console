@@ -38,6 +38,7 @@ import type { LpNotice } from "./reducer";
 import { say } from "./Live";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { holdDay, leadEmailSend, leadGate } from "@/lib/data/endpoints/lead";
+import { leadClaimRead } from "@/lib/data/endpoints/claims";
 import "@/features/lead/drawers";   /* register the lead drawers before anything opens one */
 import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
 import { LeadEmails } from "@/features/im/paper2/Emails";   /* M12-S09 */
@@ -414,6 +415,8 @@ export function LeadPage({ id }: { id: string }) {
   const lpl = useLp(l0 || ({ id } as Lead));
   /* M08-S02-W1: the finance gate on the next rung is GET /api/leads/[id]/gate (lib/data/endpoints/lead) */
   const gate = useApiRead(leadGate, state, l0 ? l0.id : null);
+  /* M10-S03: Finance's answer to a report (found / did not find it, with the reason) is GET /api/leads/[id]/claim */
+  const claimRead = useApiRead(leadClaimRead, state, l0 ? l0.id : null);
   /* g1LeadFlow(id,what,channel) — ir-merged.js:4215: a Today contact button lands here and the
      page opens its own logging flow on that channel (lpOpen), once. */
   const hand = state.ui.LPFLOW as { id: string; what: "log" | "email"; channel?: string | null } | null | undefined;
@@ -478,9 +481,12 @@ export function LeadPage({ id }: { id: string }) {
     canDecideMove(state, l) ? <><button type="button" className="chip on" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: true })}>Approve</button><button type="button" className="chip" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: false })}>Decline</button></> : null);
   /* M08-S02-W1: is a report waiting / not found — the gate route's `payment` (fixture: the same claim the book holds) */
   const payGate = gate.state === "ok" ? gate.data.payment : null;
-  const reported = payGate ? payGate.reported : cm?.state === "waiting", notFound = payGate ? payGate.notFound : cm?.state === "notfound";
+  const cr = claimRead.state === "ok" ? claimRead.data : null;
+  const reported = payGate ? payGate.reported : cm?.state === "waiting";
+  /* the gate's `notFound` is true for both answers (Receipts has no answer fields): the claim read tells them apart */
+  const notFound = cr ? cr.answer === "not-found" : payGate ? payGate.notFound : cm?.state === "notfound";
   if (seeMoney(state, l) && reported) al("cw", "due", <><b>Payment reported</b> — waiting for Finance to find it in the bank.</>, <button type="button" className="chip" onClick={() => open("claim")}>Status</button>);
-  else if (seeMoney(state, l) && notFound) al("cn", "bad", <><b>Finance could not find that payment.</b> {cm?.why}</>, <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
+  else if (seeMoney(state, l) && notFound) al("cn", "bad", <><b>Finance did not find it.</b> {cr ? cr.reason : cm?.why}</>, <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
   /* M08-S04-W1: the reservation clock's day is the gate route's `holdUntil` */
   if (gate.state === "ok" && gate.data.holdUntil) {
     const hold = holdDay(gate.data.holdUntil);

@@ -34,6 +34,7 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { claimFieldsError, type ClaimDraft } from "../../lib/selectors/claims";
 import type { Ctx } from "../../lib/selectors/ctx";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "../money/receipt-replay";
+import { ANSWERED_STATE, FOUND_TITLE, NOT_FOUND_TITLE, notFoundText } from "../money/claim-answer";
 import type { Gates, GateResult } from "./gates";
 
 export const CLAIM_KEY_PREFIX = "CLAIM-";
@@ -82,13 +83,26 @@ export type ClaimResult =
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly message: string; readonly retryable: boolean }
   | { readonly ok: false; readonly kind: "unknown-outcome"; readonly message: string; readonly retryable: true };
 
+/** The lead page's read of the latest report: still waiting, or answered (found / not found, with Finance's words). */
+export interface ClaimStateView {
+  readonly leadId: string;
+  readonly claimId: string | null;
+  readonly state: "none" | "waiting" | "answered";
+  /** Only for an answered report: Finance found the money, or did not. null when answered but the Note is unreadable. */
+  readonly answer: "found" | "not-found" | null;
+  /** Finance's reason (not-found only). */
+  readonly reason: string | null;
+  /** The sentence for the page: "Finance did not find it: <reason>" for not-found, else null. */
+  readonly says: string | null;
+}
+
 export interface ClaimAuthority {
   /** Fresh check: may this live session report money on leads (leads edit, or assign)? */
   mayReport(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
 }
 
 export interface PaymentClaimDependencies {
-  readonly crm: Pick<ZohoClient, "coql" | "insert">;
+  readonly crm: Pick<ZohoClient, "coql" | "insert"> & Partial<Pick<ZohoClient, "getRelated">>;
   readonly gates: Pick<Gates, "read">;
   readonly authority: ClaimAuthority;
   readonly log: OpsLog;
@@ -337,7 +351,36 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
     return sourceError(e.kind);
   }
 
+  type ClaimFailure = Exclude<ClaimResult, { readonly ok: true }>;
+  const fail = (r: ClaimResult): ClaimFailure => r as ClaimFailure;
+  type StateResult = { readonly ok: true; readonly value: ClaimStateView };
   return Object.freeze({
+    /** The latest report on this lead and Finance's answer, on the person's own token (the lead must be in their book). */
+    async read(principal: { credential: UserCredential; sessionId: string }, leadId: unknown, signal?: AbortSignal): Promise<StateResult | ClaimFailure> {
+      const cred = principal?.credential;
+      if (!isUserCredential(cred) || typeof principal.sessionId !== "string" || !SESSION_ID.test(principal.sessionId) || !validId(leadId)) {
+        return fail(refuse(isUserCredential(cred) ? cred.userId : "unrecognised", "invalid-request"));
+      }
+      let g: GateResult;
+      try { g = await gates.read({ credential: cred, sessionId: principal.sessionId }, leadId, signal); } catch { return fail(sourceError("unexpected")); }
+      if (!g.ok) return fail(g.kind === "refused" ? refuse(cred.userId, g.reasonCode, [leadId]) : sourceError(g.errorKind));
+      const past = await claimsOf(cred, leadId, signal);
+      if (past === "invalid") return fail(refuse(cred.userId, "source-invalid", [leadId]));
+      if ("fail" in past) return fail(sourceError(past.fail));
+      const out = (claimId: string | null, state: ClaimStateView["state"], answer: ClaimStateView["answer"] = null, reason: string | null = null): StateResult => ({
+        ok: true, value: Object.freeze({ leadId, claimId, state, answer, reason, says: answer === "not-found" ? notFoundText(reason ?? "") : null }) });
+      const latest = [...past].sort((a, b) => b.seq - a.seq)[0];
+      if (!latest) return out(null, "none");
+      if (latest.state === CLAIM_STATE) return out(latest.id, "waiting");
+      if (latest.state !== ANSWERED_STATE || typeof crm.getRelated !== "function") return out(latest.id, "answered");
+      // Receipts has no answer fields: the two answers share Match_State "Not found" and differ by the Note's title.
+      const r = await crm.getRelated(cred, RECEIPTS_MODULE, latest.id, "Notes", { fields: ["Note_Title", "Note_Content"], perPage: 200, signal });
+      if (!r.ok && r.error.kind !== "not-found") return fail(sourceError(r.error.kind));
+      const notes = r.ok ? r.value.records : [];
+      if (notes.some((n) => n.Note_Title === FOUND_TITLE)) return out(latest.id, "answered", "found");
+      const nf = notes.find((n) => n.Note_Title === NOT_FOUND_TITLE);
+      return out(latest.id, "answered", nf ? "not-found" : null, nf && typeof nf.Note_Content === "string" ? nf.Note_Content.slice(0, 500) : null);
+    },
     /** Report what the investor says they paid. Writes one Claimed receipt, or none. */
     async report(principal: { credential: UserCredential; sessionId: string }, leadId: unknown, body: unknown, signal?: AbortSignal): Promise<ClaimResult> {
       const cred = principal?.credential;

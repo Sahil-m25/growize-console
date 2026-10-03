@@ -18,9 +18,9 @@ import { leadHints, NO_WORD } from "@/lib/data/endpoints/paperwork";
 import { allotmentOf, HAND_METHODS, METHOD_OF, NOTHING_CAME_BACK, PAPER_OF_TEMPLATE, signBlock, signPrefill, signSend, signVerify, type HandMethod } from "@/lib/data/endpoints/sign";
 import type { Paper } from "@/server/documents/list";
 import {
-  CHANS, FSTATE, I, KAMS, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
-  aged, bookOf, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
-  mayDetails, money, notFin, plusDays, quiet, readBook, roundOf, safeNote, tierOf, who,
+  CHANS, FSTATE, I, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
+  aged, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
+  mayDetails, money, notFin, plusDays, readBook, roundOf, safeNote, tierOf, who,
   fileKind, llpOf, UPLOAD_ACCEPT, uploadCheck, uploadKey,
 } from "@/lib/im";
 import type { ImDrafts, ImDrawerKey, ImInvestor, ImScope } from "@/lib/im";
@@ -32,7 +32,7 @@ import { AllotPick, MONEY_DRAWER_DEFS, pickedAllot } from "../money/drawers";
 import { receiptPrepare, receiptRecord } from "@/lib/data/endpoints/claims";
 import { claimConfirm, claimNotThere, claimOne } from "@/lib/data/endpoints/receipts";
 import { useReload } from "@/lib/store";
-import { investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
+import { amManagers, investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
 import { investorAllot } from "@/lib/data/endpoints/allotments";
 
 type Ctx = ImPageProps & { id: string | null };
@@ -45,42 +45,42 @@ const set = (c: Ctx, patch: Partial<ImDrafts>) => c.dispatch({ type: "setDraft",
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
   <span className={`tag ${c}`}><span className="dot" />{children}</span>;
 
-/* ---- kam — imx.js 2597–2637 ---- */
-function kamBody(c: Ctx): ReactNode {
-  const { s, me, id } = c; const x = I(s, me, id); if (!x) return null;
+/* ---- kam — imx.js 2597–2637 ----
+   M09-S04-W2: the manager dropdown, what a manager carries today and the load are GET /api/investors/am/managers, so the
+   drawer no longer counts the book. Live the option's value is the Zoho user id; the fixture's is the demo seat key. */
+function KamBody(c: Ctx) {
+  const { s, me, id } = c; const x = I(s, me, id);
+  const mg = useApiRead(amManagers, { s, me }, true);
+  if (!x) return null;
   const { KSEL } = draft(c);
   const T = tierOf(x) || TIERS[TIERS.length - 1];
-  const carried = KSEL ? TIERS.map(t => {
-    const n = bookOf(s, me, KSEL).filter(y => (tierOf(y) || { k: "" }).k === t.k).length;
+  const list = mg.state === "ok" ? mg.data.managers : [];
+  const sel = KSEL ? list.find(m => m.id === KSEL) ?? null : null;
+  const nameOfM = (k: string | null | undefined) => (k ? list.find(m => m.id === k)?.name || s.data.P[k]?.n : "") || "a manager";
+  const carried = sel ? TIERS.map(t => {
+    const n = sel.tiers[t.k as "A" | "B" | "C"];
     return n ? (
       <div className="led" key={t.k}><span className={`tag ${t.k === "A" ? "br" : ""}`}>{t.t}</span>
         <span style={{ minWidth: 0 }}><span className="sm">{t.t2}</span></span>
         <span className="amt">{n}</span></div>
     ) : null;
   }).filter(Boolean) : [];
-  const loadLine = (() => {
-    if (!KSEL) return "";
-    const b = bookOf(s, me, KSEL);
-    const load = b.reduce((a, y) => a + 30 / cadence(y), 0);
-    return "About " + (Math.round(load * 10) / 10) + " conversation" + (Math.round(load) === 1 ? "" : "s")
-      + " a month at the cadences they are already promised"
-      + (x.kam === KSEL ? "" : ", before this one.");
-  })();
+  const loadLine = sel ? "About " + sel.perMonth + " conversation" + (Math.round(sel.perMonth) === 1 ? "" : "s") + " a month at the cadences they are already promised"
+    + (x.kam === KSEL ? "" : ", before this one.") : "";
   return (
     <>
       <p className="sm" style={{ margin: "0 0 12px" }}>A {T.t} holding gets {T.t2}. Naming
         somebody is a promise about how often this investor hears from us, so it is worth checking the
         load before making it.</p>
       <p className="lbl">The manager</p>
+      {mg.state === "error" ? <div className="note bad" role="alert">{mg.err.error}</div> : null}
       <select className="selw" aria-label="The manager" value={KSEL || ""} onChange={e => set(c, { KSEL: e.target.value || null })}>
         <option value="">The shared pool — no named manager</option>
-        {KAMS(s).map(k => {
-          const n = bookOf(s, me, k).length, q = bookOf(s, me, k).filter(y => quiet(s, me, y)).length;
-          return <option key={k} value={k}>{who(s, k).n} — {n} account{n === 1 ? "" : "s"}{q ? ", " + q + " gone quiet" : ""}</option>;
-        })}
+        {list.filter(m => !m.left).map(m => (
+          <option key={m.id} value={m.id}>{m.name ?? "A manager"} — {m.accounts} account{m.accounts === 1 ? "" : "s"}{m.goneQuiet ? ", " + m.goneQuiet + " gone quiet" : ""}</option>))}
       </select>
       {KSEL ? (
-        <div className="drwsec"><p className="lbl">What {who(s, KSEL).n.split(" ")[0]} carries today</p>
+        <div className="drwsec"><p className="lbl">What {nameOfM(KSEL).split(" ")[0]} carries today</p>
           {carried.length ? carried : <p className="sm" style={{ margin: 0 }}>Nothing yet — this would be their first.</p>}
           <p className="sm" style={{ margin: "9px 0 0" }}>{loadLine}</p>
         </div>
@@ -91,7 +91,7 @@ function kamBody(c: Ctx): ReactNode {
       )}
       {x.kam && x.kam !== KSEL ? (
         <div className="note warn" style={{ marginTop: 12 }}><b>Moving an account is a
-          new introduction.</b> {who(s, x.kam).n} holds it now. Whoever takes it should call within
+          new introduction.</b> {nameOfM(x.kam)} holds it now. Whoever takes it should call within
           the week — a handover nobody mentions reads to the investor as being forgotten.</div>
       ) : null}
     </>
@@ -664,7 +664,7 @@ function detailsFoot(c: Ctx): ReactNode {
 
 /* ---- the registry — imx.js 2592 `const DRAWERS = {…}` ---- */
 export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
-  kam: { w: 430, t: "Who looks after this account", sub: nameOf, body: kamBody, foot: kamFoot },
+  kam: { w: 430, t: "Who looks after this account", sub: nameOf, body: c => <KamBody {...c} />, foot: kamFoot },
   talk: { w: 450, t: "Log a conversation", sub: nameOf, body: talkBody, foot: talkFoot },
   claim: {
     w: 450, t: "An IR says the money has arrived",

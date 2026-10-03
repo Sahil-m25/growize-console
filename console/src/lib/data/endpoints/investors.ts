@@ -6,10 +6,15 @@
 import type { InvestorRecord, RecordSection } from "@/server/investors/record";
 import type { InvestorStateLabel } from "@/server/investors/lifecycle";
 import type { AmSummary } from "@/server/data/live";
+import type { AmServiceView } from "@/server/investors/am-service";
 import type { KamAssigned } from "@/server/investors/kam-assign";
 import type { AddPaidCreated } from "@/server/investors/add-paid";
 import type { InvestorSearchResult } from "@/server/investors/search";
-import { I, allotsOf, cared, dueBy, dupEmail, gotBy, invMatch, isAM, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId, pageReadable } from "@/lib/im";
+import {
+  I, KAMS, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
+  overdue, pageReadable, poolBook, quiet, tierOf, when, who, MOODS,
+} from "@/lib/im";
+import type { ImInvestor, ImState } from "@/lib/im";
 import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
 import { FIXTURE_VERSION } from "./version";
@@ -66,6 +71,43 @@ export const amBook: ReadEndpoint<ImBook, boolean, AmAnswer> = {
     if (!pageReadable(s, me, "inv") || !isAM(s, me)) return fail(403, "seat-denied", "This page is not part of your seat.");
     const book = myBook(s, me).filter(cared);
     return ok({ summary: { underCare: book.length, noManager: book.filter(needsKam).length }, state: "fresh" });
+  },
+};
+
+/* ---- M09-S04-W2 / M09-S02-W2 — the account-management list: GET /api/investors/am/managers (server/investors/am-service) ----
+   The managers the "Name a manager" drawer offers (accounts, tiers, gone quiet, load), the shared pool, and the AM row
+   list. A KAM reads their own row only (no pool); the Head of AM everyone. Live the manager is the Zoho user id; the
+   fixture's is the demo seat key (the same word the reducer's assignKam takes). */
+export type AmManagers = Pick<AmServiceView, "book" | "managers" | "pool" | "accounts">;
+
+/** the demo's "26 Aug 10:00" as the route's naive IST "2026-08-26T10:00" (the demo clock is IST wall time kept as UTC ms) */
+const stampOf = (s: ImState, at: string): string | null => { const ms = when(s.data.NOW, at); return ms == null ? null : new Date(ms).toISOString().slice(0, 16); };
+const tierCount = (b: ImInvestor[]) => { const t = { A: 0, B: 0, C: 0 }; b.forEach(x => { t[tierOf(x)!.k as "A" | "B" | "C"]++; }); return t; };
+const perMonth = (b: ImInvestor[]) => Math.round(b.reduce((a, y) => a + 30 / tierOf(y)!.every, 0) * 10) / 10;
+
+/** The demo book's answer in the route's shape (no seat check: the Service fixture also serves the money seats, see numbers.ts). */
+export function amManagersView(s: ImState, me: string): AmManagers {
+  const kam = who(s, me).r === "kam";
+  const managers = (kam ? [me] : KAMS(s)).map(k => {
+    const b = bookOf(s, me, k), t = tierCount(b);
+    return { id: k, name: who(s, k).n, left: false, accounts: b.length, tierA: t.A, tiers: t, perMonth: perMonth(b), goneQuiet: b.filter(y => quiet(s, me, y)).length,
+      conversations: cOf_all(s, me).filter(c => c.by === k).length,
+      openTickets: s.data.TKT.filter(x => I(s, me, x.inv) && x.state !== "closed" && x.own === k).length,
+      onConcern: b.filter(y => lastC(s, me, y.id)?.mood === "concern").length };
+  });
+  const pool = kam ? null : (() => { const b = poolBook(s, me); return { accounts: b.length, tierA: tierCount(b).A, goneQuiet: b.filter(y => quiet(s, me, y)).length, shouldBeNamed: b.filter(needsKam).length }; })();
+  const accounts = myBook(s, me).filter(cared).map(x => { const l = lastC(s, me, x.id), o = overdue(s, me, x);
+    return { id: x.id, code: x.id, name: x.n, city: x.city || null, nri: x.nri, units: x.units, tier: tierOf(x)!.k as "A" | "B" | "C", kamUserId: x.kam || null, introduced: !!x.intro,
+      lastHeardAt: l ? stampOf(s, l.at) : null, lastMood: l ? MOODS[l.mood] : null, overdue: o }; });
+  return { book: kam ? "kam" : "head", managers, pool, accounts };
+}
+
+export const amManagers: ReadEndpoint<ImBook, boolean, AmManagers> = {
+  path: am => (am ? "/api/investors/am/managers" : null),
+  pick: j => j as AmManagers,
+  fixture({ s, me }) {
+    if (!pageReadable(s, me, "inv") || !isAM(s, me)) return fail(403, "seat-denied", "This page is not part of your seat.");
+    return ok(amManagersView(s, me));
   },
 };
 
