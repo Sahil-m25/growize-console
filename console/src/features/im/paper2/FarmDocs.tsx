@@ -11,7 +11,7 @@ import type { ImPageProps } from "../common";
 import { ReadNote } from "./ReadNote";
 
 const Files = ({ files }: { files: readonly AttachmentLine[] }) => (
-  <>{files.map(f => <div className="sm" key={f.id}>{f.name}{f.size == null ? "" : " · " + fileSize(f.size)}{f.at ? " · " : ""}<span className="mono">{f.at || ""}</span></div>)}</>
+  <>{files.map(f => <div className="sm" key={f.id}>{f.name}{f.slot ? " · " + f.slot : ""}{f.size == null ? "" : " · " + fileSize(f.size)}{f.at ? " · " : ""}<span className="mono">{f.at || ""}</span>{f.by ? " · " + f.by : ""}</div>)}</>
 );
 
 export function FarmDocs({ s, me, id }: Pick<ImPageProps, "s" | "me"> & { id: string | null }) {

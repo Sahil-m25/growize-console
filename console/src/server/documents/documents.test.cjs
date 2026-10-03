@@ -69,6 +69,8 @@ const OWNER = { [PRAKASH]: { ir: ROHIT, kam: null }, [KIRAN]: { ir: ROHIT, kam: 
 function route(url, q) {
   const u = String(url);
   if (!q) {
+    const slot = u.match(/\/(Contacts|LLP_UnitAllocation_Module|LLP_Creation_Module)\/(\d+)\?fields=/);
+    if (slot) return slot[1] === 'Contacts' && slot[2] === PRAKASH ? recorded('slots.contact') : { status: 200, headers: {}, body: { data: [{ id: slot[2] }] } };   /* the record's typed-slot fields (M12-S01-W2) */
     const att = u.match(/\/(Contacts|LLP_UnitAllocation_Module|LLP_Creation_Module)\/(\d+)\/Attachments/);
     if (!att) throw new Error('unrouted GET ' + u);
     if (att[1] === 'Contacts') return recorded('attachments.contact');
@@ -153,12 +155,15 @@ test('AC1-3: Finance reads Prakash in three scopes — personal on the Contact, 
   assert.equal(res.ok, true, JSON.stringify(res));
   const d = res.documents;
   assert.deepEqual(d.access, { personal: true, allotment: 'files', project: true });
-  assert.deepEqual(d.personal.map((f) => f.name), ['Signed NDA.pdf', 'PAN proof •••••234F.pdf', 'Bank letter ••••6789.pdf', 'Aadhaar •••• •••• 9012.pdf']);
+  assert.deepEqual(d.personal.map((f) => f.name), ['PAN scan •••••234F.jpg', 'Signed NDA.pdf', 'PAN proof •••••234F.pdf', 'Bank letter ••••6789.pdf', 'Aadhaar •••• •••• 9012.pdf']);
+  /* M12-S01-W2: a paper filed to a typed slot carries the slot's label; an Attachment carries who uploaded it (a display name) and no slot */
+  assert.deepEqual(d.personal.slice(0, 2).map((f) => [f.slot, f.by]), [['PAN proof', null], [null, 'Harsha Bhat']]);
   assert.deepEqual(d.allotments.map((a) => [a.allotmentId, a.contactId, a.llpId, a.count, a.files.length]), [[`${P}740998301`, PRAKASH, EKA, 1, 1]]);
   assert.deepEqual(d.farms.map((f) => [f.llpId, f.files.map((x) => x.name)]), [[EKA, ['EKA LLP deed.pdf']]]);
   for (const c of r.calls.filter((x) => x.startsWith('GET'))) {
+    if (/\/\d+\?fields=/.test(c)) { assert.match(c, /fields=[A-Za-z_,]+$/, 'the record read names the typed-slot fields only'); assert.doesNotMatch(c, /Email|Phone|Mobile|PAN_Number|Aadhaar/); continue; }
     assert.match(c, /\/Attachments\?/, 'only attachment metadata is fetched — never a file body');
-    assert.match(c, /fields=id,File_Name,Size,Created_Time/);
+    assert.match(c, /fields=id,File_Name,Size,Created_Time,Created_By/);
   }
   assert.ok(!/ABCDE1234F|50100123456789|1234 5678 9012/.test(JSON.stringify(d)));
 });
@@ -167,7 +172,7 @@ test('AC5: Sahil (di) sees personal papers, numbers masked', async () => {
   const r = rig();
   const res = await r.reader.forInvestor(creds.get(SAHIL), 'di', PRAKASH);
   assert.equal(res.ok, true, JSON.stringify(res));
-  assert.equal(res.documents.personal.length, 4);
+  assert.equal(res.documents.personal.length, 5, 'four attachments and the PAN proof filed to its slot');
   assert.ok(!/ABCDE1234F|50100123456789|1234 5678 9012/.test(JSON.stringify(res.documents)));
 });
 

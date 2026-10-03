@@ -108,3 +108,19 @@ describe("sign template picker (M12-S04-W2)", () => {
     expect(r.state === "error" && r.err.status).toBe(403);
   });
 });
+
+describe("the attachment line carries slot and uploader (M12-S01-W2)", () => {
+  it("fixture: a paper filed to a typed slot has its slot's name; an upload says who filed it; a plain attachment has no slot", async () => {
+    const { investorDocuments } = await import("./documents");
+    const s = demo();
+    const inv = s.data.INV[0]!.id;
+    s.data.UPLOADS = [
+      { id: "UP-1", key: "k1", Scope: "Personal", Doc_Type: "PAN proof", Investor: inv, LLP: null, File_Name: "pan.pdf", File_Size: 10, File_Type: "PDF", by: "harsha", at: "02 Sep 10:00" },
+      { id: "UP-2", key: "k2", Scope: "Personal", Doc_Type: "Other", Investor: inv, LLP: null, File_Name: "note.pdf", File_Size: 10, File_Type: "PDF", by: "harsha", at: "02 Sep 10:05" },
+    ] as never;
+    const r = investorDocuments.fixture({ s, me: "harsha" }, inv);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect((r.data.personal ?? []).map(f => [f.slot, f.by])).toEqual([["PAN proof", expect.stringContaining("Harsha")], [null, expect.stringContaining("Harsha")]]);
+  });
+});
