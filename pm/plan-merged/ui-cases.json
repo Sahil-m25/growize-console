@@ -78,7 +78,7 @@
    "expected": [
     "The top-bar status says the browser is offline.",
     "The top-bar status says '1 change waiting · up to 5 minutes'.",
-    "Jhalak Mehta's access still reads 'No console access — nothing granted'."
+    "Jhalak Mehta's row in the Members table still reads 'no login here' with 0 screens."
    ],
    "fixtures": [
     "DEMO_STAFF",
@@ -3636,20 +3636,19 @@
    "id": "TC-E15-027",
    "story": "M18-S06",
    "seat": "sahil",
-   "title": "Legacy copy rows: exactly three, history seats only",
+   "title": "Transfers lists leads that said yes, by month, read only",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
     "Open Transfers from the menu"
    ],
    "expected": [
-    "The Transfers page says 4 transferred since July 2026.",
-    "The page lists Meenakshi Sundaram, Abhijit Sen and Radhika Menon as legacy investor entries.",
-    "The legacy entries show their investor codes ARL-INV-0207, ARL-INV-0206 and ARL-INV-0205.",
-    "The legacy entries are marked read only."
+    "The Transfers page says 4 transferred since July 2026 · median 9.5 days from capture.",
+    "August 2026 reads 3 transferred · 9 units · ₹2.25 Cr.",
+    "July 2026 reads 1 transferred · 1 unit · ₹25 L.",
+    "The page says it is read only."
    ],
    "fixtures": [
-    "DEMO_DATA",
-    "LEGACY_COPY_ROWS"
+    "DEMO_DATA"
    ],
    "group": "M18"
   },
@@ -5192,8 +5191,9 @@
     "Press 'Record it'"
    ],
    "expected": [
-    "The Money section lists a balance receipt for ₹22.5 L with reference HDFC2708994.",
-    "A line says the receipt cannot be matched until the supplementary agreement is signed and verified."
+    "A message on the page says the receipt was recorded.",
+    "The Money section reads '₹25 L of ₹25 L'.",
+    "The Money section lists T-0049, a balance of ₹22.5 L, RTGS HDFC2708994, recorded by Meena."
    ],
    "fixtures": [
     "DEMO_BOOK",
