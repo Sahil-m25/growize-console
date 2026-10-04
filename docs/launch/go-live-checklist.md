@@ -66,8 +66,8 @@ Record the decision, the time and the names in a dated file `docs/launch/go-no-g
 Hosting-dependent steps wait for AP4. Order follows M18-S09-T05 and D54.
 
 1. Freeze changes. No merge to `main` that day except the release.
-2. Confirm gate A1 to D5 once more on the day. Take a Zoho backup now (`backup-restore-plan.md`) so the pre-cutover state exists.
-3. Confirm `ops/` exports under `zoho/` match the live org (no console-only change, CLAUDE.md).
+2. Confirm gate A1 to D5 once more on the day. Make sure the latest Zoho backup is no older than the schedule allows (`backup-restore-plan.md`), so the pre-cutover state exists. If Zoho can run a backup on demand, do that now (not verified).
+3. Confirm the exports under `zoho/` match the live org (no console-only change, CLAUDE.md).
 4. Run the migrations (M18-S06, M18-S12) on production with the dry-run script. The run halts and writes nothing more if a payment fits no single allotment. Reconcile counts: 5 Leads, 4 Contacts, 2 Deals, and each investor's Receipts total against the old columns.
 5. Deploy the release (the same commit that passed staging). The pipeline's production job needs the manual approval.
 6. **Production smoke before any user is added.** Six cases: sign in, Today, open a lead, save a note on a test lead, search, sign out. Under 3 minutes. All must pass (TC-IM12-014, TC-E15-035). If one fails, go to section 4.
