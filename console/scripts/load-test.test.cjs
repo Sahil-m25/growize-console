@@ -145,3 +145,34 @@ test('end to end: the CLI drives a stub for ~1.5 s, reads a Plane B day file and
   assert.equal(report.planeB.calls, 1); assert.equal(report.planeB.peakComplex, 1);
   assert.deepEqual(report.verdict.failed, ['no concurrency / sub-concurrency 429 at the screens']);
 });
+
+test('TC-E15-002 (harness half): six seats on Today, Leads and lead pages against a healthy stub pass every acceptance check — p95, in-flight peak, no 429', async () => {
+  const server = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'load-test-'));
+  const now = Date.now();
+  fs.writeFileSync(path.join(dir, `ops-${new Date(now).toISOString().slice(0, 10)}.jsonl`),
+    [0, 40, 80].map((d) => JSON.stringify({ kind: 'zoho-call', at: now + 200 + d, durationMs: 50, callClass: d === 0 ? 'complex' : 'simple', status: 200, errorClass: null, creditsRemaining: null, gateWaitMs: 0 })).join('\n') + '\n');
+  const cfgFile = path.join(dir, 'cfg.json');
+  fs.writeFileSync(cfgFile, JSON.stringify({
+    baseUrl: `http://127.0.0.1:${port}/`, durationMs: 1500, rampMs: 0, thinkMs: [20, 40], logDir: dir,
+    pages: { lead: [{ name: 'Today', paths: ['/api/data'] }, { name: 'Leads', paths: ['/api/leads/search?q=a'] }, { name: 'Lead page', paths: ['/api/emails/lead/' + A] }], investors: [] },
+    seats: { ir: { side: 'lead', cookie: 'gz_sid=abc', copies: 6 } },
+  }));
+  const out = path.join(dir, 'report.json');
+  const code = await new Promise((resolve) => {
+    const p = spawn(process.execPath, [path.join(__dirname, 'load-test.mjs'), '--config', cfgFile, '--out', out], { stdio: 'ignore' });
+    p.on('exit', resolve);
+  });
+  server.close();
+  const report = fs.existsSync(out) ? JSON.parse(fs.readFileSync(out, 'utf8')) : null;
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.ok(report, 'the harness wrote its report');
+  assert.deepEqual(report.seats.lead, 6);
+  assert.ok(report.summary.p95 <= 2000, `p95 ${report.summary.p95} ms`);
+  assert.ok(report.planeB.peakInFlight <= 12 && report.planeB.peakComplex <= 8);
+  assert.deepEqual(report.summary.causes, {});
+  assert.deepEqual(report.verdict.failed, []);
+  assert.equal(code, 0, 'a healthy run exits 0');
+});

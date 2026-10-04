@@ -447,7 +447,7 @@ test('IS-S10-T06 / S08-T03 embedded signing: a replayed event never mints a seco
 
 /* ================================================== 7. cache cross-scope probe (S10-T07) ========================================= */
 
-test('IS-S10-T07 cache keys carry the scope: a person-bound book keys by the person, never by role', () => {
+test('TC-E15-010 (local half) IS-S10-T07 cache keys carry the scope: a person-bound book keys by the person, never by role', () => {
   const A = id('740995001'), B = id('740995002');
   const BOOKS = ['leads', 'investors', 'money', 'cases', 'holdings', 'farms'];
   for (const seat of ALL_SEATS) for (const book of BOOKS) {
@@ -467,7 +467,7 @@ test('IS-S10-T07 cache keys carry the scope: a person-bound book keys by the per
   assert.throws(() => cacheKey({ kind: 'user' }, 'probe'), /scope|Cache/, 'an unscoped key cannot be minted');
 });
 
-test('IS-S10-T07 two users read the same page at once: each gets their own answer, from their own key, and no id crosses', async () => {
+test('TC-E15-010 (local half) IS-S10-T07 two users read the same page at once: each gets their own answer, from their own key, and no id crosses', async () => {
   const A = ROHIT, B = IR_B;
   const r = H.rig(() => null);
   const key = (uid) => cacheKey({ kind: 'user', userId: uid }, 'investors.count');
@@ -483,7 +483,7 @@ test('IS-S10-T07 two users read the same page at once: each gets their own answe
   assert.equal((again.state === 'miss' ? (await again.settled).value : again.value), 7, 'B still reads B\'s number');
 });
 
-test('IS-S10-T07 the same page as two staff, read in parallel through the real readers: no id of one scope appears in the other\'s answer', async () => {
+test('TC-E15-010 (local half) IS-S10-T07 the same page as two staff, read in parallel through the real readers: no id of one scope appears in the other\'s answer', async () => {
   const { r, reader } = docs();
   const [a, b, c] = await Promise.all([
     reader.forInvestor(await r.cred(ROHIT), 'ir', PRAKASH),

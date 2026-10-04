@@ -118,7 +118,7 @@ test('D21: a recorded but unmatched receipt moves no Collection figure (the regi
   assert.deepEqual(y, x);
 });
 
-test('Collection is cached as numbers under the money scope; a reload spends no COQL', async () => {
+test('TC-IM12-001 (Insights): Collection is cached as numbers under the money scope; a reload spends no COQL', async () => {
   const r = await rig();
   const cred = await r.cred(HEAD);
   await r.side.read({ credential: cred, seat: 'head' }, 'cash');

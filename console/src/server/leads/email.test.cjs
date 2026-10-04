@@ -161,7 +161,7 @@ test('a 5xx on send is never retried and is reported as unconfirmed, with no tou
   assert.deepEqual(r.writes(), []);
 });
 
-test('a seat that cannot work the lead sends nothing and is told why', async () => {
+test('TC-E07-022: a seat that cannot work the lead sends nothing and is told why', async () => {
   const other = rig({ [`GET /Leads/${LEAD}`]: 'lead.guard-other-owner' });
   const res = await other.svc.send(principal(), CMD);
   assert.equal(res.reasonCode, 'not-in-book');
