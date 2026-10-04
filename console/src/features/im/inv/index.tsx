@@ -194,7 +194,8 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
                 <span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold" : "go"}`}>{t.kind}</span>
                 <span style={{ minWidth: 0 }}><b className="mono">{t.id}</b>
                   <div className="sm">{t.mode} <span className="mono">{t.utr}</span>{" · "}
-                    <ImPname s={s} k={t.by} first />{" · "}<span className="mono">{day6(t.on)}</span>{t.note ? " · " + t.note : ""}</div></span>
+                    <ImPname s={s} k={t.by} first />{" · "}<span className="mono">{day6(t.on)}</span>{t.note ? " · " + t.note : ""}
+                    {t.rec === "pending" ? " · recorded, not matched yet" : ""}</div></span>
                 <span className={`amt ${t.kind === "refund" ? "out" : ""}`}>{(t.kind === "refund" ? "−" : "") + money(t.amt)}</span>
               </div>
             )) : <p className="sm" style={{ margin: 0 }}>Nothing received yet.</p>}
