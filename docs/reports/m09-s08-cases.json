@@ -1,0 +1,228 @@
+{
+ "cases": [
+  {
+   "id": "M09-S08-A",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR's Investors lists only the investors from their own leads, in the IR columns",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The page heading reads Investors and the line under it says 5 from your leads.",
+    "The table columns are Investor, ARL ID, Farms, State and Lead.",
+    "The list includes Prakash Bhat with ARL ID ARL-INV-0208, Block B ×1, reserved.",
+    "The list includes Abhijit Sen, Anjali Deshpande, Sanjay Kulkarni and T. Balasubramanian.",
+    "The list does not include Radhika Menon."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-B",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR's investor list shows no money, KYC, tier or identity column and no Add investor button",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The table has no Paid column and no Due column.",
+    "The table has no KYC column, no PAN, no Aadhaar and no bank column.",
+    "The page has no Add investor button.",
+    "No amount in rupees is shown anywhere on the page."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-C",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR opens one of their investors: read-only, with no money or paper sections",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Prakash Bhat' on the row of ARL-INV-0208"
+   ],
+   "expected": [
+    "The record is headed Prakash Bhat with ARL ID ARL-INV-0208.",
+    "The record's sections are Who they are, What they hold and Journey.",
+    "The record has no Money section and no Paper section.",
+    "The Who they are section shows Prakash Bhat's name, mobile, email and residency.",
+    "The section says this is the IR's own investor, read only.",
+    "No PAN, Aadhaar or bank detail is shown."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-D",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR's What they hold shows units and land but no price, amount or hold controls",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Prakash Bhat' on the row of ARL-INV-0208",
+    "Press 'What they hold'"
+   ],
+   "expected": [
+    "The section shows Units 1.",
+    "The section shows 1 on Block B — Doddaballapura.",
+    "The section says Reserved.",
+    "No amount in rupees, no price per unit and no amount due is shown.",
+    "There is no Release the reservation button and no Extend the hold button."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-E",
+   "story": "M09-S08",
+   "seat": "kavya",
+   "title": "A different IR sees only their own investors",
+   "steps": [
+    "Press Kavya Nair on the sign-in screen",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The list includes Radhika Menon.",
+    "The list does not include Prakash Bhat.",
+    "The list does not include Sanjay Kulkarni."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-F",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR's search box narrows only their own list",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'",
+    "Type 'Prakash' in the text box on the heading row, next to '5 from your leads'"
+   ],
+   "expected": [
+    "The list shows Prakash Bhat.",
+    "The list does not show Sanjay Kulkarni.",
+    "The list does not show Radhika Menon."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-G",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR's search for another IR's investor finds nobody",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'",
+    "Type 'Radhika' in the text box on the heading row, next to '5 from your leads'"
+   ],
+   "expected": [
+    "A message says nobody matches that.",
+    "No investor row is shown."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-H",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR's rail has Investors, between Events and Payments, and no other Investors-side page",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen"
+   ],
+   "expected": [
+    "The menu shows Investors, after Events and before Payments.",
+    "The menu shows Today, Leads, Activity, Events, Investors, Payments and Documents.",
+    "The menu does not show Farms.",
+    "The menu does not show Tickets.",
+    "The menu does not show Investor updates.",
+    "The menu does not show Teams, Plan, Transfers, Numbers or System."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-I",
+   "story": "M09-S08",
+   "seat": "rohit",
+   "title": "An IR follows the lead link from an investor back to their own lead",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Open lead for Prakash Bhat'"
+   ],
+   "expected": [
+    "The lead page for Prakash Bhat opens.",
+    "The page is the lead page, not the Investors list."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09"
+  },
+  {
+   "id": "M09-S08-CAL1",
+   "story": null,
+   "seat": "rohit",
+   "title": "Calibration for M09-S08: must FAIL",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The list includes Radhika Menon, who came from Kavya's lead.",
+    "The table has a Paid column showing ₹25 L for Prakash Bhat."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09",
+   "expect_fail": true
+  },
+  {
+   "id": "M09-S08-CAL2",
+   "story": null,
+   "seat": "rohit",
+   "title": "Calibration for M09-S08: must FAIL",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Prakash Bhat' on the row of ARL-INV-0208"
+   ],
+   "expected": [
+    "The record has a Money section showing ₹2.5 L received and a Record a receipt button.",
+    "The record shows Prakash Bhat's PAN in full."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M09",
+   "expect_fail": true
+  }
+ ]
+}

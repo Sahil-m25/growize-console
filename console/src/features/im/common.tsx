@@ -13,7 +13,9 @@ import { I, may, maskAcct, maskPan, REVWHY, secOf, shown, who } from "@/lib/im";
 import type { ImAction, ImInvestor, ImState } from "@/lib/im";
 
 export type ImDispatch = (a: ImAction) => void;
-export interface ImPageProps { s: ImState; me: string; dispatch: ImDispatch }
+/** `irSeat`: the signed-in person is an IR, who holds the Investors page read-only on the investors of their own
+ *  leads (D113 ruling 2, M09-S08) — not a seat on the Investors side. Set by useIm from the console seat. */
+export interface ImPageProps { s: ImState; me: string; dispatch: ImDispatch; irSeat?: boolean }
 
 /* pcol/pav/pname — imx.js 121-129 */
 const pcol = (s: ImState, k: string): string => {

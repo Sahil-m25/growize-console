@@ -452,7 +452,10 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
 
     /* ---------------- section 8: state and navigation ---------------- */
     case "go": {
-      if (!pageReadable(W, WHO, a.v) || (a.v === "inv" && a.id && !Ix(a.id))) break;
+      /* M09-S08 (D113 ruling 2): an IR — a lead-side person with no Investors seat — holds the Investors page on the investors of
+         their own leads. Opening an id is not refused here: the wall is the record itself (the fixture's irMayOpen, the route's IR guard). */
+      const irOwn = a.v === "inv" && !W.data.P[WHO];
+      if (!irOwn && (!pageReadable(W, WHO, a.v) || (a.v === "inv" && a.id && !Ix(a.id)))) break;
       stash(); u.VIEW = a.v; if (a.id !== undefined) u.SEL = a.id; u.DRW = null;
       break;
     }

@@ -510,6 +510,11 @@
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
    }
   },
+  "/api/investors/mine": {
+   "GET": {
+    "needsSandbox": "needs sandbox: every seat the suite can sign in but the IR is refused inside the handler, and the IR's own read is Zoho records (the recorded replay is ir-investors.test.cjs, not this harness)"
+   }
+  },
   "/api/investors/search": {
    "GET": {
     "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"

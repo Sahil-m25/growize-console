@@ -10,8 +10,9 @@ import type { AmServiceView } from "@/server/investors/am-service";
 import type { KamAssigned } from "@/server/investors/kam-assign";
 import type { AddPaidCreated } from "@/server/investors/add-paid";
 import type { InvestorSearchResult } from "@/server/investors/search";
+import type { IrInvestorRow } from "@/server/investors/ir-list";
 import {
-  I, KAMS, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
+  I, KAMS, allots, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
   overdue, pageReadable, poolBook, quiet, tierOf, when, who, MOODS,
 } from "@/lib/im";
 import type { ImInvestor, ImState } from "@/lib/im";
@@ -28,10 +29,36 @@ export type RecordAnswer = { record: InvestorRecord };
 const FINANCE_SIDE: readonly RecordSection[] = ["who", "hold", "money", "paper", "jrn", "tkt"];
 const AM_SIDE: readonly RecordSection[] = ["who", "hold", "care", "jrn", "tkt"];
 
+/* M09-S08 (D113 ruling 2): an IR's record — who, hold and journey only (server/investors/record IR_SECTIONS; parity asserted in
+   ir-investors.test.tsx). No money, no paper, no care; the book's own investor object is scrubbed to what the route's irContacts
+   projection carries (name, ARL code, mobile, email, city, residency, the lead link) — no address, nominee, KYC, PAN, Aadhaar or bank. */
+const IR_SIDE: readonly RecordSection[] = ["who", "hold", "jrn"];
+const IR_BANK = { acct: "", ifsc: "", name: "", drop: "" };
+export const irView = (x: ImInvestor): ImInvestor => {
+  const { kycWhy: _w, fema: _f, hold: _h, nextOn: _n, ...rest } = x;
+  return { ...rest, addr: "", nominee: "", pan: null, aadh: null, aref: null, kyc: "pending", kycOn: null, bank: IR_BANK, kam: null, kamOn: null, intro: null };
+};
+
+function irRecord(s: ImBook["s"], me: string, id: string | null) {
+  if (!irMayOpen(s, me, id)) return fail(404, "not-visible", "Not found, or not yours to open.");
+  const x = irInvestors(s, me).find(y => y.id === id)!;
+  const holdings = allots(s).filter(a => a.Customer === x.id).map(a => {
+    const l = llpOf(s, a.LLP_Lookup);
+    return { id: a.id, llpId: a.LLP_Lookup, llpName: l ? l.Name : "", block: l ? l.Block_Code : "", committed: a.Committed_Units, issued: a.Issued_Units,
+      status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION };
+  });
+  return ok({ record: {
+    id: x.id, version: null, sections: IR_SIDE, investor: irView(x), state: x.st as InvestorStateLabel,
+    kyc: null, fema: null, holdings, hold: x.hold ? { until: x.hold, extension: null } : null, money: null, paper: null,
+    origin: { leadId: x.lead ?? null, irId: x.ir ?? null, irVia: null, saidYesAt: null },
+  } });
+}
+
 export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> = {
   path: id => (id ? `/api/investors/${encodeURIComponent(id)}/record` : null),
   pick: j => j as RecordAnswer,
   fixture({ s, me }, id) {
+    if (!s.data.P[me]) return irRecord(s, me, id);   /* a lead-side person with no Investors seat: the IR's own-lead record */
     if (!pageReadable(s, me, "inv")) return fail(403, "seat-denied", "This page is not part of your seat.");
     const x = I(s, me, id);
     if (!x) return fail(404, "not-visible", "Not found, or not yours to open.");
@@ -55,6 +82,26 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
       paper: null,
       origin: { leadId: x.lead ?? null, irId: x.ir ?? null, irVia: null, saidYesAt: null },
     } });
+  },
+};
+
+/* ---- M09-S08-W1 — an IR's Investors list: GET /api/investors/mine (server/investors/ir-list) ----
+   The investors that came from the signed-in IR's own leads (Contacts.Originating_IR = me): id, ARL code, name, farms, state,
+   lead link — the columns of M09-S08-NOTE-3 and nothing else (no price, amount, yield, receipt, phone, email or identity).
+   Arg: whether this seat is an IR (nothing to read for any other). The fixture is `irInvestors` over the demo book. */
+export type IrListAnswer = { rows: IrInvestorRow[]; truncated: boolean };
+
+export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
+  path: ir => (ir ? "/api/investors/mine" : null),
+  pick: j => j as IrListAnswer,
+  fixture({ s, me }) {
+    if (s.data.P[me]) return fail(403, "seat-denied", "This list is an IR's own.");
+    const rows = irInvestors(s, me).map((x): IrInvestorRow => ({
+      id: x.id, code: x.id, name: x.n, state: x.st, leadId: x.lead ?? null,
+      /* the demo's farm is its block letter (the live route reads the LLP's own id, name and block) */
+      farms: Object.entries(x.blocks).map(([block, units]) => ({ llpId: block, name: s.data.FARMS.find(f => f.k === block)?.n ?? "", block, units })),
+    })).sort((a, b) => a.name.localeCompare(b.name, "en-IN") || a.id.localeCompare(b.id));
+    return ok({ rows, truncated: false });
   },
 };
 
