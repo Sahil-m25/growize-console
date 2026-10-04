@@ -23,6 +23,8 @@ export interface SystemFacts {
   readonly licenceExpiry: number | null;
   readonly sign: { readonly lastEventAt: number | null; readonly failedHmac24h: number };
   readonly push: { readonly lastDeliveredAt: number | null; readonly failures24h: number };
+  /** Plane C's hash chain for the last closed day (server/logs/runtime auditChain().verify); omitted → no card. */
+  readonly auditChain?: { readonly day: string; readonly ok: boolean | null; readonly problems?: readonly { readonly kind: string }[] } | null;
 }
 
 const H = 3_600_000, D = 24 * H;
@@ -65,6 +67,14 @@ export function systemChecks(facts: SystemFacts, now: number): readonly Check[] 
   out.push({ key: "push", t: "Investor app delivery", figure: `${facts.push.lastDeliveredAt === null ? "nothing delivered yet" : `last ${Math.round((now - facts.push.lastDeliveredAt) / H)} h ago`} · ${facts.push.failures24h} failures`,
     state: facts.push.failures24h > 5 ? "down" : facts.push.failures24h > 0 || facts.push.lastDeliveredAt === null ? "attention" : "working",
     owner: "Digital Infrastructure", fix: "ops/runbooks/outbox-stuck.md — the outbox and the app's receiver" });
+  if (facts.auditChain) {
+    const a = facts.auditChain;
+    const kinds = [...new Set((a.problems ?? []).map((p) => p.kind))].join(", ");
+    out.push({ key: "audit-chain", t: `Audit trail chain (${a.day})`,
+      figure: a.ok === null ? "logs kept in memory only" : a.ok ? "intact" : `broken — ${kinds || "see the verifier"}`,
+      state: a.ok === null ? "attention" : a.ok ? "working" : "down",
+      owner: "Digital Infrastructure", fix: "docs/architecture/log-sink.md — run scripts/verify-audit-chain.mjs for the day; treat a break as an incident" });
+  }
   return Object.freeze(out.map((c) => Object.freeze(c)));
 }
 

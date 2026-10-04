@@ -20,7 +20,7 @@ async function get(request: Request): Promise<Response> {
     { side: q.get("side"), month: q.get("month"), day: q.get("day"), person: q.get("person"), kind: q.get("kind"), offset: q.get("offset"), limit: q.get("limit") },
     activityDeps(s.credential));
   if (!r.ok) return Response.json({ error: "Activity is not part of this seat." }, { status: 403, headers: NO_STORE });
-  return Response.json({ ...r, archive: auditArchive() ? "local" : "not-configured" }, { headers: NO_STORE });
+  return Response.json({ ...r, archive: auditArchive()?.kind ?? "not-configured" }, { headers: NO_STORE });
 }
 
 export const GET = withErrorCapture(guardApi("/api/activity", get), "/api/activity");

@@ -4,13 +4,14 @@
  * A record page's history is read live from Zoho's __timeline on the reader's own token: exactly one
  * call (TC-E11-013), and Zoho's sharing decides whether they may see it. Only which fields changed is
  * returned — client.timeline drops the values at the parse.
- * Plane C's reveals, step-ups and seat changes come from the daily JSONL files (server/logs/factory.ts)
- * when LOG_STORE=jsonl, else from the in-memory ring.
+ * Plane C's reveals, step-ups and seat changes come from the durable store (server/logs/factory.ts: the day
+ * files when LOG_STORE=jsonl, Stratus segments when LOG_SINK=stratus), else from the in-memory ring.
  */
 
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
 import type { PlaneCEvent } from "../identity/plane-c";
-import type { AppendOnlyStore } from "../logs/jsonl";
+import { daysBetween } from "../logs/reader";
+import type { PlaneStore } from "../logs/sink";
 import { auditTime } from "./export-job";
 
 export interface HistoryEntry { readonly at: string; readonly byId: string | null; readonly action: string; readonly fields: readonly string[] }
@@ -25,12 +26,12 @@ export async function recordHistory(crm: Pick<ZohoClient, "timeline">, as: UserC
   };
 }
 
-/** Plane C events in [fromMs, toMs): the day files when there are any, else the ring. */
-export function planeCBetween(o: { readonly store: AppendOnlyStore | null; readonly ring: () => readonly PlaneCEvent[] }, fromMs: number, toMs: number): readonly PlaneCEvent[] {
+/** Plane C events in [fromMs, toMs): the durable store when there is one, else the ring. */
+export async function planeCBetween(o: { readonly store: PlaneStore | null; readonly ring: () => readonly PlaneCEvent[] }, fromMs: number, toMs: number): Promise<readonly PlaneCEvent[]> {
   const inRange = (e: PlaneCEvent) => typeof e?.at === "number" && e.at >= fromMs && e.at < toMs;
   if (!o.store) return o.ring().filter(inRange);
   const first = new Date(fromMs).toISOString().slice(0, 10), last = new Date(toMs).toISOString().slice(0, 10);
   const out: PlaneCEvent[] = [];
-  for (const d of o.store.days()) if (d >= first && d <= last) for (const l of o.store.read(d)) if (inRange(l as PlaneCEvent)) out.push(l as PlaneCEvent);
+  for (const d of daysBetween(first, last)) for (const l of await o.store.read(d)) if (inRange(l as PlaneCEvent)) out.push(l as PlaneCEvent);
   return out;
 }

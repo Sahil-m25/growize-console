@@ -234,7 +234,7 @@ test('T05: Plane C reveals, step-ups and seat changes join the Investors side, s
   const f = await queryActivity({ seat: 'head', userId: U.harsha }, { ...SEP, kind: 'pii' }, failing.d);
   assert.equal(f.partial, true);
   assert.deepEqual(f.rows.map((x) => x.what), ['Stepped up'], 'the reveal is left out rather than shown unchecked');
-  const ring = planeCBetween({ store: null, ring: () => planeC }, Date.parse('2026-09-01T00:00:00+05:30'), Date.parse('2026-10-01T00:00:00+05:30'));
+  const ring = await planeCBetween({ store: null, ring: () => planeC }, Date.parse('2026-09-01T00:00:00+05:30'), Date.parse('2026-10-01T00:00:00+05:30'));
   assert.equal(ring.length, 3);
 });
 

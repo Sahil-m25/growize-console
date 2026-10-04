@@ -2,8 +2,14 @@
  * M01-S04-T01 — ONE FACTORY FOR THE LOG SINKS EVERY RUNTIME USES (Plane B calls and refusals, Plane B
  * error lines, Plane C identity and authority events).
  *
- *   LOG_STORE   "memory" (default) | "jsonl"
+ *   LOG_SINK    unset or "file" (default): the behaviour below, chosen by LOG_STORE
+ *               "stratus": batched segment objects in a Catalyst Stratus bucket (./stratus.ts, docs/architecture/log-sink.md);
+ *               needs STRATUS_* / CATALYST_* settings and fails closed at start-up if any is missing
+ *   LOG_STORE   "memory" (default) | "jsonl" — with LOG_SINK unset or "file"
  *   LOG_DIR     absolute directory for the daily files; required when LOG_STORE=jsonl
+ *
+ * Plane C is hash-chained in every durable store (./chain.ts): each line carries ch, n, prev and h, added after
+ * the identity guard. The in-memory ring keeps the guarded record without them.
  *
  * Fixture mode always gets memory, so tests and the demo never write a file. In jsonl mode each
  * sink is a tee: the in-memory ring the System and Activity checks already read, plus the
@@ -17,14 +23,24 @@ import { fixtureModeOn } from "../../lib/fixture-mode";
 import { createMemorySink, type MemorySink, type OpsRecord } from "../../lib/zoho/log";
 import { createMemoryErrorSink, type ErrorRecord, type MemoryErrorSink } from "../http/error-log";
 import { createPlaneCMemorySink, type PlaneCEvent, type PlaneCMemorySink } from "../identity/plane-c";
+import { randomBytes } from "node:crypto";
+import { createChainLinker } from "./chain";
 import { guardRecord } from "./guard";
-import { createJsonlStore, type AppendOnlyStore } from "./jsonl";
+import { createJsonlStore } from "./jsonl";
+import { fileStore, withChain, type PlaneStore } from "./sink";
+import { createStratusClient, createStratusPlaneStore, stratusConfig, stratusTokenSource, type StratusClient, type StratusFetch, type StratusPlaneStore } from "./stratus";
 
-export type LogStoreKind = "memory" | "jsonl";
+export type LogStoreKind = "memory" | "jsonl" | "stratus";
 
 export function logStoreKind(env: NodeJS.ProcessEnv = process.env): LogStoreKind {
   if (fixtureModeOn(env)) return "memory";
+  const sink = (env.LOG_SINK ?? "").trim();
   const v = (env.LOG_STORE ?? "").trim();
+  if (sink === "stratus") {
+    if (v !== "") throw new Error("LOG_SINK=stratus and LOG_STORE are both set; unset LOG_STORE (Stratus replaces the day files).");
+    return "stratus";
+  }
+  if (sink !== "" && sink !== "file") throw new Error(`LOG_SINK must be "file" or "stratus".`);
   if (v === "" || v === "memory") return "memory";
   if (v === "jsonl") return "jsonl";
   throw new Error(`LOG_STORE must be "memory" or "jsonl".`);
@@ -36,27 +52,60 @@ export interface LogSinks {
   readonly ops: MemorySink;
   readonly identity: PlaneCMemorySink;
   readonly errors: MemoryErrorSink;
-  /** Read-only access to the day files (jsonl only), for the System and Activity checks. */
-  readonly stores: Readonly<{ ops: AppendOnlyStore; identity: AppendOnlyStore; errors: AppendOnlyStore }> | null;
+  /** The durable stores (file or Stratus; null in memory mode), for the Logs, System and Activity reads. */
+  readonly stores: Readonly<{ ops: PlaneStore; identity: PlaneStore; errors: PlaneStore }> | null;
+  /** The Stratus bucket (stratus only), shared with the audit archive. */
+  readonly objects: StratusClient | null;
+  /** Upload whatever the durable stores still buffer (a no-op for files). */
+  flush(): Promise<void>;
 }
 
 export interface LogSinkOptions {
   readonly clock?: () => number;
   readonly capacity?: number;
+  /** stratus: the HTTP client (tests inject one; default global fetch). */
+  readonly fetch?: StratusFetch;
+  /** stratus: drive flush() yourself instead of the timer (tests). */
+  readonly timer?: boolean;
+  /** stratus: a failed upload; default raises the backup-failed alert (server/ops). */
+  readonly onFlushError?: (code: string) => void;
 }
+
+const netFetch: StratusFetch = async (url, init) => {
+  const r = await fetch(url, { method: init.method, headers: init.headers, body: init.body, redirect: "error", signal: AbortSignal.timeout(30_000) });
+  return { status: r.status, text: () => r.text() };
+};
+
+const alertFlush = (code: string): void => {
+  void import("../ops/runtime").then((m) => m.reportOpsFailure("backup-failed", code)).catch(() => { /* never throws */ });
+};
 
 export function createLogSinks(env: NodeJS.ProcessEnv = process.env, o: LogSinkOptions = {}): LogSinks {
   const kind = logStoreKind(env);
+  const clock = o.clock ?? Date.now;
   let dir: string | null = null;
   let stores: LogSinks["stores"] = null;
+  let objects: StratusClient | null = null;
+  let instance = `p-${randomBytes(6).toString("hex")}`;
   if (kind === "jsonl") {
     dir = (env.LOG_DIR ?? "").trim();
     if (!dir) throw new Error("LOG_DIR is required when LOG_STORE=jsonl.");
-    stores = Object.freeze({
-      ops: createJsonlStore({ dir, plane: "ops", clock: o.clock }),
-      identity: createJsonlStore({ dir, plane: "identity", clock: o.clock }),
-      errors: createJsonlStore({ dir, plane: "errors", clock: o.clock }),
-    });
+    const d = dir;
+    const file = (plane: string) => fileStore(createJsonlStore({ dir: d, plane, clock }));
+    stores = Object.freeze({ ops: file("ops"), identity: withChain(file("identity"), createChainLinker(instance), clock), errors: file("errors") });
+  } else if (kind === "stratus") {
+    const c = stratusConfig(env);
+    instance = c.instance;
+    const f = o.fetch ?? netFetch;
+    const client = createStratusClient(c, stratusTokenSource(c, f, clock), f);
+    objects = client;
+    const remote = (plane: string): StratusPlaneStore => createStratusPlaneStore({ client, plane, instance, clock, flushLines: c.flushLines, flushMs: c.flushMs,
+      timer: o.timer, onError: o.onFlushError ?? alertFlush });
+    stores = Object.freeze({ ops: remote("ops"), identity: withChain(remote("identity"), createChainLinker(instance), clock), errors: remote("errors") });
+    if (o.timer !== false) {
+      const s = stores;
+      process.once("beforeExit", () => { void Promise.all([s.ops.flush(), s.identity.flush(), s.errors.flush()]); });
+    }
   }
   const ring = createMemorySink({ capacity: o.capacity ?? 5_000 });
   const cRing = createPlaneCMemorySink(o.capacity ?? 5_000);
@@ -90,7 +139,9 @@ export function createLogSinks(env: NodeJS.ProcessEnv = process.env, o: LogSinkO
     records: () => eRing.records(),
     clear: () => eRing.clear(),
   });
-  return Object.freeze({ kind, dir, ops, identity, errors, stores });
+  const all = stores;
+  const flush = async (): Promise<void> => { if (all) await Promise.all([all.ops.flush(), all.identity.flush(), all.errors.flush()]); };
+  return Object.freeze({ kind, dir, ops, identity, errors, stores, objects, flush });
 }
 
 const G = globalThis as typeof globalThis & { __gzLogSinks?: LogSinks };

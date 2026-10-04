@@ -4,7 +4,8 @@
  */
 
 import { createOpsLog, type OpsEventLog } from "../../lib/zoho/log";
-import { logSinks } from "./factory";
+import { verifyChain, type ChainVerdict } from "./chain";
+import { logSinks, type LogSinks } from "./factory";
 import { logSourceOf, type LogSource } from "./reader";
 
 const G = globalThis as typeof globalThis & { __gzLogsRuntime?: { source: LogSource; log: OpsEventLog } };
@@ -21,3 +22,21 @@ function held() {
 export const logSource = (): LogSource => held().source;
 /** Plane B on the shared sink, `event` included. */
 export const planeBLog = (): OpsEventLog => held().log;
+
+export type AuditChainCheck = ChainVerdict | { readonly ok: null; readonly day: string; readonly reason: "not-durable" };
+
+/**
+ * Plane C's hash chain for one UTC day (./chain.ts): detects an edited, deleted or reordered line, a missing or
+ * edited segment and a manifest that does not match; with `anchor` (kept elsewhere for a closed day), a lost tail.
+ * In memory mode there is nothing durable to verify, and the answer says so. The System check calls
+ * `auditChain().verify(yesterday)`; scripts/verify-audit-chain.mjs runs the same check offline.
+ */
+export function auditChain(sinks: Pick<LogSinks, "stores"> = logSinks()) {
+  return Object.freeze({
+    async verify(day: string, anchor?: string | null): Promise<AuditChainCheck> {
+      const store = sinks.stores?.identity;
+      if (!store) return Object.freeze({ ok: null, day, reason: "not-durable" as const });
+      return verifyChain(await store.segments(day), { day, anchor });
+    },
+  });
+}

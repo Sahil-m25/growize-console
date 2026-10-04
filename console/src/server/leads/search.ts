@@ -22,7 +22,7 @@
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
-import type { OpsLog } from "../../lib/zoho/log";
+import type { OpsEventLog } from "../../lib/zoho/log";
 import type { ScopedCache } from "../../lib/zoho/cache";
 import { scopedKey, type BookScope } from "../data/scope";
 import type { LeadsAccess, LeadsAccessAuthority } from "./book";
@@ -50,7 +50,8 @@ export type SearchResult =
 export interface SearchDependencies {
   readonly crm: Pick<ZohoClient, "search">;
   readonly access: LeadsAccessAuthority;
-  readonly log: OpsLog;
+  /** M06-S05-NOTE-3: `event` is required — a search that went through is an event line, never a refusal. */
+  readonly log: OpsEventLog;
   readonly recordIdPrefix: string;
   /** Plane C's roster (D49); absent → only an explicit cover window admits a secondary (D44). */
   readonly roster?: RosterReader;
@@ -95,7 +96,7 @@ const istDate = (ms: number): string => new Date(ms + 5.5 * 3_600_000).toISOStri
 
 export function createLeadSearch(deps: SearchDependencies) {
   if (!deps || typeof deps.crm?.search !== "function" || typeof deps.access?.recheck !== "function"
-    || typeof deps.log?.refusal !== "function" || typeof deps.recordIdPrefix !== "string" || !RECORD_PREFIX.test(deps.recordIdPrefix)) {
+    || typeof deps.log?.refusal !== "function" || typeof deps.log?.event !== "function" || typeof deps.recordIdPrefix !== "string" || !RECORD_PREFIX.test(deps.recordIdPrefix)) {
     throw new TypeError("Lead search needs crm.search, the access authority, the ops log and the CRM record-id prefix.");
   }
   const { crm, access, log } = deps;
@@ -168,7 +169,7 @@ export function createLeadSearch(deps: SearchDependencies) {
       const more = hits.length - SHOWN + (res.value.moreRecords ? 1 : 0);
       const book = a.teamOrgWide ? "all" as const : a.teamOwnerIds !== null ? "team" as const : "yours" as const;
       // D47: one Plane B line — who searched, how many they got, in which scope. Never the term, never a name.
-      log.event?.({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-search", reason: `scope-${book}.count-${Math.min(hits.length, 9999)}`, recordIds: [] });
+      log.event({ at: clock(), actor: { kind: "user", userId: me }, action: "lead-search", reason: `scope-${book}.count-${Math.min(hits.length, 9999)}`, recordIds: [] });
       if (deps.cache && deps.termKey) {
         try {
           const n = hits.length;
