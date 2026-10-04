@@ -68,16 +68,21 @@ export function systemChecks(facts: SystemFacts, now: number): readonly Check[] 
   return Object.freeze(out.map((c) => Object.freeze(c)));
 }
 
+export interface SystemView { readonly working: number; readonly attention: number; readonly down: number; readonly cards: readonly Check[]; readonly all: readonly Check[] }
 export type SystemResult =
-  | { readonly ok: true; readonly value: { readonly working: number; readonly attention: number; readonly down: number; readonly cards: readonly Check[]; readonly all: readonly Check[] } }
+  | { readonly ok: true; readonly value: SystemView }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: "not-digital-infrastructure" };
+
+/** Counts, and a card for every check that is not working. */
+export function systemView(all: readonly Check[]): SystemView {
+  const n = (s: CheckState) => all.filter((c) => c.state === s).length;
+  const order: Record<CheckState, number> = { down: 0, attention: 1, working: 2 };
+  return { working: n("working"), attention: n("attention"), down: n("down"),
+    cards: all.filter((c) => c.state !== "working").sort((a, b) => order[a.state] - order[b.state]), all };
+}
 
 /** The page: counts, and a card for every check that is not working. DI only. */
 export function systemPage(actor: SeatedZohoUser | null, facts: SystemFacts, now: number): SystemResult {
   if (!actor || actor.seat !== "digital-infrastructure") return { ok: false, kind: "refused", reasonCode: "not-digital-infrastructure" };
-  const all = systemChecks(facts, now);
-  const n = (s: CheckState) => all.filter((c) => c.state === s).length;
-  const order: Record<CheckState, number> = { down: 0, attention: 1, working: 2 };
-  return { ok: true, value: { working: n("working"), attention: n("attention"), down: n("down"),
-    cards: all.filter((c) => c.state !== "working").sort((a, b) => order[a.state] - order[b.state]), all } };
+  return { ok: true, value: systemView(systemChecks(facts, now)) };
 }

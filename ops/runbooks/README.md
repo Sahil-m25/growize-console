@@ -14,6 +14,7 @@ The operations entry point is `docs/ops/runbook.md`: who is on call, alerts to a
 | [api-budget.md](api-budget.md) | PLATFORM: the Zoho API budget is running out, or 429s | Re-scoped 23 Sep |
 | [pii-leak.md](pii-leak.md) | PII: an identity field got past the wall. Act before you diagnose. | Rewritten 23 Sep |
 | [money-mismatch.md](money-mismatch.md) | MONEY: the ledger and the bank statement disagree | Valid. The "same person matches" step predates D113 item 1 |
+| [weekly-reconciliation.md](weekly-reconciliation.md) | ROUTINE: Monday bank-statement reconciliation by Finance Operations, checked by the Head of Finance (T06) | Written 4 Oct (D21, D22, D113) |
 | [heartbeat-silent.md](heartbeat-silent.md) | DM: the dead-man heartbeat stopped | Re-scoped 23 Sep. Where jobs run is not settled |
 | [sign-in-history.md](sign-in-history.md) | ROUTINE: who signed in, from where, who failed (Zoho Directory; no console screen) | Written 4 Oct |
 | [outbox-stuck.md](outbox-stuck.md) | Nothing. Void since D45. Kept as the record of what the old design needed. | Void |
@@ -22,7 +23,7 @@ Also in the repo:
 
 | Page | What |
 |---|---|
-| [../../docs/runbooks/weekly-reconciliation.md](../../docs/runbooks/weekly-reconciliation.md) | Weekly bank statement reconciliation by Finance (M10-S05-T06) |
+| [../../docs/runbooks/weekly-reconciliation.md](../../docs/runbooks/weekly-reconciliation.md) | The same routine, screen by screen: every "needs an owner" reason and who closes it |
 | [../../docs/ops/runbook.md](../../docs/ops/runbook.md) | The operations runbook |
 | [../../docs/ops/hypercare.md](../../docs/ops/hypercare.md) | The two-week hypercare plan |
 | [../../docs/launch/backup-restore-plan.md](../../docs/launch/backup-restore-plan.md) | Backup, restore and the drill |
