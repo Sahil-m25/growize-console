@@ -345,3 +345,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-04 · leak detector knows the console's PAN mask (3+1 and last-four, one looksMasked for api-leaks and the API matrix); Head of AM seat in the read-budget table (rig seat ids + measured 5 calls) · M18-S02-NOTE-4, M18-S01-NOTE-4
 - 2026-10-05 · Round 7 integrated: roster UI + D44 cover end, one ledger everywhere, Balance/Forfeit replay, refund step-up panel, sheet progress, shared idempotency; full UI regression 378/379 · D119
 - 2026-10-04 · zoho/access: sandbox access config as code - spec.json (12 profiles, module perms, FLS walls, finance/compliance sharing rules, persona map), plan.mjs planners + org guard, bundle GZAccess (plan/apply/verify) · D120 draft, ACCESS-PLAN §1-§5, D110, D115-2
+- 2026-10-05 · sandbox seed runnable through the browser session: fields plan (Test_Seed/Seed_Key), real api names, seed-key → id resolution, persona owners, seed.js bundle · M19-S03
