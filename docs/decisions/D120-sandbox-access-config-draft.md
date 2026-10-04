@@ -127,3 +127,10 @@ Verified: org, get profiles, clone, update permissions, field meta, update custo
   - Disable body: `PUT /crm/v8/settings/automation/workflow_rules/{id}` with `{workflow_rules:[{id, status:{active:false, delete_schedule_action:false}}]}`.
 - Seed applied: 132 records (farms 4, leads 18, contacts 15, touches 57, allotments 15, receipts 15, cases 8), split IR A / IR B / KAM / Finance Ops as in zoho/sandbox/README.md. Compliance's one case falls back to admin.
 - Verify the seed with list endpoints; search lags behind new records.
+
+## Owner rulings (5 Oct 2026)
+- B: the 4 fields made optional (Contacts.PAN_Number, Contacts.Aadhaar_Number, Allotment.Token_Advance_Amount, LLP.LLP_Status) stay optional. The console and Finance process enforce them. This is approved for live as well.
+- C: the Supabase/ARL sync workflows stay **off in the sandbox** and **on in production for now**. Any deploy of the sandbox change set to live excludes those 7 deactivations.
+- A (record-share actor, P12): open. The owner named IR Manager / BU Owner / Digital Infrastructure / CEO as candidates.
+  - Recommended: automatic sharing by a background "share service" user (Share permission only; identity and money hidden), plus manual Share for IR Manager and Digital Infrastructure for cover windows and fixes.
+  - Alternative to test first in the sandbox: criteria-based Zoho sharing rules per KAM/IR.
