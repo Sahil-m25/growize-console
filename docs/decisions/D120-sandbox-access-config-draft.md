@@ -106,3 +106,15 @@ Every entry point first checks `GET /crm/v8/org` for zgid `60090668120`. On the 
 - **The `&` character in profile names.** Not checked; it is avoided.
 
 Verified: org, get profiles, clone, update permissions, field meta, update custom fields (unlisted profiles unchanged; one field per call is used), create, get and update sharing rules, and get roles. The URLs are cited in `zoho/access/plan.mjs`.
+
+## Applied 5 Oct 2026
+- **What and who.** The coordinator applied the access config to the Zoho sandbox only, with the owner's explicit approval. Live was not touched.
+- **Independent verify.** 759/759 checks pass (profiles, module View/Create/Edit/Delete, per-module general permissions, field-level security, sharing rules).
+- **Three facts from the live run, now in the code** (`zoho/access/plan.mjs`, tests in `plan.test.mjs`):
+  1. **Parent permissions.** Zoho refuses to enable a child permission whose parent is disabled ("Child permission can not be enabled, since its parent permission is disabled"; each `permissions_details` item has `parent_permissions`). `planProfiles` computes the final enabled set (enabled + on - off), removes any id whose parents are not all in it (repeatedly), skips "on" toggles outside it, adds explicit "off" toggles for enabled permissions that fall out, and orders View on, then Create/Edit on, then the rest on; offs in the reverse order. A general permission on a module whose Edit stays off is skipped, not sent (the step's `why` counts the skipped ones).
+  2. **Mandatory fields take no field-level security.** Zoho answers "INVALID OPERATION: The field permission cannot be changed because it is a mandatory field". `planLayoutRequired` emits, before the FLS steps, `PATCH /crm/v8/settings/layouts/{id}?module={m}` with `required:false` for each FLS field that the spec hides or makes read-only for some profile and that a layout section requires (at most 5 field actions per call; merge semantics). `readState` now also reads the layouts of the FLS modules.
+  3. **General permissions are per module**, named `Crm_Implied_<Prefix>_<Module>` (unchanged from e255182).
+- **Sharing-rule POSTs** sent back to back on one module fail with CANNOT_PROCESS "Sharing rule computation is in process". `applySteps` retries such a step up to 6 times, 10 s apart. One browser call stays under a 35 s budget; when a wait or the next step would pass it, apply returns `{ ok:false, retryable:true, next }`, and the caller re-plans (idempotent) and applies again.
+- **Four fields were required on the Standard layouts and are now not required in the sandbox, so that they can be hidden:** Contacts.PAN_Number, Contacts.Aadhaar_Number, LLP_UnitAllocation_Module.Token_Advance_Amount, LLP_Creation_Module.LLP_Status.
+  - **HUMAN: the owner confirms before this goes to live.** The console and the Finance process now enforce these values, not Zoho. The same layout change would apply on live.
+- **Tasks and Calls permissions** are not exposed in the API. They stay as cloned from Standard. Manual check in Setup > Profiles.

@@ -16,6 +16,8 @@
 //                                                                 https://www.zoho.com/crm/developer/docs/api/v8/field-meta.html
 //  PATCH /crm/v8/settings/fields/{id}?module=X { fields: [{ id, profiles: [{ id, permission_type }] }] }; unlisted profiles unchanged
 //                                                                 https://www.zoho.com/crm/developer/docs/api/v8/update-custom-fields.html
+//  GET  /crm/v8/settings/layouts?module=X; PATCH /crm/v8/settings/layouts/{id}?module=X { layouts: [{ sections: [{ id, fields: [{ id, required }] }] }] }
+//                                                                 https://www.zoho.com/crm/developer/docs/api/v8/update-custom-layout.html
 //  GET/POST/PUT /crm/v8/settings/data_sharing/rules?module=X { sharing_rules: [{ name, type, shared_from, shared_to, permission_type, superiors_allowed }] }
 //                                                                 https://www.zoho.com/crm/developer/docs/api/v8/create-data-sharing-rules.html
 //                                                                 https://prezohoweb.zoho.com/crm/developer/docs/api/v8/data-sharing-rules.html
@@ -96,14 +98,15 @@ export function planProfiles(spec, current) {
     }
     const details = current.details[have ? have.id : base.id];
     if (!details) throw new Error(`profile detail missing for ${have ? prof.name : spec.cloneFrom}`);
-    const on = [], off = [], missing = [];
+    const on = [], off = [], missing = [], rank = new Map();
     for (const module of spec.modules) {
       const want = prof.modules[module] || "";
       for (const k of ORDER) {
         const p = findPerm(details, module, ACTIONS[k]);
         if (!p) { missing.push(`${module} ${ACTIONS[k]}=${want.includes(k) ? "on" : "off"}`); continue; }
+        rank.set(p.id, k === "v" ? 0 : k === "d" ? 2 : 1);
         const desired = want.includes(k);
-        if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired, rank: ORDER.indexOf(k) });
+        if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired });
       }
     }
     for (const [key, g] of Object.entries(spec.general)) {
@@ -115,14 +118,31 @@ export function planProfiles(spec, current) {
         ? String(p.name).startsWith(`Crm_Implied_${g.prefix}_`)
         : re.test(String(p.display_label)) && !ACTIONS_SET.has(String(p.display_label)));
       if (!hits.length) { missing.push(`${key}=${desired ? "on" : "off"}`); continue; }
-      for (const p of hits) if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired, rank: 4 });
+      for (const p of hits) if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired });
     }
-    // Enable View before Create/Edit/Delete; disable Delete/Edit/Create before View.
-    on.sort((a, b) => a.rank - b.rank); off.sort((a, b) => b.rank - a.rank);
-    const toggles = on.concat(off).map(({ id, enabled }) => ({ id, enabled }));
+    // Live 5 Oct: Zoho refuses a child permission whose parent is disabled. Final set = enabled + on - off; drop any id whose
+    // parent_permissions are not all in it (iteratively); "on" toggles outside it are skipped; enabled ones that fall out get an "off".
+    const perms = details.permissions_details || [];
+    const known = new Set(perms.map((p) => p.id));
+    const fin = new Set(perms.filter((p) => p.enabled).map((p) => p.id));
+    for (const t of on) fin.add(t.id);
+    for (const t of off) fin.delete(t.id);
+    for (let again = true; again;) {
+      again = false;
+      for (const p of perms) {
+        if (fin.has(p.id) && (p.parent_permissions || []).some((q) => known.has(q) && !fin.has(q))) { fin.delete(p.id); again = true; }
+      }
+    }
+    const rk = (id) => (rank.has(id) ? rank.get(id) : 2);
+    const onOk = on.filter((t) => fin.has(t.id)), skipped = on.length - onOk.length;
+    const offIds = new Set(off.map((t) => t.id));
+    for (const p of perms) if (p.enabled && !fin.has(p.id) && !offIds.has(p.id)) off.push({ id: p.id, enabled: false });
+    // On: View, then Create/Edit, then the rest (Delete, general). Off: the reverse.
+    onOk.sort((a, b) => rk(a.id) - rk(b.id)); off.sort((a, b) => rk(b.id) - rk(a.id));
+    const toggles = onOk.concat(off).map(({ id, enabled }) => ({ id, enabled }));
     if (toggles.length) {
       updates.push({ kind: "api", method: "PUT", path: `${V}/settings/profiles/${have ? have.id : ph(prof.name)}`,
-        body: { profiles: [{ permissions_details: toggles }] }, why: `${prof.name}: ${toggles.length} permission change(s) (ACCESS-PLAN §1-§2, spec)` });
+        body: { profiles: [{ permissions_details: toggles }] }, why: `${prof.name}: ${toggles.length} permission change(s)${skipped ? `, ${skipped} skipped (parent permission stays off)` : ""} (ACCESS-PLAN §1-§2, spec)` });
     }
     if (missing.length) {
       manual.push({ kind: "manual", where: `${PROFILES_PATH} > ${prof.name} > Module-level / Tools permissions`,
@@ -132,6 +152,40 @@ export function planProfiles(spec, current) {
   return steps.concat(updates, manual);
 }
 const ACTIONS_SET = new Set(Object.values(ACTIONS));
+
+/**
+ * Live 5 Oct: Zoho refuses field-level security on a layout-required field ("The field permission cannot be changed because it is a
+ * mandatory field"). For every FLS field the spec hides or makes read_only for any profile, and which is required in any layout
+ * section, step PATCH layouts/{id} required:false (merge semantics; <= 5 field actions per call). Runs before the FLS steps.
+ * layoutsByModule = { [module]: [{ id, sections: [{ id, fields: [{ id, api_name, required }] }] }] }.
+ */
+export function planLayoutRequired(spec, layoutsByModule) {
+  const lock = new Set();
+  for (const g of spec.fieldSecurity.groups) {
+    const restricted = spec.profiles.some((p) => ["hidden", "read_only"].includes(g.grant[p.name] || g.default));
+    if (restricted) for (const [m, apis] of Object.entries(g.fields)) for (const a of apis) lock.add(`${m}.${a}`);
+  }
+  const steps = [];
+  for (const [module, layouts] of Object.entries(layoutsByModule || {})) {
+    for (const l of layouts || []) {
+      const acts = [];
+      for (const sec of l.sections || []) for (const f of sec.fields || []) {
+        if (f.required === true && lock.has(`${module}.${f.api_name}`)) acts.push({ sec: sec.id, id: f.id, api: f.api_name });
+      }
+      for (let i = 0; i < acts.length; i += 5) {
+        const chunk = acts.slice(i, i + 5), sections = [];
+        for (const a of chunk) {
+          let s = sections.find((x) => x.id === a.sec);
+          if (!s) sections.push(s = { id: a.sec, fields: [] });
+          s.fields.push({ id: a.id, required: false });
+        }
+        steps.push({ kind: "api", method: "PATCH", path: `${V}/settings/layouts/${l.id}?module=${module}`, body: { layouts: [{ sections }] },
+          why: `layout ${module}${l.name ? ` "${l.name}"` : ""}: ${chunk.map((a) => a.api).join(", ")} not required so field security can apply (owner confirms before live)` });
+      }
+    }
+  }
+  return steps;
+}
 
 /** currentFields = { [module]: fields[] }; profileIdsByName must include spec.cloneFrom. */
 export function planFieldSecurity(spec, currentFields, profileIdsByName) {
@@ -240,16 +294,19 @@ export async function readState(call, spec) {
   for (const g of spec.fieldSecurity.groups) for (const m of Object.keys(g.fields)) fieldModules.add(m);
   const fields = {};
   for (const m of fieldModules) fields[m] = (await get(call, `${V}/settings/fields?module=${m}`)).fields || [];
+  const layouts = {};
+  for (const m of fieldModules) layouts[m] = (await get(call, `${V}/settings/layouts?module=${m}`)).layouts || [];
   const rules = {};
   for (const m of new Set(spec.sharingRules.rules.map((r) => r.module))) rules[m] = (await get(call, `${V}/settings/data_sharing/rules?module=${m}`)).sharing_rules || [];
   let dataSharing = null;
   try { dataSharing = (await get(call, `${V}/settings/data_sharing`)).data_sharing || []; } catch (e) { dataSharing = null; }
-  return { profiles, details, profileIdsByName, roleIds, fields, rules, dataSharing };
+  return { profiles, details, profileIdsByName, roleIds, fields, layouts, rules, dataSharing };
 }
 
 export function planFromState(spec, s) {
   return [].concat(
     planProfiles(spec, { profiles: s.profiles, details: s.details }),
+    planLayoutRequired(spec, s.layouts),
     planFieldSecurity(spec, s.fields, s.profileIdsByName),
     planSharing(spec, s.rules, s.roleIds),
     s.dataSharing ? planDefaultSharing(spec, s.dataSharing)
@@ -262,8 +319,23 @@ export async function planAll(call, spec) {
   return planFromState(spec, await readState(call, spec));
 }
 
-/** Runs api steps in order, stops at the first non-2xx or per-item error. Log: statuses and Zoho codes only. */
-export async function applySteps(call, steps, spec) {
+function zmsg(body) {
+  const k = body && Object.keys(body).find((x) => Array.isArray(body[x]));
+  const item = k ? body[k][0] : body;
+  return item && item.message ? String(item.message) : "";
+}
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Runs api steps in order, stops at the first non-2xx or per-item error. Log: statuses and Zoho codes only.
+ * Sharing-rule POSTs hit CANNOT_PROCESS "Sharing rule computation is in process" when posted back to back: such a step is retried
+ * up to 6 times, 10 s apart. One browser call must stay well under 45 s, so when the next wait (or the next step) would pass
+ * opts.budgetMs (35 s) it returns { ok:false, retryable:true, next:i }: re-plan (idempotent) and apply again.
+ * opts = { sleep, now, budgetMs, retries, waitMs } (tests inject them).
+ */
+export async function applySteps(call, steps, spec, opts = {}) {
+  const sleep = opts.sleep || sleepMs, now = opts.now || Date.now, budget = opts.budgetMs || 35000, retries = opts.retries || 6, wait = opts.waitMs || 10000;
+  const t0 = now();
   assertSandbox(await get(call, `${V}/org`), spec);
   let ids = null;
   const resolve = async (text, force) => {
@@ -275,6 +347,7 @@ export async function applySteps(call, steps, spec) {
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
     if (s.kind !== "api") { manual.push(s); log.push({ i, kind: "manual", where: s.where }); continue; }
+    if (now() - t0 > budget) return { ok: false, retryable: true, next: i, log, manual };
     let path, body;
     try {
       path = await resolve(s.path);
@@ -283,9 +356,17 @@ export async function applySteps(call, steps, spec) {
       log.push({ i, method: s.method, path: s.path.split("?")[0], status: 0, code: "UNRESOLVED", message: e.message });
       return { ok: false, log, manual };
     }
-    const r = await call(s.method, path, body);
-    const entry = { i, method: s.method, path: path.split("?")[0], status: r && r.status, code: zcode(r && r.body) };
-    log.push(entry);
+    let r;
+    for (let tries = 0; ; tries++) {
+      r = await call(s.method, path, body);
+      const code = zcode(r && r.body);
+      const busy = !ok(r) || zfailed(r && r.body) ? code === "CANNOT_PROCESS" && (/computation/i.test(zmsg(r && r.body)) || path.indexOf("/data_sharing/rules") >= 0) : false;
+      log.push({ i, method: s.method, path: path.split("?")[0], status: r && r.status, code });
+      if (!busy) break;
+      if (tries >= retries) return { ok: false, log, manual };
+      if (now() - t0 + wait > budget) return { ok: false, retryable: true, next: i, log, manual };
+      await sleep(wait);
+    }
     if (!ok(r) || zfailed(r.body)) return { ok: false, log, manual };
     if (s.creates) ids = null; // a new profile id exists now
   }
