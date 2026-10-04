@@ -4,6 +4,9 @@ import { nextHeaderRules } from './security-headers.mjs';
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  /* R4 (Catalyst AppSail): a self-contained server in <distDir>/standalone — what console/Dockerfile ships.
+     `next dev` is unaffected; `next start` still works but prints a note that standalone is the intended server. */
+  output: "standalone",
   /* the local test build (npm run build:local) keeps its output apart from the real build */
   distDir: process.env.GZ_LOCAL_BUILD === "1" ? ".next-local" : ".next",
   typescript: { ignoreBuildErrors: false },

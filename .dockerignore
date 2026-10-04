@@ -1,0 +1,23 @@
+# Build context is the REPO ROOT (console/Dockerfile reads ../pm fixtures and ../contracts).
+**/node_modules
+**/.next
+**/.next-local
+**/*.tsbuildinfo
+.git
+.github
+.claude
+.typesafe-key
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+jev
+tools
+ops
+autopilot
+docs
+scripts
+zoho
+console/prototype
+**/*.test.ts
+**/*.test.cjs
