@@ -164,6 +164,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/investors/[id]/preview": { kind: "page", page: "inv" },   /* M10-S22 app preview: the record's own admission decides inside */
   "/api/investors/[id]/test-link": { kind: "page", page: "inv" }, /* M10-S23: super user only, decided inside */
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
+  "/api/system": { kind: "session" },   /* M15-S05 live checks: server/system/facts mayReadSystem (`sys` capability) decides inside */
   "/api/investors/[id]/kam": { kind: "page", page: "inv" },
   "/api/investors/am": { kind: "page", page: "inv" },   /* M09-S04/S02 the AM list (managers, pool, rows): the Investors page; server/investors/am-service refuses any seat but a KAM or the Head of AM inside */
   "/api/payments": { kind: "session" },   /* M10-S01-W1 the Payments register: the seat (Finance pay/bank, the read-only Auditor) decides inside; a KAM is refused 403 */

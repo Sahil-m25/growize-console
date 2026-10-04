@@ -19,6 +19,7 @@ import { may, openable, own, P, systemRows } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { useApiRead, type Read } from "@/lib/data/api";
 import { logsRead } from "@/lib/data/endpoints/logs";
+import { systemRead } from "@/lib/data/endpoints/system";
 import { DoorRow } from "@/features/today/doors";
 import { ckDays, ckFromT } from "./checks";
 import "./drawers";
@@ -305,6 +306,39 @@ registerDrawer("p:system.test" as DrawerKind, {
   Body: TestBody,
 });
 
+/* M15-S05-NOTE-2: the live checks (Zoho credits, 429s, failed calls, audit archive, investor-app delivery) come from
+   GET /api/system. A seat without the `sys` capability is refused 403 and sees nothing here; fixture mode answers empty. */
+function LiveChecks() {
+  const { state } = useConsole();
+  const r = useApiRead(systemRead, state, undefined);
+  if (r.state === "loading" || r.state === "idle") return null;
+  if (r.state === "error") return r.err.code === "not-a-system-reader" ? null : <div className="note" role="alert">{r.err.error}</div>;
+  const d = r.data;
+  if (!d.all.length) return null;
+  const tag = { working: "go", attention: "due", down: "late" } as const;
+  return (
+    <div className="card" id="live-checks">
+      <div className="ch">
+        <h3>Live checks</h3>
+        <span className="sm">{d.working} working · {d.attention} need attention · {d.down} not working</span>
+      </div>
+      <div className="cb">
+        {d.all.map((c) => (
+          <div className="ckrow" key={c.key}>
+            <span className={`tag ${tag[c.state]}`}>{c.state === "working" ? "working" : c.state === "attention" ? "attention" : "not working"}</span>
+            <span className="cn"><b>{c.t}</b><span className="sm">{c.state === "working" ? c.owner : c.fix}</span></span>
+            <span className="sm nw" style={{ textAlign: "right" }}>{c.figure}</span>
+            <span className="sm">{c.owner}</span>
+          </div>
+        ))}
+        <p className="sm" style={{ margin: "10px 0 0" }}>
+          Service-token expiry, cache load errors, the Zoho licence date and the last Zoho Sign event are not read here yet.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function SystemPage() {
   const { state } = useConsole();
   const okC = state.CHECKS.filter((c) => c.st === "ok");
@@ -343,6 +377,7 @@ export function SystemPage() {
       />
 
       <div className="secw ux-system">
+        <LiveChecks />
         {failC.length ? (
           <div className="card">
             <div className="ch">

@@ -608,6 +608,11 @@
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
    }
   },
+  "/api/system": {
+   "GET": {
+    "needsSandbox": "needs sandbox: only the `sys` seats (Digital Infrastructure, super administrator) are answered, and the suite cannot sign either in (D80 Administrator profile, M03-S03-NOTE-1); every seat it can sign in is refused 403"
+   }
+  },
   "/api/numbers/investors-side": {
    "GET": {
     "rupee": [
