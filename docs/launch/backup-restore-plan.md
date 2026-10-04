@@ -22,7 +22,7 @@ No other database of ours holds records. Do not build one to make a backup easie
 
 ### What is backed up
 - The whole org, every module, by Zoho's own data backup. The story names it "Data backup (Enterprise)".
-- Modules the console depends on are listed in `docs/zoho-module-register.md`: Leads, Contacts, LLP_Creation_Module, LLP_UnitAllocation_Module, Receipts, Touches, Investor_Updates, Mail_Templates, Investor_Payouts, Sales_Plans, Lead_Events, plus Cases, Tasks, Calls, Statements. Legacy Deals and Accounts ride along.
+- Modules the console depends on are listed in `docs/zoho-module-register.md`: Leads, Contacts, LLP_Creation_Module, LLP_UnitAllocation_Module, Receipts, Touches, Investor_Updates, Mail_Templates, Investor_Payouts, Sales_Plans, Lead_Events, plus Cases, Tasks, Calls, and Statements once it exists (M10-S05-NOTE-1). Legacy Deals and Accounts ride along.
 - A backup file holds identity data (PAN, bank, the full Aadhaar number until it is removed). Treat every backup file as the most sensitive file we own.
 
 ### Schedule and retention
