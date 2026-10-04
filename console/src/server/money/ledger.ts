@@ -5,8 +5,11 @@
  * figures and what the replay seals are the same numbers.
  *
  * Convention (D21: recording is free, only matched money counts; D19: a gate closes on the reversal of its fact):
- *   - signed amount   inbound kinds (Advance, Part, Balance, Full) are +amount; a Refund is money out, −amount;
- *                     any other kind (Forfeit) moves no standing money.
+ *   - signed amount   inbound kinds (Advance, Part, Balance, Full) are +amount — Balance is D70's name for what the
+ *                     org's picklist calls Part, read as the same inbound kind; a Refund is money out, −amount.
+ *   - a Forfeit       money KEPT on a lapse or release (D22, D43: "forfeits do not add credit"), never money due and
+ *                     never money in: the matched money it is kept from is already counted, and the rest goes out as
+ *                     a Refund. It moves no standing money; a Matched, uncancelled Forfeit shows in `forfeited` only.
  *   - Matched         counts (matchedIn / matchedOut).
  *   - Pending         recorded, not yet matched: pendingIn / pendingOut — never in matched (D21).
  *   - Not found, Claimed, Reversed   count nowhere. Match_State "Reversed" on a receipt is that receipt cancelled.
@@ -26,6 +29,9 @@
 
 export const INBOUND_KINDS: ReadonlySet<string> = new Set(["Advance", "Part", "Balance", "Full"]);
 export const REFUND_KIND = "Refund";
+export const FORFEIT_KIND = "Forfeit";
+/** Every Kind a receipt row may carry. A row of any other kind is not a ledger row (a reader refuses it). */
+export const LEDGER_KINDS: ReadonlySet<string> = new Set([...INBOUND_KINDS, REFUND_KIND, FORFEIT_KIND]);
 
 export interface LedgerEntry {
   readonly id: string;
@@ -42,6 +48,8 @@ export interface LedgerSums {
   readonly matchedOut: number;
   readonly pendingIn: number;
   readonly pendingOut: number;
+  /** Matched forfeits, not cancelled: money kept on a lapse/release. In no other figure (standing, due, recorded). */
+  readonly forfeited: number;
 }
 
 export interface Ledger {
@@ -52,9 +60,9 @@ export interface Ledger {
 }
 
 const LIVE: ReadonlySet<string> = new Set(["Matched", "Pending"]);
-const ZERO: LedgerSums = Object.freeze({ matchedIn: 0, matchedOut: 0, pendingIn: 0, pendingOut: 0 });
+const ZERO: LedgerSums = Object.freeze({ matchedIn: 0, matchedOut: 0, pendingIn: 0, pendingOut: 0, forfeited: 0 });
 
-/** +amount for money in, −amount for a refund, 0 otherwise. */
+/** +amount for money in, −amount for a refund, 0 otherwise (a Forfeit included: it is kept, not moved). */
 export const signedOf = (e: Pick<LedgerEntry, "kind" | "amount">): number =>
   e.kind && INBOUND_KINDS.has(e.kind) ? e.amount : e.kind === REFUND_KIND ? -e.amount : 0;
 
@@ -87,10 +95,11 @@ export function ledgerOf(rows: readonly LedgerEntry[]): Ledger {
     else pendingReversal.set(t.id, r.id);
   }
 
-  const acc = new Map<string, { matchedIn: number; matchedOut: number; pendingIn: number; pendingOut: number }>();
-  const at = (id: string) => { let s = acc.get(id); if (!s) acc.set(id, (s = { matchedIn: 0, matchedOut: 0, pendingIn: 0, pendingOut: 0 })); return s; };
+  const acc = new Map<string, { matchedIn: number; matchedOut: number; pendingIn: number; pendingOut: number; forfeited: number }>();
+  const at = (id: string) => { let s = acc.get(id); if (!s) acc.set(id, (s = { matchedIn: 0, matchedOut: 0, pendingIn: 0, pendingOut: 0, forfeited: 0 })); return s; };
   for (const r of rows) {
     if (!r.allotmentId || r.reversalOf !== null || cancelled.has(r.id)) continue;
+    if (r.kind === FORFEIT_KIND) { if (r.matchState === "Matched") at(r.allotmentId).forfeited += r.amount; continue; }
     const v = signedOf(r);
     if (v === 0) continue;
     const s = at(r.allotmentId);

@@ -25,7 +25,7 @@ import type {
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import { ACTOR_ID, RECORD_ID, type OpsLog } from "../../lib/zoho/log";
-import { dueOf, ledgerOf, recordedOf, sumsOf } from "./ledger";
+import { dueOf, FORFEIT_KIND, LEDGER_KINDS, ledgerOf, recordedOf, sumsOf } from "./ledger";
 
 export const RECEIPTS_MODULE = "Receipts";
 export const ALLOTMENTS_MODULE = "LLP_UnitAllocation_Module";
@@ -214,9 +214,17 @@ type ReplayControl = {
   readonly controller: AbortController;
   reason: "deadline" | "session" | null;
 };
+/** A Receipts row already on the allotment. Its kind is any ledger kind (./ledger LEDGER_KINDS — Balance, D70's name
+ *  for Part, and Forfeit included), not only what a press may record; a Forfeit is money kept on a lapse/release and
+ *  moves no bank money, so it alone may carry no Mode or UTR (M01-S08-NOTE-4). */
+type ExistingIntent = Omit<NormalizedIntent, "kind" | "mode" | "utr"> & {
+  readonly kind: string;
+  readonly mode: ReceiptMode | null;
+  readonly utr: string | null;
+};
 type ExistingReceipt = {
   readonly id: string;
-  readonly intent: NormalizedIntent;
+  readonly intent: ExistingIntent;
   readonly idempotencyKey: string | null;
   readonly matchState: "Pending" | "Matched" | "Not found" | "Reversed" | "Claimed";
   readonly reversalOf: string | null;
@@ -449,7 +457,7 @@ function sameInstant(a: string, b: string): boolean {
   return !Number.isNaN(left) && !Number.isNaN(right) && left === right;
 }
 
-function sameIntent(a: NormalizedIntent, b: NormalizedIntent): boolean {
+function sameIntent(a: ExistingIntent, b: NormalizedIntent): boolean {
   return a.allotmentId === b.allotmentId
     && a.kind === b.kind
     && a.amountRupees === b.amountRupees
@@ -462,9 +470,12 @@ function parseExistingReceipt(record: ZohoRecord): ExistingReceipt | null {
   if (!RECORD_ID.test(record.id)) return null;
   const allotmentId = lookupId(record.Allotment);
   const amountRupees = safeInteger(record.Amount);
-  const kind = typeof record.Kind === "string" && KINDS.has(record.Kind) ? (record.Kind as ReceiptKind) : null;
+  const kind = typeof record.Kind === "string" && LEDGER_KINDS.has(record.Kind) ? record.Kind : null;
   const mode = typeof record.Mode === "string" && MODES.has(record.Mode) ? (record.Mode as ReceiptMode) : null;
   const utr = typeof record.UTR === "string" ? record.UTR.trim().toUpperCase() : "";
+  // A Forfeit moves no bank money: no Mode and no UTR are its normal shape; one that carries them is checked as usual.
+  const bankless = kind === FORFEIT_KIND && (record.Mode === null || record.Mode === undefined || record.Mode === "")
+    && (record.UTR === null || record.UTR === undefined || record.UTR === "");
   const receivedOn = typeof record.Received_On === "string" ? record.Received_On : "";
   const matchState = typeof record.Match_State === "string" && MATCH_STATES.has(record.Match_State)
     ? (record.Match_State as ExistingReceipt["matchState"])
@@ -479,13 +490,13 @@ function parseExistingReceipt(record: ZohoRecord): ExistingReceipt | null {
     : typeof record[RECEIPT_IDEMPOTENCY_FIELD] === "string" && DURABLE_IDEMPOTENCY_KEY.test(record[RECEIPT_IDEMPOTENCY_FIELD] as string)
       ? record[RECEIPT_IDEMPOTENCY_FIELD] as string
       : undefined;
-  if (!allotmentId || amountRupees === null || amountRupees <= 0 || !kind || !mode || !UTR.test(utr)
+  if (!allotmentId || amountRupees === null || amountRupees <= 0 || !kind || (!bankless && (!mode || !UTR.test(utr)))
     || !validIsoDateTime(receivedOn) || !matchState
     || idempotencyKey === undefined
     || (record.Reversal_Of !== null && record.Reversal_Of !== undefined && record.Reversal_Of !== "" && !reversalOf)) return null;
   return Object.freeze({
     id: record.id,
-    intent: Object.freeze({ allotmentId, amountRupees, kind, mode, utr, receivedOn }),
+    intent: Object.freeze({ allotmentId, amountRupees, kind, mode: bankless ? null : mode, utr: bankless ? null : utr, receivedOn }),
     idempotencyKey,
     matchState,
     reversalOf,
@@ -922,12 +933,12 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
       const parsed = parseExistingReceipt(row);
       if (!parsed || !validExistingRecordIds(parsed)
         || parsed.intent.allotmentId !== allotmentId || seenReceiptIds.has(parsed.id)
-        || seenUtrs.has(parsed.intent.utr)
+        || (parsed.intent.utr !== null && seenUtrs.has(parsed.intent.utr))
         || (parsed.idempotencyKey !== null && seenIdempotencyKeys.has(parsed.idempotencyKey))) {
         return refuse(principal, "source-invalid", [allotmentId, row.id]);
       }
       seenReceiptIds.add(parsed.id);
-      seenUtrs.add(parsed.intent.utr);
+      if (parsed.intent.utr !== null) seenUtrs.add(parsed.intent.utr);
       if (parsed.idempotencyKey !== null) seenIdempotencyKeys.add(parsed.idempotencyKey);
       receipts.push(parsed);
     }

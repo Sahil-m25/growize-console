@@ -2336,12 +2336,12 @@ test('NOTE-5: a pending balance recorded by another hand meanwhile is the balanc
 test('NOTE-5 property: for random ledgers, replay seals exactly the register\'s still-due and recorded totals', async () => {
   let seed = 0x5eed;
   const rand = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
-  const KINDS = ['Advance', 'Part', 'Full', 'Refund'];
+  const KINDS = ['Advance', 'Part', 'Balance', 'Full', 'Refund', 'Forfeit'];
   const STATES = ['Pending', 'Matched', 'Matched', 'Not found', 'Reversed', 'Claimed'];
   for (let round = 0; round < 60; round++) {
     const rows = [];
     const count = 1 + rand(7);
-    for (let i = 1; i <= count; i++) rows.push(ledgerRow(i, KINDS[rand(4)], (1 + rand(20)) * 25000, STATES[rand(STATES.length)]));
+    for (let i = 1; i <= count; i++) rows.push(ledgerRow(i, KINDS[rand(KINDS.length)], (1 + rand(20)) * 25000, STATES[rand(STATES.length)]));
     // up to two well-formed reversals of distinct non-reversal receipts
     const targets = rows.slice();
     for (let k = 0; k < rand(3) && targets.length; k++) {
@@ -2358,4 +2358,59 @@ test('NOTE-5 property: for random ledgers, replay seals exactly the register\'s 
     const again = await prepared(rows);
     assert.deepEqual(again.result.value.expected, a.result.value.expected, `round ${round}: prepare is repeatable`);
   }
+});
+
+/* ---- M01-S08-NOTE-4: Balance (D70's name for Part) and Forfeit rows on the allotment ------------------------------ */
+
+/** A Forfeit as a lapse/release writes it: money kept, no bank transfer — no Mode, no UTR. */
+const forfeitRow = (n, amount, state = 'Matched') => ({ ...ledgerRow(n, 'Forfeit', amount, state), Mode: null, UTR: null });
+
+test('NOTE-4: a Balance row is inbound money like Part; a Forfeit is kept money — never money in, never money due', async () => {
+  const rows = [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Balance', 100000, 'Matched'), forfeitRow(3, 50000),
+    ledgerRow(4, 'Balance', 200000, 'Pending'), forfeitRow(5, 50000, 'Pending')];
+  const { result } = await prepared(rows);
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.deepEqual([result.value.expected.amountDueRupees, result.value.expected.recordedRupees], [2150000, 200000],
+    '₹25 L − (₹2.5 L + ₹1 L) matched; the forfeits neither pay nor owe');
+  const totals = await registerTotals(rows);
+  assert.deepEqual([totals.received, totals.refunded, totals.stillDue, totals.recorded.net], [350000, 0, 2150000, 200000], 'the register agrees');
+  const asLedger = rows.map((x) => ({ id: x.id, allotmentId: ALLOTMENT_ID, kind: x.Kind, amount: x.Amount, matchState: x.Match_State, reversalOf: x.Reversal_Of?.id ?? null }));
+  const sums = ledgerOf(asLedger).byAllotment.get(ALLOTMENT_ID);
+  assert.deepEqual(sums, { matchedIn: 350000, matchedOut: 0, pendingIn: 200000, pendingOut: 0, forfeited: 50000 }, 'only the matched forfeit is kept money');
+  // an inbound press after them still lands (rule 3) — before NOTE-4 the Forfeit/Balance rows made this source-invalid
+  const rig = createRig({ contextRecording: ledgerOfRows(rows) });
+  const r = await rig.service.replay(principalFor(), command({ intent: { kind: 'Part', amountRupees: 100000 }, expected: snapshotWith(2150000, 200000) }));
+  assert.deepEqual(r, { ok: true, receiptId: RECEIPT_ID, duplicate: false });
+  assert.equal(rig.insertCalls().length, 1);
+});
+
+test('NOTE-4: a lapse ledger — forfeit kept, the rest refunded — stands at the forfeit; a reversed forfeit is kept nowhere', async () => {
+  // ₹3 L matched; on the lapse ₹50,000 is forfeited (one unit) and ₹2.5 L refunded: ₹50,000 stands, which is the forfeit
+  const lapse = [ledgerRow(1, 'Advance', 300000, 'Matched'), forfeitRow(2, 50000), ledgerRow(3, 'Refund', 250000, 'Matched')];
+  const s1 = ledgerOf(lapse.map((x) => ({ id: x.id, allotmentId: ALLOTMENT_ID, kind: x.Kind, amount: x.Amount, matchState: x.Match_State, reversalOf: null }))).byAllotment.get(ALLOTMENT_ID);
+  assert.deepEqual([s1.matchedIn - s1.matchedOut, s1.forfeited], [50000, 50000]);
+  const { result } = await prepared(lapse);
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.equal(result.value.expected.amountDueRupees, 2450000, 'Reserved fixture: due is commitment − standing; the forfeit row adds nothing');
+  // a matched reversal of the forfeit cancels it once
+  const undone = [...lapse, { ...forfeitRow(4, 50000), Reversal_Of: { id: lapse[1].id, name: 'Synthetic reversed receipt' } }];
+  const s2 = ledgerOf(undone.map((x) => ({ id: x.id, allotmentId: ALLOTMENT_ID, kind: x.Kind, amount: x.Amount, matchState: x.Match_State, reversalOf: x.Reversal_Of?.id ?? null })));
+  assert.deepEqual([s2.anomalies.length, s2.byAllotment.get(ALLOTMENT_ID).forfeited], [0, 0]);
+  assert.equal((await prepared(undone)).result.ok, true);
+});
+
+test('NOTE-4: only a Forfeit may be bankless; a Balance without its UTR, or an unknown kind, is still refused', async (t) => {
+  for (const [name, row] of [
+    ['Balance with no UTR', { ...ledgerRow(2, 'Balance', 100000, 'Matched'), Mode: null, UTR: null }],
+    ['Forfeit with a malformed UTR', { ...ledgerRow(2, 'Forfeit', 50000, 'Matched'), UTR: '??' }],
+    ['unknown kind', ledgerRow(2, 'Bonus', 100000, 'Matched')],
+  ]) {
+    await t.test(name, async () => {
+      const { rig, result } = await prepared([ledgerRow(1, 'Advance', 250000, 'Matched'), row]);
+      assertOneRefusal(rig, result, 'source-invalid');
+    });
+  }
+  // two bankless forfeits never collide as a "reused UTR"
+  const { result } = await prepared([ledgerRow(1, 'Advance', 250000, 'Matched'), forfeitRow(2, 50000), forfeitRow(3, 50000, 'Pending')]);
+  assert.equal(result.ok, true, JSON.stringify(result));
 });
