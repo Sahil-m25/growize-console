@@ -1,0 +1,4 @@
+{
+ "_doc": "Cases that flipped PASS <-> not PASS twice in 7 days (M19-S08, D63). They still run, still show in the workbook (results.csv notes the fix-by date) and still print as failing, but they do not block promotion. Each has a fix-by date; past it, jev/flake.mjs list says OVERDUE. Managed by `node jev/flake.mjs`; procedure in docs/runbooks/jev-rebaseline.md.",
+ "cases": []
+}

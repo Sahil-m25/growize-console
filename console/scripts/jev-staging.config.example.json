@@ -8,6 +8,7 @@
     "rohit":   { "login": "rohit.test@sandbox.example", "storageState": "rohit.json" },
     "kavya":   { "login": "kavya.test@sandbox.example" },
     "nikhil":  { "login": "nikhil.test@sandbox.example" },
+    "meena":   { "login": "meena.test@sandbox.example" },
     "tasneem": { "login": "tasneem.test@sandbox.example" },
     "sahil":   { "login": "sahil.test@sandbox.example" },
     "harsha":  { "login": "harsha.test@sandbox.example" },
