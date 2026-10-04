@@ -124,7 +124,7 @@ export const SEATCAPS: Record<SeatKey, Partial<Record<ScreenKey, Cap[]>>> = {
         numbers:["view"], xfer:["view"], today:["view"], updates:["view"], pay:["view"], docs:["view"], me:["view"]},
   ops :{today:["view"], leads:["view","edit","assign"], updates:["view"], add:["view","capture"],
         activity:["view","others"], people:["view","seats","roster"],
-        goals:["view","edit","target"], events:["view","edit","load"],
+        goals:["view","edit","target"], events:["view","edit"],
         pay:["view"], docs:["view"], xfer:["view"], numbers:["view"],
         system:["view","edit"], me:["view"]},
   exec:{me:["view"]}, bu:{me:["view"]}, corp:{me:["view"]}, cp:{me:["view"]},
@@ -132,3 +132,10 @@ export const SEATCAPS: Record<SeatKey, Partial<Record<ScreenKey, Cap[]>>> = {
      its confirmations arrive as gates on this ladder — see THE GATE, NOT A HANDOVER. */
   fin :{}, am :{}, mkt :{}
 };
+
+/**
+ * D115 ruling 2: the super administrator (Sahil, D68 — a Digital Infrastructure seat marked `sup`) holds the
+ * Digital Infrastructure preset plus loading an event sheet. Other Digital Infrastructure members do not load
+ * by default; the super administrator can grant `events · load` to them through seat rights (a per-person grant).
+ */
+export const SUPERCAPS: Partial<Record<ScreenKey, Cap[]>> = { ...SEATCAPS.ops, events: ["view", "edit", "load"] };

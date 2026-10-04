@@ -32,7 +32,7 @@ import { canManage, capDevOf, chainOf, clashOf, consoleAccount, manageable, reac
 import type { Ctx } from "../../lib/selectors/ctx";
 import type { ZohoProfileRow, ZohoRoleRow } from "../../lib/zoho/client";
 import { reachForSides, seatPresets } from "../access/guard-core";
-import { ZOHO_SEAT_SIDES } from "../access/policy";
+import { superAdminMark, ZOHO_SEAT_SIDES } from "../access/policy";
 import { IM_SEAT_TO_ZOHO } from "../access/seat-change";
 import { ZOHO_SEAT_POLICIES, type ZohoProfileName, type ZohoRoleName, type ZohoSeat, type ZohoSeatDirectory } from "../oauth/seat";
 import { CONSOLE_SEAT } from "../oauth/user-session";
@@ -107,6 +107,7 @@ export function leadCtx(viewer: string, org: Org, grants: Readonly<Record<string
     PEOPLE[m.id] = {
       n: m.name, i: initials(m.name), seat: lead, mgr: m.mgr, on: !m.left, c: 1, em: "", ph: "",
       ...((NOSIGN as readonly string[]).includes(lead) ? { ext: "the Investors pages" } : {}),
+      ...superAdminMark(m.id, lead),
     } as Person;
   }
   const CAPS: Record<PersonKey, CapGrid> = {};

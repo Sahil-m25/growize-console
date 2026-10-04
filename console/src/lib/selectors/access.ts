@@ -17,7 +17,7 @@
    ========================================================================================= */
 
 import {
-  SEATSCREENS, SEATCAPS, SEATDEF, DEFSEATS, NOSIGN, BYGRANT, PAGECAPS, NAV, IR, SEAT, TEAMNAME,
+  SEATSCREENS, SEATCAPS, SEATDEF, DEFSEATS, NOSIGN, BYGRANT, PAGECAPS, NAV, IR, SEAT, TEAMNAME, SUPERCAPS,
 } from "@/domain";
 import type { Person, PersonKey, SeatKey, NavKey, Lead, TempGrant, TempStateRead } from "@/domain";
 import { accessDay, dayOf } from "@/lib/format";
@@ -63,6 +63,17 @@ export const teamName = (PEOPLE: People, k: PersonKey | null | undefined): strin
 
 const seatOf = (PEOPLE: People, k: PersonKey | null | undefined): SeatKey | undefined =>
   roleOf(PEOPLE, k);
+
+/* D115 ruling 2: is this person the super administrator — a Digital Infrastructure seat marked `sup`? */
+export const isSuperAdmin = (PEOPLE: People, k: PersonKey | null | undefined): boolean =>
+  k != null && !!PEOPLE[k]?.sup && seatOf(PEOPLE, k) === "ops";
+
+/* the preset a person's seat gives them before any grant: their seat's, or SUPERCAPS for the super administrator */
+export const presetOf = (PEOPLE: People, k: PersonKey): Partial<Record<string, Cap[]>> => {
+  const s = seatOf(PEOPLE, k);
+  if (!s) return {};
+  return isSuperAdmin(PEOPLE, k) ? SUPERCAPS : (SEATCAPS as Record<string, Partial<Record<string, Cap[]>>>)[s] || {};
+};
 
 /* ---- D60: who signs in, and what a seat can hold ---------------------------------------------
    ir-merged.js:540-560, 627-660. */
@@ -158,7 +169,7 @@ export function capDevOf(PEOPLE: People, GRANT: Grants, k: PersonKey): CapDeviat
   const out: CapDeviation[] = [];
   (Object.keys(grant) as NavKey[]).forEach((p) => {
     if (!(PAGECAPS as Record<string, unknown>)[p] || reachBase(PEOPLE, k, GRANT).indexOf(p) < 0) return;
-    const seat = ((SEATCAPS as Record<string, Record<string, Cap[]>>)[roleOf(PEOPLE, k) || ""] || {})[p] || [];
+    const seat = presetOf(PEOPLE, k)[p] || [];
     const now = (grant[p] || []) as Cap[];
     const off = seat.filter((c) => now.indexOf(c) < 0);
     const on = now.filter((c) => seat.indexOf(c) < 0);
@@ -221,8 +232,7 @@ export const tempOn = (ctx: Ctx): TempGrant | null => {
 export const capsBase = (ctx: Ctx, k: PersonKey, p: string): Cap[] => {
   if (reachBase(ctx.PEOPLE, k, ctx.CAPS).indexOf(p) < 0) return [];
   const grant = ctx.CAPS[k] as Record<string, Cap[]> | undefined;
-  const s = seatOf(ctx.PEOPLE, k);
-  const preset = s ? (SEATCAPS as Record<string, Record<string, Cap[]>>)[s] || {} : {};
+  const preset = presetOf(ctx.PEOPLE, k);
   return roleCaps(ctx, k, p, (grant && grant[p]) || preset[p] || []);
 };
 

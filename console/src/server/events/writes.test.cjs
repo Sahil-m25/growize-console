@@ -42,6 +42,22 @@ test('the policy (front end\'s own rule): an IR may load but not edit; the IR Ma
   assert.deepEqual(c('exec'), { edit: false, load: false });
 });
 
+test('D115 ruling 2: loading an event sheet is the super administrator\'s — another Digital Infrastructure member does not load until granted', () => {
+  const SUPER = `${P}740995090`, OTHER = `${P}740995091`;
+  const was = process.env.CONSOLE_SUPER_ADMIN_IDS;
+  try {
+    process.env.CONSOLE_SUPER_ADMIN_IDS = ` ${SUPER} , not-an-id`;
+    assert.deepEqual({ ...eventCaps('ops', SUPER, {}) }, { edit: true, load: true }, 'the super administrator loads');
+    assert.deepEqual({ ...eventCaps('ops', OTHER, {}) }, { edit: true, load: false }, 'another DI member edits events but does not load');
+    assert.equal(eventCaps('ops', OTHER, { events: ['view', 'edit', 'load'] }).load, true, 'granted through seat rights, they load');
+    assert.equal(eventCaps('ir', SUPER, {}).load, true, 'the mark means nothing off the DI seat (an IR still loads, as before)');
+    delete process.env.CONSOLE_SUPER_ADMIN_IDS;
+    assert.equal(eventCaps('ops', SUPER, {}).load, false, 'nobody named: no DI member loads (fail closed)');
+  } finally {
+    if (was === undefined) delete process.env.CONSOLE_SUPER_ADMIN_IDS; else process.env.CONSOLE_SUPER_ADMIN_IDS = was;
+  }
+});
+
 test('an IR is refused with a reason and nothing is written', async () => {
   const rig = await makeWriteRig(load, route, { mayEdit: false });
   const w = createEventWrites(rig);

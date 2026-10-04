@@ -35,6 +35,7 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `ZOHO_CRM_RECORD_ID_PREFIX` | V | sandbox org's record-id prefix | live org's prefix | oauth, data, email, zoho-sign |
 | `ZOHO_SEAT_IDS` | V | JSON `{roleIds,profileIds}` of the **sandbox** roles | same, live ids | oauth/runtime.ts, data/zoho-source.ts |
 | `ZOHO_UNASSIGNED_QUEUE_USER_ID` | V | sandbox queue user id | live queue user id | data/zoho-source.ts |
+| `CONSOLE_SUPER_ADMIN_IDS` | V | Sahil's sandbox Zoho user id | Sahil's live Zoho user id | access/policy.ts (D115: the super administrator — loads event sheets; unset = nobody) |
 | `ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN` | **S** | sandbox service refresh token (job `provider-callback`) | live | zoho-sign/runtime.ts |
 | `ZOHO_SIGN_API_ORIGIN` | V | `https://sign.zoho.in` | `https://sign.zoho.in` | zoho-sign/runtime.ts (must be India DC) |
 | `ZOHO_SIGN_WEBHOOK_SECRET` | **S** | its own | its own | zoho-sign/runtime.ts |

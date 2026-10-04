@@ -4,6 +4,8 @@
  * guard decides pages with (access/policy accessCtx + ZOHO_SEAT_SIDES), so the page, the guard and
  * this write cannot disagree. The super user (D68) is Digital Infrastructure on the lead side, as in
  * the guard (guard-core reachForSides), not refused as seatAccess's sign-in door would.
+ * D115 ruling 2: `events · load` on the Digital Infrastructure seat is the super administrator's alone (SUPERCAPS,
+ * named by CONSOLE_SUPER_ADMIN_IDS through access/policy superAdminMark); another DI member loads only when granted.
  */
 
 import type { CapGrid } from "../../domain";

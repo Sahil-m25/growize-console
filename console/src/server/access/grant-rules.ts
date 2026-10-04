@@ -22,7 +22,7 @@ import { emptyImData } from "../../lib/im";
 import { canManage, capsBase, capsFor, consoleAccount, own, reachCeil, seatShape, type Grants } from "../../lib/selectors/access";
 import type { Ctx } from "../../lib/selectors/ctx";
 import type { ZohoSeat } from "../oauth/seat";
-import { ZOHO_SEAT_SIDES } from "./policy";
+import { superAdminMark, ZOHO_SEAT_SIDES } from "./policy";
 
 /** One Zoho user as the Users API names them: id, seat (from role/profile ids) and manager. */
 export interface SeatedPerson {
@@ -77,7 +77,8 @@ function bookOf(b: GrantBook): { PEOPLE: Record<PersonKey, Person>; GRANT: Recor
   const PEOPLE: Record<PersonKey, Person> = {};
   for (const p of b.people) {
     const lead = ZOHO_SEAT_SIDES[p.seat].lead;
-    PEOPLE[p.who] = { n: "", i: "", seat: lead, mgr: p.mgr && b.people.some((q) => q.who === p.mgr) ? p.mgr : null, on: true, c: 1, em: "", ph: "" };
+    PEOPLE[p.who] = { n: "", i: "", seat: lead, mgr: p.mgr && b.people.some((q) => q.who === p.mgr) ? p.mgr : null, on: true, c: 1, em: "", ph: "",
+      ...superAdminMark(p.who, lead) };
   }
   const GRANT: Record<PersonKey, CapGrid> = {};
   for (const k of Object.keys(PEOPLE)) GRANT[k] = { ...(b.grants[k] ?? {}) };
