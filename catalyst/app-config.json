@@ -1,0 +1,10 @@
+{
+  "command": "sh -c 'PORT=${X_ZOHO_CATALYST_LISTEN_PORT:-9000} HOSTNAME=0.0.0.0 node server.js'",
+  "stack": "node22",
+  "build_path": "build/appsail",
+  "memory": 512,
+  "env_variables": {
+    "NODE_ENV": "production",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}
