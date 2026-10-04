@@ -174,7 +174,7 @@ test('GAP (recorded, not asserted green): a full page load is not cached — row
   assert.equal(r.queries.length, first * 2, 'if this fails, load() started caching or coalescing: update the budget story and AC2');
 });
 
-test('one investor record: the guard read, allotments and receipts, three calls for a seat with money, two without', async () => {
+test('TC-IM12-001 (investor page): one investor record: the guard read, allotments and receipts, three calls for a seat with money, two without', async () => {
   const OWN = `${P}740997101`;
   const pick = (q) => /from Contacts/.test(q) ? recorded('data', 'coql.contact.one-own') : /from LLP_UnitAllocation_Module/.test(q) ? recorded('data', 'coql.allotments.own-lead')
     : /from Receipts/.test(q) ? recorded('data', 'coql.receipts.own-lead') : recorded('data', 'coql.none');

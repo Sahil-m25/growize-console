@@ -1,0 +1,37 @@
+{
+ "note": "R6 missing-tests: proposed UI cases for the coordinator to add to pm/plan-merged/ui-cases.json. Only cases that PASSED on a local build (port 3176, Jev runner) are in `cases`; the rest are in `not_proposed` with the reason.",
+ "cases": [
+  {
+   "id": "TC-E14-022",
+   "story": "M17-S02",
+   "seat": "jhalak",
+   "title": "A person granted Leads \u00b7 See it reads leads and cannot work them",
+   "steps": [
+    "Press Jhalak Mehta on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Meera Krishnan"
+   ],
+   "expected": [
+    "The page shows Meera Krishnan's lead page.",
+    "The page does not offer the buttons Call, WhatsApp, Email or 'Log a contact'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "JHALAK_GRANTED_LEADS"
+   ],
+   "group": "M17",
+   "note": "UI half of TC-E14-022; the Zoho half (read-only profile, field-level security) is staging."
+  }
+ ],
+ "not_proposed": [
+  {
+   "id": "TC-E07-022",
+   "reason": "Fails on the local build (0.02). Sahil (Super user, Digital Infrastructure) is offered Email, Log a contact and the Reminded-by buttons on a lead; pressing Email shows no refusal drawer. The plan case expects the seat not to be offered them. The API half passes (seat-refusal-cases.test.cjs: 403, no Zoho write, refused-action line). Decide: fix the lead page to hide the buttons for a seat without Leads work, or change the plan fact."
+  },
+  {
+   "id": "TC-E15-008",
+   "reason": "Judged REVIEW 0.58 on the local build; the sign-out wiring itself is proved by console/src/lib/sign-out-clean.test.ts. The wording of the second expectation (no note box reads 'private draft') cannot be read from the page text because a note box value is not page text; needs a runner step that reads input values."
+  }
+ ],
+ "retire": []
+}

@@ -104,6 +104,8 @@ function rig() {
     fetch: async (url, init) => { const q = init && init.body ? JSON.parse(init.body).select_query : null; calls.push(q || `GET ${decodeURIComponent(String(url))}`); return toResponse(route(url, q)); } });
   return { calls, sink, reader: createDocumentsReader({ crm, events }) };
 }
+/* measured at R6 on the recorded fixtures: Contact slots, Contact attachments, allotments, allotment attachments, the LLP read and its attachments … held exactly, so an N+1 fails here */
+const BUDGET_DOCUMENTS = 8;
 const attCalls = (r, mod) => r.calls.filter((c) => new RegExp(`GET .*/${mod}/\\d+/Attachments`).test(c));
 
 /* ---------------- T01: the scope table ---------------- */
@@ -166,6 +168,16 @@ test('AC1-3: Finance reads Prakash in three scopes — personal on the Contact, 
     assert.match(c, /fields=id,File_Name,Size,Created_Time,Created_By/);
   }
   assert.ok(!/ABCDE1234F|50100123456789|1234 5678 9012/.test(JSON.stringify(d)));
+});
+
+test('TC-IM12-001 (Documents): a cold read of one investor spends a fixed number of Zoho calls — never one per file — and a second read re-reads (rows are not cached, D45/D52)', async () => {
+  const r = rig();
+  const res = await r.reader.forInvestor(creds.get(HARSHA), 'head', PRAKASH);
+  assert.equal(res.ok, true);
+  const cold = r.calls.length;
+  assert.equal(cold, BUDGET_DOCUMENTS, `${cold} calls: raise the budget on purpose, or find the read that became one per file`);
+  await r.reader.forInvestor(creds.get(HARSHA), 'head', PRAKASH);
+  assert.equal(r.calls.length, cold * 2, 'GAP against the case text: file lists are rows, which D45/D52 never cache, so a warm render re-reads them (proposed fact change in docs/reports/r6-missing-tests.md)');
 });
 
 test('AC5: Sahil (di) sees personal papers, numbers masked', async () => {

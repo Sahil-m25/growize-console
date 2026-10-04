@@ -12,7 +12,8 @@
 // Calibration: cases with expect_fail are deliberately wrong; a run where any of them PASSES is not trusted.
 // Flags: --retry-review runs a REVIEW case once more and keeps the better-evidenced result (M19-S08; see docs/runbooks/jev-rebaseline.md).
 // Waits (M19-S08): after each step the runner waits for the page to settle (no request in flight and no DOM change for SETTLE_MS, default 250,
-// capped at SETTLE_CAP_MS, default 6000), not a fixed 300 ms. A case's `wait` still sets the quiet time.
+// capped at SETTLE_CAP_MS, default 6000), not a fixed 300 ms. A case's `wait` still sets the quiet time and, when it is longer than
+// the cap, lifts the cap to wait + 1 s for that case (M19-S08-NOTE-2: TC-E07-012 waits 11 s for the 10 s Undo window to close).
 // Key: TYPESAFE_API_KEY, or TS_KEY_FILE, or .typesafe-key at the repo root (never commit it) — looked up by jev/client.mjs.
 // Result per case: PASS (p ≥ PASS_AT, default 0.80 — see calibration note below) · FAIL (p ≤ 0.10) · REVIEW (between, or a step Jev was unsure about: top choice < 0.60).
 import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
@@ -49,7 +50,7 @@ const tracker = () => {
     .observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
   watch();
 };
-async function settle(page, quiet = SETTLE_MS, cap = SETTLE_CAP_MS) {
+async function settle(page, quiet = SETTLE_MS, cap = Math.max(SETTLE_CAP_MS, quiet + 1000)) {
   const t0 = Date.now(); let last = null, since = t0;
   while (Date.now() - t0 < cap) {
     const s = await page.evaluate(() => window.__jevSettle ? { m: window.__jevSettle.mut, f: window.__jevSettle.inflight } : null).catch(() => null);

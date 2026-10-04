@@ -89,7 +89,7 @@ test('D21: with a Pending receipt on the book, Today and the register still agre
   assert.ok(out.value.totals.recorded.net > 0, 'the Pending receipt is shown as recorded, not yet matched');
 });
 
-test('TC-IM03-015: a cold render spends at most five COQL calls; a reload inside the TTL spends none and reads the same', async () => {
+test('TC-IM12-001 (Dashboard) / TC-IM03-015: a cold render spends at most five COQL calls; a reload inside the TTL spends none and reads the same', async () => {
   const rig = await makeRig(load, routeWith());
   const cred = await rig.cred(HEAD);
   const reader = createInvestorsToday(rig);

@@ -34,6 +34,18 @@ test('Head of Finance: Open shows 6, two high priority, rows in Zoho order; the 
   assert.match(rig.queries.find((q) => !/COUNT/.test(q)), /from Cases where \(id is not null\)/);
 });
 
+test('TC-IM12-001 (Tickets): a cold register read is one list and one group-by; the counts are cached for the scope, the rows are read again (D45/D52)', async () => {
+  const rig = await makeRig(load, route);
+  const reg = createCasesRegister(rig);
+  const cred = await rig.cred(HARSHA);
+  const cold = await reg.list({ credential: cred, seat: 'head' });
+  assert.equal(cold.ok, true);
+  assert.deepEqual(rig.queries.map((q) => (/COUNT/.test(q) ? 'count' : 'list')).sort(), ['count', 'list'], 'two calls, whatever the number of tickets');
+  await reg.list({ credential: cred, seat: 'head' });
+  assert.equal(rig.queries.filter((q) => /COUNT/.test(q)).length, 1, 'warm: the counts spend nothing');
+  assert.equal(rig.queries.filter((q) => !/COUNT/.test(q)).length, 2, 'GAP against the case text: rows are never cached (D45/D52), so a warm render reads the list again');
+});
+
 test('M13-S02/S03/S04: every register row carries Cases.Modified_Time as version (selected explicitly), for PATCH and the handover to send back', async () => {
   const rig = await makeRig(load, route);
   const r = await createCasesRegister(rig).list({ credential: await rig.cred(HARSHA), seat: 'head' });
