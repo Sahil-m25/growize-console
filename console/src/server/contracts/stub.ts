@@ -60,7 +60,7 @@ export function createInProcessStub(o: {
   const recorded: Record<string, unknown>[] = [];
   const seen = new Set<string>();
   const receiver = createStubReceiver({
-    schemas: o.schemas, keys: o.keys, accepts: o.accepts ?? ["case.replied", "farm.progress", "update.published", "request.executed", "money.confirmed", "account.opened", "money.not_found", "sign.embed", "allotment.done", "hold.changed"],
+    schemas: o.schemas, keys: o.keys, accepts: o.accepts ?? ["case.replied", "farm.progress", "update.published", "request.executed", "money.confirmed", "account.opened", "money.not_found", "sign.embed", "allotment.done", "hold.changed", "farm.shelf_changed"],
     seen: { has: async (id) => seen.has(id), add: async (id) => { seen.add(id); } },
     record: async (e) => { recorded.push(e); }, newId: randomUUID, clock: o.clock,
   });

@@ -74,6 +74,7 @@ export function AllotCard(p: P) {
               cells={<>
                 <td><a className="lnk" role="button" tabIndex={0} onClick={() => llpId && dispatch({ type: "openDrawer", k: "llp", id: llpId })}
                   onKeyDown={e => { if (e.key === "Enter" && llpId) dispatch({ type: "openDrawer", k: "llp", id: llpId }); }}>{l.llp.name ?? "—"}</a>
+                  {l.linked ? null : <div><span className="tag late" data-testid="needs-link">Needs a link</span> <span className="sm">no {l.llp.id ? "Customer" : "LLP"} on this allotment — link it in Zoho</span></div>}
                   <div className="sm mono">{l.id}</div></td>
                 <td className="n">{l.committedUnits}</td>
                 {fin ? <td className="n mono">{l.amount == null ? "—" : money(l.amount)}<div className="sm">{l.unitPrice == null ? "" : money(l.unitPrice) + " a unit, as recorded"}</div></td> : null}

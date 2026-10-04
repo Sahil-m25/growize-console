@@ -9,6 +9,7 @@
  *
  * Needs what /api/receipts needs (receiptsConfigured): Zoho sign-in, ZOHO_CRM_RECORD_ID_PREFIX and the two receipt secrets.
  */
+import { guardAllotmentWrites } from "../investors/allotment-guard";
 import { createZohoClient } from "../../lib/zoho/client";
 import type { ReceiptMatch, Publish } from "./match";
 import type { ClaimAnswers } from "./claim-answer";
@@ -28,7 +29,7 @@ async function parts(env: NodeJS.ProcessEnv) {
   const { publishToInvestorApp } = await import("../contracts/runtime");
   const rt = dataRuntime();
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
-  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  const crm = guardAllotmentWrites(createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix }), rt.log);
   /** The seat the live session holds now (a fresh check on every press). */
   const seatNow = async (userId: string, sid: string): Promise<Seat> => {
     const now = await userSessions(env).credential(sid);
@@ -119,7 +120,7 @@ export async function statements(env: NodeJS.ProcessEnv = process.env): Promise<
   const { seatAccess } = await import("../access/policy");
   const rt = dataRuntime();
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
-  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  const crm = guardAllotmentWrites(createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix }), rt.log);
   // D113: the statement auto-matches the pending receipts it confirms — through "Match it" (needs the receipt secrets).
   const { receiptsConfigured } = await import("../../app/api/receipts/compose");
   const match = receiptsConfigured(env) ? await receiptMatch(env) : undefined;

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growize.internal/contracts/farm.shelf_changed.json",
+  "title": "farm.shelf_changed",
+  "x-direction": "investor → app",
+  "x-produced-by": "The Head of Finance releasing a farm LLP's units or taking them back (M11-S04, server/farms/release)",
+  "x-consumed-by": "The app's farm shelf: which farms take reservations and how many units are released (M13-S01-NOTE-4)",
+  "x-rule": "PROVISIONAL (M13-S01-NOTE-4): no earlier schema covered a shelf change (farm.progress is the FMS's phase note, not units). Sent only after Zoho accepted the Units_Released write, never before and never on a refusal; one event per change, not per investor. No investor identity travels: the LLP's record id, its label and unit counts only.",
+  "allOf": [
+    {
+      "$ref": "_envelope.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "farm.shelf_changed"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "llp_id",
+        "project",
+        "action",
+        "units_released",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "llp_id": {
+          "type": "string",
+          "pattern": "^[0-9]{15,22}$"
+        },
+        "project": {
+          "type": "string",
+          "description": "The LLP's label, as allotment.done names it."
+        },
+        "action": {
+          "enum": [
+            "released",
+            "taken_back"
+          ]
+        },
+        "units_released": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Units_Released after the write: Total_Units on release, 0 on take-back."
+        },
+        "total_units": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "by": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

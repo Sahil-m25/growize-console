@@ -28,6 +28,7 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { newEvent } from "../contracts/outbox";
 import type { OversellGuard } from "../farms/oversell";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "../money/register";
+import { ALLOTMENT_UNLINKED, missingLinks, unlinkedMessage } from "./allotment-guard";
 
 export const ALLOT_MODULE = ALLOTMENTS_MODULE;
 export const ISSUED = "Issued";
@@ -47,7 +48,7 @@ const RECEIPT_PAGE = 2_000;
 
 export type AllotFact = "balance" | "kyc" | "fema";
 export type AllotRefusal = "invalid-request" | "not-finance" | "not-visible" | "cancelled" | "letter-missing" | "changed"
-  | "facts-missing" | "oversell" | "no-transition" | "blueprint-refused";
+  | "facts-missing" | "oversell" | "allotment-unlinked" | "no-transition" | "blueprint-refused";
 
 export interface AllotPrincipal { readonly credential: UserCredential; readonly sessionId: string }
 export interface AllotAuthority {
@@ -192,6 +193,9 @@ export function createAllot(deps: AllotDependencies) {
 
     try {
       const a = await get(cred, ALLOT_MODULE, allotmentId, ALLOT_FIELDS, signal);
+      // M11-S02 AC1: an allotment without its Customer or its LLP is never carried further (no stamp, no transition).
+      const gap = a ? missingLinks(a.Customer, a.LLP) : [];
+      if (gap.length) return refuse(me, ALLOTMENT_UNLINKED, `Not allotted — ${unlinkedMessage(gap)}`, [contactId, allotmentId]);
       if (!a || idOf(a.Customer) !== contactId) return refuse(me, "not-visible", "Not allotted — this allotment is not visible to you.", [contactId, allotmentId]);
       const llpId = idOf(a.LLP);
       const status = a.Allocation_Status;

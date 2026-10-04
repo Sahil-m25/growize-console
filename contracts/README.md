@@ -9,7 +9,7 @@ stamped by the sender on each delivery attempt — M13-S01, PROVISIONAL),
 `actor`, the identifier pair, and the typed payload. Deliveries are HTTPS POSTs signed with HMAC-SHA256
 over the body, with two active keys during rotation. A receiver that cannot verify the signature logs and drops.
 
-31 events.
+32 events.
 
 | Event | Direction | Produced by | Consumed by | Reverses |
 |---|---|---|---|---|
@@ -19,6 +19,7 @@ over the body, with two active keys during rotation. A receiver that cannot veri
 | `case.replied` | app ↔ investor | The KAM | The app's case thread | — |
 | `details.changed` | app ↔ investor | investor or KAM | Contact; bank_match → pending on a name change | — |
 | `farm.progress` | outside → investor | The FMS | investors project project_updates | — |
+| `farm.shelf_changed` | investor → app | Head of Finance releasing or taking back a farm's units (M13-S01-NOTE-4, PROVISIONAL) | The app's farm shelf | — |
 | `hold.changed` | investor → leads | Head of Finance or the BU Owner | The console display | — |
 | `lead.closed` | leads → investor | IR moving to Onboarded | Investor org (the close copy) | — |
 | `lead.handover` | leads → investor | IR moving the lead to Said yes | Investor org (creates the Contact), both mirrors | — |
