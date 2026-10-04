@@ -14,9 +14,12 @@
  * (investors/book SENSITIVE_CONTACT_FIELDS) and inside Finance's; PAN, bank and Aadhaar are in neither —
  * `FINANCE_CONTACT_FIELDS` is checked when this module loads and refuses them.
  *
- * Money, as the Payments register (money/register) works it out, never typed:
- *   paid = inbound receipts (Advance, Part/Balance, Full) that stand (not Reversed / Not found / Claimed)
- *   due  = over Reserved allotments, units × unit price − what stands against each (net of refunds), ≥ 0
+ * Money, as the Payments register (money/register) works it out, never typed — through ../money/ledger, the one signed
+ * ledger the register, the Money section and the receipt replay use (M01-S08-NOTE-3), so MATCHED money only (D21):
+ *   paid = MATCHED inbound receipts (Advance, Part/Balance, Full) not cancelled by a matched reversal
+ *   due  = over Reserved allotments, units × unit price − the allotment's matched net (net of refunds), ≥ 0
+ * Pending (recorded, not yet matched) money is in neither. Over the live (not Cancelled) allotments, so a row equals
+ * the investor record's Money total (money/by-allotment investorRow).
  */
 
 import { IDENTITY_FIELDS } from "../../lib/zoho/identity";
@@ -30,10 +33,9 @@ import type { InvestorEvents } from "../data/events";
 import { MODULES } from "../data/projections";
 import { scopedKey, scopesFor, type BookScope } from "../data/scope";
 import { LIFECYCLE_FIELD, resolveIrs, stateLabel, type InvestorStateLabel } from "./lifecycle";
+import { dueOf, ledgerOf, sumsOf } from "../money/ledger";
 
 export const FINANCE_TTL_MS = 60_000;
-const NOT_STANDING: ReadonlySet<string> = new Set(["Reversed", "Not found", "Claimed"]);
-const INBOUND: ReadonlySet<string> = new Set(["Advance", "Part", "Balance", "Full"]);
 const IDENTITY_PATTERN = /(^|_)(pan|bank|aadhaar|ifsc|isfc)(_|$)/i;
 
 /** Status, never identity. A field added here that names PAN, bank or Aadhaar fails the server at load. */
@@ -109,15 +111,7 @@ export function buildFinanceRows(
   /** Contact id → IR resolved through the Lead lookup, for Contacts without Originating_IR. */
   leadIr: ReadonlyMap<string, string> = new Map(),
 ): { rows: FinanceInvestorRow[]; summary: FinanceSummary } {
-  const standing = new Map<string, number>();   // allotment → net standing (inbound − refunds)
-  const inbound = new Map<string, number>();    // allotment → inbound standing
-  for (const r of receipts) {
-    if (!r.allotmentId || (r.matchState && NOT_STANDING.has(r.matchState))) continue;
-    const isRefund = r.kind === "Refund" || !!r.reversalOf;
-    const isIn = !isRefund && !!r.kind && INBOUND.has(r.kind);
-    if (isIn) inbound.set(r.allotmentId, (inbound.get(r.allotmentId) ?? 0) + r.amount);
-    standing.set(r.allotmentId, (standing.get(r.allotmentId) ?? 0) + (isIn ? r.amount : isRefund ? -r.amount : 0));
-  }
+  const ledger = ledgerOf(receipts);
   const byContact = new Map<string, AllotmentRow[]>();
   for (const a of allots) byContact.set(a.Customer, [...(byContact.get(a.Customer) ?? []), a]);
 
@@ -134,9 +128,8 @@ export function buildFinanceRows(
       const prev = farms.get(a.LLP_Lookup);
       farms.set(a.LLP_Lookup, { llpId: a.LLP_Lookup, name: l?.name ?? "", block: l?.block ?? "", units: (prev?.units ?? 0) + a.Committed_Units });
     }
-    const paid = live.reduce((t, a) => t + (inbound.get(a.id) ?? 0), 0);
-    const due = live.filter((a) => a.Allocation_Status === "Reserved")
-      .reduce((t, a) => t + Math.max(0, a.Committed_Units * a.Unit_Price - (standing.get(a.id) ?? 0)), 0);
+    const paid = live.reduce((t, a) => t + sumsOf(ledger, a.id).matchedIn, 0);
+    const due = live.reduce((t, a) => t + dueOf(a.Allocation_Status, a.Committed_Units * a.Unit_Price, sumsOf(ledger, a.id)), 0);
     const state: ImSt | null = !mine.length ? null : !live.length ? "lapsed"
       : live.some((a) => a.Allocation_Status === "Issued") ? "allocated" : due === 0 && paid > 0 ? "paid" : "reserved";
     const residency = str(c, "Residency", 40);

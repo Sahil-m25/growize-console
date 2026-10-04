@@ -26,7 +26,7 @@ const options = {
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10,
   noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot,
 };
-const sources = ['server/investors/finance-list.ts', 'server/investors/handoff-share.ts', 'server/data/events.ts'].map((f) => path.join(srcRoot, f));
+const sources = ['server/investors/finance-list.ts', 'server/investors/handoff-share.ts', 'server/data/events.ts', 'server/money/register.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -46,7 +46,8 @@ const { createZohoClient, createZohoServiceClient, userCredential, serviceCreden
 const { createScopedCache, createMemoryStore } = load('lib/zoho/cache.js');
 const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-c.js');
 const { createInvestorEvents } = load('server/data/events.js');
-const { createFinanceInvestorList, FINANCE_CONTACT_FIELDS, FINANCE_TTL_MS } = load('server/investors/finance-list.js');
+const { createFinanceInvestorList, buildFinanceRows, FINANCE_CONTACT_FIELDS, FINANCE_TTL_MS } = load('server/investors/finance-list.js');
+const { createPaymentsRegister } = load('server/money/register.js');
 const { shareAtHandOff } = load('server/investors/handoff-share.js');
 
 const P = '9007199254';
@@ -173,4 +174,59 @@ test('hand-off shares the Contact, its allotments and receipts read-only with th
   assert.deepEqual(wrong, { ok: false, reason: 'not-the-originating-ir' }, 'never shared with anybody but the Contact\'s Originating_IR');
   const other = serviceCredential('cover-window-share', { access_token: 'svc', api_domain: 'https://www.zohoapis.in', expires_in: 3600, token_type: 'Bearer' }, NOW);
   await assert.rejects(shareAtHandOff(client, other, { contactId: `${P}740997101`, irUserId: ROHIT }), TypeError, 'only the handoff-share job may');
+});
+
+/* ---- M01-S08-NOTE-3: the Finance list reads money through money/ledger, so it agrees with the Payments register ---- */
+test('NOTE-3: on mixed ledgers (refund, reversal of matched / pending, pending) each row equals the register — matched only (D21)', async () => {
+  const U = 2_500_000;
+  const id = (n) => `${P}74099${String(n).padStart(4, '0')}`;
+  const C1 = id(7001), C2 = id(7002), A1 = id(7101), A2 = id(7102), LLP = id(7201);
+  const allots = [
+    { id: A1, Customer: C1, LLP_Lookup: LLP, Committed_Units: 1, Issued_Units: 0, Unit_Price: U, Allocation_Status: 'Reserved' },
+    { id: A2, Customer: C2, LLP_Lookup: LLP, Committed_Units: 2, Issued_Units: 0, Unit_Price: U, Allocation_Status: 'Reserved' },
+  ];
+  let n = 0;
+  const rc = (allotmentId, kind, amount, matchState, reversalOf = null) => ({ id: id(7300 + (++n)), allotmentId, kind, amount, mode: 'NEFT',
+    utr: `SYNTHFIN${n}`, on: '2026-09-01', byId: FIN, matched: matchState === 'Matched', matchState, reversalOf });
+  const r = [];
+  r.push(rc(A1, 'Advance', 250_000, 'Matched'));               // 0 stands
+  r.push(rc(A1, 'Part', 500_000, 'Pending'));                  // 1 pending — not paid (the old list counted it)
+  r.push(rc(A1, 'Refund', 50_000, 'Matched'));                 // 2 money out
+  r.push(rc(A1, 'Part', 300_000, 'Matched'));                  // 3 …cancelled by 4
+  r.push(rc(A1, 'Refund', 300_000, 'Matched', r[3].id));       // 4 matched reversal of a matched receipt
+  r.push(rc(A2, 'Advance', 500_000, 'Pending'));               // 5 …cancelled by 6
+  r.push(rc(A2, 'Refund', 500_000, 'Matched', r[5].id));       // 6 matched reversal of a pending receipt
+  r.push(rc(A2, 'Advance', 400_000, 'Matched'));               // 7 …taken back by 8, in pending only
+  r.push(rc(A2, 'Refund', 400_000, 'Pending', r[7].id));       // 8 pending reversal of a matched receipt
+  r.push(rc(A2, 'Balance', 100_000, 'Not found'));             // 9 counts nowhere
+  const contacts = [{ id: C1, Last_Name: 'One', First_Name: 'Synthetic' }, { id: C2, Last_Name: 'Two', First_Name: 'Synthetic' }];
+  const { rows } = buildFinanceRows(contacts, allots, r, new Map([[LLP, { name: 'Block S', block: 'S' }]]));
+  const by = Object.fromEntries(rows.map((x) => [x.id, x]));
+  assert.deepEqual([by[C1].paid, by[C1].due], [250_000, U - 200_000], 'C1: ₹2.5 L matched; due = ₹25 L − (₹2.5 L − ₹0.5 L); the pending ₹5 L and the reversed ₹3 L are not paid');
+  assert.deepEqual([by[C2].paid, by[C2].due], [400_000, 2 * U - 400_000], 'C2: a pending reversal does not unpay a matched receipt; a reversed pending one never paid');
+
+  // the register over the same rows (as Zoho returns them) — per allotment, through the farm filter of one investor's farm
+  const zrow = (x) => ({ id: x.id, Allotment: { id: x.allotmentId }, Kind: x.kind, Amount: x.amount, Mode: x.mode, UTR: x.utr, Received_On: x.on,
+    Match_State: x.matchState, Reversal_Of: x.reversalOf ? { id: x.reversalOf } : null, Created_By: { id: FIN } });
+  const totalsFor = async (rowsFor) => {
+    const crm = { async coql(_c, q) {
+      const records = /from Receipts/.test(q) ? rowsFor.map(zrow)
+        : allots.map((a) => ({ id: a.id, Customer: { id: a.Customer, name: 'x' }, LLP: { id: LLP, name: 'Block S' }, Allocation_Status: a.Allocation_Status,
+          Issued_Units: a.Issued_Units, Reserved_Units: a.Committed_Units, Unit_Price: a.Unit_Price })).filter((a) => /Allocation_Status = 'Reserved'/.test(q) || q.includes(a.id));
+      return { ok: true, value: { records, moreRecords: false, invalidRecordIds: null } };
+    } };
+    const reg = createPaymentsRegister({ crm, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW,
+      access: { async recheck(cred) { return { actor: { userId: cred.userId }, seesRegister: true, seesUtr: true, canRecord: true }; } } });
+    const out = await reg.read({ credential: creds.get(FIN), sessionId: 'synthetic-session-0001' });
+    assert.equal(out.ok, true, JSON.stringify(out));
+    return out.value.totals;
+  };
+  for (const [c, a] of [[C1, A1], [C2, A2]]) {
+    const t = await totalsFor(r.filter((x) => x.allotmentId === a));
+    const other = allots.find((x) => x.id !== a);
+    const otherDue = other.Committed_Units * other.Unit_Price;   // the other allotment has no receipts in this read
+    assert.deepEqual([by[c].paid, by[c].due], [t.received, t.stillDue - otherDue], `${c}: the list row equals the register`);
+  }
+  const all = await totalsFor(r);
+  assert.deepEqual([rows.reduce((s, x) => s + x.paid, 0), rows.reduce((s, x) => s + x.due, 0)], [all.received, all.stillDue], 'the book totals agree');
 });
