@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   UNIT, accessView, addInvestorGate, allotPayStatus, allotPickGate, allotsOf, allotsOnLlp, drawerReadable, dupEmail,
   emptyImData, fmtDate, imReducer, llpCounts, markPaidGate, mayHoldings, mayMatch, matchWhy, monthlyGross, nextInvId,
-  onSale, paymentStatus, payoutNet, payoutSchedule, payoutsDue, prePick, qrCells, testLinkState, holdingsOf,
+  onSale, paymentStatus, payoutNet, payoutSchedule, payoutsDue, plusDays, prePick, qrCells, testLinkState, holdingsOf,
 } from "./index";
 import type { ImAllot, ImState } from "./index";
 import { act, kit } from "./test-kit";
@@ -275,6 +275,20 @@ describe("add an investor who already paid (M09-S09)", () => {
     expect(r.data.ACCESS![x.id]).toMatchObject({ App_Access: "Hold", App_Welcome_At: null });
     expect(r.data.OUTBOX.some(o => o.inv === x.id)).toBe(false);
     expect(r.ui.SEL).toBe(x.id);
+  });
+  it("M09-S09-NOTE-7 / D118: a part-paid add starts no hold; the 30-day hold starts when its advance is matched", () => {
+    const s = book();
+    s.data.FARMS[0].units = 20;
+    const r = act(s, "fin", { type: "addInvestor", ...f, units: 2, paid: UNIT });
+    const x = r.data.INV[r.data.INV.length - 1];
+    expect(x).toMatchObject({ st: "reserved" });
+    expect(x.hold).toBeUndefined();
+    expect(r.data.TXN[0]).toMatchObject({ inv: x.id, kind: "advance", rec: "pending" });
+    /* its supplementary signed and verified, so the match gate opens (D113) */
+    r.data.DOCS.push({ ...r.data.DOCS.find(d => d.t === "Supplementary agreement")!, id: "D-99", inv: x.id });
+    const m = act(r, "ops1", { type: "matchReceipt", tid: r.data.TXN[0].id });
+    expect(m.data.TXN[0].rec).toBe("matched");
+    expect(m.data.INV.find(i => i.id === x.id)!.hold).toBe(plusDays(s.data.NOW, 30));
   });
 });
 

@@ -3,7 +3,6 @@
    same alert/confirm/log the prototype's writes use, so a refusal is an in-page NOTE, a question
    parks the write in PENDING until {type:"confirmYes"}, and every write lands in the Activity log.
    ────────────────────────────────────────────────────────────────────────────────────────── */
-import { plusDays } from "./dates";
 import {
   addInvestorGate, allotOf, fmtDate, llpOf, lockAppGate, markPaidGate, newTestLink, nextInvId, openHeld,
   payoutNet, payoutOf, payoutSchedule, sendWelcomeGate, testLinkGate,
@@ -118,7 +117,8 @@ export function moneyRun(W: ImState, WHO: string, a: ImMoneyAction, c: MoneyCtx)
         kyc: "pending", kycOn: null, bank: { acct: "", ifsc: "", name: "", drop: "pending" },
         units: f.units, blocks: { [l.Block_Code]: f.units }, st: full ? "paid" : "reserved",
         ir: "", src: "Added by Finance — paid before the console", since: on, nominee: "—", kam: null, kamOn: null, intro: null,
-        ...(full ? {} : { hold: plusDays(d.NOW, 30) }),
+        /* M09-S09-NOTE-7 / D118: no hold here — the 30-day hold starts when the advance is MATCHED (reducer settle,
+           the live match.ts startHold), never at the add. */
       });
       const alId = "AL-" + id.slice(-4);
       d.ALLOT = (d.ALLOT || []).concat([{
