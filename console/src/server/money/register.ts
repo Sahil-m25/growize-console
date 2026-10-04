@@ -15,6 +15,9 @@
  *   net banked = received − refunded
  *   still due  = over Reserved allotments, units × unit price − the allotment's matched net, never below 0
  *   recorded   = recorded, not yet matched (Pending): { received, refunded, net } — shown apart, never in the above
+ * All of it is ./ledger ledgerOf, the one signed ledger the Money section and the receipt replay use: a matched
+ * reversal (Reversal_Of) cancels the receipt it names once; a ledger whose reversals break that convention is
+ * refused as source-invalid rather than summed two ways.
  * Counts and totals are over the farm the person picked (all farms when none), before the kind and
  * reconciliation cuts, so the chips read the same whichever chip is on.
  */
@@ -24,6 +27,7 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { SeatedZohoUser } from "../oauth/seat";
+import { dueOf, ledgerOf, sumsOf } from "./ledger";
 
 export const RECEIPTS_MODULE = "Receipts";
 export const ALLOTMENTS_MODULE = "LLP_UnitAllocation_Module";
@@ -38,6 +42,8 @@ export type RegisterKind = "advance" | "balance" | "full" | "refund" | "forfeit"
 const KIND: Readonly<Record<string, RegisterKind>> = Object.freeze({
   Advance: "advance", Part: "balance", Balance: "balance", Full: "full", Refund: "refund", Forfeit: "forfeit",
 });
+/** RegisterKind → the Zoho Kind the ledger reads (Part and Balance are one balance kind). */
+const KIND_NAME: Readonly<Record<RegisterKind, string>> = Object.freeze({ advance: "Advance", balance: "Part", full: "Full", refund: "Refund", forfeit: "Forfeit" });
 const MATCH_STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not found", "Reversed", "Claimed"]);
 
 export interface RegisterAccess {
@@ -191,17 +197,13 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
         }
 
         const inFarm = filter.farm ? rows.filter((r) => r.farm.id === filter.farm) : rows;
-        const matched = (r: RegisterRow) => r.matchState === "Matched";
-        const pending = (r: RegisterRow) => r.matchState === "Pending";
-        const inbound = (r: RegisterRow) => r.kind === "advance" || r.kind === "balance" || r.kind === "full";
-        const sum = (keep: (r: RegisterRow) => boolean) => inFarm.filter(keep).reduce((t, r) => t + r.amount, 0);
-        const received = sum((r) => inbound(r) && matched(r));
-        const refunded = sum((r) => r.kind === "refund" && matched(r));
-        const recIn = sum((r) => inbound(r) && pending(r)), recOut = sum((r) => r.kind === "refund" && pending(r));
-        const matchedByAllot = new Map<string, number>();
-        for (const r of rows) if (matched(r)) matchedByAllot.set(r.allotmentId, (matchedByAllot.get(r.allotmentId) ?? 0) + (inbound(r) ? r.amount : r.kind === "refund" ? -r.amount : 0));
-        const stillDue = [...allots.values()].filter((x) => x.status === "Reserved" && (!filter.farm || x.farmId === filter.farm))
-          .reduce((t, x) => t + Math.max(0, x.commitment - Math.max(0, matchedByAllot.get(x.id) ?? 0)), 0);
+        // The one signed ledger (./ledger): refunds out, a matched reversal cancels its receipt once, Pending apart (D21).
+        const ledger = ledgerOf(rows.map((r) => ({ id: r.id, allotmentId: r.allotmentId, kind: KIND_NAME[r.kind], amount: r.amount, matchState: r.matchState, reversalOf: r.reversalOf })));
+        if (ledger.anomalies.length) throw new Invalid([...ledger.anomalies]);
+        const inFarmAllots = new Set([...allots.values()].filter((x) => !filter.farm || x.farmId === filter.farm).map((x) => x.id));
+        let received = 0, refunded = 0, recIn = 0, recOut = 0;
+        for (const id of inFarmAllots) { const s = sumsOf(ledger, id); received += s.matchedIn; refunded += s.matchedOut; recIn += s.pendingIn; recOut += s.pendingOut; }
+        const stillDue = [...allots.values()].filter((x) => inFarmAllots.has(x.id)).reduce((t, x) => t + dueOf(x.status, x.commitment, sumsOf(ledger, x.id)), 0);
         const cut: Record<string, (r: RegisterRow) => boolean> = {
           advance: (r) => r.kind === "advance",
           full: (r) => r.kind === "full" || r.kind === "balance",

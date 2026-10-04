@@ -41,7 +41,7 @@ import type { MatchResult, MatchView } from "./match";
 import type {
   QueuedReceiptReplay, ReceiptKind, ReceiptMode, ReceiptReplayPrincipal, ReceiptReplayService, ReceiptReplaySnapshot,
 } from "./receipt-replay";
-import { RECEIPT_MODES } from "./receipt-replay";
+import { RECEIPT_MODES, outstandingRupees } from "./receipt-replay";
 
 export const READ_ONLY_TEXT = "Read only — Finance Operations and the Head of Finance record money.";
 export const MATCH_BLOCKED_TEXT = "Recorded. It cannot be matched until the supplementary agreement is signed and verified.";
@@ -233,7 +233,7 @@ export function createRecordReceipt(deps: RecordReceiptDependencies) {
     const r = await replay.prepare(p, allotmentId, signal);
     if (!r.ok) return failOf(r);
     const matchable = matchableOf(r.value.expected);
-    return { ok: true, value: Object.freeze({ ...r.value, amountDueRupees: r.value.expected.amountDueRupees, matchable,
+    return { ok: true, value: Object.freeze({ ...r.value, amountDueRupees: outstandingRupees(r.value.expected), matchable,
       matchNote: matchable ? null : MATCH_BLOCKED_TEXT }) };
   }
 
@@ -245,8 +245,9 @@ export function createRecordReceipt(deps: RecordReceiptDependencies) {
       if (!got.ok) return got;
       prepared = got.value;
     }
-    // The drawer's computed amount: the balance (or a full payment) is what is still due.
-    const amountRupees = i.amountRupees ?? prepared.expected?.amountDueRupees ?? 0;
+    // The drawer's computed amount: the balance (or a full payment) is what is still to record — the register's
+    // still-due less what is recorded and waiting to be matched (receipt-replay outstandingRupees).
+    const amountRupees = i.amountRupees ?? (prepared.expected ? outstandingRupees(prepared.expected) : 0);
     if (!Number.isSafeInteger(amountRupees) || amountRupees <= 0) return refuse(me, "nothing-due", [i.allotmentId]);
     const command: QueuedReceiptReplay = {
       preparedAt: prepared.preparedAt,

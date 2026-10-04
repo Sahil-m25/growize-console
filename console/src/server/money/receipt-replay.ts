@@ -25,6 +25,7 @@ import type {
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import { ACTOR_ID, RECORD_ID, type OpsLog } from "../../lib/zoho/log";
+import { dueOf, ledgerOf, recordedOf, sumsOf } from "./ledger";
 
 export const RECEIPTS_MODULE = "Receipts";
 export const ALLOTMENTS_MODULE = "LLP_UnitAllocation_Module";
@@ -97,7 +98,10 @@ export interface AllotmentTargetSnapshot {
 }
 
 export interface ReceiptReplaySnapshot {
+  /** Still due as the Payments register shows it (./ledger dueOf): MATCHED money only (D21); 0 unless Reserved. */
   readonly amountDueRupees: number;
+  /** Recorded, not yet matched (Pending), net of pending refunds/reversals — the register's recorded.net. */
+  readonly recordedRupees: number;
   readonly target: AllotmentTargetSnapshot;
   readonly supplementary: SupplementarySnapshot;
   readonly reservation: ReservationSnapshot;
@@ -346,6 +350,7 @@ function validSnapshot(value: unknown): value is ReceiptReplaySnapshot {
   const reservation = obj(snapshot?.reservation);
   if (!snapshot || !target || !supplementary || !reservation) return false;
   if (!Number.isSafeInteger(snapshot.amountDueRupees) || (snapshot.amountDueRupees as number) < 0) return false;
+  if (!Number.isSafeInteger(snapshot.recordedRupees)) return false;
   if (typeof target.customerId !== "string" || !RECORD_ID.test(target.customerId)
     || typeof target.llpId !== "string" || !RECORD_ID.test(target.llpId)) return false;
   if (!Array.isArray(supplementary.fileIds) || supplementary.fileIds.length > MAX_SUPPLEMENTARY_FILES
@@ -369,6 +374,7 @@ function captureSnapshot(value: unknown): ReceiptReplaySnapshot | null {
   if (!validSnapshot(value)) return null;
   return Object.freeze({
     amountDueRupees: value.amountDueRupees,
+    recordedRupees: value.recordedRupees,
     target: Object.freeze({ customerId: value.target.customerId, llpId: value.target.llpId }),
     supplementary: Object.freeze({
       fileIds: Object.freeze([...new Set(value.supplementary.fileIds)].sort()),
@@ -404,6 +410,7 @@ function durableReceiptIdempotencyKey(
 function snapshotFingerprintParts(expected: ReceiptReplaySnapshot): readonly unknown[] {
   return [
     expected.amountDueRupees,
+    expected.recordedRupees,
     [expected.target.customerId, expected.target.llpId],
     [[...expected.supplementary.fileIds].sort(), expected.supplementary.signRequestId,
       expected.supplementary.signedVia, expected.supplementary.verifiedAt],
@@ -485,21 +492,36 @@ function parseExistingReceipt(record: ZohoRecord): ExistingReceipt | null {
   });
 }
 
-function currentRecordedRupees(receipts: readonly ExistingReceipt[]): number | null {
-  let total = 0;
-  for (const receipt of receipts) {
-    if (receipt.matchState === "Claimed" || receipt.matchState === "Not found") continue;
-    // M10 owns the final refund/reversal approval and state convention. Until it does, guessing
-    // whether a pending Refund is approved, or whether to drop/subtract a linked reversal, could
-    // reopen balance and admit a duplicate inbound receipt.
-    if (receipt.intent.kind === "Refund" || receipt.matchState === "Reversed" || receipt.reversalOf !== null) return null;
-    total += receipt.intent.amountRupees;
-    if (!Number.isSafeInteger(total)) return null;
-  }
-  return total;
+/**
+ * The allotment's money through ./ledger — the one signed ledger the Payments register and the Money section use,
+ * so what replay seals is what the register shows. A refund is money out, a matched reversal cancels the receipt it
+ * names (once), Pending money is never matched (D21). A ledger whose reversals break that convention is refused
+ * here (a writer must not seal a precondition the readers could sum two ways); an inbound receipt after a clean
+ * refund or reversal stays recordable (rule 3).
+ */
+function ledgerMoney(
+  receipts: readonly ExistingReceipt[],
+  allotmentId: string,
+  allocationState: AllocationState,
+  commitment: number,
+): { readonly due: number; readonly recorded: number } | null {
+  const ledger = ledgerOf(receipts.map((r) => ({
+    id: r.id, allotmentId: r.intent.allotmentId, kind: r.intent.kind, amount: r.intent.amountRupees, matchState: r.matchState, reversalOf: r.reversalOf,
+  })));
+  if (ledger.anomalies.length) return null;
+  const sums = sumsOf(ledger, allotmentId);
+  const values = [sums.matchedIn, sums.matchedOut, sums.pendingIn, sums.pendingOut];
+  if (!values.every(Number.isSafeInteger)) return null;
+  return { due: dueOf(allocationState, commitment, sums), recorded: recordedOf(sums) };
+}
+
+/** Money still to be recorded before the commitment is covered: due less what is already recorded and waiting. */
+export function outstandingRupees(snapshot: Pick<ReceiptReplaySnapshot, "amountDueRupees" | "recordedRupees">): number {
+  return Math.max(0, snapshot.amountDueRupees - Math.max(0, snapshot.recordedRupees));
 }
 
 function parseAllotment(
+  allotmentId: string,
   record: ZohoRecord,
   receipts: readonly ExistingReceipt[],
   validOrgRecordId: (value: unknown) => value is string,
@@ -528,11 +550,13 @@ function parseAllotment(
     || (extensionDecidedAt !== null && !validIsoDateTime(extensionDecidedAt))) return null;
   const units = allocationState === "Reserved" ? reservedUnits : issuedUnits;
   const commitment = units * unitPriceRupees;
-  const recorded = currentRecordedRupees(receipts);
-  if (!Number.isSafeInteger(commitment) || commitment < 0 || recorded === null || recorded < 0) return null;
+  if (!Number.isSafeInteger(commitment) || commitment < 0) return null;
+  // An excess credit or an over-refund is still money and must not make the ledger unreadable (D21).
+  const money = ledgerMoney(receipts, allotmentId, allocationState, commitment);
+  if (money === null) return null;
   return Object.freeze({
-    // An excess credit is still money and must not make the ledger unreadable (D21).
-    amountDueRupees: Math.max(0, commitment - recorded),
+    amountDueRupees: money.due,
+    recordedRupees: money.recorded,
     target: Object.freeze({ customerId, llpId }),
     supplementary: Object.freeze({ fileIds: supplementaryFiles, signRequestId, signedVia, verifiedAt }),
     reservation: Object.freeze({
@@ -907,7 +931,7 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
       if (parsed.idempotencyKey !== null) seenIdempotencyKeys.add(parsed.idempotencyKey);
       receipts.push(parsed);
     }
-    const snapshot = parseAllotment(allotment.value, receipts, validOrgRecordId);
+    const snapshot = parseAllotment(allotmentId, allotment.value, receipts, validOrgRecordId);
     return snapshot && validSnapshotRecordIds(snapshot)
       ? { snapshot, receipts: Object.freeze(receipts.slice()) }
       : refuse(principal, "source-invalid", [allotmentId]);
@@ -1022,9 +1046,11 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
     if (!sameHold(current.reservation, command.expected.reservation)) {
       return refuse(principal, "hold-changed", [intent.allotmentId]);
     }
-    if (current.amountDueRupees !== command.expected.amountDueRupees) {
-      const balanceWasTheIntent = intent.kind !== "Refund" && intent.amountRupees === command.expected.amountDueRupees;
-      if (balanceWasTheIntent && current.amountDueRupees === 0) {
+    if (current.amountDueRupees !== command.expected.amountDueRupees || current.recordedRupees !== command.expected.recordedRupees) {
+      // Another hand recorded or matched money meanwhile. If this press was the whole balance and nothing is left
+      // to record, it is the same money landing twice.
+      const balanceWasTheIntent = intent.kind !== "Refund" && intent.amountRupees === outstandingRupees(command.expected);
+      if (balanceWasTheIntent && outstandingRupees(current) === 0) {
         return refuse(principal, "balance-already-recorded", [intent.allotmentId]);
       }
       return refuse(principal, "amount-due-changed", [intent.allotmentId]);
@@ -1097,8 +1123,8 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
         const winningReference = racedReference ?? racedReferenceInContext;
         if (winningReference) {
           const balanceWasTheIntent = intent.kind !== "Refund"
-            && intent.amountRupees === command.expected.amountDueRupees;
-          if (balanceWasTheIntent && fresh.snapshot.amountDueRupees === 0) {
+            && intent.amountRupees === outstandingRupees(command.expected);
+          if (balanceWasTheIntent && outstandingRupees(fresh.snapshot) === 0) {
             return refuse(principal, "balance-already-recorded", [intent.allotmentId, winningReference.id]);
           }
           return refuse(principal, "receipt-reference-reused", [intent.allotmentId, winningReference.id]);

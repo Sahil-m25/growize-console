@@ -13,6 +13,8 @@
  *   recorded    = Pending (recorded, not yet matched) inbound − Pending refunds: shown apart, never in paid/due
  *   status      = money/allotment-receipts expectedPaymentStatus over MATCHED inbound − matched refunds
  * (PROVISIONAL, Jev 0.67 "a": the record follows the register to matched-only.)
+ * Refunds and reversals follow ./ledger (a refund is money out; a matched reversal cancels the receipt it names,
+ * once; a pending one shows in recorded only).
  * The total sums the blocks that count on the Investors row (Cancelled allotments do not), so it equals
  * that row; it is offered only when there is more than one block (AC4).
  *
@@ -26,8 +28,7 @@ import type { UserCredential } from "../../lib/zoho/client";
 import type { ReceiptRow } from "../data/adapters";
 import type { AllotmentReader, AllotmentLine } from "../investors/allotments";
 import { expectedPaymentStatus, type PaymentStatus } from "./allotment-receipts";
-
-const INBOUND: ReadonlySet<string> = new Set(["Advance", "Part", "Balance", "Full"]);
+import { dueOf, ledgerOf, recordedOf, standingOf, sumsOf } from "./ledger";
 
 export interface MoneyAllotment {
   readonly id: string;
@@ -49,23 +50,15 @@ export interface AllotmentMoney {
   readonly paymentStatus: PaymentStatus;
 }
 
-const refundOf = (r: ReceiptRow) => r.kind === "Refund" || !!r.reversalOf;
-const inboundOf = (r: ReceiptRow) => !refundOf(r) && !!r.kind && INBOUND.has(r.kind);
-
-/** The money of one allotment from the receipts linked to it (receipts of other allotments are ignored). */
+/** The money of one allotment from the receipts linked to it (receipts of other allotments are ignored).
+ *  The arithmetic is ./ledger ledgerOf — the one signed ledger the register and the receipt replay also use. */
 export function moneyOf(a: MoneyAllotment, receipts: readonly ReceiptRow[]): AllotmentMoney {
-  let matchedIn = 0, matchedOut = 0, recorded = 0;
-  for (const r of receipts) {
-    if (r.allotmentId !== a.id) continue;
-    const isIn = inboundOf(r), isOut = refundOf(r);
-    if (r.matched) { if (isIn) matchedIn += r.amount; else if (isOut) matchedOut += r.amount; }
-    else if (r.matchState === "Pending") recorded += isIn ? r.amount : isOut ? -r.amount : 0;
-  }
+  const s = sumsOf(ledgerOf(receipts), a.id);
   const amount = a.units * a.unitPrice;
-  const standing = matchedIn - matchedOut;
+  const standing = standingOf(s);
   const matchedNet = Math.max(0, standing);
-  const due = a.status === "Reserved" ? Math.max(0, amount - matchedNet) : 0;
-  return Object.freeze({ paid: matchedIn, standing, matchedNet, amount, due, recorded, paymentStatus: expectedPaymentStatus(matchedNet, amount) });
+  const due = dueOf(a.status, amount, s);
+  return Object.freeze({ paid: s.matchedIn, standing, matchedNet, amount, due, recorded: recordedOf(s), paymentStatus: expectedPaymentStatus(matchedNet, amount) });
 }
 
 export interface MoneyBlock {

@@ -49,6 +49,8 @@ const sources = [
   'lib/zoho/log.ts',
   'lib/zoho/client.ts',
   'server/money/receipt-replay.ts',
+  'server/money/register.ts',
+  'server/money/by-allotment.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -78,6 +80,7 @@ const {
   RECEIPT_IDEMPOTENCY_FIELD,
   RECEIPT_REPLAY_MAX_AGE_MS,
   createReceiptReplayService,
+  outstandingRupees,
 } = load(path.join('server', 'money', 'receipt-replay.js'));
 
 const readJson = (name) => JSON.parse(fs.readFileSync(path.join(fixtureRoot, name), 'utf8'));
@@ -139,8 +142,11 @@ const BASE_INTENT = Object.freeze({
   utr: ' hdfc2609001 ',
   receivedOn: '2026-09-02T09:00:00+05:30',
 });
+// The register's view of the fixture ledger (one Pending ₹2.5 L Advance): nothing matched, so all ₹25 L is still due
+// (D21 — Pending never counts as matched) and ₹2.5 L is recorded and waiting.
 const SIGNED_SNAPSHOT = Object.freeze({
-  amountDueRupees: 2250000,
+  amountDueRupees: 2500000,
+  recordedRupees: 250000,
   target: Object.freeze({ customerId: CUSTOMER_ID, llpId: LLP_ID }),
   supplementary: Object.freeze({
     fileIds: Object.freeze([FILE_ID]),
@@ -233,6 +239,7 @@ function contextTokenFor(principal, preparedAt, allotmentId, expected, secret = 
     preparedAt,
     allotmentId,
     expected.amountDueRupees,
+    expected.recordedRupees,
     [expected.target.customerId, expected.target.llpId],
     [[...expected.supplementary.fileIds].sort(), expected.supplementary.signRequestId,
       expected.supplementary.signedVia, expected.supplementary.verifiedAt],
@@ -675,7 +682,7 @@ test('prepare issues the live server snapshot and a valid context seal', async (
   assert.equal(Object.hasOwn(result.value, 'boundActorId'), false);
   assert.equal(Object.hasOwn(result.value, 'boundSessionId'), false);
   assert.equal(Object.hasOwn(result.value, 'queuedAt'), false, 'the actual press time is not chosen during prepare');
-  assert.equal(PREPARED_CONTEXT_TOKEN, 'receipt-context-v1_3yCETgBwCXG1N1HxOm82g6LZDcXUYOhLluLcupLXyvI');
+  assert.equal(PREPARED_CONTEXT_TOKEN, 'receipt-context-v1_-c7vaaSAJ1SUqL9sxUgYIAp4lxSn45Uen9vrYziKMR0');
   assert.deepEqual(rig.calls.map((call) => call.op), [
     'session', 'permission', 'getRecord', 'coql:allotment', 'session', 'permission',
   ]);
@@ -1598,10 +1605,11 @@ test('stale due is refused, including TC-IM01-010 with a different opaque key', 
   }
 });
 
-test('an excess-credit ledger remains readable with due clamped to zero', async () => {
+test('an excess-credit ledger remains readable with nothing left to record', async () => {
   const rig = createRig({ contextRecording: recordings.excessCredit });
   const result = await rig.service.prepare(principalFor(), ALLOTMENT_ID);
-  const expected = { ...clone(SIGNED_SNAPSHOT), amountDueRupees: 0 };
+  // Both receipts are Pending: due stays the whole ₹25 L (nothing matched, D21), recorded is ₹26 L, outstanding 0.
+  const expected = { ...clone(SIGNED_SNAPSHOT), amountDueRupees: 2500000, recordedRupees: 2600000 };
 
   assert.deepEqual(result, {
     ok: true,
@@ -1613,7 +1621,8 @@ test('an excess-credit ledger remains readable with due clamped to zero', async 
   });
   const recorded = recordings.excessCredit.body.data.reduce((sum, row) => sum + row.Amount, 0);
   assert.equal(recorded, 2600000);
-  assert.equal(result.value.expected.amountDueRupees, 0);
+  assert.equal(result.value.expected.recordedRupees, 2600000);
+  assert.equal(outstandingRupees(result.value.expected), 0);
   assert.equal(rig.insertCalls().length, 0);
   assert.equal(rig.sink.records().length, 0);
 });
@@ -2170,4 +2179,183 @@ test('Plane B refusal rows are IDs and fixed codes only, never receipt or invest
     recordings.supplementaryChanged.body.data[0].Customer.name,
     recordings.supplementaryChanged.body.data[0].LLP.name,
   ]);
+});
+
+/* ---- M01-S08-NOTE-5: refunds and reversals through the one signed ledger (./ledger) --------------------------- */
+
+const { createPaymentsRegister } = load(path.join('server', 'money', 'register.js'));
+const { moneyOf } = load(path.join('server', 'money', 'by-allotment.js'));
+const { ledgerOf } = load(path.join('server', 'money', 'ledger.js'));
+
+let ledgerUtr = 0;
+/** A synthetic Receipts row on the fixture allotment. n: 2-digit suffix of the record id. */
+function ledgerRow(n, kind, amount, state, reversalOf = null) {
+  ledgerUtr += 1;
+  return {
+    ...clone(recordings.advance.body.data[0]),
+    id: `90071992547409931${String(n).padStart(2, '0')}`,
+    Kind: kind, Amount: amount, Match_State: state, UTR: `SYNTHLEDGER${String(ledgerUtr).padStart(4, '0')}`,
+    Reversal_Of: reversalOf ? { id: `90071992547409931${String(reversalOf).padStart(2, '0')}`, name: 'Synthetic reversed receipt' } : null,
+  };
+}
+const ledgerOfRows = (rows) => recordingWithRows(recordings.advance, rows);
+const snapshotWith = (amountDueRupees, recordedRupees) => ({ ...clone(SIGNED_SNAPSHOT), amountDueRupees, recordedRupees });
+
+async function prepared(rows) {
+  const rig = createRig({ contextRecording: ledgerOfRows(rows) });
+  const result = await rig.service.prepare(principalFor(), ALLOTMENT_ID);
+  return { rig, result };
+}
+
+/** The Payments register over the same rows and the same allotment (Reserved, 1 unit × ₹25 L). */
+async function registerTotals(rows) {
+  const allot = recordings.allotment.body.data[0];
+  const crm = {
+    async coql(_cred, q) {
+      const records = /from Receipts/.test(q) ? rows.map((r) => ({ ...r, Created_By: r.Created_By }))
+        : /Allocation_Status = 'Reserved'/.test(q) ? [{ id: ALLOTMENT_ID, Customer: allot.Customer, LLP: allot.LLP, Allocation_Status: allot.Allocation_Status,
+          Issued_Units: allot.Issued_Units, Reserved_Units: allot.Reserved_Units, Unit_Price: allot.Unit_Price }] : [];
+      return { ok: true, value: { records, moreRecords: false, invalidRecordIds: null } };
+    },
+  };
+  const register = createPaymentsRegister({
+    crm, log: createOpsLog(createMemorySink()), recordIdPrefix: RECORD_ID_PREFIX, clock: () => NOW,
+    access: { async recheck(cred) { return { actor: { userId: cred.userId }, seesRegister: true, seesUtr: true, canRecord: true }; } },
+  });
+  const r = await register.read(principalFor());
+  assert.equal(r.ok, true, JSON.stringify(r));
+  return r.value.totals;
+}
+
+test('NOTE-5: a refund after a match is money out; an inbound receipt after it is still recordable (D21)', async () => {
+  const rows = [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 50000, 'Matched')];
+  const { result } = await prepared(rows);
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.deepEqual([result.value.expected.amountDueRupees, result.value.expected.recordedRupees], [2300000, 0], '₹25 L − (₹2.5 L − ₹0.5 L)');
+  const rig = createRig({ contextRecording: ledgerOfRows(rows) });
+  const replayed = await rig.service.replay(principalFor(), command({ intent: { kind: 'Part', amountRupees: 100000 }, expected: snapshotWith(2300000, 0) }));
+  assert.deepEqual(replayed, { ok: true, receiptId: RECEIPT_ID, duplicate: false });
+  assert.equal(rig.insertCalls().length, 1);
+  const totals = await registerTotals(rows);
+  assert.deepEqual([totals.received, totals.refunded, totals.stillDue], [250000, 50000, 2300000]);
+});
+
+test('NOTE-5: a matched reversal cancels the receipt it points at — once, even when that receipt is also flipped to Reversed', async () => {
+  for (const [name, rows] of [
+    ['reversal row only', [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Matched', 1)]],
+    ['reversal row and the receipt flipped', [ledgerRow(1, 'Advance', 250000, 'Reversed'), ledgerRow(2, 'Refund', 250000, 'Matched', 1)]],
+    ['receipt flipped, no reversal row', [ledgerRow(1, 'Advance', 250000, 'Reversed')]],
+  ]) {
+    const { result } = await prepared(rows);
+    assert.equal(result.ok, true, `${name}: ${JSON.stringify(result)}`);
+    assert.deepEqual([result.value.expected.amountDueRupees, result.value.expected.recordedRupees], [2500000, 0], `${name}: nothing double-subtracted`);
+    const totals = await registerTotals(rows);
+    assert.deepEqual([totals.netBanked, totals.stillDue, totals.recorded.net], [0, 2500000, 0], name);
+  }
+  // ...and the inbound replay after it still lands (rule 3)
+  const rows = [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Matched', 1)];
+  const rig = createRig({ contextRecording: ledgerOfRows(rows) });
+  const r = await rig.service.replay(principalFor(), command({ intent: { kind: 'Advance', amountRupees: 250000 }, expected: snapshotWith(2500000, 0) }));
+  assert.equal(r.ok, true, JSON.stringify(r));
+});
+
+test('NOTE-5: reversal of a pending receipt, and a pending reversal of a matched one — Pending never counts as matched', async () => {
+  for (const [name, rows, due, recorded] of [
+    ['matched reversal of a pending receipt', [ledgerRow(1, 'Advance', 250000, 'Pending'), ledgerRow(2, 'Refund', 250000, 'Matched', 1)], 2500000, 0],
+    ['pending reversal of a pending receipt', [ledgerRow(1, 'Advance', 250000, 'Pending'), ledgerRow(2, 'Refund', 250000, 'Pending', 1)], 2500000, 0],
+    ['pending reversal of a matched receipt', [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Pending', 1)], 2250000, -250000],
+    ['void (Not found) reversal', [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Not found', 1)], 2250000, 0],
+  ]) {
+    const { result } = await prepared(rows);
+    assert.equal(result.ok, true, `${name}: ${JSON.stringify(result)}`);
+    assert.deepEqual([result.value.expected.amountDueRupees, result.value.expected.recordedRupees], [due, recorded], name);
+    const totals = await registerTotals(rows);
+    assert.deepEqual([totals.stillDue, totals.recorded.net], [due, recorded], `${name}: the register agrees`);
+  }
+});
+
+test('NOTE-5: a refund of a receipt already reversed is refused — by the replay and in the ledger', async () => {
+  // replay never takes a refund (D22: money leaving has its own approved flow)
+  const reversed = [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Matched', 1)];
+  let rig = createRig({ contextRecording: ledgerOfRows(reversed) });
+  const refund = await rig.service.replay(principalFor(), command({ intent: { kind: 'Refund', amountRupees: 250000 }, expected: snapshotWith(2500000, 0) }));
+  assertOneRefusal(rig, refund, 'refund-requires-approved-flow');
+  // a second refund recorded as reversing the same receipt would subtract it twice: the ledger is not sealed
+  for (const extra of [ledgerRow(3, 'Refund', 250000, 'Matched', 1), ledgerRow(3, 'Refund', 250000, 'Pending', 1)]) {
+    const { rig: r2, result } = await prepared([...reversed, extra]);
+    assertOneRefusal(r2, result, 'source-invalid');
+    assert.deepEqual([...ledgerOf([...reversed, extra].map((x) => ({ id: x.id, allotmentId: ALLOTMENT_ID, kind: x.Kind, amount: x.Amount, matchState: x.Match_State, reversalOf: x.Reversal_Of?.id ?? null }))).anomalies], [extra.id]);
+  }
+  // a reversal of a missing receipt, of a different amount, or of another reversal is refused the same way
+  for (const bad of [
+    [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Matched', 9)],
+    [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 100000, 'Matched', 1)],
+    [ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Refund', 250000, 'Matched', 1), ledgerRow(3, 'Advance', 250000, 'Matched', 2)],
+  ]) {
+    rig = createRig({ contextRecording: ledgerOfRows(bad) });
+    assertOneRefusal(rig, await rig.service.prepare(principalFor(), ALLOTMENT_ID), 'source-invalid');
+    assert.equal(rig.insertCalls().length, 0);
+  }
+});
+
+test('NOTE-5: a mixed ledger seals what the register and the Money section show, and replay stays idempotent', async () => {
+  const rows = [
+    ledgerRow(1, 'Advance', 250000, 'Matched'), ledgerRow(2, 'Part', 500000, 'Pending'), ledgerRow(3, 'Part', 100000, 'Reversed'),
+    ledgerRow(4, 'Refund', 50000, 'Matched'), ledgerRow(5, 'Part', 300000, 'Matched'), ledgerRow(6, 'Refund', 300000, 'Matched', 5),
+    ledgerRow(7, 'Part', 40000, 'Claimed'), ledgerRow(8, 'Refund', 20000, 'Pending'),
+  ];
+  const { result } = await prepared(rows);
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.deepEqual([result.value.expected.amountDueRupees, result.value.expected.recordedRupees], [2300000, 480000]);
+  const totals = await registerTotals(rows);
+  assert.deepEqual([totals.received, totals.refunded, totals.stillDue, totals.recorded.net], [250000, 50000, 2300000, 480000]);
+  const asRows = rows.map((x) => ({ id: x.id, allotmentId: ALLOTMENT_ID, kind: x.Kind, amount: x.Amount, mode: null, utr: null, on: null, byId: null,
+    matched: x.Match_State === 'Matched', matchState: x.Match_State, reversalOf: x.Reversal_Of?.id ?? null }));
+  const m = moneyOf({ id: ALLOTMENT_ID, status: 'Reserved', units: 1, unitPrice: 2500000 }, asRows);
+  assert.deepEqual([m.due, m.recorded], [2300000, 480000], 'the investor record reads the same numbers');
+
+  // the same press twice: one write, the second answer is the persisted receipt
+  const rig = createRig({ contextRecording: ledgerOfRows(rows) });
+  const cmd = command({ intent: { kind: 'Part', amountRupees: 100000 }, expected: snapshotWith(2300000, 480000) });
+  const first = await rig.service.replay(principalFor(), cmd);
+  const second = await rig.service.replay(principalFor(), cmd);
+  assert.deepEqual(first, { ok: true, receiptId: RECEIPT_ID, duplicate: false });
+  assert.deepEqual(second, { ok: true, receiptId: RECEIPT_ID, duplicate: true });
+  assert.equal(rig.insertCalls().length, 1);
+});
+
+test('NOTE-5: a pending balance recorded by another hand meanwhile is the balance already recorded', async () => {
+  const before = [ledgerRow(1, 'Advance', 250000, 'Matched')];
+  const after = [...before, ledgerRow(2, 'Full', 2250000, 'Pending')];
+  const rig = createRig({ contextRecording: ledgerOfRows(after) });
+  const r = await rig.service.replay(principalFor(), command({ idempotencyKey: OTHER_IDEMPOTENCY_KEY, expected: snapshotWith(2250000, 0) }));
+  assertOneRefusal(rig, r, 'balance-already-recorded');
+  assert.equal(rig.insertCalls().length, 0);
+});
+
+test('NOTE-5 property: for random ledgers, replay seals exactly the register\'s still-due and recorded totals', async () => {
+  let seed = 0x5eed;
+  const rand = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  const KINDS = ['Advance', 'Part', 'Full', 'Refund'];
+  const STATES = ['Pending', 'Matched', 'Matched', 'Not found', 'Reversed', 'Claimed'];
+  for (let round = 0; round < 60; round++) {
+    const rows = [];
+    const count = 1 + rand(7);
+    for (let i = 1; i <= count; i++) rows.push(ledgerRow(i, KINDS[rand(4)], (1 + rand(20)) * 25000, STATES[rand(STATES.length)]));
+    // up to two well-formed reversals of distinct non-reversal receipts
+    const targets = rows.slice();
+    for (let k = 0; k < rand(3) && targets.length; k++) {
+      const t = targets.splice(rand(targets.length), 1)[0];
+      rows.push(ledgerRow(20 + k, rand(2) ? 'Refund' : t.Kind, t.Amount, ['Matched', 'Pending', 'Not found'][rand(3)], Number(t.id.slice(-2))));
+    }
+    const shuffled = rows.slice().sort(() => rand(3) - 1);
+    const a = await prepared(rows), b = await prepared(shuffled);
+    assert.equal(a.result.ok, true, `round ${round}: ${JSON.stringify(a.result)}`);
+    assert.deepEqual(b.result.value.expected, a.result.value.expected, `round ${round}: row order never changes the seal`);
+    const totals = await registerTotals(rows);
+    assert.equal(a.result.value.expected.amountDueRupees, totals.stillDue, `round ${round}: due`);
+    assert.equal(a.result.value.expected.recordedRupees, totals.recorded.net, `round ${round}: recorded`);
+    const again = await prepared(rows);
+    assert.deepEqual(again.result.value.expected, a.result.value.expected, `round ${round}: prepare is repeatable`);
+  }
 });
