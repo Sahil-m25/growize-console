@@ -80,6 +80,9 @@ export function openAbsenceDrawer(dispatch: Dispatch<Action>, state: ConsoleStat
       ABWHY: a ? a.why : null,
       ABFROM: a && dOf(a.from) ? a.from : iso(state.NOW),
       ABTO: a && dOf(a.to) ? a.to : iso(dAdd(state.NOW, 1)),
+      /* the last press's refusal or note belongs to the last opening (absence drawer, M08-S05-NOTE-6) */
+      AVERR: null,
+      AVNOTE: null,
     },
   });
 }

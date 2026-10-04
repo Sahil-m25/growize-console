@@ -27,6 +27,7 @@ import { curSide, MNote, useIm } from "@/features/im/host";
 import { ImDrawer, DRAWERS as IMDRAWERS } from "@/features/im/drawers";
 import { useDocked } from "./useDocked";
 import { Live } from "./Live";
+import { LiveRoster } from "./LiveRoster";
 import { LeadPage } from "@/features/lead/LeadPage";
 import { EventPage } from "@/features/events";
 import TodayRoute from "@/app/today/page";
@@ -374,6 +375,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
       {/* body.html: one polite live region for the whole console, outside the pane */}
       <Live />
+      <LiveRoster />
     </>
   );
 }

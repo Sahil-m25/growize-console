@@ -1,0 +1,75 @@
+{
+  "cases": [
+    {
+      "id": "TC-E08-030",
+      "story": "M08-S05",
+      "seat": "kavya",
+      "title": "An IR books her own absence and the roster shows it",
+      "steps": [
+        "Press Kavya Nair on the sign-in screen",
+        "Press 'Your account' in the top bar",
+        "Press 'Set your availability'",
+        "Choose 'On leave' in 'Absence reason · private'",
+        "Type '2026-08-31' in the Out from box",
+        "Type '2026-09-02' in the Back on box",
+        "Press 'Book absence'"
+      ],
+      "expected": [
+        "It says 'Away 31 Aug · back 02 Sep'.",
+        "The panel offers 'Cancel planned absence'."
+      ],
+      "fixtures": [
+        "DEMO_BOOK"
+      ],
+      "group": "M08"
+    },
+    {
+      "id": "TC-E08-031",
+      "story": "M08-S05",
+      "seat": "kavya",
+      "title": "An absence longer than the roster allows is refused in the panel",
+      "steps": [
+        "Press Kavya Nair on the sign-in screen",
+        "Press 'Your account' in the top bar",
+        "Press 'Set your availability'",
+        "Choose 'On leave' in 'Absence reason · private'",
+        "Type '2026-08-29' in the Out from box",
+        "Type '2026-10-29' in the Back on box",
+        "Press 'Book absence'"
+      ],
+      "expected": [
+        "The panel says 'Nothing changed — choose a start date from today and a later return date, at most 30 days ahead and 60 days long.'.",
+        "The panel still offers 'Book absence' and does not offer 'Cancel planned absence'."
+      ],
+      "fixtures": [
+        "DEMO_BOOK"
+      ],
+      "group": "M08"
+    },
+    {
+      "id": "TC-E08-032",
+      "story": "M08-S05",
+      "seat": "tasneem",
+      "title": "Marking an absent IR back in ends the cover of her leads (D44)",
+      "steps": [
+        "Press Tasneem Qureshi on the sign-in screen",
+        "Press 'Your account' in the top bar",
+        "Press 'Team availability'",
+        "Press 'Change availability for Ananya Iyer'",
+        "Press 'Mark back in'",
+        "Press 'Your account' in the top bar",
+        "Press 'Sign out'",
+        "Press Nikhil Rao on the sign-in screen",
+        "Type 'Rahul Sethi' in the find-an-investor box"
+      ],
+      "expected": [
+        "Rahul Sethi is not offered in the search results."
+      ],
+      "fixtures": [
+        "DEMO_BOOK",
+        "ANANYA_ON_LEAVE_NIKHIL_COVERS"
+      ],
+      "group": "M08"
+    }
+  ]
+}
