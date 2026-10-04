@@ -5,7 +5,7 @@
    every screen, and the one door out: Sign out. */
 
 import type { NavKey } from "@/domain";
-import { avail, everyone, P } from "@/lib/selectors";
+import { accountAllowed, avail, everyone, P } from "@/lib/selectors";
 import { titleOf } from "../SignIn";
 import { useConsole, useSession } from "@/lib/store";
 import { AppearanceControls, Icon, Pav } from "@/components/ui";
@@ -19,6 +19,9 @@ function Body(_: DrawerProps) {
   const router = useRouter();
   const me = state.WHO;
   const p = P(state.PEOPLE, me);
+  /* an Investors-only seat has no lead-side account: no availability, no Profile, no Team availability, no lead help —
+     the person, the appearance and (below) Sign out */
+  const lead = accountAllowed(state);
   const s = availabilityStatus(state, me);
   const goAndClose = (view: View) => {
     dispatch({ type: "closeDrawer" });
@@ -41,7 +44,7 @@ function Body(_: DrawerProps) {
         </div>
       </div>
 
-      <section className="ux-account-availability">
+      {lead ? <><section className="ux-account-availability">
         <div>
           <b>Your availability</b>
           <span className={`tag ${s.out ? "cov" : "go"}`}>
@@ -78,6 +81,8 @@ function Body(_: DrawerProps) {
           <Icon name="next" />
         </button>
       </div>
+
+      </> : null}
 
       <section className="rd-account-appearance">
         <h3>Appearance</h3>

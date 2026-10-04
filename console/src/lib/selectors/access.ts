@@ -491,6 +491,9 @@ export const hasLeads = (ctx: Ctx): boolean => canReach(ctx, "leads") && seesTea
 
 /* The shell and reducer ask the same gate before rendering a drawer or accepting its draft. */
 export function canOpenDrawer(ctx: Ctx, kind: string, id: string | null): boolean {
+  /* "Your account" is the one door every signed-in seat holds — an Investors-only seat (no lead-side account) too: it is how
+     they sign out. Its body offers them nothing of the lead side (drawers/account.tsx). */
+  if (kind === "account") return true;
   if (!accountAllowed(ctx)) return false;
   if (kind === "help") return true;
   /* "account" is always about the signed-in person — no id to check. "updates" is the bell: a
