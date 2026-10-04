@@ -3,7 +3,7 @@
 Written 4 Oct 2026. Status: **NOT SIGNED OFF.** Every KPI target below is blank on purpose. A brief with a blank target is not signed off (M20-S01 acceptance 3). The owner fills the targets (OD10).
 
 ## 1. The problem
-ARL runs the Growize unit across spreadsheets, the Zoho CRM screens, email and a separate investor portal. Leads, paper, money and investor care are handled in different places by different people. Two hundred investors' money runs through this (CLAUDE.md). The goal is to run the whole ecosystem of the unit from one place (project brief).
+Before the console, the Growize unit's work was spread over separate tools and separate portals. Leads, paper, money and investor care were handled in different places by different people. Two hundred investors' money runs through this (CLAUDE.md). The goal is to run the whole ecosystem of the unit from one place (project brief).
 
 The Growize Console is that place. It sits on top of one Zoho CRM Enterprise org (D52). Zoho is the only store. The console holds no records of its own (D45). Every person reads and writes as themselves, so Zoho's roles, sharing and field-level security decide what each person sees (D53).
 
@@ -81,7 +81,7 @@ Notes:
 - K4 needs the plan values in Sales_Plans. Who enters them: **OPEN — owner**.
 - K7 needs the hourly production check (M19-S07-T02), which needs hosting.
 - Baselines: none exist today. The first two weeks of hypercare give the first readings (`docs/ops/hypercare.md`). No target is set from a single reading.
-- Bring in the Jev UI suite pass rate and UAT results as build-quality measures. They are not product KPIs.
+- The Jev UI suite pass rate and UAT results measure build quality. They are not product KPIs and are not listed here.
 
 ## 5. Sign-off
 
