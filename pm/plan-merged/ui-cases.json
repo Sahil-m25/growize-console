@@ -223,7 +223,7 @@
    "id": "TC-E03-008",
    "story": "M01-S01",
    "seat": "sahil",
-   "title": "Digital Infrastructure reaches System; money and paper are view-only",
+   "title": "Digital Infrastructure reaches System; Payments is the full ledger",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
     "Open Payments from the menu"
@@ -231,8 +231,8 @@
    "expected": [
     "The menu shows System.",
     "The menu shows Teams.",
-    "The Payments page says it is read only, recorded by Finance in the Investor Management portal.",
-    "The Payments page does not offer a button to record a payment."
+    "The Payments page offers 'Upload the bank statement'.",
+    "The Payments page lists T-0030 for Joseph Mathew, an advance of ₹10 L."
    ],
    "fixtures": [
     "DEMO_STAFF"
@@ -712,13 +712,14 @@
    "id": "TC-E05-003",
    "story": "M05-S01",
    "seat": "sahil",
-   "title": "Digital Infrastructure has no Today",
+   "title": "Digital Infrastructure lands on Today with both sides",
    "steps": [
     "Press Sahil Mohite on the sign-in screen"
    ],
    "expected": [
-    "The menu does not show Today.",
-    "The Leads page is showing."
+    "The menu shows Today.",
+    "The Today page offers 'Lead side' and 'Investors side'.",
+    "The page reads 'Team follow-ups'."
    ],
    "fixtures": [
     "CLOCK_28AUG_1000",
@@ -1154,14 +1155,14 @@
    "id": "TC-E07-003",
    "story": "M07-S01",
    "seat": "sahil",
-   "title": "View-only seat gets no contact or logging controls",
+   "title": "The super user's lead page offers the contact controls",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
     "Open Meera Krishnan"
    ],
    "expected": [
     "Meera Krishnan's lead page is open (it shows 'Last contact: Inbound reply · Reply received · 26 Aug 10:52').",
-    "The only buttons on the lead page are 'Back to leads' and 'Investor file': there is no Call, WhatsApp, Email or 'Log a contact' button."
+    "The Next step card offers Call, WhatsApp, Email and 'Log a contact'."
    ],
    "fixtures": [
     "DEMO_BOOK"
@@ -2853,7 +2854,7 @@
    "id": "TC-E10-012",
    "story": "M14-S03",
    "seat": "sahil",
-   "title": "Digital Infrastructure cannot load an event sheet",
+   "title": "Digital Infrastructure (super user) can load an event sheet",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
     "Open Events from the menu",
@@ -2861,8 +2862,7 @@
    ],
    "expected": [
     "The Event leads sheet card reads 'ready to load'.",
-    "The card says 'Your seat does not load event sheets; the IR team or Marketing do.'",
-    "The card does not offer a 'Load 31 leads' button."
+    "The card offers a 'Load 31 leads' button."
    ],
    "fixtures": [
     "DEMO_DATA"
@@ -3707,14 +3707,13 @@
    "id": "TC-IM01-003",
    "story": "M01-S01",
    "seat": "sahil",
-   "title": "Administrator lands on the Activity log, not an empty Dashboard",
+   "title": "Super user lands on Today with the whole rail on both sides",
    "steps": [
     "Press Sahil Mohite on the sign-in screen"
    ],
    "expected": [
-    "The page heading is 'Activity log'.",
-    "The menu shows 2 pages: Activity log and Team.",
-    "The menu does not show Dashboard."
+    "The menu shows Today, Leads, Activity, Events, Investors, Farms, Tickets, Investor updates, Payments, Documents, Transfers, Plan, Numbers, Teams and System.",
+    "The page offers a 'Lead side' and an 'Investors side' switch."
    ],
    "fixtures": [
     "DEMO_PORTAL"
@@ -4466,14 +4465,15 @@
    "id": "TC-IM10-007",
    "story": "M15-S03",
    "seat": "sahil",
-   "title": "Administration reads the audit with investor details withheld",
+   "title": "The super user reads the audit on the Investors side",
    "steps": [
-    "Press Sahil Mohite on the sign-in screen"
+    "Press Sahil Mohite on the sign-in screen",
+    "Press 'Activity' in the menu",
+    "Press 'Investors side'"
    ],
    "expected": [
-    "The page says '12 accessible entries · organisation audit with investor details withheld'.",
-    "Every money row reads 'Money event' with 'Investor details withheld'.",
-    "The page does not show any ARL-INV id."
+    "The page says '12 accessible entries · your work on accounts you can open'.",
+    "The money rows read 'Recorded a receipt' with the investor ids ARL-INV-0208, ARL-INV-0209 and ARL-INV-0210."
    ],
    "fixtures": [
     "DEMO_PORTAL"
@@ -4547,6 +4547,8 @@
    "title": "Filtering the audit by one person",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
+    "Press 'Activity' in the menu",
+    "Press 'Investors side'",
     "Press 'Meena' in the person filter"
    ],
    "expected": [

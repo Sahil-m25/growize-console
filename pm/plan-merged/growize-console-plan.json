@@ -18698,7 +18698,7 @@
   {
    "id": "TC-E03-008",
    "story": "M01-S01",
-   "title": "Digital Infrastructure reaches System; money and paper are view-only",
+   "title": "Digital Infrastructure reaches System; Payments is the full ledger",
    "type": "Functional",
    "seat": "sahil",
    "priority": "P1",
@@ -18706,7 +18706,7 @@
    "steps": [
     "Read Sahil's pages and his Payments/Documents capabilities"
    ],
-   "expected": "1. hasSystem = true. 2. hasTeams = true. 3. paymentsCaps = [\"view\"] (no record). 4. documentsCaps = [\"view\"] (no send).",
+   "expected": "The menu shows System. The menu shows Teams. The Payments page offers 'Upload the bank statement'. The Payments page lists T-0030 for Joseph Mathew, an advance of ₹10 L.",
    "auto": {
     "observe": "const k=navFor().map(n=>n.k); return {hasSystem:k.includes('system'), hasTeams:k.includes('people'), paymentsCaps:capsFor('sahil','pay'), documentsCaps:capsFor('sahil','docs'), pages:k}"
    },
@@ -18720,8 +18720,8 @@
    "ui_expected": [
     "The menu shows System.",
     "The menu shows Teams.",
-    "The Payments page says it is read only, recorded by Finance in the Investor Management portal.",
-    "The Payments page does not offer a button to record a payment."
+    "The Payments page offers 'Upload the bank statement'.",
+    "The Payments page lists T-0030 for Joseph Mathew, an advance of ₹10 L."
    ],
    "ui_mode": "ui",
    "group": "A",
@@ -19858,7 +19858,7 @@
   {
    "id": "TC-E05-003",
    "story": "M05-S01",
-   "title": "Digital Infrastructure has no Today",
+   "title": "Digital Infrastructure lands on Today with both sides",
    "type": "Permission",
    "seat": "sahil",
    "priority": "P2",
@@ -19867,7 +19867,7 @@
     "Sign in as Sahil",
     "Call go('today')"
    ],
-   "expected": "Today is not in Sahil's navigation and the view stays on Leads.",
+   "expected": "The menu shows Today. The Today page offers 'Lead side' and 'Investors side'. The page reads 'Team follow-ups'.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); return true;",
     "act": "go('today'); return true;",
@@ -19881,8 +19881,9 @@
     "Press Sahil Mohite on the sign-in screen"
    ],
    "ui_expected": [
-    "The menu does not show Today.",
-    "The Leads page is showing."
+    "The menu shows Today.",
+    "The Today page offers 'Lead side' and 'Investors side'.",
+    "The page reads 'Team follow-ups'."
    ],
    "ui_mode": "ui",
    "group": "B",
@@ -21036,7 +21037,7 @@
   {
    "id": "TC-E07-003",
    "story": "M07-S01",
-   "title": "View-only seat gets no contact or logging controls",
+   "title": "The super user's lead page offers the contact controls",
    "type": "Permission",
    "seat": "sahil",
    "priority": "P2",
@@ -21046,7 +21047,7 @@
     "Open L4",
     "Try to start a logging flow"
    ],
-   "expected": "(1) view = \"lead\" and lead = \"L4\" (the page renders). (2) canWork = false. (3) contactButtons = 0. (4) flowOpenAfterStart = false. (5) flowElementPresent = false.",
+   "expected": "Meera Krishnan's lead page is open (it shows 'Last contact: Inbound reply · Reply received · 26 Aug 10:52'). The Next step card offers Call, WhatsApp, Email and 'Log a contact'.",
    "auto": {
     "setup": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}",
     "act": "const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);go('lead','L4'); lpOpen('L4','log','call'); return true;",
@@ -21062,7 +21063,7 @@
    ],
    "ui_expected": [
     "Meera Krishnan's lead page is open (it shows 'Last contact: Inbound reply · Reply received · 26 Aug 10:52').",
-    "The only buttons on the lead page are 'Back to leads' and 'Investor file': there is no Call, WhatsApp, Email or 'Log a contact' button."
+    "The Next step card offers Call, WhatsApp, Email and 'Log a contact'."
    ],
    "group": "C",
    "plan": "In 3 weeks",
@@ -24522,7 +24523,7 @@
   {
    "id": "TC-E10-012",
    "story": "M14-S03",
-   "title": "Digital Infrastructure cannot load an event sheet",
+   "title": "Digital Infrastructure (super user) can load an event sheet",
    "type": "Permission",
    "seat": "sahil",
    "priority": "P2",
@@ -24531,7 +24532,7 @@
     "Open E-04",
     "Force loadSheet('E-04')"
    ],
-   "expected": "Card says 'Your seat does not load event sheets'; no Load button; forced load adds nothing and sheet stays 'ready'",
+   "expected": "The Event leads sheet card reads 'ready to load'. The card offers a 'Load 31 leads' button.",
    "auto": {
     "setup": "window.H={pane:()=>document.querySelector('#pane').innerText,\nrow:()=>{const r=document.querySelector('.d60d-paper');return r?r.innerText.replace(/\\s+/g,' ').trim():'';},\nrowBtns:()=>{const r=document.querySelector('.d60d-paper');return r?[...r.querySelectorAll('button')].map(b=>b.innerText.trim()):[];},\nclick:(scope,t)=>{const s=typeof scope==='string'?document.querySelector(scope):scope;const b=s&&[...s.querySelectorAll('button')].find(b=>b.innerText.trim()===t);if(!b)throw new Error('no button '+t);b.click();return true;},\nundo:()=>H.click('.work-notice','Undo'),\nlead:id=>LEADS.find(l=>l.id===id)};\nsignIn('sahil'); go('event',null,'E-04'); window.N0=LEADS.length;",
     "act": "loadSheet('E-04');\nreturn true;",
@@ -24547,8 +24548,7 @@
    ],
    "ui_expected": [
     "The Event leads sheet card reads 'ready to load'.",
-    "The card says 'Your seat does not load event sheets; the IR team or Marketing do.'",
-    "The card does not offer a 'Load 31 leads' button."
+    "The card offers a 'Load 31 leads' button."
    ],
    "ui_mode": "ui",
    "group": "D",
@@ -28250,7 +28250,7 @@
    ],
    "id": "TC-IM01-003",
    "story": "M01-S01",
-   "title": "Administrator lands on the Activity log, not an empty Dashboard",
+   "title": "Super user lands on Today with the whole rail on both sides",
    "type": "Permission",
    "seat": "sahil",
    "ui_mode": "ui",
@@ -28258,12 +28258,12 @@
     "Press Sahil Mohite on the sign-in screen"
    ],
    "ui_expected": [
-    "The page heading is 'Activity log'.",
-    "The menu shows 2 pages: Activity log and Team.",
-    "The menu does not show Dashboard."
+    "The menu shows Today, Leads, Activity, Events, Investors, Farms, Tickets, Investor updates, Payments, Documents, Transfers, Plan, Numbers, Teams and System.",
+    "The page offers a 'Lead side' and an 'Investors side' switch."
    ],
    "group": "IM-A",
-   "orig_story": "IM01-S01"
+   "orig_story": "IM01-S01",
+   "expected": "The menu shows Today, Leads, Activity, Events, Investors, Farms, Tickets, Investor updates, Payments, Documents, Transfers, Plan, Numbers, Teams and System. The page offers a 'Lead side' and an 'Investors side' switch."
   },
   {
    "priority": "P1",
@@ -29456,20 +29456,22 @@
    ],
    "id": "TC-IM10-007",
    "story": "M15-S03",
-   "title": "Administration reads the audit with investor details withheld",
+   "title": "The super user reads the audit on the Investors side",
    "type": "Permission",
    "seat": "sahil",
    "ui_mode": "ui",
    "ui_steps": [
-    "Press Sahil Mohite on the sign-in screen"
+    "Press Sahil Mohite on the sign-in screen",
+    "Press 'Activity' in the menu",
+    "Press 'Investors side'"
    ],
    "ui_expected": [
-    "The page says '12 accessible entries · organisation audit with investor details withheld'.",
-    "Every money row reads 'Money event' with 'Investor details withheld'.",
-    "The page does not show any ARL-INV id."
+    "The page says '12 accessible entries · your work on accounts you can open'.",
+    "The money rows read 'Recorded a receipt' with the investor ids ARL-INV-0208, ARL-INV-0209 and ARL-INV-0210."
    ],
    "group": "IM-A",
-   "orig_story": "IM10-S03"
+   "orig_story": "IM10-S03",
+   "expected": "The page says '12 accessible entries · your work on accounts you can open'. The money rows read 'Recorded a receipt' with the investor ids ARL-INV-0208, ARL-INV-0209 and ARL-INV-0210."
   },
   {
    "priority": "P1",
@@ -29560,6 +29562,8 @@
    "ui_mode": "ui",
    "ui_steps": [
     "Press Sahil Mohite on the sign-in screen",
+    "Press 'Activity' in the menu",
+    "Press 'Investors side'",
     "Press 'Meena' in the person filter"
    ],
    "ui_expected": [
@@ -29567,7 +29571,8 @@
     "Every row in the table is by Meena."
    ],
    "group": "IM-A",
-   "orig_story": "IM10-S04"
+   "orig_story": "IM10-S04",
+   "expected": "The table shows 6 rows. Every row in the table is by Meena."
   },
   {
    "priority": "P1",
