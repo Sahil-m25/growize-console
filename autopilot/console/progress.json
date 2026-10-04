@@ -1,32 +1,32 @@
 {
  "stories": {
   "M02-S01": {
-   "status": "pending",
-   "attempts": 1,
-   "at": "2026-09-25T18:36:44.944Z",
-   "note": "Seat plan written (ops/SEAT-PLAN.md); Sahil's renewal + test seat in BLOCKED.md; Jev run 0/0 (only manual cases; playwright missing)",
+   "status": "waiting",
+   "attempts": 2,
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "5c95302"
    ],
    "phases": {
-    "test": "pending"
+    "test": "waiting"
    },
    "phase_attempts": {
-    "test": 0
+    "test": 1
    }
   },
   "M02-S02": {
-   "status": "pending",
-   "attempts": 1,
-   "at": "2026-09-25T18:38:35.761Z",
-   "note": "Lead fields (27), Lead_Event lookup and the 10 ladder values in Lead_Status are live. 6 old default values remain only because the sample Blueprint 'Lead nurturing process' (inactive) references them - owner to delete it. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md",
+   "status": "done",
+   "attempts": 2,
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "phases": {
     "zoho": "waiting",
-    "test": "pending"
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 0,
-    "test": 0
+    "test": 1
    },
    "commits": []
   },
@@ -109,9 +109,9 @@
   },
   "M02-S04": {
    "status": "waiting",
-   "attempts": 3,
-   "at": "2026-10-04T11:28:25.173Z",
-   "note": "Local part built (identity shaper, reveal, field register); Sahil's profile/field-security setup and restricted-user probes left (sandbox)",
+   "attempts": 4,
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "400a678",
     "3c6435a",
@@ -125,7 +125,7 @@
    "phase_attempts": {
     "fe": 1,
     "zoho": 1,
-    "test": 1
+    "test": 2
    },
    "notes": 1
   },
@@ -190,10 +190,10 @@
    }
   },
   "M19-S03": {
-   "status": "pending",
-   "attempts": 1,
-   "at": "2026-09-27T13:42:46.892Z",
-   "note": "all 90 catalogue fixtures registered (data edits, reducer-run as a person, clock, client actions; staging ones explicit no-ops); fresh / resets",
+   "status": "done",
+   "attempts": 2,
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "0f325a3",
     "936d1cd"
@@ -201,12 +201,12 @@
    "phases": {
     "fe": "done",
     "zoho": "done",
-    "test": "pending"
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
     "zoho": 0,
-    "test": 0
+    "test": 1
    }
   },
   "M02-S10": {
@@ -302,20 +302,22 @@
    ]
   },
   "M04-S01": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:03.510Z",
+   "at": "2026-10-04T13:56:34.716Z",
    "notes": 2,
-   "note": "Jev run 28 Sep: app 4/4 vs prototype 4/4",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "f938534",
     "3c6435a"
@@ -440,37 +442,41 @@
    ]
   },
   "M07-S03": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T16:20:43.183Z",
+   "at": "2026-10-04T13:56:34.716Z",
    "notes": 2,
-   "note": "Follow-up save/undo server functions with guarded lead-first write, take-back and signed 10 s Undo, 9 tests; waits on delete/activity permissions, Undo secret and the session layer for route handlers.",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "86a3697"
    ]
   },
   "M07-S04": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:07.278Z",
+   "at": "2026-10-04T13:56:34.716Z",
    "notes": 1,
-   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "c5fcc0a",
     "3c6435a"
@@ -582,40 +588,44 @@
    ]
   },
   "M16-S01": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:23.718Z",
-   "notes": 1,
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4",
+   "at": "2026-10-04T13:56:34.716Z",
+   "notes": 2,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "45ce49e",
     "3c6435a"
    ]
   },
   "M16-S03": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:24.021Z",
+   "at": "2026-10-04T13:56:34.716Z",
    "notes": 1,
-   "note": "Jev run 28 Sep: app 2/3 vs prototype 2/3",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "3261785",
     "3c6435a"
@@ -685,20 +695,22 @@
    ]
   },
   "M20-S07": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "phases": {
     "zoho": "waiting",
-    "harden": "done"
+    "harden": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 1,
-    "harden": 1
+    "harden": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-30T12:29:34.185Z",
-   "notes": 2,
-   "note": "Zoho CRM Portals spike: PARTIAL, leaning NO — no documented API/OAuth for portal users; keep Supabase (docs/reports/portals-spike.md)",
+   "at": "2026-10-04T13:56:34.716Z",
+   "notes": 3,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "9069a95",
     "fba719b"
@@ -725,41 +737,46 @@
    ]
   },
   "M03-S01": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "62b38ea",
     "181979c"
    ],
-   "at": "2026-09-28T06:46:36.621Z",
-   "note": "Admission built on the shared policy and tested for every seat; waiting on sandbox admission matrix (T03) and owner decisions on Sahil and Pradeep.",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 5
   },
   "M19-S01": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a"
    ],
-   "at": "2026-09-27T22:55:59.733Z",
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "notes": 1
   },
   "M01-S01": {
    "status": "waiting",
-   "attempts": 2,
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
@@ -769,7 +786,7 @@
    "phase_attempts": {
     "fe": 1,
     "wire": 1,
-    "test": 1
+    "test": 2
    },
    "commits": [
     "3c6435a",
@@ -777,27 +794,29 @@
     "f387f44",
     "74872c5"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 7
   },
   "M01-S03": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "3d38b79"
    ],
-   "at": "2026-09-28T06:46:49.508Z",
-   "note": "Live source built and tested on fixtures; waiting on sandbox proof (T06/T07), front-end freshness states (T04) and a Zoho Users reader for PEOPLE.",
-   "notes": 6
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "notes": 8
   },
   "M01-S07": {
    "status": "done",
@@ -819,45 +838,49 @@
    "notes": 1
   },
   "M01-S09": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "1f09598",
     "f387f44"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Freshness from /api/data fresh via nextDataRead",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 2
   },
   "M03-S02": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "3eb18d2",
     "f387f44"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Grants via POST/DELETE /api/grants; 4/4",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
    "notes": 5
   },
   "M03-S04": {
@@ -921,19 +944,21 @@
    "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
   },
   "M01-S06": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a"
    ],
-   "at": "2026-09-27T22:56:03.215Z",
-   "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json"
   },
   "M04-S03": {
    "status": "waiting",
@@ -1014,19 +1039,21 @@
    "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
   },
   "M07-S01": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a"
    ],
-   "at": "2026-09-27T22:56:06.676Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json"
   },
   "M07-S02": {
    "status": "done",
@@ -1047,16 +1074,18 @@
    "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left"
   },
   "M07-S05": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
@@ -1064,47 +1093,51 @@
     "057b4c1",
     "d690a88"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Live lead book carries Leads.Modified_Time (Lead.mt); composer sends the real expectedModifiedTime; stale → 409 reload",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 6
   },
   "M09-S01": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "1f09598"
    ],
-   "at": "2026-09-28T07:44:32.286Z",
-   "note": "Finance list read (T01) built and tested; waiting on an API route, the front-end table (T02) and Jev UI cases.",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 2
   },
   "M09-S02": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "a4b0e76",
     "fe49f1c"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "AM heading/subtitle/No-manager chip from /api/investors/am; 3/3",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 5
   },
   "M09-S03": {
@@ -1157,37 +1190,41 @@
    "notes": 7
   },
   "M09-S07": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "e4c3d05",
     "fe49f1c"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Investors search debounced via /api/investors/search",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 4
   },
   "M09-S08": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "waiting",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
@@ -1195,8 +1232,8 @@
     "fe49f1c",
     "15de941"
    ],
-   "at": "2026-10-04T08:29:27.974Z",
-   "note": "IR Investors page reusing ImInv/VOne: own-lead investors only, read-only, no money; GET /api/investors/mine (IR token, Originating_IR filter, guard re-admits every row); 11 scratch Jev cases pass",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 5
   },
   "M07-S07": {
@@ -1219,6 +1256,30 @@
   },
   "M01-S10": {
    "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 2
+   },
+   "commits": [
+    "3c6435a",
+    "3eb18d2",
+    "f387f44",
+    "74872c5"
+   ],
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "notes": 8
+  },
+  "M05-S06": {
+   "status": "done",
    "attempts": 2,
    "phases": {
     "fe": "done",
@@ -1233,33 +1294,11 @@
    },
    "commits": [
     "3c6435a",
-    "3eb18d2",
-    "f387f44",
-    "74872c5"
-   ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 8
-  },
-  "M05-S06": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
     "cbe5734",
     "2fc5aea"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Investors Today tiles, as-of line and stale state from /api/numbers/investors-today; TC-IM03-002 now passes",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 4
   },
   "M05-S07": {
@@ -1335,24 +1374,26 @@
    "notes": 7
   },
   "M08-S07": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "waiting",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "a4b0e76",
     "057b4c1"
    ],
-   "at": "2026-10-04T11:28:25.173Z",
-   "note": "Review closed by the 4 Oct reconcile (D116): 'said yes' state in ImSt; live derives it",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 5
   },
   "M08-S08": {
@@ -1378,7 +1419,7 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 10
+   "notes": 11
   },
   "M10-S01": {
    "status": "waiting",
@@ -1452,7 +1493,7 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 6
+   "notes": 7
   },
   "M10-S05": {
    "status": "waiting",
@@ -1545,7 +1586,7 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 5
+   "notes": 6
   },
   "M11-S03": {
    "status": "waiting",
@@ -1801,16 +1842,18 @@
    "notes": 3
   },
   "M12-S11": {
-   "status": "review",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
@@ -1818,9 +1861,9 @@
     "9444836",
     "8593446"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Paperwork row GETs /api/leads/[id]/paperwork; 8/10 as baseline",
-   "notes": 9
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "R5 (D117): Finance queue ordered by rankForFinance via GET /api/documents/queue; Not signed after all note; 19/19 Jev cases pass",
+   "notes": 11
   },
   "M12-S12": {
    "status": "done",
@@ -1841,19 +1884,21 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
-   "notes": 2
+   "notes": 3
   },
   "M12-S13": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
@@ -1861,8 +1906,8 @@
     "9444836",
     "8593446"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Deck follow-up hidden before NDA; 4/4",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 5
   },
   "M14-S01": {
@@ -1940,25 +1985,27 @@
    "notes": 9
   },
   "M10-S08": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "31fa384",
     "5aae3b8"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Per-farm money blocks from /api/investors/[id]/money",
-   "notes": 3
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "notes": 4
   },
   "M10-S09": {
    "status": "done",
@@ -2151,7 +2198,7 @@
   },
   "M15-S05": {
    "status": "done",
-   "attempts": 4,
+   "attempts": 5,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
@@ -2161,7 +2208,7 @@
    "phase_attempts": {
     "fe": 1,
     "wire": 2,
-    "test": 2
+    "test": 3
    },
    "commits": [
     "3c6435a",
@@ -2170,8 +2217,8 @@
     "af147c0",
     "02cd2ce"
    ],
-   "at": "2026-10-04T11:28:25.173Z",
-   "note": "Review closed (D116): Logs view on /api/logs, reveal behind step-up with reason; /api/system feeds the System card",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "notes": 11
   },
   "M17-S01": {
@@ -2286,19 +2333,21 @@
    "notes": 5
   },
   "M18-S03": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "waiting",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a"
    ],
-   "at": "2026-09-27T22:56:26.244Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json"
   },
   "M09-S09": {
    "status": "done",
@@ -2421,36 +2470,40 @@
    "notes": 4
   },
   "M01-S02": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "notes": 6,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Sign-in follows the route redirect; refusal message shown; signedOut signs out",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "58e93b5",
     "f387f44"
    ]
   },
   "M18-S04": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "notes": 4,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "installErrorBeacon on live payload; failed writes and give-ups send the beacon; 2/2",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "0683e32",
     "2fc5aea"
@@ -2485,29 +2538,35 @@
    ]
   },
   "M01-S04": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "notes": 3,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T07:43:52.510Z",
-   "note": "Sinks built and tested; waiting on the staging host LOG_DIR (AP4) and TC-E01-010/011 on staging.",
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "5a4eb31"
    ]
   },
   "M18-S02": {
-   "status": "pending",
-   "attempts": 0,
-   "notes": 2,
+   "status": "waiting",
+   "attempts": 1,
+   "notes": 3,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T07:43:57.578Z",
-   "note": "Log scrub test (T03) passes; leak matrix script (T02) built, waiting on staging users per role; T04 is Sahil's.",
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "5a4eb31"
    ]
@@ -2541,36 +2600,40 @@
    ]
   },
   "M06-S05": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "notes": 3,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Contacts wall per seat; 21 per-seat tests",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "399b469",
     "f387f44"
    ]
   },
   "M08-S02": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "notes": 4,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Gate route is read-only (nothing to guard); drawers now get Lead.mt",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "399b469",
     "057b4c1",
@@ -2578,18 +2641,20 @@
    ]
   },
   "M08-S05": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "notes": 5,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Cover start/end send Lead.mt live; stale → 409 lead-changed shows reload",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "399b469",
     "057b4c1",
@@ -2599,7 +2664,7 @@
   "M13-S01": {
    "status": "done",
    "attempts": 1,
-   "notes": 5,
+   "notes": 6,
    "phases": {
     "zoho": "waiting",
     "test": "done"
@@ -2657,18 +2722,20 @@
    ]
   },
   "M03-S03": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "notes": 2,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Grantor matrix rules tested; 3/4 same as baseline",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "5d6893b",
     "f387f44"
@@ -2698,18 +2765,20 @@
    ]
   },
   "M17-S02": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "notes": 5,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Seat and manager changes via PUT /api/users; step-up 403 in page",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "19ec347",
     "f387f44"
@@ -2755,32 +2824,37 @@
    ]
   },
   "M18-S01": {
-   "status": "pending",
-   "attempts": 0,
-   "notes": 3,
+   "status": "waiting",
+   "attempts": 1,
+   "notes": 4,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T13:47:00.608Z",
-   "note": "Harness and tuning built; waiting on a staging load run and real mail.",
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "9fa00b5"
    ]
   },
   "M18-S08": {
-   "status": "pending",
-   "attempts": 1,
-   "notes": 3,
+   "status": "waiting",
+   "attempts": 2,
+   "notes": 4,
    "phases": {
     "zoho": "waiting",
-    "harden": "done"
+    "harden": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "harden": 1
+    "harden": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "UAT pack: 10 seat scenarios, 131 steps, sign-off sheet, defect intake (docs/uat/)",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "41100de",
     "a1833bf"
@@ -2833,7 +2907,7 @@
    "commits": [
     "c88afd2"
    ],
-   "notes": 6
+   "notes": 7
   },
   "M19-S13": {
    "status": "done",
@@ -2853,15 +2927,15 @@
   },
   "M12-S10": {
    "status": "waiting",
-   "attempts": 1,
+   "attempts": 2,
    "phases": {
     "test": "waiting"
    },
    "phase_attempts": {
-    "test": 1
+    "test": 2
    },
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "at": "2026-10-04T13:56:34.716Z",
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
    "commits": [
     "a88383f"
    ],
@@ -2912,7 +2986,7 @@
    "commits": [
     "2ec8f37"
    ],
-   "notes": 1
+   "notes": 2
   },
   "M19-S07": {
    "status": "waiting",
@@ -3057,9 +3131,9 @@
  },
  "subtasks": {
   "M02-S01-T02": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reset — the Jev run never executed (fixture errors)"
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
   },
   "M02-S01-T03": {
    "status": "pending",
@@ -3285,9 +3359,9 @@
    "at": "2026-09-25T19:00:02.267Z"
   },
   "M19-S03-T02": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reset — the Jev run never executed (fixture errors)"
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
   },
   "M19-S03-T03": {
    "status": "done",
@@ -4905,8 +4979,8 @@
    "phase": "wire"
   },
   "M12-S11-W1": {
-   "status": "review",
-   "at": "2026-09-30T12:29:34.185Z",
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
    "phase": "wire"
   },
   "M13-S02-W1": {
@@ -5567,6 +5641,36 @@
   "M20-S06-T01": {
    "status": "done",
    "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M03-S02-T03": {
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
+  },
+  "M03-S03-T02": {
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
+  },
+  "M04-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
+  },
+  "M07-S01-T03": {
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
+  },
+  "M18-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
+  },
+  "M18-S08-T01": {
+   "status": "done",
+   "at": "2026-10-04T13:56:34.716Z",
    "phase": "test"
   }
  },
@@ -10255,6 +10359,402 @@
    "status": "waiting",
    "attempt": 1,
    "note": "Local part built (identity shaper, reveal, field register); Sahil's profile/field-security setup and restricted-user probes left (sandbox)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S06",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S09",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M01-S10",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M02-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M02-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M02-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M03-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M03-S02",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M03-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M04-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M05-S06",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M06-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M07-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M07-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M07-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M07-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M08-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M08-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M08-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M09-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M09-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M09-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M09-S08",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M10-S08",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M12-S10",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M12-S11",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M12-S13",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M15-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 3,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M16-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M16-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M17-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M18-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M18-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M18-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M18-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M18-S08",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M19-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M19-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M20-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T13:56:34.716Z",
+   "story": "M12-S11",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 2,
+   "note": "R5 (D117): Finance queue ordered by rankForFinance via GET /api/documents/queue; Not signed after all note; 19/19 Jev cases pass",
    "by": "fan-out (D111)"
   }
  ],

@@ -25,7 +25,7 @@ dashboard. Two hundred investors' money runs through this. Read this file first,
 | How a thing is proved | `docs/test-book.html` — 104 cases, each carrying the decision it defends |
 | How it fails | `docs/where-it-breaks.html` — 145 modes |
 | What is built this week | `docs/plan.html` and `docs/plan.xlsx` |
-| Every event that crosses a seam | `contracts/` — 30 schemas. Declare it there **before** you emit it. Under one org most are now same-org field writes; the schema is still the field contract (D52) |
+| Every event that crosses a seam | `contracts/` — 32 event schemas (33 files). Declare it there **before** you emit it. Under one org most are now same-org field writes; the schema is still the field contract (D52) |
 | The shape of the code | `tools/graphify/graphify-out/graph.json` — query this instead of re-reading files. **It holds zero nodes today** (C-01 in `docs/CARRY-FORWARD.md`): a query returns nothing, so open the files until it is rebuilt |
 | What to build this week, in what order, with which agents, and the gate that says it is done | `docs/stages/` — the protocol in `README.md`, then the stage sheet, then only the week you are in |
 

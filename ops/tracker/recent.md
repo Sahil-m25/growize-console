@@ -1,4 +1,4 @@
-*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D116`.*
+*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D117`.*
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 
@@ -51,7 +51,15 @@
   - 30-second limit audit.
 - **Blocker for Catalyst:** sign-in sessions are still kept in memory.
 
-**Checks:** tsc clean · 635 + 1,851 tests pass · build ok · smoke 7/7.
+**Round 5 (D117):**
+- Screens finished: Finance's Investors list on its route; IR payment reports on Payments and Today; Finance's paperwork queue ordered, with "Not signed after all"; agreed supplementary draft offered when sending.
+- Audit trail: a reason is asked before showing a bank reference; app-access release and test sign-in links are logged in the audit trail.
+- Farm releases are pushed to the investor app; an allotment can't be saved without its investor and farm.
+- Live people list from Zoho users; System page now shows token expiry, cache errors and the last Zoho Sign event.
+- Tests: 47 local test steps checked (7 fully proven, 38 local half proven, 2 missing documents); read-budget tests; 22 new or converted browser cases; one real bug fixed ("End access" on a lent page did nothing).
+- **Phase 2b wiring: 66 of 66 done.**
+
+**Checks:** tsc clean · 687 + 1,891 tests pass · build ok · smoke 7/7 · 40 of 40 touched browser cases pass.
 
 **Waiting on the owner:**
 - Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
@@ -61,7 +69,7 @@
 - Catalyst project access.
 
 **Next local work:**
-- Move sessions into the shared store.
+- Move sessions into the shared store, and the other per-copy state (needed before any multi-instance host).
 - Add a request time limit and fix the 3 actions that can exceed 30 s.
-- Record the 47 test steps that can run here.
-- M12-S11 (Finance's paperwork queue).
+- Money: receipt replay with refunds; discard the pending-receipt session on sign-out.
+- The two missing documents (UAT usability sheet, one-page UI test contract) and the test gaps listed in BLOCKED.md.

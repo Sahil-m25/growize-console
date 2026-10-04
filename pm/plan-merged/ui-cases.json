@@ -3038,17 +3038,18 @@
    "id": "TC-E11-016",
    "story": "M15-S05",
    "seat": "sahil",
-   "title": "Revealing a bank reference writes a named, masked log line",
+   "title": "Revealing a bank reference asks why, then writes a named, masked log line with the reason",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
     "Open Payments from the menu",
     "Press 'Show the reference' on Joseph Mathew's row",
+    "Press 'A payout or a refund'",
     "Open Activity from the menu",
     "Press 'Investors side'"
    ],
    "expected": [
     "The Activity log lists 'Revealed a bank reference' by Sahil Mohite.",
-    "That line's note reads 'Payments · ••• 8119 · shown to Sahil Mohite'."
+    "That line's note reads 'Payments · ••• 8119 · shown to Sahil Mohite · A payout or a refund'."
    ],
    "fixtures": [
     "DEMO_DATA"
@@ -5236,7 +5237,7 @@
    ],
    "expected": [
     "T-0049 reads Prakash Bhat, balance, ₹22.5 L.",
-    "T-0049 reads RTGS HDFC2708994.",
+    "T-0049 reads RTGS ••• 8994.",
     "T-0049 was recorded by Harsha."
    ],
    "fixtures": [
@@ -5749,25 +5750,19 @@
   },
   {
    "id": "TC-IM07-011",
-   "story": "M12-S06",
+   "story": "M12-S11",
    "seat": "meena",
-   "title": "Verify the signed supplementary with its eMudhra reference",
+   "title": "Finance's Out for signature lists the paper the IR says is signed first, with the IR's word beside it",
    "steps": [
     "Press Meena Raghavan on the sign-in screen",
-    "Press 'Verify it' on Kiran Joshi's row",
-    "Type 'EMU-0109-90001' in the e-Mudhra reference box",
-    "Press 'The signed copy is here'",
-    "Press 'Investors' in the menu",
-    "Open Kiran Joshi",
-    "Press the 'Paper' tab"
+    "Press 'Documents' in the menu"
    ],
    "expected": [
-    "The Supplementary agreement round is tagged 'signed' and reads 'Signed and verified', with reference EMU-0109-90001.",
-    "Everything on file shows the Supplementary agreement as signed with reference EMU-0109-90001.",
-    "The page does not offer 'Verify it'."
+    "The first row of 'Out for signature' is Kiran Joshi's Supplementary agreement.",
+    "Under Kiran Joshi the row reads 'They say the supplementary is signed and sent' and 'That is what they were told, not a signature.'"
    ],
    "fixtures": [
-    "KIRAN_SUPP_SAID_SIGNED"
+    "IM:KIRAN_SUPP_SAID_SIGNED"
    ],
    "group": "M12"
   },
@@ -7465,6 +7460,449 @@
    ],
    "group": "M01",
    "bug_open": "Investors-only seats have no working Your account button; state.ts blocks every action but setPerson/setRole/setTheme when the seat holds no lead-side account"
+  },
+  {
+   "id": "TC-E11-016b",
+   "story": "M18-S05",
+   "seat": "sahil",
+   "title": "'Show the reference' asks the reason first and shows nothing until one is chosen",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Payments from the menu",
+    "Press 'Show the reference' on Joseph Mathew's row"
+   ],
+   "expected": [
+    "The page asks 'Why do you need it?' with the choices 'A payout or a refund', 'A name match against a cancelled cheque', 'An investor query about their own record' and 'Cancel'."
+   ],
+   "fixtures": [
+    "DEMO_DATA"
+   ],
+   "group": "M18"
+  },
+  {
+   "id": "TC-IM05-041",
+   "story": "M10-S03",
+   "seat": "harsha",
+   "title": "Payments lists the IR's waiting payment report and offers Answer it",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Payments'"
+   ],
+   "expected": [
+    "A card titled 'Payment reports waiting on Finance' shows 1 report.",
+    "The report reads Balance, ₹22.5 L, RTGS and offers 'Answer it'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "TC-IM05-042",
+   "story": "M10-S03",
+   "seat": "fahad",
+   "title": "Compliance sees no payment reports on Payments",
+   "steps": [
+    "Press Fahad Rizvi on the sign-in screen"
+   ],
+   "expected": [
+    "The page does not mention payment reports waiting on Finance."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "TC-E14-024",
+   "story": "M15-S05",
+   "seat": "sahil",
+   "title": "In the demo book System shows the prototype's own checks and no Live checks card",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open System from the menu"
+   ],
+   "expected": [
+    "The doors under the counts are Working checks, Role permissions, System activity and Failed-write test.",
+    "The page has a card headed 'Not working'.",
+    "The page has a card headed 'Needs attention'."
+   ],
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "group": "M17"
+  },
+  {
+   "id": "TC-E14-025",
+   "story": "M15-S05",
+   "seat": "tasneem",
+   "title": "A seat without the system right has no System page and so no Live checks",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen"
+   ],
+   "expected": [
+    "The menu ends with 'Teams' and then 'How the merge works'.",
+    "The menu has Today, Leads and Numbers."
+   ],
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "group": "M17"
+  },
+  {
+   "id": "TC-E14-026",
+   "story": "M15-S05",
+   "seat": "harsha",
+   "title": "An Investors-side seat has no System page either",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen"
+   ],
+   "expected": [
+    "The menu ends with 'Teams' and then 'How the merge works'.",
+    "The menu has Today, Investors and Numbers."
+   ],
+   "fixtures": [
+    "DEMO_PORTAL"
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-004",
+   "seat": "sahil",
+   "title": "Granting a page: the confirmation says what starts and nothing else",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Open Jhalak Mehta'",
+    "Press 'Leads · 0 allowed' under Granted access",
+    "Press 'See it' under Leads"
+   ],
+   "expected": [
+    "The panel says 'Jhalak starts reaching Leads' and that it appears on their rail with 'See it' and nothing else.",
+    "The panel offers 'Give Jhalak Leads' and 'Leave it as it is'."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-028",
+   "seat": "sahil",
+   "title": "After the grant, a by-grant person signs in to only that page",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Open Jhalak Mehta'",
+    "Press 'Leads · 0 allowed' under Granted access",
+    "Press 'See it' under Leads",
+    "Press 'Give Jhalak Leads'",
+    "Press 'Your account' in the top bar",
+    "Press 'Sign out'",
+    "Press Jhalak Mehta on the sign-in screen"
+   ],
+   "expected": [
+    "The top bar names Jhalak Mehta.",
+    "The menu holds Leads.",
+    "The page is Leads."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-005",
+   "seat": "tasneem",
+   "title": "The IR Manager sees only her IRs and cannot give a seat above their own",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Open Kavya Nair'",
+    "Open the 'Role and reporting manager' section"
+   ],
+   "expected": [
+    "The Members list names Tasneem Qureshi, Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer and Vinay Shenoy.",
+    "Kavya Nair's Position dropdown shows IR Associate, and IR Manager in it is marked as above Tasneem's own access."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-007",
+   "seat": "sahil",
+   "title": "A manager change cannot make a loop: Tasneem's Reports-to list holds no one under her",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Open Tasneem Qureshi'",
+    "Open the 'Role and reporting manager' section"
+   ],
+   "expected": [
+    "Tasneem Qureshi's 'Reports to' dropdown lists Nobody, Sahil Mohite, Harsha Bhat, Divya Kamath, Arvind Menon and Pradeep Ram.",
+    "Tasneem Qureshi's 'Reports to' dropdown currently shows Arvind Menon."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-010",
+   "seat": "tasneem",
+   "title": "A leaver's leads move to the successor in one step",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Open Nikhil Rao'",
+    "Open the 'Temporary access and staff handover' section",
+    "Press 'Handover and remove member'",
+    "Choose 'Kavya Nair · 6 owned leads' in the 'Receive this IR work' dropdown",
+    "Press 'Handover and remove'"
+   ],
+   "expected": [
+    "Nikhil Rao's row in Members is marked 'left' and reaches 0 screens.",
+    "Kavya Nair's row shows 8 leads.",
+    "The page says 'Removed member after handover, Nikhil Rao · 2 owned leads to Kavya Nair'."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-012",
+   "seat": "tasneem",
+   "title": "Lend a page: Tasneem grants Kavya Numbers for 3 days",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Temporary access'",
+    "Press 'Grant access'",
+    "Choose 'Kavya Nair — IR Associate' in the 'To whom' dropdown",
+    "Choose 'Numbers' in the 'Which page' dropdown",
+    "Type 'Covering the weekly review' in the reason box",
+    "Press 'Grant access'"
+   ],
+   "expected": [
+    "The Temporary access door reads '2 live'.",
+    "The page says 'Granted temporary access, Kavya Nair · Numbers (See it) · 3 days · Covering the weekly review'."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-012b",
+   "seat": "tasneem",
+   "title": "Kavya sees the lent Numbers page waiting to be switched on",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Temporary access'",
+    "Press 'Grant access'",
+    "Choose 'Kavya Nair — IR Associate' in the 'To whom' dropdown",
+    "Choose 'Numbers' in the 'Which page' dropdown",
+    "Type 'Covering the weekly review' in the reason box",
+    "Press 'Grant access'",
+    "Press 'Your account' in the top bar",
+    "Press 'Sign out'",
+    "Press Kavya Nair on the sign-in screen",
+    "Press '2 lent to you' in the top bar"
+   ],
+   "expected": [
+    "The page offers 'Activate access' for the Numbers grant.",
+    "The Numbers grant reads 'Covering the weekly review'."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-014",
+   "seat": "tasneem",
+   "title": "Ending a live grant revokes it at once",
+   "steps": [
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Teams from the menu",
+    "Press 'Temporary access'",
+    "Press 'End access'"
+   ],
+   "expected": [
+    "The Temporary access panel says 'none live' and 'No active temporary access.'",
+    "The panel shows 'Previous grants · 3'."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-020",
+   "seat": "sahil",
+   "title": "The failed-write test fails the next save and leaves the saved date alone",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open System from the menu",
+    "Press 'Failed-write test'",
+    "Press 'Test a failed write'",
+    "Open Plan from the menu",
+    "Press 'Edit periods'",
+    "Type '2026-09-29' in the 'September ends' box",
+    "Press 'Finish editing'"
+   ],
+   "expected": [
+    "The top bar says '1 save failed' with a Retry button.",
+    "The Period targets table shows September as 01 Sep → 30 Sep."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M17-S02",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E14-020b",
+   "seat": "sahil",
+   "title": "After the failed-write test, Retry saves the date",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open System from the menu",
+    "Press 'Failed-write test'",
+    "Press 'Test a failed write'",
+    "Open Plan from the menu",
+    "Press 'Edit periods'",
+    "Type '2026-09-29' in the 'September ends' box",
+    "Press 'Retry' in the top bar",
+    "Press 'Finish editing'"
+   ],
+   "expected": [
+    "The Period targets table shows September as 01 Sep → 29 Sep."
+   ],
+   "group": "M17"
+  },
+  {
+   "story": "M16-S05",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E12-016",
+   "seat": "sahil",
+   "title": "A funnel dial asks first, with the price",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Plan from the menu",
+    "Press 'Assumptions'",
+    "Press 'Funnel rates'",
+    "Press 'Raise Lead → qualified'"
+   ],
+   "expected": [
+    "The panel is headed 'Lead → Qualified: 40% → 41%'.",
+    "The panel says 'Captured 3,170 → 3,093'.",
+    "The panel offers 'Set it to 41%' and 'Leave it as it is'."
+   ],
+   "group": "M16"
+  },
+  {
+   "story": "M16-S05",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E12-016b",
+   "seat": "sahil",
+   "title": "Confirming the funnel dial saves it",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Plan from the menu",
+    "Press 'Assumptions'",
+    "Press 'Funnel rates'",
+    "Press 'Raise Lead → qualified'",
+    "Press 'Set it to 41%'"
+   ],
+   "expected": [
+    "The Funnel rates row on Plan reads '41% → 18% → 85%'."
+   ],
+   "group": "M16"
+  },
+  {
+   "story": "M16-S05",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E12-017",
+   "seat": "sahil",
+   "title": "An end date before the start is refused",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Plan from the menu",
+    "Press 'Edit periods'",
+    "Type '2026-08-01' in the 'September ends' box"
+   ],
+   "expected": [
+    "The page says 'The end date must be on or after the start. The saved window is unchanged.'",
+    "The Total row still reads 01 Sep → 31 Dec."
+   ],
+   "group": "M16"
+  },
+  {
+   "story": "M16-S05",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E12-018",
+   "seat": "sahil",
+   "title": "A new target is saved and the plan total follows",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Plan from the menu",
+    "Press 'Edit periods'",
+    "Type '60' in the 'September target units' box"
+   ],
+   "expected": [
+    "The Total row shows 203.",
+    "September's Paid cell shows 0 and is plain text."
+   ],
+   "group": "M16"
+  },
+  {
+   "story": "M16-S05",
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "id": "TC-E12-019",
+   "seat": "sahil",
+   "title": "Digital Infrastructure sets a recovery action on a red line",
+   "steps": [
+    "Press Sahil Mohite on the sign-in screen",
+    "Open Numbers from the menu",
+    "Press 'Review'",
+    "Press 'Set action' on the 'Hours a lead waits for an owner' row",
+    "Choose 'Coach the owner and re-run next week' in the 'The action' dropdown",
+    "Choose 'Tasneem Qureshi — IR Manager' in the 'The owner' dropdown",
+    "Press '7 days'",
+    "Press 'Save recovery action'"
+   ],
+   "expected": [
+    "The 'Hours a lead waits for an owner' line now shows 'Coach the owner and re-run next week'.",
+    "The line names Tasneem and a date."
+   ],
+   "group": "M16"
   }
  ],
  "retired": [
