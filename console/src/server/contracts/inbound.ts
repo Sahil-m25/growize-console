@@ -117,3 +117,17 @@ export function createSeenEvents(store?: AppendOnlyStore | null, keepDays = 14):
     add: async (id: string) => { load().add(id); store?.append({ eventId: id }); },
   });
 }
+
+/**
+ * Applied event ids in SharedState (docs/architecture/shared-state.md inventory 8): every instance sees the same
+ * set and it survives a recycle. One key per event id, kept `keepDays` (the same window the file reader replays).
+ * Used when STATE_STORE=catalyst (server/state/runtime instanceStateShared); the file one above otherwise.
+ * A store failure rejects (SharedStateError): the inbound endpoint answers 5xx and the sender redelivers.
+ */
+export function createSharedSeenEvents(state: SharedState, ns: string, keepDays = 14): SeenEvents {
+  const key = (id: string) => `seen|${ns}|${id}`;
+  return Object.freeze({
+    has: async (id: string) => (await state.get(key(id))) !== null,
+    add: async (id: string) => { await state.set(key(id), "1", keepDays * 86_400); },
+  });
+}

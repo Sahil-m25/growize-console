@@ -10,7 +10,10 @@
  *   - the bank UTR is required, and one transfer pays one payout (a UTR already on another payout is refused);
  *   - 0 ≤ TDS ≤ gross, whole rupees; the paid-on date is a real day and not in the future (IST).
  * The double-press guard: one Idempotency-Key per press; a second press with the same key joins the first and
- * gets its answer (held ten minutes, ids only); the same key with a different payment is refused.
+ * gets its answer (held ten minutes, ids only); the same key with a different payment is refused. The key is
+ * claimed in SharedState (../state/idempotent), so a second press landing on another instance joins too; the
+ * stored answer carries no UTR (it is re-masked from the replayed press). One payout is marked by one press at
+ * a time, across instances (a claim on the payout id).
  * The write carries If-Unmodified-Since (the Modified_Time the screen loaded, else the one just read):
  * someone else's change in between is a 409, never an overwrite.
  * The UTR is never logged and comes back masked ("••••1234"). Logs carry the payout id and a code.
@@ -22,9 +25,13 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { PAYOUT_MODES, payoutNet } from "../../lib/im/money";
 import { dayOf, lookupId, numOf, PAYOUTS_MODULE } from "./schedule";
 import { maskUtr } from "./queue";
+import { createMemoryState } from "../state/memory";
+import { createIdempotency } from "../state/idempotent";
+import type { SharedState } from "../state/shared-state";
 
 export const MARK_PAID_TTL_MS = 10 * 60 * 1_000;
-const MAX_HELD = 500;
+/** How long one press may hold a payout (a crashed instance's lock frees itself). */
+const PAYOUT_LOCK_S = 120;
 const RECORD_ID = /^\d{15,22}$/;
 const OPAQUE_KEY = /^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$/;
 const UTR = /^[A-Z0-9][A-Z0-9._/-]{2,39}$/;
@@ -79,6 +86,8 @@ export interface MarkPaidDeps {
   /** Fresh check on the live session: does the seat hold "pay"? (./authority pay) */
   readonly mayPay: (cred: UserCredential, signal?: AbortSignal) => Promise<boolean>;
   readonly clock?: () => number;
+  /** Where the double-press guard lives (runtime: sharedState()); default an in-process store. */
+  readonly state?: SharedState;
 }
 
 interface Intent { readonly payoutId: string; readonly paidOn: string; readonly mode: string; readonly utr: string; readonly tds: number; readonly modifiedTime: string | null }
@@ -89,8 +98,15 @@ export function createMarkPaid(deps: MarkPaidDeps) {
   const { crm, log } = deps;
   const clock = deps.clock ?? Date.now;
   const valid = (id: unknown): id is string => typeof id === "string" && RECORD_ID.test(id) && id.startsWith(deps.recordIdPrefix);
-  const held = new Map<string, { readonly at: number; readonly fingerprint: string; readonly result: Promise<MarkPaidResult> }>();
-  const inFlight = new Set<string>();
+  const state = deps.state ?? createMemoryState({ clock });
+  const isBusy = (r: MarkPaidResult) => !r.ok && r.kind === "refused" && r.reasonCode === "busy";
+  const presses = createIdempotency<MarkPaidResult>({
+    state, ns: "mark-paid", ttlSeconds: MARK_PAID_TTL_MS / 1_000, clock,
+    // Only a confirmed answer is held; anything retryable (or "busy") may be pressed again with the same key.
+    keep: (r) => r.ok || (!r.retryable && !isBusy(r)),
+    save: (r) => JSON.stringify(r.ok ? { ...r, value: { ...r.value, utrMasked: "" } } : r),
+    load: (s) => { try { return JSON.parse(s) as MarkPaidResult; } catch { return null; } },
+  });
 
   const at = () => { try { return clock(); } catch { return 0; } };
   const refuse = (me: string, code: string, ids: readonly unknown[] = [], extra: { paidOn?: string | null } = {}): Fail => {
@@ -196,25 +212,18 @@ export function createMarkPaid(deps: MarkPaidDeps) {
       const i = parse(me, body);
       if ("ok" in i) return i;
 
-      const now = at();
-      for (const [k, v] of held) if (now - v.at > MARK_PAID_TTL_MS) held.delete(k);
       const slot = `${me}\u0000${idempotencyKey}`;
       const fingerprint = JSON.stringify([i.payoutId, i.paidOn, i.mode, i.utr, i.tds]);
-      const first = held.get(slot);
-      if (first) {
-        if (first.fingerprint !== fingerprint) return refuse(me, "idempotency-key-reused", [i.payoutId]);
-        const r = await first.result;
-        return r.ok ? { ok: true, value: Object.freeze({ ...r.value, duplicate: true }) } : r;
-      }
-      if (held.size >= MAX_HELD) return refuse(me, "busy");
-      if (inFlight.has(i.payoutId)) return refuse(me, "busy", [i.payoutId]);
-      inFlight.add(i.payoutId);
-      const result = run(cred, i, signal).finally(() => inFlight.delete(i.payoutId));
-      held.set(slot, { at: now, fingerprint, result });
-      const r = await result;
-      // Only a confirmed answer is held; anything retryable may be pressed again with the same key.
-      if (!r.ok && r.retryable && held.get(slot)?.result === result) held.delete(slot);
-      return r;
+      const lock = `mark-paid-payout|${i.payoutId}`;
+      const o = await presses.once(slot, fingerprint, async () => {
+        if (!(await state.claim(lock, PAYOUT_LOCK_S))) return refuse(me, "busy", [i.payoutId]);
+        try { return await run(cred, i, signal); } finally { await state.release(lock).catch(() => { /* the TTL frees it */ }); }
+      });
+      if (o.kind === "reused") return refuse(me, "idempotency-key-reused", [i.payoutId]);
+      if (o.kind === "busy" || o.kind === "unavailable") return refuse(me, "busy", [i.payoutId]);
+      const r = o.result;
+      if (o.kind === "ran") return r;
+      return r.ok ? { ok: true, value: Object.freeze({ ...r.value, utrMasked: maskUtr(i.utr)!, duplicate: true }) } : r;
     },
   });
 }

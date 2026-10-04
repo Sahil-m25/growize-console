@@ -18,6 +18,7 @@
 import type { OpsLog } from "../../lib/zoho/log";
 import type { ServiceCredential, ZohoRecord, ZohoServiceClient } from "../../lib/zoho/client";
 import type { AppendOnlyStore } from "../logs/jsonl";
+import type { SharedState } from "../state/shared-state";
 import { slaDue, SLA_DAYS } from "../cases/writes";
 import { requestExecuted } from "./outbox";
 
@@ -56,6 +57,23 @@ export function createRequestIndex(store?: AppendOnlyStore | null): RequestIndex
   return Object.freeze({
     get: async (id: string) => load().get(id) ?? null,
     put: async (id: string, caseId: string, contactId: string) => { load().set(id, { caseId, contactId }); store?.append({ appRequestId: id, caseId, contactId }); },
+  });
+}
+
+/**
+ * app_request_id → Case in SharedState (docs/architecture/shared-state.md inventory 9): one key per request id,
+ * value "caseId|contactId" (ids only), no expiry — the file index above also keeps every day. Used when
+ * STATE_STORE=catalyst; a store failure rejects, so the intake throws and the app redelivers.
+ */
+export function createSharedRequestIndex(state: SharedState): RequestIndex {
+  const key = (id: string) => `req|${id}`;
+  return Object.freeze({
+    async get(id: string) {
+      const v = await state.get(key(id));
+      const m = v === null ? null : /^(\d{15,22})\|(\d{15,22})$/.exec(v);
+      return m ? Object.freeze({ caseId: m[1]!, contactId: m[2]! }) : null;
+    },
+    async put(id: string, caseId: string, contactId: string) { await state.set(key(id), `${caseId}|${contactId}`); },
   });
 }
 

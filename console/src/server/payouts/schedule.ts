@@ -27,6 +27,8 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { PAYOUT_MONTHS, payoutSchedule } from "../../lib/im/money";
 import type { ImAllot } from "../../lib/im/types";
 import { checkProjection, MODULES } from "../data/projections";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 
 export const PAYOUTS_MODULE = "Investor_Payouts";
 /** PROVISIONAL (see above): the allotment date the schedule starts from. */
@@ -143,12 +145,19 @@ export interface ScheduleJobDeps {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
+  /** Where the per-allotment run claim lives (runtime: sharedState()); default an in-process store. */
+  readonly state?: SharedState;
 }
+
+/** How long one run may hold an allotment (released when it ends; a crashed instance's claim frees itself). */
+export const SCHEDULE_RUN_CLAIM_S = 300;
 
 export function createPayoutScheduleJob(deps: ScheduleJobDeps) {
   const { crm, log } = deps;
   const clock = deps.clock ?? Date.now;
-  const running = new Set<string>();
+  // One run per allotment at a time, across instances (docs/architecture/shared-state.md inventory 14).
+  const state = deps.state ?? createMemoryState({ clock });
+  const runKey = (id: string) => `payout-run|${id}`;
   const valid = (id: unknown): id is string => typeof id === "string" && RECORD_ID.test(id) && id.startsWith(deps.recordIdPrefix);
   const note = (me: string, action: string, reason: string, ids: readonly string[]) => {
     let at = 0; try { at = clock(); } catch { /* the note stands */ }
@@ -191,10 +200,11 @@ export function createPayoutScheduleJob(deps: ScheduleJobDeps) {
         if (!a) { outcomes.push({ allotmentId: id, status: "skipped", reason: "not-visible" }); continue; }
         const why = unschedulable(a);
         if (why) { outcomes.push({ allotmentId: id, status: "skipped", reason: why }); continue; }
-        if (running.has(id)) { outcomes.push({ allotmentId: id, status: "skipped", reason: "busy" }); continue; }
+        let mine: boolean;
+        try { mine = await state.claim(runKey(id), SCHEDULE_RUN_CLAIM_S); } catch { mine = false; }
+        if (!mine) { outcomes.push({ allotmentId: id, status: "skipped", reason: "busy" }); continue; }
         todo.push(a);
       }
-      for (const a of todo) running.add(a.id);
       try {
         for (let i = 0; i < todo.length; i += ALLOTS_PER_PAYOUT_READ) {
           const chunk = todo.slice(i, i + ALLOTS_PER_PAYOUT_READ);
@@ -225,7 +235,7 @@ export function createPayoutScheduleJob(deps: ScheduleJobDeps) {
             else { note(me, "payout-schedule", "created", [a.id]); outcomes.push({ allotmentId: a.id, status: "created", created, present: m.present, doubled: m.doubled }); }
           }
         }
-      } finally { for (const a of todo) running.delete(a.id); }
+      } finally { await Promise.allSettled(todo.map((a) => state.release(runKey(a.id)))); }
       const order = new Map(ids.map((id, i) => [id, i]));
       outcomes.sort((x, y) => order.get(x.allotmentId)! - order.get(y.allotmentId)!);
       return { ok: true, outcomes: Object.freeze(outcomes) };

@@ -56,6 +56,13 @@ export interface LogSinks {
   readonly stores: Readonly<{ ops: PlaneStore; identity: PlaneStore; errors: PlaneStore }> | null;
   /** The Stratus bucket (stratus only), shared with the audit archive. */
   readonly objects: StratusClient | null;
+  /**
+   * A further durable plane for append-only records other than Planes B/C — the Zoho Sign dead-letters
+   * ("sign-dead") and the investor-app push ledger ("push"): a day file under LOG_DIR (jsonl) or Stratus segments
+   * (stratus), so they survive a recycle and every instance reads every instance's lines. Null in memory mode.
+   * Each record passes the identity guard first. One store per plane per process.
+   */
+  planeStore(plane: string): PlaneStore | null;
   /** Upload whatever the durable stores still buffer (a no-op for files). */
   flush(): Promise<void>;
 }
@@ -87,12 +94,14 @@ export function createLogSinks(env: NodeJS.ProcessEnv = process.env, o: LogSinkO
   let stores: LogSinks["stores"] = null;
   let objects: StratusClient | null = null;
   let instance = `p-${randomBytes(6).toString("hex")}`;
+  let makeExtra: ((plane: string) => PlaneStore) | null = null;
   if (kind === "jsonl") {
     dir = (env.LOG_DIR ?? "").trim();
     if (!dir) throw new Error("LOG_DIR is required when LOG_STORE=jsonl.");
     const d = dir;
     const file = (plane: string) => fileStore(createJsonlStore({ dir: d, plane, clock }));
     stores = Object.freeze({ ops: file("ops"), identity: withChain(file("identity"), createChainLinker(instance), clock), errors: file("errors") });
+    makeExtra = file;
   } else if (kind === "stratus") {
     const c = stratusConfig(env);
     instance = c.instance;
@@ -102,9 +111,9 @@ export function createLogSinks(env: NodeJS.ProcessEnv = process.env, o: LogSinkO
     const remote = (plane: string): StratusPlaneStore => createStratusPlaneStore({ client, plane, instance, clock, flushLines: c.flushLines, flushMs: c.flushMs,
       timer: o.timer, onError: o.onFlushError ?? alertFlush });
     stores = Object.freeze({ ops: remote("ops"), identity: withChain(remote("identity"), createChainLinker(instance), clock), errors: remote("errors") });
+    makeExtra = remote;
     if (o.timer !== false) {
-      const s = stores;
-      process.once("beforeExit", () => { void Promise.all([s.ops.flush(), s.identity.flush(), s.errors.flush()]); });
+      process.once("beforeExit", () => { void flush(); });
     }
   }
   const ring = createMemorySink({ capacity: o.capacity ?? 5_000 });
@@ -139,9 +148,23 @@ export function createLogSinks(env: NodeJS.ProcessEnv = process.env, o: LogSinkO
     records: () => eRing.records(),
     clear: () => eRing.clear(),
   });
+  const extras = new Map<string, PlaneStore>();
+  const planeStore = (plane: string): PlaneStore | null => {
+    if (!makeExtra) return null;
+    if (plane === "ops" || plane === "identity" || plane === "errors") throw new Error("Planes B and C are written through their own sinks.");
+    let st = extras.get(plane);
+    if (!st) {
+      const inner = makeExtra(plane);
+      st = Object.freeze({ ...inner, append: (record: object) => inner.append(guardRecord(record).record) });
+      extras.set(plane, st);
+    }
+    return st;
+  };
   const all = stores;
-  const flush = async (): Promise<void> => { if (all) await Promise.all([all.ops.flush(), all.identity.flush(), all.errors.flush()]); };
-  return Object.freeze({ kind, dir, ops, identity, errors, stores, objects, flush });
+  const flush = async (): Promise<void> => {
+    if (all) await Promise.all([all.ops.flush(), all.identity.flush(), all.errors.flush(), ...[...extras.values()].map((x) => x.flush())]);
+  };
+  return Object.freeze({ kind, dir, ops, identity, errors, stores, objects, planeStore, flush });
 }
 
 const G = globalThis as typeof globalThis & { __gzLogSinks?: LogSinks };

@@ -836,6 +836,24 @@
    "GET": {
     "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
    }
+  },
+  "/api/jobs/sign-recheck": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (X-Job-Secret header = JOB_SECRET; no body)"
+    }
+   }
+  },
+  "/api/jobs/outbox-drain": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (X-Job-Secret header = JOB_SECRET; no body)"
+    }
+   }
   }
  }
 }

@@ -9,6 +9,7 @@ import type { LiveContext } from "../data/zoho-source";
 import type { MarkPaid } from "./mark-paid";
 import type { PayoutScheduleJob } from "./schedule";
 import { payoutCapsOf, type PayoutCaps } from "./authority";
+import { sharedState } from "../state/runtime";
 
 export const NO_STORE = Object.freeze({ "Cache-Control": "no-store" });
 
@@ -35,14 +36,14 @@ export async function markPaid(ctx: LiveContext, env: NodeJS.ProcessEnv = proces
   sids().set(ctx.principal.credential, ctx.principal.sessionId);
   if (G.__gzMarkPaid) return G.__gzMarkPaid;
   const { createMarkPaid } = await import("./mark-paid");
-  return (G.__gzMarkPaid = createMarkPaid({ crm: ctx.crm, log: ctx.rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX ?? "",
+  return (G.__gzMarkPaid = createMarkPaid({ crm: ctx.crm, log: ctx.rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX ?? "", state: sharedState(),
     mayPay: async (cred) => { const sid = sids().get(cred); return !!sid && (await liveCaps(sid, cred, env)).pay; } }));
 }
 
 export async function scheduleJob(ctx: LiveContext, env: NodeJS.ProcessEnv = process.env): Promise<PayoutScheduleJob> {
   if (G.__gzPayoutJob) return G.__gzPayoutJob;
   const { createPayoutScheduleJob } = await import("./schedule");
-  return (G.__gzPayoutJob = createPayoutScheduleJob({ crm: ctx.crm, log: ctx.rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX ?? "" }));
+  return (G.__gzPayoutJob = createPayoutScheduleJob({ crm: ctx.crm, log: ctx.rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX ?? "", state: sharedState() }));
 }
 
 /** A read or job failure as an HTTP answer: refusals 403 (never "not found"), bad input 400, Zoho 503. */

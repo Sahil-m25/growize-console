@@ -22,7 +22,8 @@ const config = ts.readConfigFile(path.join(consoleRoot, 'tsconfig.json'), ts.sys
 const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot);
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
-const program = ts.createProgram(['server/payouts/schedule.ts', 'server/payouts/queue.ts', 'server/payouts/mark-paid.ts', 'server/payouts/authority.ts']
+const program = ts.createProgram(['server/payouts/schedule.ts', 'server/payouts/queue.ts', 'server/payouts/mark-paid.ts', 'server/payouts/authority.ts',
+  'server/state/memory.ts', 'server/state/catalyst.ts', 'server/state/fake-catalyst.ts']
   .map((f) => path.join(srcRoot, f)), options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -44,6 +45,15 @@ const S = load('server/payouts/schedule.js');
 const { createPayoutReads, maskUtr } = load('server/payouts/queue.js');
 const { createMarkPaid } = load('server/payouts/mark-paid.js');
 const { payoutCapsOf } = load('server/payouts/authority.js');
+const { createMemoryState } = load('server/state/memory.js');
+const { createCatalystState } = load('server/state/catalyst.js');
+const { createFakeCatalyst, FAKE_CONFIG } = load('server/state/fake-catalyst.js');
+
+/** Two instances on one shared store (M18-S09-NOTE-2): one memory Map, or two catalyst adapters over one fake backend. */
+const TWO_INSTANCES = [
+  ['memory', () => { const st = createMemoryState({ clock: () => NOW }); return [st, st]; }],
+  ['fake catalyst', () => { const fake = createFakeCatalyst({ seed: 11 }); const mk = () => createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => NOW, sleep: async () => undefined }); return [mk(), mk()]; }],
+];
 
 const P = '9007199254';
 const HARSHA = `${P}740993002`, KAM = `${P}740994001`;
@@ -326,3 +336,58 @@ test('who reads and pays: Head of Finance and Finance Operations; never Complian
   assert.deepEqual(caps('ops'), [false, false]);
   for (const s of ['comp', 'kam', 'amlead', 'ir', 'conv', 'bu', 'exec', 'nobody']) assert.deepEqual(caps(s), [false, false], s);
 });
+
+/* ------------------------------ M18-S09-NOTE-2: two instances ------------------------------ */
+
+for (const [name, two] of TWO_INSTANCES) {
+  test(`two instances (${name}): the same press landing on both writes once, the second gets the first's answer (UTR re-masked, never stored)`, async () => {
+    const r = payRig('get-scheduled');
+    const [s1, s2] = two();
+    const mk = (state) => createMarkPaid({ crm: r.crm, log: r.log, recordIdPrefix: P, clock: () => NOW, mayPay: async () => true, state });
+    const [x, y] = await Promise.all([mk(s1).commit(cred, BODY, 'press-0000000900'), mk(s2).commit(cred, BODY, 'press-0000000900')]);
+    assert.equal(x.ok && y.ok, true, JSON.stringify([x, y]));
+    assert.deepEqual([x.value.duplicate, y.value.duplicate].sort(), [false, true]);
+    assert.deepEqual([x.value.utrMasked, y.value.utrMasked], ['••••0777', '••••0777']);
+    assert.equal(r.writes().length, 1, 'one Zoho write across both instances');
+    // a third press later, on either instance, is a replay; the same key for another payment is refused
+    const z = await mk(s2).commit(cred, BODY, 'press-0000000900');
+    assert.equal(z.ok && z.value.duplicate, true);
+    const other = await mk(s1).commit(cred, { ...BODY, utr: 'UTR2026092800999' }, 'press-0000000900');
+    assert.equal(other.reasonCode, 'idempotency-key-reused');
+    assert.equal(r.writes().length, 1);
+  });
+
+  test(`two instances (${name}): two different presses for one payout at once — one runs, the other is "busy" and may press again`, async () => {
+    let release;
+    const gate = new Promise((ok) => { release = ok; });
+    const r = rig(async (req) => {
+      if (req.method === 'GET' && req.url.includes(`/Investor_Payouts/${PO2}`)) { await gate; return recorded('get-scheduled'); }
+      if (req.q && /Payout_UTR = /.test(req.q)) return recorded('none');
+      if (req.method === 'PUT') return recorded('update-ok');
+      throw new Error(`unrouted ${req.method} ${req.url}`);
+    });
+    const [s1, s2] = two();
+    const mk = (state) => createMarkPaid({ crm: r.crm, log: r.log, recordIdPrefix: P, clock: () => NOW, mayPay: async () => true, state });
+    const first = mk(s1).commit(cred, BODY, 'press-0000000901');
+    await new Promise((ok) => setTimeout(ok, 30));
+    const second = await mk(s2).commit(cred, BODY, 'press-0000000902');
+    assert.equal(second.reasonCode, 'busy');
+    release();
+    assert.equal((await first).ok, true);
+    assert.equal(r.writes().length, 1);
+  });
+
+  test(`two instances (${name}): the schedule job on both at once fills an allotment once (the run claim per allotment)`, async () => {
+    const r = storeRig();
+    const [s1, s2] = two();
+    const mk = (state) => S.createPayoutScheduleJob({ crm: r.crm, log: r.log, recordIdPrefix: P, clock: () => NOW, state });
+    const [x, y] = await Promise.all([mk(s1).run(cred, [A1], { commit: true }), mk(s2).run(cred, [A1], { commit: true })]);
+    const outs = [...x.outcomes, ...y.outcomes].map((o) => o.status === 'skipped' ? `skipped:${o.reason}` : o.status).sort();
+    assert.equal(outs.filter((o) => o === 'created').length, 1, JSON.stringify(outs));
+    assert.ok(outs.every((o) => o === 'created' || o === 'skipped:busy' || o === 'complete'), JSON.stringify(outs));
+    assert.equal(r.store.length, 60, 'never 120');
+    // the claim is released when a run ends: the next run reads it complete
+    const again = await mk(s2).run(cred, [A1], { commit: true });
+    assert.deepEqual(again.outcomes.map((o) => o.status), ['complete']);
+  });
+}

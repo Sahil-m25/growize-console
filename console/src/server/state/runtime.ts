@@ -23,6 +23,16 @@ export function stateStoreKind(env: NodeJS.ProcessEnv = process.env): StateStore
   throw new Error(`STATE_STORE must be "memory" or "catalyst" (got an unknown value).`);
 }
 
+/**
+ * True when the per-instance items (webhook seen-ids, the request index, the push outbox queue, and — unless
+ * GRANT_STORE says otherwise — the grant store) live in SharedState instead of this process's memory/day files.
+ * Follows STATE_STORE: a multi-instance host sets STATE_STORE=catalyst and gets all of them at once; a
+ * single-instance host keeps the file behaviour it always had (docs/architecture/shared-state.md).
+ */
+export function instanceStateShared(env: NodeJS.ProcessEnv = process.env): boolean {
+  return stateStoreKind(env) === "catalyst";
+}
+
 export function createStateFromEnv(env: NodeJS.ProcessEnv = process.env, deps: CatalystDeps = {}): SharedState {
   return stateStoreKind(env) === "catalyst" ? createCatalystState(catalystConfigFromEnv(env), deps) : createMemoryState();
 }

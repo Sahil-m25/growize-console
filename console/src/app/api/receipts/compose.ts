@@ -9,6 +9,7 @@
    Who records: the Investors-side "pay" capability of the seat the live session holds now (Finance Operations,
    Head of Finance, super user) — the same check /api/investors/add-paid makes. What they record is matched at once
    when the paper allows it (D113 ruling 1: Finance's record is Finance's approval). */
+import { sharedState } from "@/server/state/runtime";
 import { createZohoClient } from "@/lib/zoho/client";
 import type { RecordReceipt } from "@/server/money/record-receipt";
 
@@ -64,6 +65,7 @@ export async function recordReceipt(env: NodeJS.ProcessEnv = process.env): Promi
     match: { async match(p, id, body, signal) { const { receiptMatch } = await import("@/server/money/runtime"); return (await receiptMatch(env)).match(p, id, body, signal); } },
     log: rt.log,
     recordIdPrefix,
+    state: sharedState(),
   }));
 }
 

@@ -25,7 +25,7 @@ export interface CaseDeliveriesDeps {
   readonly crm: Pick<ZohoClient, "coql">;
   readonly events: InvestorEvents;
   /** server/contracts/runtime investorAppDeliveries. */
-  readonly deliveries: (recordId: string, type: string) => readonly DeliveryState[];
+  readonly deliveries: (recordId: string, type: string) => readonly DeliveryState[] | Promise<readonly DeliveryState[]>;
   readonly subtreeOf?: (managerId: string, signal?: AbortSignal) => Promise<readonly string[] | null>;
 }
 
@@ -43,8 +43,8 @@ export type CaseDeliveriesList =
   | { readonly ok: false; readonly kind: "refused"; readonly reason: "no-book" | "invalid-request" }
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
 
-function deliveriesOf(deps: Pick<CaseDeliveriesDeps, "deliveries">, id: string): { readonly replies: readonly ReplyDelivery[]; readonly label: string | null } {
-  const replies = deps.deliveries(id, "case.replied").map((d): ReplyDelivery => Object.freeze({
+async function deliveriesOf(deps: Pick<CaseDeliveriesDeps, "deliveries">, id: string): Promise<{ readonly replies: readonly ReplyDelivery[]; readonly label: string | null }> {
+  const replies = (await deps.deliveries(id, "case.replied")).map((d): ReplyDelivery => Object.freeze({
     eventId: d.eventId, status: d.status, label: d.label, attempts: d.attempts, reason: d.lastReason, deliveredAt: d.deliveredAt,
   }));
   const worst = replies.reduce<ReplyDelivery | null>((w, d) => (!w || RANK[d.status] > RANK[w.status] ? d : w), null);
@@ -60,8 +60,8 @@ export function createCaseDeliveries(deps: CaseDeliveriesDeps) {
         if (seen.kind === "refused" && seen.reason === "no-book") deps.events.refusal(p.credential.userId, "case-deliveries", "seat-denied");
         return seen;
       }
-      const cases: Record<string, ReturnType<typeof deliveriesOf>> = {};
-      for (const id of ids as string[]) if (seen.ids.has(id)) cases[id] = deliveriesOf(deps, id);
+      const cases: Record<string, Awaited<ReturnType<typeof deliveriesOf>>> = {};
+      for (const id of ids as string[]) if (seen.ids.has(id)) cases[id] = await deliveriesOf(deps, id);
       return { ok: true, cases };
     },
 
@@ -73,7 +73,7 @@ export function createCaseDeliveries(deps: CaseDeliveriesDeps) {
         return seen;
       }
       if (!seen.ids.has(id as string)) { deps.events.refusal(me, "case-deliveries", "not-found", [id as string]); return { ok: false, kind: "refused", reason: "not-found" }; }
-      const one = deliveriesOf(deps, id as string);
+      const one = await deliveriesOf(deps, id as string);
       return { ok: true, caseId: id as string, ...one };
     },
   });

@@ -46,12 +46,14 @@ import type { AllotmentReceiptWrites } from "../money/allotment-receipts";
 import type { OversellGuard } from "../farms/oversell";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE, type ReceiptReplayResult } from "../money/receipt-replay";
 import { ALLOTMENT_UNLINKED, unlinkedMessage, writeMissing } from "./allotment-guard";
+import { createMemoryState } from "../state/memory";
+import { createIdempotency } from "../state/idempotent";
+import type { SharedState } from "../state/shared-state";
 
 export const CONTACTS_MODULE = "Contacts";
 export const LLPS_MODULE = "LLP_Creation_Module";
 export const ADD_PAID_APP = "App: on hold — data synced, sign-in locked, no email sent. It stays locked until Finance presses Send welcome and unlock";
 export const ADD_PAID_REPLAY_TTL_MS = 10 * 60 * 1_000;
-const MAX_REPLAYS = 500;
 const MAX_CODE_ATTEMPTS = 3;
 const ARL_CODE = /^ARL-INV-(\d{4})$/;
 const RECORD_ID = /^\d{15,22}$/;
@@ -151,6 +153,8 @@ export interface AddPaidDependencies {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
+  /** Where the Idempotency-Key guard lives (the route passes sharedState()); default an in-process store. */
+  readonly state?: SharedState;
 }
 
 export interface AddPaidService {
@@ -255,7 +259,15 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     note(userId, reasonCode, ids);
     return { ok: false, kind: "refused", reasonCode, message, ...(existing ? { existing: Object.freeze(existing) } : {}), retryable: false };
   };
-  const replays = new Map<string, { at: number; result: Promise<AddPaidResult> }>();
+  // The Idempotency-Key guard (../state/idempotent): claimed in SharedState, so the same press reaching two
+  // instances writes once. Only a success is held (ids and codes; the investor's name is never stored —
+  // the success value carries ids, the ARL code and the app line only).
+  const presses = createIdempotency<AddPaidResult>({
+    state: deps.state ?? createMemoryState({ clock }), ns: "add-paid", ttlSeconds: ADD_PAID_REPLAY_TTL_MS / 1_000, clock,
+    keep: (r) => r.ok,
+    save: (r) => JSON.stringify(r),
+    load: (s) => { try { return JSON.parse(s) as AddPaidResult; } catch { return null; } },
+  });
 
   /* the email → the Contact it belongs to, as this person sees it */
   const byEmail = async (cred: UserCredential, email: string, signal?: AbortSignal): Promise<ZohoRecord | null> => {
@@ -505,20 +517,11 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
       if (!allowed) return refuse(me, "not-finance", "Adding an investor is Finance's.");
       if (!idempotencyKey) return run(c, form, signal);
 
-      const now = clock();
-      for (const [k, v] of replays) if (now - v.at > ADD_PAID_REPLAY_TTL_MS) replays.delete(k);
-      const key = me + ":" + idempotencyKey;
-      const held = replays.get(key);
-      if (held) {
-        const r = await held.result;
-        return r.ok ? { ok: true, value: Object.freeze({ ...r.value, replayed: true }) } : r;
-      }
-      if (replays.size >= MAX_REPLAYS) return refuse(me, "in-progress", "Not saved yet — the console is busy. Try again in a minute.");
-      const result = run(c, form, signal);
-      replays.set(key, { at: now, result });
-      const r = await result;
-      if (!r.ok) replays.delete(key); // only a success is replayed; a failure may be retried with the same key
-      return r;
+      // As before: the same person's key gets the first answer back, whatever the form (no fingerprint check).
+      const o = await presses.once(me + ":" + idempotencyKey, "add-paid", () => run(c, form, signal));
+      if (o.kind !== "ran" && o.kind !== "replay") return refuse(me, "in-progress", "Not saved yet — the console is busy. Try again in a minute.");
+      const r = o.result;
+      return o.kind === "replay" && r.ok ? { ok: true, value: Object.freeze({ ...r.value, replayed: true }) } : r;
     },
   };
   return Object.freeze(service);

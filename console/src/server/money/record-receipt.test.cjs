@@ -25,7 +25,8 @@ const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
 const sources = ['lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib/zoho/log.ts', 'lib/zoho/client.ts', 'server/money/receipt-replay.ts',
-  'server/money/allotment-receipts.ts', 'server/money/record-receipt.ts'].map((f) => path.join(srcRoot, f));
+  'server/money/allotment-receipts.ts', 'server/money/record-receipt.ts', 'server/state/memory.ts', 'server/state/catalyst.ts',
+  'server/state/fake-catalyst.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -38,6 +39,9 @@ const { createZohoClient, userCredential } = load('lib/zoho/client.js');
 const { createReceiptReplayService } = load('server/money/receipt-replay.js');
 const { createAllotmentReceiptWrites } = load('server/money/allotment-receipts.js');
 const { createRecordReceipt, READ_ONLY_TEXT, MATCH_BLOCKED_TEXT } = load('server/money/record-receipt.js');
+const { createMemoryState } = load('server/state/memory.js');
+const { createCatalystState } = load('server/state/catalyst.js');
+const { createFakeCatalyst, FAKE_CONFIG } = load('server/state/fake-catalyst.js');
 
 const P = '9007199254';
 const ALLOTMENT = '9007199254740993001', CUSTOMER = '9007199254740993002', LLP = '9007199254740993003';
@@ -85,15 +89,19 @@ function rig(o = {}) {
       }
       throw new Error(`unexpected ${init.method} ${u}`);
     } });
-  const replay = createReceiptReplayService({
-    crm, log, recordIdPrefix: P, clock: () => NOW,
-    permission: { async recheck() { return true; } }, session: { async recheck() { return true; } },
-    idempotencySecret: 'synthetic-receipt-idempotency-secret-0001', contextSigningSecret: 'synthetic-receipt-context-signing-secret-0001',
-  });
-  const writes = createAllotmentReceiptWrites({ crm, replay, log, recordIdPrefix: P, clock: () => NOW });
-  const svc = createRecordReceipt({ replay, writes, log, recordIdPrefix: P, clock: () => NOW,
-    authority: { async mayRecord() { return f.mayRecord; } } });
-  return { svc, calls, sink, inserts: () => calls.filter((c) => c.op === 'insert') };
+  /* one "instance": its own replay service and guards, over the shared Zoho fake (and the shared state, when given) */
+  const instance = (state) => {
+    const replay = createReceiptReplayService({
+      crm, log, recordIdPrefix: P, clock: () => NOW,
+      permission: { async recheck() { return true; } }, session: { async recheck() { return true; } },
+      idempotencySecret: 'synthetic-receipt-idempotency-secret-0001', contextSigningSecret: 'synthetic-receipt-context-signing-secret-0001',
+    });
+    const writes = createAllotmentReceiptWrites({ crm, replay, log, recordIdPrefix: P, clock: () => NOW });
+    return createRecordReceipt({ replay, writes, log, recordIdPrefix: P, clock: () => NOW, state,
+      authority: { async mayRecord() { return f.mayRecord; } } });
+  };
+  const svc = instance(o.state);
+  return { svc, instance, calls, sink, inserts: () => calls.filter((c) => c.op === 'insert') };
 }
 const balance = (over = {}) => ({ allotmentId: ALLOTMENT, kind: 'balance', mode: 'SWIFT', ref: 'EMIR0209900', ...over });
 
@@ -198,4 +206,33 @@ test('prepare seals the context for the drawer: amount due and whether matching 
   const r = rig();
   const res = await r.svc.commit(principal(), balance({ prepared: ok.value, amount: 2_250_000 }), 'press_record_000002');
   assert.equal(res.ok, true, 'a prepared context from the drawer is replayed unchanged');
+});
+
+/* M18-S09-NOTE-2: a double press landing on two instances writes one receipt (the key is claimed in SharedState) */
+for (const [name, two] of [
+  ['memory', () => { const st = createMemoryState({ clock: () => NOW }); return [st, st]; }],
+  ['fake catalyst', () => { const fake = createFakeCatalyst({ seed: 5 }); const mk = () => createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => NOW, sleep: async () => undefined }); return [mk(), mk()]; }],
+]) {
+  test(`two instances (${name}): the same press on both records one receipt; the replay carries the reference back but the stored answer never held it`, async () => {
+    const r = rig();
+    const [s1, s2] = two();
+    const [x, y] = await Promise.all([r.instance(s1).commit(principal(), balance(), KEY), r.instance(s2).commit(principal(), balance(), KEY)]);
+    assert.equal(x.ok && y.ok, true, JSON.stringify([x, y]));
+    assert.deepEqual([x.value.duplicate, y.value.duplicate].map(Boolean).sort(), [false, true]);
+    assert.deepEqual([x.value.ref, y.value.ref], ['EMIR0209900', 'EMIR0209900']);
+    assert.equal(r.inserts().length, 1, 'one Receipts insert across both instances');
+    const reused = await r.instance(s2).commit(principal(), balance({ ref: 'EMIR0209901' }), KEY);
+    assert.equal(reused.reasonCode, 'idempotency-key-reused');
+  });
+}
+
+test('the stored answer for a press holds no bank reference (rule 7)', async () => {
+  const fake = createFakeCatalyst({ seed: 9 });
+  const state = createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => NOW, sleep: async () => undefined });
+  const r = rig({ state });
+  const res = await r.svc.commit(principal(), balance(), KEY);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const stored = JSON.stringify([...fake.items.values()]);
+  assert.ok(stored.length > 0 && !stored.includes('EMIR0209900'), 'the reference never reaches the shared store');
+  assert.ok(!stored.includes(KEY) && !stored.includes(SESSION), 'the key and session are hashed');
 });

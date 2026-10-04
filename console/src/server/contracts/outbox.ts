@@ -12,10 +12,18 @@
  *
  * The payload lives only in this queue (and the dead-letter shelf, for a replay); once delivered it is
  * dropped. The ledger, when given, receives ids, type, status and codes only (Plane B rule: no bodies).
+ *
+ * Multi-instance (docs/architecture/shared-state.md inventory 10): with `queue` (./outbox-queue.ts, used when
+ * STATE_STORE=catalyst) every change is also written to SharedState, `drain` first picks up events other
+ * instances queued, and each delivery attempt is claimed (`queue.lock`) and made only after re-reading the
+ * shared state — so a recycled instance loses nothing and no event is sent by two instances at once. The sync
+ * methods (state, forRecord, stats) answer from this process's view; `sync()` refreshes it. Without `queue`
+ * the outbox is exactly the in-process one it always was.
  */
 
 import { randomUUID } from "node:crypto";
 import { pushEvent, validateEvent, SCHEMA_VERSION, type JsonSchema } from "./events";
+import type { OutboxQueue, StoredDelivery } from "./outbox-queue";
 
 export type DeliveryStatus = "queued" | "retrying" | "delivered" | "dead";
 export const DELIVERY_LABEL: Readonly<Record<DeliveryStatus, string>> = Object.freeze({
@@ -54,6 +62,8 @@ export interface OutboxDeps {
   readonly ledger?: DeliveryLedger;
   /** Called once when an event is dead-lettered, with a short code. */
   readonly onFailure?: (code: string) => void;
+  /** The shared, durable queue (multi-instance); absent → in-process only. */
+  readonly queue?: OutboxQueue;
 }
 
 export type EnqueueResult =
@@ -151,6 +161,9 @@ interface Item {
   lastReason: string | null;
   nextAt: number | null;
   deliveredAt: number | null;
+  /** shared queue: its index slot once listed; `unsaved` when the last write to it failed (retried on drain). */
+  slot?: number | null;
+  unsaved?: boolean;
 }
 
 export function createOutbox(deps: OutboxDeps) {
@@ -163,6 +176,56 @@ export function createOutbox(deps: OutboxDeps) {
   const failures: number[] = [];
   let lastDeliveredAt: number | null = null;
   let draining: Promise<number> | null = null;
+  const queue = deps.queue ?? null;
+  const pending = new Set<Promise<void>>();
+
+  const stored = (i: Item): StoredDelivery => ({ eventId: i.eventId, type: i.type, recordIds: i.recordIds, status: i.status, attempts: i.attempts,
+    lastReason: i.lastReason, nextAt: i.nextAt, deliveredAt: i.deliveredAt });
+  const track = (p: Promise<void>): void => { const q = p.finally(() => pending.delete(q)); pending.add(q); };
+  /** Write this item to the shared queue (in the background; `settle` waits). A failure is retried on the next drain. */
+  const persist = (i: Item, how: "add" | "save"): void => {
+    if (!queue) return;
+    const event = i.event;
+    track((async () => {
+      try {
+        if (how === "add" && event) { const slot = await queue.add(stored(i), event); if (slot !== null) i.slot = slot; }
+        else await queue.save(stored(i));
+        i.unsaved = false;
+      } catch {
+        if (!i.unsaved) { try { deps.onFailure?.("queue-unavailable"); } catch { /* never throws */ } }
+        i.unsaved = true;
+      }
+    })());
+  };
+  const settle = async (): Promise<void> => { while (pending.size) await Promise.allSettled([...pending]); };
+  const adopt = (i: Item, d: StoredDelivery, event: Record<string, unknown> | null): void => {
+    i.status = d.status; i.attempts = d.attempts; i.lastReason = d.lastReason; i.nextAt = d.nextAt; i.deliveredAt = d.deliveredAt;
+    if (d.status === "delivered") { i.event = null; if (d.deliveredAt !== null) lastDeliveredAt = Math.max(lastDeliveredAt ?? 0, d.deliveredAt); }
+    else if (event && !i.event) i.event = event;
+  };
+  /** Pick up events other instances listed, and retry writes that failed. */
+  async function sync(): Promise<void> {
+    if (!queue) return;
+    await settle();
+    for (const i of items.values()) if (i.unsaved) persist(i, i.slot ? "save" : "add");
+    await settle();
+    let listed: Awaited<ReturnType<OutboxQueue["listed"]>>;
+    try { listed = await queue.listed(); } catch { return; }
+    for (const { slot, eventId } of listed) {
+      const known = items.get(eventId);
+      if (known) { known.slot ??= slot; continue; }
+      let r: Awaited<ReturnType<OutboxQueue["read"]>>;
+      try { r = await queue.read(eventId); } catch { continue; }
+      if (!r) continue;
+      const i: Item = { event: r.event, eventId, type: r.delivery.type, recordIds: Object.freeze([...r.delivery.recordIds]), status: r.delivery.status,
+        attempts: r.delivery.attempts, lastReason: r.delivery.lastReason, nextAt: r.delivery.nextAt, deliveredAt: r.delivery.deliveredAt, slot };
+      if (i.status === "delivered") i.event = null;
+      items.set(eventId, i);
+    }
+    const open = [...items.values()].filter((i) => (i.status === "queued" || i.status === "retrying") && typeof i.slot === "number").map((i) => i.slot as number);
+    try { await queue.lowWater(open.length ? Math.min(...open) : null); } catch { /* a hint only */ }
+  }
+  const due = (i: Item): boolean => (i.status === "queued" || i.status === "retrying") && i.nextAt !== null && i.nextAt <= clock();
 
   const view = (i: Item): DeliveryState => Object.freeze({
     eventId: i.eventId, type: i.type, status: i.status, label: DELIVERY_LABEL[i.status], attempts: i.attempts,
@@ -179,6 +242,7 @@ export function createOutbox(deps: OutboxDeps) {
     i.status = "delivered"; i.deliveredAt = at; i.nextAt = null; i.lastReason = null; i.event = null; // the payload leaves the queue
     lastDeliveredAt = Math.max(lastDeliveredAt ?? 0, at);
     note(i);
+    persist(i, "save");
   }
   function failed(i: Item, reason: string, final: boolean): void {
     const now = clock();
@@ -188,12 +252,14 @@ export function createOutbox(deps: OutboxDeps) {
     if (final || i.attempts >= max) {
       i.status = "dead"; i.nextAt = null;
       note(i);
+      persist(i, "save");
       try { deps.onFailure?.(i.lastReason); } catch { /* never throws into the job */ }
       return;
     }
     i.status = "retrying";
     i.nextAt = now + Math.min(cap, base * 2 ** (i.attempts - 1));
     note(i);
+    persist(i, "save");
   }
 
   async function attempt(i: Item): Promise<void> {
@@ -219,6 +285,7 @@ export function createOutbox(deps: OutboxDeps) {
       const i: Item = { event: { ...event }, eventId, type: v.type, recordIds: recordIdsOf(event), status: "queued", attempts: 0, lastReason: null, nextAt: clock(), deliveredAt: null };
       items.set(eventId, i);
       note(i);
+      persist(i, "add");
       return { ok: true, eventId, state: view(i) };
     },
     /** One attempt for every due event, in order. Concurrent calls share one pass. Returns how many were tried. */
@@ -226,20 +293,49 @@ export function createOutbox(deps: OutboxDeps) {
       if (draining) return draining;
       const pass = (async () => {
         await Promise.resolve(); // the pass is registered before it can finish
+        await sync();
         let n = 0;
         for (const i of [...items.values()]) {
-          if ((i.status !== "queued" && i.status !== "retrying") || i.nextAt === null || i.nextAt > clock()) continue;
-          n++;
-          try { await attempt(i); } catch { failed(i, "unexpected", false); }
+          if (!due(i)) continue;
+          if (!queue) {
+            n++;
+            try { await attempt(i); } catch { failed(i, "unexpected", false); }
+            continue;
+          }
+          // Shared: claim this attempt, then re-read — another instance may have made it already.
+          let mine = false;
+          try { mine = await queue.lock(i.eventId); } catch { mine = false; }
+          if (!mine) continue;
+          try {
+            const fresh = await queue.read(i.eventId);
+            if (fresh) adopt(i, fresh.delivery, fresh.event);
+            if (!due(i) || !i.event) continue;
+            n++;
+            try { await attempt(i); } catch { failed(i, "unexpected", false); }
+            await settle();   // the new state is stored before the claim is let go
+          } catch { /* the store failed mid-way: the claim's TTL frees the event for the next drain */ } finally {
+            await queue.unlock(i.eventId).catch(() => { /* the TTL frees it */ });
+          }
         }
+        await settle();
         return n;
       })();
       draining = pass.finally(() => { draining = null; });
       return draining;
     },
+    /** Shared queue: pick up what other instances queued (no-op in-process). */
+    sync: (): Promise<void> => sync(),
+    /** Wait until every write to the shared queue has been tried (no-op in-process). */
+    settle,
     /** From the inbound endpoint: a push.delivered answer for one of ours. */
     acknowledge(messageId: string, status: "delivered" | "bounced" | "deferred" = "delivered"): boolean {
       const i = items.get(messageId);
+      if (!i && queue && status === "delivered") {
+        // Another instance queued it: the done mark tells every instance (and beats a slower "retrying").
+        const at = clock();
+        track(queue.markDelivered(messageId, at).catch(() => { /* the app redelivers push.delivered */ }));
+        return false;
+      }
       if (!i || i.status === "delivered") return false;
       if (status === "delivered") { delivered(i, clock()); return true; }
       if (status === "bounced") { failed(i, "bounced", true); return true; }
@@ -251,6 +347,7 @@ export function createOutbox(deps: OutboxDeps) {
       if (!i || i.status !== "dead" || !i.event) return false;
       i.status = "queued"; i.attempts = 0; i.nextAt = clock(); i.lastReason = null;
       note(i);
+      persist(i, "save");
       return true;
     },
     state: (eventId: string): DeliveryState | null => { const i = items.get(eventId); return i ? view(i) : null; },

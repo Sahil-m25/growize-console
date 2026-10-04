@@ -58,6 +58,10 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `CATALYST_PROJECT_ID` | V | with `STATE_STORE=catalyst`: the numeric project id | same | server/state/catalyst.ts |
 | `CATALYST_STATE_TABLE` | V | with `STATE_STORE=catalyst`: the NoSQL table (partition key `k`, TTL attribute `ttl`) | same | server/state/catalyst.ts |
 | `CATALYST_REFRESH_TOKEN` | **S** | with `STATE_STORE=catalyst`: a refresh token with the ZohoCatalyst.nosql item scopes | same | server/state/catalyst.ts (uses `ZOHO_ACCOUNTS_ORIGIN`, `ZOHO_OAUTH_CLIENT_ID`/`SECRET`) |
+| `GRANT_STORE` | V | unset | unset with `STATE_STORE=catalyst` (→ `shared`); `jsonl` only on a single host with a persistent disk | access/grants.ts — `memory` \| `jsonl` \| `shared`; unset follows `STATE_STORE` (`catalyst` → `shared`, else `memory`); `shared` without `STATE_STORE=catalyst` refuses to start |
+| `GRANT_DIR` | V | with `GRANT_STORE=jsonl` only | same | access/grants.ts |
+| `JOB_SECRET` | **S** | ≥ 32 random chars, its own | ≥ 32 random chars, its own | jobs/claim.ts — the `X-Job-Secret` header the platform scheduler sends to `POST /api/jobs/sign-recheck` and `/api/jobs/outbox-drain` (constant-time compare); unset → those answer 503 `not-configured` |
+| `SIGN_CHECK_TIMER` | V | unset | unset (`off` under `STATE_STORE=catalyst`; the scheduler calls the job instead) | zoho-sign/runtime.ts — `on` \| `off`; unset = `on` on a single-process store, `off` when `STATE_STORE=catalyst` |
 | `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` | V | optional (`CATALYST-ORG` header; `Development` sends `Environment: Development`) | optional | server/state/catalyst.ts |
 
 ### CI / test tooling (GitHub Environment `staging` only)
@@ -100,7 +104,12 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
   — `STATE_STORE` unset keeps them in the Node process's memory, which is correct only for **one instance**; a host
   that runs more than one (autoscaling, Catalyst AppSail's up-to-5, serverless) must set `STATE_STORE=catalyst` (or
   add another adapter behind the same interface). A misconfigured store refuses to start; it never falls back to
-  memory. Sessions are sealed with `SESSION_ENC_KEY`. Several other stores are still per-process: `docs/architecture/shared-state.md`.
+  memory. `STATE_STORE=catalyst` also moves, in one switch, the webhook seen-ids, the investor-app request index,
+  the push outbox queue (each delivery attempt claimed), the grant store (unless `GRANT_STORE` says otherwise) and
+  the money Idempotency-Key guards (mark-paid, add-paid, record-receipt) and the payout job's run claim. The Zoho
+  Sign dead-letters and the push ledger are append-only records and go to the log sink (`LOG_STORE=jsonl` /
+  `LOG_SINK=stratus`). On such a host set `JOB_SECRET` and schedule the two job calls (`catalyst/README.md`).
+  Sessions are sealed with `SESSION_ENC_KEY`. The rest of the inventory: `docs/architecture/shared-state.md`.
 - **The client IP comes from the proxy.** The limiter reads the right-most `X-Forwarded-For` hop (else
   `X-Real-IP`) — the address the host's own edge appended. Confirm the chosen host sets it that way (one trusted
   hop); with no proxy header every caller shares one "unknown" bucket per session.
