@@ -11,6 +11,7 @@
    frame, exactly as the prototype wrapped every body/sub/foot in it. */
 
 import { SignRowCell } from "../paper2/SignCell";
+import { AgreedDraftOffer, SUPP_TEMPLATE, useAgreedDraft } from "../paper2/AgreedDraft";
 import { TemplatePick, useTemplatePick } from "../paper2/TemplatePick";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { newIdempotencyKey, runWrite, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
@@ -364,17 +365,20 @@ const payFoot = (c: Ctx): ReactNode => <PayFoot {...c} />;
 const sendBlocked = (x: ImInvestor | null, DSIG: string): boolean => !!x && x.nri && DSIG === "Aadhaar OTP";
 function useSendFacts(c: Ctx) {
   const { s, me, id } = c; const x = I(s, me, id);
-  const { DTPL, DSIG, DTID } = draft(c);
+  const d = draft(c), { DSIG, DTID } = d;
+  /* M12-S12-NOTE-2: an agreed supplementary draft makes the Supplementary agreement the default document of the send */
+  const ag = useAgreedDraft(s, me, id);
+  const DTPL = d.DTPL || (ag.offered ? SUPP_TEMPLATE : d.DTPL);
   const paper = DTPL ? PAPER_OF_TEMPLATE[DTPL] ?? null : null;
   const rid = paper && x ? (paper === "fema" ? x.id : paper === "nda" ? x.lead ?? x.id : allotmentOf({ s, me }, x.id) ?? x.id) : null;
   const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: rid });
   /* Aadhaar is offered only where the route says so; a template that is not one of the four papers has no prefill: the book's NRI flag */
   const off = paper ? pre.state === "ok" && !pre.data.methods.includes("aadhaar") : !!(x && x.nri);
   const pick = useTemplatePick(s, me, paper, DTID);
-  return { x, DTPL, DSIG, DTID, paper, rid, pre, pick, blocked: !!x && off && DSIG === "Aadhaar OTP" };
+  return { x, DTPL, DSIG, DTID, paper, rid, pre, pick, ag, blocked: !!x && off && DSIG === "Aadhaar OTP" };
 }
 function SendBody(c: Ctx) {
-  const { s, id } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, DTID, blocked, pre, paper, pick } = f;
+  const { s, id } = c; const f = useSendFacts(c); const { x, DTPL, DSIG, DTID, blocked, pre, paper, pick, ag } = f;
   if (!x || !id) return null;
   const t = TPL.find(y => y.t === DTPL);
   return (
@@ -391,6 +395,7 @@ function SendBody(c: Ctx) {
       {t && t.noSign ? <p className="sm" style={{ margin: "0 0 12px" }}>A receipt is issued, not signed.</p>
         : <><p className="lbl">Signing</p><div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg =>
           <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`} onClick={() => set(c, { DSIG: sg })}>{sg}</button>)}</div></>}
+      {paper === "supplementary" && ag.draft ? <AgreedDraftOffer draft={ag.draft} /> : null}
       <TemplatePick paper={paper} pick={pick} DTID={DTID} onPick={v => set(c, { DTID: v })} />
       {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}
       {paper && pre.state === "ok" && pre.data.recipient

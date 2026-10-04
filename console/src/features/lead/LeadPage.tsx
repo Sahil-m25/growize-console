@@ -341,8 +341,11 @@ function LpPaperRow({ l }: { l: Lead }) {
         : linkField("Paste the link to the agreed final draft", "Final draft agreed", "agreed")}
       <button type="button" className="lp-link lp-mini" onClick={() => dispatch({ type: "setUi", patch: { PREDRAFT: redo ? null : l.id + cur.round, PLINK: "" } })}>{redo ? "Back to the final draft" : "New draft"}</button></>;
   } else head = nm + " — " + (n.t || "").toLowerCase();
+  /* Finance's "Not signed after all" (M12-S11-NOTE-6): shown on the round it is about, in the prototype's words */
+  const back = cur.back ? <div className="note bad d60d-back" style={{ margin: "6px 0 0" }}><b>Not signed after all.</b> {cur.back.why || "Nothing has come back signed"}
+    {cur.back.by && P(state.PEOPLE, cur.back.by as never).n !== cur.back.by ? " — " + P(state.PEOPLE, cur.back.by as never).n : ""} <span className="mono">{cur.back.at}</span>.</div> : null;
   return (
-    <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody"><b>{head}</b>{body}{deck}</div>{tag}</div>
+    <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody"><b>{head}</b>{body}{back}{deck}</div>{tag}</div>
   );
 }
 

@@ -1,0 +1,39 @@
+[
+  {
+    "id": "TC-IM07-011",
+    "story": "M12-S11",
+    "seat": "meena",
+    "title": "Finance's Out for signature lists the paper the IR says is signed first, with the IR's word beside it",
+    "steps": [
+      "Press Meena Raghavan on the sign-in screen",
+      "Press 'Documents' in the menu"
+    ],
+    "expected": [
+      "The first row of 'Out for signature' is Kiran Joshi's Supplementary agreement.",
+      "Under Kiran Joshi the row reads 'They say the supplementary is signed and sent' and 'That is what they were told, not a signature.'",
+      "No other row carries a line about the IR's word."
+    ],
+    "fixtures": [
+      "IM:KIRAN_SUPP_SAID_SIGNED"
+    ],
+    "group": "M12"
+  },
+  {
+    "id": "TC-E09-015",
+    "story": "M12-S11",
+    "seat": "kavya",
+    "title": "A paper Finance found unsigned shows 'Not signed after all' on the lead page row",
+    "steps": [
+      "Press Kavya Nair on the sign-in screen",
+      "Open Leads from the menu",
+      "Open a lead whose NDA Finance sent back (fixture)"
+    ],
+    "expected": [
+      "Under 'Paperwork' the page shows 'Not signed after all.' followed by the reason Finance gave."
+    ],
+    "fixtures": [
+      "TO_BE_ADDED_BY_COORDINATOR: a lead whose paper round holds back:{by,at,why} (reducer prBounce state)"
+    ],
+    "group": "M12"
+  }
+]
