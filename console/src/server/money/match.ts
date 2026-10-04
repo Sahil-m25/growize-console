@@ -91,13 +91,17 @@ const MARK_FIELDS: ReadonlySet<string> = new Set(["App_Account_Mark", "App_Mark_
 
 export type MatchRefusal =
   | "invalid-request" | "not-matcher" | "not-approver" | "not-visible" | "is-claim" | "not-pending" | "same-hand" | "zoho-same-hand-rule"
-  | "receipt-changed" | "supplementary-not-verified" | "allotment-cancelled" | "source-invalid";
+  | "receipt-changed" | "supplementary-not-verified" | "allotment-cancelled" | "source-invalid"
+  /* M01-S10-NOTE-6 / D22: approving a refund (money leaving) needs a live step-up ("refund") on this session */
+  | "step-up" | "step-up-locked";
 
 const MESSAGE: Readonly<Record<MatchRefusal, string>> = Object.freeze({
   "invalid-request": "Not matched — reload the page and try again.",
   "not-matcher": NOT_MATCHER_TEXT,
   "not-approver": NOT_APPROVER_TEXT,
   "not-visible": "This receipt is not available to you.",
+  "step-up": "Not matched — confirm it is you with a fresh Zoho sign-in first. Money leaving needs it (D22).",
+  "step-up-locked": "Not matched — approving refunds is locked for you after three failed confirmations. Ask Digital Infrastructure to unlock it.",
   "is-claim": "This is an IR's report, not a receipt. Answer it from the report.",
   "not-pending": "Only a pending receipt can be matched.",
   "same-hand": SAME_HAND_TEXT,
@@ -152,6 +156,9 @@ export interface MatchAuthority {
   /** Fresh check: may this person be the second hand on money leaving — the Head of Finance or an administrator (D22)?
    *  Absent: `mayMatch` decides refunds too (the recorder is still refused). */
   mayApproveOutbound?(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
+  /** M01-S10-NOTE-6 / D22: is a step-up for "refund" live on this session? Asked only for money leaving, after the
+   *  approver and same-hand checks. Absent: not asked (tests, doubles). The runtime always supplies it. */
+  stepUpOutbound?(sessionId: string): Promise<"ok" | "step-up" | "locked">;
 }
 
 export interface MatchDependencies {
@@ -427,6 +434,12 @@ export function createReceiptMatch(deps: MatchDependencies) {
           }
           if (!approver) return refuse(me, "not-approver", [receiptId]);
           if (recorder === me) return refuse(me, "same-hand", [receiptId]);
+          if (authority.stepUpOutbound) {
+            let su: "ok" | "step-up" | "locked" = "step-up";
+            try { su = await authority.stepUpOutbound(sessionId); } catch { su = "step-up"; }
+            if (su === "locked") return refuse(me, "step-up-locked", [receiptId]);
+            if (su !== "ok") return refuse(me, "step-up", [receiptId]);
+          }
         }
         if (expected !== null && expected !== rec.Modified_Time) return refuse(me, "receipt-changed", [receiptId]);
         allot = await read(cred, ALLOTMENTS_MODULE, allotmentId, ALLOTMENT_FIELDS, signal);

@@ -28,8 +28,8 @@ import type { TokenGrant, ZohoAccounts } from "../oauth/zoho-accounts";
 import { createMemoryState } from "../state/memory";
 import type { SharedState } from "../state/shared-state";
 
-/* "seat": a seat change on Teams (M17-S02, D22) */
-export const STEP_UP_ACTIONS = ["reveal", "export", "erase", "release", "seat"] as const;
+/* "seat": a seat change on Teams (M17-S02, D22); "refund": approving a refund — money leaving (D22, M01-S10-NOTE-6) */
+export const STEP_UP_ACTIONS = ["reveal", "export", "erase", "release", "seat", "refund"] as const;
 export type StepUpAction = (typeof STEP_UP_ACTIONS)[number];
 export const isStepUpAction = (x: unknown): x is StepUpAction => typeof x === "string" && (STEP_UP_ACTIONS as readonly string[]).includes(x);
 

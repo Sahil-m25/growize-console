@@ -63,6 +63,12 @@ export async function receiptMatch(env: NodeJS.ProcessEnv = process.env): Promis
         const s = await seatNow(cred.userId, sid);
         return !!s && (s.seat === "head-of-finance" || s.seat === "digital-infrastructure" || s.seat === "corporate-root");
       },
+      /* M01-S10-NOTE-6 / D22: a refund's approval is money leaving — a live step-up "refund" on this session (fail closed) */
+      async stepUpOutbound(sid) {
+        const { stepUp } = await import("../access/runtime");
+        const v = await stepUp().valid(sid, "refund");
+        return v.ok ? "ok" : v.code === "locked" ? "locked" : "step-up";
+      },
     },
   }));
 }
@@ -141,7 +147,7 @@ export async function statements(env: NodeJS.ProcessEnv = process.env): Promise<
 /** A refusal or failure as HTTP. Refusals by code; every non-confirmed answer says "Not saved yet"/"Not matched". */
 export function moneyFailure(r: { kind: string; reasonCode?: string; errorKind?: string; message: string; retryable: boolean }, headers: HeadersInit): Response {
   const status = r.kind === "refused"
-    ? ({ "not-matcher": 403, "not-approver": 403, "not-finance": 403, "not-visible": 403, "same-hand": 403, "read-only": 403, "invalid-request": 400,
+    ? ({ "step-up": 403, "step-up-locked": 423, "not-matcher": 403, "not-approver": 403, "not-finance": 403, "not-visible": 403, "same-hand": 403, "read-only": 403, "invalid-request": 400,
         "idempotency-key-invalid": 400, "session-changed": 401, "actor-changed": 401, "busy": 429, "source-invalid": 502,
         "reference-required": 422, "reason-required": 422, "fields": 422,
         "file-type": 415, "too-large": 413, "unreadable": 422, "too-many-refs": 422 } as Record<string, number>)[r.reasonCode ?? ""] ?? 409
