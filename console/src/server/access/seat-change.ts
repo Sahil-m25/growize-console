@@ -17,6 +17,13 @@
  *   6. Plane C `seat-change`: who, whom, from → to (reason "kam-to-amlead"), count and the returned ids;
  *      the moved person's sessions end at once (their seat token is stale).
  *
+ * M18-S09-NOTE-3 — a book of 200 inside a 30 s request: the Contacts are cleared 4 at a time, and no clear starts inside
+ * the request deadline's stop margin. What is left comes back as `continueFrom` (the first Contact id not tried; the book
+ * is read in id order). The page sends the same seat again with { continueFrom }: every check runs again, the seat is
+ * not written twice (they already hold it), the book is re-read at org scope and the clears go on from that id — a
+ * Contact already back in the pool is no longer in the book, and one that could not be written is not retried.
+ * Plane C files the continuation as `seat-change` reason "kam-to-<seat>-continued" with its own count and ids.
+ *
  * M17-S02-T01 — the Leads side (`side: "lead"`), the prototype's setSeat (vTeams 14426): the front end's own
  * canManage / canGrant / seatClash over the granter's and the holder's manager chains (grant-rules ctxOf), so
  * Digital Infrastructure seats anyone into a Leads seat and an IR Manager only gives "ir" to their own IRs;
@@ -35,6 +42,7 @@ import type { CapGrid, SeatKey } from "../../domain";
 import { canGrant, canManage, seatClash } from "../../lib/selectors/access";
 import { ctxOf, type GrantBook, type SeatedPerson } from "./grant-rules";
 import type { GrantStore } from "./grants";
+import { DEFAULT_STOP_MARGIN_MS, pastStopMargin, runBounded } from "../../lib/zoho/deadline";
 
 export const CONTACTS = "Contacts";
 export const POOL_PAGE = 200;
@@ -87,6 +95,8 @@ export type SeatChangeResult =
     readonly ok: true; readonly whom: string; readonly from: ImRoleKey; readonly to: ImRoleKey;
     /** Contact ids returned to the pool / listed but not written (a newer change, or no write access) */
     readonly returned: readonly string[]; readonly notReturned: readonly string[];
+    /** M18-S09-NOTE-3: the first Contact not tried inside the request deadline; send the seat again with it. null = done. */
+    readonly continueFrom: string | null;
   }
   | { readonly ok: true; readonly side: "lead"; readonly whom: string; readonly from: SeatKey; readonly to: SeatKey; readonly overridesCleared: number }
   | { readonly ok: false; readonly status: 400 | 403 | 404 | 409 | 502 | 503; readonly refusal: SeatRefusal; readonly message: string };
@@ -110,11 +120,19 @@ export interface SeatChangeDeps {
   /** M17-S02: the grant store — read for the Leads-side rules, and reset when a Leads seat changes */
   readonly store?: Pick<GrantStore, "grantsOf" | "set">;
   readonly clock?: () => number;
+  /** Contacts cleared at once (default 4). */
+  readonly concurrency?: number;
+  /** No clear starts with less than this left on the request deadline (default 8 s). */
+  readonly stopMarginMs?: number;
 }
 
+export type SeatAsk = { readonly whom: unknown; readonly to: unknown; readonly side?: unknown; readonly continueFrom?: unknown };
 export interface SeatChangeService {
-  change(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown; readonly side?: unknown }): Promise<SeatChangeResult>;
+  change(as: UserCredential, session: ConsoleSession, ask: SeatAsk): Promise<SeatChangeResult>;
 }
+
+/** Record ids compared as numbers (15–22 digits). */
+const idAtLeast = (id: string, from: string): boolean => BigInt(id) >= BigInt(from);
 
 const putFailure = (k: string): SeatRefusal =>
   /* not retried: a lost reply may have applied (network/aborted/server); refused before sending otherwise */
@@ -205,8 +223,18 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
     return { ok: true, side: "lead", whom, from: from as SeatKey, to, overridesCleared: held.length };
   }
 
+  /** Clear KAM on each Contact, `concurrency` at a time, never starting one inside the deadline's stop margin. */
+  async function poolReturn(as: UserCredential, rows: readonly PoolRow[]) {
+    const r = await runBounded(rows, d.concurrency ?? 4,
+      async (row) => (await d.crm.update(as, CONTACTS, row.id, { KAM: null, KAM_Since: null, KAM_Intro_At: null }, { ifUnmodifiedSince: row.modifiedTime })).ok,
+      () => pastStopMargin(d.stopMarginMs ?? DEFAULT_STOP_MARGIN_MS));
+    const returned: string[] = [], notReturned: string[] = [];
+    for (const x of r.done) (x.value ? returned : notReturned).push(rows[x.index]!.id);
+    return { returned, notReturned, continueFrom: r.notStarted.length ? rows[r.notStarted[0]!]!.id : null };
+  }
+
   return Object.freeze({
-    async change(as: UserCredential, session: ConsoleSession, ask: { readonly whom: unknown; readonly to: unknown; readonly side?: unknown }): Promise<SeatChangeResult> {
+    async change(as: UserCredential, session: ConsoleSession, ask: SeatAsk): Promise<SeatChangeResult> {
       if (ask.side === "lead") return changeLead(as, session, ask);
       const by = session.who;
       const whom = typeof ask.whom === "string" && USER_ID.test(ask.whom) ? ask.whom : "";
@@ -238,6 +266,17 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
       data.P[whom] = { n: "", i: "", r: theirIm, c: 1, em: "" };
       data.SIGNINS.push(by, whom);
       if (!maySeat({ data }, by, whom, to)) return no("cannot-seat");
+
+      /* M18-S09-NOTE-3: the rest of a pool return that ran out of request time — they already hold `to`, not KAM */
+      if (ask.continueFrom !== undefined && ask.continueFrom !== null) {
+        const from = typeof ask.continueFrom === "string" && RECORD_ID.test(ask.continueFrom) ? ask.continueFrom : null;
+        if (!from || to !== theirIm || theirIm === "kam") return no("bad-request");
+        const rest = await d.kamBook(whom);
+        if (rest === null) return no("book-unreadable");
+        const out = await poolReturn(as, rest.filter((row) => idAtLeast(row.id, from)));
+        d.events.seatChanged(by, whom, session.seat, "kam", `${to}-continued`, "ok", out.returned);
+        return { ok: true, whom, from: "kam", to, returned: Object.freeze(out.returned), notReturned: Object.freeze(out.notReturned), continueFrom: out.continueFrom };
+      }
       if (to === theirIm) return no("same-seat");
 
       /* a KAM leaving the seat: list the whole book first (org scope), or change nothing */
@@ -248,14 +287,10 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
       const put = await d.crm.updateUserSeat(as, whom, { roleId: write.roleId, roleName: write.roleName, profileId: write.profileId, profileName: write.profileName });
       if (!put.ok) return no(putFailure(put.error.kind));
 
-      const returned: string[] = [], notReturned: string[] = [];
-      for (const row of book) {
-        const w = await d.crm.update(as, CONTACTS, row.id, { KAM: null, KAM_Since: null, KAM_Intro_At: null }, { ifUnmodifiedSince: row.modifiedTime });
-        (w.ok ? returned : notReturned).push(row.id);
-      }
+      const { returned, notReturned, continueFrom } = await poolReturn(as, book);
       d.events.seatChanged(by, whom, session.seat, theirIm, to, "ok", returned);
       try { await d.sessions?.endSessionsOf(whom, "seat-changed"); } catch { /* their next refresh ends it (seat mismatch) */ }
-      return { ok: true, whom, from: theirIm, to, returned: Object.freeze(returned), notReturned: Object.freeze(notReturned) };
+      return { ok: true, whom, from: theirIm, to, returned: Object.freeze(returned), notReturned: Object.freeze(notReturned), continueFrom };
     },
   });
 }

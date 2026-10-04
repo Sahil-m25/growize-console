@@ -61,12 +61,23 @@ describe("seats — PUT /api/users/{id}", () => {
     const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { whom: "7", from: "kam", to: "amlead", returned: 4 }));
     const seen: ImAction[] = [];
     const r = await runWrite("live", imSeatChange, { s: im(), me: "divya" }, (a: ImAction) => seen.push(a), { whom: "imran", seat: "amlead" }, { fetch: f });
-    expect(r).toEqual({ ok: true, data: { whom: "7", to: "amlead" } });
+    expect(r).toEqual({ ok: true, data: { whom: "7", to: "amlead", returned: 4, continueFrom: null } });
     expect(f.mock.calls[0][0]).toBe("/api/users/imran");
     expect(f.mock.calls[0][1]!.method).toBe("PUT");
     expect(JSON.parse(f.mock.calls[0][1]!.body as string)).toEqual({ seat: "amlead" });
     await runWrite("live", leadSeatChange, as("sahil"), spy().d, { whom: "rohit", seat: "conv" }, { fetch: f });
     expect(JSON.parse(f.mock.calls[1][1]!.body as string)).toEqual({ seat: "conv", side: "lead" });
+  });
+  it("M18-S09-NOTE-3 live: a book left over answers continueFrom; the next PUT sends {seat, continueFrom}; the fixture never continues", async () => {
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => json(200, { whom: "7", from: "kam", to: "amlead", returned: 60, continueFrom: "554023000000500060" }));
+    const r = await runWrite("live", imSeatChange, { s: im(), me: "divya" }, () => {}, { whom: "imran", seat: "amlead" }, { fetch: f });
+    expect(r).toMatchObject({ ok: true, data: { returned: 60, continueFrom: "554023000000500060" } });
+    await runWrite("live", imSeatChange, { s: im(), me: "divya" }, () => {}, { whom: "imran", seat: "amlead", continueFrom: "554023000000500060" }, { fetch: f });
+    expect(JSON.parse(f.mock.calls[1][1]!.body as string)).toEqual({ seat: "amlead", continueFrom: "554023000000500060" });
+    const seen: ImAction[] = [];
+    expect(await runWrite("fixture", imSeatChange, { s: im(), me: "divya" }, (a: ImAction) => seen.push(a), { whom: "imran", seat: "amlead", continueFrom: "x" }))
+      .toMatchObject({ ok: true, data: { continueFrom: null } });
+    expect(seen).toEqual([]);
   });
   it("live: 403 step-up lands in the page note with the route's message (M17-S02)", async () => {
     const f = vi.fn(async (_u: string, _i?: RequestInit) => json(403, { error: "Confirm it is you with a fresh Zoho sign-in first.", code: "step-up" }));
