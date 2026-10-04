@@ -179,15 +179,18 @@ test('paid in full: one Contact (App_Access = Hold — D115 ruling 1), one Issue
   noIdentity(r.sink);
 });
 
-test('part paid: the allotment is Reserved with a 30-day hold and the receipt is an Advance', async () => {
+test('part paid: the allotment is Reserved with NO hold written here (M09-S09-NOTE-4: money/match starts it when Finance matches the Advance) and the receipt is a Pending Advance', async () => {
   const r = rig({ allotment: 'allotment.reserved' });
   const res = await r.add.add(principal(), form({ amountPaid: 1_000_000 }));
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.equal(res.value.allocationStatus, 'Reserved');
   const w = r.writes();
   assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
-    Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Reserved', Reserved_Units: 2, Issued_Units: 0, Hold_Until: '2026-10-28' });
+    Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Reserved', Reserved_Units: 2, Issued_Units: 0 });
+  assert.ok(!r.writes().some((c) => 'Hold_Until' in (c[2]?.data?.[0] ?? {})), 'add-paid never writes the hold deadline — one fact, one writer');
   assert.equal(w[2][2].data[0].Kind, 'Advance');
+  assert.equal(w[2][2].data[0].Match_State, 'Pending', 'Pending money starts no hold (D21)');
+  assert.equal(res.value.app, 'App: on hold — data synced, sign-in locked, no email sent. It stays locked until Finance presses Send welcome and unlock', 'D115 ruling 1');
   assert.equal(w[2][2].data[0].Amount, 1_000_000);
 });
 

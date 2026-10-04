@@ -13,9 +13,12 @@
  *   read fresh) BEFORE anything is written; a Zoho oversell refusal of the allotment insert is named the same way.
  *   2. one allotment in LLP_UnitAllocation_Module — Customer, LLP, Unit_Price, Investment_Date and, per D70
  *      ("reserved until the balance lands"), Issued with Issued_Units + Capital_Invested when the amount
- *      covers units × unit price, else Reserved with Reserved_Units and a 30-day Hold_Until (PROVISIONAL,
- *      jev decide 0.87 — the story's Zoho line says Issued; the front-end and the mapping say Reserved
- *      until paid);
+ *      covers units × unit price, else Reserved with Reserved_Units (PROVISIONAL, jev decide 0.87 — the story's
+ *      Zoho line says Issued; the front-end and the mapping say Reserved until paid). NO Hold_Until is written
+ *      here (M09-S09-NOTE-4, rule 1: one fact, one writer): the hold deadline has one owner, money/match.ts
+ *      startHold — the first MATCHED Advance of a Reserved allotment starts it 30 days out on the one IST clock
+ *      (holdUntilFrom, rule 9). This allotment's Advance below is Pending, so its hold starts the day Finance
+ *      matches it, exactly as for any other investor (D21: Pending money starts nothing);
  *   3. one Pending receipt for the money already paid, through the allotment guard
  *      (money/allotment-receipts `guarded`: allotment required, Cancelled takes refunds only, 412 →
  *      allotment-changed). The M01-S08 replay path needs a UTR, a mode and a sealed context the form does
@@ -46,7 +49,6 @@ import { ALLOTMENT_UNLINKED, unlinkedMessage, writeMissing } from "./allotment-g
 
 export const CONTACTS_MODULE = "Contacts";
 export const LLPS_MODULE = "LLP_Creation_Module";
-export const ADD_PAID_HOLD_DAYS = 30;
 export const ADD_PAID_APP = "App: on hold — data synced, sign-in locked, no email sent. It stays locked until Finance presses Send welcome and unlock";
 export const ADD_PAID_REPLAY_TTL_MS = 10 * 60 * 1_000;
 const MAX_REPLAYS = 500;
@@ -105,7 +107,7 @@ export interface AddPaidCreated {
   readonly allotmentId: string;
   readonly allocationStatus: "Issued" | "Reserved";
   readonly receiptId: string;
-  /** what the investor record shows: no account until the receipt is matched (M08-S08) */
+  /** what the investor record shows: the app account On hold until a person with the release right unlocks it (D115 ruling 1) */
   readonly app: typeof ADD_PAID_APP;
   readonly replayed: boolean;
 }
@@ -161,7 +163,6 @@ export interface AddPaidService {
 export function kolkataDay(ms: number): string {
   return new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 10);
 }
-const addDays = (day: string, n: number): string => new Date(Date.parse(day + "T00:00:00Z") + n * 86_400_000).toISOString().slice(0, 10);
 const realDay = (d: string): boolean => {
   const m = DAY.exec(d);
   if (!m) return false;
@@ -396,7 +397,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
       Customer: { id: contactId }, LLP: { id: f.llpId }, Unit_Price: farm.price, Investment_Date: f.investmentDate,
       ...(full
         ? { Allocation_Status: "Issued", Issued_Units: f.units, Reserved_Units: 0, Capital_Invested: total }
-        : { Allocation_Status: "Reserved", Reserved_Units: f.units, Issued_Units: 0, Hold_Until: addDays(today, ADD_PAID_HOLD_DAYS) }),
+        : { Allocation_Status: "Reserved", Reserved_Units: f.units, Issued_Units: 0 }),
     };
     // M11-S02 AC1: no allotment is written without its Customer and its LLP; what this call wrote so far is taken back.
     const unlinked = writeMissing("create", allot);

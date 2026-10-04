@@ -393,6 +393,16 @@ test('M08-S08: an account already On hold (added as paid) gets only the mark; Ho
   assert.equal(b.value.accountOpened.ok, true, 'account.opened is still (re)sent — same event id, the app applies it once');
 });
 
+test('M09-S09-NOTE-4: an investor added as paid (App_Access Hold, Reserved, no Hold_Until) gets the hold from the match — its one writer', async () => {
+  const r = rig({ ...FIRST, contact: 'contact.hold-no-mark' });
+  const res = await r.svc.match(principal(), RADV);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.value.hold, { ok: true, value: { until: holdUntilFrom(NOW), written: true }, code: null }, 'match day + 30 on the IST clock');
+  assert.deepEqual(puts(r.calls).filter((c) => c[1] === 'LLP_UnitAllocation_Module').map((c) => c[3]), [{ Hold_Until: holdUntilFrom(NOW) }]);
+  assert.deepEqual(res.value.appAccess, { ok: true, value: 'already-set', code: null }, 'D115: the app stays on hold until released');
+  assert.equal(r.events.filter((e) => e.type === 'hold.changed').length, 1);
+});
+
 test('D115 ruling 1: a match never opens app access — an account added On hold stays Hold, an unlocked one stays Invite, and no write ever carries Invite', async () => {
   for (const [contact, was] of [['contact.hold-no-mark', 'Hold'], ['contact.invite-no-mark', 'Invite'], ['contact.no-app', null]]) {
     const r = rig({ ...FIRST, contact });
