@@ -155,30 +155,30 @@ describe("M18-S15-H3 rate limits", () => {
     for (let i = 0; i < 300; i++) expect((await w(req("/api/data", "GET"), {})).status).toBe(200);
   });
 
-  it("a caller inventing a fresh session per request still meets the per-IP ceiling (IP_SHARE × N)", () => {
+  it("a caller inventing a fresh session per request still meets the per-IP ceiling (IP_SHARE × N)", async () => {
     const lim = createRateLimiter({ clock: () => 0 });
     const n = limitOf("auth");
     let ok = 0;
-    for (let i = 0; i < n * IP_SHARE + 5; i++) if (lim.check("/api/auth/zoho", req("/api/auth/zoho", "GET", { "x-forwarded-for": "203.0.113.7", cookie: `gz_zsid=s${i}` })).ok) ok++;
+    for (let i = 0; i < n * IP_SHARE + 5; i++) if ((await lim.check("/api/auth/zoho", req("/api/auth/zoho", "GET", { "x-forwarded-for": "203.0.113.7", cookie: `gz_zsid=s${i}` }))).ok) ok++;
     expect(ok).toBe(n * IP_SHARE);
   });
 
-  it("the bucket refills with time, and Retry-After is when the next token lands", () => {
+  it("the bucket refills with time, and Retry-After is when the next token lands", async () => {
     let now = 0;
     const lim = createRateLimiter({ clock: () => now, rules: [{ name: "t", matches: () => true, perMinute: 6 }] });
     const r = () => lim.check("/x", req("/x", "GET"));
-    for (let i = 0; i < 6; i++) expect(r().ok).toBe(true);
-    const v = r();
+    for (let i = 0; i < 6; i++) expect((await r()).ok).toBe(true);
+    const v = await r();
     expect(v).toEqual({ ok: false, rule: "t", retryAfterS: 10 });
     now += 10_000;
-    expect(r().ok).toBe(true);
-    expect(r().ok).toBe(false);
+    expect((await r()).ok).toBe(true);
+    expect((await r()).ok).toBe(false);
   });
 
-  it("the client IP is the proxy's right-most X-Forwarded-For hop (a spoofed left-most entry does not buy a new bucket)", () => {
+  it("the client IP is the proxy's right-most X-Forwarded-For hop (a spoofed left-most entry does not buy a new bucket)", async () => {
     const lim = createRateLimiter({ clock: () => 0, rules: [{ name: "t", matches: () => true, perMinute: 1 }] });
-    expect(lim.check("/x", req("/x", "GET", { "x-forwarded-for": "1.1.1.1, 203.0.113.7" })).ok).toBe(true);
-    expect(lim.check("/x", req("/x", "GET", { "x-forwarded-for": "2.2.2.2, 203.0.113.7" })).ok).toBe(false);
+    expect((await lim.check("/x", req("/x", "GET", { "x-forwarded-for": "1.1.1.1, 203.0.113.7" }))).ok).toBe(true);
+    expect((await lim.check("/x", req("/x", "GET", { "x-forwarded-for": "2.2.2.2, 203.0.113.7" }))).ok).toBe(false);
   });
 
   it("on in every mode but unit tests (NODE_ENV=test) unless GZ_RATE_LIMITS=on", () => {

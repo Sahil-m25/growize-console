@@ -77,7 +77,7 @@ A 429 has three different causes. They have different fixes. Read which one firs
 | `concurrency-exceeded` | Too many calls in flight (org, or the sub-bucket for COQL, sorted lists, bulk) | Retries fast. A write is safe to resend because it was refused before it ran. | Find what is calling in a loop. Pause one background job. The client gate is about 12 calls overall and 8 complex (D53). Do not raise retries. |
 | `rate-limited-unclassified` | The body names both a daily limit and concurrency | Retries twice, slowly | Treat as concurrency first. |
 
-**The console's own 429.** Rate limits at the door: sign-in `/api/auth/*` 20 a minute, search 60, upload 20, webhooks 120, per client IP and session, with a coarser limit per IP (`console/src/server/http/request-gate.ts`). A 429 with `Retry-After` there means one caller is hammering. Look in Plane B for the person and route. A webhook 429 may be a sender retrying. The limits are in-process: with more than one instance each has its own bucket (`ops/env/README.md`).
+**The console's own 429.** Rate limits at the door: sign-in `/api/auth/*` 20 a minute, search 60, upload 20, webhooks 120, per client IP and session, with a coarser limit per IP (`console/src/server/http/request-gate.ts`). A 429 with `Retry-After` there means one caller is hammering. Look in Plane B for the person and route. A webhook 429 may be a sender retrying. The buckets live in the shared state store (`STATE_STORE`; memory by default, so with more than one instance on memory each has its own bucket — `docs/architecture/shared-state.md`).
 
 **A storm.** Steps:
 1. Read one 429 body. Which kind?

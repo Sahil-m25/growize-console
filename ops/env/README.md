@@ -51,6 +51,12 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `JEV_SEED_TOKEN` | **S** | set: guards `/api/test/*` | **—** (test API must not be reachable) | scripts/jev-staging-seed.mjs sends it |
 | `NEXT_PUBLIC_RETICLE_TOKEN` / `_URL` / `_ROOT` | V | **—** | **—** (dev-only Reticle bridge) | app/reticle-dev.tsx |
 | `GZ_RATE_LIMITS` | V | **—** | **—** (`on` only forces the limits on under `NODE_ENV=test`; every other mode enforces them) | server/http/request-gate.ts |
+| `STATE_STORE` | V | unset (`memory`) until hosting is chosen | `catalyst` if AP4 lands on Catalyst AppSail (more than one instance); unset only on a single-instance host | server/state/runtime.ts — anything but unset/`memory`/`catalyst` refuses to start |
+| `CATALYST_API_ORIGIN` | V | with `STATE_STORE=catalyst`: `https://api.catalyst.zoho.in` (India DC host UNVERIFIED) | same | server/state/catalyst.ts |
+| `CATALYST_PROJECT_ID` | V | with `STATE_STORE=catalyst`: the numeric project id | same | server/state/catalyst.ts |
+| `CATALYST_STATE_TABLE` | V | with `STATE_STORE=catalyst`: the NoSQL table (partition key `k`, TTL attribute `ttl`) | same | server/state/catalyst.ts |
+| `CATALYST_REFRESH_TOKEN` | **S** | with `STATE_STORE=catalyst`: a refresh token with the ZohoCatalyst.nosql item scopes | same | server/state/catalyst.ts (uses `ZOHO_ACCOUNTS_ORIGIN`, `ZOHO_OAUTH_CLIENT_ID`/`SECRET`) |
+| `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` | V | optional (`CATALYST-ORG` header; `Development` sends `Environment: Development`) | optional | server/state/catalyst.ts |
 
 ### CI / test tooling (GitHub Environment `staging` only)
 
@@ -88,12 +94,11 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 - Only `NEXT_PUBLIC_*` reaches the browser; none of the secrets above may be renamed to it. CI's
   `bundle secret scan` step builds and greps `.next/static` for `client_secret`, `refresh_token` and each
   secret's value (TC-E01-018).
-- **Rate limits are in-process (M18-S15-H3).** `console/src/server/http/request-gate.ts` keeps one token bucket
-  per client IP + session in the Node process's memory (`RATE_LIMITS`: sign-in `/api/auth/*`, `/api/*/search`,
-  `/api/documents/upload`, `/api/webhooks/*`). That is correct only for **one instance**. A host that runs
-  more than one instance (autoscaling, several regions, serverless functions — AP4 is not chosen) divides the
-  limit by nothing and multiplies it by the instance count: before going multi-instance, move the buckets to a
-  shared store (e.g. Redis/Upstash `INCR` + `EXPIRE`) behind the same `RateLimiter` interface.
+- **Rate limits, step-up locks and webhook dedupe live in a SharedState (M18-S15-H3).** `console/src/server/state/`
+  — `STATE_STORE` unset keeps them in the Node process's memory, which is correct only for **one instance**; a host
+  that runs more than one (autoscaling, Catalyst AppSail's up-to-5, serverless) must set `STATE_STORE=catalyst` (or
+  add another adapter behind the same interface). A misconfigured store refuses to start; it never falls back to
+  memory. User sessions and several other stores are still per-process: `docs/architecture/shared-state.md`.
 - **The client IP comes from the proxy.** The limiter reads the right-most `X-Forwarded-For` hop (else
   `X-Real-IP`) — the address the host's own edge appended. Confirm the chosen host sets it that way (one trusted
   hop); with no proxy header every caller shares one "unknown" bucket per session.

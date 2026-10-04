@@ -18,12 +18,15 @@
  * RATE LIMITS (H3). One table, RATE_LIMITS. An in-process token bucket per (client IP + session) — refill
  * `perMinute` per minute, burst `perMinute` — and a coarser one per client IP alone at IP_SHARE × perMinute,
  * so a caller inventing a fresh cookie per request still meets a ceiling. Crossing either answers 429 with
- * Retry-After (whole seconds). IN-PROCESS ONLY: a host running more than one instance needs a shared store
- * (ops/env/README.md). Off under NODE_ENV=test unless GZ_RATE_LIMITS=on, so route tests that call one endpoint
+ * Retry-After (whole seconds). The buckets live in the process's SharedState (server/state, STATE_STORE): memory
+ * by default (one instance only), Catalyst NoSQL for a multi-instance host (docs/architecture/shared-state.md). Off under NODE_ENV=test unless GZ_RATE_LIMITS=on, so route tests that call one endpoint
  * many times keep passing; every other mode (dev, fixture mode, production) enforces it.
  */
 
 import { createHash } from "node:crypto";
+import { createMemoryState } from "../state/memory";
+import { sharedState } from "../state/runtime";
+import type { SharedState } from "../state/shared-state";
 
 export type RouteHandler<C> = (request: Request, context: C) => Response | Promise<Response>;
 
@@ -120,53 +123,34 @@ export function sessionKey(request: Request): string {
   return "-";
 }
 
-type Bucket = { tokens: number; at: number };
 export type RateVerdict = { readonly ok: true } | { readonly ok: false; readonly rule: string; readonly retryAfterS: number };
 
 export interface RateLimiter {
-  check(route: string, request: Request): RateVerdict;
+  check(route: string, request: Request): Promise<RateVerdict>;
+  /** Start every bucket afresh (tests). Bumps this limiter's key generation; the store forgets the old keys by TTL. */
   reset(): void;
 }
 
-const MAX_BUCKETS = 50_000;
-
-export function createRateLimiter(options: { rules?: ReadonlyArray<RateRule>; clock?: () => number; ipShare?: number } = {}): RateLimiter {
+/** The buckets live in a SharedState (server/state): memory by default, one per limiter, as before. */
+export function createRateLimiter(options: { rules?: ReadonlyArray<RateRule>; clock?: () => number; ipShare?: number; state?: SharedState } = {}): RateLimiter {
   const rules = options.rules ?? RATE_LIMITS;
-  const clock = options.clock ?? Date.now;
   const ipShare = options.ipShare ?? IP_SHARE;
-  const buckets = new Map<string, Bucket>();
-
-  /** Refill, then take one token. Returns 0 when taken, else the ms until one is available. */
-  const take = (key: string, capacity: number, now: number): number => {
-    const perMs = capacity / 60_000;
-    const b = buckets.get(key) ?? { tokens: capacity, at: now };
-    b.tokens = Math.min(capacity, b.tokens + Math.max(0, now - b.at) * perMs);
-    b.at = now;
-    buckets.set(key, b);
-    if (b.tokens >= 1) { b.tokens -= 1; return 0; }
-    return Math.ceil((1 - b.tokens) / perMs);
-  };
-
-  const sweep = (now: number) => {
-    if (buckets.size < MAX_BUCKETS) return;
-    for (const [k, b] of buckets) if (now - b.at > 60_000) buckets.delete(k);   // full again by now: forgetting it changes nothing
-    if (buckets.size >= MAX_BUCKETS) buckets.clear();
-  };
+  const state = options.state ?? createMemoryState({ clock: options.clock });
+  let generation = 0;
 
   return {
-    check(route, request) {
+    async check(route, request) {
       const rule = rules.find((r) => r.matches(route));
       if (!rule) return { ok: true };
-      const now = clock();
-      sweep(now);
       const ip = clientIp(request);
-      const waitPair = take(`${rule.name}|${ip}|${sessionKey(request)}`, rule.perMinute, now);
+      const g = `rate|${generation}|${rule.name}|${ip}`;
+      const waitPair = await state.take(`${g}|${sessionKey(request)}`, rule.perMinute, rule.perMinute);
       if (waitPair > 0) return { ok: false, rule: rule.name, retryAfterS: Math.max(1, Math.ceil(waitPair / 1000)) };
-      const waitIp = take(`${rule.name}|${ip}`, rule.perMinute * ipShare, now);
+      const waitIp = await state.take(g, rule.perMinute * ipShare, rule.perMinute * ipShare);
       if (waitIp > 0) return { ok: false, rule: rule.name, retryAfterS: Math.max(1, Math.ceil(waitIp / 1000)) };
       return { ok: true };
     },
-    reset() { buckets.clear(); },
+    reset() { generation++; },
   };
 }
 
@@ -190,10 +174,13 @@ export interface RequestGateOptions {
 /** Wrap one handler: 429 when throttled, 403 when a write comes from another site; else the handler. */
 export function createRequestGate(options: RequestGateOptions) {
   return function gate<C>(handler: RouteHandler<C>, route: string): RouteHandler<C> {
-    return (request, context) => {
+    return async (request, context) => {
       const limiter = options.limiter();
       if (limiter) {
-        const r = limiter.check(route, request);
+        let r: RateVerdict;
+        /* A shared store that cannot answer lets the request through (PROVISIONAL, docs/architecture/shared-state.md):
+           the limit is a guard in front of Zoho's own, and refusing every sign-in while the store is down is worse. */
+        try { r = await limiter.check(route, request); } catch { r = { ok: true }; }
         if (!r.ok) return rateRefusal(r);
       }
       const o = originVerdict(request, route);
@@ -206,7 +193,7 @@ export function createRequestGate(options: RequestGateOptions) {
 /* The process's one limiter (globalThis, so a dev-server module reload keeps the counts). */
 const G = globalThis as typeof globalThis & { __gzRateLimiter?: RateLimiter };
 export function sharedRateLimiter(): RateLimiter {
-  return (G.__gzRateLimiter ??= createRateLimiter());
+  return (G.__gzRateLimiter ??= createRateLimiter({ state: sharedState() }));
 }
 
 /** The gate withErrorCapture applies to every route. */

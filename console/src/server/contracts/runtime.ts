@@ -16,6 +16,7 @@ import { createJsonlStore } from "../logs/jsonl";
 import { alertingOpsSink, reportOpsFailure } from "../ops/runtime";
 import type { JsonSchema } from "./events";
 import { createInboundEndpoint, createSeenEvents } from "./inbound";
+import { sharedState } from "../state/runtime";
 import { createOutbox, deliveriesForRecord, type DeliveryState, type Outbox, type PushFetch } from "./outbox";
 import { createRequestIndex, createRequestIntake } from "./requests";
 import { contractKeys, createInProcessStub, investorAppMode, loadSchemas } from "./stub";
@@ -121,7 +122,7 @@ export function investorAppInbound() {
     contactIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"), publish: publishToInvestorApp,
   });
   h.inbound = createInboundEndpoint({
-    schemas: h.schemas, keys: keys.all, seen, log, newId: randomUUID, caseFor: intake.caseFor,
+    schemas: h.schemas, keys: keys.all, seen, log, newId: randomUUID, caseFor: intake.caseFor, state: sharedState(),
     async onRequest(event) {
       try {
         const r = await intake.handle(event);
