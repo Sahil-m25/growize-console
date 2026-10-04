@@ -1,0 +1,115 @@
+{
+ "_note": "M19-S07: the six smoke cases (sign in, Today, open a lead, save a note on a test lead, search, sign out). Run by `node console/scripts/smoke.mjs <url> --jev` (deploy mode only: case 4 writes a note). Not part of ui-cases.json.",
+ "cases": [
+  {
+   "id": "SMOKE-01",
+   "story": "M19-S07",
+   "seat": "rohit",
+   "title": "Smoke: sign in",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen"
+   ],
+   "expected": [
+    "The menu has a Today link (it may carry a count).",
+    "The menu has a Leads link (it may carry a count).",
+    "The sign-in screen is not showing."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "smoke"
+  },
+  {
+   "id": "SMOKE-02",
+   "story": "M19-S07",
+   "seat": "rohit",
+   "title": "Smoke: Today",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Today link in the menu"
+   ],
+   "expected": [
+    "The Today page is showing.",
+    "The sign-in screen is not showing."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "smoke"
+  },
+  {
+   "id": "SMOKE-03",
+   "story": "M19-S07",
+   "seat": "rohit",
+   "title": "Smoke: open a lead",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Sanjay Menon"
+   ],
+   "expected": [
+    "Sanjay Menon's lead page is open."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "smoke"
+  },
+  {
+   "id": "SMOKE-04",
+   "story": "M19-S07",
+   "seat": "rohit",
+   "title": "Smoke: save a note on a test lead",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Meera Krishnan",
+    "Type 'Prefers WhatsApp on weekdays' in the Add a note box",
+    "Press 'Add note'"
+   ],
+   "expected": [
+    "The page shows the latest note 'Prefers WhatsApp on weekdays' attributed to Rohit."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "smoke"
+  },
+  {
+   "id": "SMOKE-05",
+   "story": "M19-S07",
+   "seat": "rohit",
+   "title": "Smoke: search",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Type 'Sanjay' in the 'Find an investor by name, phone, email or city' box and press Enter"
+   ],
+   "expected": [
+    "Sanjay Menon's lead page is open."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "smoke"
+  },
+  {
+   "id": "SMOKE-06",
+   "story": "M19-S07",
+   "seat": "rohit",
+   "title": "Smoke: sign out",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Your account' in the top bar",
+    "Press 'Sign out'"
+   ],
+   "expected": [
+    "The sign-in screen is showing.",
+    "It says 'You are signed out.'"
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "smoke"
+  }
+ ]
+}

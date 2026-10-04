@@ -10,6 +10,9 @@
 // Writing cases: one action per step, using the visible label ("Press 'Assign to me' on Ritu Anand's row", "Type 'Rahul' in the find-an-investor box");
 // expected = a list of separate facts about what the screen shows after the steps (no "no longer", no internal names).
 // Calibration: cases with expect_fail are deliberately wrong; a run where any of them PASSES is not trusted.
+// Flags: --retry-review runs a REVIEW case once more and keeps the better-evidenced result (M19-S08; see docs/runbooks/jev-rebaseline.md).
+// Waits (M19-S08): after each step the runner waits for the page to settle (no request in flight and no DOM change for SETTLE_MS, default 250,
+// capped at SETTLE_CAP_MS, default 6000), not a fixed 300 ms. A case's `wait` still sets the quiet time.
 // Key: TYPESAFE_API_KEY, or TS_KEY_FILE, or .typesafe-key at the repo root (never commit it) — looked up by jev/client.mjs.
 // Result per case: PASS (p ≥ PASS_AT, default 0.80 — see calibration note below) · FAIL (p ≤ 0.10) · REVIEW (between, or a step Jev was unsure about: top choice < 0.60).
 import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
@@ -24,7 +27,8 @@ if (!chromium) { console.error("playwright not found: run scripts/setup (console
 // (jev/questions/pick-control.mjs and judge-fact.mjs hold byte-identical copies, checked by jev/test/questions.test.mjs).
 if (!findKey()) throw new Error("No TypeSafe key");
 const client = createClient({ retries: 4, backoffMs: 2000 });
-const [casesFile, target, outArg] = process.argv.slice(2);
+const argv = process.argv.slice(2); const RETRY_REVIEW = argv.includes("--retry-review") || process.env.JEV_RETRY_REVIEW === "1";
+const [casesFile, target, outArg] = argv.filter(a => a !== "--retry-review");
 const cases = JSON.parse(fs.readFileSync(casesFile, "utf8")).cases;
 const url = /^https?:/.test(target) ? target : "file://" + path.resolve(target);
 const STEP_MIN = 0.6;
@@ -34,6 +38,28 @@ const PASS_AT = +(process.env.PASS_AT || 0.8);
 const FIX = process.env.FIXTURES && fs.existsSync(process.env.FIXTURES) ? JSON.parse(fs.readFileSync(process.env.FIXTURES, "utf8")) : {};
 // Investors-side fixtures are filed as "IM:<NAME>" while ui-cases.json cites them bare (same rule as the app's resolveFixture).
 for (const k of Object.keys(FIX)) if (k.startsWith("IM:") && !FIX[k.slice(3)]) FIX[k.slice(3)] = FIX[k];
+// M19-S08: the settle wait. The page counts DOM changes and requests in flight (init script); this side polls both
+// on its own clock, so it also works under page.clock.install.
+const SETTLE_MS = +(process.env.SETTLE_MS || 250), SETTLE_CAP_MS = +(process.env.SETTLE_CAP_MS || 6000);
+const tracker = () => {
+  if (window.__jevSettle) return; const st = window.__jevSettle = { mut: 0, inflight: 0 };
+  const F = window.fetch; if (F) window.fetch = function () { st.inflight++; const done = () => { st.inflight--; }; const p = F.apply(this, arguments); p.then(done, done); return p; };
+  const send = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function () { st.inflight++; let d = false; const done = () => { if (!d) { d = true; st.inflight--; } }; this.addEventListener("loadend", done); return send.apply(this, arguments); };
+  const watch = () => new MutationObserver(rs => { for (const r of rs) if (r.type !== "attributes" || r.attributeName !== "data-jevid") { st.mut++; break; } })
+    .observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+  watch();
+};
+async function settle(page, quiet = SETTLE_MS, cap = SETTLE_CAP_MS) {
+  const t0 = Date.now(); let last = null, since = t0;
+  while (Date.now() - t0 < cap) {
+    const s = await page.evaluate(() => window.__jevSettle ? { m: window.__jevSettle.mut, f: window.__jevSettle.inflight } : null).catch(() => null);
+    const now = Date.now(); const key = s ? s.m + "/" + s.f : "x";
+    if (key !== last || !s || s.f > 0) { last = key; since = now; }   // a change, or something still in flight, restarts the quiet time
+    else if (now - since >= quiet) return { waited: now - t0, capped: false };
+    await new Promise(r => setTimeout(r, 40));
+  }
+  return { waited: Date.now() - t0, capped: true };
+}
 const wrap = code => `(async()=>{ ${code && /\breturn\b/.test(code) ? code : (code || "")} })()`;
 
 const jev = (state, questions) => client.ask(state, questions, { caller: "ui-runner", def: "pick" in questions ? "pick-control@1" : "judge-fact@1" });
@@ -136,12 +162,13 @@ const screen = page => page.evaluate(() => {
 const browser = await chromium.launch(fs.existsSync("/opt/pw-browsers/chromium") ? { executablePath: "/opt/pw-browsers/chromium" } : {});
 const results = [];
 const only = process.env.ONLY ? process.env.ONLY.split(",") : null;
-for (let c of cases.filter(c => !only || only.includes(c.id))) {
+async function runCase(c) {
   // On staging, people sign in through Zoho: a saved session per seat (SESSIONS_DIR/<seat>.json, E16-S02) replaces the sign-in step.
   const sess = process.env.SESSIONS_DIR && c.seat && path.join(process.env.SESSIONS_DIR, c.seat + ".json");
   const useSess = sess && fs.existsSync(sess);
   const ctx = await browser.newContext({ viewport: { width: c.width || 1440, height: 900 }, ...(useSess ? { storageState: sess } : {}) });
   const page = await ctx.newPage();
+  await page.addInitScript(tracker);
   if (useSess) c = { ...c, steps: c.steps.filter(st => !/sign-in screen|'Signed in as'/i.test(st)) };
   // D98: the merged console has one sign-in screen; the old Investors-portal cases pick the person from a 'Signed in as' dropdown.
   c = { ...c, steps: c.steps.map(st => st.replace(/^Choose '([^'—]+?)\s*—[^']*' in the 'Signed in as' dropdown$/, "Press $1 on the sign-in screen")) };
@@ -152,9 +179,9 @@ for (let c of cases.filter(c => !only || only.includes(c.id))) {
   const clock = c.clock || process.env.CLOCK;   // e.g. "2026-08-28T10:00:00+05:30" so time-of-day labels do not drift during a run
   if (clock) await page.clock.install({ time: new Date(clock) });
   const errors = []; page.on("pageerror", e => errors.push(e.message)); page.on("dialog", d => { errors.push("native dialog: " + d.message()); d.dismiss(); });
-  const trace = []; let unsure = false, runError = null;
+  let result; const trace = []; let unsure = false, runError = null;
   try {
-    await page.goto(url); await page.waitForTimeout(300);
+    await page.goto(url); await settle(page);
     const runFix = async (later) => { for (const f of c.fixtures || []) {
       if (!!(FIX[f] && FIX[f].after_signin) !== later) continue;
       if (!FIX[f]) throw new Error("unknown fixture " + f);
@@ -167,7 +194,7 @@ for (let c of cases.filter(c => !only || only.includes(c.id))) {
     } };
     await runFix(false);
     for (const [si, step] of c.steps.entries()) {
-      if (si === 1) { await runFix(true); await page.waitForTimeout(200); }
+      if (si === 1) { await runFix(true); await settle(page); }
       const els = await controls(page);
       const criteria = { none: "No control on screen does what this step says.", look_only: "This step only asks to look or check something; nothing needs pressing or typing." };
       els.forEach(e => criteria["e" + e.id] = `${e.kind} "${e.name}"${e.current ? ` (currently holds "${e.current}")` : ""} in the ${e.where}` + (e.ctx ? ` — its row/area reads: "${e.ctx}"` : "") + (e.opts ? ` — options: ${e.opts}` : ""));
@@ -204,7 +231,7 @@ for (let c of cases.filter(c => !only || only.includes(c.id))) {
       else if (el.kind.startsWith("dropdown")) await loc.selectOption({ label: quoted ?? "" }, { timeout: 8000 });
       else if (el.disabled) { t.problem = "control is disabled"; t.disabled = true; }
       else await loc.click({ timeout: 8000 });
-      await page.waitForTimeout(c.wait || 300);
+      const w = await settle(page, c.wait || SETTLE_MS); t.settled = w.waited; if (w.capped) t.settle_capped = true;
     }
     if (c.steps.length === 1) await runFix(true);
     const seen = await screen(page);
@@ -219,9 +246,21 @@ for (let c of cases.filter(c => !only || only.includes(c.id))) {
     const p = Math.min(...factP.map(x => x.p));
     const stuck = trace.some(t => t.problem === "no matching control");   // a step could not be done: never a PASS
     const verdict = errors.length ? "FAIL" : p >= PASS_AT && !unsure && !stuck ? "PASS" : p <= 0.1 ? "FAIL" : "REVIEW";
-    results.push({ id: c.id, story: c.story, title: c.title, verdict, p, facts: factP, unsure_step: unsure, expect_fail: !!c.expect_fail, trace, errors, screen: seen });
-  } catch (e) { runError = String(e.message || e).slice(0, 300); results.push({ id: c.id, title: c.title, verdict: "FAIL", runError, trace, errors }); }
+    result = { id: c.id, story: c.story, title: c.title, verdict, p, facts: factP, unsure_step: unsure, expect_fail: !!c.expect_fail, trace, errors, screen: seen };
+  } catch (e) { runError = String(e.message || e).slice(0, 300); result = { id: c.id, title: c.title, verdict: "FAIL", runError, trace, errors }; }
   await ctx.close();
+  return result;
+}
+// M19-S08: --retry-review. A REVIEW (not a crash) is run once more; a decisive verdict (PASS or FAIL) is better evidence than a REVIEW,
+// and between two REVIEWs the one with no unsure step and the higher score wins. Both verdicts stay in the result.
+const rank = r => (r.verdict === "REVIEW" ? 0 : 2) + (r.unsure_step ? 0 : 1) + (r.p ?? 0) / 10;
+for (const c of cases.filter(c => !only || only.includes(c.id))) {
+  let r = await runCase(c);
+  if (RETRY_REVIEW && r.verdict === "REVIEW" && !r.runError) {
+    const r2 = await runCase(c); const keep = rank(r2) > rank(r) ? r2 : r, other = keep === r ? r2 : r;
+    r = { ...keep, retried: true, first_attempts: [{ verdict: other.verdict, p: other.p }] };
+  }
+  results.push(r);
 }
 await browser.close();
 const out = outArg || casesFile.replace(/\.json$/, "") + ".ui-results.json";

@@ -67,6 +67,10 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `ONLY` | V | runner case filter (comma list) — CI sets it from `vars.JEV_ONLY` |
 | `PASS_AT` | V | Jev pass threshold (default 0.80) |
 | `SEED_WAIT_MS` | V | seed settle wait (default 700) |
+| `SETTLE_MS` / `SETTLE_CAP_MS` | V | runner's settle wait after each step: quiet time (default 250 ms) and cap (default 6000 ms), M19-S08 |
+| `JEV_RETRY_REVIEW` | V | `1` = the runner re-runs a REVIEW case once (same as `--retry-review`) |
+| `SMOKE_ALERT_WEBHOOK` | **S** | smoke.mjs / production-check.yml: chat webhook that takes `{"text"}`, called when a smoke or production check fails (production Environment too) |
+| `PROD_CHECK_SESSIONS_TGZ_B64` | **S** | production-check.yml: tar.gz of `ir.json` / `inv.json` saved sessions for a test IR with no book (production Environment) |
 | `LEAK_MATRIX_CONFIG` | V (path) | scripts/leak-matrix.mjs |
 | `NODE_PATH` | V | set by test harnesses themselves — do not configure |
 

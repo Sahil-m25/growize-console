@@ -2,8 +2,10 @@
 #
 #   check       every push and PR: tsc, vitest (reports the rule-test count), a11y lint, node --test (src/ and scripts/),
 #               npm audit --audit-level=high (M18-S15-H4)
-#   staging     push to main: build with staging env, bundle secret scan, DEPLOY (placeholder), smoke,
-#               reset sandbox, Jev UI suite, calibration gate, publish results.csv
+#   staging     push to main: build with staging env, bundle secret scan, DEPLOY (placeholder), wait for the host,
+#               smoke suite (M19-S07: console/scripts/smoke.mjs — boots, sign-in, every rail page on both sides, /api/data,
+#               security headers, no dialogs), reset sandbox, Jev UI suite (--retry-review; quarantined cases do not block,
+#               M19-S08), calibration gate, publish results.csv
 #   production  after green staging, behind the `production` Environment's required reviewers (manual approval)
 #
 # Merge blocking: in GitHub branch protection for `main`, require the status check "check".
@@ -170,7 +172,7 @@ jobs:
           echo "::error::Deploy is not wired: the hosting account is not chosen (AP4). Replace this step in .github/workflows/pipeline.yml."
           exit 1
 
-      - name: Smoke
+      - name: Wait for staging to answer
         run: |
           set -e
           base="${STAGING_URL%/}"
@@ -190,17 +192,25 @@ jobs:
           if [ -n "$SESS" ]; then printf '%s' "$SESS" | base64 -d | tar -xz -C "$JEV_SESSIONS_DIR"; fi
           node scripts/jev-sessions.mjs check || { echo "::error::saved Jev sessions are missing or expired (12 h) — re-run jev-sessions.mjs sign-in and update JEV_SESSIONS_TGZ_B64"; exit 1; }
 
-      - name: Reset sandbox fixtures
-        run: node scripts/jev-staging-seed.mjs --reset
-
+      # M19-S07: the smoke suite, after the deploy and with the saved sessions (sign-in is Zoho). A failure stops the job here —
+      # before the 30-minute Jev suite spends anything on a broken deploy. results land in the uploaded artifact.
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+
+      - name: Smoke suite (M19-S07, under 3 minutes)
+        run: |
+          mkdir -p "$JEV_OUT"
+          node scripts/smoke.mjs "$STAGING_URL" --mode deploy --out "$JEV_OUT/smoke.json" \
+            --storage-ir "$JEV_SESSIONS_DIR/rohit.json" --storage-inv "$JEV_SESSIONS_DIR/meena.json"
+
+      - name: Reset sandbox fixtures
+        run: node scripts/jev-staging-seed.mjs --reset
 
       - name: Jev UI suite (current stage)
         id: suite
         run: |
           set +e
-          node scripts/jev-staging-run.mjs --out-dir "$JEV_OUT" ${{ vars.JEV_STORY && format('--story {0}', vars.JEV_STORY) || '' }}
+          node scripts/jev-staging-run.mjs --retry-review --out-dir "$JEV_OUT" ${{ vars.JEV_STORY && format('--story {0}', vars.JEV_STORY) || '' }}
           code=$?
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "suite exit $code (0 all PASS · 1 not all PASS · 3 calibration case passed · 2 setup error)"
@@ -322,3 +332,11 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' "$base/"); echo "GET / -> $code"; [ "$code" -lt 500 ]
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$base/api/test/reset"); echo "POST /api/test/reset -> $code"
           [ "$code" -ge 400 ] || { echo "::error::the test API answers in production"; exit 1; }
+
+      # M19-S07: the read-only production check, once right after the deploy (the hourly run is production-check.yml).
+      # No saved session here, so the page checks are reported SKIPPED; the hourly run signs in as a test IR with no book.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Production check (read-only smoke)
+        run: node scripts/smoke.mjs "$PRODUCTION_URL" --mode production --alert-webhook "${{ secrets.SMOKE_ALERT_WEBHOOK }}"

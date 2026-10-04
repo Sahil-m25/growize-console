@@ -1,0 +1,60 @@
+# M19-S07 — the hourly production check. READ-ONLY: `smoke.mjs --mode production` refuses every non-GET request,
+# signs in as a saved test IR with no book (sessions below), opens each rail page, and alerts on failure.
+#
+# Needs (production Environment): vars PRODUCTION_URL, HOSTING_READY=true; secrets PROD_CHECK_SESSIONS_TGZ_B64 (a tar.gz of
+# ir.json / inv.json Playwright sessions from jev-sessions.mjs, as the staging suite uses) and SMOKE_ALERT_WEBHOOK
+# (a chat webhook that takes {"text": "..."}; the WhatsApp/email relay to Sahil hangs off it — M19-S07-T02).
+# Saved sessions last 12 hours (jev-sessions.mjs check); until a longer-lived test session exists (PROVISIONAL, see runbook) a
+# session that has expired shows up as an alert, which is the intended failure, not a silent skip.
+# GitHub's cron can run a few minutes late and drops runs under load; the alert path is the failure, silence is not proof of health.
+name: production-check
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: console
+
+jobs:
+  check:
+    if: vars.HOSTING_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+      SMOKE_ALERT_WEBHOOK: ${{ secrets.SMOKE_ALERT_WEBHOOK }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Saved test sessions
+        env:
+          SESS: ${{ secrets.PROD_CHECK_SESSIONS_TGZ_B64 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/sess"
+          [ -n "$SESS" ] && printf '%s' "$SESS" | base64 -d | tar -xz -C "$RUNNER_TEMP/sess" || echo "::warning::no saved sessions: page checks will be SKIPPED"
+      - name: Production check (read-only)
+        run: |
+          args=""
+          [ -f "$RUNNER_TEMP/sess/ir.json" ] && args="$args --storage-ir $RUNNER_TEMP/sess/ir.json"
+          [ -f "$RUNNER_TEMP/sess/inv.json" ] && args="$args --storage-inv $RUNNER_TEMP/sess/inv.json"
+          node scripts/smoke.mjs "$PRODUCTION_URL" --mode production --out "$RUNNER_TEMP/smoke.json" $args
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-check
+          path: ${{ runner.temp }}/smoke.json
+          if-no-files-found: ignore
+          retention-days: 7
