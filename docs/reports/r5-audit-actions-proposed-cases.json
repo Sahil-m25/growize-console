@@ -1,0 +1,42 @@
+[
+  {
+    "id": "TC-E11-016",
+    "story": "M15-S05",
+    "seat": "sahil",
+    "title": "Revealing a bank reference asks why, then writes a named, masked log line with the reason",
+    "steps": [
+      "Press Sahil Mohite on the sign-in screen",
+      "Open Payments from the menu",
+      "Press 'Show the reference' on Joseph Mathew's row",
+      "Press 'A payout or a refund'",
+      "Open Activity from the menu",
+      "Press 'Investors side'"
+    ],
+    "expected": [
+      "The Activity log lists 'Revealed a bank reference' by Sahil Mohite.",
+      "That line's note reads 'Payments · ••• 8119 · shown to Sahil Mohite · A payout or a refund'."
+    ],
+    "fixtures": [
+      "DEMO_DATA"
+    ],
+    "group": "M15"
+  },
+  {
+    "id": "TC-E11-016b",
+    "story": "M18-S05",
+    "seat": "sahil",
+    "title": "'Show the reference' asks the reason first and shows nothing until one is chosen",
+    "steps": [
+      "Press Sahil Mohite on the sign-in screen",
+      "Open Payments from the menu",
+      "Press 'Show the reference' on Joseph Mathew's row"
+    ],
+    "expected": [
+      "The page asks 'Why do you need it?' with the choices 'A payout or a refund', 'A name match against a cancelled cheque', 'An investor query about their own record' and 'Cancel'."
+    ],
+    "fixtures": [
+      "DEMO_DATA"
+    ],
+    "group": "M18"
+  }
+]

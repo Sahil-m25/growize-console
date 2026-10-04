@@ -6,7 +6,7 @@
    is recorded and not yet matched is shown apart. The Match it button is M10-S02 (../money/pages). */
 
 import { useState } from "react";
-import { day6, fmtDate, money, pageReadable, refShown, TXNF } from "@/lib/im";
+import { day6, fmtDate, money, pageReadable, refShown, REVWHY, TXNF } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { paymentsRegister, revealReceiptRef, type RegisterArgs, type RegisterRowView } from "@/lib/data/endpoints/payments";
@@ -28,17 +28,24 @@ const asTxn = (r: RegisterRowView): ImTxn => ({ id: r.id, inv: r.investor.id, ki
 const dayOf = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? fmtDate(v).slice(0, 6) : day6(v));
 
 /** The reference, masked ("SWIFT · ••• 8119"), with "Show the reference" for a seat that holds the reveal right (rule 7, D13/D22).
- *  Live: step-up first, then POST /api/receipts/[id]/reveal answers the full reference for this row. Fixture: the reducer's
- *  logged revealRef (no Zoho to sign in to again). Either way the line is logged and "Hide" covers it again. */
+ *  M18-S05-NOTE-3: the reason first — the bank-account chips every other reveal asks (REVWHY.acct, common.tsx Pii) — then,
+ *  live, step-up and POST /api/receipts/[id]/reveal { why }, which files the reason on the Plane C line. Fixture: the
+ *  reducer's logged revealRef with the same reason (no Zoho to sign in to again). Either way "Hide" covers it again. */
 function RefCells({ s, me, dispatch, t }: ImPageProps & { t: RegisterRowView }) {
   const mode = useApiMode();
   const reveal = useApiWrite(revealReceiptRef, { s, me }, dispatch);
   const [full, setFull] = useState<string | null>(null);
-  const [asking, setAsking] = useState(false);
+  const [why, setWhy] = useState<string | null>(null);
   const fixtureFull = mode === "fixture" && refShown(s, me, t.id) ? s.data.TXN.find(x => x.id === t.id)?.utr ?? null : null;
   const open = fixtureFull ?? full;
   if (t.utrHidden) return <><td className="sm">{t.mode ?? "—"} <span className="mono">Finance only</span></td><td></td></>;
   const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
+  /* the asking row lives in the store (REVASK f "ref"), like the investor record's reveals */
+  const choosing = s.ui.REVASK?.f === "ref" && s.ui.REVASK.id === t.id;
+  const choose = (r: string) => {
+    dispatch({ type: "revCancel" });
+    if (mode === "fixture") void reveal({ id: t.id, why: r }); else setWhy(r);
+  };
   /* the control sits in a cell of its own, so the row's text (the investor, the amount) is what names it */
   return (
     <>
@@ -50,11 +57,20 @@ function RefCells({ s, me, dispatch, t }: ImPageProps & { t: RegisterRowView }) 
             onClick={() => { setFull(null); if (fixtureFull) dispatch({ type: "hideAll" }); }}>Hide the reference</button>
         ) : t.canReveal ? (
           <>
-            <button className="chip" title="Shows the whole reference and writes your name and the minute into the log"
-              onClick={() => { if (mode === "fixture") void reveal({ id: t.id }); else setAsking(true); }}>Show the reference</button>
-            <StepUp action={asking ? "reveal" : null} what="before the reference is shown"
-              onOpen={() => { setAsking(false); void reveal({ id: t.id }).then(r => { if (r.ok) setFull(r.data.utr); }); }}
-              onCancel={() => setAsking(false)} />
+            <button className="chip" title="Shows the whole reference and writes your name, the minute and your reason into the log"
+              onClick={() => dispatch({ type: "refAsk", id: t.id })}>Show the reference</button>
+            {choosing ? (
+              <div className="note" style={{ marginTop: 7 }}>
+                <b>Why do you need it?</b> This goes in the log with your name against it.
+                <div className="chips" style={{ marginTop: 7 }}>
+                  {REVWHY.acct.map(r => <button key={r} className="chip" onClick={() => choose(r)}>{r}</button>)}
+                  <button className="chip" onClick={() => dispatch({ type: "revCancel" })}>Cancel</button>
+                </div>
+              </div>
+            ) : null}
+            <StepUp action={why ? "reveal" : null} what="before the reference is shown"
+              onOpen={() => { const w = why; setWhy(null); void reveal({ id: t.id, why: w }).then(r => { if (r.ok) setFull(r.data.utr); }); }}
+              onCancel={() => setWhy(null)} />
           </>
         ) : null}
       </td>

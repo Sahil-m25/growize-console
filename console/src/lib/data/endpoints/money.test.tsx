@@ -62,9 +62,13 @@ describe("M10-S01-W1 — the Payments register, fixture half", () => {
     expect(JSON.stringify(a)).not.toContain("EMIR2608119");
     expect(okd<any>(paymentsRegister.fixture(book("latha"), {})).readOnly).toBe(true);
   });
-  it("Show the reference — live: POST the receipt's reveal route, no body, and read the full reference out of { reveal }", async () => {
+  it("Show the reference — live: POST the receipt's reveal route with the chosen reason as { why } (M18-S05-NOTE-3), and read the full reference out of { reveal }", async () => {
     expect(revealReceiptRef.path({ id: "9007199254740996304" })).toBe("/api/receipts/9007199254740996304/reveal");
-    expect(revealReceiptRef.body).toBeUndefined();
+    expect(revealReceiptRef.body!({ id: "9007199254740996304", why: "A payout or a refund" })).toEqual({ why: "A payout or a refund" });
+    expect(revealReceiptRef.body!({ id: "9007199254740996304" })).toBeUndefined();
+    const fw = fetchOf(200, { reveal: { receiptId: "9007199254740996304", mode: "SWIFT", utr: "EMIR2608119" } });
+    await runWrite("live", revealReceiptRef, book("sahil"), () => {}, { id: "9007199254740996304", why: "A name match against a cancelled cheque" }, { fetch: fw });
+    expect(JSON.parse(String(fw.mock.calls[0][1]?.body))).toEqual({ why: "A name match against a cancelled cheque" });
     const f = fetchOf(200, { reveal: { receiptId: "9007199254740996304", mode: "SWIFT", utr: "EMIR2608119" } });
     const r = await runWrite("live", revealReceiptRef, book("sahil"), () => {}, { id: "9007199254740996304" }, { fetch: f });
     expect(r.ok && r.data).toEqual({ receiptId: "9007199254740996304", mode: "SWIFT", utr: "EMIR2608119" });
@@ -81,6 +85,9 @@ describe("M10-S01-W1 — the Payments register, fixture half", () => {
     const r = await runWrite("fixture", revealReceiptRef, book("sahil"), (a: ImAction) => dispatched.push(a), { id: "T-0030" }, {});
     expect(r.ok && r.data).toEqual({ receiptId: "T-0030", mode: "SWIFT", utr: "EMIR2608119" });
     expect(dispatched).toEqual([{ type: "revealRef", id: "T-0030" }]);
+    const withWhy: ImAction[] = [];
+    await runWrite("fixture", revealReceiptRef, book("sahil"), (x: ImAction) => withWhy.push(x), { id: "T-0030", why: "A payout or a refund" }, {});
+    expect(withWhy).toEqual([{ type: "revealRef", id: "T-0030", why: "A payout or a refund" }]);
     const s = imReducer(demo(), "sahil", dispatched[0]);
     expect(s.data.LOG[0]).toMatchObject({ what: "Revealed a bank reference", who: "sahil", kind: "pii", note: "Payments · ••• 8119 · shown to Sahil Mohite" });
     expect(JSON.stringify(s.data.LOG[0])).not.toContain("EMIR2608119");

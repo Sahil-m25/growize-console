@@ -33,7 +33,7 @@ program.emit();
 const load = (f) => require(path.join(outDir, f));
 const { createLocalAuditArchive } = load('server/activity/archive.js');
 const { createZohoAuditExportSource, runAuditExport, fetchUserDirectory, auditTime, auditRowsFromCsv, previousIstDay } = load('server/activity/export-job.js');
-const { queryActivity, activitySides } = load('server/activity/query.js');
+const { queryActivity, activitySides, rowFromPlaneC } = load('server/activity/query.js');
 const { recordHistory, planeCBetween } = load('server/activity/sources.js');
 const { serviceCredential } = load('lib/zoho/client.js');
 
@@ -252,6 +252,26 @@ test('Plane C admin rows: console access granted / ended, a reporting-line chang
   const r = await queryActivity({ seat: 'di', userId: U.sahil }, { ...SEP, side: 'investors', kind: 'admin' }, d);
   const pc = r.rows.filter((x) => x.source === 'plane-c').map((x) => x.what);
   assert.deepEqual(pc, ['Seat changed (refused)', 'Seat changed · 3 accounts returned to the pool', 'Changed who they report to', 'Console access ended', 'Console access granted']);
+});
+
+test('M08-S08-NOTE-10 / M15-S05-NOTE-1: an app-access release is "App access released" (Account care) on the releaser\'s Investors side and on the Auditor\'s Finance trail, even when the Finance people are unknown; a test link is an Admin row', async () => {
+  const a = await archived();
+  const C = '9007199254740994101';
+  const at = (m) => Date.parse(`2026-09-04T12:0${m}:00+05:30`);
+  const planeC = [
+    { at: at(1), who: U.meena, action: 'app-access-released', outcome: 'ok', reason: 'released', seat: 'fin', recordIds: [C] },
+    { at: at(2), who: U.meena, action: 'app-access-released', outcome: 'refused', reason: 'changed', seat: 'fin', recordIds: [C] },
+    { at: at(3), who: U.sahil, action: 'test-link-issued', outcome: 'ok', reason: 'real-investor', seat: 'di', recordIds: [C], ttlMinutes: 10 },
+  ];
+  const { d } = deps(a.archive, { planeC });
+  const fin = await queryActivity({ seat: 'fin', userId: U.meena }, { ...SEP, kind: 'care' }, d);
+  assert.deepEqual(fin.rows.filter((x) => x.source === 'plane-c').map((x) => [x.what, x.kind, x.module, x.recordId]),
+    [['App access released (refused)', 'care', 'Contacts', C], ['App access released', 'care', 'Contacts', C]]);
+  const comp = await queryActivity({ seat: 'comp', userId: U.latha }, { ...SEP, kind: 'care' }, { ...d, financeUserIds: async () => null });
+  assert.deepEqual(comp.rows.filter((x) => x.source === 'plane-c').map((x) => x.what), ['App access released (refused)', 'App access released'], 'on the Finance trail without the Finance list');
+  const di = await queryActivity({ seat: 'di', userId: U.sahil }, { ...SEP, side: 'investors', kind: 'admin' }, d);
+  assert.deepEqual(di.rows.filter((x) => x.source === 'plane-c').map((x) => [x.what, x.recordId, x.withheld]), [['Admin event', null, true]], 'the org view withholds the Contact');
+  assert.deepEqual(rowFromPlaneC(planeC[2]).what, 'Test sign-in link issued');
 });
 
 test('T05 / TC-E11-013: a record history is one live __timeline call on the reader token, values never returned', async () => {

@@ -94,7 +94,10 @@ const validDay = (d: string, month: string): boolean => {
 const PLANE_C_WHAT: Readonly<Record<string, string>> = Object.freeze({
   reveal: "Identity revealed", "step-up": "Stepped up", "seat-change": "Seat changed", "grant-change": "Access changed",
   "access-granted": "Console access granted", "access-ended": "Console access ended", "manager-change": "Changed who they report to",
+  "app-access-released": "App access released", "test-link-issued": "Test sign-in link issued",
 });
+/** The Plane C actions that are Finance's own acts: on the Auditor's Finance trail even when the Finance people are unknown. */
+const FINANCE_PLANE_C: ReadonlySet<string> = new Set([PLANE_C_WHAT["app-access-released"]!]);
 /** "3 accounts returned to the pool" — a seat change's count (M03-S04-T02); nothing when none moved. */
 export const pooledText = (n: number | undefined): string | null =>
   typeof n === "number" && Number.isSafeInteger(n) && n > 0 ? `${n} account${n === 1 ? "" : "s"} returned to the pool` : null;
@@ -158,7 +161,8 @@ export async function queryActivity(reader: { readonly seat: string; readonly us
   } else if (reach === "finance") {
     const fin = deps.financeUserIds ? await deps.financeUserIds() : null;
     if (fin) { const ids = new Set([...fin, reader.userId]); rows = rows.filter((r) => ids.has(r.byId)); }
-    else rows = rows.filter((r) => r.kind === "money" || r.kind === "doc" || r.kind === "kyc");
+    else rows = rows.filter((r) => r.kind === "money" || r.kind === "doc" || r.kind === "kyc"
+      || (r.source === "plane-c" && FINANCE_PLANE_C.has(r.what.replace(/ \(refused\)$/, ""))));
   }
 
   /* what: only rows about records the reader can open (Digital Infrastructure sees the org) */

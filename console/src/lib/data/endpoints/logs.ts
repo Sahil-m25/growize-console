@@ -26,7 +26,7 @@ export const logsRead: ReadEndpoint<ConsoleState, LogsArgs, LogsView> = {
       const reveal = /reveal/i.test(e.what);
       return { at: 0, when: e.at, plane: reveal || e.kind === "admin" ? "c" : "b", kind: e.kind, group: reveal ? "identity" : "event", actorId: e.who, action: e.what,
         outcome: "ok", reason: null, endpoint: null, status: null, durationMs: null, creditsRemaining: null, whom: null, seat: null,
-        recordIds: e.lead ? [e.lead] : [], label: e.what, withheld: false, why: null, note: logNote(state, e) };
+        recordIds: e.lead ? [e.lead] : [], label: e.what, withheld: false, why: null, expiresAt: null, note: logNote(state, e) };
     });
     return ok({
       byActor, identityReveals: all.filter(e => /reveal/i.test(e.what)).length, identity: true, total: rows.length, rows,

@@ -84,18 +84,20 @@ export const paymentsRegister: ReadEndpoint<ImBook, RegisterArgs, RegisterView> 
 
 /* ── "Show the reference" — POST /api/receipts/[id]/reveal (server/money/reveal-ref), behind step-up "reveal" ─────────────
    Live: the route, on the person's own token; it answers the full reference and writes the Plane C line. The screen asks
-   step-up first (StepUp). Fixture: the reducer's revealRef (the demo has no Zoho to sign in to again), which writes the
+   the reason first (REVWHY.acct chips, sent as { why }), then step-up (StepUp). Fixture: the reducer's revealRef (the demo has no Zoho to sign in to again), which writes the
    Investors-side log line the Activity page lists; the answer is the book's own reference. */
 export type RevealedRef = { receiptId: string; mode: string | null; utr: string };
-export const revealReceiptRef: WriteEndpoint<ImBook, { id: string }, RevealedRef, ImDispatch> = {
+export const revealReceiptRef: WriteEndpoint<ImBook, { id: string; why?: string | null }, RevealedRef, ImDispatch> = {
   method: "POST",
   path: a => `/api/receipts/${encodeURIComponent(a.id)}/reveal`,
+  /* M18-S05-NOTE-3: the reason chip's words (REVWHY.acct); the route files them as a REVEAL_WHY code, "unstated" without */
+  body: a => (a.why ? { why: a.why } : undefined),
   pick: j => (j as { reveal: RevealedRef }).reveal,
   fixture(b, d, a) {
     const t = b.s.data.TXN.find(x => x.id === a.id);
     if (!t || !pageReadable(b.s, b.me, "txn")) return fail(404, "not-visible", "This payment is not available to you.");
     if (!may(b.s, b.me, "bank") || !may(b.s, b.me, "pay") || !t.utr) return fail(403, "not-allowed", "Showing a bank reference is for Finance and Digital Infrastructure.");
-    return imFixtureWrite(b, d, { type: "revealRef", id: a.id }, { receiptId: t.id, mode: t.mode || null, utr: t.utr });
+    return imFixtureWrite(b, d, { type: "revealRef", id: a.id, ...(a.why ? { why: a.why } : {}) }, { receiptId: t.id, mode: t.mode || null, utr: t.utr });
   },
   onLiveError: imLiveError,
 };

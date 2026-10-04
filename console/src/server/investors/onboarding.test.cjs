@@ -129,9 +129,10 @@ function rig(o = {}) {
   const guardRefusals = [];
   const oversell = createOversellGuard({ crm, events: { refusal: (...a) => guardRefusals.push(a) } });
   const add = createAddPaid({ crm, receipts, oversell, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
-  const app = createAppAccess({ crm, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
+  const planeC = [];
+  const app = createAppAccess({ crm, authority: allow, log, events: { appAccessReleased: (...x) => planeC.push(x) }, recordIdPrefix: P, clock: () => NOW });
   const writes = () => calls.filter((c) => c[0] !== 'GET' && c[1] !== '/coql');
-  return { add, app, calls, sink, writes, guardRefusals };
+  return { add, app, calls, sink, writes, guardRefusals, planeC };
 }
 
 /* ---- pure pieces ---------------------------------------------------------------------------------- */
@@ -447,3 +448,28 @@ test('D115: the release (Send welcome and unlock) is the one Hold → Invite wri
   assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'not-finance'));
   noIdentity(r.sink);
 });
+
+test('M08-S08-NOTE-10: the release is also a Plane C authority line — releaser, seat, Contact id, outcome — beside the Plane B line; refused releases too; a lock and a repeat are not releases', async () => {
+  let r = rig({ contact: (n) => (n === 0 ? 'contact.hold' : 'contact.invite'), timeline: 'timeline.unlocked' });
+  let res = await r.app.unlock({ ...principal(), seat: 'fin' }, CONTACT, T1);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(r.planeC, [[ACTOR, 'fin', CONTACT, 'ok', 'released']]);
+  assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'unlocked'), 'the Plane B line stays');
+  r = rig({ finance: false });
+  await r.app.unlock({ ...principal(), seat: 'kam' }, CONTACT, T1);
+  assert.deepEqual(r.planeC, [[ACTOR, 'kam', CONTACT, 'refused', 'not-finance']]);
+  r = rig({ contact: 'contact.invite-delivered', timeline: 'timeline.unlocked' });
+  res = await r.app.unlock(principal(), CONTACT);
+  assert.equal(res.already, true);
+  assert.deepEqual(r.planeC, [], 'already unlocked: nothing released');
+  r = rig({ contact: (n) => (n === 0 ? 'contact.invite-delivered' : 'contact.hold-locked'), timeline: 'timeline.unlocked' });
+  res = await r.app.lock(principal(), CONTACT, 'Investor asked us to pause access');
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(r.planeC, [], 'a lock is not a release');
+  r = rig();
+  await r.app.unlock(principal(), 'not-an-id');
+  assert.deepEqual(r.planeC, [[ACTOR, null, '', 'refused', 'invalid-request']], 'a bad id is never carried onto the line');
+  assert.throws(() => createAppAccess({ crm: r.calls && { getRecord() {}, update() {}, insert() {}, timeline() {} }, authority: { mayChange: async () => true },
+    log: createOpsLog(createMemorySink()), recordIdPrefix: P }), /Plane C events/);
+});
+

@@ -24,7 +24,7 @@ async function service() {
   const { seatAccess } = await import("@/server/access/policy");
   const { rt, crm, principal } = c.ctx;
   const app = createAppAccess({
-    crm, log: rt.log, recordIdPrefix: process.env.ZOHO_CRM_RECORD_ID_PREFIX!,
+    crm, log: rt.log, events: rt.events, recordIdPrefix: process.env.ZOHO_CRM_RECORD_ID_PREFIX!,
     authority: {
       // Finance controls app access (Head of Finance, Finance Operations, super user): the Investors-side "pay" capability.
       async mayChange(cred, sid) {
@@ -35,7 +35,7 @@ async function service() {
       },
     },
   });
-  return { ok: true as const, app, who: { credential: principal.credential, sessionId: principal.sessionId } };
+  return { ok: true as const, app, who: { credential: principal.credential, sessionId: principal.sessionId, seat: principal.session.seat } };
 }
 
 async function bodyOf(req: Request): Promise<Record<string, unknown>> {

@@ -20,12 +20,15 @@ const config = ts.readConfigFile(path.join(consoleRoot, 'tsconfig.json'), ts.sys
 const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot);
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
-const program = ts.createProgram([path.join(srcRoot, 'server/money/reveal-ref.ts')], options);
+const program = ts.createProgram(['server/money/reveal-ref.ts', 'server/data/events.ts', 'lib/im/constants.ts'].map((f) => path.join(srcRoot, f)), options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) { console.error(ts.formatDiagnostics(diagnostics, { getCanonicalFileName: (f) => f, getCurrentDirectory: () => consoleRoot, getNewLine: () => '\n' })); process.exit(1); }
 const { createRevealRef } = require(path.join(outDir, 'server/money/reveal-ref.js'));
 const { userCredential } = require(path.join(outDir, 'lib/zoho/client.js'));
 const { createMemorySink, createOpsLog } = require(path.join(outDir, 'lib/zoho/log.js'));
+const { createInvestorEvents } = require(path.join(outDir, 'server/data/events.js'));
+const { createPlaneCLog, createPlaneCMemorySink } = require(path.join(outDir, 'server/identity/plane-c.js'));
+const { REVWHY } = require(path.join(outDir, 'lib/im/constants.js'));
 
 const P = '9007199254';
 const ME = '9007199254740994090', RID = `${P}740996304`;
@@ -92,4 +95,17 @@ test('M15-S05-NOTE-1: the chosen reason rides to the Plane C writer with the rev
   r = rig({ seat: { seat: 'key-account-manager', mayReveal: false } });
   await r.svc.reveal(principal, RID, undefined, 'cheque-name-match');
   assert.equal(r.lines[0][5], 'cheque-name-match');
+});
+
+test('M18-S05-NOTE-3: the Payments register sends the chip\'s words; each bank-account chip lands on the Plane C line as its code, no chip as "unstated"', async () => {
+  const sink = createPlaneCMemorySink();
+  const events = createInvestorEvents({ log: createOpsLog(createMemorySink()), planeC: createPlaneCLog(sink), clock: () => 1_700_000_000_000 });
+  const crm = { async getRecord() { return { ok: true, value: { id: RID, Mode: 'SWIFT', UTR: 'SWIFT00008119' } }; } };
+  const svc = createRevealRef({ crm, events, seatNow: async () => ({ seat: 'fin', mayReveal: true }) });
+  for (const label of REVWHY.acct) assert.equal((await svc.reveal(principal, RID, undefined, label)).ok, true);
+  await svc.reveal(principal, RID, undefined, null);
+  assert.deepEqual(sink.events().map((e) => [e.action, e.reason, e.why, e.recordIds]), [
+    ['reveal', 'bank-account', 'payout-refund', [RID]], ['reveal', 'bank-account', 'cheque-name-match', [RID]],
+    ['reveal', 'bank-account', 'own-record-query', [RID]], ['reveal', 'bank-account', 'unstated', [RID]]]);
+  assert.ok(!JSON.stringify(sink.events()).includes('8119'), 'the reference never reaches the line');
 });
