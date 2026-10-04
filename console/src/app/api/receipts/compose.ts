@@ -47,6 +47,7 @@ export async function recordReceipt(env: NodeJS.ProcessEnv = process.env): Promi
     contextSigningSecret: env.RECEIPT_CONTEXT_SIGNING_SECRET!,
     session: { async recheck(cred, sid) { const now = await userSessions(env).credential(sid); return now.ok && now.credential.userId === cred.userId; } },
     permission: { async recheck(cred) { const sid = sessionIds.get(cred); return !!sid && mayPay(cred.userId, sid); } },
+    state: sharedState(),
   });
   /* M01-S08-NOTE-6: sign-out / change of person aborts this person's queued replays before the session is destroyed */
   const { onSessionEnd } = await import("@/server/oauth/session-end");

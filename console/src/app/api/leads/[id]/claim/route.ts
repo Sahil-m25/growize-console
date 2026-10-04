@@ -31,6 +31,7 @@ const G = globalThis as typeof globalThis & { __gzPaymentClaims?: PaymentClaims 
 async function claims(): Promise<PaymentClaims> {
   if (G.__gzPaymentClaims) return G.__gzPaymentClaims;
   const { createPaymentClaims } = await import("@/server/leads/claim");
+  const { sharedState } = await import("@/server/state/runtime");
   const { createZohoClient } = await import("@/lib/zoho/client");
   const { dataRuntime } = await import("@/server/data/zoho-source");
   const { userSessions } = await import("@/server/oauth/runtime");
@@ -43,6 +44,7 @@ async function claims(): Promise<PaymentClaims> {
     gates: leadsRuntime().gates,
     log: rt.log,
     recordIdPrefix,
+    state: sharedState(),
     authority: {
       // Re-derived from the live session: the lead side's edit (claims.ts canReportPayment). PROVISIONAL: assign ⊂ edit.
       async mayReport(cred, sid) {

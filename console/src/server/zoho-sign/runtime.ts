@@ -161,7 +161,7 @@ export function signPersonRuntime(env: NodeJS.ProcessEnv = process.env): SignPer
   const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX! });
   const sign = createSignApi({ origin: requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN), gate: rt.gate, log: rt.log });
   G.__gzSignPerson = Object.freeze({
-    sender: createSignSender({ crm, sign, log: rt.log }),
+    sender: createSignSender({ crm, sign, log: rt.log, state: sharedState() }),
     actions: createSignActions({ crm, sign, log: rt.log }),
     blocker: createPaperBlocker({ crm, sign, log: rt.log }),
     verifier: createHandVerifier({ crm, log: rt.log }),

@@ -27,6 +27,9 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { scopesFor } from "../data/scope";
 import { listAttachments, maskFileName, SCOPE_MODULE, type DocScope } from "./attachments";
 import { SLOTS, type UploadScope } from "./slots";
+import { createIdempotency } from "../state/idempotent";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 
 export { MAX_UPLOAD_BYTES };
 export const UPLOAD_MODULE: Readonly<Record<UploadScope, string>> = Object.freeze({ ...SCOPE_MODULE, lead: "Leads" });
@@ -115,22 +118,34 @@ export interface UploadDeps {
   readonly crm: Pick<ZohoClient, "uploadAttachment" | "uploadFile" | "update" | "getRecord" | "getRelated">;
   readonly log: OpsLog;
   readonly clock?: () => number;
+  /** Where the double-press guard and the one-upload-per-target lock live (runtime: sharedState()); default this process only. */
+  readonly state?: SharedState;
 }
 
 const RECORD_ID = /^\d{15,22}$/;
 const OPAQUE_KEY = /^[A-Za-z0-9_-]{16,128}$/;
 const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 export const HELD_TTL_MS = 30 * 60_000;
-const MAX_HELD = 2_000;
+const UPLOAD_LOCK_S = 300;
+const MAX_RECOVERY_ATTEMPTS = 4;
 const UNKNOWN = new Set(["network", "server", "aborted", "unexpected"]);
 
-type Held = { readonly at: number; readonly fingerprint: string; before: number | null; result: Promise<UploadResult> };
+/** What one press answered, and how many matching files the target held before it (the recovery baseline). */
+type Pressed = { readonly r: UploadResult; readonly before: number | null };
 const idOf = (v: unknown): string | null => (v && typeof v === "object" && typeof (v as { id?: unknown }).id === "string" ? (v as { id: string }).id : null);
 
 export function createUploader(deps: UploadDeps) {
   const clock = deps.clock ?? Date.now;
-  const held = new Map<string, Held>();
-  const inFlight = new Set<string>();
+  const state = deps.state ?? createMemoryState({ clock });
+  // The double-press guard (../state/idempotent). A success or an unknown outcome is held (the unknown one with its
+  // before-count, so a retry can tell whether the first press landed); a refusal or a clean not-saved frees the key.
+  // The stored answer carries no file name (rule 7: names can hold identity) — it is put back from the replayed press.
+  const presses = createIdempotency<Pressed>({
+    state, ns: "document-upload", ttlSeconds: HELD_TTL_MS / 1_000, clock,
+    keep: (p) => p.r.ok || (p.r.kind === "not-saved" && p.r.unknownOutcome),
+    save: (p) => JSON.stringify({ r: p.r.ok ? { ...p.r, value: { ...p.r.value, fileName: "" } } : p.r, before: p.before }),
+    load: (s) => { try { return JSON.parse(s) as Pressed; } catch { return null; } },
+  });
 
   const refuse = (userId: string, code: UploadRefusal, ids: readonly string[] = []): UploadResult => {
     deps.log.refusal({ at: clock(), actor: { kind: "user", userId }, action: "document-upload", reason: code, recordIds: ids.filter((x) => RECORD_ID.test(x)) });
@@ -177,7 +192,7 @@ export function createUploader(deps: UploadDeps) {
     return mine ? null : "not-in-book";
   }
 
-  async function run(cred: UserCredential, i: UploadInput, name: string, mime: UploadMime, h: Held, signal?: AbortSignal): Promise<UploadResult> {
+  async function run(cred: UserCredential, i: UploadInput, name: string, mime: UploadMime, signal?: AbortSignal): Promise<UploadResult> {
     const module = UPLOAD_MODULE[i.scope];
     const file = { fileName: name, contentType: mime, bytes: i.bytes };
     const ok = (attachmentId: string | null, recovered: boolean): UploadResult => ({ ok: true, value: Object.freeze({
@@ -228,51 +243,41 @@ export function createUploader(deps: UploadDeps) {
         if (!sniffed || sniffed !== declared || sniffed !== ext) return refuse(me, sniffed ? "type-mismatch" : "type-not-allowed", [i.recordId]);
         const name = uploadFileName(i.fileName, sniffed);
 
-        const now = clock();
-        for (const [k, v] of held) if (now - v.at > HELD_TTL_MS) held.delete(k);
         const slotKey = `${me}\u0000${idempotencyKey}`;
         const fingerprint = createHash("sha256").update(`${i.scope}|${i.recordId}|${i.slot ?? ""}|${name}|`).update(i.bytes).digest("hex");
-        const first = held.get(slotKey);
-        if (first && first.fingerprint !== fingerprint) return refuse(me, "idempotency-key-reused", [i.recordId]);
         const target = `${i.scope}|${i.recordId}|${i.slot ?? ""}`;
-
-        if (first) {
-          const r = await first.result;
-          if (r.ok) return { ok: true, value: Object.freeze({ ...r.value, duplicate: true }) };
-          if (r.kind === "refused") return r;
-          // An unknown outcome: did the first press land? Count again before sending anything.
-          if (!r.unknownOutcome) held.delete(slotKey);
-          else {
-            if (first.before === null) return notSaved("unknown-outcome", true);
-            if (inFlight.has(target)) return refuse(me, "busy", [i.recordId]);
-            const nowCount = await countMatching(cred, i, name, signal);
-            if (nowCount === null) return notSaved("unknown-outcome", true);
-            if (nowCount > first.before) {
-              const value = Object.freeze({ scope: i.scope, recordId: i.recordId, slot: i.slot, attachmentId: null, fileName: name, size: i.bytes.byteLength, duplicate: true, recovered: true });
-              first.result = Promise.resolve({ ok: true, value } as UploadResult);
-              return { ok: true, value };
+        const lock = `doc-upload-target|${target}`;
+        const work = async (): Promise<Pressed> => {
+          if (!(await state.claim(lock, UPLOAD_LOCK_S))) return { r: refuse(me, "busy", [i.recordId]), before: null };
+          try {
+            if (i.scope === "lead") {
+              const a = await admitLead(cred, seat, i.recordId, signal);
+              if (a === "unknown") return { r: notSaved("unexpected", false), before: null };
+              if (a) return { r: refuse(me, a, [i.recordId]), before: null };
             }
-            held.delete(slotKey);
+            const before = await countMatching(cred, i, name, signal);
+            return { r: await run(cred, i, name, sniffed, signal), before };
+          } finally { await state.release(lock).catch(() => { /* the TTL frees it */ }); }
+        };
+        // Attempt n is its own key. An unknown outcome (#n) is checked against the target's own count; when nothing
+        // landed the same press goes again as #n+1, so a lost answer never uploads twice and a clean miss is retried.
+        for (let n = 0; n < MAX_RECOVERY_ATTEMPTS; n++) {
+          const o = await presses.once(`${slotKey}\u0000#${n}`, fingerprint, work);
+          if (o.kind === "reused") return refuse(me, "idempotency-key-reused", [i.recordId]);
+          if (o.kind === "busy" || o.kind === "unavailable") return refuse(me, "busy", [i.recordId]);
+          const p = o.result;
+          if (o.kind === "ran") return p.r;
+          if (p.r.ok) return { ok: true, value: Object.freeze({ ...p.r.value, fileName: name, duplicate: true }) };
+          if (p.r.kind === "refused") return p.r;
+          // An unknown outcome: did that press land? Count again before sending anything.
+          if (p.before === null) return notSaved("unknown-outcome", true);
+          const nowCount = await countMatching(cred, i, name, signal);
+          if (nowCount === null) return notSaved("unknown-outcome", true);
+          if (nowCount > p.before) {
+            return { ok: true, value: Object.freeze({ scope: i.scope, recordId: i.recordId, slot: i.slot, attachmentId: null, fileName: name, size: i.bytes.byteLength, duplicate: true, recovered: true }) };
           }
         }
-        if (held.size >= MAX_HELD) return refuse(me, "busy");
-        if (inFlight.has(target)) return refuse(me, "busy", [i.recordId]);
-        inFlight.add(target);
-        const h: Held = { at: now, fingerprint, before: null, result: Promise.resolve(notSaved("pending", false)) };
-        h.result = (async (): Promise<UploadResult> => {
-          if (i.scope === "lead") {
-            const a = await admitLead(cred, seat, i.recordId, signal);
-            if (a === "unknown") return notSaved("unexpected", false);
-            if (a) return refuse(me, a, [i.recordId]);
-          }
-          h.before = await countMatching(cred, i, name, signal);
-          return run(cred, i, name, sniffed, h, signal);
-        })().finally(() => inFlight.delete(target));
-        held.set(slotKey, h);
-        const r = await h.result;
-        // A refusal or a clean not-saved may be pressed again with the same key; only success and unknown outcomes are held.
-        if (!r.ok && (r.kind === "refused" || !r.unknownOutcome) && held.get(slotKey) === h) held.delete(slotKey);
-        return r;
+        return notSaved("unknown-outcome", true);
       } finally {
         try { input?.bytes?.fill(0); } catch { /* frozen or detached — nothing kept either way */ }
       }

@@ -288,16 +288,18 @@ test('sent but the touch fails: still sent, one Plane B line for repair, and a n
   noSecrets(r.sink);
 });
 
-test('a second press while the first is in flight is refused, so one press sends one email', async () => {
+test('the same press while the first is in flight joins it; a different email to that lead is refused: one press, one email', async () => {
   let release;
   const gateOn = new Promise((ok) => { release = ok; });
   const r = rig({}, { gateOn });
   const first = r.svc.send(principal(), CMD);
   await new Promise((ok) => setTimeout(ok, 20));
-  const second = await r.svc.send(principal(), CMD);
-  assert.equal(second.reasonCode, 'sending');
+  const same = r.svc.send(principal(), CMD);
+  const other = await r.svc.send(principal(), { ...CMD, subject: `${CMD.subject} again` });
+  assert.equal(other.reasonCode, 'sending');
   release();
   assert.equal((await first).ok, true);
+  assert.equal((await same).ok, true);
   assert.equal(r.sends().length, 1);
 });
 

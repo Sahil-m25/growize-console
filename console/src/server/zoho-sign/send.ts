@@ -22,6 +22,9 @@ import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/clie
 import { isUserCredential } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
 import { ROUND_FIELDS } from "../leads/paperwork";
+import { createIdempotency } from "../state/idempotent";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 import type { SignApi, SignField, SignMethod, SignRecipient, SignTemplate } from "./api";
 import {
   DATETIME, isLive, isPaper, mayActOnPaper, PAPER_FIELDS, PAPER_KEYS, primaryDoerNote, RECORD_ID, reqIdOf, SEND_BELONGS_TO, SIGNED_VIA, signStateOf,
@@ -105,19 +108,28 @@ export interface SendDeps {
   readonly sign: Pick<SignApi, "createFromTemplate" | "createFromPdf" | "getRequest" | "recall"> & Partial<Pick<SignApi, "listTemplates">>;
   readonly log: OpsLog;
   readonly clock?: () => number;
+  /** Where the double-press guard and the one-send-per-paper lock live (runtime: sharedState()); default this process only. */
+  readonly state?: SharedState;
 }
 
 const OPAQUE_KEY = /^[A-Za-z0-9_-]{16,128}$/;
 const HELD_TTL_MS = 30 * 60_000;
-const MAX_HELD = 2_000;
+const SEND_LOCK_S = 120;
 const idOf = (v: unknown): string | null => (v && typeof v === "object" && typeof (v as { id?: unknown }).id === "string" ? (v as { id: string }).id : null);
 const s = (r: ZohoRecord, k: string, max = 200): string | null => (typeof r[k] === "string" && (r[k] as string).trim() !== "" ? (r[k] as string).trim().slice(0, max) : null);
 const isNri = (residency: string | null): boolean => residency !== null && /^(nri|oci)$|non[- ]?resident/i.test(residency);
 
 export function createSignSender(deps: SendDeps) {
   const clock = deps.clock ?? Date.now;
-  const held = new Map<string, { at: number; fingerprint: string; result: Promise<SendResult> }>();
-  const inFlight = new Set<string>();
+  const state = deps.state ?? createMemoryState({ clock });
+  // The double-press guard (../state/idempotent): joined here, replayed from SharedState, else claimed — so the same
+  // press on two instances sends once. Only a success is held; the answer is ids and codes (no recipient, no file).
+  const presses = createIdempotency<SendResult>({
+    state, ns: "sign-send", ttlSeconds: HELD_TTL_MS / 1_000, clock,
+    keep: (r) => r.ok,
+    save: (r) => JSON.stringify(r),
+    load: (v) => { try { return JSON.parse(v) as SendResult; } catch { return null; } },
+  });
 
   const refuse = (userId: string, code: SendRefusal, ids: readonly string[] = [], requestId?: string): SendResult => {
     deps.log.refusal({ at: clock(), actor: { kind: "user", userId }, action: "sign-send", reason: code, recordIds: ids.filter((x) => RECORD_ID.test(x)) });
@@ -288,25 +300,19 @@ export function createSignSender(deps: SendDeps) {
         if (!mayActOnPaper(seat, i.paper)) return refuse(me, "seat-denied", [i.recordId]);
         if (typeof idempotencyKey !== "string" || !OPAQUE_KEY.test(idempotencyKey)) return refuse(me, "idempotency-key-invalid", [i.recordId]);
 
-        const now = clock();
-        for (const [k, v] of held) if (now - v.at > HELD_TTL_MS) held.delete(k);
-        const key = `${me}\u0000${idempotencyKey}`;
+        const slot = `${me}\u0000${idempotencyKey}`;
         const fingerprint = `${i.paper}|${i.recordId}|${i.method}|${i.source.kind}|${i.source.kind === "template" ? i.source.templateId : i.source.bytes.byteLength}`;
-        const first = held.get(key);
-        if (first) {
-          if (first.fingerprint !== fingerprint) return refuse(me, "idempotency-key-reused", [i.recordId]);
-          const r = await first.result;
-          return r.ok ? { ok: true, value: Object.freeze({ ...r.value, duplicate: true }) } : r;
-        }
-        const target = `${i.paper}|${i.recordId}`;
-        if (inFlight.has(target) || held.size >= MAX_HELD) return refuse(me, "busy", [i.recordId]);
-        inFlight.add(target);
-        const h = { at: now, fingerprint, result: run(cred, seat, i, signal).finally(() => inFlight.delete(target)) };
-        held.set(key, h);
-        const r = await h.result;
-        // Only a success is held for the double press; a refusal or a clean failure may be pressed again.
-        if (!r.ok && held.get(key) === h) held.delete(key);
-        return r;
+        // One send per paper and record at a time, on any instance (a second key for the same paper waits out).
+        const lock = `sign-send-paper|${i.paper}|${i.recordId}`;
+        const o = await presses.once(slot, fingerprint, async () => {
+          if (!(await state.claim(lock, SEND_LOCK_S))) return refuse(me, "busy", [i.recordId]);
+          try { return await run(cred, seat, i, signal); } finally { await state.release(lock).catch(() => { /* the TTL frees it */ }); }
+        });
+        if (o.kind === "reused") return refuse(me, "idempotency-key-reused", [i.recordId]);
+        if (o.kind === "busy" || o.kind === "unavailable") return refuse(me, "busy", [i.recordId]);
+        const r = o.result;
+        if (o.kind === "ran") return r;
+        return r.ok ? { ok: true, value: Object.freeze({ ...r.value, duplicate: true }) } : r;
       } finally {
         if (input?.source?.kind === "pdf") { try { input.source.bytes.fill(0); } catch { /* nothing kept either way */ } }
       }

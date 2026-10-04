@@ -11,6 +11,7 @@
  */
 import { guardAllotmentWrites } from "../investors/allotment-guard";
 import { createZohoClient } from "../../lib/zoho/client";
+import { sharedState } from "../state/runtime";
 import type { ReceiptMatch, Publish } from "./match";
 import type { ClaimAnswers } from "./claim-answer";
 import type { Statements } from "./statements";
@@ -42,6 +43,7 @@ async function parts(env: NodeJS.ProcessEnv) {
     crm, log: rt.log, recordIdPrefix,
     idempotencySecret: env.RECEIPT_IDEMPOTENCY_SECRET!, contextSigningSecret: env.RECEIPT_CONTEXT_SIGNING_SECRET!,
     session: { async recheck() { return false; } }, permission: { async recheck() { return false; } },
+    state: sharedState(),
   });
   const writes = createAllotmentReceiptWrites({ crm, replay, log: rt.log, recordIdPrefix });
   const publish: Publish = async (event) => publishToInvestorApp(event);

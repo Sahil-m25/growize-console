@@ -12,6 +12,7 @@ import { dataRuntime } from "../data/zoho-source";
 import { createSignApi } from "../zoho-sign/api";
 import { createSignStatusReader } from "../zoho-sign/status";
 import { createDocumentsList, type DocumentsList, type SignStatusReader } from "./list";
+import { sharedState } from "../state/runtime";
 import { createUploader, type Uploader } from "./upload";
 
 const G = globalThis as typeof globalThis & { __gzDocUploader?: Uploader; __gzDocSignStatus?: SignStatusReader | null };
@@ -21,7 +22,7 @@ export function documentUploader(env: NodeJS.ProcessEnv = process.env): Uploader
   if (G.__gzDocUploader) return G.__gzDocUploader;
   const rt = dataRuntime();
   const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX! });
-  G.__gzDocUploader = createUploader({ crm, log: rt.log });
+  G.__gzDocUploader = createUploader({ crm, log: rt.log, state: sharedState() });
   return G.__gzDocUploader;
 }
 

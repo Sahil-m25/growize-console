@@ -51,6 +51,9 @@ const sources = [
   'server/money/receipt-replay.ts',
   'server/money/register.ts',
   'server/money/by-allotment.ts',
+  'server/state/memory.ts',
+  'server/state/catalyst.ts',
+  'server/state/fake-catalyst.ts',
 ].map((file) => path.join(srcRoot, file));
 const format = (items) => ts.formatDiagnostics(items, {
   getCanonicalFileName: (file) => file,
@@ -73,6 +76,9 @@ const load = (file) => require(path.join(outDir, file));
 const { classifyResponse, isFailure, parseCreditsRemaining } = load(path.join('lib', 'zoho', 'errors.js'));
 const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js'));
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
+const { createMemoryState } = load(path.join('server', 'state', 'memory.js'));
+const { createCatalystState } = load(path.join('server', 'state', 'catalyst.js'));
+const { createFakeCatalyst, FAKE_CONFIG } = load(path.join('server', 'state', 'fake-catalyst.js'));
 const {
   ALLOTMENTS_MODULE,
   RECEIPTS_MODULE,
@@ -544,6 +550,7 @@ function createRig(options = {}) {
       previousContextSigningSecrets: options.previousContextSigningSecrets,
       preparationTimeoutMs: options.preparationTimeoutMs,
       clock: options.clock || (() => NOW),
+      state: options.state,
     }),
     sessionCalls: () => sessionCalls,
     permissionCalls: () => permissionCalls,
@@ -1172,7 +1179,7 @@ test('exact concurrent presses share one write; a later replay returns the persi
 
   const [left, right] = await Promise.all([first, second]);
   assert.deepEqual(left, { ok: true, receiptId: RECEIPT_ID, duplicate: false });
-  assert.deepEqual(right, left);
+  assert.deepEqual(right, { ok: true, receiptId: RECEIPT_ID, duplicate: true }, 'the joined press is answered as the duplicate it is');
   assert.equal(rig.insertCalls().length, 1);
 
   const later = await rig.service.replay(principal, clone(queued));
@@ -2414,3 +2421,69 @@ test('NOTE-4: only a Forfeit may be bankless; a Balance without its UTR, or an u
   const { result } = await prepared([ledgerRow(1, 'Advance', 250000, 'Matched'), forfeitRow(2, 50000), forfeitRow(3, 50000, 'Pending')]);
   assert.equal(result.ok, true, JSON.stringify(result));
 });
+
+/* M18-S09-NOTE-8 (r7-idempotency): the replay guard and the per-allotment turn live in SharedState, so two instances
+ * (one memory map two services share; two catalyst adapters over one fake backend) write one receipt, and the
+ * stored answer holds no bank reference. Each instance is its own rig (its own CRM view): inserts are summed. */
+const twoInstances = {
+  memory: () => { const st = createMemoryState(); return { a: st, b: st }; },
+  'fake catalyst': () => {
+    const fake = createFakeCatalyst({ seed: 21 });
+    const mk = () => createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, sleep: async () => undefined });
+    return { a: mk(), b: mk() };
+  },
+};
+/** A state that remembers every value written through it. */
+function spied(state, stored) {
+  return { ...state, async set(key, value, ttl) { stored.push(String(value)); return state.set(key, value, ttl); } };
+}
+const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+for (const [name, make] of Object.entries(twoInstances)) {
+  test(`NOTE-8 (${name}): the same press on two instances writes one receipt; the stored answer carries no reference`, async () => {
+    const { a, b } = make();
+    const stored = [];
+    const ra = createRig({ state: spied(a, stored), insertGate: pause(60) });
+    const rb = createRig({ state: spied(b, stored), insertGate: pause(60) });
+    const queued = command();
+    const [left, right] = await Promise.all([ra.service.replay(principalFor(), queued), rb.service.replay(principalFor(), clone(queued))]);
+    assert.equal(ra.insertCalls().length + rb.insertCalls().length, 1, 'one write across both instances');
+    const won = [left, right].filter((r) => r.duplicate === false), joined = [left, right].filter((r) => r.duplicate === true);
+    assert.equal(won.length, 1);
+    assert.equal(joined.length, 1);
+    assert.deepEqual(joined[0], { ok: true, receiptId: RECEIPT_ID, duplicate: true });
+    assert.ok(stored.length >= 2, 'the guard stored its fingerprint and the answer');
+    for (const v of stored) assert.ok(!/hdfc2609001/i.test(v), 'no bank reference in a stored value');
+    assert.ok(stored.some((v) => v.includes(RECEIPT_ID)), 'the answer is the receipt id');
+  });
+
+  test(`NOTE-8 (${name}): two keys for one allotment take turns across instances`, async () => {
+    const { a, b } = make();
+    const release = deferred();
+    const ra = createRig({ state: a, insertGate: release.promise });
+    const rb = createRig({ state: b });
+    const first = ra.service.replay(principalFor(), command());
+    await waitUntil(() => ra.insertCalls().length === 1, 'the first press did not reach its insert');
+    const second = rb.service.replay(principalFor(), command({ idempotencyKey: OTHER_IDEMPOTENCY_KEY, intent: { utr: 'ICIC2609002' } }));
+    await pause(150);
+    assert.equal(rb.sessionCalls(), 0, 'the other instance waits for the allotment turn and has read nothing');
+    release.resolve();
+    const [x, y] = await Promise.all([first, second]);
+    assert.equal(x.ok, true);
+    assert.equal(typeof y.ok, 'boolean', 'the second press is answered once the turn is free');
+    assert.equal(rb.sessionCalls() > 0, true);
+  });
+
+  test(`NOTE-8 (${name}): a different press under the same key is refused as reused; a failure frees the key`, async () => {
+    const { a, b } = make();
+    const ra = createRig({ state: a });
+    assert.equal((await ra.service.replay(principalFor(), command())).ok, true);
+    const rb = createRig({ state: b });
+    const other = await rb.service.replay(principalFor(), command({ intent: { amountRupees: 1 } }));
+    assert.equal(other.reasonCode, 'idempotency-key-reused');
+    assert.equal(rb.insertCalls().length, 0);
+    const down = createRig({ state: make().a, sessionThrows: [true, false] });
+    assert.equal((await down.service.replay(principalFor(), command())).ok, false);
+    assert.equal((await down.service.replay(principalFor(), command())).ok, true, 'a source failure is not kept; the same key goes again');
+  });
+}

@@ -34,6 +34,9 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { claimFieldsError, type ClaimDraft } from "../../lib/selectors/claims";
 import type { Ctx } from "../../lib/selectors/ctx";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "../money/receipt-replay";
+import { createIdempotency } from "../state/idempotent";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 import { ANSWERED_STATE, FOUND_TITLE, NOT_FOUND_TITLE, notFoundText } from "../money/claim-answer";
 import type { Gates, GateResult } from "./gates";
 
@@ -108,7 +111,12 @@ export interface PaymentClaimDependencies {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
+  /** Where the double-press guard and the one-report-per-lead lock live (runtime: sharedState()); default this process only. */
+  readonly state?: SharedState;
 }
+
+const CLAIM_PRESS_TTL_S = 60;
+const CLAIM_LEAD_LOCK_S = 120;
 
 const MESSAGE: Readonly<Record<ClaimRefusal, string>> = Object.freeze({
   "invalid-request": "Not saved yet — reload the page and try again.",
@@ -173,7 +181,16 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
     const id = v && typeof v === "object" ? (v as { id?: unknown }).id : undefined;
     return validId(id) ? id : null;
   };
-  const inFlight = new Map<string, { readonly fingerprint: string; readonly promise: Promise<ClaimResult> }>();
+  const state = deps.state ?? createMemoryState({ clock });
+  // The double press (../state/idempotent): scoped to lead + report, so the same report joins/replays on any
+  // instance within a minute (an identical report a minute later is a new report). Only a success is kept; the
+  // stored answer carries no reference (the masked last four is put back from the replayed press).
+  const presses = createIdempotency<ClaimResult>({
+    state, ns: "payment-claim", ttlSeconds: CLAIM_PRESS_TTL_S, clock,
+    keep: (r) => r.ok,
+    save: (r) => JSON.stringify(r.ok ? { ...r, value: { ...r.value, ref: null } } : r),
+    load: (s) => { try { return JSON.parse(s) as ClaimResult; } catch { return null; } },
+  });
 
   const refuse = (me: string, code: ClaimRefusal, ids: readonly unknown[] = [], message?: string): ClaimResult => {
     let at = 0;
@@ -395,11 +412,16 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
       if (!allowed) return refuse(me, "capability-missing", [leadId]);
       // The double press: one claim per lead in flight. The same report joins the first; another waits its turn.
       const fingerprint = JSON.stringify([me, d.zohoKind, d.mode, d.amountRupees, d.saidOn, d.allotmentId]);
-      const running = inFlight.get(leadId);
-      if (running) return running.fingerprint === fingerprint ? running.promise : refuse(me, "in-progress", [leadId]);
-      const promise = run(cred, principal.sessionId, leadId, d, signal);
-      inFlight.set(leadId, { fingerprint, promise });
-      try { return await promise; } finally { if (inFlight.get(leadId)?.promise === promise) inFlight.delete(leadId); }
+      // A different report on the same lead waits its turn: one claim per lead in flight, on any instance.
+      const lock = `payment-claim-lead|${leadId}`;
+      const o = await presses.once(`${leadId}\u0000${fingerprint}`, fingerprint, async () => {
+        if (!(await state.claim(lock, CLAIM_LEAD_LOCK_S))) return refuse(me, "in-progress", [leadId]);
+        try { return await run(cred, principal.sessionId, leadId, d, signal); } finally { await state.release(lock).catch(() => { /* the TTL frees it */ }); }
+      });
+      if (o.kind === "busy" || o.kind === "unavailable" || o.kind === "reused") return refuse(me, "in-progress", [leadId]);
+      const r = o.result;
+      if (o.kind === "ran") return r;
+      return r.ok ? { ok: true, value: Object.freeze({ ...r.value, ref: maskRef(d.ref), duplicate: true }) } : r;
     },
   });
 }

@@ -22,6 +22,7 @@ import { zohoSeatOf } from "../data/live";
 import { scopesFor } from "../data/scope";
 import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
 import { createDeckMailer, createEmailSender, createLeadNdaReader, type NdaReader } from "./email";
+import { sharedState } from "../state/runtime";
 import { createHintReader } from "./hints";
 import { createPaperwork } from "./paperwork";
 import { createFollowups, type FollowupAccessAuthority } from "./followup";
@@ -64,7 +65,7 @@ export function emailSender(env: NodeJS.ProcessEnv = process.env, nda: NdaReader
   });
   const followups = createFollowups({ crm, access, log: rt.log, recordIdPrefix, undoSecret: env.FOLLOWUP_UNDO_SECRET! });
   const sender = createEmailSender({ crm, followups, access, log: rt.log, recordIdPrefix, orgDomains: orgDomainsOf(env.ORG_EMAIL_DOMAINS),
-    nda: nda ?? createLeadNdaReader(crm), deck: createDeckMailer(crm, env.GROWIZE_DECK_FILE_ID) });
+    nda: nda ?? createLeadNdaReader(crm), deck: createDeckMailer(crm, env.GROWIZE_DECK_FILE_ID), state: sharedState() });
   G.__gzEmailSender = sender;
   return sender;
 }
