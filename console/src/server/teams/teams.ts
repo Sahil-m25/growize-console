@@ -99,17 +99,20 @@ export function seatOrg(users: readonly unknown[], seats: ZohoSeatDirectory): Or
 
 const initials = (n: string): string => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
 
+/** One org member as the lead side's Person (on = still active). `em` only when the caller says so (rule 7: least shown). */
+export function personOf(m: OrgMember, em = ""): Person {
+  const lead = ZOHO_SEAT_SIDES[m.seat].lead;
+  return {
+    n: m.name, i: initials(m.name), seat: lead, mgr: m.mgr, on: !m.left, c: 1, em, ph: "",
+    ...((NOSIGN as readonly string[]).includes(lead) ? { ext: "the Investors pages" } : {}),
+    ...superAdminMark(m.id, lead),
+  } as Person;
+}
+
 /** Lead side: every member as a Person (on = still active), with what each holds by name. */
 export function leadCtx(viewer: string, org: Org, grants: Readonly<Record<string, CapGrid>>, now: Date): Ctx {
   const PEOPLE: Record<PersonKey, Person> = {};
-  for (const m of org.members) {
-    const lead = ZOHO_SEAT_SIDES[m.seat].lead;
-    PEOPLE[m.id] = {
-      n: m.name, i: initials(m.name), seat: lead, mgr: m.mgr, on: !m.left, c: 1, em: "", ph: "",
-      ...((NOSIGN as readonly string[]).includes(lead) ? { ext: "the Investors pages" } : {}),
-      ...superAdminMark(m.id, lead),
-    } as Person;
-  }
+  for (const m of org.members) PEOPLE[m.id] = personOf(m);
   const CAPS: Record<PersonKey, CapGrid> = {};
   for (const k of Object.keys(PEOPLE)) CAPS[k] = { ...(grants[k] ?? {}) };
   return {

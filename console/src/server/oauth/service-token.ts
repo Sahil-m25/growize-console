@@ -23,6 +23,8 @@ const ACCOUNTS_HOSTS = new Set([
   "accounts.zoho.sa",
 ]);
 
+const G = globalThis as typeof globalThis & { __gzServiceTokens?: ServiceTokenProvider[] };
+
 export interface TokenFetch {
   (
     url: string,
@@ -36,6 +38,16 @@ export interface TokenFetch {
 }
 
 export interface ServiceTokenProvider {
+  /** The background job this provider mints for. */
+  readonly job: ServiceJob;
+  /**
+   * M15-S05-NOTE-10 — read-only, for the System card: when the access token held now stops working (ms since
+   * epoch), or null when none is held (never minted, or already past expiry — it is minted again on demand).
+   * Only the time leaves; the token never does.
+   */
+  expiresAt(): number | null;
+  /** True when the most recent refresh attempt failed (cleared by the next success). */
+  refreshFailed(): boolean;
   credential(signal?: AbortSignal): Promise<ServiceCredential>;
   /** Clear only the credential that was rejected; never evict a newer grant. */
   invalidate(credential: ServiceCredential): void;
@@ -147,6 +159,7 @@ export function createServiceTokenProvider(options: ServiceTokenProviderOptions)
     throw new RangeError("refreshTimeoutMs must be 100–60000 ms.");
   }
   let cached: ServiceCredential | null = null;
+  let failed = false;
   let refreshing: Promise<ServiceCredential> | null = null;
 
   const refresh = async (signal?: AbortSignal): Promise<ServiceCredential> => {
@@ -196,7 +209,10 @@ export function createServiceTokenProvider(options: ServiceTokenProviderOptions)
     }
   };
 
-  return Object.freeze({
+  const provider: ServiceTokenProvider = Object.freeze({
+    job: options.job,
+    expiresAt: () => (cached !== null && cached.expiresAt !== null && cached.expiresAt > clock() ? cached.expiresAt : null),
+    refreshFailed: () => failed,
     async credential(signal?: AbortSignal): Promise<ServiceCredential> {
       if (signal?.aborted) throw new Error("Zoho service credential is unavailable.");
       const now = clock();
@@ -207,7 +223,11 @@ export function createServiceTokenProvider(options: ServiceTokenProviderOptions)
         refreshing = refresh(controller.signal)
           .then((credential) => {
             cached = credential;
+            failed = false;
             return credential;
+          }, (error: unknown) => {
+            failed = true;
+            throw error;
           })
           .finally(() => {
             clearTimeout(deadline);
@@ -220,4 +240,13 @@ export function createServiceTokenProvider(options: ServiceTokenProviderOptions)
       if (cached === credential) cached = null;
     },
   });
+  const all = (G.__gzServiceTokens ??= []);
+  all.push(provider);
+  if (all.length > 32) all.shift();   // tests and dev reloads build many; a process has a handful
+  return provider;
+}
+
+/** Every provider this process built (any route bundle): for the System card, read-only. */
+export function serviceTokenProviders(): readonly ServiceTokenProvider[] {
+  return (G.__gzServiceTokens ?? []).slice();
 }

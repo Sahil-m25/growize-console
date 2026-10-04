@@ -1,5 +1,5 @@
 /* GET /api/system — the System page's live checks (M15-S05-NOTE-2, M15-S03-NOTE-5): Zoho credits headroom, 429s and
-   failures from Plane B, the audit archive's last run, investor-app delivery from the outbox (server/system/facts + checks).
+   failures from Plane B, the audit archive's last run, investor-app delivery from the outbox, service-token expiry, cache load errors and the last Zoho Sign event (server/system/facts + checks).
    Only seats with the `sys` capability (Digital Infrastructure, the super administrator). A read: no Origin guard, no body.
    200 → SystemView · 403 → not a system reader (logged to Plane B as a refusal) */
 import { guardApi } from "@/server/access/guard";
@@ -9,6 +9,9 @@ import { auditChain, logSource, planeBLog } from "@/server/logs/runtime";
 import { planeBBetween } from "@/server/logs/reader";
 import { auditArchive } from "@/server/activity/runtime";
 import { investorAppOutbox } from "@/server/contracts/runtime";
+import { processLoadWindow } from "@/lib/zoho/cache";
+import { serviceTokenProviders } from "@/server/oauth/service-token";
+import { signLastEventAt } from "@/server/zoho-sign/webhook";
 import { gatherFacts, mayReadSystem } from "@/server/system/facts";
 import { systemChecks, systemView } from "@/server/system/checks";
 
@@ -30,6 +33,9 @@ async function get(): Promise<Response> {
     ops: await planeBBetween(logSource(), now - DAY, now + 1),
     archiveLastRun: async () => (archive ? archive.lastRun() : null),
     outbox: investorAppOutbox(),
+    serviceTokens: serviceTokenProviders(),
+    cacheLoads: () => processLoadWindow().totals(now),
+    signLastEventAt: () => signLastEventAt(),
     // Plane C hash chain for the last closed India day (r4-cat-audit, docs/architecture/log-sink.md)
     auditChain: () => auditChain().verify(new Date(now + 5.5 * 3_600_000 - DAY).toISOString().slice(0, 10)),
   }, now);

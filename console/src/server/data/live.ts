@@ -4,6 +4,7 @@
  * Composition, not a second implementation. Per request it is handed ONE shared client (built on the
  * process-wide gate, ./runtime) and the person's own credential, and it composes the readers that
  * already exist:
+ *   People     — readPeople (./people): Zoho Users on the viewer's own token, per request, never cached.
  *   Leads      — createLeadsBook (server/leads/book): personal scope for an IR, team for an IR Manager;
  *                then one projection read of the rung stamps (server/leads/journey RUNGS) for those ids.
  *   KAM book   — createKamBookService (server/investors/book) for a Key Account Manager's own book.
@@ -34,6 +35,9 @@ import { contactsWhere, createInvestorGuard, investorsKey, type GuardRefusal, ty
 import { MODULES } from "./projections";
 import { scopedKey, scopesFor, type BookScope, type SeatScopes } from "./scope";
 import { amKey, amScopeOf, isAmSeat } from "./am-scope";
+import { readPeople } from "./people";
+import type { ZohoUserDirectory } from "../identity/users";
+import type { ZohoSeatDirectory } from "../oauth/seat";
 
 export interface LivePrincipal {
   readonly credential: UserCredential;
@@ -48,7 +52,13 @@ export interface SeatIds {
 
 export interface LiveDeps {
   /** The one shared client of this request — on the process-wide gate. */
-  readonly crm: Pick<ZohoClient, "coql" | "aggregate" | "getRecord" | "update" | "insert">;
+  readonly crm: Pick<ZohoClient, "coql" | "aggregate" | "getRecord" | "update" | "insert"> & Partial<Pick<ZohoClient, "listUsers">>;
+  /**
+   * M01-S03-NOTE-4: seat directory (and the Users reader for the viewer's own entry) that feed PEOPLE from
+   * Zoho Users on the viewer's own token. Absent (tests, fixture builds) → PEOPLE stays empty.
+   */
+  readonly seats?: ZohoSeatDirectory;
+  readonly users?: Pick<ZohoUserDirectory, "entry">;
   readonly cache: ScopedCache;
   readonly log: OpsLog;
   readonly events: InvestorEvents;
@@ -336,6 +346,11 @@ export function createLiveDataLayer(deps: LiveDeps) {
       const problems: string[] = [];
       ds.LEADS = await readLeads(p, scopes.leads, problems, signal);
       await readInvestors(p, scopes, ds, problems, signal);
+      if (deps.seats && deps.crm.listUsers) {
+        // Per request, never cached (rule 8: a name list is not an aggregate); Zoho scopes what the viewer may list.
+        const r = await readPeople({ crm: { listUsers: deps.crm.listUsers }, seats: deps.seats, users: deps.users }, p.credential, signal);
+        if (r.ok) { ds.PEOPLE = r.value.people; ds.im.P = r.value.im; } else problems.push(`people:${r.code}`);
+      }
       return { ds, scopes, problems: Object.freeze(problems) };
     },
 
