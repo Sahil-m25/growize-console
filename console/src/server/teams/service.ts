@@ -24,8 +24,9 @@ import { readGrants, ZOHO_SEAT_SIDES, type GrantReader } from "../access/policy"
 import { scopedKey, scopesFor, type BookScope } from "../data/scope";
 import type { ZohoSeatDirectory } from "../oauth/seat";
 import type { ConsoleSession } from "../oauth/user-session";
+import type { RosterService } from "../roster/roster";
 import {
-  countTargets, memberDetail, rightsGrid, seatOrg, teamsAccess, teamsView,
+  countTargets, memberDetail, type MemberRoster, rightsGrid, seatOrg, teamsAccess, teamsView,
   type MemberDetail, type Org, type PinnedSeatIds, type RightsGrid, type TeamsAccess, type TeamsView,
 } from "./teams";
 
@@ -53,6 +54,8 @@ export interface TeamsDeps {
   readonly grants: GrantReader;
   readonly cache: ScopedCache;
   readonly log: Pick<OpsLog, "refusal">;
+  /** D49 roster (Plane C) for the member drawer's Out / Back on. Absent → "No absence is recorded" (tests, fixture builds). */
+  readonly roster?: Pick<RosterService, "view">;
   readonly clock?: () => number;
 }
 
@@ -62,6 +65,7 @@ export interface TeamsService {
 }
 
 const UNAVAILABLE = "Zoho did not answer. Try again.";
+const istDay = (ms: number): string => new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 10);
 
 const chunks = <T>(xs: readonly T[], n: number): T[][] => {
   const out: T[][] = [];
@@ -153,7 +157,14 @@ export function createTeamsService(d: TeamsDeps): TeamsService {
       if (typeof id !== "string" || !USER_ID.test(id)) return { ok: false, status: 404, code: "cannot-open", message: "That is not a member you can open." };
       const b = await build(as, session, signal);
       if (!b.ok) return b;
-      const r = memberDetail(b.a, b.org, b.grants, b.view, id, new Date(clock()));
+      let roster: MemberRoster | undefined;
+      if (d.roster) {
+        try {
+          const v = await d.roster.view(signal);
+          roster = { today: istDay(clock()), window: v.windows.get(id) ?? null };
+        } catch { roster = "unread"; }
+      }
+      const r = memberDetail(b.a, b.org, b.grants, b.view, id, new Date(clock()), roster);
       if (!r.ok) {
         try { d.log.refusal({ at: clock(), actor: { kind: "user", userId: as.userId }, action: "teams-member", reason: r.code, recordIds: [id] }); } catch { /* never fail on a log */ }
         return { ok: false, status: 403, code: "cannot-open", message: r.message };

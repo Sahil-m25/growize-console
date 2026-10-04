@@ -7,6 +7,7 @@ import { createScopedCache } from "../../lib/zoho/cache";
 import { createZohoClient } from "../../lib/zoho/client";
 import { sharedGrantReader } from "../access/grants";
 import { oauthParts } from "../oauth/runtime";
+import { rosterRuntime } from "../roster/runtime";
 import { createTeamsService, type TeamsService } from "./service";
 import type { PinnedSeatIds } from "./teams";
 
@@ -23,6 +24,7 @@ export function teamsService(env: NodeJS.ProcessEnv = process.env): TeamsService
     grants: sharedGrantReader(),
     cache: createScopedCache(),
     log: o.log,
+    roster: rosterRuntime(),
   });
   return G.__gzTeams;
 }
