@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   I, UNIT, allotGate, appOf, blockOver, careQueue, dueBy, finQueue, freeUnits, holdDays, holdExpired,
-  imCount, imHas, imReach, imReadOnly, imReducer, imTitle, kamLoad, markLeft, markLocked, matchGate,
+  imCount, imHas, imReach, imReadOnly, imReducer, imTitle, kamLoad, markLeft, markLocked, matchGate, PAPER_FIRST,
   may, maySeat, mineQueue, navFor, oversold, piiView, readBook, recordPayGate, roundOf, safeNote, shown,
   tierOf, txOf, docOf, overdue, when, stamp, plusDays, aged, activityBase, drawerReadable,
 } from "./index";
@@ -200,16 +200,53 @@ describe("oversell guard", () => {
   });
 });
 
-describe("two-person receipt match", () => {
-  it("the recorder cannot match their own receipt; a second Finance seat can", () => {
+describe("receipt match (D113 ruling 1)", () => {
+  it("a refund keeps D22's second hand: never its recorder, never an ops seat; the Head of Finance matches it", () => {
     let s = imReducer(act(kit(), "su", { type: "lapseHold", id: "R2" }), "su", { type: "confirmYes" });
     const t = s.data.TXN[0];
-    expect(t.rec).toBe("pending");
+    expect(t).toMatchObject({ kind: "refund", rec: "pending" });
     expect(matchGate(s, "su", t)).toMatchObject({ ok: false });
     expect(act(s, "su", { type: "matchReceipt", tid: t.id }).ui.NOTE!.kind).toBe("refuse");
     expect(matchGate(s, "aud", t)).toEqual({ ok: false, msg: null });
-    s = act(s, "ops2", { type: "matchReceipt", tid: t.id });
-    expect(s.data.TXN[0]).toMatchObject({ rec: "matched", mby: "ops2" });
+    expect(act(s, "ops2", { type: "matchReceipt", tid: t.id }).data.TXN[0].rec).toBe("pending");
+    s = act(s, "fin", { type: "matchReceipt", tid: t.id });
+    expect(s.data.TXN[0]).toMatchObject({ rec: "matched", mby: "fin" });
+  });
+  it("a receipt a Finance seat records is matched by the recorder — no second person; the account opens On hold", () => {
+    const s0 = kit();
+    delete s0.data.APP.R1; if (s0.data.ACCESS) delete s0.data.ACCESS.R1;
+    const s = act(s0, "ops1", { type: "recordPay", id: "R1", kind: "balance", mode: "RTGS", utr: "HDFC2709001" });
+    expect(s.data.TXN[0]).toMatchObject({ inv: "R1", kind: "balance", by: "ops1", rec: "matched", mby: "ops1" });
+    expect(invOf(s, "R1").st).toBe("paid");
+    expect(s.data.ACCESS!.R1).toMatchObject({ App_Access: "Hold", App_Welcome_At: null });
+    expect(s.data.LOG.some(e => e.what === "Growize account created" && e.inv === "R1")).toBe(true);
+  });
+  it("rule 3: unverified paper — recorded, never refused, left pending; nothing settles until it is matched", () => {
+    const s = act(kit(), "ops1", { type: "recordPay", id: "N1", kind: "advance", mode: "NEFT", utr: "HDFC2709002" });
+    const t = s.data.TXN[0];
+    expect(t).toMatchObject({ inv: "N1", kind: "advance", by: "ops1", rec: "pending" });
+    expect(t.mby).toBeUndefined();
+    expect(s.data.APP.N1).toBeUndefined();
+    expect(matchGate(s, "ops1", t)).toEqual({ ok: false, msg: PAPER_FIRST });
+    expect(matchGate(s, "fin", t)).toEqual({ ok: false, msg: PAPER_FIRST });
+  });
+  it("a pending ordinary receipt (legacy, paper verified since) is matched by any Finance seat, the recorder included", () => {
+    const s0 = kit();
+    s0.data.TXN.unshift({ id: "T-0050", inv: "R1", kind: "balance", amt: 2250000, mode: "RTGS", utr: "U50", on: "02 Sep 10:00", by: "ops1", rec: "pending" });
+    expect(matchGate(s0, "ops1", s0.data.TXN[0])).toEqual({ ok: true });
+    const s = act(s0, "ops1", { type: "matchReceipt", tid: "T-0050" });
+    expect(s.data.TXN[0]).toMatchObject({ rec: "matched", mby: "ops1" });
+    expect(invOf(s, "R1").st).toBe("paid");
+  });
+  it("an IR's payment report stays pending until Finance confirms it; confirming records it matched", () => {
+    const s0 = kit();
+    const n0 = s0.data.TXN.length;
+    expect(s0.data.ANS["N-1"]).toBeUndefined();
+    expect(s0.data.TXN.filter(t => t.inv === "R1")).toHaveLength(1);
+    const s = act(s0, "ops1", { type: "confirmClaim", nid: "N-1" });
+    expect(s.data.TXN).toHaveLength(n0 + 1);
+    expect(s.data.TXN[0]).toMatchObject({ inv: "R1", kind: "balance", rec: "matched", mby: "ops1" });
+    expect(s.data.ANS["N-1"]).toMatchObject({ state: "confirmed", by: "ops1" });
   });
 });
 

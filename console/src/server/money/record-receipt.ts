@@ -3,8 +3,14 @@
  *
  * Every rupee that arrives is recorded, whatever state the paper is in: recording is never refused for an
  * unsigned or unverified supplementary agreement — it is recorded "unmatched" (Match_State Pending) and the
- * answer says it cannot be MATCHED until the supplementary is signed and verified. Matching is the gated act,
- * and it is a second person's (the Head of Finance), never this path (D21 / CLAUDE.md rule 3).
+ * answer says it cannot be MATCHED until the supplementary is signed and verified (D21 / CLAUDE.md rule 3).
+ *
+ * D113 ruling 1: a receipt a Finance seat records IS matched — recording by a Finance seat is Finance's own approval,
+ * no second person. So when the paper allows it, the receipt inserted here is matched at once through match.ts
+ * (the one path to Matched: Matched_By = the recorder, on the recorder's token; the gate, money.confirmed, the hold
+ * and the investor's app account at the first matched money all follow from there, exactly as a "Match it" press).
+ * If that match does not land (paper not verified, Zoho busy, a refusal), the receipt stays recorded and Pending and
+ * the answer says so — Finance confirms it by hand with "Match it", or the weekly statement does (statements.ts).
  *
  * This file adds no Zoho logic of its own. It composes the existing write path:
  *   receipt-replay.ts        prepare() seals the live allotment context; replay() inserts ONE Pending receipt
@@ -31,6 +37,7 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { AllotmentLink, AllotmentReceiptResult, AllotmentReceiptWrites, PaymentStatusReading } from "./allotment-receipts";
+import type { MatchResult, MatchView } from "./match";
 import type {
   QueuedReceiptReplay, ReceiptKind, ReceiptMode, ReceiptReplayPrincipal, ReceiptReplayService, ReceiptReplaySnapshot,
 } from "./receipt-replay";
@@ -38,6 +45,8 @@ import { RECEIPT_MODES } from "./receipt-replay";
 
 export const READ_ONLY_TEXT = "Read only — Finance Operations and the Head of Finance record money.";
 export const MATCH_BLOCKED_TEXT = "Recorded. It cannot be matched until the supplementary agreement is signed and verified.";
+/** The receipt is recorded but the immediate match did not land: Finance presses "Match it" on Payments. */
+export const NOT_MATCHED_YET_TEXT = "Recorded, not matched yet — press 'Match it' on Payments.";
 export const RECORD_REPLAY_TTL_MS = 10 * 60 * 1_000;
 const MAX_HELD = 500;
 
@@ -57,8 +66,13 @@ export type RecordRefusal =
 export interface RecordedReceipt {
   readonly receiptId: string;
   readonly duplicate: boolean;
-  /** Recorded, not matched: Match_State Pending. Only the Head of Finance matches (D21). */
-  readonly state: "unmatched";
+  /** matched: Finance's own record matched it (D113); unmatched: Pending — the paper is not verified, or the match did not land. */
+  readonly state: "matched" | "unmatched";
+  /** who matched it (the recorder) and when (IST), when matched now; null otherwise */
+  readonly matchedBy: string | null;
+  readonly matchedAt: string | null;
+  /** match.ts's answer (the gate, money.confirmed, the app account, the hold) when the match ran; null otherwise */
+  readonly match: MatchView | null;
   readonly kind: keyof typeof RECORD_KINDS;
   readonly mode: ReceiptMode;
   readonly amountRupees: number;
@@ -93,8 +107,15 @@ export interface RecordAuthority {
   mayRecord(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
 }
 
+/** match.ts's "Match it", called with the recorder's own principal (D113). */
+export interface RecordMatch {
+  match(principal: unknown, receiptId: unknown, body?: unknown, signal?: AbortSignal): Promise<MatchResult>;
+}
+
 export interface RecordReceiptDependencies {
   readonly replay: Pick<ReceiptReplayService, "prepare">;
+  /** D113: match a Finance seat's receipt as it is recorded. Absent: recorded Pending (the pre-D113 behaviour). */
+  readonly match?: RecordMatch;
   readonly writes: Pick<AllotmentReceiptWrites, "record">;
   readonly authority: RecordAuthority;
   readonly log: OpsLog;
@@ -242,12 +263,27 @@ export function createRecordReceipt(deps: RecordReceiptDependencies) {
     }
     if (!r.ok) return failOf(r);
     const matchable = matchableOf(prepared.expected);
+    // D113: Finance's record is Finance's approval — match it now, through match.ts, on the recorder's own token.
+    let matched: MatchView | null = null, matchNote: string | null = matchable ? null : MATCH_BLOCKED_TEXT;
+    if (matchable && deps.match) {
+      let m: MatchResult;
+      try { m = await deps.match.match(p, r.receiptId, {}, signal); } catch { m = { ok: false, kind: "source-error", errorKind: "unexpected", message: "", retryable: true }; }
+      if (m.ok) matched = m.value;
+      else {
+        matchNote = m.kind === "refused" && m.reasonCode === "supplementary-not-verified" ? MATCH_BLOCKED_TEXT : NOT_MATCHED_YET_TEXT;
+        let at = 0;
+        try { at = clock(); } catch { /* the note stands */ }
+        log.refusal({ at, actor: { kind: "user", userId: me }, action: "record-receipt",
+          reason: `not-matched.${m.kind === "refused" ? m.reasonCode : m.errorKind}`.slice(0, 64), recordIds: [r.receiptId].filter(validId) });
+      }
+    }
     return {
       ok: true,
       value: Object.freeze({
-        receiptId: r.receiptId, duplicate: r.duplicate, state: "unmatched" as const, kind: i.kind, mode: i.mode, amountRupees,
+        receiptId: r.receiptId, duplicate: r.duplicate, state: matched ? "matched" as const : "unmatched" as const, kind: i.kind, mode: i.mode, amountRupees,
         ref: i.ref, receivedOn: i.receivedOn, recordedBy: me, link: r.link, matchable,
-        matchNote: matchable ? null : MATCH_BLOCKED_TEXT, paymentStatus: r.paymentStatus,
+        matchNote, paymentStatus: matched?.paymentStatus ?? r.paymentStatus,
+        matchedBy: matched ? matched.matchedBy : null, matchedAt: matched ? matched.matchedAt : null, match: matched,
       }),
     };
   }

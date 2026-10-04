@@ -103,14 +103,20 @@ export function setMarkGate(s: ImCtx, WHO: string, id: string, to: ImMark): Gate
       + "permanent now says the holding is settled when it is not. Do it only if you know why." };
   return OK;
 }
-/** TWO-PERSON MATCH. Not in IMX's writes — the prototype's recordPay writes every receipt as
- *  "matched" by the recorder. The rule comes from the merge notes' workflow 1 ("Finance records it;
- *  a second Finance person matches it") and applies to a receipt left "pending" (a lapse refund
- *  today). The refusal copy is new. */
+/** "Match it" on a PENDING receipt (D113 ruling 1). A receipt a Finance seat records is matched as it is recorded
+ *  (recordPay), so this is for what is left pending: a receipt whose supplementary was not verified when it was
+ *  recorded, a legacy or added-as-paid row, a lapse refund. Inbound money: any Finance seat, the recorder included —
+ *  no second person — once the supplementary is signed and verified (the server's match refuses before that too).
+ *  Money leaving (a refund): D22's second hand stays — never the person who recorded it (mayMatch adds the seat). */
+export const PAPER_FIRST = "It cannot be matched until the supplementary agreement is signed and verified.";
 export function matchGate(s: ImCtx, WHO: string, t: ImTxn | null | undefined): Gate {
   if (!t || !may(s, WHO, "pay") || !I(s, WHO, t.inv) || t.rec !== "pending") return no();
-  if (t.by === WHO)
-    return no("You recorded " + t.id + ". A receipt is matched by a second Finance person, never by the one who recorded it.");
+  if (t.kind === "refund" || t.kind === "forfeit") {
+    if (t.by === WHO)
+      return no("You recorded " + t.id + ". Money leaving is matched by a second person — the Head of Finance or an administrator, never the one who recorded it.");
+    return OK;
+  }
+  if (roundOf(s, WHO, t.inv, "supp").state !== "done") return no(PAPER_FIRST);
   return OK;
 }
 

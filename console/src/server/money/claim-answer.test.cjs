@@ -100,7 +100,8 @@ function rig(f = {}, opts = {}) {
   const writes = createAllotmentReceiptWrites({ crm, replay, log, recordIdPrefix: P, clock: () => NOW });
   const record = { async commit(p, body, key) {
     commits.push({ body, key });
-    return opts.commit ?? { ok: true, value: { receiptId: NEWR, duplicate: false, state: 'unmatched', kind: body.kind, mode: body.mode, amountRupees: body.amount,
+    // D113: record-receipt matches a Finance seat's receipt as it is recorded (the recorder is the matcher)
+    return opts.commit ?? { ok: true, value: { receiptId: NEWR, duplicate: false, state: 'matched', matchedBy: p.credential.userId, matchedAt: '2026-09-02T09:02:00+05:30', match: null, kind: body.kind, mode: body.mode, amountRupees: body.amount,
       ref: body.ref, receivedOn: body.receivedOn, recordedBy: p.credential.userId, link: { allotmentId: body.allotmentId, investorId: C, farmId: '9007199254740994003' },
       matchable: true, matchNote: null, paymentStatus: null } };
   } };
@@ -153,10 +154,12 @@ test('a KAM (no "pay") gets no report and no answer — refused before Zoho is a
   assert.equal(r.commits.length, 0);
 });
 
-test('the reports waiting on Finance', async () => {
+test('the reports waiting on Finance — an IR\'s report stays pending (Claimed) until Finance confirms it; reading writes nothing', async () => {
   const r = rig();
   const res = await r.svc.waiting(principal());
   assert.equal(res.ok, true);
+  assert.equal(r.commits.length, 0, 'nothing is recorded or matched until Finance presses Confirm');
+  assert.equal(puts(r.calls).length, 0);
   assert.deepEqual(res.value.claims, [{ claimId: CL, leadId: LEAD, allotmentId: A, kind: 'balance', mode: 'RTGS', amountRupees: 2_250_000, saidOn: '2026-08-27', byId: IR }]);
   noSecrets(res.value);
 });
@@ -167,7 +170,8 @@ test('"Confirm and record it": one receipt from the report\'s fields on its allo
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.deepEqual(r.commits, [{ key: 'press_key_000001', body: { allotmentId: A, kind: 'balance', mode: 'RTGS', ref: 'HDFC2708994', amount: 2_250_000, receivedOn: '2026-08-27' } }]);
   assert.equal(res.value.receipt.recordedBy, HEAD, 'recorded by the person pressing');
-  assert.equal(res.value.receipt.state, 'unmatched', 'it still waits for the second hand');
+  assert.equal(res.value.receipt.state, 'matched', 'D113: Finance\'s confirmation records it, and the record is matched — no second hand');
+  assert.equal(res.value.receipt.matchedBy, HEAD);
   assert.equal(res.value.answered, true);
   assert.equal(res.value.linked, true);
   const notes = r.calls.filter((c) => c[0] === 'note').map((c) => c[1]);

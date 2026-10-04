@@ -87,9 +87,11 @@ function rig(f = {}, opts = {}) {
     } });
   const zoho = createZohoStatementStore({ crm, recordIdPrefix: P });
   const store = opts.failAttach ? { ...zoho, async attach() { return { ok: false, code: 'server', errorKind: 'server' }; } } : zoho;
-  const svc = createStatements({ crm, store, log, recordIdPrefix: P, clock: () => NOW,
+  const matches = [];
+  const match = opts.match ? { async match(p, id, body) { matches.push([p.credential.userId, id, body]); return opts.match(id); } } : undefined;
+  const svc = createStatements({ crm, store, log, recordIdPrefix: P, clock: () => NOW, ...(match ? { match } : {}),
     authority: { async mayUpload() { return opts.mayUpload ?? true; } } });
-  return { svc, calls, sink };
+  return { svc, calls, sink, matches };
 }
 
 /* ---- the parser ------------------------------------------------------------------------------------------ */
@@ -164,7 +166,7 @@ test('upload: every line is matched to a receipt (UTR + amount + date) or listed
   const res = await r.svc.upload(principal(), csvFile());
   assert.equal(res.ok, true, JSON.stringify(res));
   const v = res.value;
-  assert.deepEqual(v.counts, { lines: 7, matched: 4, awaitingMatch: 3, needsOwner: 3, debits: 2, skipped: v.counts.skipped });
+  assert.deepEqual(v.counts, { lines: 7, matched: 4, awaitingMatch: 3, autoMatched: 0, needsOwner: 3, debits: 2, skipped: v.counts.skipped });
   assert.deepEqual(v.matched.map((m) => [m.line, m.receiptId, m.state, m.recordedByYou, m.kind]), [
     [1, RC(1), 'matched', false, 'Advance'],
     [2, RC(2), 'awaiting-match', false, 'Part'],
@@ -184,7 +186,39 @@ test('upload: every line is matched to a receipt (UTR + amount + date) or listed
   assert.equal(v.name, statementName('2026-09-22', '2026-09-26'));
 });
 
-test('upload: suggestions only — no receipt is written; the file goes to Zoho on the Statements record, on the uploader\'s token', async () => {
+test('D113: the stored statement auto-matches the pending inbound receipts it confirms, through Match it; a refund keeps its second hand', async () => {
+  const ok = (id) => ({ ok: true, value: { receiptId: id, state: 'matched', matchedBy: HEAD, matchedAt: '2026-09-28T10:00:00+05:30' } });
+  const r = rig({}, { match: (id) => (id === RC(3)
+    ? { ok: false, kind: 'refused', reasonCode: 'supplementary-not-verified', message: 'x', retryable: false } : ok(id)) });
+  const res = await r.svc.upload(principal(), csvFile());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const v = res.value;
+  // only the pending CREDIT lines are offered to the match, on the uploader's own principal, after the statement is stored
+  assert.deepEqual(r.matches.map((m) => [m[0], m[1]]), [[HEAD, RC(2)], [HEAD, RC(3)]]);
+  assert.deepEqual(r.calls.map((c) => c[0]), ['coql', 'insert', 'attach']);
+  assert.deepEqual(v.matched.map((m) => [m.line, m.state, m.autoMatched, m.matchNote]), [
+    [1, 'matched', false, null],
+    [2, 'matched', true, null],
+    [3, 'awaiting-match', false, 'It cannot be matched until the supplementary agreement is signed and verified.'],
+    [7, 'awaiting-match', false, 'Money leaving — the Head of Finance or an administrator matches it.'],
+  ]);
+  assert.equal(v.matched[1].matchedBy, HEAD);
+  assert.equal(v.counts.autoMatched, 1);
+  assert.equal(v.counts.awaitingMatch, 2);
+  assert.equal(v.counts.matched, 4, 'Lines_Matched on the record counts lines matched to a receipt either way');
+  const ev = r.sink.records().filter((x) => x.action === 'statement-auto-match').map((x) => x.reason);
+  assert.deepEqual(ev, ['not-matched.supplementary-not-verified', 'matched-1']);
+  noSecrets(r.sink.records());
+});
+
+test('D113: a failed store matches nothing (the statement is the source, so it must be kept first)', async () => {
+  const r = rig({}, { failAttach: true, match: () => { throw new Error('must not be called'); } });
+  const res = await r.svc.upload(principal(), csvFile());
+  assert.equal(res.ok, false);
+  assert.equal(r.matches.length, 0);
+});
+
+test('upload without a match service: suggestions only — no receipt is written; the file goes to Zoho on the Statements record, on the uploader\'s token', async () => {
   const r = rig();
   await r.svc.upload(principal(), csvFile());
   const kinds = r.calls.map((c) => c[0]);

@@ -1,6 +1,7 @@
 /* M10-S02-W1 — "Match it": POST /api/receipts/[id]/match { expectedModifiedTime } (server/money/match).
-   Live: the route (Head of Finance / super user, never the recorder; 409 when the row changed).
-   Fixture: the reducer's matchReceipt, which applies the same second-hand rule to the demo book. */
+   Live: the route (D113: any Finance seat on inbound money, the recorder included; a refund keeps D22's second hand —
+   Head of Finance or an administrator, never the recorder; 409 when the row changed).
+   Fixture: the reducer's matchReceipt, which applies the same rules to the demo book. */
 
 import type { MatchView } from "@/server/money/match";
 import type { ClaimDetail, ClaimRow, ConfirmView, NotThereView } from "@/server/money/claim-answer";

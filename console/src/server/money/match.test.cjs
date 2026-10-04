@@ -38,7 +38,7 @@ const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createZohoClient, userCredential } = load('lib/zoho/client.js');
 const { createReceiptReplayService } = load('server/money/receipt-replay.js');
 const { createAllotmentReceiptWrites } = load('server/money/allotment-receipts.js');
-const { createReceiptMatch, holdUntilFrom, factEventId, SAME_HAND_TEXT } = load('server/money/match.js');
+const { createReceiptMatch, holdUntilFrom, factEventId, SAME_HAND_TEXT, NOT_APPROVER_TEXT, ZOHO_RULE_TEXT } = load('server/money/match.js');
 const { validateEvent } = load('server/contracts/events.js');
 const { createOutbox, identityPaths } = load('server/contracts/outbox.js');
 const { loadSchemas, createInProcessStub } = load('server/contracts/stub.js');
@@ -102,7 +102,8 @@ function rig(f = {}, opts = {}) {
   const writes = createAllotmentReceiptWrites({ crm, replay, log, recordIdPrefix: P, clock: () => NOW });
   const publish = opts.publish ?? (async (event) => { events.push(event); const v = validateEvent(schemas, event); return v.ok ? { ok: true, eventId: event.event_id } : { ok: false, reason: v.reason, errors: v.errors }; });
   const svc = createReceiptMatch({ crm, writes, publish, log, recordIdPrefix: P, clock: () => opts.now ?? NOW,
-    authority: { async mayMatch() { return opts.mayMatch ?? true; } } });
+    authority: { async mayMatch() { return opts.mayMatch ?? true; },
+      ...(opts.mayApproveOutbound === undefined ? {} : { async mayApproveOutbound() { return opts.mayApproveOutbound; } }) } });
   return { svc, calls, events, sink };
 }
 const puts = (calls) => calls.filter((c) => c[0] === 'put');
@@ -139,33 +140,60 @@ test('the Head of Finance matches Meena\'s pending balance: one guarded PUT, mon
   noSecrets(e);
 });
 
-test('the recorder cannot match her own receipt: refused before any write, with the prototype\'s words', async () => {
+test('D113: the recorder matches her own ordinary receipt — no second person; Matched_By is the recorder', async () => {
   const r = rig({ receipt: 'receipt.pending-own' });
   const res = await r.svc.match(principal(), R);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.matchedBy, HEAD);
+  const p = puts(r.calls);
+  assert.deepEqual(p[0].slice(1, 4), ['Receipts', R, { Match_State: 'Matched', Matched_By: { id: HEAD } }]);
+  assert.equal(r.events.filter((e) => e.type === 'money.confirmed').length, 1);
+  assert.equal(r.sink.records().filter((x) => x.kind === 'refusal').length, 0);
+});
+
+test('D22 kept for money leaving: the recorder of a refund cannot match it; a seat that is not an approver is refused', async () => {
+  let r = rig({ receipt: 'receipt.pending-refund-own' });
+  let res = await r.svc.match(principal(), RADV);
   assert.equal(res.ok, false);
   assert.equal(res.reasonCode, 'same-hand');
   assert.equal(res.message, SAME_HAND_TEXT);
-  assert.match(res.message, /matched by someone other than the person who recorded it/);
+  assert.match(res.message, /Money leaving is matched by a second person/);
   assert.equal(puts(r.calls).length, 0);
   assert.equal(r.events.length, 0);
   assert.deepEqual(r.sink.records().filter((x) => x.kind === 'refusal').map((x) => [x.action, x.reason]), [['receipt-match', 'same-hand']]);
+  // Finance Operations (a Finance seat, not an approver) may not be the refund's second hand
+  r = rig({ receipt: 'receipt.pending-refund' }, { mayApproveOutbound: false });
+  res = await r.svc.match(principal(), RADV);
+  assert.equal(res.reasonCode, 'not-approver');
+  assert.equal(res.message, NOT_APPROVER_TEXT);
+  assert.equal(puts(r.calls).length, 0);
+  // the Head of Finance (an approver, not the recorder) matches it
+  r = rig({ receipt: 'receipt.pending-refund', allotment: 'allotment.first-advance', investorAllotments: 'allotments.investor-first',
+    investorReceipts: 'receipts.first-advance', allotmentReceipts: 'receipts.first-advance' }, { mayApproveOutbound: true });
+  res = await r.svc.match(principal(), RADV);
+  assert.equal(res.ok, true, JSON.stringify(res));
 });
 
-test('Zoho\'s validation rule refusing Matched_By (TC-IM05-024) is answered as the same hand; nothing follows', async () => {
-  const r = rig({ put: 'receipt.validation-matched-by' });
-  const res = await r.svc.match(principal(), R);
+test('Zoho\'s validation rule refusing Matched_By: a refund\'s same hand (TC-IM05-024); on inbound money the old two-person rule (D113)', async () => {
+  let r = rig({ put: 'receipt.validation-matched-by' });
+  let res = await r.svc.match(principal(), R);
   assert.equal(res.ok, false);
-  assert.equal(res.reasonCode, 'same-hand');
+  assert.equal(res.reasonCode, 'zoho-same-hand-rule');
+  assert.equal(res.message, ZOHO_RULE_TEXT);
   assert.equal(r.events.length, 0);
   assert.equal(puts(r.calls).length, 1);
   noSecrets(r.sink.records());
+  r = rig({ receipt: 'receipt.pending-refund', allotment: 'allotment.first-advance', put: 'receipt.validation-matched-by' });
+  res = await r.svc.match(principal(), RADV);
+  assert.equal(res.reasonCode, 'same-hand');
+  assert.equal(r.events.length, 0);
 });
 
-test('a seat that is not the Head of Finance or the super user is refused before Zoho is asked', async () => {
+test('a seat without Finance\'s "pay" capability is refused before Zoho is asked', async () => {
   const r = rig({}, { mayMatch: false });
   const res = await r.svc.match(principal(), R);
   assert.equal(res.reasonCode, 'not-matcher');
-  assert.match(res.message, /Waiting for the Head of Finance/);
+  assert.match(res.message, /Finance matches receipts/);
   assert.equal(r.calls.length, 0);
 });
 
@@ -418,9 +446,9 @@ test('M08-S08: recording alone never opens — one opening path on money (match.
 });
 
 test('M08-S08: an unmatched (pending) receipt never reaches the consequences — a refused match writes nothing on the Contact', async () => {
-  for (const f of [{ ...FIRST, receipt: 'receipt.pending-own' }, { ...FIRST, allotment: 'allotment.unverified' }, { ...FIRST, put: 'receipt.conflict-412' }]) {
+  for (const f of [{ ...FIRST, receipt: 'receipt.pending-refund-own' }, { ...FIRST, allotment: 'allotment.unverified' }, { ...FIRST, put: 'receipt.conflict-412' }]) {
     const r = rig(f);
-    const res = await r.svc.match(principal(), f.receipt === 'receipt.pending-own' ? R : RADV);
+    const res = await r.svc.match(principal(), RADV);
     assert.equal(res.ok, false);
     assert.equal(puts(r.calls).filter((c) => c[1] === 'Contacts').length, 0);
     assert.equal(r.events.length, 0);

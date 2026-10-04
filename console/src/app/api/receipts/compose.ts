@@ -7,7 +7,8 @@
      ZOHO_CRM_RECORD_ID_PREFIX, and Zoho sign-in configured
 
    Who records: the Investors-side "pay" capability of the seat the live session holds now (Finance Operations,
-   Head of Finance, super user) — the same check /api/investors/add-paid makes. */
+   Head of Finance, super user) — the same check /api/investors/add-paid makes. What they record is matched at once
+   when the paper allows it (D113 ruling 1: Finance's record is Finance's approval). */
 import { createZohoClient } from "@/lib/zoho/client";
 import type { RecordReceipt } from "@/server/money/record-receipt";
 
@@ -55,6 +56,9 @@ export async function recordReceipt(env: NodeJS.ProcessEnv = process.env): Promi
       record: (p, command, signal) => { sessionIds.set(p.credential, p.sessionId); return writes.record(p, command, signal); },
     },
     authority: { mayRecord: (cred, sid) => mayPay(cred.userId, sid) },
+    // D113: a Finance seat's receipt is matched as it is recorded — through "Match it" (server/money/match), lazily
+    // composed so the two share one match service per process.
+    match: { async match(p, id, body, signal) { const { receiptMatch } = await import("@/server/money/runtime"); return (await receiptMatch(env)).match(p, id, body, signal); } },
     log: rt.log,
     recordIdPrefix,
   }));

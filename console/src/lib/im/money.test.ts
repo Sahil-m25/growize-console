@@ -177,20 +177,31 @@ describe("app access (M10-S21, D93)", () => {
   });
 });
 
-describe("the second hand (M10-S02)", () => {
+describe("Match it (M10-S02, D113 ruling 1)", () => {
   const pend = (s: ImState) => {
     s.data.TXN.unshift({ id: "T-0050", inv: "R1", kind: "balance", amt: 2250000, mode: "RTGS", utr: "U50", on: "02 Sep 10:00", by: "ops1", rec: "pending" });
     return s.data.TXN[0];
   };
-  it("offers Match it to the Head of Finance, not the recorder and not another ops seat", () => {
+  it("offers Match it on an ordinary receipt to every Finance seat, the recorder included — no second person", () => {
     const s = book(); const t = pend(s);
+    expect(mayMatch(s, "fin", t)).toBe(true);
+    expect(mayMatch(s, "su", t)).toBe(true);
+    expect(mayMatch(s, "ops1", t)).toBe(true);
+    expect(mayMatch(s, "ops2", t)).toBe(true);
+    expect(mayMatch(s, "aud", t)).toBe(false);
+    expect(matchWhy(s, "ops1", t)).toBe(null);
+    expect(matchWhy(s, "aud", t)).toBe(null);
+  });
+  it("a refund keeps its second hand: the Head of Finance or the super user, never its recorder or an ops seat", () => {
+    const s = book();
+    s.data.TXN.unshift({ id: "T-0051", inv: "R1", kind: "refund", amt: 100000, mode: "NEFT", utr: "U51", on: "02 Sep 11:00", by: "ops1", rec: "pending" });
+    const t = s.data.TXN[0];
     expect(mayMatch(s, "fin", t)).toBe(true);
     expect(mayMatch(s, "su", t)).toBe(true);
     expect(mayMatch(s, "ops1", t)).toBe(false);
     expect(mayMatch(s, "ops2", t)).toBe(false);
-    expect(matchWhy(s, "ops1", t)).toMatch(/matched by someone other than the person who recorded it/);
-    expect(matchWhy(s, "fin", t)).toBe(null);
-    expect(matchWhy(s, "aud", t)).toBe(null);
+    expect(matchWhy(s, "ops1", t)).toMatch(/You recorded this refund\. Money leaving is matched by a second person/);
+    expect(matchWhy(s, "ops2", t)).toMatch(/Waiting for the Head of Finance or an administrator/);
   });
 });
 

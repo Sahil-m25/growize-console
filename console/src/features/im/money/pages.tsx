@@ -20,10 +20,10 @@ import type { QueueLine } from "@/server/payouts/queue";
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
   <span className={`tag ${c}`}><span className="dot" />{children}</span>;
 
-/* ---- Payments: the second hand on a not-reconciled row (M10-S02) ---- */
+/* ---- Payments: Match it on a not-reconciled row (M10-S02, D113: Finance, the recorder included; a refund's second hand) ---- */
 export function MatchCell({ s, me, dispatch, t }: ImPageProps & { t: ImTxn }) {
   /* M10-S02-W1: the match is POST /api/receipts/[id]/match (lib/data/endpoints/receipts); a refusal or a 409
-     lands in the page note. Whether to offer it is still the book's second-hand rule until M10-S01-W1 wires the rows. */
+     lands in the page note. Whether to offer it is the book's rule (lib/im mayMatch) until M10-S01-W1 wires the rows. */
   const match = useApiWrite(receiptMatch, { s, me }, dispatch);
   if (t.rec !== "pending") return null;
   const stop = (e: MouseEvent) => e.stopPropagation();

@@ -4,7 +4,7 @@
  * Finance (and the super user) adds someone who paid before the console: name, email, mobile, farm (LLP),
  * units, amount paid and investment date. On the person's own token (D53) this writes, in order:
  *   1. one Contact — First_Name / Last_Name / Email / Mobile, a fresh ARL_ID, App_Access left EMPTY: the account
- *      opens only on MATCHED money (M08-S08, D21) — the Pending receipt below is matched by a second person and
+ *      opens only on MATCHED money (M08-S08, D21) — the Pending receipt below is matched by Finance (D113: any Finance seat) and
  *      money/match.ts then opens it On hold + Tentative and publishes account.opened, exactly as for any other
  *      investor (PROVISIONAL, jev decide "a" 0.85: no second account-opening path; recording never opens one).
  *      NO email of any kind goes to the investor from here (D93);
@@ -19,7 +19,7 @@
  *      (money/allotment-receipts `guarded`: allotment required, Cancelled takes refunds only, 412 →
  *      allotment-changed). The M01-S08 replay path needs a UTR, a mode and a sealed context the form does
  *      not ask for, so the writer here is create-once keyed on the fresh allotment (PROVISIONAL, jev 0.47).
- *      It is Pending: the Head of Finance matches it as any other (D21).
+ *      It is Pending: Finance matches it with "Match it" (D113 — no second person; the paper gate still applies).
  *
  * "One commit": Zoho has no transaction, so a failure after the Contact is written deletes what this call
  * wrote, newest first, and answers "Not saved yet". If that clean-up cannot finish the answer says so with
@@ -45,7 +45,7 @@ import { ALLOTMENTS_MODULE, RECEIPTS_MODULE, type ReceiptReplayResult } from "..
 export const CONTACTS_MODULE = "Contacts";
 export const LLPS_MODULE = "LLP_Creation_Module";
 export const ADD_PAID_HOLD_DAYS = 30;
-export const ADD_PAID_APP = "App: not open yet — it opens On hold when the Head of Finance matches the receipt";
+export const ADD_PAID_APP = "App: not open yet — it opens On hold when Finance matches the receipt";
 export const ADD_PAID_REPLAY_TTL_MS = 10 * 60 * 1_000;
 const MAX_REPLAYS = 500;
 const MAX_CODE_ATTEMPTS = 3;

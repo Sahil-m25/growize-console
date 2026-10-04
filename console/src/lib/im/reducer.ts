@@ -12,13 +12,13 @@ import { APPLOCK, BLANK_DRAFTS, CHANS, CMODE, CREF, DETF, MOODS, ROLE, SECRETS, 
 import { day6, inr, money, plusDays, stamp, when } from "./dates";
 import {
   I, bookOf, cared, dueBy, drawerReadable, finSeats, gotBy, isAM, isSuper, may, mayDetails, maySeat,
-  mayTkt, nOpen, pageReadable, role, tierOf, who, withholdKnown,
+  mayTkt, nOpen, pageReadable, role, roundOf, tierOf, who, withholdKnown,
 } from "./selectors";
 import {
   allotGate, holdBlockGate, lapseGate, logContactGate, matchGate, recordPayGate, sendDocGate, setMarkGate,
 } from "./rules";
 import type { ImAction, ImApp, ImData, ImDrafts, ImInvestor, ImKind, ImState, ImUi } from "./types";
-import { allotPickGate, allotReceiptAmt, openHeld } from "./money";
+import { allotPickGate, allotReceiptAmt, mayMatch, openHeld } from "./money";
 import { isMoneyAction, moneyRun } from "./money-reducer";
 import { isPaper2, paper2Run } from "./paper2-reducer";
 
@@ -113,14 +113,29 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
   const setDraft = (p: Partial<ImDrafts>) => { u.drafts = { ...u.drafts, ...structuredClone(p) }; };
 
   /* ---- writes that other writes call ---- */
+  /* D113 ruling 1: a receipt a Finance seat records IS matched — Finance's own approval, no second person — when the
+     supplementary is signed and verified (the server's match refuses before that). Otherwise it is recorded pending
+     (rule 3: recording is always allowed) and "Match it" settles it later. */
   function recordPay(id: string, kind: "advance" | "balance", mode?: string, utr?: string, claimId?: string, allot?: string) {
     const g = recordPayGate(W, WHO, id, kind);
     if (refuse(g) || !g.ok) return;
     if (refuse(allotPickGate(W, WHO, id, allot, kind))) return;     /* M10-S07: one allotment per receipt */
-    const x = Ix(id)!, amt = allotReceiptAmt(W, WHO, id, allot, kind) ?? g.amt!;   /* several farms: this farm's share */
+    const amt = allotReceiptAmt(W, WHO, id, allot, kind) ?? g.amt!;   /* several farms: this farm's share */
     const ref = (utr || "").trim().toUpperCase() || "—";
+    const matched = roundOf(W, WHO, id, "supp").state === "done";
     d.TXN.unshift({ id: "T-" + String(++d.TSEQ).padStart(4, "0"), inv: id, kind, amt, mode: mode || "RTGS",
-      utr: ref, on: T(), by: WHO, rec: "matched", ...(allot ? { Allotment: allot } : {}) });
+      utr: ref, on: T(), by: WHO, rec: matched ? "matched" : "pending", ...(matched ? { mby: WHO, mat: T() } : {}),
+      ...(allot ? { Allotment: allot } : {}) });
+    if (matched) settle(id, kind, amt);
+    if (claimId) d.ANS[claimId] = { state: "confirmed", by: WHO, at: T() };   /* the IR's report was pending until now */
+    log("Recorded a receipt", id, (kind === "advance" ? "10% advance" : "Balance") + " · " + inr(amt)
+      + " · " + (mode || "RTGS") + " " + ref + (matched ? "" : " · not matched until the supplementary is verified"), "money");
+    u.drafts.PUTR = ""; u.DRW = null;
+  }
+  /** what matched inbound money sets moving (the server's match.ts consequences): the status and hold, the app account
+   *  On hold at the first matched money (D93), permanent when paid in full, and the investor's notice. */
+  function settle(id: string, kind: "advance" | "balance" | "full", amt: number) {
+    const x = Ix(id); if (!x) return;
     if (kind === "advance") { x.st = "reserved"; x.hold = plusDays(d.NOW, 30); }
     else if (dueBy(W, WHO, id) > 0) { /* another farm still owes — stays reserved (M10-S08) */ }
     else { x.st = "paid"; delete x.hold; }
@@ -134,12 +149,8 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
       ap.mark = "permanent"; ap.markAt = T(); ap.markBy = WHO;
       log("Marked the account permanent", id, "paid in full — " + APPLOCK + " days to take it back", "money");
     }
-    if (claimId) d.ANS[claimId] = { state: "confirmed", by: WHO, at: T() };
     d.OUTBOX.unshift({ at: T(), inv: id, t: (kind === "advance" ? "Advance received"
       : gotBy(W, WHO, id) > amt ? "Balance received" : "Paid in full") + " · " + money(amt), by: WHO });
-    log("Recorded a receipt", id, (kind === "advance" ? "10% advance" : "Balance") + " · " + inr(amt)
-      + " · " + (mode || "RTGS") + " " + ref, "money");
-    u.drafts.PUTR = ""; u.DRW = null;
   }
   function allot(x: ImInvestor) {
     if (refuse(allotGate(W, WHO, x))) return;
@@ -267,12 +278,13 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
       log("Could not find a payment", n.inv, w + " · claimed by " + who(W, n.ir).n, "money");
       break;
     }
-    case "matchReceipt": {                        /* NOT IN IMX — see matchGate */
+    case "matchReceipt": {                        /* D113: see matchGate / mayMatch */
       const t = d.TXN.find(x => x.id === a.tid);
-      if (refuse(matchGate(W, WHO, t)) || !t) break;
+      if (refuse(matchGate(W, WHO, t)) || !t || !mayMatch(W, WHO, t)) break;
       t.rec = "matched"; t.mby = WHO; t.mat = T();
       log("Matched a receipt", t.inv, t.id + " · " + t.kind + " · " + inr(t.amt), "money");
-      if (!d.APP[t.inv] && t.kind !== "refund" && t.kind !== "forfeit") {   /* the first confirmed money opens the account, On hold (D10, D93) */
+      if (t.kind === "advance" || t.kind === "balance") settle(t.inv, t.kind, t.amt);
+      else if (!d.APP[t.inv] && t.kind !== "refund" && t.kind !== "forfeit") {   /* the first confirmed money opens the account, On hold (D10, D93) */
         appOpen(d, t.inv, T()); openHeld(d, t.inv);
         log("Growize account created", t.inv, "on the first matched receipt · on hold — data synced, sign-in locked, no email sent", "money");
       }

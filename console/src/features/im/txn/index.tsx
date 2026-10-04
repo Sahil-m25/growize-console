@@ -46,7 +46,7 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
           <span>still due</span></div>
       </div>
       {rec.received || rec.refunded ? <p className="sm" style={{ margin: "0 0 8px" }}>Recorded, not yet matched: <b>{money(rec.received)}</b> in
-        {rec.refunded ? <> and <b>−{money(rec.refunded)}</b> out</> : null} · not counted above until the second hand matches it.</p> : null}
+        {rec.refunded ? <> and <b>−{money(rec.refunded)}</b> out</> : null} · not counted above until Finance matches it.</p> : null}
       <div className="secbar">{Object.entries(TXNF).map(([k, [t]]) => (
         <button key={k} className={`sc ${f === k ? "on" : ""}`}
           onClick={() => dispatch({ type: "setFilter", patch: { TFILT: k } })}>{t}<i>{counts[COUNT[k]]}</i></button>

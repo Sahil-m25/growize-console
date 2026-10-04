@@ -162,7 +162,7 @@ test('paid in full: one Contact (App_Access empty — it opens on match, M08-S08
   const res = await r.add.add(principal(), form());
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.deepEqual({ ...res.value }, { contactId: CONTACT, code: 'ARL-INV-0206', allotmentId: ALLOT, allocationStatus: 'Issued',
-    receiptId: RECEIPT, app: 'App: not open yet — it opens On hold when the Head of Finance matches the receipt', replayed: false });
+    receiptId: RECEIPT, app: 'App: not open yet — it opens On hold when Finance matches the receipt', replayed: false });
   const w = r.writes();
   assert.deepEqual(w.map((c) => c[0] + ' ' + c[1]), ['POST /Contacts', 'POST /LLP_UnitAllocation_Module', 'POST /Receipts']);
   assert.deepEqual(w[0][2].data[0], { First_Name: 'Synthetic Paid', Last_Name: 'Investor', Email: 'synthetic.paid@example.invalid',

@@ -14,9 +14,12 @@
  *   4. one Statements record is created (period, line counts) and the CSV is attached to it, streamed to Zoho on the
  *      uploader's token (D71). A failed attachment removes the record again, so nothing half-stored remains.
  *
- * SUGGESTIONS ONLY. A statement line matching a pending receipt is "awaiting the match": the match itself is the
- * second hand's act through POST /api/receipts/[id]/match (server/money/match.ts — Head of Finance, never the
- * recorder; it sets Matched_By, and the match time is the event's). Nothing here writes a receipt.
+ * AUTOMATIC MATCH (D113 ruling 1). A credit line that agrees with a PENDING inbound receipt on reference, amount, date
+ * and direction confirms it from the source: once the statement is stored, that receipt is matched through match.ts
+ * (the one path to Matched — Matched_By = the uploader, a Finance seat; the gate, money.confirmed, the hold and the app
+ * account follow exactly as "Match it"). A match that does not land (paper not verified, Zoho busy) leaves the line
+ * "awaiting the match" with the reason; Finance confirms it by hand. A Refund (money leaving) is never matched here:
+ * D22's second hand — the Head of Finance or an administrator — matches it. Nothing here writes a receipt directly.
  *
  * The Statements module does not exist in Zoho yet (M10-S05-T01): the store is an interface; createZohoStatementStore
  * is the Zoho shape it will use once the module and its fields are made.
@@ -27,6 +30,7 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import { RECEIPTS_MODULE } from "./receipt-replay";
+import type { MatchResult } from "./match";
 import { MAX_STATEMENT_BYTES, parseStatement, type StatementDirection, type StatementLine } from "./statement-parse";
 
 export const STATEMENTS_MODULE = "Statements";
@@ -58,11 +62,15 @@ export interface MatchedLine {
   readonly utr: string;
   readonly receiptId: string;
   readonly kind: string;
-  /** matched: already matched by the second hand; awaiting-match: pending — the Head of Finance matches it */
+  /** matched: matched (already, or now by this statement); awaiting-match: still pending — see matchNote */
   readonly state: "matched" | "awaiting-match";
   readonly matchedBy: string | null;
-  /** true: the uploader recorded this receipt, so the uploader cannot be the one to match it (D21) */
+  /** true: the uploader recorded this receipt */
   readonly recordedByYou: boolean;
+  /** true: this statement matched the pending receipt now (D113 — confirmed from the source) */
+  readonly autoMatched: boolean;
+  /** why a line agreeing with a pending receipt was not matched now (a refund's second hand, paper, Zoho); null otherwise */
+  readonly matchNote: string | null;
 }
 
 export interface OwnerLine {
@@ -84,7 +92,7 @@ export interface Reconciliation {
   readonly to: string;
   readonly matched: readonly MatchedLine[];
   readonly needsOwner: readonly OwnerLine[];
-  readonly counts: { readonly lines: number; readonly matched: number; readonly awaitingMatch: number; readonly needsOwner: number; readonly debits: number; readonly skipped: number };
+  readonly counts: { readonly lines: number; readonly matched: number; readonly awaitingMatch: number; readonly autoMatched: number; readonly needsOwner: number; readonly debits: number; readonly skipped: number };
 }
 
 export interface StatementSummary {
@@ -120,8 +128,15 @@ export interface StatementAuthority {
   mayUpload(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
 }
 
+/** match.ts's "Match it", on the uploader's own principal (D113 automatic match). */
+export interface StatementMatch {
+  match(principal: unknown, receiptId: unknown, body?: unknown, signal?: AbortSignal): Promise<MatchResult>;
+}
+
 export interface StatementDependencies {
   readonly crm: Pick<ZohoClient, "coql">;
+  /** D113: match the pending inbound receipts the statement confirms. Absent: suggestions only. */
+  readonly match?: StatementMatch;
   readonly store: StatementStore;
   readonly authority: StatementAuthority;
   readonly log: OpsLog;
@@ -143,6 +158,10 @@ const MESSAGE: Readonly<Record<Exclude<StatementRefusal, "unreadable">, string>>
   "too-many-refs": "The statement has too many lines to reconcile at once. Upload one week at a time.",
   "source-invalid": "Not reconciled — Zoho returned something the console cannot read. Digital Infrastructure has been told.",
 });
+
+export const REFUND_NOTE = "Money leaving — the Head of Finance or an administrator matches it.";
+export const NOT_MATCHED_NOTE = "Finance confirms it with 'Match it'.";
+export const PAPER_NOTE = "It cannot be matched until the supplementary agreement is signed and verified.";
 
 const retryableKind = (k: string): boolean =>
   k === "network" || k === "server" || k === "busy" || k === "concurrency-exceeded" || k === "rate-limited-unclassified" || k === "unexpected";
@@ -266,21 +285,44 @@ export function createStatements(deps: StatementDependencies) {
         state: state === "Matched" ? "matched" as const : "awaiting-match" as const,
         matchedBy: state === "Matched" ? idOf(best.Matched_By) : null,
         recordedByYou: idOf(best.Created_By) === me,
+        autoMatched: false,
+        matchNote: state === "Matched" ? null : l.direction === "debit" ? REFUND_NOTE : NOT_MATCHED_NOTE,
       }));
     }
     return Object.freeze({
       from, to, matched: Object.freeze(matched), needsOwner: Object.freeze(needsOwner),
       counts: Object.freeze({
-        lines: lines.length, matched: matched.length, awaitingMatch: matched.filter((m) => m.state === "awaiting-match").length,
+        lines: lines.length, matched: matched.length, awaitingMatch: matched.filter((m) => m.state === "awaiting-match").length, autoMatched: 0,
         needsOwner: needsOwner.length, debits: lines.filter((l) => l.direction === "debit").length, skipped,
       }),
     });
   }
 
+  /** D113: the stored statement confirms the pending inbound receipts it agrees with — each matched through match.ts. */
+  async function autoMatch(cred: UserCredential, sid: string, rec: Reconciliation, signal?: AbortSignal): Promise<Reconciliation> {
+    if (!deps.match) return rec;
+    const out: MatchedLine[] = [];
+    for (const m of rec.matched) {
+      if (m.state !== "awaiting-match" || m.direction !== "credit") { out.push(m); continue; }
+      let r: MatchResult;
+      try { r = await deps.match.match({ credential: cred, sessionId: sid }, m.receiptId, {}, signal); }
+      catch { r = { ok: false, kind: "source-error", errorKind: "unexpected", message: "", retryable: true }; }
+      if (r.ok) out.push(Object.freeze({ ...m, state: "matched" as const, matchedBy: r.value.matchedBy, autoMatched: true, matchNote: null }));
+      else {
+        event(cred.userId, "statement-auto-match", `not-matched.${r.kind === "refused" ? r.reasonCode : r.errorKind}`.slice(0, 64), [m.receiptId]);
+        out.push(Object.freeze({ ...m, matchNote: r.kind === "refused" && r.reasonCode === "supplementary-not-verified" ? PAPER_NOTE : NOT_MATCHED_NOTE }));
+      }
+    }
+    const auto = out.filter((m) => m.autoMatched).length;
+    if (auto) event(cred.userId, "statement-auto-match", `matched-${auto}`, out.filter((m) => m.autoMatched).map((m) => m.receiptId));
+    return Object.freeze({ ...rec, matched: Object.freeze(out),
+      counts: Object.freeze({ ...rec.counts, awaitingMatch: out.filter((m) => m.state === "awaiting-match").length, autoMatched: auto }) });
+  }
+
   return Object.freeze({
     /**
      * "Upload the bank statement". file: { name, type, bytes } — the request's bytes, held for this call only.
-     * The answer lists every line: matched (or awaiting the Head of Finance's match) and "needs an owner".
+     * The answer lists every line: matched (now, by this statement, or before) or still awaiting the match, and "needs an owner".
      */
     async upload(principal: unknown, file: unknown, signal?: AbortSignal): Promise<StatementResult<UploadView>> {
       const p = principalOf(principal);
@@ -320,7 +362,8 @@ export function createStatements(deps: StatementDependencies) {
         return sourceError(attached.errorKind ?? attached.code, "stored");
       }
       event(me, "statement-upload", `lines-${rec.counts.lines}.matched-${rec.counts.matched}.owner-${rec.counts.needsOwner}`, [created.id]);
-      return { ok: true, value: Object.freeze({ ...rec, statementId: created.id, attachmentId: attached.attachmentId, name: title }) };
+      const done = await autoMatch(cred, sid, rec, signal);
+      return { ok: true, value: Object.freeze({ ...done, statementId: created.id, attachmentId: attached.attachmentId, name: title }) };
     },
 
     /** The last statement uploaded: "last reconciled <when>" on the Payments page (TC-IM05-019). */

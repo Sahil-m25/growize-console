@@ -2,10 +2,12 @@
    Header Idempotency-Key (required, one per press). Body: { allotmentId, kind: advance|balance|full, mode, ref,
    receivedOn? (YYYY-MM-DD, default today IST), amount? (whole rupees; balance/full default to what is due),
    prepared? { preparedAt, contextToken, expected } (from /api/receipts/prepare), queuedAt? }.
-   Writes ONE Receipts record, Match_State Pending ("unmatched"), with the allotment lookup, on the person's own
-   token (recorded_by = the token user). Never refused for unsigned paper (D21): the answer carries the note.
-   200 → { receipt: { receiptId, duplicate, state: "unmatched", kind, mode, amountRupees, ref, receivedOn, recordedBy,
-           link: { allotmentId, investorId, farmId }, matchable, matchNote, paymentStatus } }
+   Writes ONE Receipts record with the allotment lookup, on the person's own token (recorded_by = the token user), and —
+   D113: a Finance seat's record is Finance's approval — matches it at once when the paper is verified (Match_State
+   Matched, Matched_By = the recorder; the gate, money.confirmed and the app account follow, server/money/match.ts).
+   Never refused for unsigned paper (D21): it stays Pending ("unmatched") and the answer carries the note.
+   200 → { receipt: { receiptId, duplicate, state: "matched" | "unmatched", matchedBy, matchedAt, match, kind, mode,
+           amountRupees, ref, receivedOn, recordedBy, link: { allotmentId, investorId, farmId }, matchable, matchNote, paymentStatus } }
    4xx/5xx → { error: "Not saved yet — …" | "Read only — …", code, saved: false, retry } */
 import { sessionCredential } from "@/server/oauth/request";
 import { guardApi } from "@/server/access/guard";

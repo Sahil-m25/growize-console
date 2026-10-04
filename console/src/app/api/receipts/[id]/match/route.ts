@@ -1,9 +1,10 @@
-/* POST /api/receipts/[id]/match — "Match it": the second hand (M10-S02-T02, D21/D22).
-   Body: { expectedModifiedTime? } (the row's Modified_Time as the page loaded it). Head of Finance or super user only;
-   never the person who recorded it (refused here, and again by Zoho's validation rule).
+/* POST /api/receipts/[id]/match — "Match it" (M10-S02-T02, D21/D22, D113 ruling 1).
+   Body: { expectedModifiedTime? } (the row's Modified_Time as the page loaded it). For a pending receipt (paper verified
+   since, a legacy or added-as-paid row, one the statement shows): any Finance seat, the recorder included (D113). A
+   refund keeps D22's second hand: the Head of Finance or an administrator, never the person who recorded it.
    200 → { match: { receiptId, state: "matched", duplicate, matchedBy, matchedAt, kind, amountRupees, link, gate,
            paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, hold } }
-   403 not the matcher / same hand · 409 not pending / changed / paper not verified · 503 Zoho not answering.
+   403 not the matcher / not the approver / same hand (refund) · 409 not pending / changed / paper not verified · 503 Zoho not answering.
    Server: server/money/match.ts. */
 import { cookies } from "next/headers";
 import { guardApi } from "@/server/access/guard";

@@ -97,7 +97,7 @@ function rig(o = {}) {
 }
 const balance = (over = {}) => ({ allotmentId: ALLOTMENT, kind: 'balance', mode: 'SWIFT', ref: 'EMIR0209900', ...over });
 
-test('TC-IM05-005: Finance records the balance by SWIFT — one unmatched receipt, amount computed, by the token user, under the farm', async () => {
+test('TC-IM05-005: Finance records the balance by SWIFT — one receipt (unmatched here: no match service wired; D113 matching is record-matched.test.cjs), amount computed, by the token user, under the farm', async () => {
   const r = rig();
   const res = await r.svc.commit(principal(), balance(), KEY);
   assert.equal(res.ok, true, JSON.stringify(res));

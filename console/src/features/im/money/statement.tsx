@@ -1,8 +1,9 @@
 "use client";
 
 /* The bank statement card on Payments (M10-S05-W1): "Upload the bank statement", when the last one was reconciled, and
-   after an upload the lines that matched and the lines that need an owner. Finance ("pay") seats only. Suggestions only:
-   a line matching a pending receipt is "awaiting the match" — the Head of Finance matches it with Match it (D21). */
+   after an upload the lines that matched and the lines that need an owner. Finance ("pay") seats only. D113: a credit line
+   that agrees with a pending receipt matches it automatically; what does not land (paper, a refund's second hand) stays
+   "awaiting the match" with the reason. */
 
 import { useRef, useState } from "react";
 import { fmtDate, may, money } from "@/lib/im";
@@ -50,8 +51,8 @@ export function StatementCard({ s, me, dispatch }: ImPageProps) {
       <div className="cb">
         <input ref={pick} type="file" accept=".csv,.txt,text/csv" hidden aria-label="Bank statement file" onChange={e => void send(e.target.files?.[0])} />
         <button className="act" disabled={busy} onClick={() => pick.current?.click()}>{busy ? "Reading the statement…" : "Upload the bank statement"}</button>
-        <p className="sm" style={{ margin: "8px 0 0" }}>One week's CSV from net banking, up to 2 MB. The statement is the second hand behind every receipt: it
-          suggests matches and lists what has no owner. It changes nothing by itself.</p>
+        <p className="sm" style={{ margin: "8px 0 0" }}>One week's CSV from net banking, up to 2 MB. The statement confirms receipts from the bank: a
+          pending receipt it agrees with is matched, and it lists what has no owner.</p>
         {said ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{said}</p> : null}
         {got ? <Reconciled u={got} /> : null}
       </div></div>
@@ -63,15 +64,15 @@ function Reconciled({ u }: { u: UploadView }) {
   return (
     <div className="drwsec">
       <p className="lbl">{u.name} · {day(u.from)} to {day(u.to)}</p>
-      <p className="sm" style={{ margin: "0 0 8px" }}>{c.lines} lines · {c.matched} matched · {c.awaitingMatch} awaiting the match · {c.needsOwner} need an owner
+      <p className="sm" style={{ margin: "0 0 8px" }}>{c.lines} lines · {c.matched} matched{c.autoMatched ? " (" + c.autoMatched + " just now)" : ""} · {c.awaitingMatch} awaiting the match · {c.needsOwner} need an owner
         {c.skipped ? " · " + c.skipped + " skipped" : ""}</p>
       <p className="lbl">Matched</p>
       {u.matched.length ? u.matched.map(m => (
         <div className="led" key={m.line + m.receiptId}>
-          <span className={`tag ${m.state === "matched" ? "go" : "due"}`}>{m.state === "matched" ? "matched" : "awaiting match"}</span>
+          <span className={`tag ${m.state === "matched" ? "go" : "due"}`}>{m.state === "matched" ? (m.autoMatched ? "matched now" : "matched") : "awaiting match"}</span>
           <span style={{ minWidth: 0 }}><b className="mono">{m.receiptId}</b>
             <div className="sm">line {m.line} · {day(m.date)} · {m.kind} <span className="mono">{m.utr}</span>
-              {m.state === "awaiting-match" ? (m.recordedByYou ? " · you recorded it — the Head of Finance matches it" : " · the Head of Finance matches it") : ""}</div></span>
+              {m.state === "awaiting-match" && m.matchNote ? " · " + m.matchNote : ""}</div></span>
           <span className="amt">{m.direction === "debit" ? "−" : ""}{rupees(m.amountPaise)}</span>
         </div>
       )) : <p className="sm" style={{ margin: 0 }}>No line matched a receipt.</p>}

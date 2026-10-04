@@ -8,7 +8,7 @@
 import { MON, UNIT } from "./constants";
 import { inr, nowDay, nowFull } from "./dates";
 import { I, isSuper, may, notFin, pageReadable, txOf, who } from "./selectors";
-import { matchGate, type Gate } from "./rules";
+import { PAPER_FIRST, matchGate, type Gate } from "./rules";
 import type {
   ImAccess, ImAllot, ImArlTxn, ImCtx, ImData, ImDrawerKey, ImHolding, ImInvestor, ImLlp, ImLlpStatus, ImPayStatus,
   ImPayout, ImPayoutMode, ImTestLink, ImTxn,
@@ -300,16 +300,18 @@ export const holdingsOf = (s: ImCtx, WHO: string, inv: string): ImHolding[] =>
 export const arlTxnsOf = (s: ImCtx, h: ImHolding): ImArlTxn[] =>
   (s.data.ARLTXN || []).filter(t => t.Holding === h.id).sort((a, b) => (a.Date < b.Date ? -1 : 1));
 
-/* ============================ the second hand (M10-S02) ============================ */
-/** "Match it" is the Head of Finance's (and the super user's), and never on a receipt they recorded */
+/* ============================ Match it (M10-S02, D113 ruling 1) ============================ */
+/** "Match it" on a pending receipt: inbound money — any Finance seat, the recorder included (D113); money leaving —
+ *  the Head of Finance or an administrator, never the one who recorded it (D22). */
 export const mayMatch = (s: ImCtx, WHO: string, t: ImTxn | null | undefined): boolean =>
-  matchGate(s, WHO, t).ok && (who(s, WHO).r === "head" || isSuper(s, WHO));
-/** what a pending row says to a seat that may not match it (null: nothing to say) */
+  matchGate(s, WHO, t).ok && (!!t && received(t) || who(s, WHO).r === "head" || who(s, WHO).r === "root" || isSuper(s, WHO));
+/** what a pending row says to a Finance seat that may not match it now (null: nothing to say) */
 export function matchWhy(s: ImCtx, WHO: string, t: ImTxn): string | null {
   if (t.rec !== "pending" || mayMatch(s, WHO, t) || !may(s, WHO, "pay")) return null;
+  if (received(t)) return PAPER_FIRST;
   return t.by === WHO
-    ? "You recorded this one. A receipt is matched by someone other than the person who recorded it — the Head of Finance matches it."
-    : "Waiting for the Head of Finance. A receipt is matched by someone other than the person who recorded it.";
+    ? "You recorded this refund. Money leaving is matched by a second person — the Head of Finance or an administrator matches it."
+    : "Waiting for the Head of Finance or an administrator. Money leaving is matched by a second person.";
 }
 
 /* ============================ add an investor who already paid (M09-S09) ============================ */

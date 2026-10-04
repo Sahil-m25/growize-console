@@ -8,8 +8,9 @@
  *   confirm   "Confirm and record it": ONE receipt is recorded through record-receipt.ts commit() (the M01-S08 replay
  *             path: Pending, recorded_by = Finance, one per Idempotency-Key) from the report's kind / mode / amount /
  *             date and the report's allotment. The report's reference is kept masked only (claim.ts), so Finance
- *             enters the bank reference they see; when the report kept a last four, it must agree. The new receipt
- *             still waits for the second hand (match.ts) — confirming a report is recording, not matching (D21).
+ *             enters the bank reference they see; when the report kept a last four, it must agree. The report itself
+ *             stays pending until this confirm; the receipt Finance records here is matched at once when the paper
+ *             allows it (D113 ruling 1 — Finance's record is Finance's approval; record-receipt.ts → match.ts).
  *   notThere  "Not there yet" with a reason: the reason goes on the report as a Zoho Note under Finance's name, and
  *             money.not_found { reason, claim_id, at } is published (contracts/money.not_found.json).
  *

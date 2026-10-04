@@ -1,13 +1,19 @@
 /**
- * M10-S02-T02 — "Match it": the second hand, and what a match sets moving (D10, D19, D21, D22, D70, D73).
+ * M10-S02-T02 — "Match it", and what a match sets moving (D10, D19, D21, D22, D70, D73, D113 ruling 1).
  *
- * Recording is free; matching is the gated act (D21 / CLAUDE.md rule 3). This is the only console path that
- * moves a receipt to Matched, and it keeps the maker-checker rule on the server, whatever the front end shows:
- *   - who: the Head of Finance or the super user (lib/im/money.ts `mayMatch`), checked fresh on the live session;
- *   - never the same hand: Created_By (the recorder — record-receipt.ts writes on the recorder's own token, D53)
- *     must not be the matcher. Zoho's validation rule (M10-S02-T01, Sahil) refuses the same PUT again; its
- *     refusal naming Matched_By is answered with the same words;
- *   - only a Pending receipt is matched. A Claimed row is an IR's report, answered through claim-answer.ts;
+ * Recording is free; matching is the gated act (D21 / CLAUDE.md rule 3) — and the gate is the Finance seat (D113):
+ * a receipt a Finance seat records is Finance's own approval, so record-receipt.ts matches it through this file
+ * straight after the insert. This is the only console path that moves a receipt to Matched:
+ *   - who, for inbound money (Advance / Part / Full): a Finance seat — the Investors-side "pay" capability (Finance
+ *     Operations, Head of Finance, super user), checked fresh on the live session (`mayMatch`). The recorder may
+ *     match their own receipt: no second person (D113 supersedes the second-person reading of D21/D22);
+ *   - who, for money leaving (a Refund): D22's second hand stays — the Head of Finance or an administrator
+ *     (`mayApproveOutbound`), never the person who recorded it (Created_By ≠ the matcher). A Zoho validation rule
+ *     refusing Matched_By is answered with the same words for a refund; for inbound money it means Zoho still
+ *     holds the old two-person rule (M10-S02-T01), answered as such;
+ *   - only a Pending receipt is matched: a recorded one whose paper was not verified yet, a legacy or added-as-paid
+ *     row, or one the weekly statement confirms (statements.ts). A Claimed row is an IR's report and stays pending
+ *     until Finance confirms it (claim-answer.ts records it, which matches it);
  *   - inbound money is matched only when the allotment's supplementary is verified (record-receipt MATCH_BLOCKED_TEXT).
  *
  * The write: ONE guarded PUT (If-Unmodified-Since = the receipt's Modified_Time, D44) of Match_State = Matched and
@@ -30,7 +36,8 @@
  *      system set it). If Zoho refuses the mark fields (T01 turning App_Account_Mark into a formula), the write is
  *      retried once with App_Access alone. Hold/Invite once set are never touched (server/investors/unlock.ts owns
  *      Hold → Invite, and so the welcome: nothing here sends one or sets Invite). Permanent is Zoho's (T01).
- *      M08-S08: this is the ONLY path that opens an account on money; recording (record-receipt.ts) never does.
+ *      M08-S08: this is the ONLY path that opens an account on money; a Finance seat's recording (record-receipt.ts)
+ *      opens it by matching through here, never by writing the Contact itself (D113).
  *      Every publish result (delivered / queued / not sent) is logged as an ops event: type + status + ids only;
  *   5. the first matched Advance of a Reserved allotment starts the hold 30 days out (Asia/Kolkata): Hold_Until =
  *      match day + 30, written only when empty or earlier — never shortening a hold (PROVISIONAL, Jev 0.56).
@@ -52,8 +59,11 @@ import { holdChangedEvent } from "../holds/rules";
 
 export const CONTACTS_MODULE = "Contacts";
 export const HOLD_DAYS = 30;
-export const SAME_HAND_TEXT = "A receipt is matched by someone other than the person who recorded it — you recorded this one, so the Head of Finance matches it.";
-export const NOT_MATCHER_TEXT = "Waiting for the Head of Finance. A receipt is matched by someone other than the person who recorded it.";
+/** D22: money leaving keeps its second hand. Ordinary receipts have none (D113). */
+export const SAME_HAND_TEXT = "Money leaving is matched by a second person — you recorded this refund, so the Head of Finance or an administrator matches it.";
+export const NOT_MATCHER_TEXT = "Finance matches receipts — Finance Operations or the Head of Finance.";
+export const NOT_APPROVER_TEXT = "Money leaving is matched by the Head of Finance or an administrator, never by the person who recorded it.";
+export const ZOHO_RULE_TEXT = "Not matched — Zoho still holds the old two-person rule on receipts. Digital Infrastructure removes it for ordinary receipts (D113).";
 export const MATCH_NEEDS_PAPER_TEXT = "It cannot be matched until the supplementary agreement is signed and verified.";
 
 const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
@@ -75,16 +85,18 @@ const CONTACT_FIELDS = Object.freeze(["ARL_ID", "App_Access", "App_Account_Mark"
 const MARK_FIELDS: ReadonlySet<string> = new Set(["App_Account_Mark", "App_Mark_At"]);
 
 export type MatchRefusal =
-  | "invalid-request" | "not-matcher" | "not-visible" | "is-claim" | "not-pending" | "same-hand" | "receipt-changed"
-  | "supplementary-not-verified" | "allotment-cancelled" | "source-invalid";
+  | "invalid-request" | "not-matcher" | "not-approver" | "not-visible" | "is-claim" | "not-pending" | "same-hand" | "zoho-same-hand-rule"
+  | "receipt-changed" | "supplementary-not-verified" | "allotment-cancelled" | "source-invalid";
 
 const MESSAGE: Readonly<Record<MatchRefusal, string>> = Object.freeze({
   "invalid-request": "Not matched — reload the page and try again.",
   "not-matcher": NOT_MATCHER_TEXT,
+  "not-approver": NOT_APPROVER_TEXT,
   "not-visible": "This receipt is not available to you.",
   "is-claim": "This is an IR's report, not a receipt. Answer it from the report.",
   "not-pending": "Only a pending receipt can be matched.",
   "same-hand": SAME_HAND_TEXT,
+  "zoho-same-hand-rule": ZOHO_RULE_TEXT,
   "receipt-changed": "Not matched — the receipt changed while you were looking at it. Reload and match again.",
   "supplementary-not-verified": MATCH_NEEDS_PAPER_TEXT,
   "allotment-cancelled": "Not matched — this allotment is cancelled; it takes refunds only.",
@@ -129,8 +141,11 @@ export type MatchResult =
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly message: string; readonly retryable: boolean };
 
 export interface MatchAuthority {
-  /** Fresh check on the live session: is this person the Head of Finance or the super user? */
+  /** Fresh check on the live session: does this person hold a Finance seat (the "pay" capability)? (D113) */
   mayMatch(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
+  /** Fresh check: may this person be the second hand on money leaving — the Head of Finance or an administrator (D22)?
+   *  Absent: `mayMatch` decides refunds too (the recorder is still refused). */
+  mayApproveOutbound?(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
 }
 
 export interface MatchDependencies {
@@ -365,7 +380,7 @@ export function createReceiptMatch(deps: MatchDependencies) {
   }
 
   return Object.freeze({
-    /** "Match it": the second hand confirms a pending receipt. body: { expectedModifiedTime? } (the row as the page loaded it). */
+    /** "Match it": Finance confirms a pending receipt (a refund: the second hand). body: { expectedModifiedTime? } (the row as the page loaded it). */
     async match(principal: unknown, receiptId: unknown, body?: unknown, signal?: AbortSignal): Promise<MatchResult> {
       const p = principal && typeof principal === "object" ? (principal as { credential?: unknown; sessionId?: unknown }) : null;
       if (!p || !isUserCredential(p.credential) || typeof p.sessionId !== "string" || !SESSION_ID.test(p.sessionId)) return refuse("unrecognised", "invalid-request");
@@ -394,7 +409,14 @@ export function createReceiptMatch(deps: MatchDependencies) {
           return { ok: true, value: await consequences(cred, sessionId, { id: receiptId, kind: rec.Kind, amount, allotmentId, matchedBy: by, matchedAt: at, duplicate: true }, signal) };
         }
         if (rec.Match_State !== "Pending") return refuse(me, "not-pending", [receiptId]);
-        if (recorder === me) return refuse(me, "same-hand", [receiptId]);
+        if (!INBOUND.has(rec.Kind)) {               // money leaving: D22's second hand
+          let approver = true;
+          if (authority.mayApproveOutbound) {
+            try { approver = (await authority.mayApproveOutbound(cred, sessionId, signal)) === true; } catch { approver = false; }
+          }
+          if (!approver) return refuse(me, "not-approver", [receiptId]);
+          if (recorder === me) return refuse(me, "same-hand", [receiptId]);
+        }
         if (expected !== null && expected !== rec.Modified_Time) return refuse(me, "receipt-changed", [receiptId]);
         allot = await read(cred, ALLOTMENTS_MODULE, allotmentId, ALLOTMENT_FIELDS, signal);
         if (!allot) return refuse(me, "not-visible", [receiptId, allotmentId]);
@@ -414,8 +436,10 @@ export function createReceiptMatch(deps: MatchDependencies) {
       if (!w.ok) {
         const e = w.error;
         if (e.kind === "conflict") return refuse(me, "receipt-changed", [receiptId]);
-        // Zoho's maker-checker validation rule (M10-S02-T01) names Matched_By.
-        if (e.kind === "invalid-data" && (e.field === "Matched_By" || e.records?.some((r) => r.field === "Matched_By"))) return refuse(me, "same-hand", [receiptId]);
+        // A Zoho validation rule naming Matched_By (M10-S02-T01): the refund's second hand, or — on inbound money — the old two-person rule.
+        if (e.kind === "invalid-data" && (e.field === "Matched_By" || e.records?.some((r) => r.field === "Matched_By"))) {
+          return refuse(me, INBOUND.has(rec.Kind as string) ? "zoho-same-hand-rule" : "same-hand", [receiptId]);
+        }
         if (e.kind === "invalid-data") return refuse(me, "source-invalid", [receiptId]);
         return sourceError(e.kind);
       }

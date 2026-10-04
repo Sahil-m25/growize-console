@@ -129,8 +129,14 @@ describe("M10-S02-W1 — Match it, fixture half", () => {
     expect(r).toEqual({ ok: true, data: { receiptId: "T-0050", state: "matched" } });
     expect(seen).toEqual([{ type: "matchReceipt", tid: "T-0050" }]);
   });
-  it("the recorder: the reducer's own refusal comes back as a 422", async () => {
+  it("D113: the recorder matches her own ordinary receipt — no second person", async () => {
     const r = await runWrite("fixture", receiptMatch, { s: pending(), me: "meena" }, () => {}, { id: "T-0050", expectedModifiedTime: null });
+    expect(r).toEqual({ ok: true, data: { receiptId: "T-0050", state: "matched" } });
+  });
+  it("a refund's recorder: the reducer's own refusal comes back as a 422 (D22 keeps the second hand)", async () => {
+    const s = demo();
+    s.data.TXN.unshift({ id: "T-0051", inv: "ARL-INV-0205", kind: "refund", amt: 100000, mode: "NEFT", utr: "U51", on: "02 Sep 11:00", by: "meena", rec: "pending" });
+    const r = await runWrite("fixture", receiptMatch, { s, me: "meena" }, () => {}, { id: "T-0051", expectedModifiedTime: null });
     expect(r).toMatchObject({ ok: false, status: 422, code: "refused" });
   });
 });

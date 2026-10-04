@@ -4,7 +4,8 @@
      receiptPrepare  POST /api/receipts/prepare     (server/money/record-receipt)  seal the allotment's live context
      receiptRecord   POST /api/receipts             (server/money/record-receipt)  Finance records the receipt, per-press Idempotency-Key
    Recording money is always allowed; only matching is gated (D21, rule 3) — so nothing here refuses on unsigned paper:
-   the record's answer carries `matchable` / `matchNote` and the page says matching waits.
+   the record's answer carries `matchable` / `matchNote` and the page says matching waits. When the paper allows, a
+   Finance seat's receipt is matched as it is recorded (D113 ruling 1; `state: "matched"`).
    (endpoints/receipts.ts stays the Match pilot; the record drawer's two writes live here so that file is untouched.) */
 
 import type { ClaimStateView, ClaimView } from "@/server/leads/claim";
@@ -84,9 +85,10 @@ export const receiptRecord: WriteEndpoint<ImBook, RecordArgs, Recorded, ImDispat
   pick: j => (j as { receipt: RecordedReceipt }).receipt,
   fixture(b, d, a) {
     const matchable = roundOf(b.s, b.me, a.inv, "supp").state === "done";
-    /* PROVISIONAL: the route answers `unmatched` (a second hand matches, D21); the demo reducer's recordPay still writes the receipt matched */
+    /* D113 ruling 1: a Finance seat's receipt is matched as it is recorded, when the paper allows — the route and the
+       reducer's recordPay agree (matched by the recorder; otherwise recorded pending with the note) */
     return imFixtureWrite(b, d, { type: "recordPay", id: a.inv, kind: a.kind, mode: a.mode, utr: a.ref, allot: a.allotmentId || undefined },
-      { receiptId: "T-" + String(b.s.data.TSEQ + 1).padStart(4, "0"), state: "unmatched" as const, matchable, matchNote: matchable ? null : MATCH_BLOCKED });
+      { receiptId: "T-" + String(b.s.data.TSEQ + 1).padStart(4, "0"), state: matchable ? "matched" as const : "unmatched" as const, matchable, matchNote: matchable ? null : MATCH_BLOCKED });
   },
   onLiveError: imLiveError,
 };
