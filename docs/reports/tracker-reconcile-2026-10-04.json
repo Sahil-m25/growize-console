@@ -1,0 +1,1834 @@
+{
+ "generated": "2026-10-04",
+ "source": "autopilot/console/BLOCKED.md @ 8a21d5d",
+ "lines": [
+  {
+   "id": "M02-S01-T01",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M02-S04-T02",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M02-S04-T03",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M02-S04-T04",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M02-S05-T01",
+   "kind": "TASK (Autopilot)",
+   "verdict": "open-external",
+   "evidence": "Zoho user invite. progress.json marks it done (25 Sep) but nothing in the repo proves the user exists"
+  },
+  {
+   "id": "M02-S05-T02",
+   "kind": "TASK (Autopilot)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Autopilot)); not buildable locally"
+  },
+  {
+   "id": "M02-S05-T03",
+   "kind": "TASK (Autopilot (Jev)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Autopilot (Jev)); not buildable locally"
+  },
+  {
+   "id": "M02-S06-T01",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M02-S08-T01",
+   "kind": "TASK (Autopilot)",
+   "verdict": "open-external",
+   "evidence": "Zoho mailbox/templates (progress.json says done 25 Sep, line text is \"--note\")"
+  },
+  {
+   "id": "M02-S08-T02",
+   "kind": "TASK (Autopilot (Jev)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Autopilot (Jev)); not buildable locally"
+  },
+  {
+   "id": "M02-S09-T01",
+   "kind": "TASK (Autopilot)",
+   "verdict": "open-external",
+   "evidence": "Share/unshare proof needs super admin + restricted test user on the sandbox (progress.json says done 25 Sep)"
+  },
+  {
+   "id": "M19-S03-T01",
+   "kind": "TASK (Autopilot)",
+   "verdict": "done",
+   "evidence": "zoho/sandbox/reset.mjs:1,29 (refuses unless org id and api domain are sandbox, deletes records tagged Test_Seed, upserts manifest.json), zoho/sandbox/make-manifest.mjs, reset.test.mjs TC-E16-005/006; commit 0f325a3. Needs the Test_Seed boolean field in the sandbox to run live"
+  },
+  {
+   "id": "M02-S10-T02",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M02-S10-NOTE-1",
+   "kind": "OWNER ACTION",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (OWNER ACTION); not buildable locally"
+  },
+  {
+   "id": "M20-S08-T01",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M20-S08-T02",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M20-S08-NOTE-1",
+   "kind": "OWNER ACTION",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (OWNER ACTION); not buildable locally"
+  },
+  {
+   "id": "M20-S08-NOTE-3",
+   "kind": "PRODUCTION ACTIVATION BLOCK",
+   "verdict": "open-external",
+   "evidence": "Needs the durable worker and persistent Plane B sink (D47 log store open) before the callbacks are registered"
+  },
+  {
+   "id": "M01-S08-NOTE-1",
+   "kind": "RECEIPT IDEMPOTENCY FIELD AND KEYS",
+   "verdict": "open-external",
+   "evidence": "Sandbox field Receipts.Idempotency_Key and host secrets"
+  },
+  {
+   "id": "M01-S08-NOTE-2",
+   "kind": "ZOHO-SIDE ATOMICITY BLOCK",
+   "verdict": "open-external",
+   "evidence": "Zoho-resident atomic guard must be sandbox-proved with two app processes"
+  },
+  {
+   "id": "M01-S08-NOTE-3",
+   "kind": "SANDBOX ACCESS AND FAILURE PROOF",
+   "verdict": "open-external",
+   "evidence": "Needs two restricted Finance seats and one IR seat on the sandbox"
+  },
+  {
+   "id": "M01-S08-NOTE-4",
+   "kind": "UTR FACT CONFLICT",
+   "verdict": "open-external",
+   "evidence": "Owner decision on UTR uniqueness (D76 vs Stage 3 section 9.1)"
+  },
+  {
+   "id": "M01-S08-NOTE-5",
+   "kind": "REFUND AND REVERSAL LEDGER CONVENTION",
+   "verdict": "open-local",
+   "evidence": "server/money/receipt-replay.ts:492-495 still returns null for any ledger holding a Refund, Reversed or Reversal_Of; signed ledger arithmetic exists for reads (server/money/by-allotment.ts:52 refundOf) but the replay writer is not using it and no fixtures prove an inbound receipt after a refund"
+  },
+  {
+   "id": "M01-S08-NOTE-6",
+   "kind": "SESSION REVOCATION AND IDENTITY WIRING",
+   "verdict": "open-local",
+   "evidence": "server/money/receipt-replay.ts:647,1331 defines discardSession but nothing calls it on sign-out (no other reference in server/); session.recheck binding not traced. ZohoCRM.users.READ is requested (server/oauth/runtime.ts:37)"
+  },
+  {
+   "id": "M01-S08-NOTE-7",
+   "kind": "PLAN AND FIELD-MAP DRIFT",
+   "verdict": "open-local",
+   "evidence": "Reconcile stale text in pm/plan-merged/zoho-field-mapping.json and M02-S12-T03 with D76 (coordinator edits protected files); sandbox metadata confirm is external"
+  },
+  {
+   "id": "M01-S08-NOTE-8",
+   "kind": "OFFLINE CONTEXT INTEGRATION",
+   "verdict": "open-external",
+   "evidence": "Front-end half done (M01-S08-NOTE-9: 4-minute renew, 5-minute offline cap, TC-IM01-008/009 PASS); the live prepare, offline press, reconnect case needs real Zoho"
+  },
+  {
+   "id": "M03-S05-T01",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M03-S05-NOTE-1",
+   "kind": "SANITIZED SEAT EXPORTS AND STAGING PROOF",
+   "verdict": "open-external",
+   "evidence": "Needs the final role/profile wall on the sandbox and production"
+  },
+  {
+   "id": "M03-S05-NOTE-4",
+   "kind": "ENTERPRISE ENTITLEMENT PROOF",
+   "verdict": "open-external",
+   "evidence": "Needs Organization API evidence from the real org"
+  },
+  {
+   "id": "M03-S07-T01",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M03-S07-NOTE-1",
+   "kind": "ZOHO SHARING PROOF",
+   "verdict": "open-external",
+   "evidence": "Owner/Zoho-side action"
+  },
+  {
+   "id": "M04-S01-NOTE-1",
+   "kind": "ZOHO SETUP FOR CAPTURE",
+   "verdict": "open-external",
+   "evidence": "Owner/Zoho-side action"
+  },
+  {
+   "id": "M04-S02-NOTE-1",
+   "kind": "ZOHO DUPLICATE CHECK ON LEADS",
+   "verdict": "open-external",
+   "evidence": "Owner/Zoho-side action"
+  },
+  {
+   "id": "M06-S01-NOTE-1",
+   "kind": "LEADS BOOK SHARING",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (leads book sharing); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M05-S01-NOTE-2",
+   "kind": "TODAY ACTIVITY MODULES",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (today activity modules); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M05-S02-NOTE-1",
+   "kind": "ASSIGN TO ME NEEDS WRITE ON QUEUE LEADS",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (assign to me needs write on queue leads); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M06-S03-NOTE-1",
+   "kind": "LEAD SEARCH STAGING PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (lead search staging proof); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M07-S03-NOTE-1",
+   "kind": "FOLLOW-UP SAVE AND UNDO",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (follow-up save and undo); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M07-S04-NOTE-1",
+   "kind": "ACTIVITY MAPPING STAGING PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (activity mapping staging proof); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M07-S06-NOTE-1",
+   "kind": "CLOSE AS LOST IN ZOHO",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (close as lost in zoho); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M04-S04-NOTE-1",
+   "kind": "CSV IMPORT DEPENDENCIES",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (csv import dependencies); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M05-S04-T02",
+   "kind": "TASK (Tester)",
+   "verdict": "open-external",
+   "evidence": "Tester, manual check of the reminder in Zoho CRM calendar"
+  },
+  {
+   "id": "M08-S01-NOTE-1",
+   "kind": "JOURNEY FIELDS",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (journey fields); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M16-S01-NOTE-1",
+   "kind": "ASSIGNMENTS REPORT",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (assignments report); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M16-S03-NOTE-1",
+   "kind": "NUMBERS SECTIONS STAGING PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (numbers sections staging proof); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M16-S04-T02",
+   "kind": "TASK (Autopilot (Jev)",
+   "verdict": "done",
+   "evidence": "progress.json subtask M16-S04-T02 done (4 Oct, phase 3 local half); TC-E12-013..015 are in ui-cases.json and the 4 Oct suite"
+  },
+  {
+   "id": "M16-S04-NOTE-1",
+   "kind": "PLAN READ",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (plan read); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M16-S06-NOTE-1",
+   "kind": "TRANSFERS",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (transfers); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M17-S05-T02",
+   "kind": "TASK (Autopilot (Jev)",
+   "verdict": "done",
+   "evidence": "progress.json subtask M17-S05-T02 done (4 Oct, phase 3 local half)"
+  },
+  {
+   "id": "M17-S05-NOTE-1",
+   "kind": "OWN PROFILE IN ZOHO",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (own profile in zoho); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M20-S07-T04",
+   "kind": "TASK (Autopilot)",
+   "verdict": "open-external",
+   "evidence": "The investor app codebase is not in the repo; the stub receiver (server/contracts/events.ts) stands in. progress.json marks the subtask done in the zoho phase, but the line asks for the real onboarding"
+  },
+  {
+   "id": "M20-S07-NOTE-1",
+   "kind": "INVESTOR APP CONTRACTS",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (investor app contracts); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M17-S06-T02",
+   "kind": "TASK (Autopilot (Jev)",
+   "verdict": "done",
+   "evidence": "progress.json subtask M17-S06-T02 done (4 Oct, phase 3 local half)"
+  },
+  {
+   "id": "M17-S06-NOTE-1",
+   "kind": "SYSTEM CHECKS",
+   "verdict": "open-external",
+   "evidence": "Zoho-side setup, owner decision or staging proof (system checks); text names a Zoho setting, field, rule or staging check; not buildable locally"
+  },
+  {
+   "id": "M01-S02-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S02-NOTE-6",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M18-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S01-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S01-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Partly changed by D76 as applied (docs/decisions/D76-zoho-setup-modules-and-touches.md: Receipts carries the Allotment lookup only; parents are read through it, see M01-S08-NOTE-7), so the Contact and LLP lookups are no longer needed; Kind Balance/Forfeit, Matched_At, Claim_Id, Idempotency_Key and Payment_Status still need Zoho"
+  },
+  {
+   "id": "M10-S01-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M18-S12-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S03-NOTE-4",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: server/data/live.ts has no PEOPLE/P population; a Users reader exists (server/identity/users.ts) but is not fed into the Dataset, so live screens show no signed-in name"
+  },
+  {
+   "id": "M01-S03-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S03-NOTE-6",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S07-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Partly changed by D76 as applied (docs/decisions/D76-zoho-setup-modules-and-touches.md: Receipts carries the Allotment lookup only; parents are read through it, see M01-S08-NOTE-7), so the Contact and LLP lookups are no longer needed; Kind Balance/Forfeit, Matched_At, Claim_Id, Idempotency_Key and Payment_Status still need Zoho"
+  },
+  {
+   "id": "M10-S07-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S02-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S02-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S02-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S02-NOTE-5",
+   "kind": "NOTE",
+   "verdict": "done",
+   "evidence": "console/package.json:16 \"test:scripts\": \"node --test scripts/*.test.cjs\" runs them (D114 gate \"scripts 50\")"
+  },
+  {
+   "id": "M01-S01-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S01-NOTE-5",
+   "kind": "FOLLOW-UP",
+   "verdict": "done",
+   "evidence": "server/access/guard.ts:17,43 uses authorityEvents() (server/identity/authority.ts:20-22 refusedPage/refusedAction)"
+  },
+  {
+   "id": "M01-S04-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S04-NOTE-3",
+   "kind": "FOLLOW-UP",
+   "verdict": "done",
+   "evidence": "server/access/grant-service.ts:50,59,72 call events.grantChange (authority.ts:24,48) into Plane C"
+  },
+  {
+   "id": "M18-S02-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M18-S02-NOTE-2",
+   "kind": "NOTE",
+   "verdict": "done",
+   "evidence": "Statement of a fix already made: console/src/server/http/error-log.ts refuses identity-shaped ids; log scrub test exists (server/http). Nothing left to do"
+  },
+  {
+   "id": "M03-S09-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M03-S09-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S01-NOTE-1",
+   "kind": "WAITING",
+   "verdict": "open-local",
+   "evidence": "Server and route exist (app/api/investors/finance/route.ts, server/investors/finance-list.ts + test). Missing: no client endpoint in lib/data/endpoints/investors.ts and no Investors table consuming /api/investors/finance; Jev cases (4 TC in ui-cases.json) exist"
+  },
+  {
+   "id": "M07-S05-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M07-S05-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M07-S05-NOTE-3",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "NdaReader is wired (server/leads/email-runtime.ts:67, email.ts:63 reads Leads.NDA_Verified_At). Missing: deck/webinar attachment (email-runtime.ts passes deck:null; sendMail has no attachments, see M12-S13-NOTE-2)"
+  },
+  {
+   "id": "M07-S05-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "console/src/features/lead/LeadPage.tsx:234 (Send is POST /api/leads/[id]/email); lib/data/endpoints/lead.ts:38 leadEmailSend"
+  },
+  {
+   "id": "M19-S04-NOTE-1",
+   "kind": "OPS",
+   "verdict": "open-external",
+   "evidence": ".github/workflows/pipeline.yml exists but the CI jobs are gated on hosting (HOSTING_READY); pm/jev-calibrate.mjs is absent from this repo and the growize/pm archive is not present, so it cannot be copied here"
+  },
+  {
+   "id": "M03-S02-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "superseded",
+   "evidence": "D110 ruling 1: Sahil moves to a non-administrator Digital Infrastructure profile (task M03-S05-T02), so \"Sahil maps to no seat on the Administrator profile\" no longer holds once done"
+  },
+  {
+   "id": "M03-S02-NOTE-3",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "server/identity/users.ts:34 accepts Reporting_To and reports_to; which key the org returns needs a sandbox user with a manager"
+  },
+  {
+   "id": "M01-S10-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S10-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S10-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S10-NOTE-6",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: receipt reveal (app/api/receipts/[id]/reveal/route.ts:31) and hold release are wrapped in requireStepUp; no PAN/bank reveal or export route exists to wrap; forfeit/refund writers belong to M02-S12"
+  },
+  {
+   "id": "M09-S02-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S02-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S03-NOTE-2",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/investors/record.ts:74-76 computes Payment_Status from matched receipts and Agreement_Signed from Supplementary_Verified_At"
+  },
+  {
+   "id": "M08-S07-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S07-NOTE-3",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "lib/im/types.ts:37-38 ImSt has \"said yes\"; server/data/live.ts:182 derives it (no allotments -> \"said yes\"); features/im/inv/index.tsx:231, features/im/common.tsx:47 render it"
+  },
+  {
+   "id": "M08-S07-NOTE-4",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S09-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S21-NOTE-1",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "pm/plan-merged/zoho-field-mapping.json has no App_Access row (count 0): add the row (coordinator, protected file). Field history tracking on Contacts.App_Access is a Zoho setting (Sahil)"
+  },
+  {
+   "id": "M10-S21-NOTE-4",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M06-S05-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M06-S05-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "lib/zoho/log.ts:81,204 has the \"event\" kind; server/leads/search.ts:171 files log.event \"lead-search\""
+  },
+  {
+   "id": "M08-S02-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S02-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S02-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/lead/LeadPage.tsx:416 reads leadGate; drawers/owner.tsx:46 and drawers/hold.tsx:20; lib/data/endpoints/lead.ts:3"
+  },
+  {
+   "id": "M08-S05-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S05-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S05-NOTE-4",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "No Zoho source records absences (server/teams/teams.ts:349 PROVISIONAL); server/leads/cover.ts:54 takes an injected roster reader and D49 is superseded by D52, so the roster source is undefined"
+  },
+  {
+   "id": "M08-S05-NOTE-5",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "lib/data/endpoints/cover.ts:1-32 POST/DELETE /api/leads/[id]/cover with expectedModifiedTime; features/lead/drawers/owner.tsx:46"
+  },
+  {
+   "id": "M11-S01-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M14-S01-NOTE-1",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs the owner/Zoho decision on Leads sharing or a counts-only rule (Private sharing hides other IRs' leads from an IR's own-token group-by)"
+  },
+  {
+   "id": "M13-S02-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S01-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S01-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S01-NOTE-4",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: Case reply publishes via publishToInvestorApp (server/cases/http.ts:89-93, writes.ts:71); the farm shelf writer (server/farms/*) has no publish call"
+  },
+  {
+   "id": "M15-S03-NOTE-1",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "lib/data/endpoints/activity.ts:1 (side=investors, history); features/activity/logic.ts:5 (side=lead); features/im/act/index.tsx:5"
+  },
+  {
+   "id": "M15-S03-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M15-S03-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M15-S03-NOTE-5",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "server/system/checks.ts systemChecks() is called by no route; auditArchive().lastRun() and investorAppOutbox().stats() are not passed to it"
+  },
+  {
+   "id": "M15-S03-NOTE-6",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S06-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S05-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S05-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M01-S05-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S05-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S05-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "pm/jev-calibrate.mjs is in the archive only (not in this repo, no growize/pm folder here); needs the original file"
+  },
+  {
+   "id": "M19-S05-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M03-S03-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "superseded",
+   "evidence": "D110 ruling 1: same - Sahil holds a console session on the DI profile; the rule-level proof stands until the sandbox exists"
+  },
+  {
+   "id": "M03-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M03-S04-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M03-S04-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/activity/query.ts:96-100 labels access-granted/access-ended and \"N accounts returned to the pool\"; server/identity/authority.ts:52-55, plane-c.ts:39"
+  },
+  {
+   "id": "M03-S04-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/team/index.tsx:30-61 select aria-label \"Seat for <name>\", PUT /api/users/{id} {seat}, offered only where the route lists seatOptions (never root/di, never own or super-admin row); lib/data/endpoints/access.ts:4"
+  },
+  {
+   "id": "M09-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S04-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "Tier computed: server/investors/am-service.ts:6-8,Tier A; lib/im tierOf (lib/im/index.ts:18, reducer.ts:161)"
+  },
+  {
+   "id": "M09-S04-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "lib/data/endpoints/investors.ts:124-169 (am/managers read, PUT /api/investors/[id]/kam); features/im/drawers/index.tsx:52,103"
+  },
+  {
+   "id": "M09-S04-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S08-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S08-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M09-S08-NOTE-3",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/inv/index.tsx:154-171 VIrInv with IR_COLS (Investor, ARL ID, Farms, State, Lead link) on GET /api/investors/mine (lib/data/endpoints/investors.ts:88-95; server/investors/ir-list.ts, ir-investors.test.cjs, endpoints/ir-investors.test.tsx); D114"
+  },
+  {
+   "id": "M11-S02-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: no allotment write path refuses a save without Customer and LLP (server/investors/allot.ts only handles an existing Reserved allotment); reads expose linked:false"
+  },
+  {
+   "id": "M11-S02-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S03-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S03-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M14-S02-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M14-S02-NOTE-3",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Same as M08-S05-NOTE-4: no roster/absence source in Zoho; eligibleStaffIds is null (server/events/http.ts:6)"
+  },
+  {
+   "id": "M14-S02-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/events/EventEditor.tsx:197 (gaps list), :228 (DELETE without ?confirm=1 returns the 428 answer, confirm before remove); features/events/drawer.tsx:11 p:event.drop. unsure: activity lines from the API answer not traced"
+  },
+  {
+   "id": "M14-S03-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M14-S03-NOTE-4",
+   "kind": "GAP",
+   "verdict": "superseded",
+   "evidence": "D113 ruling 3 applied the case change: pm/plan-merged/ui-cases.json:2823 TC-E10-012 now says Sahil (super user) can load; D115 (owner ruling, r4 brief item 2) limits the load right to the super administrator, other DI members only by seat rights. Code still gives every DI seat the right (lib/selectors/access.ts:83) - build under D115, not under this gap"
+  },
+  {
+   "id": "M14-S03-NOTE-5",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "server/leads/capture.ts:33 writes \"On the event sheet\" (and \"In person\", \"On a call\"...) while the picklist holds Form, Verbal, Email reply, Event sheet; map to the picklist values"
+  },
+  {
+   "id": "M14-S03-NOTE-6",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/add/AddPage.tsx:74 eventPicker; features/events/EventPage.tsx:56-59 sheet card on GET/POST /api/events/[id]/sheet; features/add/reducer.ts:276 \"Loaded the event sheet\"; features/events/sheet.test.ts; TC-E10-012 passes in docs/reports/ui-suite-2026-10-04.md"
+  },
+  {
+   "id": "M13-S03-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S03-NOTE-4",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Category assignment rule is a Zoho Cases rule not yet created"
+  },
+  {
+   "id": "M13-S06-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S06-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M15-S05-NOTE-1",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "Search part done (server/leads/search.ts:171 uses log.event). Missing: Plane C reveal lines carry no chosen reason and Plane C has no test-link action (server/identity/plane-c.ts:20,52)"
+  },
+  {
+   "id": "M15-S05-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "No /api/system route exists (app/api has none); checks.ts is not fed planeBBetween (server/logs/reader.ts:288), auditArchive().lastRun() or investorAppOutbox().stats()"
+  },
+  {
+   "id": "M15-S05-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "ops/runbooks/sign-in-history.md exists"
+  },
+  {
+   "id": "M15-S05-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/system/SystemPage.tsx:140-251 LogBody on GET /api/logs (actor chips byActor, identityReveals, headroom, signInHistory); lib/data/endpoints/logs.ts"
+  },
+  {
+   "id": "M15-S05-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S22-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "Fixtures exist (console/src/lib/zoho/__fixtures__/payouts) but pm/plan-merged/zoho-field-mapping.json and zoho/ have no Investor_Payouts rows (count 0)"
+  },
+  {
+   "id": "M10-S23-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S23-NOTE-3",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs a Zoho field that marks test investor accounts; ZOHO_TEST_INVESTOR_IDS is the stand-in (D113 ruling 6 keeps Zoho fields for later)"
+  },
+  {
+   "id": "M10-S02-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "superseded",
+   "evidence": "D113 ruling 1: a Finance-recorded receipt is matched by the recorder, so a Zoho rule Matched_By != Created_By on receipts would block it; the refunds-only variant is M10-S02-NOTE-8, held by the owner (D115 item 4: build nothing)"
+  },
+  {
+   "id": "M10-S03-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/money/claim-answer.ts:10-11,63-72: Finance enters the bank reference, checked against the kept last four (reference-required, reference-differs)"
+  },
+  {
+   "id": "M10-S03-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "open-local",
+   "evidence": "unsure: claim drawer reads claimOne and posts confirm/not-there (features/im/drawers/index.tsx:171-220; lib/data/endpoints/receipts.ts:63-82) and the IR lead page shows \"Finance did not find it: <reason>\" (features/lead/LeadPage.tsx:489, endpoints/claims.ts:44-55). Missing: GET /api/claims list (receipts.ts:52 claimList) has no consumer on Today/Payments"
+  },
+  {
+   "id": "M09-S07-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S03-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S03-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S01-NOTE-3",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S01-NOTE-4",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs a Documents module in Zoho (type, scope, signing state) or an owner decision not to have one; record.ts already imports listAttachments (server/investors/record.ts:38)"
+  },
+  {
+   "id": "M12-S01-NOTE-5",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/paper2/Upload.tsx:12, features/im/paper2/FarmDocs.tsx:4; lib/data/endpoints/documents.ts:45,66"
+  },
+  {
+   "id": "M17-S01-NOTE-1",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/team/index.tsx:29 (GET /api/teams rows and rights grid); features/people/Members.tsx:17; features/people/drawers.tsx:539 (GET /api/teams/{id}); lib/data/endpoints/teams.ts"
+  },
+  {
+   "id": "M17-S01-NOTE-3",
+   "kind": "GAP",
+   "verdict": "superseded",
+   "evidence": "Owner ruling 4 Oct (D115, r4 brief item 3): rights grid shows seats as columns each labelled with its D80 Zoho role. Code still builds one column per Zoho role (server/teams/teams.ts:426) - build under D115"
+  },
+  {
+   "id": "M17-S01-NOTE-4",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S05-NOTE-1",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs a Cases.app_request_id field in Zoho (M13-S02-NOTE-2); until then the Subject marker + persistent index stands"
+  },
+  {
+   "id": "M13-S05-NOTE-4",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S05-NOTE-5",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs an owner-approved routing rule for requests whose Contact has no KAM"
+  },
+  {
+   "id": "M13-S05-NOTE-6",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/tkt/index.tsx:34 (GET /api/cases/deliveries?ids= for the register); lib/data/endpoints/cases.ts:7-8,139 (per-case /deliveries)"
+  },
+  {
+   "id": "M13-S05-NOTE-7",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S20-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S20-NOTE-4",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M05-S06-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M05-S06-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/money/register.ts:11-17,195-204 counts matched money only; Pending shown apart as recorded"
+  },
+  {
+   "id": "M08-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S04-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/money/match.ts:44-45,134 emits hold.changed open (holdChangedEvent) when a match writes the hold; an extension approved later in Zoho needs a Zoho workflow (external)"
+  },
+  {
+   "id": "M08-S04-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S08-NOTE-1",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "As built the gate opens through matched Receipts: server/leads/gates.ts, app/api/leads/[id]/gate/route.ts, lib/zoho/__fixtures__/gates; no account_opened_at field needed"
+  },
+  {
+   "id": "M08-S08-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M08-S08-NOTE-4",
+   "kind": "GAP",
+   "verdict": "superseded",
+   "evidence": "D93 (app account opens On hold, Finance unlocks) and D115 (r4 brief item 1): app access stays Hold whenever an account is created, a match never opens it. Code diverges: add-paid.ts:6,359-368 leaves App_Access empty and match.ts opens on match - fix under D115"
+  },
+  {
+   "id": "M08-S08-NOTE-5",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/money/record.tsx:199 and drawers.tsx:272 read appCard (lib/data/endpoints/app); journey.test.tsx; progress.json M08-S08-T04 TC-IM11-005..006 done"
+  },
+  {
+   "id": "M10-S05-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S05-NOTE-3",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "docs/runbooks/weekly-reconciliation.md exists"
+  },
+  {
+   "id": "M10-S05-NOTE-4",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S04-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S07-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S07-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S07-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "lib/data/endpoints/receipt-oversell.test.tsx (receipt drawer refusal, TC-IM06-012); lib/im/rules.ts:54-60 oversellGate; lib/im/oversell.test.ts; server/investors/allot.ts:13 oversell guard; D113 5d. unsure: allot drawer wording not traced separately"
+  },
+  {
+   "id": "M12-S02-NOTE-1",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/paper2/Upload.tsx:9,72,90 (one Idempotency-Key per chosen file, reused on retry); lib/data/endpoints/documents.ts:213 POST /api/documents/upload?scope&id&slot&name&expected"
+  },
+  {
+   "id": "M12-S02-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S03-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs Sign_Status/Sign_Sent_At fields or a Documents module in Zoho, or a per-user Sign client"
+  },
+  {
+   "id": "M12-S09-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S04-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M13-S04-NOTE-4",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M17-S02-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M17-S02-NOTE-4",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/logs/reader.ts:198-201 and server/activity/query.ts:96 label manager-change \"Changed who they report to\""
+  },
+  {
+   "id": "M12-S04-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S04-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S04-NOTE-4",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/drawers/index.tsx:362-363; features/im/docs/index.tsx:5; lib/data/endpoints/sign.ts:40,86 (prefill, send with Idempotency-Key per press)"
+  },
+  {
+   "id": "M12-S05-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S05-NOTE-2",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "server/documents/runtime.ts:13,33 builds createSignStatusReader into the documents list (list.ts:97,178); server/ops/runtime.ts:47-56 starts ensureSignCheck at process start"
+  },
+  {
+   "id": "M12-S06-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S06-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S08-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M05-S07-NOTE-2",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "Sign status reader now feeds documents/list.ts:178 and numbers/investors-side.ts:365 (server/documents/runtime.ts:33). unsure: the 3-day threshold itself not traced"
+  },
+  {
+   "id": "M05-S07-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M05-S08-NOTE-2",
+   "kind": "GAP",
+   "verdict": "done",
+   "evidence": "Computed as stated: tier from issued units (lib/im tierOf), next contact from cadence (lib/im/index.ts:18)"
+  },
+  {
+   "id": "M05-S08-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M16-S08-NOTE-1",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "features/im/ins/index.tsx:151 (every figure from /api/numbers/investors-side?section=); lib/data/endpoints/numbers.ts:27-37; M16-S08-NOTE-4 fact change applied (D113)"
+  },
+  {
+   "id": "M16-S09-NOTE-2",
+   "kind": "HUMAN",
+   "verdict": "superseded",
+   "evidence": "D110 ruling 1: Sahil keeps every page and action of both sides; the server reads Collection for him per AC4"
+  },
+  {
+   "id": "M16-S09-NOTE-3",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M18-S01-NOTE-1",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M18-S01-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Only Zoho Composite API would cut the three activity calls per 100 leads; needs a sandbox proof of Composite on Tasks/Calls/Events"
+  },
+  {
+   "id": "M11-S05-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S05-NOTE-2",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M11-S05-NOTE-5",
+   "kind": "GAP",
+   "verdict": "open-external",
+   "evidence": "Needs an e-Mudhra reference field in Zoho and Allocation_Status moved onto a blueprint transition"
+  },
+  {
+   "id": "M12-S11-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S11-NOTE-3",
+   "kind": "FRONT-END LOOP",
+   "verdict": "open-local",
+   "evidence": "Row is wired (features/lead/LeadPage.tsx:281, lib/data/endpoints/paperwork.ts) and the verify panel reads leadHints (features/im/drawers/index.tsx:444). Missing: Finance queue ordering never calls rankForFinance (server/leads/hints.ts:95 is used by no route or screen); needs a batch hints route (see M12-S11-NOTE-6)"
+  },
+  {
+   "id": "M12-S11-NOTE-4",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S11-NOTE-5",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: server/leads/followup.ts:34,39 and capture.ts:35 still read/write Consent_Visit, which the org lacks; drop it or create the field (zoho/ has no copy of the Leads field list to compare)"
+  },
+  {
+   "id": "M12-S12-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S12-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: Lead.Supp_Agreed_Ref is mapped (server/leads/paperwork.ts:73) but the documents send flow does not offer it as the draft"
+  },
+  {
+   "id": "M12-S13-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M12-S13-NOTE-2",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "lib/zoho/client.ts SendMailRequest has no attachments and no DeckMailer is wired (email-runtime.ts deck:null); deck file id itself needs Zoho (M12-S13-NOTE-1)"
+  },
+  {
+   "id": "M12-S05-NOTE-5",
+   "kind": "HUMAN PROOF",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M10-S01-NOTE-6",
+   "kind": "FRONT-END LOOP",
+   "verdict": "done",
+   "evidence": "server/money/register.ts:11-17,194-218 matched-only totals with recorded apart; features/im/txn/index.tsx:4,66,85 \"Recorded, not yet matched\"; features/im/money/record.tsx:181; lib/data/endpoints/payments.ts:2"
+  },
+  {
+   "id": "M09-S09-NOTE-4",
+   "kind": "GAP",
+   "verdict": "open-local",
+   "evidence": "unsure: add-paid still writes a 30-day Hold_Until (server/investors/add-paid.ts:15) and its answer says the app opens when the Head of Finance matches; D115 item 1 (Hold until a released person releases) and D113 ruling 1 change that wording and rule"
+  },
+  {
+   "id": "M18-S08-NOTE-1",
+   "kind": "WAITING",
+   "verdict": "open-external",
+   "evidence": "T08 UAT defect fixes start only after exploratory sessions and UAT on staging (hosting AP4, sandbox)"
+  },
+  {
+   "id": "M03-S05-T02",
+   "kind": "TASK (Sahil)",
+   "verdict": "open-external",
+   "evidence": "Task for a person or Zoho-side setup (TASK (Sahil)); not buildable locally"
+  },
+  {
+   "id": "M12-S05-NOTE-7",
+   "kind": "BLOCK",
+   "verdict": "open-external",
+   "evidence": "Needs the durable worker and a persistent Plane B/C sink (D47 log store still open per D113 ruling 4) before the inline Sign re-read can leave the 200 path; test pin stays until then"
+  },
+  {
+   "id": "M19-S12-NOTE-6",
+   "kind": "BUG OPEN",
+   "verdict": "done",
+   "evidence": "Every part fixed: offline receipts queued (D112, TC-IM01-008/009 PASS, M01-S08-NOTE-9); Auditor Activity reads Finance trail (D112); UTR masked and reveal behind step-up (D114, features/im/txn/render.test.tsx:38-44); step-up panel features/im/stepup.tsx + stepup.test.tsx"
+  },
+  {
+   "id": "M01-S08-NOTE-9",
+   "kind": "FIXED",
+   "verdict": "open-external",
+   "evidence": "Fix done (d95c79d); remaining live integration case against real Zoho (NOTE-8)"
+  },
+  {
+   "id": "M08-S03-NOTE-7",
+   "kind": "FIXED",
+   "verdict": "done",
+   "evidence": "D112: \"Not done.\" no longer prefixes a recorded receipt; TC-IM05-007 fact judge-unstable (see M19-S12-NOTE-5)"
+  },
+  {
+   "id": "M10-S02-NOTE-7",
+   "kind": "BLOCKED ON OWNER",
+   "verdict": "superseded",
+   "evidence": "D113 ruling 1 (docs/decisions/D113-owner-rulings-4-oct.md) closes M10-S02-NOTE-2/-6: a Finance-recorded receipt is matched; TC-IM05-006 follows; built in D114"
+  },
+  {
+   "id": "M12-S10-NOTE-1",
+   "kind": "NOTE",
+   "verdict": "open-external",
+   "evidence": "Local suite is built (console/src/server/http/contract/isolation.test.cjs); real-Zoho sharing proof, sign-request listing and two-user probe need the sandbox"
+  },
+  {
+   "id": "M15-S05-NOTE-6",
+   "kind": "BUG OPEN",
+   "verdict": "done",
+   "evidence": "Payments register offers \"Show the reference\" behind step-up with a logged Plane C reveal: app/api/receipts/[id]/reveal/route.ts:31, server/money/reveal-ref.ts, features/im/txn/render.test.tsx:38-44, lib/data/endpoints/money.test.tsx; D114"
+  },
+  {
+   "id": "M10-S02-NOTE-8",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  },
+  {
+   "id": "M19-S07-NOTE-1",
+   "kind": "HUMAN",
+   "verdict": "open-external",
+   "evidence": "Zoho sandbox, staging, hosting, a tester seat or a person's setup; not deep-checked (no later decision changes the need)"
+  }
+ ],
+ "units": [
+  {
+   "story": "M03-S04",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "Seat dropdown is on PUT /api/users/{id} (features/im/team/index.tsx:30-61 \"Seat for <name>\", never root/di, never own or super-admin row; endpoints/access.ts:4). Plane C labels done (server/activity/query.ts:96-100, M03-S04-NOTE-3). TC-IM02-026 fact change applied (D113). Test phase already done. The kam-pool-return grant and users.UPDATE scope (NOTE-1/-2) belong to the zoho phase, already waiting."
+  },
+  {
+   "story": "M08-S07",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "The review reason was the missing \"said yes\" state: ImSt has it (lib/im/types.ts:38), live investorOf derives it (server/data/live.ts:182), rendered at features/im/inv/index.tsx:231 and common.tsx:47. Blueprint and sandbox proof (NOTE-1, NOTE-4) are zoho-phase."
+  },
+  {
+   "story": "M10-S01",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "GET /api/payments register is wired (features/im/txn/index.tsx:66, endpoints/payments.ts); totals are matched-only with recorded shown apart (register.ts:11-17, txn/index.tsx:85); UTR masked and \"Show the reference\" behind step-up built (D114, txn/render.test.tsx:38-44, route receipts/[id]/reveal:31). NOTE-7 (not implemented) is out of date. Legacy migration and Receipts fields are zoho-phase."
+  },
+  {
+   "story": "M12-S11",
+   "phase": "wire",
+   "verdict": "stays-review",
+   "why": "Paperwork row on /api/leads/[id]/paperwork and the verify panel hints are wired, but Finance queue ordering never uses rankForFinance (server/leads/hints.ts:95, no consumer; needs a batch hints route) and RoundView lacks Finance's \"not signed after all\" note (M12-S11-NOTE-6). Local defect, no Zoho needed."
+  },
+  {
+   "story": "M14-S03",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "Sheet route, sheet card and capture event picker are wired (EventPage.tsx:56-59, AddPage.tsx:74, add/reducer.ts:276); the known failure TC-E10-012 was a stale case, changed by D113 ruling 3 and passing in the 4 Oct suite. Follow-up outside this unit: D115 item 2 (only the super administrator loads by default) still has to be built in the seat policy (lib/selectors/access.ts:83)."
+  },
+  {
+   "story": "M15-S05",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "Logs view reads GET /api/logs (SystemPage.tsx:140-251); the bug that held the test phase (TC-E11-016 no reveal control) is fixed in D114. Remaining local gaps (M15-S05-NOTE-1/-2: /api/system route and checks wiring) are new work, not the review reason."
+  },
+  {
+   "story": "M16-S08",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "All five Investors-side sections including Service read /api/numbers/investors-side (features/im/ins/index.tsx:151, endpoints/numbers.ts:27-37); the \"Jev 0/3\" came from stale rail names, fixed by the D113 fact change (M16-S08-NOTE-4 applied). Test phase already done."
+  },
+  {
+   "story": "M12-S01",
+   "phase": "wire",
+   "verdict": "to-done",
+   "why": "Investor and farm DOCS tabs read /api/documents/investor|farm/[id] (paper2/Upload.tsx:12, FarmDocs.tsx:4) and the uploader/slot sits on the attachment line (round 2). Slot/uploader live shape (NOTE-6/-7) and the Documents module (NOTE-4) are external."
+  },
+  {
+   "story": "M02-S04",
+   "phase": "zoho",
+   "verdict": "to-waiting",
+   "why": "Local part is built: identity shaper/reveal/safeNote, zoho/field-register.json with tie-in test, 7 wall UI cases and 7 in-code cases, phase 3 local half done. What is left is T02-T04 profile/FLS/sharing setup by Sahil and T09 restricted-user probes on sandbox users."
+  }
+ ],
+ "localTestWork": [
+  {
+   "story": "M01-S01",
+   "subtask": "M01-S01-T07",
+   "title": "Rail and deep links per seat",
+   "why": "pm/generated/ui-cases-seats.json holds 143 per-seat cases; 140 pass on the demo build (ui-suite-2026-10-04.md). Run the rest and record"
+  },
+  {
+   "story": "M01-S02",
+   "subtask": "M01-S02-T05",
+   "title": "Session cases",
+   "why": "node session tests exist (server/oauth/user-session.test.cjs); record on fixtures, no staging needed"
+  },
+  {
+   "story": "M01-S03",
+   "subtask": "M01-S03-T07",
+   "title": "Scope and log API tests",
+   "why": "Scope and Plane B line content are testable on recorded fixtures (server/identity, server/logs tests); restricted-user part stays external"
+  },
+  {
+   "story": "M01-S04",
+   "subtask": "M01-S04-T02",
+   "title": "Log content check",
+   "why": "unsure: node tests on log lines (identity-free) can run on demo data; staging TC-E01-010/011 stay external"
+  },
+  {
+   "story": "M01-S06",
+   "subtask": "M01-S06-T02",
+   "title": "Offline scenarios",
+   "why": "TC-IM01-008/009 offline queue cases pass (D112); local part is the one ui case; two ui-staging cases external"
+  },
+  {
+   "story": "M01-S09",
+   "subtask": "M01-S09-T03",
+   "title": "Freshness cases",
+   "why": "2 of 3 cases are ui on demo data (ui-cases.json); lib/data/freshness.test.ts exists; staging case external"
+  },
+  {
+   "story": "M01-S10",
+   "subtask": "M01-S10-T05",
+   "title": "Step-up paths",
+   "why": "features/im/stepup.test.tsx and 4 ui cases exist; sandbox half (prompt=login) external"
+  },
+  {
+   "story": "M01-S10",
+   "subtask": "M01-S10-T06",
+   "title": "Step-up reveal cases",
+   "why": "receipt reveal route, reveal-ref.test.cjs, txn/render.test.tsx run on demo data"
+  },
+  {
+   "story": "M02-S01",
+   "subtask": "M02-S01-T02",
+   "title": "Seat plan",
+   "why": "ops/SEAT-PLAN.md exists; mark done"
+  },
+  {
+   "story": "M02-S02",
+   "subtask": "M02-S02-T04",
+   "title": "Compare fields to mapping",
+   "why": "unsure: zoho/field-register.json vs pm/plan-merged/zoho-field-mapping.json can be diffed offline; the live field read stays external"
+  },
+  {
+   "story": "M02-S04",
+   "subtask": "M02-S04-T10",
+   "title": "Jev and API cases for the wall",
+   "why": "7 ui cases in ui-cases.json and 7 in code; p3-access recorded the local half; subtask just needs recording"
+  },
+  {
+   "story": "M03-S01",
+   "subtask": "M03-S01-T03",
+   "title": "Admission matrix",
+   "why": "role to seat mapping tests exist (server/oauth/user-session.test.cjs:203,398); extend to all 14 people"
+  },
+  {
+   "story": "M03-S02",
+   "subtask": "M03-S02-T03",
+   "title": "Grant flows",
+   "why": "4 ui cases in ui-cases.json, server/access/grants.test.cjs"
+  },
+  {
+   "story": "M03-S03",
+   "subtask": "M03-S03-T02",
+   "title": "Grantor matrix",
+   "why": "4 ui cases, server/access/policy.test.cjs, grants.test.cjs"
+  },
+  {
+   "story": "M04-S01",
+   "subtask": "M04-S01-T04",
+   "title": "Test add lead",
+   "why": "4 ui cases on demo data (ui-cases.json)"
+  },
+  {
+   "story": "M05-S06",
+   "subtask": "M05-S06-T03",
+   "title": "Jev cases and COQL budget",
+   "why": "3 ui cases, 4 TC ids already in code"
+  },
+  {
+   "story": "M06-S05",
+   "subtask": "M06-S05-T03",
+   "title": "API and Jev cases for the search wall",
+   "why": "server/leads/wall.test.cjs and seat-search.test.cjs exist"
+  },
+  {
+   "story": "M07-S01",
+   "subtask": "M07-S01-T03",
+   "title": "Test lead page shell",
+   "why": "4 ui cases"
+  },
+  {
+   "story": "M07-S03",
+   "subtask": "M07-S03-T03",
+   "title": "Test save and undo",
+   "why": "4 ui cases (1 ui-staging external)"
+  },
+  {
+   "story": "M07-S04",
+   "subtask": "M07-S04-T03",
+   "title": "Test time and mapping",
+   "why": "5 ui cases (1 ui-staging external)"
+  },
+  {
+   "story": "M07-S05",
+   "subtask": "M07-S05-T03",
+   "title": "Test composer and send",
+   "why": "4 ui cases, 3 TC ids in code; real send is external"
+  },
+  {
+   "story": "M08-S02",
+   "subtask": "M08-S02-T02",
+   "title": "Test gates",
+   "why": "4 ui cases, 4 TC ids in code"
+  },
+  {
+   "story": "M08-S05",
+   "subtask": "M08-S05-T02",
+   "title": "Test cover",
+   "why": "3 ui cases, 5 TC ids in code"
+  },
+  {
+   "story": "M08-S07",
+   "subtask": "M08-S07-T04",
+   "title": "TC-IM11-003..004, 014",
+   "why": "ui and api case exist; 003/013 need a sandbox lead for the proof"
+  },
+  {
+   "story": "M09-S01",
+   "subtask": "M09-S01-T03",
+   "title": "Jev cases for the Finance list",
+   "why": "4 ui cases exist, but the Finance list client endpoint and table are not wired yet (see M09-S01-NOTE-1)"
+  },
+  {
+   "story": "M09-S02",
+   "subtask": "M09-S02-T04",
+   "title": "Jev cases for the AM book",
+   "why": "3 ui cases, 2 in code"
+  },
+  {
+   "story": "M09-S07",
+   "subtask": "M09-S07-T03",
+   "title": "Jev cases for investor search",
+   "why": "server/investors/search.test.cjs exists"
+  },
+  {
+   "story": "M09-S08",
+   "subtask": "M09-S08-T04",
+   "title": "Jev and API cases for the IR wall",
+   "why": "docs/reports/m09-s08-cases.json, ir-investors.test.cjs and endpoints/ir-investors.test.tsx exist"
+  },
+  {
+   "story": "M10-S08",
+   "subtask": "M10-S08-T03",
+   "title": "Jev cases for the per-farm view",
+   "why": "demo-data case"
+  },
+  {
+   "story": "M12-S10",
+   "subtask": "M12-S10-T08",
+   "title": "Run and review isolation suite",
+   "why": "console/src/server/http/contract/isolation.test.cjs (63 cases) runs in npm test"
+  },
+  {
+   "story": "M12-S11",
+   "subtask": "M12-S11-T05",
+   "title": "NDA loop and hint cases",
+   "why": "10 ui and 2 api cases, 11 TC ids in code"
+  },
+  {
+   "story": "M12-S13",
+   "subtask": "M12-S13-T03",
+   "title": "Material gating cases",
+   "why": "4 ui cases"
+  },
+  {
+   "story": "M15-S05",
+   "subtask": "M15-S05-T04",
+   "title": "Planes B and C cases",
+   "why": "3 ui, 2 api cases and 7 TC ids in code"
+  },
+  {
+   "story": "M16-S01",
+   "subtask": "M16-S01-T03",
+   "title": "Test Assignments by IR",
+   "why": "4 ui cases; AssignReport.test.tsx"
+  },
+  {
+   "story": "M16-S03",
+   "subtask": "M16-S03-T03",
+   "title": "Test Numbers sections",
+   "why": "4 ui cases"
+  },
+  {
+   "story": "M17-S02",
+   "subtask": "M17-S02-T02",
+   "title": "Test grants and seats",
+   "why": "4 ui-todo cases need a multi-step Teams runner (TC-E14-004..007); api case local (server/access/seat-change.test.cjs)"
+  },
+  {
+   "story": "M18-S01",
+   "subtask": "M18-S01-T04",
+   "title": "Read-budget assertions per screen",
+   "why": "5 api cases testable on recorded fixtures; the 5-COQL Today budget is countable offline"
+  },
+  {
+   "story": "M18-S02",
+   "subtask": "M18-S02-T01",
+   "title": "Generator for matrix cases",
+   "why": "pm/gen-seat-cases.mjs exists; extend for the matrix"
+  },
+  {
+   "story": "M18-S02",
+   "subtask": "M18-S02-T05",
+   "title": "Security pass",
+   "why": "code-side checks (headers, origin guard, rate limits) exist locally (D105)"
+  },
+  {
+   "story": "M18-S03",
+   "subtask": "M18-S03-T03",
+   "title": "390px Jev cases and screenshots",
+   "why": "3 ui cases at phone width on the demo build"
+  },
+  {
+   "story": "M18-S04",
+   "subtask": "M18-S04-T03",
+   "title": "Observability checks",
+   "why": "unsure: 2 ui + 1 api case; alert mailer is external (M18-S04-NOTE-1)"
+  },
+  {
+   "story": "M18-S08",
+   "subtask": "M18-S08-T01",
+   "title": "UAT script",
+   "why": "docs/uat/scenarios and signoff-sheet.csv exist; mark done"
+  },
+  {
+   "story": "M18-S08",
+   "subtask": "M18-S08-T03",
+   "title": "Prepare usability session",
+   "why": "document work only"
+  },
+  {
+   "story": "M19-S01",
+   "subtask": "M19-S01-T02",
+   "title": "Write the UI test contract",
+   "why": "documentation"
+  },
+  {
+   "story": "M19-S01",
+   "subtask": "M19-S01-T03",
+   "title": "Check the contract on the first built pages",
+   "why": "Jev on demo build"
+  },
+  {
+   "story": "M19-S03",
+   "subtask": "M19-S03-T02",
+   "title": "How to add a fixture",
+   "why": "documentation; zoho/sandbox/README.md and docs exist"
+  },
+  {
+   "story": "M20-S07",
+   "subtask": "M20-S07-T05",
+   "title": "Contract and isolation tests",
+   "why": "all 31 contract schemas run through the stub receiver (D112); real receivers external"
+  }
+ ]
+}
