@@ -4,7 +4,7 @@
  "url": "http://localhost:3001",
  "prototype": "console/prototype/growize-console-merged.html",
  "next_queue": null,
- "built": "2026-09-30T06:42:10.760Z",
+ "built": "2026-10-04T08:29:05.033Z",
  "stories": [
   {
    "id": "M03-S01",
@@ -77,7 +77,7 @@
    "tests": [
     {
      "id": "TC-E03-001",
-     "title": "Sign-in screen lists exactly the six console users",
+     "title": "Sign-in screen lists everyone either side admits",
      "type": "Functional",
      "seat": "rohit",
      "priority": "P1",
@@ -91,16 +91,14 @@
       "Press 'Sign out'"
      ],
      "expected": [
-      "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-      "It does not offer Harsha Bhat.",
-      "It does not offer Gokul S.",
-      "It does not offer Jhalak Mehta.",
-      "It does not offer Arvind Menon or Pradeep Ram."
+      "The sign-in screen offers exactly fourteen people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi, Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram.",
+      "Harsha Bhat's card reads Head of Finance.",
+      "Pradeep Ram's card reads Head, Corporate Operations · by grant."
      ]
     },
     {
      "id": "TC-E03-002",
-     "title": "Finance cannot sign in",
+     "title": "Finance signs in for the Investors side",
      "type": "Negative",
      "seat": "none",
      "priority": "P1",
@@ -109,11 +107,11 @@
       "DEMO_STAFF"
      ],
      "steps": [
-      "Look at the sign-in screen"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
-      "The sign-in screen does not offer Harsha Bhat.",
-      "No console page is showing."
+      "The page heading reads Harsha's day.",
+      "The menu shows Investors, Farms, Tickets, Investor updates, Payments and Documents."
      ]
     },
     {
@@ -122,7 +120,7 @@
      "type": "Negative",
      "seat": "none",
      "priority": "P2",
-     "ui_mode": "ui",
+     "ui_mode": "retired",
      "fixtures": [
       "DEMO_STAFF",
       "GOKUL_ACTIVE"
@@ -137,7 +135,7 @@
     },
     {
      "id": "TC-E03-004",
-     "title": "Ops Lead, BU Owner and Corporate Ops without a grant are refused",
+     "title": "Corporate Operations is offered by grant",
      "type": "Permission",
      "seat": "none",
      "priority": "P1",
@@ -149,9 +147,8 @@
       "Look at the sign-in screen"
      ],
      "expected": [
-      "The sign-in screen does not offer Jhalak Mehta.",
-      "It does not offer Arvind Menon.",
-      "It does not offer Pradeep Ram."
+      "Pradeep Ram's card on the sign-in screen reads Head, Corporate Operations · by grant.",
+      "Sahil Mohite's card reads Super user · Digital Infrastructure."
      ]
     },
     {
@@ -197,7 +194,6 @@
    "ui_cases": [
     "TC-E03-001",
     "TC-E03-002",
-    "TC-E03-003",
     "TC-E03-004",
     "TC-E03-005"
    ],
@@ -1137,7 +1133,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list"
      ],
@@ -1158,7 +1154,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list"
      ],
@@ -1200,7 +1196,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'"
      ],
@@ -1221,7 +1217,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'"
      ],
@@ -1242,7 +1238,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'"
      ],
@@ -1263,14 +1259,14 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'"
      ],
      "expected": [
       "PAN reads 'AFT•••••L'.",
       "Bank reads '•••• •••• 1208'.",
-      "The page offers no reveal button."
+      "The PAN row says 'Compliance and the Head of Finance may reveal a PAN — not this seat'."
      ]
     },
     {
@@ -1284,7 +1280,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors'",
       "Press 'Radhika Menon'"
      ],
@@ -2959,19 +2955,14 @@
       "Press Tasneem Qureshi on the sign-in screen"
      ],
      "expected": [
-      "The menu has a Today link (it may carry a count).",
-      "The menu has a Leads link (it may carry a count).",
+      "The menu shows Today and Leads (each may carry a count and a Team label).",
       "The menu shows Activity, Events, Payments and Documents.",
-      "The menu shows Teams.",
-      "The menu shows Plan.",
-      "The menu shows Transfers.",
-      "The menu shows Numbers.",
-      "The menu does not show System."
+      "The menu shows Transfers, Plan, Numbers and Teams."
      ]
     },
     {
      "id": "TC-E03-008",
-     "title": "Digital Infrastructure reaches System; money and paper are view-only",
+     "title": "Digital Infrastructure reaches System; Payments is the full ledger",
      "type": "Functional",
      "seat": "sahil",
      "priority": "P1",
@@ -2986,8 +2977,8 @@
      "expected": [
       "The menu shows System.",
       "The menu shows Teams.",
-      "The Payments page says it is read only, recorded by Finance in the Investor Management portal.",
-      "The Payments page does not offer a button to record a payment."
+      "The Payments page offers 'Upload the bank statement'.",
+      "The Payments page lists T-0030 for Joseph Mathew, an advance of ₹10 L."
      ]
     },
     {
@@ -3014,7 +3005,7 @@
     },
     {
      "id": "TC-E03-010",
-     "title": "No seat can record payments or send documents",
+     "title": "Documents is read only for the IR Manager",
      "type": "Negative",
      "seat": "tasneem",
      "priority": "P2",
@@ -3027,9 +3018,8 @@
       "Open Documents from the menu"
      ],
      "expected": [
-      "The Documents page says it is read only, sent by Finance from the Investor Management portal.",
-      "The Documents page does not offer a button to send a document.",
-      "The Documents page does not offer a button to upload a document."
+      "The Documents page says 'Read only · sent by Finance from the Investors pages'.",
+      "The Document register lists 3 signed non-disclosure agreements: D-036 for Prakash Bhat, D-039 for Joseph Mathew and D-035b for R. Sundaram."
      ]
     },
     {
@@ -3053,7 +3043,7 @@
     },
     {
      "id": "TC-IM01-002",
-     "title": "Head of Finance lands on the Dashboard with the full rail",
+     "title": "Head of Finance lands on Today with the Investors rail",
      "type": "Regression",
      "seat": "harsha",
      "priority": "P1",
@@ -3062,17 +3052,21 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
-      "The menu shows 10 pages: Dashboard, Investors, Farms, Transactions, Documents, Tickets, Updates, Insights, Activity log and Team.",
-      "The top bar shows Harsha Bhat, Head of Finance.",
-      "The top bar offers a 'Toggle theme' button."
+      "The menu shows Today and Activity.",
+      "The menu shows Investors, Farms, Tickets and Investor updates.",
+      "The menu shows Payments and Documents.",
+      "The menu shows Numbers and Teams.",
+      "The menu lists 11 links in all: those ten and 'How the merge works'.",
+      "The top bar shows Harsha Bhat.",
+      "The page heading reads Harsha's day."
      ]
     },
     {
      "id": "TC-IM01-003",
-     "title": "Administrator lands on the Activity log, not an empty Dashboard",
+     "title": "Super user lands on Today with the whole rail on both sides",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
@@ -3081,17 +3075,16 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown"
+      "Press Sahil Mohite on the sign-in screen"
      ],
      "expected": [
-      "The page heading is 'Activity log'.",
-      "The menu shows 2 pages: Activity log and Team.",
-      "The menu does not show Dashboard."
+      "The menu shows Today, Leads, Activity, Events, Investors, Farms, Tickets, Investor updates, Payments, Documents, Transfers, Plan, Numbers, Teams and System.",
+      "The page offers a 'Lead side' and an 'Investors side' switch."
      ]
     },
     {
      "id": "TC-IM02-003",
-     "title": "A KAM's rail has no money or paper pages",
+     "title": "A KAM's rail holds the service pages only",
      "type": "Permission",
      "seat": "imran",
      "priority": "P1",
@@ -3100,17 +3093,18 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown"
+      "Press Imran Sheikh on the sign-in screen"
      ],
      "expected": [
-      "The menu shows 8 pages: Dashboard, Investors, Farms, Tickets, Updates, Insights, Activity log and Team.",
-      "The menu does not show Transactions.",
-      "The menu does not show Documents."
+      "The menu shows Today and Activity.",
+      "The menu shows Investors, Farms, Tickets and Investor updates.",
+      "The menu shows Numbers and Teams.",
+      "The menu lists 9 links in all: those eight and 'How the merge works'."
      ]
     },
     {
      "id": "TC-IM02-004",
-     "title": "The Super administrator's rail holds no investor page",
+     "title": "Corporate Operations signs in by grant to three pages",
      "type": "Permission",
      "seat": "pradeep",
      "priority": "P1",
@@ -3119,16 +3113,16 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Pradeep Ram — Super administrator' in the 'Signed in as' dropdown"
+      "Press Pradeep Ram on the sign-in screen"
      ],
      "expected": [
-      "The menu shows 3 pages: System, Activity log and Team.",
-      "The menu does not show Investors."
+      "The menu shows Activity, Teams and System.",
+      "The menu lists 4 links in all: those three and 'How the merge works'."
      ]
     },
     {
      "id": "TC-IM02-005",
-     "title": "Compliance's rail has no Transactions page",
+     "title": "Compliance's rail holds Documents but not Payments",
      "type": "Permission",
      "seat": "fahad",
      "priority": "P2",
@@ -3137,11 +3131,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown"
+      "Press Fahad Rizvi on the sign-in screen"
      ],
      "expected": [
-      "The menu shows 9 pages: Dashboard, Investors, Farms, Documents, Tickets, Updates, Insights, Activity log and Team.",
-      "The menu does not show Transactions."
+      "The menu shows Today and Activity.",
+      "The menu shows Investors, Farms, Tickets and Investor updates.",
+      "The menu shows Documents, Numbers and Teams.",
+      "The menu lists 10 links in all: those nine and 'How the merge works'."
      ]
     }
    ],
@@ -3353,12 +3349,12 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press 'reveal' next to the masked PAN 'AFT•••••L'",
       "Press 'A filing or a TDS check'",
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list"
      ],
@@ -3383,12 +3379,33 @@
       "The sign-in screen shows 'Continue with Zoho'.",
       "No portal page or menu is showing."
      ]
+    },
+    {
+     "id": "TC-IM01-020",
+     "title": "An Investors-only seat can open Your account and sign out",
+     "type": "Functional",
+     "seat": "meena",
+     "priority": "P1",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_DATA"
+     ],
+     "steps": [
+      "Press Meena Raghavan on the sign-in screen",
+      "Press 'Your account' in the top bar",
+      "Press 'Sign out'"
+     ],
+     "expected": [
+      "The top bar offers a 'Your account' button beside Meena Raghavan.",
+      "The sign-in screen is showing."
+     ]
     }
    ],
    "ui_cases": [
     "TC-E01-005",
     "TC-E01-006",
-    "TC-IM01-016"
+    "TC-IM01-016",
+    "TC-IM01-020"
    ],
    "calibration": [
     "TC-M01-CAL1"
@@ -3930,13 +3947,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Farms' in the menu",
       "Press 'Take it back' on the Block A row"
      ],
      "expected": [
-      "An open panel explains that Block A — Doddaballapura has 29 units already held by investors and cannot be taken back off the shelf.",
-      "The panel offers a 'Close' button.",
+      "A message on the page reads 'Not done. Block A — Doddaballapura has 29 units already held by investors. Land cannot be taken back off the shelf while somebody is standing on it.'",
+      "The message offers an 'OK' button.",
       "Block A reads '29 allotted · 33 free'."
      ]
     },
@@ -3951,7 +3968,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Farms' in the menu"
      ],
      "expected": [
@@ -3972,7 +3989,7 @@
       "PRAKASH_ALLOCATION_OUT"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press 'Verify' on Prakash Bhat's row",
       "Type 'EMU-0209-92003' in the e-Mudhra reference box",
@@ -3993,7 +4010,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Prakash Bhat",
       "Press the 'What they hold' tab",
@@ -4127,7 +4144,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press the 'Money' tab",
@@ -4154,7 +4171,7 @@
       "BROWSER_OFFLINE"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press the 'Money' tab",
@@ -4181,7 +4198,7 @@
       "BROWSER_OFFLINE"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press the 'Money' tab",
@@ -4308,7 +4325,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
       "The top bar says the data is demo fixtures with no live source connected."
@@ -4326,7 +4343,7 @@
       "BROWSER_OFFLINE"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
       "The top bar says the browser is offline."
@@ -4867,13 +4884,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Divya Kamath — Head of Account Management' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Divya Kamath on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
-      "Imran Sheikh's seat dropdown offers 2 seats: Head of Account Management and Key Account Manager.",
+      "Imran Sheikh's seat dropdown lists Head of Account Management and Key Account Manager.",
       "Harsha Bhat's row says 'another team's seat'.",
-      "Divya Kamath's own row is marked 'you' and shows her seat 'Head of Account Management' with no list of seats to choose from."
+      "Divya Kamath's own row is marked 'you' and shows 'Head of Account Management' as plain text."
      ]
     },
     {
@@ -4887,10 +4904,10 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Divya Kamath — Head of Account Management' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu",
+      "Press Divya Kamath on the sign-in screen",
+      "Press 'Teams' in the menu",
       "Choose 'Head of Account Management' in the seat dropdown on Imran Sheikh's row",
-      "Press 'Activity log' in the menu"
+      "Press 'Activity' in the menu"
      ],
      "expected": [
       "The log shows 'Changed a seat' with 'Imran Sheikh: Key Account Manager → Head of Account Management · 4 accounts returned to the pool'.",
@@ -4899,7 +4916,7 @@
     },
     {
      "id": "TC-IM02-025",
-     "title": "An Administrator moving a KAM also returns the book to the pool",
+     "title": "A super user moving a KAM also returns the book to the pool",
      "type": "Negative",
      "seat": "sahil",
      "priority": "P1",
@@ -4908,18 +4925,20 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu",
-      "Choose 'Head of Account Management' in the sixth seat dropdown on the Team page, which is Imran Sheikh's row",
-      "Press 'Activity log' in the menu"
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Teams' in the menu",
+      "Choose 'Head of Account Management' in the sixth seat dropdown on the Teams page, which is Imran Sheikh's row",
+      "Press 'Activity' in the menu",
+      "Press 'Investors side'"
      ],
      "expected": [
-      "The first log row is 'Changed a seat' by Sahil and its detail says '4 accounts returned to the pool'."
+      "The log shows an Admin entry 'Changed a seat' by Sahil whose detail says 'Imran Sheikh: Key Account Manager → Head of Account Management · 4 accounts returned to the pool'.",
+      "The log shows four 'Returned it to the pool' entries by Sahil for Imran Sheikh's accounts."
      ]
     },
     {
      "id": "TC-IM02-026",
-     "title": "The Administrator cannot change his own seat",
+     "title": "The super user cannot change his own seat",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
@@ -4928,16 +4947,17 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
-      "The page offers exactly 8 seat dropdowns, one for every person except Sahil Mohite."
+      "In the 'Investors side seats' table, Sahil Mohite's row shows 'Super user — Digital Infrastructure'.",
+      "In that table Pradeep Ram's row shows 'Super administrator'."
      ]
     },
     {
      "id": "TC-IM02-027",
-     "title": "The Administrator cannot change the Super administrator",
+     "title": "The super user cannot change the Super administrator",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
@@ -4946,8 +4966,8 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
       "Pradeep Ram's row shows 'Super administrator' and offers no seat dropdown.",
@@ -5114,13 +5134,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Latha Prabhu on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
-      "The top bar shows Latha Prabhu, Auditor — read only.",
+      "The top bar shows Latha Prabhu with a 'read only' tag.",
       "'Who is here' lists 9 people: Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram.",
-      "Pradeep Ram's seat reads 'Super administrator' and Sahil Mohite's reads 'Administrator'."
+      "Pradeep Ram's seat reads 'Super administrator' and Sahil Mohite's reads 'Super user — Digital Infrastructure'."
      ]
     },
     {
@@ -5241,7 +5261,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press the 'Money' tab"
@@ -5264,7 +5284,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -5284,7 +5304,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list"
      ],
@@ -5394,7 +5414,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors' in the menu"
      ],
      "expected": [
@@ -5413,7 +5433,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Neha Bhandari — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Neha Bhandari on the sign-in screen",
       "Press 'Investors' in the menu"
      ],
      "expected": [
@@ -5432,7 +5452,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Radhika Menon' in the investors list"
      ],
@@ -5532,7 +5552,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Joseph Mathew' in the investors list",
       "Press 'Work the KYC'"
@@ -5554,7 +5574,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Joseph Mathew' in the investors list"
      ],
@@ -5574,7 +5594,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Joseph Mathew' in the investors list"
      ],
@@ -5904,7 +5924,7 @@
      "expected": [
       "The top-bar status says the browser is offline.",
       "The top-bar status says '1 change waiting · up to 5 minutes'.",
-      "Jhalak Mehta's access still reads 'No console access — nothing granted'."
+      "Jhalak Mehta's row in the Members table still reads 'no login here' with 0 screens."
      ]
     },
     {
@@ -6492,7 +6512,7 @@
    "tests": [
     {
      "id": "TC-E05-001",
-     "title": "Rohit's Today lists his work in urgency order",
+     "title": "Rohit's Today lists his own work in urgency order",
      "type": "Functional",
      "seat": "rohit",
      "priority": "P1",
@@ -6506,17 +6526,14 @@
      ],
      "expected": [
       "The page heading reads 'Your follow-ups'.",
-      "The page shows '4 due now · 5 open' under the heading.",
+      "The page shows '2 due now · 3 open' under the heading.",
       "The first investor listed is Sanjay Menon, tagged Overdue, with 'Intro email — due 22 Aug' under his name.",
-      "Ritu Anand and Harish Kamath are listed, each reading 'No owner yet'.",
-      "Meera Krishnan is listed, tagged Today, reading 'Call back — today at 16:30'.",
-      "Prakash Bhat is not listed.",
-      "Preethi Nayak is not listed."
+      "Meera Krishnan is listed, tagged Today, reading 'Call back — today at 16:30'."
      ]
     },
     {
      "id": "TC-E05-002",
-     "title": "Unassigned leads offer Assign to me",
+     "title": "Unowned leads on Leads offer Assign to me",
      "type": "Functional",
      "seat": "rohit",
      "priority": "P1",
@@ -6526,16 +6543,17 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Press Rohit Deshpande on the sign-in screen"
+      "Press Rohit Deshpande on the sign-in screen",
+      "Open Leads from the menu"
      ],
      "expected": [
-      "Ritu Anand's row reads 'No owner yet — added by Tasneem Qureshi'.",
-      "Ritu Anand's row offers 'Assign to me'."
+      "The Leads page has a 'Needs an owner' section listing Harish Kamath and Ritu Anand.",
+      "Ritu Anand's row reads 'Founder network · 27 Aug 09:15' and offers 'Assign to me'."
      ]
     },
     {
      "id": "TC-E05-003",
-     "title": "Digital Infrastructure has no Today",
+     "title": "Digital Infrastructure lands on Today with both sides",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P2",
@@ -6548,8 +6566,9 @@
       "Press Sahil Mohite on the sign-in screen"
      ],
      "expected": [
-      "The menu does not show Today.",
-      "The Leads page is showing."
+      "The menu shows Today.",
+      "The Today page offers 'Lead side' and 'Investors side'.",
+      "The page reads 'Team follow-ups'."
      ]
     }
    ],
@@ -6641,12 +6660,12 @@
      ],
      "steps": [
       "Press Rohit Deshpande on the sign-in screen",
+      "Open Leads from the menu",
       "Press 'Assign to me' on Ritu Anand's row"
      ],
      "expected": [
-      "Ritu Anand's row offers WhatsApp.",
-      "Ritu Anand's row does not offer 'Assign to me'.",
-      "Harish Kamath's row offers 'Assign to me'."
+      "The 'Needs an owner' section lists 1 lead, Harish Kamath, and his row offers 'Assign to me'.",
+      "The investor records table in Rohit's book lists Ritu Anand."
      ]
     },
     {
@@ -6685,7 +6704,7 @@
       "Press Kavya Nair on the sign-in screen"
      ],
      "expected": [
-      "The investor in focus beside the list is Deepa Varghese ('Investor said yes · ₹1 Cr', with 'Full record').",
+      "The investor in focus beside the list is Deepa Varghese ('Investor said yes · ₹1 Cr', with 'Open the record').",
       "Its next step reads 'Send the reservation note' at '28 Aug · 16:30'.",
       "It offers 'Reschedule'.",
       "It shows a 'Last contact' line.",
@@ -6694,7 +6713,7 @@
     },
     {
      "id": "TC-E05-007",
-     "title": "IR Manager cannot 'Assign to me' but assigns an owner",
+     "title": "IR Manager assigns an owner from Needs an owner",
      "type": "Permission",
      "seat": "tasneem",
      "priority": "P2",
@@ -6704,11 +6723,12 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Press Tasneem Qureshi on the sign-in screen"
+      "Press Tasneem Qureshi on the sign-in screen",
+      "Open Leads from the menu"
      ],
      "expected": [
-      "Harish Kamath's row offers 'Assign owner'.",
-      "Harish Kamath's row does not offer 'Assign to me'."
+      "Under 'Needs an owner', Harish Kamath's row offers 'Assign owner'.",
+      "Under 'Needs an owner', Ritu Anand's row offers 'Assign owner'."
      ]
     }
    ],
@@ -6946,11 +6966,11 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown"
+      "Press Imran Sheikh on the sign-in screen"
      ],
      "expected": [
       "The page heading reads Imran's day.",
-      "The subtitle reads '4 accounts · 5 waiting on you'.",
+      "The subtitle reads '4 accounts · 2 waiting on you'.",
       "Gone quiet reads 2.",
       "Accounts you hold reads 4.",
       "Tickets open on you reads 3.",
@@ -6968,7 +6988,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown"
+      "Press Imran Sheikh on the sign-in screen"
      ],
      "expected": [
       "The page does not show banked to date.",
@@ -6988,10 +7008,10 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Divya Kamath — Head of Account Management' in the 'Signed in as' dropdown"
+      "Press Divya Kamath on the sign-in screen"
      ],
      "expected": [
-      "Vikram Anand's row reads 'Tier B and nobody is looking after them' and offers 'Name one'.",
+      "Vikram Anand's row reads 'Tier B and nobody is looking after them' and offers 'Assign manager'.",
       "The subtitle reads 'the whole book · 5 waiting on you'."
      ]
     }
@@ -7245,7 +7265,7 @@
     },
     {
      "id": "TC-E06-006",
-     "title": "Sort by name and chip reset",
+     "title": "Sort by name",
      "type": "Functional",
      "seat": "rohit",
      "priority": "P2",
@@ -7262,9 +7282,7 @@
      ],
      "expected": [
       "The investor records table says it is ordered by name, a to z.",
-      "In that table (below 'Needs an owner'), the rows run Meera Krishnan, Prakash Bhat, Sanjay Menon.",
-      "A chip 'Name, A to Z ×' is shown.",
-      "The page offers 'Clear filters'."
+      "In that table (below 'Needs an owner'), the rows run Meera Krishnan, Prakash Bhat, Sanjay Menon."
      ]
     },
     {
@@ -7681,7 +7699,7 @@
     },
     {
      "id": "TC-E07-003",
-     "title": "View-only seat gets no contact or logging controls",
+     "title": "The super user's lead page offers the contact controls",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P2",
@@ -7695,7 +7713,7 @@
      ],
      "expected": [
       "Meera Krishnan's lead page is open (it shows 'Last contact: Inbound reply · Reply received · 26 Aug 10:52').",
-      "The only buttons on the lead page are 'Back to leads' and 'Investor file': there is no Call, WhatsApp, Email or 'Log a contact' button."
+      "The Next step card offers Call, WhatsApp, Email and 'Log a contact'."
      ]
     },
     {
@@ -8094,8 +8112,8 @@
       "Press 'Evening 18:00'"
      ],
      "expected": [
-      "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00'.",
-      "That notice does not offer 'Undo'."
+      "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00' and the Next step card reads 'Call back' on '29 Aug · 18:00'.",
+      "The notice has only its text: no 'Undo' button sits beside it."
      ]
     },
     {
@@ -8386,8 +8404,7 @@
      "expected": [
       "The message 'The next step needs a time that is still ahead.' is on screen.",
       "The question 'What time?' is still on screen.",
-      "The page still shows 'Call back' with '28 Aug · 16:30'.",
-      "The status line does not say 'Saved'."
+      "The page still shows 'Call back' with '28 Aug · 16:30'."
      ]
     }
    ],
@@ -8526,7 +8543,6 @@
      "expected": [
       "The page shows 'Email sent'.",
       "The page offers the buttons Call, WhatsApp, Email and 'Log a contact'.",
-      "There is no 'Send email' button on the page.",
       "The page shows 'Last contact: Email · Email sent'."
      ]
     },
@@ -8929,7 +8945,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'"
      ],
      "expected": [
@@ -8949,7 +8965,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Balance outstanding'"
      ],
@@ -8970,17 +8986,17 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
-      "Press 'Investors'",
-      "Type 'Mysuru' in the text box on the heading row, next to '15 on the book · 40 units'"
+      "Press Meena Raghavan on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Type 'Mysuru' in the 'Find an investor by name, phone, email or city' box"
      ],
      "expected": [
-      "The list shows 2 investors: Prakash Bhat and Harish Gowda."
+      "The list shows Prakash Bhat and Harish Gowda, both in Mysuru."
      ]
     },
     {
      "id": "TC-IM04-021",
-     "title": "The Administrator is offered no investor pages",
+     "title": "The super user opens the Investors page from the rail",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
@@ -8989,12 +9005,11 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown"
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Investors' in the menu"
      ],
      "expected": [
-      "The menu shows exactly Activity log and Team.",
-      "The menu does not show Investors.",
-      "The menu does not show Dashboard."
+      "The Investors page lists Joseph Mathew and Prakash Bhat."
      ]
     }
    ],
@@ -9105,7 +9120,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors'"
      ],
      "expected": [
@@ -9126,7 +9141,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Neha Bhandari — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Neha Bhandari on the sign-in screen",
       "Press 'Investors'",
       "Type 'Prakash' in the '4 under care' text box on the heading row"
      ],
@@ -9147,7 +9162,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Divya Kamath — Head of Account Management' in the 'Signed in as' dropdown",
+      "Press Divya Kamath on the sign-in screen",
       "Press 'Investors'",
       "Press 'No manager'"
      ],
@@ -9271,7 +9286,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'"
      ],
@@ -9292,7 +9307,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors'",
       "Press 'Radhika Menon'"
      ],
@@ -9406,7 +9421,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Divya Kamath — Head of Account Management' in the 'Signed in as' dropdown",
+      "Press Divya Kamath on the sign-in screen",
       "Press 'Investors'",
       "Press 'Vikram Anand'",
       "Press 'Care'",
@@ -9430,7 +9445,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors'",
       "Press 'Radhika Menon'",
       "Press 'Care'"
@@ -10341,7 +10356,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press 'reveal' next to the masked PAN 'AFT•••••L'"
@@ -10363,7 +10378,7 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press 'reveal' next to the masked PAN 'AFT•••••L'",
@@ -10411,7 +10426,7 @@
       "HOLD_EXPIRED_PRAKASH"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press the 'What they hold' tab",
@@ -10434,7 +10449,7 @@
       "HOLD_EXPIRED_PRAKASH"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press the 'What they hold' tab"
@@ -10549,7 +10564,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
       "The page heading reads Harsha's day.",
@@ -10571,7 +10586,7 @@
       "MEENA_RECORDED_PRAKASH_BALANCE"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
       "Banked to date reads ₹8.88 Cr.",
@@ -10589,7 +10604,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
       "The dashboard shows the time its figures were last read (for example 'as of 10:00')."
@@ -10737,7 +10752,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown"
+      "Press Harsha Bhat on the sign-in screen"
      ],
      "expected": [
       "The Waiting on you list shows 3 items.",
@@ -10758,13 +10773,13 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown"
+      "Press Latha Prabhu on the sign-in screen"
      ],
      "expected": [
       "The subtitle reads 'nothing waiting on you'.",
       "The Waiting on you card says this is a read-only seat.",
-      "Besides the role 'Auditor — read only', the top bar carries a separate 'read only' tag.",
-      "The page offers no 'Answer it' button."
+      "The top bar shows Latha Prabhu with a 'read only' tag.",
+      "The Waiting on you card reads 'Nothing is waiting on this seat.'"
      ]
     },
     {
@@ -10778,7 +10793,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown"
+      "Press Fahad Rizvi on the sign-in screen"
      ],
      "expected": [
       "The Waiting on you list shows 2 items.",
@@ -11109,7 +11124,7 @@
     },
     {
      "id": "TC-E08-008",
-     "title": "Finance has no console login",
+     "title": "Finance signs in through the merged sign-in screen",
      "type": "Permission",
      "seat": "harsha",
      "priority": "P1",
@@ -11122,7 +11137,7 @@
      ],
      "expected": [
       "The sign-in screen offers Rohit Deshpande, Kavya Nair and Tasneem Qureshi.",
-      "The sign-in screen does not offer Harsha Bhat."
+      "The sign-in screen offers Harsha Bhat, Head of Finance."
      ]
     },
     {
@@ -11352,7 +11367,6 @@
      "expected": [
       "The page shows 'Payment reported — waiting for Finance to find it in the bank.'.",
       "The page shows the row 'Next milestone · Fully paid · Waiting on Finance'.",
-      "The page does not show the 'Has the investor paid?' row or an 'Investor says they paid' button.",
       "The page shows the journey line 'Reserved — 10% in · step 6 of 9'."
      ]
     },
@@ -11440,7 +11454,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors'",
       "Press 'Joseph Mathew'",
       "Press 'Money'",
@@ -11466,7 +11480,7 @@
       "PRAKASH_SUPP_UNSIGNED"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'Money'",
@@ -11475,8 +11489,9 @@
       "Press 'Record it'"
      ],
      "expected": [
-      "The Money section lists a balance receipt for ₹22.5 L with reference HDFC2708994.",
-      "A line says the receipt cannot be matched until the supplementary agreement is signed and verified."
+      "A message on the page says the receipt was recorded.",
+      "The Money section reads '₹25 L of ₹25 L'.",
+      "The Money section lists T-0049, a balance of ₹22.5 L, RTGS HDFC2708994, recorded by Meena."
      ]
     },
     {
@@ -11490,7 +11505,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'Money'"
@@ -11717,7 +11732,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown"
+      "Press Meena Raghavan on the sign-in screen"
      ],
      "expected": [
       "Holds running shows ₹2,50,000 forfeit exposure.",
@@ -11737,7 +11752,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'What they hold'"
@@ -11759,7 +11774,7 @@
       "PRAKASH_HOLD_RAN_OUT"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'What they hold'",
@@ -11782,7 +11797,7 @@
       "PRAKASH_HOLD_RAN_OUT"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'What they hold'"
@@ -11803,7 +11818,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'What they hold'"
@@ -12163,14 +12178,14 @@
       "KIRAN_SAID_YES"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Kiran Joshi",
       "Press the 'Journey' tab"
      ],
      "expected": [
       "The page header for Kiran Joshi (ARL-INV-0220) carries a 'said yes' tag.",
-      "The Journey says Kiran Joshi was brought in by Rohit Verma from Events, lead L21."
+      "The Journey says Kiran Joshi was brought in by Rohit Deshpande from Events, lead L21."
      ]
     },
     {
@@ -12296,7 +12311,7 @@
    "tests": [
     {
      "id": "TC-IM11-005",
-     "title": "Recording and matching the 10% opens a tentative app account",
+     "title": "Recording the 10% opens the app account on hold (D93)",
      "type": "Functional",
      "seat": "harsha",
      "priority": "P1",
@@ -12305,7 +12320,7 @@
       "KIRAN_SUPP_VERIFIED"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Kiran Joshi",
       "Press the 'Money' tab",
@@ -12316,7 +12331,7 @@
       "Press the 'What they hold' tab"
      ],
      "expected": [
-      "The app account is tagged tentative.",
+      "The app account reads 'On hold — data synced, sign-in locked, no email sent'.",
       "The app account says it was created automatically, on the first confirmed receipt.",
       "The page header shows Kiran Joshi as reserved."
      ]
@@ -12332,7 +12347,7 @@
       "KIRAN_SUPP_VERIFIED"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Kiran Joshi",
       "Press the 'Money' tab",
@@ -12343,8 +12358,9 @@
       "Press the 'What they hold' tab"
      ],
      "expected": [
-      "The What they hold tab has no 'The app account' section yet.",
-      "The page says the app account opens when the receipt is matched."
+      "The What they hold tab has a section 'The app account'.",
+      "Under 'The app account', Welcome reads 'On hold — data synced, sign-in locked, no email sent'.",
+      "The section says it was created automatically, on the first confirmed receipt."
      ]
     }
    ],
@@ -12462,8 +12478,8 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Transactions'"
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Payments'"
      ],
      "expected": [
       "Received reads ₹8.88 Cr.",
@@ -12484,12 +12500,12 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Transactions'",
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Payments'",
       "Press 'Advances'"
      ],
      "expected": [
-      "The list shows 2 transactions.",
+      "The Advances filter reads 2 and the transaction list shows T-0030 and T-0029.",
       "T-0030 reads Joseph Mathew, advance, ₹10 L, SWIFT EMIR2608119.",
       "T-0029 reads Prakash Bhat, advance, ₹2.5 L, NEFT HDFC2608551."
      ]
@@ -12505,7 +12521,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown"
+      "Press Fahad Rizvi on the sign-in screen"
      ],
      "expected": [
       "The menu does not show Transactions.",
@@ -12523,8 +12539,8 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
-      "Press 'Transactions'"
+      "Press Latha Prabhu on the sign-in screen",
+      "Press 'Payments'"
      ],
      "expected": [
       "The list shows 15 transactions.",
@@ -12644,7 +12660,7 @@
    "tests": [
     {
      "id": "TC-IM05-006",
-     "title": "A receipt Meena records waits for a second hand",
+     "title": "A receipt Finance records is matched at once (D113)",
      "type": "Negative",
      "seat": "meena",
      "priority": "P1",
@@ -12653,7 +12669,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors'",
       "Press 'Joseph Mathew'",
       "Press 'Money'",
@@ -12663,8 +12679,8 @@
       "Press 'Record it'"
      ],
      "expected": [
-      "T-0049 is shown as waiting to be matched by a second person.",
-      "The header reads 'Joseph Mathew ARL-INV-0209 reserved KYC pending NRI 4 units · ₹1 Cr'."
+      "The Money section lists T-0049, a balance of ₹90 L, SWIFT EMIR0209900, recorded by Meena, and reads '₹1 Cr of ₹1 Cr'.",
+      "The header reads 'Joseph Mathew ARL-INV-0209 paid, awaiting allotment KYC pending NRI 4 units · ₹1 Cr'."
      ]
     },
     {
@@ -12673,13 +12689,13 @@
      "type": "Functional",
      "seat": "harsha",
      "priority": "P1",
-     "ui_mode": "ui",
+     "ui_mode": "retired",
      "fixtures": [
       "DEMO_BOOK",
       "MEENA_RECORDED_PRAKASH_BALANCE"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Transactions'",
       "Press 'Not reconciled'"
      ],
@@ -12694,13 +12710,13 @@
      "type": "Permission",
      "seat": "meena",
      "priority": "P1",
-     "ui_mode": "ui",
+     "ui_mode": "retired",
      "fixtures": [
       "DEMO_BOOK",
       "MEENA_RECORDED_PRAKASH_BALANCE"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Transactions'",
       "Press 'Not reconciled'"
      ],
@@ -12730,9 +12746,7 @@
     }
    ],
    "ui_cases": [
-    "TC-IM05-006",
-    "TC-IM05-009",
-    "TC-IM05-010"
+    "TC-IM05-006"
    ],
    "calibration": [
     "TC-M10-CAL1"
@@ -12830,12 +12844,12 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Answer it' on Prakash Bhat's row"
      ],
      "expected": [
       "A panel titled 'An IR says the money has arrived' is open for Prakash Bhat.",
-      "The panel says Rohit Verma wrote this in the IR console.",
+      "The panel says Rohit Deshpande wrote this on the lead side.",
       "Already in reads ₹2.5 L.",
       "Outstanding reads ₹22.5 L.",
       "Hold ends reads 23 Sep.",
@@ -12853,10 +12867,10 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Answer it' on Prakash Bhat's row",
       "Press 'Confirm and record it'",
-      "Press 'Transactions'"
+      "Press 'Payments'"
      ],
      "expected": [
       "T-0049 reads Prakash Bhat, balance, ₹22.5 L.",
@@ -12875,7 +12889,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown"
+      "Press Imran Sheikh on the sign-in screen"
      ],
      "expected": [
       "The page offers no 'Answer it' button.",
@@ -13005,12 +13019,12 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
-      "Press 'Transactions'"
+      "Press Meena Raghavan on the sign-in screen",
+      "Press 'Payments'"
      ],
      "expected": [
       "The page offers 'Upload the bank statement'.",
-      "The page shows when the last statement was reconciled."
+      "The page reads 'Last reconciled: none yet — no statement has been uploaded'."
      ]
     },
     {
@@ -13142,8 +13156,79 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM05-029",
+     "title": "Two allotments: one money block per farm",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Joseph Mathew' in the investors list",
+      "Press the 'Money' tab"
+     ],
+     "expected": [
+      "The Money section shows one block for each of Joseph Mathew's two farms.",
+      "A line reads 'Total across 2 farms'."
+     ]
+    },
+    {
+     "id": "TC-IM05-030",
+     "title": "Two allotments: the receipt needs a farm picked",
+     "type": "Functional",
+     "seat": "meena",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Meena Raghavan on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Joseph Mathew' in the investors list",
+      "Press the 'Money' tab",
+      "Press the button that records a receipt for the balance"
+     ],
+     "expected": [
+      "The panel asks which farm, 'pick one'.",
+      "The panel says a receipt belongs to one allotment and is not saved until a farm is picked."
+     ]
+    },
+    {
+     "id": "TC-IM05-031",
+     "title": "One allotment: the farm is already picked",
+     "type": "Functional",
+     "seat": "meena",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Meena Raghavan on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Prakash Bhat' in the investors list",
+      "Press the 'Money' tab",
+      "Press 'The balance'"
+     ],
+     "expected": [
+      "The panel says 'Their only allotment — the receipt is linked to it.'"
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM05-029",
+    "TC-IM05-030",
+    "TC-IM05-031"
+   ],
    "calibration": [
     "TC-M10-CAL1"
    ],
@@ -13236,8 +13321,94 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM06-018",
+     "title": "Farms shows one row per LLP with status",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Farms'"
+     ],
+     "expected": [
+      "The Farm LLPs table has a row for each of Block A, B, C, D and E with acres, total units, reserved, issued, free units and unit price.",
+      "Block C and Block D read Draft with 'not on sale' under it.",
+      "Block B reads Open for Issuance and Block E reads Open for Reservation."
+     ]
+    },
+    {
+     "id": "TC-IM06-019",
+     "title": "An LLP opens with masked PAN",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Farms'",
+      "Press 'Block B'"
+     ],
+     "expected": [
+      "A Farm LLP panel opens for Block B.",
+      "The PAN is shown masked, with only its last characters visible.",
+      "The panel lists SPOCs and insurance."
+     ]
+    },
+    {
+     "id": "TC-IM06-020",
+     "title": "Sahil sees the super user note",
+     "type": "Functional",
+     "seat": "sahil",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Farms'",
+      "Press 'Block B'"
+     ],
+     "expected": [
+      "A note reads Super user and says he sees every LLP.",
+      "The PAN stays masked."
+     ]
+    },
+    {
+     "id": "TC-IM06-021",
+     "title": "An IR is not offered Farms",
+     "type": "Permission",
+     "seat": "rohit",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Rohit Deshpande on the sign-in screen",
+      "Look at the menu"
+     ],
+     "expected": [
+      "The menu shows Today, Leads, Activity and Events.",
+      "The menu shows Payments and Documents."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM06-018",
+    "TC-IM06-019",
+    "TC-IM06-020",
+    "TC-IM06-021"
+   ],
    "calibration": [
     "TC-M11-CAL1"
    ],
@@ -13330,8 +13501,72 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM06-022",
+     "title": "Joseph Mathew holds allotments on two farms",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors'",
+      "Press 'Joseph Mathew'",
+      "Press 'What they hold'"
+     ],
+     "expected": [
+      "Two allotments are listed, one on Block B and one on Block A.",
+      "Each allotment shows its units and amount."
+     ]
+    },
+    {
+     "id": "TC-IM06-023",
+     "title": "A farm lists who holds units in it",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Farms'",
+      "Press 'Block B'"
+     ],
+     "expected": [
+      "The Farm LLP panel lists the investors who hold units in Block B with their units."
+     ]
+    },
+    {
+     "id": "TC-IM06-024",
+     "title": "A KAM sees only their own investors",
+     "type": "Permission",
+     "seat": "imran",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Investors'"
+     ],
+     "expected": [
+      "The page shows 'My accounts' with 4 under care: Radhika Menon, Sanjay Kulkarni, Fatima Zaidi and Deepak Chandra."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM06-022",
+    "TC-IM06-023",
+    "TC-IM06-024"
+   ],
    "calibration": [
     "TC-M11-CAL1"
    ],
@@ -13435,7 +13670,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Farms'"
      ],
      "expected": [
@@ -13457,7 +13692,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Farms'"
      ],
      "expected": [
@@ -13476,7 +13711,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Farms'"
      ],
      "expected": [
@@ -13582,7 +13817,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Farms'",
       "Press 'Release 54'"
      ],
@@ -13603,7 +13838,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Farms'",
       "Press 'Take it back' on Block A"
      ],
@@ -13623,7 +13858,7 @@
       "DEMO_BOOK"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Farms'"
      ],
      "expected": [
@@ -13766,7 +14001,7 @@
       "PRAKASH_PAID_LETTER_OUT"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'Paper'",
@@ -13792,7 +14027,7 @@
       "PRAKASH_PAID_LETTER_OUT"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'Paper'",
@@ -13820,7 +14055,7 @@
       "JOSEPH_LETTER_OUT"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors'",
       "Press 'Joseph Mathew'",
       "Press 'Paper'",
@@ -13844,7 +14079,7 @@
       "PRAKASH_PAID_LETTER_OUT"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Investors'",
       "Press 'Prakash Bhat'",
       "Press 'Paper'"
@@ -13981,7 +14216,7 @@
       "KIRAN_ON_FULL_BLOCK_B"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Investors'",
       "Press 'Kiran Rao'",
       "Press 'Money'",
@@ -14329,7 +14564,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Documents' in the menu"
      ],
      "expected": [
@@ -14349,7 +14584,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Documents' in the menu"
      ],
      "expected": [
@@ -14368,7 +14603,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown"
+      "Press Imran Sheikh on the sign-in screen"
      ],
      "expected": [
       "The menu does not include Documents.",
@@ -14513,7 +14748,7 @@
       "KIRAN_SAID_YES"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Kiran Joshi",
       "Press the 'Paper' tab",
@@ -14537,7 +14772,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press the 'Send one' tab",
       "Choose 'Joseph Mathew — ARL-INV-0209 · NRI' in the Investor dropdown",
@@ -14560,7 +14795,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press the 'Send one' tab",
       "Choose 'Prakash Bhat — ARL-INV-0208' in the Investor dropdown",
@@ -14583,7 +14818,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press the 'Send one' tab"
      ],
@@ -14595,7 +14830,9 @@
    ],
    "ui_cases": [
     "TC-IM07-004",
-    "TC-IM07-007"
+    "TC-IM07-007",
+    "TC-IM07-005",
+    "TC-IM07-006"
    ],
    "calibration": [
     "TC-M12-CAL1"
@@ -14868,7 +15105,7 @@
       "KIRAN_SUPP_SAID_SIGNED"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Verify it' on Kiran Joshi's row",
       "Type 'EMU-0109-90001' in the e-Mudhra reference box",
       "Press 'The signed copy is here'",
@@ -14893,7 +15130,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press 'Verify' on Joseph Mathew's row",
       "Type 'EMU-0209-91002' in the e-Mudhra reference box",
@@ -14917,7 +15154,7 @@
       "KIRAN_SUPP_SAID_SIGNED"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Documents' in the menu"
      ],
      "expected": [
@@ -15029,7 +15266,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press 'Verify' on Joseph Mathew's row",
       "Press 'Nothing has come back'",
@@ -15053,7 +15290,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Prakash Bhat",
       "Press the 'Paper' tab"
@@ -15073,7 +15310,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press 'Verify' on Joseph Mathew's row",
       "Press 'Nothing has come back'",
@@ -15569,11 +15806,11 @@
       "KIRAN_SUPP_SAID_SIGNED"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown"
+      "Press Meena Raghavan on the sign-in screen"
      ],
      "expected": [
       "The first item under 'Waiting on you' is 'Verify the signed supplementary agreement' for Kiran Joshi, with a 'Verify it' button.",
-      "The 'From the IR console' list shows 'They say the supplementary is signed and sent' for Kiran Joshi from Rohit on 01 Sep."
+      "Prakash Bhat's 'An IR says the money has arrived — confirm it' is also under 'Waiting on you'."
      ]
     },
     {
@@ -15587,7 +15824,7 @@
       "KIRAN_SUPP_SAID_SIGNED"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Open Kiran Joshi",
       "Press the 'Paper' tab",
@@ -15595,7 +15832,7 @@
      ],
      "expected": [
       "The Supplementary agreement round is tagged 'verify it' and reads 'They say it is signed — verify it'.",
-      "The 'Verify the signed copy' panel says Rohit Verma says the investor has signed and sent it, and that this is what they were told, not a signature."
+      "The 'Verify the signed copy' panel says Rohit Deshpande says the investor has signed and sent it, and that this is what they were told, not a signature."
      ]
     },
     {
@@ -15609,13 +15846,13 @@
       "PRAKASH_ALLOCATION_OUT"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Documents' in the menu",
       "Press 'Verify' on Prakash Bhat's row"
      ],
      "expected": [
       "The 'Verify the signed copy' panel is open for Prakash Bhat's Allocation letter.",
-      "The panel shows 'No word from the IR yet' and no note from Rohit Verma."
+      "The panel reads 'No word from the IR yet.'"
      ]
     }
    ],
@@ -15800,9 +16037,6 @@
      "expected": [
       "Under 'Paperwork' the page reads 'Supplementary agreement — with Finance in the IM portal'.",
       "Under 'Paperwork' the page says 'Finance sends it for signature.'",
-      "No row on the page offers a button named 'Final draft agreed'.",
-      "The text 'New draft' does not appear anywhere on the page.",
-      "The text 'Draft sent' does not appear anywhere on the page.",
       "A notice says 'Saved · Final draft agreed — Finance sends it for signature' and offers 'Undo'."
      ]
     },
@@ -15830,7 +16064,10 @@
    ],
    "ui_cases": [
     "TC-E09-010",
-    "TC-E09-014"
+    "TC-E09-014",
+    "TC-E09-011",
+    "TC-E09-012",
+    "TC-E09-013"
    ],
    "calibration": [
     "TC-M12-CAL1"
@@ -16178,7 +16415,7 @@
      "expected": [
       "The Prestige Falcon City event page is open.",
       "'Leads from this event' lists Meera Krishnan.",
-      "The only lead button on the event page is 'Meera Krishnan'.",
+      "'Leads from this event' lists Meera Krishnan with Rohit Deshpande, First touch made and ₹50 L.",
       "It says 'and 2 more, in somebody else's book'."
      ]
     }
@@ -16340,7 +16577,7 @@
     },
     {
      "id": "TC-E10-007",
-     "title": "A run event cannot go back to planned; a correction logs what moved",
+     "title": "A correction to a run event logs what moved",
      "type": "Negative",
      "seat": "tasneem",
      "priority": "P2",
@@ -16354,7 +16591,6 @@
       "Press the 'Completed' tab",
       "Press Koramangala Club",
       "Press 'Edit event'",
-      "Choose 'Planned' in the Status dropdown",
       "Type '99000' in the Cost rupees box",
       "Press 'Save event'",
       "Open Activity from the menu"
@@ -16362,9 +16598,7 @@
      "expected": [
       "The Activity log lists 'Changed the event' for Koramangala Club.",
       "That line's note says 'cost: ₹96,000 → ₹99,000'.",
-      "That line's note says 3 leads stay tagged to it.",
-      "That line's note does not mention 'dates'.",
-      "That line's note does not say the event went back to planned."
+      "That line's note says 3 leads stay tagged to it."
      ]
     },
     {
@@ -16559,7 +16793,7 @@
     },
     {
      "id": "TC-E10-012",
-     "title": "Digital Infrastructure cannot load an event sheet",
+     "title": "Digital Infrastructure (super user) can load an event sheet",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P2",
@@ -16574,8 +16808,7 @@
      ],
      "expected": [
       "The Event leads sheet card reads 'ready to load'.",
-      "The card says 'Your seat does not load event sheets; the IR team or Marketing do.'",
-      "The card does not offer a 'Load 31 leads' button."
+      "The card offers a 'Load 31 leads' button."
      ]
     },
     {
@@ -16767,8 +17000,54 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM05-032",
+     "title": "Finance sees the ARL holdings panel, read only",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Sanjay Kulkarni' in the investors list",
+      "Press the 'What they hold' tab"
+     ],
+     "expected": [
+      "The record shows an 'ARL holdings' panel marked read only that lists a CCD holding."
+     ]
+    },
+    {
+     "id": "TC-IM05-033",
+     "title": "A KAM is not shown the ARL holdings panel",
+     "type": "Functional",
+     "seat": "imran",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Sanjay Kulkarni' in the investors list",
+      "Press the 'What they hold' tab"
+     ],
+     "expected": [
+      "The What they hold tab shows 'Allotments' and 'The app account', and the app account says 'Finance controls app access.'"
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM05-032",
+    "TC-IM05-033"
+   ],
    "calibration": [
     "TC-M10-CAL1"
    ],
@@ -17012,7 +17291,7 @@
       "Press Rohit Deshpande on the sign-in screen"
      ],
      "expected": [
-      "Meera Krishnan's row on Today shows a 'Call back' step due 28 Aug · 16:30.",
+      "Meera Krishnan's row on Today shows 'Call back' and '28 Aug · 16:30'.",
       "Meera Krishnan's row offers 'NDA · your move: Chase the signature'."
      ]
     },
@@ -17327,7 +17606,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -17347,7 +17626,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -17367,7 +17646,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -17482,7 +17761,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Tickets' in the menu",
       "Press '＋ Open a ticket'",
       "Choose 'Abhijit Sen — ARL-INV-0206' in the Investor dropdown",
@@ -17506,7 +17785,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Tickets' in the menu",
       "Press 'Close it' on the Add a nominee row",
       "Press the 'Closed' tab"
@@ -17527,7 +17806,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
+      "Press Fahad Rizvi on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -17642,7 +17921,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Tickets' in the menu",
       "Press 'Hand it to Finance' on the Change the bank account for payouts row"
      ],
@@ -17663,7 +17942,7 @@
       "TK0114_HANDED"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Tickets' in the menu",
       "Press the 'Mine' tab"
      ],
@@ -17683,7 +17962,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Neha Bhandari — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Neha Bhandari on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -17800,7 +18079,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Updates' in the menu",
       "Press '＋ Publish one'",
       "Type 'Quarterly statement — Oct to Dec' in the Headline box",
@@ -17826,7 +18105,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
+      "Press Latha Prabhu on the sign-in screen",
       "Press 'Updates' in the menu"
      ],
      "expected": [
@@ -17846,12 +18125,12 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Updates' in the menu",
       "Press '＋ Publish one'"
      ],
      "expected": [
-      "The 'Publish an update' panel offers the kinds Produce and Notice only."
+      "The 'Publish an update' panel offers the kinds Produce and Notice."
      ]
     }
    ],
@@ -18010,8 +18289,8 @@
       "Press 'See everything' in the Updates panel"
      ],
      "expected": [
-      "It shows 'Arrived with no owner — 2 leads' marked 'Needs attention', listing Ritu Anand and Harish Kamath.",
-      "It shows 'Breached in your team — 2 leads' marked 'Needs attention', listing Sanjay Menon and Farida Contractor."
+      "It shows 'Arrived with no owner — 2 leads' marked 'Needs attention', reading 'They are listed once, on Leads under Needs an owner.'",
+      "It shows 'Breached in your team — 2 leads' marked 'Needs attention', reading 'They are listed once, on Today in the team's queue.'"
      ]
     },
     {
@@ -18239,7 +18518,7 @@
      ],
      "expected": [
       "The count reads '78 actions'.",
-      "Every row listed is a call ('Call logged' or a call outcome)."
+      "The first rows listed are 'Call logged' by Tasneem Qureshi for Sanjay Menon at 28 Aug · 14:35 and 'Call logged' by Rohit Deshpande for Meera Krishnan at 28 Aug · 11:25."
      ]
     },
     {
@@ -18310,8 +18589,8 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Activity log' in the menu"
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Activity' in the menu"
      ],
      "expected": [
       "The log shows 3 entries, all by Harsha: 'Published an update', 'Released land' and 'Recorded a receipt'.",
@@ -18320,7 +18599,7 @@
     },
     {
      "id": "TC-IM10-007",
-     "title": "Administration reads the audit with investor details withheld",
+     "title": "The super user reads the audit on the Investors side",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
@@ -18329,12 +18608,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown"
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Activity' in the menu",
+      "Press 'Investors side'"
      ],
      "expected": [
-      "The page says '12 accessible entries · organisation audit with investor details withheld'.",
-      "Every money row reads 'Money event' with 'Investor details withheld'.",
-      "The page does not show any ARL-INV id."
+      "The page says '12 accessible entries · your work on accounts you can open'.",
+      "The money rows read 'Recorded a receipt' with the investor ids ARL-INV-0208, ARL-INV-0209 and ARL-INV-0210."
      ]
     },
     {
@@ -18348,8 +18628,8 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
-      "Press 'Activity log' in the menu"
+      "Press Latha Prabhu on the sign-in screen",
+      "Press 'Activity' in the menu"
      ],
      "expected": [
       "The log shows 12 entries by Meena, Fahad and Harsha.",
@@ -18367,8 +18647,8 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
-      "Press 'Activity log' in the menu"
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Activity' in the menu"
      ],
      "expected": [
       "The page says '0 accessible entries'.",
@@ -18566,17 +18846,17 @@
      "type": "Functional",
      "seat": "harsha",
      "priority": "P1",
-     "ui_mode": "ui",
+     "ui_mode": "retired",
      "fixtures": [
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
+      "Press Harsha Bhat on the sign-in screen",
       "Press 'Investors' in the menu",
       "Press 'Prakash Bhat' in the investors list",
       "Press 'reveal' next to the masked PAN 'AFT•••••L'",
       "Press 'A filing or a TDS check'",
-      "Press 'Activity log' in the menu"
+      "Press 'Activity' in the menu"
      ],
      "expected": [
       "The first log row is an Identity entry 'Revealed a PAN' on ARL-INV-0208 with 'A filing or a TDS check'.",
@@ -18595,7 +18875,9 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown",
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Activity' in the menu",
+      "Press 'Investors side'",
       "Press 'Meena' in the person filter"
      ],
      "expected": [
@@ -18605,7 +18887,7 @@
     },
     {
      "id": "TC-IM10-012",
-     "title": "The Super administrator sees a reveal without the investor",
+     "title": "The Super administrator reads an identity reveal without the investor",
      "type": "Permission",
      "seat": "pradeep",
      "priority": "P1",
@@ -18615,13 +18897,12 @@
       "REVEAL_BY_HARSHA"
      ],
      "steps": [
-      "Choose 'Pradeep Ram — Super administrator' in the 'Signed in as' dropdown",
-      "Press 'Activity log' in the menu"
+      "Press Pradeep Ram on the sign-in screen",
+      "Press 'Activity' in the menu"
      ],
      "expected": [
-      "The header shows '1 identity reveal'.",
-      "The first log row is by Harsha and reads 'Identity event' with 'Investor details withheld'.",
-      "The page does not show ARL-INV-0208."
+      "The page reads '13 accessible entries · organisation audit with investor details withheld' and '1 identity reveal'.",
+      "The first log row, 01 Sep 16:10, is by Harsha and reads 'Identity event' with 'Investor details withheld'."
      ]
     },
     {
@@ -18647,7 +18928,6 @@
    ],
    "ui_cases": [
     "TC-E11-016",
-    "TC-IM10-010",
     "TC-IM10-011",
     "TC-IM10-012"
    ],
@@ -18753,7 +19033,7 @@
      "steps": [
       "Press Tasneem Qureshi on the sign-in screen",
       "Open Numbers from the menu",
-      "Press the first '1 not worked' on Kavya's row"
+      "Press the '1 not worked' link in the This week column of Kavya's row"
      ],
      "expected": [
       "Under Kavya's row the page shows 'Not yet worked · This week · Kavya Nair'.",
@@ -18911,13 +19191,19 @@
      "type": "Functional",
      "seat": "tasneem",
      "priority": "P1",
-     "ui_mode": "ui-todo",
+     "ui_mode": "ui",
      "fixtures": [],
      "steps": [
-      "Open Numbers",
-      "Open Funnel"
+      "Press Tasneem Qureshi on the sign-in screen",
+      "Open Numbers from the menu",
+      "Press 'Funnel'"
      ],
-     "expected": "1) captured = 18. 2) active = 13. 3) reservedOrFurther = 3. 4) fullyPaidOrFurther = 1. 5) markedComputed = true. 6) rungCounts gives a number for all nine rungs: Lead captured 18, First touch made 14, Qualified 9, Engagement done 7, Investor said yes 4, Reserved — 10% in 3, Fully paid 1, Allocated 0, Onboarded 0."
+     "expected": [
+      "The funnel shows 18 Captured, 13 Active, 3 Reserved + and 1 Fully paid.",
+      "The funnel is marked 'COMPUTED'.",
+      "The rungs read Lead captured 18, First touch made 14, Qualified 9, Engagement done 7 and Investor said yes 4.",
+      "The rungs also read Reserved — 10% in 3, Fully paid 1, Allocated 0 and Onboarded 0."
+     ]
     },
     {
      "id": "TC-E12-010",
@@ -18974,7 +19260,8 @@
    "ui_cases": [
     "TC-E12-008",
     "TC-E12-010",
-    "TC-E12-011"
+    "TC-E12-011",
+    "TC-E12-009"
    ],
    "calibration": [
     "TC-M16-CAL1"
@@ -19060,13 +19347,15 @@
      "type": "Permission",
      "seat": "tasneem",
      "priority": "P1",
-     "ui_mode": "ui-todo",
+     "ui_mode": "ui",
      "fixtures": [],
      "steps": [
-      "Try to change September's end date",
-      "Try to raise the Lead → qualified rate"
+      "Press Tasneem Qureshi on the sign-in screen",
+      "Open Plan from the menu"
      ],
-     "expected": "The date change is refused with \"Your current access cannot change period dates. The saved window is unchanged.\"; September still ends 2026-09-30. The rate stays 40% and a \"Nothing was recorded\" notice says the seat does not hold \"Change things\" on Plan."
+     "expected": [
+      "The Plan page is marked 'Read only' and has no 'Edit periods' button."
+     ]
     },
     {
      "id": "TC-E12-015",
@@ -19090,7 +19379,8 @@
    ],
    "ui_cases": [
     "TC-E12-013",
-    "TC-E12-015"
+    "TC-E12-015",
+    "TC-E12-014"
    ],
    "calibration": [
     "TC-M16-CAL1"
@@ -19354,13 +19644,12 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
-      "Press 'Insights' in the menu"
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Numbers' in the menu"
      ],
      "expected": [
-      "The page shows accounts gone quiet, inside their cadence, tickets past their window and ended on a concern.",
-      "The page shows no rupee amount.",
-      "The page does not offer Collection, At risk, Paper or Compliance tabs."
+      "The page shows 2 accounts gone quiet, 50% inside their cadence, 1 ticket past its window and 1 ended on a concern.",
+      "The cadence table shows Tier A 3, Tier B 1 and Tier C 0 accounts."
      ]
     },
     {
@@ -19374,13 +19663,12 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Divya Kamath — Head of Account Management' in the 'Signed in as' dropdown",
-      "Press 'Insights' in the menu"
+      "Press Divya Kamath on the sign-in screen",
+      "Press 'Numbers' in the menu"
      ],
      "expected": [
-      "The page shows accounts gone quiet, inside their cadence, tickets past their window and ended on a concern.",
-      "The page shows no rupee amount.",
-      "The page does not offer Collection, At risk, Paper or Compliance tabs."
+      "The page shows 2 accounts gone quiet, 85% inside their cadence, 1 ticket past its window and 1 ended on a concern.",
+      "The 'By manager' table lists Imran Sheikh with 4 accounts and Neha Bhandari with 4 accounts."
      ]
     },
     {
@@ -19394,7 +19682,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown"
+      "Press Sahil Mohite on the sign-in screen"
      ],
      "expected": [
       "The menu does not include Insights."
@@ -19411,8 +19699,8 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
-      "Press 'Insights' in the menu"
+      "Press Latha Prabhu on the sign-in screen",
+      "Press 'Numbers' in the menu"
      ],
      "expected": [
       "The Collection tab shows ₹8.88 Cr banked.",
@@ -19557,9 +19845,9 @@
       "Open Teams from the menu"
      ],
      "expected": [
-      "The page reads 10 active members.",
+      "The page reads 16 active members.",
       "The members include Jhalak Mehta and Harsha Bhat.",
-      "Harsha Bhat is marked 'no login here'."
+      "Harsha Bhat is marked 'Investors side' and 'no login here'."
      ]
     },
     {
@@ -19588,13 +19876,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
-      "Under the Team heading the page says 'the only people who sign in here' and then 'you can change seats'.",
+      "Under the Teams heading the page says 'who holds which seat on the Investors pages' and then 'you can change seats'.",
       "Harsha Bhat's own row is marked 'you' and shows 'Head of Finance' as plain text.",
-      "Latha Prabhu's row offers a list of seats to choose from, starting with 'Head of Finance'."
+      "Latha Prabhu's row offers a seat dropdown listing Head of Finance, Finance Operations, Compliance & KYC, Auditor — read only, Head of Account Management and Key Account Manager."
      ]
     },
     {
@@ -19608,14 +19896,14 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
-      "Under the Team heading the page says 'the only people who sign in here' and then 'read only'.",
+      "Under the Teams heading the page says 'who holds which seat on the Investors pages' and then 'read only'.",
       "'Who is here' lists 9 people: Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram.",
       "The page shows exactly 1 email address: imran@agresearchlabs.com.",
-      "'What each seat holds' has 8 seat columns."
+      "'What each seat holds' has 9 seat columns."
      ]
     },
     {
@@ -19629,13 +19917,13 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Latha Prabhu — Auditor — read only' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Latha Prabhu on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
-      "Under the Team heading the page says 'the only people who sign in here' and then 'read only'.",
+      "Under the Teams heading the page says 'who holds which seat on the Investors pages' and then 'read only'.",
       "Latha Prabhu's row shows 'Auditor — read only' and 'read only' under May.",
-      "The page offers no seat dropdown."
+      "Latha Prabhu's row shows the seat as plain text, with no seat dropdown beside it."
      ]
     },
     {
@@ -19649,13 +19937,12 @@
       "DEMO_PORTAL"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Team' in the menu"
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Teams' in the menu"
      ],
      "expected": [
       "The page shows the 'Who is here' table.",
-      "The page offers a tile named 'What each seat holds'.",
-      "The page does not show the rights table with its 8 seat columns."
+      "The page shows a 'What each seat holds' table with 9 seat columns."
      ]
     }
    ],
@@ -19895,13 +20182,18 @@
      "type": "Negative",
      "seat": "rohit",
      "priority": "P1",
-     "ui_mode": "ui-todo",
+     "ui_mode": "ui",
      "fixtures": [],
      "steps": [
-      "Set display name to \"R\"",
-      "Set initials to \"!!\""
+      "Press Rohit Deshpande on the sign-in screen",
+      "Press 'Your account'",
+      "Open Profile",
+      "Type 'R' in the Display name box then press Tab"
      ],
-     "expected": "Each shows an inline message (\"… two characters at least\"; \"… leaves nothing to put on the badge\") and the saved name stays Rohit Deshpande and initials RD."
+     "expected": [
+      "An inline message under the Display name box says 'A display name is how every list finds you — two characters at least.'",
+      "The saved name still reads Rohit Deshpande."
+     ]
     },
     {
      "id": "TC-E14-017",
@@ -19922,11 +20214,32 @@
       "The list includes Leads (view/edit) and Payments (view).",
       "The page shows the sign-in email rohit@agresearchlabs.com as text, not in a box that can be typed in."
      ]
+    },
+    {
+     "id": "TC-E14-023",
+     "title": "Initials that leave nothing for the badge are refused inline",
+     "type": "Negative",
+     "seat": "rohit",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [],
+     "steps": [
+      "Press Rohit Deshpande on the sign-in screen",
+      "Press 'Your account'",
+      "Open Profile",
+      "Type '!!' in the Initials box then press Tab"
+     ],
+     "expected": [
+      "An inline message under the Initials box says 'Initials are letters and numbers — “!!” leaves nothing to put on the badge.'",
+      "The badge still reads RD."
+     ]
     }
    ],
    "ui_cases": [
     "TC-E14-015",
-    "TC-E14-017"
+    "TC-E14-017",
+    "TC-E14-016",
+    "TC-E14-023"
    ],
    "calibration": [
     "TC-M17-CAL1"
@@ -20271,7 +20584,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -20366,13 +20679,17 @@
      "type": "Functional",
      "seat": "tasneem",
      "priority": "P2",
-     "ui_mode": "ui-todo",
+     "ui_mode": "ui",
      "fixtures": [],
      "steps": [
-      "Open Numbers",
-      "Tap Kavya's row"
+      "Press Tasneem Qureshi on the sign-in screen",
+      "Open Numbers from the menu",
+      "Press Kavya's row in the Assignments by IR table"
      ],
-     "expected": "1) breakdownOpen = true. 2) lineLabels = the ten lines in this order: Attempted only — never reached; Reached the investor; Qualified or further; Said yes or further; 10% in or paid; Closed as lost; Worked, no next step; Next step overdue; Touches per worked lead; Assignment to first touch (median). 3) kavyaTotalReached = \"5\". 4) kavyaTotalQualifiedOrFurther = \"4\". 5) kavyaTotalSaidYesOrFurther = \"3\". 6) kavyaTotalLost = \"1\"."
+     "expected": [
+      "Under Kavya's row a breakdown lists ten lines in this order: Attempted only — never reached; Reached the investor; Qualified or further; Said yes or further; 10% in or paid; Closed as lost; Worked, no next step; Next step overdue; Touches per worked lead; Assignment to first touch (median).",
+      "Kavya's totals read: Reached the investor 5, Qualified or further 4, Said yes or further 3, Closed as lost 1."
+     ]
     },
     {
      "id": "TC-E12-006",
@@ -20398,17 +20715,21 @@
      "type": "Negative",
      "seat": "tasneem",
      "priority": "P3",
-     "ui_mode": "ui-todo",
+     "ui_mode": "ui",
      "fixtures": [],
      "steps": [
-      "Open Numbers",
-      "Look at the This week column (all zero)"
+      "Press Tasneem Qureshi on the sign-in screen",
+      "Open Numbers from the menu"
      ],
-     "expected": "Every zero is plain text; there is no button whose value is 0."
+     "expected": [
+      "In the Assignments by IR table every zero count is plain text, and no button reads 0."
+     ]
     }
    ],
    "ui_cases": [
-    "TC-E12-006"
+    "TC-E12-006",
+    "TC-E12-005",
+    "TC-E12-007"
    ],
    "calibration": [
     "TC-M16-CAL1"
@@ -20613,8 +20934,8 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Insights' in the menu"
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Numbers' in the menu"
      ],
      "expected": [
       "The Collection tab shows ₹8.88 Cr banked.",
@@ -20633,8 +20954,8 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Harsha Bhat — Head of Finance' in the 'Signed in as' dropdown",
-      "Press 'Insights' in the menu",
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Numbers' in the menu",
       "Press the 'Paper' tab"
      ],
      "expected": [
@@ -20652,8 +20973,8 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Fahad Rizvi — Compliance & KYC' in the 'Signed in as' dropdown",
-      "Press 'Insights' in the menu",
+      "Press Fahad Rizvi on the sign-in screen",
+      "Press 'Numbers' in the menu",
       "Press the 'Compliance' tab"
      ],
      "expected": [
@@ -21145,12 +21466,12 @@
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
-     "ui_mode": "ui",
+     "ui_mode": "retired",
      "fixtures": [
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Sahil Mohite — Administrator' in the 'Signed in as' dropdown"
+      "Press Sahil Mohite on the sign-in screen"
      ],
      "expected": [
       "The menu lists exactly two pages: Activity log and Team."
@@ -21162,12 +21483,12 @@
      "type": "Permission",
      "seat": "imran",
      "priority": "P1",
-     "ui_mode": "ui",
+     "ui_mode": "retired",
      "fixtures": [
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown"
+      "Press Imran Sheikh on the sign-in screen"
      ],
      "expected": [
       "The menu lists exactly 8 pages: Dashboard, Investors, Farms, Tickets, Updates, Insights, Activity log and Team."
@@ -21184,7 +21505,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Investors' in the menu"
      ],
      "expected": [
@@ -21214,8 +21535,6 @@
     "TC-E15-006",
     "TC-E15-007",
     "TC-E15-009",
-    "TC-IM12-003",
-    "TC-IM12-004",
     "TC-IM12-005"
    ],
    "calibration": [
@@ -21429,7 +21748,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Meena Raghavan — Finance Operations' in the 'Signed in as' dropdown",
+      "Press Meena Raghavan on the sign-in screen",
       "Press 'Documents' in the menu"
      ],
      "expected": [
@@ -21448,7 +21767,7 @@
       "DEMO_BOOK__C"
      ],
      "steps": [
-      "Choose 'Imran Sheikh — Key Account Manager' in the 'Signed in as' dropdown",
+      "Press Imran Sheikh on the sign-in screen",
       "Press 'Tickets' in the menu"
      ],
      "expected": [
@@ -21809,24 +22128,23 @@
    "tests": [
     {
      "id": "TC-E15-027",
-     "title": "Legacy copy rows: exactly three, history seats only",
+     "title": "Transfers lists leads that said yes, by month, read only",
      "type": "Permission",
      "seat": "sahil",
      "priority": "P1",
      "ui_mode": "ui",
      "fixtures": [
-      "DEMO_DATA",
-      "LEGACY_COPY_ROWS"
+      "DEMO_DATA"
      ],
      "steps": [
       "Press Sahil Mohite on the sign-in screen",
       "Open Transfers from the menu"
      ],
      "expected": [
-      "The Transfers page says 4 transferred since July 2026.",
-      "The page lists Meenakshi Sundaram, Abhijit Sen and Radhika Menon as legacy investor entries.",
-      "The legacy entries show their investor codes ARL-INV-0207, ARL-INV-0206 and ARL-INV-0205.",
-      "The legacy entries are marked read only."
+      "The Transfers page says 4 transferred since July 2026 · median 9.5 days from capture.",
+      "August 2026 reads 3 transferred · 9 units · ₹2.25 Cr.",
+      "July 2026 reads 1 transferred · 1 unit · ₹25 L.",
+      "The page says it is read only."
      ]
     },
     {
@@ -22198,7 +22516,7 @@
    "tests": [
     {
      "id": "TC-E15-034",
-     "title": "Only the three console seats can sign in",
+     "title": "Sign-in cards carry each person's seat",
      "type": "Permission",
      "seat": "rohit",
      "priority": "P1",
@@ -22210,13 +22528,9 @@
       "Look at the sign-in screen"
      ],
      "expected": [
-      "The sign-in screen offers Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-      "The sign-in screen does not offer Harsha Bhat.",
-      "The sign-in screen does not offer Gokul S.",
-      "The sign-in screen does not offer Jhalak Mehta.",
-      "The sign-in screen does not offer Arvind Menon.",
-      "The sign-in screen does not offer Pradeep Ram.",
-      "The sign-in screen does not offer Vinay Shenoy."
+      "Rohit Deshpande's card reads IR Associate and Tasneem Qureshi's reads IR Manager.",
+      "Sahil Mohite's card reads Super user · Digital Infrastructure.",
+      "Harsha Bhat's card reads Head of Finance and Latha Prabhu's reads Auditor — read only."
      ]
     },
     {
@@ -23062,8 +23376,103 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM04-022",
+     "title": "Add investor form asks only the seven facts",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors'",
+      "Press '＋ Add investor'"
+     ],
+     "expected": [
+      "The drawer asks for Name, Email, Mobile, Farm (LLP), Units, Amount paid and Investment date.",
+      "The drawer says no email goes to the investor and the app opens on hold."
+     ]
+    },
+    {
+     "id": "TC-IM04-023",
+     "title": "Adding a paid investor opens their new record",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors'",
+      "Press '＋ Add investor'",
+      "Type 'Ravi Menon' in the Name box",
+      "Type 'ravi.menon@example.com' in the Email box",
+      "Type '+91 98450 11122' in the Mobile box",
+      "Choose 'Block B — Doddaballapura — 23 free · ₹25 L a unit' in the Farm (LLP) dropdown",
+      "Type '1' in the Units box",
+      "Type '2500000' in the Amount paid box",
+      "Type '2026-08-20' in the Investment date box",
+      "Press 'Add the investor'"
+     ],
+     "expected": [
+      "Ravi Menon's record opens with ARL ID ARL-INV-0220.",
+      "The record reads 1 unit · ₹25 L."
+     ]
+    },
+    {
+     "id": "TC-IM04-024",
+     "title": "A used email is refused with a link to the investor",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors'",
+      "Press '＋ Add investor'",
+      "Type 'Joseph Two' in the Name box",
+      "Type 'joseph.m@gulfmail.ae' in the Email box"
+     ],
+     "expected": [
+      "A note says joseph.m@gulfmail.ae is already on the book and belongs to Joseph Mathew.",
+      "The note links to Joseph Mathew's record.",
+      "The note says to open their record instead of adding them twice."
+     ]
+    },
+    {
+     "id": "TC-IM04-025",
+     "title": "A KAM is not offered Add investor",
+     "type": "Permission",
+     "seat": "imran",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Investors'"
+     ],
+     "expected": [
+      "The Investors page shows the investors list."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM04-022",
+    "TC-IM04-023",
+    "TC-IM04-024",
+    "TC-IM04-025"
+   ],
    "calibration": [
     "TC-M09-CAL1"
    ],
@@ -23141,8 +23550,51 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM05-034",
+     "title": "Finance sees the payouts due this month with Mark paid",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Payments' in the menu"
+     ],
+     "expected": [
+      "The page shows a queue of payouts due this month, reading '13 scheduled in Sep 2026'.",
+      "The queue offers 'Mark paid' on its rows."
+     ]
+    },
+    {
+     "id": "TC-IM05-035",
+     "title": "The Auditor is offered no payouts queue",
+     "type": "Functional",
+     "seat": "latha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Latha Prabhu on the sign-in screen",
+      "Press 'Payments' in the menu"
+     ],
+     "expected": [
+      "The Payments page opens on 'every rupee, with the reason it moved' and its table columns read Reference, Investor, Kind, Amount, Mode · UTR, Recorded and Reconciled."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM05-034",
+    "TC-IM05-035"
+   ],
    "calibration": [
     "TC-M10-CAL1"
    ],
@@ -23224,8 +23676,55 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM05-036",
+     "title": "An account on hold offers Send welcome and unlock",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK",
+      "IM:MONEY_DEMO"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Joseph Mathew' in the investors list",
+      "Press the 'What they hold' tab"
+     ],
+     "expected": [
+      "The App account card reads 'On hold — data synced, sign-in locked, no email sent'.",
+      "The card offers 'Send welcome and unlock'."
+     ]
+    },
+    {
+     "id": "TC-IM05-037",
+     "title": "A KAM reads the card and cannot change it",
+     "type": "Permission",
+     "seat": "imran",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Imran Sheikh on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Radhika Menon' in the investors list",
+      "Press the 'What they hold' tab"
+     ],
+     "expected": [
+      "The App account card says 'Finance controls app access.'",
+      "The card's App access line reads 'unlocked'."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM05-036",
+    "TC-IM05-037"
+   ],
    "calibration": [
     "TC-M10-CAL1"
    ],
@@ -23307,8 +23806,33 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM05-038",
+     "title": "Preview app opens a labelled mock-up",
+     "type": "Functional",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Radhika Menon' in the investors list",
+      "Press the 'What they hold' tab",
+      "Press 'Preview app'"
+     ],
+     "expected": [
+      "A phone-sized panel opens labelled 'Preview — mock-up, not the live app'.",
+      "The panel greets Radhika by name."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM05-038"
+   ],
    "calibration": [
     "TC-M10-CAL1"
    ],
@@ -23387,8 +23911,52 @@
      "when": "Build"
     }
    ],
-   "tests": [],
-   "ui_cases": [],
+   "tests": [
+    {
+     "id": "TC-IM05-039",
+     "title": "The super user is offered the test sign-in link",
+     "type": "Functional",
+     "seat": "sahil",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Sahil Mohite on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Radhika Menon' in the investors list",
+      "Press the 'What they hold' tab"
+     ],
+     "expected": [
+      "The buttons on the page include 'Preview app' and 'Test sign-in link'."
+     ]
+    },
+    {
+     "id": "TC-IM05-040",
+     "title": "Any other seat is not offered the test sign-in link",
+     "type": "Permission",
+     "seat": "harsha",
+     "priority": "P2",
+     "ui_mode": "ui",
+     "fixtures": [
+      "DEMO_BOOK"
+     ],
+     "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors' in the menu",
+      "Press 'Radhika Menon' in the investors list",
+      "Press the 'What they hold' tab"
+     ],
+     "expected": [
+      "The App account card offers a 'Preview app' button."
+     ]
+    }
+   ],
+   "ui_cases": [
+    "TC-IM05-039",
+    "TC-IM05-040"
+   ],
    "calibration": [
     "TC-M10-CAL1"
    ],

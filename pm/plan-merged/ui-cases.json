@@ -3043,7 +3043,8 @@
     "Press Sahil Mohite on the sign-in screen",
     "Open Payments from the menu",
     "Press 'Show the reference' on Joseph Mathew's row",
-    "Open Activity from the menu"
+    "Open Activity from the menu",
+    "Press 'Investors side'"
    ],
    "expected": [
     "The Activity log lists 'Revealed a bank reference' by Sahil Mohite.",
@@ -3532,7 +3533,7 @@
     "Prakash Bhat's payment reference is shown as 'NEFT · ••• 8551'.",
     "R. Sundaram's payment reference is shown as 'RTGS · ••• 8430'.",
     "No payment reference on the page is shown in full.",
-    "Each payment row offers 'Show the reference'."
+    "Each row of the Payments register table offers 'Show the reference'."
    ],
    "fixtures": [
     "DEMO_DATA"
@@ -3844,12 +3845,14 @@
     "Press 'Prakash Bhat' in the investors list",
     "Press 'reveal' next to the masked PAN 'AFT•••••L'",
     "Press 'A filing or a TDS check'",
+    "Press 'Your account' in the top bar",
+    "Press 'Sign out'",
     "Press Fahad Rizvi on the sign-in screen",
     "Press 'Investors' in the menu",
     "Press 'Prakash Bhat' in the investors list"
    ],
    "expected": [
-    "The top bar shows Fahad Rizvi, Compliance & KYC.",
+    "The top bar shows Fahad Rizvi.",
     "The PAN reads 'AFT•••••L'.",
     "The PAN row offers a 'reveal' button."
    ],
@@ -7453,8 +7456,8 @@
     "Press 'Sign out'"
    ],
    "expected": [
-    "The top bar offers a 'Your account' button beside Meena Raghavan.",
-    "The sign-in screen is showing."
+    "The sign-in screen is showing.",
+    "The sign-in screen offers Meena Raghavan."
    ],
    "fixtures": [
     "DEMO_DATA"

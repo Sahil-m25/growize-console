@@ -1178,25 +1178,26 @@
    "notes": 4
   },
   "M09-S08": {
-   "status": "review",
-   "attempts": 1,
+   "status": "pending",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 2
    },
    "commits": [
     "3c6435a",
     "03c8a5f",
-    "fe49f1c"
+    "fe49f1c",
+    "15de941"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Not wired: an IR has no Investors page and no IR list route exists",
-   "notes": 4
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "IR Investors page reusing ImInv/VOne: own-lead investors only, read-only, no money; GET /api/investors/mine (IR token, Originating_IR filter, guard re-admits every row); 11 scratch Jev cases pass",
+   "notes": 5
   },
   "M07-S07": {
    "status": "done",
@@ -1405,7 +1406,7 @@
   },
   "M10-S02": {
    "status": "waiting",
-   "attempts": 2,
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
@@ -1415,17 +1416,18 @@
    "phase_attempts": {
     "fe": 1,
     "wire": 1,
-    "test": 1
+    "test": 2
    },
    "commits": [
     "3c6435a",
     "12914d3",
     "0973b9b",
-    "6c25a1b"
+    "6c25a1b",
+    "8e27fff"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 7
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "D113: a Finance-recorded receipt is matched by the recorder (server + demo); statement auto-matches pending money-in; IR claims pending until Finance confirms; refunds keep the D22 second hand",
+   "notes": 9
   },
   "M10-S03": {
    "status": "done",
@@ -2149,27 +2151,28 @@
   },
   "M15-S05": {
    "status": "review",
-   "attempts": 2,
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
     "wire": "review",
-    "test": "review"
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
     "wire": 1,
-    "test": 1
+    "test": 2
    },
    "commits": [
     "3c6435a",
     "89793a0",
     "2fc5aea",
-    "af147c0"
+    "af147c0",
+    "02cd2ce"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; real bug open",
-   "notes": 7
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "TC-E11-016 fixed: Payments register masks every reference; \"Show the reference\" behind step-up with a logged Plane C reveal (POST /api/receipts/[id]/reveal)",
+   "notes": 8
   },
   "M17-S01": {
    "status": "done",
@@ -2863,6 +2866,191 @@
     "a88383f"
    ],
    "notes": 1
+  },
+  "M19-S10": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "test": "done"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Fact changes applied to ui-cases.json (D113 ruling 3); 6 cases retired with reasons, 6 ui-todo converted, 28 promoted, 2 added; suite 367 cases",
+   "commits": [
+    "a01b0cf",
+    "3d734e5"
+   ]
+  },
+  "M19-S11": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "done"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "pm/gen-seat-cases.mjs emits 143 per-seat cases (pm/generated/ui-cases-seats.json); Sahil set 17/18, per-seat 123/125 + 2 REVIEW",
+   "commits": [
+    "59cd871"
+   ]
+  },
+  "M19-S08": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "test": "done"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Runner settle wait (network idle + no DOM change 250 ms, cap 6 s) replaces the fixed 300 ms; --retry-review; flake log + quarantine (jev/flake.mjs); re-baseline runbook; calibration 21/21 caught",
+   "commits": [
+    "2ec8f37"
+   ],
+   "notes": 1
+  },
+  "M19-S07": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Smoke suite console/scripts/smoke.mjs (deploy + read-only production mode, --jev); 7/7 on the demo build; wired after deploy in pipeline.yml and an hourly production-check workflow gated on HOSTING_READY",
+   "commits": [
+    "2ec8f37"
+   ],
+   "notes": 1
+  },
+  "M18-S05": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/backup-restore-plan.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
+   "commits": [
+    "6f3b47f"
+   ]
+  },
+  "M18-S09": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/go-live-checklist.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
+   "commits": [
+    "6f3b47f"
+   ]
+  },
+  "M18-S10": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/ops/runbook.md, hypercare.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
+   "commits": [
+    "6f3b47f"
+   ]
+  },
+  "M20-S01": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/product-brief.md (KPI targets blank for the owner)",
+   "commits": [
+    "6f3b47f"
+   ],
+   "notes": 1
+  },
+  "M20-S03": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "done"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/guides/ (8 seat guides; Farm ops persona kept)",
+   "commits": [
+    "6f3b47f"
+   ]
+  },
+  "M20-S04": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/support-model.md (response times proposed)",
+   "commits": [
+    "6f3b47f"
+   ],
+   "notes": 1
+  },
+  "M20-S05": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "test": "done"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/stage-reviews.md (phases 1, 2, 2b, 2c, 3-local reviewed; later stages templated)",
+   "commits": [
+    "6f3b47f"
+   ]
+  },
+  "M20-S06": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "test": "done"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T08:29:27.974Z",
+   "note": "Written: docs/launch/change-control.md + change-log.md",
+   "commits": [
+    "6f3b47f"
+   ]
   }
  },
  "subtasks": {
@@ -4614,8 +4802,8 @@
    "phase": "wire"
   },
   "M09-S08-W1": {
-   "status": "review",
-   "at": "2026-09-30T12:29:34.185Z",
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
    "phase": "wire"
   },
   "M10-S05-W1": {
@@ -5050,7 +5238,7 @@
   },
   "M10-S02-T05": {
    "status": "done",
-   "at": "2026-10-04T00:07:29.251Z",
+   "at": "2026-10-04T08:29:27.974Z",
    "phase": "test"
   },
   "M10-S03-T03": {
@@ -5264,8 +5452,118 @@
    "phase": "test"
   },
   "M15-S05-T03": {
-   "status": "review",
-   "at": "2026-10-04T00:07:29.251Z",
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S10-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S10-T02": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S11-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S11-T02": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S11-T03": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S08-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M19-S07-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M18-S05-T03": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M18-S09-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M18-S09-T02": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M18-S09-T06": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M18-S10-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S01-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S03-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S04-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S05-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S05-T02": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S05-T03": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S05-T04": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S05-T05": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S05-T06": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
+   "phase": "test"
+  },
+  "M20-S06-T01": {
+   "status": "done",
+   "at": "2026-10-04T08:29:27.974Z",
    "phase": "test"
   }
  },
@@ -9747,6 +10045,141 @@
    "status": "review",
    "attempt": 1,
    "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; real bug open",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M09-S08",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 2,
+   "note": "IR Investors page reusing ImInv/VOne: own-lead investors only, read-only, no money; GET /api/investors/mine (IR token, Originating_IR filter, guard re-admits every row); 11 scratch Jev cases pass",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M10-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "D113: a Finance-recorded receipt is matched by the recorder (server + demo); statement auto-matches pending money-in; IR claims pending until Finance confirms; refunds keep the D22 second hand",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M15-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "TC-E11-016 fixed: Payments register masks every reference; \"Show the reference\" behind step-up with a logged Plane C reveal (POST /api/receipts/[id]/reveal)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M19-S10",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Fact changes applied to ui-cases.json (D113 ruling 3); 6 cases retired with reasons, 6 ui-todo converted, 28 promoted, 2 added; suite 367 cases",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M19-S11",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "pm/gen-seat-cases.mjs emits 143 per-seat cases (pm/generated/ui-cases-seats.json); Sahil set 17/18, per-seat 123/125 + 2 REVIEW",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M19-S08",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Runner settle wait (network idle + no DOM change 250 ms, cap 6 s) replaces the fixed 300 ms; --retry-review; flake log + quarantine (jev/flake.mjs); re-baseline runbook; calibration 21/21 caught",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M19-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Smoke suite console/scripts/smoke.mjs (deploy + read-only production mode, --jev); 7/7 on the demo build; wired after deploy in pipeline.yml and an hourly production-check workflow gated on HOSTING_READY",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M18-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Written: docs/launch/backup-restore-plan.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M18-S09",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Written: docs/launch/go-live-checklist.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M18-S10",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Written: docs/ops/runbook.md, hypercare.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M20-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Written: docs/launch/product-brief.md (KPI targets blank for the owner)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M20-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Written: docs/launch/guides/ (8 seat guides; Farm ops persona kept)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M20-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Written: docs/launch/support-model.md (response times proposed)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M20-S05",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Written: docs/launch/stage-reviews.md (phases 1, 2, 2b, 2c, 3-local reviewed; later stages templated)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T08:29:27.974Z",
+   "story": "M20-S06",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Written: docs/launch/change-control.md + change-log.md",
    "by": "fan-out (D111)"
   }
  ],
