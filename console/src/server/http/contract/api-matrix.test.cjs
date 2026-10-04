@@ -57,7 +57,7 @@ const FIXTURE_IDENTITY = ['FXPAN1234F', 'FXPAN9999Z', 'FXBANK000999', 'FXBANK123
 const CANARY_VALUES = [...Object.values(CANARY).filter((v) => !/\.pdf$/.test(v)), ...FIXTURE_IDENTITY];
 const BANK_NAME = /^(ifsc|isfc)(_?code)?$|account_?holder|^bank_?(name|branch|address|proof|account)|^acct|account_?number/i;
 const PII_NAME = /^pan(_?(number|no|proof))?$|aadhaar|aadhar|kyc_?(ref|proof)/i;
-const MASKED = (v) => typeof v === 'string' && (/^[X*•·.\- ]{2,}[A-Za-z0-9]{0,4}$/.test(v.trim()) || /•{3,}/.test(v));
+const MASKED = L.looksMasked; /* one detector for every mask the console emits (M18-S02-NOTE-4) */
 const WHO_VALUES = Object.values(H.WHO);
 
 const calls = []; /* every call to the Zoho double since the last reset */
@@ -125,8 +125,7 @@ function fieldFindings(json, seat) {
 function identityProblems(c, seat, res) {
   const bad = [];
   const lk = C.leaks(res); if (lk.length) bad.push(`leak ${JSON.stringify(lk)}`);
-  /* the console's own masks ('AFT•••••L' for a PAN, '•••• •••• 1208' for an account, lib/zoho/identity) are masks: the leak-matrix detector only knows the 'XXXXXX1234' form */
-  const json = res.json === undefined ? undefined : JSON.parse(JSON.stringify(res.json), (k, v) => (typeof v === 'string' && /•{3,}/.test(v) ? 'XXXXXX' + v.slice(-4).replace(/[^A-Za-z0-9]/g, '0') : v));
+  const json = res.json;
   for (const f of L.maskedFindings(json, res.text)) bad.push(`${f.kind} unmasked at ${f.path}`);
   for (const v of CANARY_VALUES) if (res.text.includes(v)) bad.push(`canary identity value ${v.slice(0, 4)}… reached the answer`);
   bad.push(...fieldFindings(res.json, seat));

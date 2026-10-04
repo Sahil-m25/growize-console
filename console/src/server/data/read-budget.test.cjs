@@ -63,7 +63,9 @@ const KAM = `${P}740994001`;         // Imran (KAM) — the kam-book fixtures' u
 const DIVYA = `${P}740994009`;       // Head of AM
 const SID = 'sid_fixture_data_layer_00000000000000000';
 const NOW = Date.parse('2026-09-28T06:00:00Z');
-const SEAT_IDS = { roleIds: { 'Key Account Manager': `${P}740998001`, 'Investor Relations': `${P}740998003` }, profileIds: { KAM: `${P}740998002`, IR: `${P}740998004` } };
+/* the Head of AM's role and profile ids are in the table too: without them the AM book's access snapshot carries empty ids and is refused 'seat-denied' (M18-S01-NOTE-4) */
+const SEAT_IDS = { roleIds: { 'Key Account Manager': `${P}740998001`, 'Investor Relations': `${P}740998003`, 'Head of Account Management': `${P}740998005` },
+  profileIds: { KAM: `${P}740998002`, IR: `${P}740998004`, 'AM Head': `${P}740998006` } };
 
 const recorded = (dir, name) => JSON.parse(fs.readFileSync(path.join(fx, dir, `${name}.response.json`), 'utf8'));
 const toResponse = (r) => new Response(r.status === 204 ? null : JSON.stringify(r.body), { status: r.status, headers: r.headers || {} });
@@ -74,6 +76,13 @@ before(async () => {
     { recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(createMemorySink()), clock: () => NOW,
       fetch: async () => toResponse({ status: 200, body: { users: [{ id, status: 'active' }] } }) }));
 });
+
+/** The Head of AM's book (am-scope.test.cjs): every allotted account by id, and the issued allotments of all KAMs. */
+const headRoute = (q) => {
+  if (/from Contacts where \(id in/.test(q)) return recorded('kam-book', 'coql.contacts.head');
+  if (/from LLP_UnitAllocation_Module/.test(q) && /Allocation_Status = 'Issued'/.test(q)) return recorded('kam-book', 'coql.allotments.all');
+  return null;
+};
 
 /** Routes a COQL query to a recorded answer. */
 function route(q, over = {}) {
@@ -126,14 +135,15 @@ const principal = (id, seat) => ({ credential: creds.get(id), session: { who: id
  *   conv : personal (1) + team (1) + lead detail (1) + farms (1)           — an IR Manager has no investor book
  *   fin  : contacts, farms, allotments, receipts, cases, holdings, ARL transactions — one each
  *   kam  : AM book (contacts, allotments) + farms + allotments projection + cases
+ *   amlead: the Head of AM, same five: AM book (issued allotments, contacts by id) + farms + allotments projection + cases (measured 4 Oct, M18-S01-NOTE-4)
  */
-const BUDGET = { ir: 5, conv: 4, fin: 7, kam: 5 };
-const WHO = { ir: IR, conv: MANAGER, fin: FIN, kam: KAM };
+const BUDGET = { ir: 5, conv: 4, fin: 7, kam: 5, amlead: 5 };
+const WHO = { ir: IR, conv: MANAGER, fin: FIN, kam: KAM, amlead: DIVYA };
 const kind = (q) => (q.match(/ from (\w+)/) || [])[1];
 
 for (const seat of Object.keys(BUDGET)) {
   test(`${seat}: a cold page read makes at most ${BUDGET[seat]} Zoho calls, one per book`, async () => {
-    const r = rig();
+    const r = rig(seat === 'amlead' ? { over: { raw: headRoute } } : {});
     const res = await r.layer.load(principal(WHO[seat], seat));
     assert.deepEqual(res.problems, []);
     assert.ok(r.queries.length <= BUDGET[seat], `${seat}: ${r.queries.length} calls > ${BUDGET[seat]}: ${r.queries.map(kind).join(', ')}`);
@@ -141,7 +151,7 @@ for (const seat of Object.keys(BUDGET)) {
     // a module is read once per page except where the page has two scopes of the same book (leads: personal + team) or two shapes
     const perModule = {};
     for (const q of r.queries) perModule[kind(q)] = (perModule[kind(q)] || 0) + 1;
-    for (const [m, n] of Object.entries(perModule)) assert.ok(n <= (m === 'Leads' ? 3 : m === 'LLP_UnitAllocation_Module' && seat === 'kam' ? 2 : 1), `${seat}: ${m} read ${n} times`);
+    for (const [m, n] of Object.entries(perModule)) assert.ok(n <= (m === 'Leads' ? 3 : m === 'LLP_UnitAllocation_Module' && (seat === 'kam' || seat === 'amlead') ? 2 : 1), `${seat}: ${m} read ${n} times`);
   });
 }
 
