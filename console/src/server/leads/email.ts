@@ -27,6 +27,9 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailure, ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import { LEADS_MODULE } from "./capture";
+import { createIdempotency } from "../state/idempotent";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 import type { FollowupAccessAuthority, FollowupCommand, createFollowups } from "./followup";
 
 /** Product limits, tighter than send_mail's own. */
@@ -146,7 +149,12 @@ export interface EmailDependencies {
   /** Deck follow-up sends only through this (the deck attached); absent → refused "deck-not-ready". */
   readonly deck?: DeckMailer | null;
   readonly clock?: () => number;
+  /** Where the double-press guard and the one-send-per-lead lock live (runtime: sharedState()); default this process only. */
+  readonly state?: SharedState;
 }
+
+const EMAIL_PRESS_TTL_S = 60;
+const EMAIL_LEAD_LOCK_S = 180;
 
 const zohoTime = (ms: number): string => `${new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 19)}+05:30`;
 const idOf = (v: unknown): string | null => {
@@ -165,7 +173,16 @@ export function createEmailSender(deps: EmailDependencies) {
   const { crm, access, log, followups } = deps;
   const clock = deps.clock ?? Date.now;
   const domains = new Set(deps.orgDomains);
-  const inFlight = new Set<string>();
+  const state = deps.state ?? createMemoryState({ clock });
+  // The double press (../state/idempotent): scoped to person + lead + this exact email, so the same press on any
+  // instance sends once and the second press answers what the first did. Only a sent email is kept; the stored
+  // answer carries no address (`from` is blank on replay; the touch and message ids are ids).
+  const presses = createIdempotency<EmailResult>({
+    state, ns: "lead-email", ttlSeconds: EMAIL_PRESS_TTL_S, clock,
+    keep: (r) => r.ok,
+    save: (r) => JSON.stringify(r.ok ? { ...r, value: { ...r.value, from: "" } } : r),
+    load: (s) => { try { return JSON.parse(s) as EmailResult; } catch { return null; } },
+  });
   const validId = (v: unknown): v is string => typeof v === "string" && RECORD_ID.test(v) && v.startsWith(deps.recordIdPrefix);
   const refuse = (userId: string, code: EmailRefusal, ids: readonly string[] = []): EmailResult => {
     log.refusal({ at: clock(), actor: { kind: "user", userId }, action: "lead-email", reason: code, recordIds: ids.filter(validId) });
@@ -191,9 +208,11 @@ export function createEmailSender(deps: EmailDependencies) {
     const tpl = Object.prototype.hasOwnProperty.call(EMAIL_TEMPLATES, c.template) ? EMAIL_TEMPLATES[c.template]! : null;
     if (!tpl) return refuse(me, "unknown-template", [lead]);
 
-    const key = `${me}|${lead}`;
-    if (inFlight.has(key)) return refuse(me, "sending", [lead]);
-    inFlight.add(key);
+    // A different email to the same lead waits its turn ("sending"), on any instance.
+    const lock = `lead-email-lead|${me}|${lead}`;
+    const fingerprint = JSON.stringify([c.template, subject, message, c.to ?? "", c.expectedModifiedTime, c.scheduled?.id ?? ""]);
+    const work = async (): Promise<EmailResult> => {
+    if (!(await state.claim(lock, EMAIL_LEAD_LOCK_S))) return refuse(me, "sending", [lead]);
     try {
       // ---- who is asking, now
       let a: Awaited<ReturnType<FollowupAccessAuthority["recheck"]>>;
@@ -307,8 +326,12 @@ export function createEmailSender(deps: EmailDependencies) {
       return { ok: true, value: { sent: true, messageId, from: from.email, touchRecorded: true, touchId: saved.value.touchId, notice: "Email sent",
         ...(isDeck ? { materialMarked } : {}) } };
     } finally {
-      inFlight.delete(key);
+      await state.release(lock).catch(() => { /* the TTL frees it */ });
     }
+    };
+    const o = await presses.once(`${me}|${lead}|${fingerprint}`, fingerprint, work);
+    if (o.kind === "busy" || o.kind === "unavailable" || o.kind === "reused") return refuse(me, "sending", [lead]);
+    return o.result;
   }
 
   return Object.freeze({ send });

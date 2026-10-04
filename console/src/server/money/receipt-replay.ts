@@ -26,6 +26,9 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import { ACTOR_ID, RECORD_ID, type OpsLog } from "../../lib/zoho/log";
 import { dueOf, ledgerOf, recordedOf, sumsOf } from "./ledger";
+import { createIdempotency } from "../state/idempotent";
+import { createMemoryState } from "../state/memory";
+import { SharedStateError, type SharedState } from "../state/shared-state";
 
 export const RECEIPTS_MODULE = "Receipts";
 export const ALLOTMENTS_MODULE = "LLP_UnitAllocation_Module";
@@ -153,6 +156,8 @@ export interface ReceiptReplayDependencies {
   /** Server-owned preparation deadline; injectable only to make timeout behavior deterministic in tests. */
   readonly preparationTimeoutMs?: number;
   readonly clock?: () => number;
+  /** Where the double-press guard and the per-allotment turn live (state/idempotent.ts). Absent: this process only. */
+  readonly state?: SharedState;
 }
 
 export type ReceiptRefusalCode =
@@ -715,7 +720,17 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
     throw new RangeError(`receipt replay preparationTimeoutMs must be 1–${RECEIPT_PREPARATION_TIMEOUT_MS}`);
   }
   const clock = dependencies.clock ?? Date.now;
-  const inFlight = new Map<string, { readonly fingerprint: string; readonly promise: Promise<ReceiptReplayResult> }>();
+  // The double-press guard (state/idempotent.ts): a press running here is joined, a stored answer is replayed,
+  // else the key is claimed in SharedState so the same press on another instance writes nothing. Only a
+  // success is kept; the answer is ids and a flag (rule 7: no reference travels in it).
+  const state = dependencies.state ?? createMemoryState({ clock });
+  const presses = createIdempotency<ReceiptReplayResult>({
+    state, ns: "receipt-replay", ttlSeconds: RECEIPT_CONTEXT_MAX_AGE_MS / 1_000 + 60, clock,
+    keep: (r) => r.ok,
+    save: (r) => JSON.stringify(r),
+    load: (v) => { try { return JSON.parse(v) as ReceiptReplayResult; } catch { return null; } },
+  });
+  let running = 0;
   const allotmentTails = new Map<string, Promise<void>>();
   const queuedByAllotment = new Map<string, number>();
   const inFlightByActor = new Map<string, number>();
@@ -786,6 +801,34 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
       if (allotmentTails.get(allotmentId) === tail) allotmentTails.delete(allotmentId);
     });
     return run;
+  };
+
+  /** The allotment's turn across instances: claim `replay-turn|<allotment>` (poll until the press's own deadline). */
+  const turnOn = async (
+    allotmentId: string,
+    control: ReplayControl,
+    waitMs: number,
+    task: () => Promise<ReceiptReplayResult>,
+    busy: () => ReceiptReplayError,
+  ): Promise<ReceiptReplayResult> => {
+    const key = `replay-turn|${allotmentId}`;
+    const until = (sampledNow() ?? 0) + waitMs;
+    let pause = 25, waited = 0;
+    for (;;) {
+      if (control.controller.signal.aborted) return task(); // execute() answers the cancellation itself
+      let got: boolean;
+      try { got = await state.claim(key, RECEIPT_REPLAY_MAX_AGE_MS / 1_000 + 30); } catch (e) {
+        if (e instanceof SharedStateError) return busy();
+        throw e;
+      }
+      if (got) {
+        try { return await task(); } finally { await state.release(key).catch(() => { /* the TTL frees it */ }); }
+      }
+      if (waited >= waitMs || (sampledNow() ?? Number.MAX_SAFE_INTEGER) >= until) return busy();
+      await new Promise<void>((r) => setTimeout(r, pause));
+      waited += pause;
+      pause = Math.min(500, pause * 2);
+    }
   };
 
   const refuse = (
@@ -1302,18 +1345,11 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
         captured.intent,
         captured.expected,
       );
-      const running = inFlight.get(scope);
-      if (running) {
-        if (running.fingerprint !== fingerprint) return refuse(trustedPrincipal, "idempotency-key-reused", [captured.intent.allotmentId]);
-        return running.promise;
-      }
       const actorId = trustedPrincipal.credential.userId;
       const allotmentId = captured.intent.allotmentId;
-      if (inFlight.size >= MAX_IN_FLIGHT_RECEIPT_REPLAYS
-        || (inFlightByActor.get(actorId) ?? 0) >= MAX_IN_FLIGHT_RECEIPT_REPLAYS_PER_ACTOR
-        || (queuedByAllotment.get(allotmentId) ?? 0) >= MAX_QUEUED_RECEIPT_REPLAYS_PER_ALLOTMENT) {
-        return sourceUnavailable("zoho", "busy");
-      }
+      const busy = (): ReceiptReplayError => sourceUnavailable("zoho", "busy");
+      // Registered before the first await, so a session that ends while this press is still being claimed
+      // aborts it (discardSession) — whether this press wins the claim or only joins another.
       const control: ReplayControl = { controller: new AbortController(), reason: null };
       const remainingMs = Math.min(
         RECEIPT_REPLAY_MAX_AGE_MS - queueAge,
@@ -1330,27 +1366,41 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
       const sessionControls = controlsBySession.get(activeSessionKey) ?? new Set<ReplayControl>();
       sessionControls.add(control);
       controlsBySession.set(activeSessionKey, sessionControls);
-      inFlightByActor.set(actorId, (inFlightByActor.get(actorId) ?? 0) + 1);
-      queuedByAllotment.set(allotmentId, (queuedByAllotment.get(allotmentId) ?? 0) + 1);
-      // This closes the same-process different-key race. Production activation still needs a
-      // Zoho-side CAS/validation guard for deployments with more than one server process.
-      // Once a money commit starts it is not cancelled by a browser disconnect. The idempotency
-      // key lets that browser (or another waiter) recover the durable outcome later.
-      const promise = serializeAllotment(allotmentId, () => execute(trustedPrincipal, captured, control));
-      inFlight.set(scope, { fingerprint, promise });
       try {
-        return await promise;
+        const o = await presses.once(scope, fingerprint, async () => {
+          if (running >= MAX_IN_FLIGHT_RECEIPT_REPLAYS
+            || (inFlightByActor.get(actorId) ?? 0) >= MAX_IN_FLIGHT_RECEIPT_REPLAYS_PER_ACTOR
+            || (queuedByAllotment.get(allotmentId) ?? 0) >= MAX_QUEUED_RECEIPT_REPLAYS_PER_ALLOTMENT) {
+            return busy();
+          }
+          running += 1;
+          inFlightByActor.set(actorId, (inFlightByActor.get(actorId) ?? 0) + 1);
+          queuedByAllotment.set(allotmentId, (queuedByAllotment.get(allotmentId) ?? 0) + 1);
+          // Same-process different-key presses take turns here; across instances the turn is a SharedState claim
+          // on the allotment (turnOn), so two keys for one allotment never run at once on two processes either.
+          // Once a money commit starts it is not cancelled by a browser disconnect. The idempotency
+          // key lets that browser (or another waiter) recover the durable outcome later.
+          try {
+            return await serializeAllotment(allotmentId, () => turnOn(allotmentId, control, remainingMs,
+              () => execute(trustedPrincipal, captured, control), busy));
+          } finally {
+            running -= 1;
+            const actorPending = (inFlightByActor.get(actorId) ?? 1) - 1;
+            if (actorPending === 0) inFlightByActor.delete(actorId);
+            else inFlightByActor.set(actorId, actorPending);
+            const allotmentPending = (queuedByAllotment.get(allotmentId) ?? 1) - 1;
+            if (allotmentPending === 0) queuedByAllotment.delete(allotmentId);
+            else queuedByAllotment.set(allotmentId, allotmentPending);
+          }
+        });
+        if (o.kind === "reused") return refuse(trustedPrincipal, "idempotency-key-reused", [captured.intent.allotmentId]);
+        if (o.kind === "busy" || o.kind === "unavailable") return busy();
+        const r = o.result;
+        return o.kind === "replay" && r.ok ? { ok: true, receiptId: r.receiptId, duplicate: true } : r;
       } finally {
         clearTimeout(timer);
-        if (inFlight.get(scope)?.promise === promise) inFlight.delete(scope);
         sessionControls.delete(control);
         if (sessionControls.size === 0) controlsBySession.delete(activeSessionKey);
-        const actorPending = (inFlightByActor.get(actorId) ?? 1) - 1;
-        if (actorPending === 0) inFlightByActor.delete(actorId);
-        else inFlightByActor.set(actorId, actorPending);
-        const allotmentPending = (queuedByAllotment.get(allotmentId) ?? 1) - 1;
-        if (allotmentPending === 0) queuedByAllotment.delete(allotmentId);
-        else queuedByAllotment.set(allotmentId, allotmentPending);
       }
     },
 

@@ -162,14 +162,54 @@ Grant lines, seen-ids, the request index and idempotency answers are ids and cod
   is drained by that instance (it holds it), not picked up by a fresh one until it is listed again.
 - The payout claim store failing skips the allotment as "busy" (nothing written); the System page's outbox stats are
   this instance's view.
-- `receipt-replay.ts` keeps its own in-process guards (r6-money owns it); the Zoho unique `Idempotency_Key` is still
-  what makes a receipt land once across instances (BLOCKED elsewhere).
+- ~~`receipt-replay.ts` keeps its own in-process guards~~ — moved onto SharedState 4 Oct (M18-S09-NOTE-8; see "Round 7" below).
 - Catalyst Job Scheduling's expression grammar and minimum interval are UNVERIFIED (catalyst/README.md).
+
+## Round 7 — the last per-process idempotency maps (M18-S09-NOTE-8, 4 Oct 2026)
+
+Five more guards moved onto `state/idempotent.ts` exactly as round 6 did for mark-paid, add-paid and record-receipt:
+join a press already running in this process, else replay the stored answer (fingerprint must match, else `reused`),
+else `claim` (the claim TTL is the guard's TTL); the winner stores the answer, a retryable failure releases the key; a
+loser waits up to 20 s, then `busy`; a store that cannot answer is `unavailable` and the write is refused. Each
+service takes an optional `state` (runtime passes `sharedState()`; absent, an in-process store, so behaviour on one
+instance is what it was).
+
+| Guard | Scope (hashed) | Kept | TTL | Stored answer (rule 7) | Put back on replay | A different press meanwhile |
+|---|---|---|---|---|---|---|
+| Zoho Sign send (`zoho-sign/send.ts`) | person + Idempotency-Key | success | 30 min | ids, codes, the doer note — no recipient, no file | `duplicate: true` | another key for the same paper+record: `busy` (claim `sign-send-paper\|…`, 120 s) |
+| Document upload (`documents/upload.ts`) | person + key + attempt `#n` | success, or an unknown outcome with its before-count | 30 min | ids and codes; **file name blanked** (a name can carry identity) | `fileName` from the replayed press | another key for the same target: `busy` (claim `doc-upload-target\|…`, 300 s) |
+| IR payment claim (`leads/claim.ts`) | lead + the report | success | 60 s | the claim view with **`ref` blanked** | `maskRef(ref)` from the replayed press, `duplicate: true` | another report on the lead: `in-progress` (claim `payment-claim-lead\|…`, 120 s) |
+| Lead email (`leads/email.ts`) | person + lead + the exact email | a sent email | 60 s | message and touch ids; **`from` blanked** (the sender's mailbox) | `from` stays empty on a replay (nothing in the press names it) | another email to the lead: `sending` (claim `lead-email-lead\|…`, 180 s) |
+| Receipt replay (`money/receipt-replay.ts`) | the durable receipt key | success | 11 min | receipt id + `duplicate` | `duplicate: true` | two keys for one allotment take turns across instances: claim `replay-turn\|<allotment>` (poll to the press's own deadline, TTL 5.5 min), inside the existing in-process queue |
+
+**Why these TTLs.** The claim and payment-claim answers are held only for the double-press window: an identical
+report or email a minute later is a new one (Finance may have answered the first). Sign and upload keep half an hour
+(what the in-process maps held). Receipt replay holds for the signed context's life plus a minute; after that Zoho's
+unique `Idempotency_Key` is the guard, as before.
+
+**Document upload keeps its recovery.** An unknown outcome (the answer was lost) is stored with the target's file
+count before the press. A retry with the same key, on any instance, counts again: more than before means the first
+landed (answered `recovered: true`, nothing uploaded); the same count means it did not, and the press goes again as
+attempt `#n+1` (four attempts, then "unknown outcome"). A clean refusal or not-saved is never kept.
+
+**What stays per process, on purpose.** The receipt replay's capacity caps (64 presses, 16 per person, 8 queued per
+allotment) and its session-abort registry (`discardSession`) are about this process's own work: a running press
+cannot be aborted from another instance, and a cap is a resource limit, not a correctness rule. The press registers
+its abort control before its first await, so a sign-out that lands while it is still claiming aborts it.
+
+**Behaviour changes to know.** (1) The same email pressed twice at once now joins (both answered "Email sent", one
+mail) instead of the second answering "sending"; a *different* email to that lead is still "sending". (2) A joined or
+replayed receipt press is answered `duplicate: true`, as mark-paid already was. (3) On an unavailable store each of
+these refuses ("busy" / "sending" / "in progress") rather than running unguarded.
+
+**Tests.** `state/idempotency-sites.test.ts` (Sign, upload incl. lost-answer recovery, claim, email; memory and fake
+Catalyst, two instances each; stored values searched for the recipient, name, reference, address and text) and the
+`NOTE-8` cases in `money/receipt-replay.test.cjs`.
 
 ## Next, in order (not built here)
 
 1. ~~User sessions onto SharedState~~ (inventory 6) — done 4 Oct (M18-S09-NOTE-1, r6-sessions). Catalyst cost: a session read is 1 query; sign-in is 4 calls (set, incr = 2, set); `keysOf` reads up to 65 items (seat change / access ended only).
 2. ~~Seen-event ids, request index, grant store, push outbox, money idempotency maps, payout lock, Sign re-check timer~~ — done 4 Oct (M18-S09-NOTE-2, r6-instance-state; see "Round 6" above).
 3. **Alert windows** (inventory 15), once mail is wired; the test-link register (17).
-4. The L-class idempotency maps (Sign send, document upload, payment claim, lead email) onto `state/idempotent.ts`
-   if a double write there turns out to matter; `receipt-replay.ts` guards.
+4. ~~The L-class idempotency maps (Sign send, document upload, payment claim, lead email) and the `receipt-replay.ts`
+   guards onto `state/idempotent.ts`~~ — done 4 Oct (M18-S09-NOTE-8, r7-idempotency; see "Round 7" above).
