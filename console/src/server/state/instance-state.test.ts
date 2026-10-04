@@ -20,6 +20,7 @@ import { createSharedOutboxQueue } from "../contracts/outbox-queue";
 import { createInProcessStub, loadSchemas } from "../contracts/stub";
 import { claimJob, jobResponse, jobSecretOk } from "../jobs/claim";
 
+const env = (o: Record<string, string>): NodeJS.ProcessEnv => o as unknown as NodeJS.ProcessEnv;
 const T0 = Date.parse("2026-10-04T04:30:00Z");
 type Two = { a: SharedState; b: SharedState; now: { t: number }; fake: ReturnType<typeof createFakeCatalyst> | null };
 const BACKENDS: ReadonlyArray<{ name: string; make: () => Two }> = [
@@ -199,50 +200,50 @@ describe("file / memory defaults keep their behaviour", () => {
   });
 
   it("the switches: STATE_STORE=catalyst makes the items shared; GRANT_STORE=shared needs it", () => {
-    expect(instanceStateShared({} as NodeJS.ProcessEnv)).toBe(false);
-    expect(instanceStateShared({ STATE_STORE: "catalyst" } as NodeJS.ProcessEnv)).toBe(true);
-    expect(grantStoreKind({} as NodeJS.ProcessEnv)).toBe("memory");
-    expect(grantStoreKind({ STATE_STORE: "catalyst" } as NodeJS.ProcessEnv)).toBe("shared");
-    expect(grantStoreKind({ STATE_STORE: "catalyst", GRANT_STORE: "jsonl" } as NodeJS.ProcessEnv)).toBe("jsonl");
-    expect(() => grantStoreKind({ GRANT_STORE: "shared" } as NodeJS.ProcessEnv)).toThrow(/STATE_STORE=catalyst/);
-    expect(() => grantStoreKind({ GRANT_STORE: "nope" } as NodeJS.ProcessEnv)).toThrow();
+    expect(instanceStateShared(env({}))).toBe(false);
+    expect(instanceStateShared(env({ STATE_STORE: "catalyst" }))).toBe(true);
+    expect(grantStoreKind(env({}))).toBe("memory");
+    expect(grantStoreKind(env({ STATE_STORE: "catalyst" }))).toBe("shared");
+    expect(grantStoreKind(env({ STATE_STORE: "catalyst", GRANT_STORE: "jsonl" }))).toBe("jsonl");
+    expect(() => grantStoreKind(env({ GRANT_STORE: "shared" }))).toThrow(/STATE_STORE=catalyst/);
+    expect(() => grantStoreKind(env({ GRANT_STORE: "nope" }))).toThrow();
   });
 });
 
 describe("the job door (POST /api/jobs/*)", () => {
   const SECRET = "synthetic-job-secret-never-live-0123456789";
-  const env = { JOB_SECRET: SECRET } as NodeJS.ProcessEnv;
+  const jobEnv = env({ JOB_SECRET: SECRET });
   const req = (h?: string) => new Request("http://localhost/api/jobs/sign-recheck", { method: "POST", headers: h === undefined ? {} : { "X-Job-Secret": h } });
 
   it("JOB_SECRET is compared in constant time; unset or short is not-configured", () => {
-    expect(jobSecretOk(SECRET, env)).toBe(true);
-    expect(jobSecretOk(SECRET.slice(0, -1), env)).toBe(false);
-    expect(jobSecretOk(null, env)).toBe(false);
-    expect(jobSecretOk(SECRET, {} as NodeJS.ProcessEnv)).toBe("not-configured");
-    expect(jobSecretOk("short", { JOB_SECRET: "short" } as NodeJS.ProcessEnv)).toBe("not-configured");
+    expect(jobSecretOk(SECRET, jobEnv)).toBe(true);
+    expect(jobSecretOk(SECRET.slice(0, -1), jobEnv)).toBe(false);
+    expect(jobSecretOk(null, jobEnv)).toBe(false);
+    expect(jobSecretOk(SECRET, env({}))).toBe("not-configured");
+    expect(jobSecretOk("short", env({ JOB_SECRET: "short" }))).toBe("not-configured");
   });
 
   it("answers 503 / 401 / 200 ran / 200 already-running / 503 state-unavailable, and never runs without the secret", async () => {
     let runs = 0;
     const run = async () => { runs++; return { ran: true } as const; };
-    expect((await jobResponse(req(SECRET), "sign-recheck", run, {} as NodeJS.ProcessEnv)).status).toBe(503);
-    expect((await jobResponse(req("wrong"), "sign-recheck", run, env)).status).toBe(401);
-    expect((await jobResponse(req(), "sign-recheck", run, env)).status).toBe(401);
+    expect((await jobResponse(req(SECRET), "sign-recheck", run, env({}))).status).toBe(503);
+    expect((await jobResponse(req("wrong"), "sign-recheck", run, jobEnv)).status).toBe(401);
+    expect((await jobResponse(req(), "sign-recheck", run, jobEnv)).status).toBe(401);
     expect(runs).toBe(0);
-    const ok = await jobResponse(req(SECRET), "sign-recheck", run, env);
+    const ok = await jobResponse(req(SECRET), "sign-recheck", run, jobEnv);
     expect([ok.status, await ok.json()]).toEqual([200, { job: "sign-recheck", ran: true }]);
-    const busy = await jobResponse(req(SECRET), "sign-recheck", async () => ({ ran: false, reason: "already-running" }), env);
+    const busy = await jobResponse(req(SECRET), "sign-recheck", async () => ({ ran: false, reason: "already-running" }), jobEnv);
     expect([busy.status, (await busy.json()).code]).toEqual([200, "already-running"]);
-    expect((await jobResponse(req(SECRET), "sign-recheck", async () => ({ ran: false, reason: "state-unavailable" }), env)).status).toBe(503);
+    expect((await jobResponse(req(SECRET), "sign-recheck", async () => ({ ran: false, reason: "state-unavailable" }), jobEnv)).status).toBe(503);
   });
 
   it("the Sign re-check timer is kept only on a single long-lived process (SIGN_CHECK_TIMER)", async () => {
     const { signCheckTimerOn } = await import("../zoho-sign/runtime");
-    expect(signCheckTimerOn({} as NodeJS.ProcessEnv)).toBe(true);
-    expect(signCheckTimerOn({ STATE_STORE: "catalyst" } as NodeJS.ProcessEnv)).toBe(false);
-    expect(signCheckTimerOn({ STATE_STORE: "catalyst", SIGN_CHECK_TIMER: "on" } as NodeJS.ProcessEnv)).toBe(true);
-    expect(signCheckTimerOn({ SIGN_CHECK_TIMER: "off" } as NodeJS.ProcessEnv)).toBe(false);
-    expect(() => signCheckTimerOn({ SIGN_CHECK_TIMER: "sometimes" } as NodeJS.ProcessEnv)).toThrow();
+    expect(signCheckTimerOn(env({}))).toBe(true);
+    expect(signCheckTimerOn(env({ STATE_STORE: "catalyst" }))).toBe(false);
+    expect(signCheckTimerOn(env({ STATE_STORE: "catalyst", SIGN_CHECK_TIMER: "on" }))).toBe(true);
+    expect(signCheckTimerOn(env({ SIGN_CHECK_TIMER: "off" }))).toBe(false);
+    expect(() => signCheckTimerOn(env({ SIGN_CHECK_TIMER: "sometimes" }))).toThrow();
   });
 });
 
@@ -253,17 +254,17 @@ describe("append-only records go to the log sink (Sign dead-letters, push ledger
     const { createLogSinks } = await import("../logs/factory");
     const dir = mkdtempSync(path.join(tmpdir(), "gz-extra-"));
     try {
-      const sinks = createLogSinks({ LOG_STORE: "jsonl", LOG_DIR: dir } as NodeJS.ProcessEnv, { clock: () => T0 });
+      const sinks = createLogSinks(env({ LOG_STORE: "jsonl", LOG_DIR: dir }), { clock: () => T0 });
       const dead = sinks.planeStore("sign-dead")!;
       expect(sinks.planeStore("sign-dead")).toBe(dead);
       dead.append({ at: T0, reason: "unlinked", requestId: "9007199254740999001", retryable: false, note: "PAN ABCPE1234F" });
       // another process (a restarted instance) reads the same day file
-      const again = createLogSinks({ LOG_STORE: "jsonl", LOG_DIR: dir } as NodeJS.ProcessEnv, { clock: () => T0 }).planeStore("sign-dead")!;
+      const again = createLogSinks(env({ LOG_STORE: "jsonl", LOG_DIR: dir }), { clock: () => T0 }).planeStore("sign-dead")!;
       const lines = await again.read((await again.days())[0]!);
       expect(lines).toHaveLength(1);
       expect(JSON.stringify(lines)).not.toContain("ABCPE1234F");
       expect(() => sinks.planeStore("identity")).toThrow();
-      expect(createLogSinks({} as NodeJS.ProcessEnv).planeStore("push")).toBeNull();
+      expect(createLogSinks(env({})).planeStore("push")).toBeNull();
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });
