@@ -350,16 +350,42 @@ export interface MemberDetail {
   readonly clash: readonly string[];
   /** M17-S01-W2 — what was changed from their seat by name, per page (the "N changed from the seat" tag) */
   readonly changed: readonly CapDeviation[];
-  /** M17-S01-W2 — PROVISIONAL: Zoho records no absences, so only a leaver reads "out"; needs a Zoho source for availability (D49) */
-  readonly availability: { readonly out: boolean; readonly soon: boolean; readonly detail: string; readonly cover: string };
+  /** M17-S01-W2 / M08-S05-NOTE-6 — Out / In from the roster (Plane C, D49: server/roster), a leaver always out. Ids and days only:
+   *  `backOn` the first day back (YYYY-MM-DD) and `from` the first day out; never the private reason. `cover` is not served live (""). */
+  readonly availability: { readonly out: boolean; readonly soon: boolean; readonly detail: string; readonly cover: string; readonly from?: string | null; readonly backOn?: string | null };
 }
 
 export type DetailResult = { readonly ok: true; readonly detail: MemberDetail } | { readonly ok: false; readonly code: "cannot-open"; readonly message: string };
 
 export const CANNOT_OPEN = "You can open only the people inside your own access.";
 
+/** One person's roster window as the roster reader gives it (server/roster RosterView.windows): first day out, first day back. */
+export interface RosterWindow { readonly from: string; readonly to: string }
+/** What the member drawer knows of the roster: the person's window (or none), today (IST), or `unread` when Plane C did not answer. */
+export type MemberRoster = { readonly today: string; readonly window: RosterWindow | null } | "unread";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** "12 Oct" (the year only when it is not this year) — lib/format dISOtoDisp, from a YYYY-MM-DD day with no clock involved. */
+const dayDisp = (day: string, now: Date): string => {
+  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
+  return `${String(d).padStart(2, "0")} ${MONTHS[m - 1]}${y !== now.getFullYear() ? " " + y : ""}`;
+};
+
+/** The drawer's availability from the roster (D49): Out "Back on <day>", planned "Away <day> · back on <day>", else In. */
+export function rosterAvailability(m: { readonly left: boolean }, roster: MemberRoster | undefined, now: Date): MemberDetail["availability"] {
+  if (m.left) return { out: true, soon: false, detail: "Left the company", cover: "" };
+  if (roster === "unread") return { out: false, soon: false, detail: "Availability could not be read. Try again.", cover: "" };
+  const w = roster?.window;
+  if (!roster || !w || w.to <= roster.today) return { out: false, soon: false, detail: roster ? "Available for follow-ups" : "No absence is recorded", cover: "" };
+  const out = w.from <= roster.today;
+  return out
+    ? { out: true, soon: false, detail: `Back on ${dayDisp(w.to, now)}`, cover: "", from: w.from, backOn: w.to }
+    : { out: false, soon: true, detail: `Away ${dayDisp(w.from, now)} · back on ${dayDisp(w.to, now)}`, cover: "", from: w.from, backOn: w.to };
+}
+
 /** A member the viewer may open: themselves, someone they manage (lead side), or an Investors seat row they may read. */
-export function memberDetail(a: Extract<TeamsAccess, { ok: true }>, org: Org, grants: Readonly<Record<string, CapGrid>>, view: TeamsView, id: string, now: Date = new Date(0)): DetailResult {
+export function memberDetail(a: Extract<TeamsAccess, { ok: true }>, org: Org, grants: Readonly<Record<string, CapGrid>>, view: TeamsView, id: string, now: Date = new Date(0),
+  roster?: MemberRoster): DetailResult {
   const no: DetailResult = { ok: false, code: "cannot-open", message: CANNOT_OPEN };
   if (typeof id !== "string" || !USER_ID.test(id)) return no;
   const lead = view.members?.find((r) => r.id === id) ?? null;
@@ -383,9 +409,7 @@ export function memberDetail(a: Extract<TeamsAccess, { ok: true }>, org: Org, gr
       email: id === a.viewer || view.canChangeSeats ? m.email || null : null,
       clash: Object.freeze(m.left ? [] : clashOf(ctx.PEOPLE, id)),
       changed: Object.freeze(m.left ? [] : capDevOf(ctx.PEOPLE, ctx.CAPS as Grants, id).map((d) => Object.freeze({ ...d, off: Object.freeze([...d.off]) as Cap[], on: Object.freeze([...d.on]) as Cap[] }))),
-      availability: Object.freeze(m.left
-        ? { out: true, soon: false, detail: "Left the company", cover: "" }
-        : { out: false, soon: false, detail: "No absence is recorded", cover: "" }),
+      availability: Object.freeze(rosterAvailability(m, roster, now)),
     }),
   };
 }

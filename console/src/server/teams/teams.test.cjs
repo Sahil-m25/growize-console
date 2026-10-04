@@ -69,7 +69,7 @@ async function credentialOf(id) {
 }
 
 /** users: page-fixture override; roles/profiles: fixture names; agg: (module) => fixture name */
-function rig({ users = (p) => `users.all.page${p}`, roles = 'settings.roles', profiles = 'settings.profiles', agg = (m) => (m === 'Leads' ? 'coql.leads-by-owner' : 'coql.accounts-by-kam'), grants = createGrantStore(), cache = createScopedCache({ clock: () => T0 }) } = {}) {
+function rig({ users = (p) => `users.all.page${p}`, roles = 'settings.roles', profiles = 'settings.profiles', agg = (m) => (m === 'Leads' ? 'coql.leads-by-owner' : 'coql.accounts-by-kam'), grants = createGrantStore(), cache = createScopedCache({ clock: () => T0 }), roster } = {}) {
   const calls = [];
   const sink = createMemorySink();
   const log = createOpsLog(sink);
@@ -84,7 +84,7 @@ function rig({ users = (p) => `users.all.page${p}`, roles = 'settings.roles', pr
       if (u.pathname === '/crm/v8/coql') return toResponse(FX('teams', `${agg(/from (\w+)/.exec(call.body.select_query)[1])}.response.json`));
       throw new Error(`unexpected ${init.method} ${u.pathname}`);
     } });
-  const svc = createTeamsService({ crm, seats, pinned, grants: grantReaderOf(grants), cache, log, clock: () => T0 });
+  const svc = createTeamsService({ crm, seats, pinned, grants: grantReaderOf(grants), cache, log, clock: () => T0, ...(roster ? { roster } : {}) });
   return { svc, calls, sink };
 }
 
@@ -281,4 +281,21 @@ test('M17-S01-W2: the person drawer\'s clash, changed-from-the-seat and availabi
   assert.equal(plain.ok, true);
   assert.deepEqual([plain.detail.changed.length, plain.detail.clash.length], [0, 0]);
   assert.ok(!/@example\.invalid|\+91/.test(JSON.stringify(plain.detail)), 'no email or phone for someone whose seat the viewer does not change');
+});
+
+test('M08-S05-NOTE-6: the member drawer reads Out / Back on from the roster (Plane C) — ids and days only, a failed read says so', async () => {
+  const cred = await credentialOf(U('04'));
+  const viewOf = (windows) => ({ async view() { return { windows: new Map(windows) }; } });
+  // T0 = 28 Sep 2026 IST
+  const out = await rig({ roster: viewOf([[U('05'), { from: '2026-09-25', to: '2026-10-02' }]]) }).svc.member(cred, { who: U('04'), seat: 'conv' }, U('05'));
+  assert.deepEqual({ ...out.detail.availability }, { out: true, soon: false, detail: 'Back on 02 Oct', cover: '', from: '2026-09-25', backOn: '2026-10-02' });
+  const soon = await rig({ roster: viewOf([[U('05'), { from: '2026-10-05', to: '2027-01-02' }]]) }).svc.member(cred, { who: U('04'), seat: 'conv' }, U('05'));
+  assert.deepEqual({ ...soon.detail.availability }, { out: false, soon: true, detail: 'Away 05 Oct · back on 02 Jan 2027', cover: '', from: '2026-10-05', backOn: '2027-01-02' });
+  const back = await rig({ roster: viewOf([[U('05'), { from: '2026-09-20', to: '2026-09-28' }]]) }).svc.member(cred, { who: U('04'), seat: 'conv' }, U('05'));
+  assert.deepEqual({ ...back.detail.availability }, { out: false, soon: false, detail: 'Available for follow-ups', cover: '' }, 'the first day back they are in');
+  const other = await rig({ roster: viewOf([[U('14'), { from: '2026-09-25', to: '2026-10-02' }]]) }).svc.member(cred, { who: U('04'), seat: 'conv' }, U('05'));
+  assert.equal(other.detail.availability.out, false, 'someone else\'s window is not theirs');
+  const down = await rig({ roster: { async view() { throw new Error('plane c down'); } } }).svc.member(cred, { who: U('04'), seat: 'conv' }, U('05'));
+  assert.equal(down.ok, true);
+  assert.deepEqual({ ...down.detail.availability }, { out: false, soon: false, detail: 'Availability could not be read. Try again.', cover: '' });
 });

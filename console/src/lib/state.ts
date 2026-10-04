@@ -457,6 +457,8 @@ export type Action =
   | { type: "setMe"; f: string; v: string }
   | { type: "setMyStyle"; c: number; sq: boolean }
   | { type: "setAvail"; k: PersonKey; why?: string; from?: string | null; to?: string | null }
+  /* M08-S05-NOTE-6: live mode only — the roster's windows from GET /api/availability (components/shell/LiveRoster.tsx) */
+  | { type: "availLive"; AVAIL: Dataset["AVAIL"] }
   | { type: "setOutWhy"; k: PersonKey; why: string }
   | { type: "setOutFrom"; k: PersonKey; from: string }
   | { type: "setOutTo"; k: PersonKey; to: string }
@@ -754,6 +756,8 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
   }
   if (a.type === "fixture") return a.k === "failNextOnSignIn" && state.FIXTURES ? { ...state, FXFAIL: true } : state;
   if (!state.authed && a.type !== "setTheme") return state;
+  /* the roster read live (GET /api/availability): ids and days, replacing the empty live AVAIL. The demo book keeps its own. */
+  if (a.type === "availLive") return state.FIXTURES ? state : { ...state, AVAIL: a.AVAIL };
   /* the Investors side (merge-glue.js IMHOOK): its writes run as the signed-in person; opening one of
      its drawers closes the lead side's (IMHOOK.closeIR); its go(v) lands on the console page that
      carries v, on the Investors side of it (IMHOOK.go) */

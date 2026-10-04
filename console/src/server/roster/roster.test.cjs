@@ -222,3 +222,57 @@ test('M14-S02: the event write refuses staff who are out or carry no book, with 
   assert.equal(staffMessage([{ userId: OWNER, why: 'out', backOn: 'x' }, { userId: OTHER, why: 'no-book', backOn: null }]),
     '2 people named to work this event cannot: 1 is out of office on the event dates and 1 carries no book. Pick someone who is in and carries a book.');
 });
+
+/* M08-S05-NOTE-7 / D44 — returning a primary through roster controls clears their explicit cover. */
+async function returnRig(who, { conflictOn = null, shareOk = true, team = null } = {}) {
+  const r = rig();
+  const { userCredential } = load('lib/zoho/client.js');
+  const cred = await userCredential({ access_token: 'synthetic', api_domain: 'https://www.zohoapis.in', expires_in: 3600 },
+    { recordIdPrefix: P, gate: { async acquire() { return { waitedMs: 0, release() {} }; }, async run(_c, t) { return t(); }, snapshot() { return {}; } },
+      log: { event() {}, refusal() {}, call() {} }, clock: () => T0, fetch: async () => new Response(JSON.stringify({ users: [{ id: who, status: 'active' }] }), { status: 200 }) });
+  const L2 = `${P}740996304`;
+  const calls = { coql: [], update: [], share: [], refusals: [] };
+  const crm = {
+    async getRecord() { throw new Error('not read'); },
+    async coql(_c, q) { calls.coql.push(q); return { ok: true, value: { moreRecords: false, records: [
+      { id: LEAD, Cover_By: { id: SEC }, Modified_Time: '2026-10-05T09:00:00+05:30' },
+      { id: L2, Cover_By: { id: NEW }, Modified_Time: '2026-10-05T09:01:00+05:30' }] } }; },
+    async update(_c, _m, id, f, o) { calls.update.push({ id, f, ifUnmodifiedSince: o.ifUnmodifiedSince });
+      return id === conflictOn ? { ok: false, error: { kind: 'conflict' } } : { ok: true, value: { modifiedTime: '2026-10-05T10:00:00+05:30' } }; },
+  };
+  const access = { async recheck() { return { actor: { userId: who, seat: team ? 'ir-manager' : 'ir' }, mayViewLeads: true, teamOwnerIds: team, teamOrgWide: false }; } };
+  const cover = createCover({ crm, access, share: async (w) => { calls.share.push(...w); return w.map((x) => ({ leadId: x.leadId, state: x.state, ok: shareOk })); },
+    log: { refusal(e) { calls.refusals.push(e); } }, planeC: r.planeC, recordIdPrefix: P, roster: r.roster, clock: r.clock });
+  return { r, cover, calls, L2, p: { credential: cred, sessionId: 'session_fixture_roster_0002' } };
+}
+
+test('D44: the owner marked back in — every explicit cover on their leads ends: guarded write, share revoked, one Plane C line each', async () => {
+  const { r, cover, calls, L2, p } = await returnRig(OWNER);
+  const out = await cover.returned(p, OWNER);
+  assert.deepEqual(out, { ok: true, value: { personId: OWNER, cleared: [LEAD, L2], failed: [] } });
+  assert.match(calls.coql[0], new RegExp(`Owner = '${OWNER}' and Cover_By is not null`));
+  assert.deepEqual(calls.update.map((u) => [u.id, u.f, u.ifUnmodifiedSince]), [
+    [LEAD, { Cover_By: null, Cover_Until: null }, '2026-10-05T09:00:00+05:30'], [L2, { Cover_By: null, Cover_Until: null }, '2026-10-05T09:01:00+05:30']]);
+  assert.deepEqual(calls.share, [{ leadId: LEAD, coverUserId: SEC, state: 'closed' }, { leadId: L2, coverUserId: NEW, state: 'closed' }]);
+  const lines = r.lines().filter((e) => e.action === 'grant-change');
+  assert.deepEqual(lines.map((e) => [e.who, e.whom, e.outcome, e.reason, e.recordIds]), [
+    [OWNER, SEC, 'ended', 'cover-end-returned', [LEAD]], [OWNER, NEW, 'ended', 'cover-end-returned', [L2]]]);
+});
+
+test('D44: a manager over the owner may mark them back; a lead Zoho will not clear is reported, not hidden', async () => {
+  const { cover, calls, L2, p } = await returnRig(MGR, { conflictOn: `${P}740996304`, team: [OWNER] });
+  const out = await cover.returned(p, OWNER);
+  assert.deepEqual(out.value, { personId: OWNER, cleared: [LEAD], failed: [L2] });
+  assert.equal(calls.share.length, 1, 'the share of the lead still covered stays open');
+});
+
+test('D44: someone neither the owner nor over them cannot end the owner\'s covers — refused, nothing read or written', async () => {
+  const { r, cover, calls, p } = await returnRig(OTHER);
+  const out = await cover.returned(p, OWNER);
+  assert.equal(out.reasonCode, 'not-yours-to-end');
+  assert.equal(calls.coql.length + calls.update.length + calls.share.length, 0);
+  const refused = r.lines().find((e) => e.action === 'refused-action');
+  assert.deepEqual([refused.who, refused.whom, refused.reason], [OTHER, OWNER, 'cover-return']);
+  assert.equal((await cover.returned({ ...p, sessionId: 'x' }, OWNER)).reasonCode, 'invalid-request');
+  assert.equal((await cover.returned(p, 'not-an-id')).reasonCode, 'invalid-request');
+});

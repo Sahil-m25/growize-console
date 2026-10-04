@@ -21,6 +21,12 @@
  * PROVISIONAL jev "b" 0.85), and Plane C files the grant (D49: who, whom, outcome). Ending — by the
  * owner, whoever carries it or a manager — clears the window, revokes the share and files the end.
  * Expiry is `sweepExpiredCovers`, run on the service token by a schedule: revoke, then clear.
+ *
+ * THE RETURN (D44: "returning a primary through roster controls clears their cover"). When a person who is out today
+ * is marked back in (DELETE /api/availability — themselves, or a manager over them), `returned` ends every explicit
+ * window on the leads they own: read on the marker's own token, cleared with If-Unmodified-Since, the share revoked,
+ * and one Plane C `grant-change` line per lead (outcome ended, reason cover-end-returned). A lead Zoho will not clear
+ * is reported, never retried silently; its window still closes at Cover_Until.
  * Nothing is cached; logs hold ids and codes only.
  */
 
@@ -39,6 +45,8 @@ const RECORD_PREFIX = /^\d{6,16}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 const SWEEP_PAGE = 200;
+/** A returning owner's covered leads, read in one page: more than this is reported as pending rather than left unread. */
+const RETURN_PAGE = 200;
 
 /** The prototype's DUR. "back" (until the owner is back) ends the day before the roster's first day back; 14 days only when the roster does not say when. */
 export const COVER_DURATIONS = Object.freeze({ today: 1, d3: 3, w1: 7, w2: 14, back: 14 } as const);
@@ -134,11 +142,17 @@ const REASON: Readonly<Record<CoverRefusal, string>> = Object.freeze({
   "not-yours-to-end": "a cover ends when the owner, whoever is carrying it, or a manager says so",
 });
 
+export type ReturnResult =
+  | { readonly ok: true; readonly value: { readonly personId: string; /** leads whose cover was ended */ readonly cleared: readonly string[];
+      /** leads Zoho would not clear (changed, refused, or past the page) — their window closes at Cover_Until */ readonly failed: readonly string[] } }
+  | Extract<CoverResult, { ok: false }>;
+
 /** Opens or closes the record share for a window. Runtime: the cover-window-share service job. */
 export type CoverShare = (windows: readonly CoverWindow[], signal?: AbortSignal) => Promise<readonly CoverWindowResult[]>;
 
 export interface CoverDependencies {
-  readonly crm: Pick<ZohoClient, "getRecord" | "update">;
+  /** coql: only `returned` reads a list (the returning owner's covered leads) */
+  readonly crm: Pick<ZohoClient, "getRecord" | "update"> & Partial<Pick<ZohoClient, "coql">>;
   readonly access: LeadsAccessAuthority;
   readonly share: CoverShare;
   readonly log: OpsLog;
@@ -161,14 +175,16 @@ export function createCover(deps: CoverDependencies) {
   const clock = deps.clock ?? Date.now;
   const validId = (v: unknown): v is string => typeof v === "string" && RECORD_ID.test(v) && v.startsWith(deps.recordIdPrefix);
   const seatCode = (a: LeadsAccess | null) => a?.actor?.seat ?? null;
-  const refuse = (me: string, a: LeadsAccess | null, action: "cover-start" | "cover-end", code: CoverRefusal, ids: string[] = []): CoverResult => {
-    log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action, reason: code, recordIds: ids.filter(validId) });
+  const refuse = (me: string, a: LeadsAccess | null, action: "cover-start" | "cover-end" | "cover-return", code: CoverRefusal, ids: string[] = []): Extract<CoverResult, { ok: false }> => {
+    log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action, reason: code, recordIds: action === "cover-return" ? [] : ids.filter(validId) });
     if (code === "not-yours-to-cover" || code === "not-yours-to-end" || code === "capability-missing") {
-      planeC.record({ at: clock(), who: me, action: "refused-action", outcome: "refused", reason: action, seat: seatCode(a), recordIds: ids.filter(validId) });
+      /* a refused return names the person (whom), never a lead: their ids are user ids, not records */
+      planeC.record({ at: clock(), who: me, ...(action === "cover-return" && ids[0] ? { whom: ids[0] } : {}), action: "refused-action", outcome: "refused", reason: action,
+        seat: seatCode(a), recordIds: action === "cover-return" ? [] : ids.filter(validId) });
     }
     return { ok: false, kind: "refused", reasonCode: code, reason: REASON[code] };
   };
-  const zoho = (k: ZohoFailureKind | "unexpected"): CoverResult =>
+  const zoho = (k: ZohoFailureKind | "unexpected"): Extract<CoverResult, { ok: false }> =>
     ({ ok: false, kind: "source-error", source: "zoho", errorKind: k, retryable: k === "network" || k === "server" || k === "busy" });
   const isManagerOf = (a: LeadsAccess, owner: string) => a.teamOrgWide || (a.teamOwnerIds !== null && a.teamOwnerIds.includes(owner));
 
@@ -255,6 +271,41 @@ export function createCover(deps: CoverDependencies) {
       if (!revoked) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-end", reason: "unshare-pending", recordIds: [leadId] });
       planeC.record({ at: clock(), who: me, whom: by, action: "grant-change", outcome: "ended", reason: "cover-end", seat: seatCode(a), recordIds: [leadId] });
       return { ok: true, value: { leadId, coverById: null, coverUntil: null, modifiedTime: put.value.modifiedTime, shared: revoked } };
+    },
+
+    /** D44: `personId` was out and is marked back in — end every explicit cover on the leads they own. The person themself, or a manager over them. */
+    async returned(p: Principal, personId: string, signal?: AbortSignal): Promise<ReturnResult> {
+      const cred = p?.credential;
+      if (!isUserCredential(cred) || !validId(cred.userId) || typeof p.sessionId !== "string" || !SESSION_ID.test(p.sessionId) || !validId(personId)) {
+        return refuse(isUserCredential(cred) ? cred.userId : "unrecognised", null, "cover-return", "invalid-request");
+      }
+      const me = cred.userId;
+      let a: LeadsAccess | null;
+      try { a = await access.recheck(cred, p.sessionId, signal); } catch {
+        return { ok: false, kind: "source-error", source: "access", errorKind: "unexpected", retryable: true };
+      }
+      if (!a || a.actor?.userId !== me) return refuse(me, a, "cover-return", "session-changed");
+      if (personId !== me && !isManagerOf(a, personId)) return refuse(me, a, "cover-return", "not-yours-to-end", [personId]);
+      if (typeof crm.coql !== "function") return zoho("unexpected");
+      let got: Awaited<ReturnType<NonNullable<typeof crm.coql>>>;
+      try {
+        got = await crm.coql(cred, `select id, Cover_By, Modified_Time from ${LEADS_MODULE} where (Owner = '${personId}' and Cover_By is not null) order by id asc limit 0, ${RETURN_PAGE}`, { signal });
+      } catch { return zoho("unexpected"); }
+      if (!got.ok) return zoho(got.error.kind);
+      const cleared: string[] = [], failed: string[] = [];
+      for (const L of got.value.records) {
+        const by = idOf(L.Cover_By);
+        if (!validId(L.id)) continue;
+        if (!by || typeof L.Modified_Time !== "string" || !DATETIME.test(L.Modified_Time)) { failed.push(L.id); continue; }
+        const put = await write(cred, L.id, L.Modified_Time, { Cover_By: null, Cover_Until: null }, signal);
+        if (!put || !put.ok) { failed.push(L.id); continue; }
+        const revoked = await shareOk({ leadId: L.id, coverUserId: by, state: "closed" }, signal);
+        if (!revoked) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-end", reason: "unshare-pending", recordIds: [L.id] });
+        planeC.record({ at: clock(), who: me, whom: by, action: "grant-change", outcome: "ended", reason: "cover-end-returned", seat: seatCode(a), recordIds: [L.id] });
+        cleared.push(L.id);
+      }
+      if (got.value.moreRecords) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-return", reason: "more-than-a-page", recordIds: [] });
+      return { ok: true, value: { personId, cleared, failed } };
     },
   });
 }

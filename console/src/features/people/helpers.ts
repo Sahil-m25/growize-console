@@ -65,6 +65,9 @@ export const absOpen = (s: ConsoleState, k: PersonKey): Action => {
       ABWHY: a ? a.why : null,
       ABFROM: a && isoDay.test(a.from) ? a.from : iso(s.NOW),
       ABTO: a && isoDay.test(a.to) ? a.to : iso(dAdd(s.NOW, 1)),
+      /* the last press's refusal or note belongs to the last opening (absence drawer, M08-S05-NOTE-6) */
+      AVERR: null,
+      AVNOTE: null,
     },
   };
 };
