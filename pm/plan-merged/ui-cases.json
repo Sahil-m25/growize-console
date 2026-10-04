@@ -5306,7 +5306,7 @@
    ],
    "expected": [
     "A panel titled 'An IR says the money has arrived' is open for Prakash Bhat.",
-    "The panel says Rohit Verma wrote this in the IR console.",
+    "The panel says Rohit Deshpande wrote this on the lead side.",
     "Already in reads ₹2.5 L.",
     "Outstanding reads ₹22.5 L.",
     "Hold ends reads 23 Sep.",
@@ -5815,7 +5815,7 @@
    ],
    "expected": [
     "The Supplementary agreement round is tagged 'verify it' and reads 'They say it is signed — verify it'.",
-    "The 'Verify the signed copy' panel says Rohit Verma says the investor has signed and sent it, and that this is what they were told, not a signature."
+    "The 'Verify the signed copy' panel says Rohit Deshpande says the investor has signed and sent it, and that this is what they were told, not a signature."
    ],
    "fixtures": [
     "KIRAN_SUPP_SAID_SIGNED"
@@ -5834,7 +5834,7 @@
    ],
    "expected": [
     "The 'Verify the signed copy' panel is open for Prakash Bhat's Allocation letter.",
-    "The panel shows 'No word from the IR yet' and no note from Rohit Verma."
+    "The panel reads 'No word from the IR yet.'"
    ],
    "fixtures": [
     "PRAKASH_ALLOCATION_OUT"
@@ -6363,7 +6363,7 @@
    ],
    "expected": [
     "The page header for Kiran Joshi (ARL-INV-0220) carries a 'said yes' tag.",
-    "The Journey says Kiran Joshi was brought in by Rohit Verma from Events, lead L21."
+    "The Journey says Kiran Joshi was brought in by Rohit Deshpande from Events, lead L21."
    ],
    "fixtures": [
     "KIRAN_SAID_YES"

@@ -30823,14 +30823,15 @@
    ],
    "ui_expected": [
     "A panel titled 'An IR says the money has arrived' is open for Prakash Bhat.",
-    "The panel says Rohit Verma wrote this in the IR console.",
+    "The panel says Rohit Deshpande wrote this on the lead side.",
     "Already in reads ₹2.5 L.",
     "Outstanding reads ₹22.5 L.",
     "Hold ends reads 23 Sep.",
     "The panel offers 'Confirm and record it' and 'Not there yet'."
    ],
    "group": "IM-B",
-   "orig_story": "IM05-S04"
+   "orig_story": "IM05-S04",
+   "expected": "A panel titled 'An IR says the money has arrived' is open for Prakash Bhat. The panel says Rohit Deshpande wrote this on the lead side. Already in reads ₹2.5 L. Outstanding reads ₹22.5 L. Hold ends reads 23 Sep. The panel offers 'Confirm and record it' and 'Not there yet'."
   },
   {
    "id": "TC-IM05-012",
@@ -31777,10 +31778,11 @@
    ],
    "ui_expected": [
     "The Supplementary agreement round is tagged 'verify it' and reads 'They say it is signed — verify it'.",
-    "The 'Verify the signed copy' panel says Rohit Verma says the investor has signed and sent it, and that this is what they were told, not a signature."
+    "The 'Verify the signed copy' panel says Rohit Deshpande says the investor has signed and sent it, and that this is what they were told, not a signature."
    ],
    "group": "IM-C",
-   "orig_story": "IM07-S03"
+   "orig_story": "IM07-S03",
+   "expected": "The Supplementary agreement round is tagged 'verify it' and reads 'They say it is signed — verify it'. The 'Verify the signed copy' panel says Rohit Deshpande says the investor has signed and sent it, and that this is what they were told, not a signature."
   },
   {
    "id": "TC-IM07-010",
@@ -31801,10 +31803,11 @@
    ],
    "ui_expected": [
     "The 'Verify the signed copy' panel is open for Prakash Bhat's Allocation letter.",
-    "The panel shows 'No word from the IR yet' and no note from Rohit Verma."
+    "The panel reads 'No word from the IR yet.'"
    ],
    "group": "IM-C",
-   "orig_story": "IM07-S03"
+   "orig_story": "IM07-S03",
+   "expected": "The 'Verify the signed copy' panel is open for Prakash Bhat's Allocation letter. The panel reads 'No word from the IR yet.'"
   },
   {
    "id": "TC-IM07-011",
@@ -32720,10 +32723,11 @@
    ],
    "ui_expected": [
     "The page header for Kiran Joshi (ARL-INV-0220) carries a 'said yes' tag.",
-    "The Journey says Kiran Joshi was brought in by Rohit Verma from Events, lead L21."
+    "The Journey says Kiran Joshi was brought in by Rohit Deshpande from Events, lead L21."
    ],
    "group": "IM-C",
-   "orig_story": "IM11-S02"
+   "orig_story": "IM11-S02",
+   "expected": "The page header for Kiran Joshi (ARL-INV-0220) carries a 'said yes' tag. The Journey says Kiran Joshi was brought in by Rohit Deshpande from Events, lead L21."
   },
   {
    "id": "TC-IM11-005",
