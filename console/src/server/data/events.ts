@@ -12,7 +12,7 @@
 
 import type { ZohoFailure } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
-import type { PlaneCLog } from "../identity/plane-c";
+import { revealWhyOf, type PlaneCLog } from "../identity/plane-c";
 
 const RECORD_ID = /^\d{15,22}$/;
 const ids = (xs: readonly (string | null | undefined)[]): string[] => xs.filter((x): x is string => typeof x === "string" && RECORD_ID.test(x));
@@ -24,8 +24,9 @@ export interface InvestorEvents {
   refusal(userId: string, action: string, reason: string, recordIds?: readonly string[]): void;
   /** Plane B: Zoho answered 412 ALREADY_MODIFIED to a conditional write. */
   conflict(userId: string, action: string, recordId: string | null): void;
-  /** Plane C: an identity field shown in full (or refused). The field is a code; the value never travels. */
-  reveal(userId: string, seat: string | null, field: RevealField, contactId: string, outcome: "ok" | "refused"): void;
+  /** Plane C: an identity field shown in full (or refused). The field is a code; the value never travels. `why` is the
+   *  chosen reason (a REVEAL_WHY code or its chip label); without one the line says "unstated" (M15-S05-NOTE-1). */
+  reveal(userId: string, seat: string | null, field: RevealField, contactId: string, outcome: "ok" | "refused", why?: string | null): void;
   /** Plane C: a step-up (re-authentication before a sensitive act). */
   stepUp(userId: string, seat: string | null, outcome: "ok" | "refused", reason: string): void;
   /** Plane C: the session's seat changed between two reads (Zoho role moved). */
@@ -55,8 +56,9 @@ export function createInvestorEvents(deps: { readonly log: OpsLog; readonly plan
     conflict(userId: string, action: string, recordId: string | null) {
       deps.log.refusal({ at: clock(), actor: user(userId), action, reason: "already-modified", recordIds: ids([recordId]) });
     },
-    reveal(userId: string, seat: string | null, field: RevealField, contactId: string, outcome: "ok" | "refused") {
-      deps.planeC.record({ at: clock(), who: userId, action: "reveal", outcome, reason: field === "pan" ? "pan" : "bank-account", seat, recordIds: ids([contactId]) });
+    reveal(userId: string, seat: string | null, field: RevealField, contactId: string, outcome: "ok" | "refused", why?: string | null) {
+      deps.planeC.record({ at: clock(), who: userId, action: "reveal", outcome, reason: field === "pan" ? "pan" : "bank-account", seat, recordIds: ids([contactId]),
+        why: revealWhyOf(why) ?? "unstated" });
     },
     stepUp(userId: string, seat: string | null, outcome: "ok" | "refused", reason: string) {
       deps.planeC.record({ at: clock(), who: userId, action: "step-up", outcome, reason, seat });

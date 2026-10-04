@@ -2,7 +2,9 @@
  * M15-S03 — server-only composition for the Activity API.
  *
  *   AUDIT_ARCHIVE_DIR        absolute directory of the local append-only archive (./archive.ts); unset →
- *                            the page reads Plane C only and says the archive is not configured
+ *                            the page reads Plane C only and says the archive is not configured.
+ *                            With LOG_SINK=stratus the archive is the Stratus bucket instead (../logs/stratus.ts)
+ *                            and AUDIT_ARCHIVE_DIR is ignored — an AppSail disk does not outlive its instance.
  *   ZOHO_FINANCE_USER_IDS    comma-separated Zoho user ids of the Finance people, for the Auditor (optional)
  *
  * Every Zoho read here is on the signed-in person's own token (D53): the visibility check and the record
@@ -14,7 +16,8 @@ import { dataRuntime } from "../data/zoho-source";
 import { logSinks } from "../logs/factory";
 import { reportOpsFailure } from "../ops/runtime";
 import { createZohoAuditExportSource, fetchUserDirectory, runAuditExport, type ExportRun, type HttpFetch } from "./export-job";
-import { createLocalAuditArchive, type AuditArchive } from "./archive";
+import { cleanRow, createLocalAuditArchive, type AuditArchive } from "./archive";
+import { createStratusAuditArchive } from "../logs/stratus";
 import type { ActivityDeps } from "./query";
 import { planeCBetween } from "./sources";
 
@@ -23,6 +26,8 @@ const G = globalThis as typeof globalThis & { __gzAuditArchive?: AuditArchive | 
 
 export function auditArchive(env: NodeJS.ProcessEnv = process.env): AuditArchive | null {
   if (G.__gzAuditArchive !== undefined) return G.__gzAuditArchive;
+  const objects = logSinks(env).objects;
+  if (objects) return (G.__gzAuditArchive = createStratusAuditArchive({ client: objects, clean: cleanRow }));
   const dir = (env.AUDIT_ARCHIVE_DIR ?? "").trim();
   G.__gzAuditArchive = dir ? createLocalAuditArchive({ dir }) : null;
   return G.__gzAuditArchive;

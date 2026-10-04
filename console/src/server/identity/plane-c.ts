@@ -38,6 +38,30 @@ export interface PlaneCEvent {
   readonly whom?: string;
   /** M03-S04-T02: how many records the event moved (a seat change's accounts returned to the pool). */
   readonly count?: number;
+  /** M15-S05-NOTE-1: a reveal's chosen reason, a code from REVEAL_WHY — never free text, never identity. */
+  readonly why?: RevealWhy;
+}
+
+/**
+ * M15-S05-NOTE-1 — the reasons a person may give for a reveal, as the short codes Plane C stores. The labels are
+ * the prototype's chips (lib/im/constants REVWHY); `unstated` marks a reveal whose screen asks no reason yet.
+ */
+export const REVEAL_WHY_LABEL = Object.freeze({
+  "tds-filing": "A filing or a TDS check",
+  "identity-check": "An identity check against a document",
+  "own-record-query": "An investor query about their own record",
+  "payout-refund": "A payout or a refund",
+  "cheque-name-match": "A name match against a cancelled cheque",
+  unstated: "No reason was asked",
+} as const);
+export type RevealWhy = keyof typeof REVEAL_WHY_LABEL;
+
+/** A reason code, or the exact chip label, as its code; anything else is null (the caller files "unstated"). */
+export function revealWhyOf(x: unknown): RevealWhy | null {
+  if (typeof x !== "string") return null;
+  if (Object.hasOwn(REVEAL_WHY_LABEL, x)) return x as RevealWhy;
+  const hit = (Object.entries(REVEAL_WHY_LABEL) as [RevealWhy, string][]).find(([, label]) => label === x);
+  return hit ? hit[0] : null;
 }
 
 export interface PlaneCSink {
@@ -65,6 +89,7 @@ function clean(e: PlaneCEvent): PlaneCEvent {
     reason: typeof x.reason === "string" && CODE.test(x.reason) && !looksLikeIdentity(x.reason) ? x.reason : "unrecognised",
     seat: typeof x.seat === "string" && CODE.test(x.seat) && !looksLikeIdentity(x.seat) ? x.seat : null,
     ...(x.whom !== undefined ? { whom: typeof x.whom === "string" && USER_ID.test(x.whom) ? x.whom : "unrecognised" } : {}),
+    ...(x.why !== undefined ? { why: revealWhyOf(x.why) ?? "unstated" } : {}),
     ...(x.count !== undefined ? { count: typeof x.count === "number" && Number.isSafeInteger(x.count) && x.count >= 0 ? x.count : 0 } : {}),
     ...(Array.isArray(x.recordIds)
       ? { recordIds: Object.freeze([...new Set((x.recordIds as unknown[]).filter((v): v is string => typeof v === "string" && RECORD_ID.test(v)))].slice(0, 50)) }

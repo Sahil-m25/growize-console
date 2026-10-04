@@ -1,9 +1,9 @@
 /* GET /api/logs?from=YYYY-MM-DD&to=YYYY-MM-DD&plane=b|c&kind=<kind or group>&actor=<zoho user id>&outcome=ok|failed|refused|ended&offset&limit
-   The Logs view (M15-S05-T01): Planes B and C read back from the day files, filtered, with the identity-reveal
+   The Logs view (M15-S05-T01): Planes B and C read back from the durable store (day files or Stratus segments), filtered, with the identity-reveal
    count and the API headroom (X-API-CREDITS-REMAINING) from Plane B. Readers: Digital Infrastructure / the
    super user, the Administrator seats, and the Auditor (server/logs/reader.ts logAccessOf). A reader without
    identity rights gets reveals as "Identity event" with record ids withheld. Invalid filters are ignored and named.
-   200 → LogResult · 403 → not a log reader (logged to Plane B as a refusal). Sign-in history: Zoho Directory. */
+   200 → LogResult · 503 log store not answering · 403 → not a log reader (logged to Plane B as a refusal). Sign-in history: Zoho Directory. */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { sessionCredential } from "@/server/oauth/request";
@@ -18,9 +18,15 @@ async function get(request: Request): Promise<Response> {
   const s = await sessionCredential();
   if (!s.ok) return s.response;
   const q = new URL(request.url).searchParams;
-  const r = queryLogs({ seat: s.session.seat },
-    { from: q.get("from"), to: q.get("to"), plane: q.get("plane"), kind: q.get("kind"), actor: q.get("actor"), outcome: q.get("outcome"), offset: q.get("offset"), limit: q.get("limit") },
-    logSource());
+  let r: Awaited<ReturnType<typeof queryLogs>>;
+  try {
+    r = await queryLogs({ seat: s.session.seat },
+      { from: q.get("from"), to: q.get("to"), plane: q.get("plane"), kind: q.get("kind"), actor: q.get("actor"), outcome: q.get("outcome"), offset: q.get("offset"), limit: q.get("limit") },
+      logSource());
+  } catch {
+    /* the durable store (Stratus) did not answer: say so, never show a partial log as complete */
+    return Response.json({ error: "Not shown — the log store is not answering. Try again in a minute.", code: "log-store-unavailable" }, { status: 503, headers: NO_STORE });
+  }
   if (!r.ok) {
     planeBLog().refusal({ at: Date.now(), actor: { kind: "user", userId: s.credential.userId }, action: "logs-read", reason: r.reason, recordIds: [] });
     return Response.json({ error: "The console logs are Digital Infrastructure's and the Auditor's.", code: r.reason }, { status: 403, headers: NO_STORE });

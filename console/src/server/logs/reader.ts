@@ -17,8 +17,10 @@ import { ROLE } from "../../lib/im/constants";
 import type { ImRoleKey } from "../../lib/im/types";
 import { dayOf } from "./jsonl";
 import type { LogSinks } from "./factory";
+import type { StorePlane } from "./sink";
+import { REVEAL_WHY_LABEL } from "../identity/plane-c";
 
-export type StorePlane = "ops" | "identity" | "errors";
+export type { StorePlane } from "./sink";
 export type LogPlane = "b" | "c";
 export type LogOutcome = "ok" | "failed" | "refused" | "ended";
 export type LogGroup = "api" | "refusal" | "event" | "error" | "identity" | "session" | "access";
@@ -49,6 +51,8 @@ export interface LogRow {
   readonly label: string | null;
   /** Record ids were removed for this reader. */
   readonly withheld: boolean;
+  /** A reveal's chosen reason, a short code from REVEAL_WHY ("tds-filing"…); null otherwise or for a reader without `pii`. */
+  readonly why: string | null;
 }
 
 export interface LogHeadroom {
@@ -125,17 +129,24 @@ export function logAccessOf(seat: string): { readonly read: boolean; readonly id
 
 export interface LogSource {
   /** The lines of one store whose UTC day falls in [fromDay, toDay]. */
-  read(plane: StorePlane, fromDay: string, toDay: string): readonly unknown[];
+  read(plane: StorePlane, fromDay: string, toDay: string): Promise<readonly unknown[]>;
 }
 
-/** The process's sinks as a source: the day files in jsonl mode, the in-memory rings otherwise. */
+/** Every UTC day from `fromDay` to `toDay` inclusive (capped at 400). */
+export function daysBetween(fromDay: string, toDay: string): string[] {
+  const out: string[] = [];
+  for (let t = Date.parse(fromDay + "T00:00:00Z"), end = Date.parse(toDay + "T00:00:00Z"); Number.isFinite(t) && t <= end && out.length < 400; t += D) out.push(dayOf(t));
+  return out;
+}
+
+/** The process's sinks as a source: the durable store (day files or Stratus segments), the in-memory rings otherwise. */
 export function logSourceOf(sinks: Pick<LogSinks, "stores" | "ops" | "identity" | "errors">): LogSource {
   return Object.freeze({
-    read(plane: StorePlane, fromDay: string, toDay: string): readonly unknown[] {
+    async read(plane: StorePlane, fromDay: string, toDay: string): Promise<readonly unknown[]> {
       const store = sinks.stores?.[plane] ?? null;
       if (store) {
         const out: unknown[] = [];
-        for (const d of store.days()) if (d >= fromDay && d <= toDay) out.push(...store.read(d));
+        for (const d of daysBetween(fromDay, toDay)) out.push(...await store.read(d)); // never lists a year of objects
         return out;
       }
       const ring: readonly unknown[] = plane === "ops" ? sinks.ops.records() : plane === "identity" ? sinks.identity.events() : sinks.errors.records();
@@ -168,7 +179,7 @@ function fromOps(l: unknown): Base | null {
   const r = lineOf(l);
   if (!r) return null;
   const at = r.at as number;
-  const common = { at, when: istIso(at), plane: "b" as const, actorId: actorOf(r.actor), whom: null, seat: null, recordIds: ids(r.recordIds), label: null };
+  const common = { at, when: istIso(at), plane: "b" as const, actorId: actorOf(r.actor), whom: null, seat: null, recordIds: ids(r.recordIds), label: null, why: null };
   if (r.kind === "zoho-call") {
     const failed = r.errorClass !== null && r.errorClass !== undefined;
     return { ...common, kind: "zoho-call", group: "api", action: str(r.op) ?? "unrecognised", outcome: failed ? "failed" : "ok",
@@ -188,7 +199,7 @@ function fromErrors(l: unknown): Base | null {
   const actorId = typeof r.userId === "string" && USER_ID.test(r.userId) ? r.userId : "unrecognised";
   return { at, when: istIso(at), plane: "b", kind: r.kind, group: "error", actorId, action: str(r.route) ?? "/unrecognised",
     outcome: "failed", reason: str(r.errorClass) ?? str(r.source) ?? str(r.zohoCode), endpoint: str(r.route), status: int(r.status) ?? int(r.zohoStatus),
-    durationMs: int(r.durationMs), creditsRemaining: null, whom: null, seat: null, recordIds: [], label: null };
+    durationMs: int(r.durationMs), creditsRemaining: null, whom: null, seat: null, recordIds: [], label: null, why: null };
 }
 
 const C_GROUP: Readonly<Record<string, LogGroup>> = Object.freeze({
@@ -221,12 +232,13 @@ function fromIdentity(l: unknown, identity: boolean): Base | null {
         : C_LABEL[action] ?? null;
   return { at, when: istIso(at), plane: "c", kind: action, group: C_GROUP[action]!, actorId: typeof e.who === "string" && USER_ID.test(e.who) ? e.who : "unrecognised",
     action, outcome, reason: action === "reveal" && !identity ? null : reason, endpoint: null, status: null, durationMs: null, creditsRemaining: null,
-    whom: typeof e.whom === "string" && USER_ID.test(e.whom) ? e.whom : null, seat: str(e.seat), recordIds: ids(e.recordIds), label };
+    whom: typeof e.whom === "string" && USER_ID.test(e.whom) ? e.whom : null, seat: str(e.seat), recordIds: ids(e.recordIds), label,
+    why: action === "reveal" && identity && typeof e.why === "string" && Object.hasOwn(REVEAL_WHY_LABEL, e.why) ? e.why : null };
 }
 
 /* ---- the query ---------------------------------------------------------------------------------- */
 
-export function queryLogs(reader: { readonly seat: string }, p: LogParams, source: LogSource, now: number = Date.now()): LogResult {
+export async function queryLogs(reader: { readonly seat: string }, p: LogParams, source: LogSource, now: number = Date.now()): Promise<LogResult> {
   const access = logAccessOf(reader.seat);
   if (!access.read) return { ok: false, reason: "not-a-log-reader" };
   const ignored: string[] = [];
@@ -251,10 +263,10 @@ export function queryLogs(reader: { readonly seat: string }, p: LogParams, sourc
 
   const base: Base[] = [];
   if (plane !== "c") {
-    for (const l of source.read("ops", from, to)) { const r = fromOps(l); if (r) base.push(r); }
-    for (const l of source.read("errors", from, to)) { const r = fromErrors(l); if (r) base.push(r); }
+    for (const l of await source.read("ops", from, to)) { const r = fromOps(l); if (r) base.push(r); }
+    for (const l of await source.read("errors", from, to)) { const r = fromErrors(l); if (r) base.push(r); }
   }
-  if (plane !== "b") for (const l of source.read("identity", from, to)) { const r = fromIdentity(l, access.identity); if (r) base.push(r); }
+  if (plane !== "b") for (const l of await source.read("identity", from, to)) { const r = fromIdentity(l, access.identity); if (r) base.push(r); }
   const inRange = base.filter((r) => { const d = dayOf(r.at); return d >= from && d <= to; }).sort((a, b) => b.at - a.at);
 
   const rows: LogRow[] = inRange.map((r) => {
@@ -286,8 +298,8 @@ export function queryLogs(reader: { readonly seat: string }, p: LogParams, sourc
 }
 
 /** Plane B's lines in [fromMs, toMs), for the System page's checks (server/system/checks.ts SystemFacts.ops). */
-export function planeBBetween(source: LogSource, fromMs: number, toMs: number): readonly unknown[] {
-  return source.read("ops", dayOf(fromMs), dayOf(toMs)).filter((l) => {
+export async function planeBBetween(source: LogSource, fromMs: number, toMs: number): Promise<readonly unknown[]> {
+  return (await source.read("ops", dayOf(fromMs), dayOf(toMs))).filter((l) => {
     const at = (l as { at?: unknown })?.at;
     return typeof at === "number" && at >= fromMs && at < toMs;
   });

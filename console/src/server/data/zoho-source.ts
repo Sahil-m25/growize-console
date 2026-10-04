@@ -15,7 +15,7 @@ import type { Dataset } from "../../lib/data/types";
 import { createScopedCache, type ScopedCache } from "../../lib/zoho/cache";
 import { createZohoClient } from "../../lib/zoho/client";
 import { createGate, type Gate } from "../../lib/zoho/gate";
-import { createOpsLog, type OpsLog } from "../../lib/zoho/log";
+import { createOpsLog, type OpsEventLog } from "../../lib/zoho/log";
 import { createPlaneCLog, type PlaneCLog } from "../identity/plane-c";
 import { sharedOpsSink, sharedPlaneCSink } from "../logs/factory";
 import { alertingOpsSink } from "../ops/runtime";
@@ -28,7 +28,7 @@ import { noteLiveFailure, noteLiveRead } from "./freshness";
 export interface DataRuntime {
   readonly gate: Gate;
   readonly cache: ScopedCache;
-  readonly log: OpsLog;
+  readonly log: OpsEventLog;
   readonly planeC: PlaneCLog;
   readonly events: InvestorEvents;
 }

@@ -29,7 +29,7 @@ export interface RevealRefDeps {
   /** The seat the live session holds now (a fresh check on every press); null when the session changed. */
   readonly seatNow: (credential: UserCredential, sessionId: string) => Promise<RevealSeat | null>;
   /** Plane C: data/events.ts InvestorEvents.reveal — ids and codes only. */
-  readonly events: { reveal(userId: string, seat: string | null, field: "bank_account", recordId: string, outcome: "ok" | "refused"): void };
+  readonly events: { reveal(userId: string, seat: string | null, field: "bank_account", recordId: string, outcome: "ok" | "refused", why?: string | null): void };
 }
 export type RevealRefResult =
   | { readonly ok: true; readonly value: { readonly receiptId: string; readonly mode: string | null; readonly utr: string } }
@@ -43,21 +43,22 @@ export function createRevealRef(deps: RevealRefDeps) {
   const { crm, seatNow, events } = deps;
   const refuse = (code: RevealRefusal): RevealRefResult => ({ ok: false, kind: "refused", reasonCode: code, message: MESSAGE[code], retryable: false });
   return Object.freeze({
-    async reveal(principal: { readonly credential: UserCredential; readonly sessionId: string }, receiptId: string, signal?: AbortSignal): Promise<RevealRefResult> {
+    /** `why`: the reason chosen on screen (a REVEAL_WHY code); it rides on the Plane C line, "unstated" when absent. */
+    async reveal(principal: { readonly credential: UserCredential; readonly sessionId: string }, receiptId: string, signal?: AbortSignal, why?: string | null): Promise<RevealRefResult> {
       if (!isUserCredential(principal?.credential) || !SESSION_ID.test(principal.sessionId) || typeof receiptId !== "string" || !RECEIPT_ID.test(receiptId)) return refuse("invalid-request");
       const me = principal.credential.userId;
       const s = await seatNow(principal.credential, principal.sessionId);
       if (!s) return refuse("invalid-request");
-      if (!s.mayReveal) { events.reveal(me, s.seat, "bank_account", receiptId, "refused"); return refuse("not-allowed"); }
+      if (!s.mayReveal) { events.reveal(me, s.seat, "bank_account", receiptId, "refused", why); return refuse("not-allowed"); }
       const r = await crm.getRecord(principal.credential, "Receipts", receiptId, { fields: ["Mode", "UTR"], signal });
       if (!r.ok) {
-        if (r.error.kind === "refused") { events.reveal(me, s.seat, "bank_account", receiptId, "refused"); return refuse("not-visible"); }
+        if (r.error.kind === "refused") { events.reveal(me, s.seat, "bank_account", receiptId, "refused", why); return refuse("not-visible"); }
         return { ok: false, kind: "source-error", errorKind: r.error.kind, retryable: RETRY.has(r.error.kind), message: "Not shown — Zoho is not answering. Press again." };
       }
       const rec = r.value;
-      if (!rec) { events.reveal(me, s.seat, "bank_account", receiptId, "refused"); return refuse("not-visible"); }
+      if (!rec) { events.reveal(me, s.seat, "bank_account", receiptId, "refused", why); return refuse("not-visible"); }
       if (rec.id !== receiptId || typeof rec.UTR !== "string" || !rec.UTR) return refuse("source-invalid");
-      events.reveal(me, s.seat, "bank_account", receiptId, "ok");
+      events.reveal(me, s.seat, "bank_account", receiptId, "ok", why);
       return { ok: true, value: { receiptId, mode: typeof rec.Mode === "string" ? rec.Mode : null, utr: rec.UTR.slice(0, 80) } };
     },
   });

@@ -50,7 +50,7 @@ test('a seat with the reveal right gets the full reference for that one receipt,
   const res = await r.svc.reveal(principal, RID);
   assert.deepEqual(res, { ok: true, value: { receiptId: RID, mode: 'SWIFT', utr: 'SWIFT00008119' } });
   assert.deepEqual(r.calls, [{ module: 'Receipts', id: RID, fields: ['Mode', 'UTR'] }]);
-  assert.deepEqual(r.lines, [[ME, 'digital-infrastructure', 'bank_account', RID, 'ok']]);
+  assert.deepEqual(r.lines, [[ME, 'digital-infrastructure', 'bank_account', RID, 'ok', undefined]], 'no reason given: the events layer files "unstated"');
   assert.ok(!JSON.stringify(r.lines).includes('8119'), 'the value never reaches the log');
 });
 
@@ -60,7 +60,7 @@ test('a seat without the right is refused before Zoho is read, and the refusal i
   assert.equal(res.ok, false);
   assert.equal(res.reasonCode, 'not-allowed');
   assert.equal(r.calls.length, 0);
-  assert.deepEqual(r.lines, [[ME, 'key-account-manager', 'bank_account', RID, 'refused']]);
+  assert.deepEqual(r.lines, [[ME, 'key-account-manager', 'bank_account', RID, 'refused', undefined]]);
 });
 
 test('a receipt Zoho will not show this person is "not visible" (logged refused); a changed session or bad id is invalid-request and reads nothing', async () => {
@@ -83,4 +83,13 @@ test('a record that is not the one asked for, or has no reference, is source-inv
   r = rig({ record: { id: RID, UTR: '' } });
   assert.equal((await r.svc.reveal(principal, RID)).reasonCode, 'source-invalid');
   assert.equal(r.lines.length, 0);
+});
+
+test('M15-S05-NOTE-1: the chosen reason rides to the Plane C writer with the reveal, given or refused', async () => {
+  let r = rig();
+  await r.svc.reveal(principal, RID, undefined, 'payout-refund');
+  assert.deepEqual(r.lines, [[ME, 'digital-infrastructure', 'bank_account', RID, 'ok', 'payout-refund']]);
+  r = rig({ seat: { seat: 'key-account-manager', mayReveal: false } });
+  await r.svc.reveal(principal, RID, undefined, 'cheque-name-match');
+  assert.equal(r.lines[0][5], 'cheque-name-match');
 });

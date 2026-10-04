@@ -333,7 +333,8 @@ test('Plane B/C lines for refusals, reveals, step-ups, seat changes and 412s hol
     ['reveal', 'ok', 'pan', 'fin'], ['step-up', 'refused', 'stale-auth', 'fin'], ['seat-change', 'ok', 'from-kam', 'amlead'],
   ]);
   assert.deepEqual(c[0].recordIds, [`${P}740997101`]);
-  for (const e of c) for (const k of Object.keys(e)) assert.ok(['at', 'who', 'action', 'outcome', 'reason', 'seat', 'recordIds'].includes(k), k);
+  assert.equal(c[0].why, 'unstated', 'M15-S05-NOTE-1: a reveal with no reason given says so, as a code');
+  for (const e of c) for (const k of Object.keys(e)) assert.ok(['at', 'who', 'action', 'outcome', 'reason', 'seat', 'recordIds', 'why'].includes(k), k);
   assert.ok(!JSON.stringify([...b, ...c]).includes('AVRPM4471K'));
 });
 

@@ -30,7 +30,7 @@ export interface ArchivedAuditRow {
 }
 
 export interface AuditArchive {
-  readonly kind: "local" | "s3";
+  readonly kind: "local" | "s3" | "stratus";
   /** True once the day is sealed. */
   has(day: string): Promise<boolean>;
   /** Seal one day's rows. Refuses a day already sealed. */

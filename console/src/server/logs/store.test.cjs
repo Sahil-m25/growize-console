@@ -104,7 +104,7 @@ test('factory: memory by default and always in fixture mode; jsonl needs LOG_DIR
   assert.equal(mem.kind, 'memory'); assert.equal(mem.stores, null);
 });
 
-test('factory (jsonl): every sink is a tee — the ring the checks read, plus the day file — and every record is guarded', () => {
+test('factory (jsonl): every sink is a tee — the ring the checks read, plus the day file — and every record is guarded', async () => {
   const dir = tmp();
   const sinks = createLogSinks({ LOG_STORE: 'jsonl', LOG_DIR: dir }, { clock: () => DAY1 });
   const ops = createOpsLog(sinks.ops);
@@ -112,16 +112,16 @@ test('factory (jsonl): every sink is a tee — the ring the checks read, plus th
   ops.refusal({ at: DAY1, actor: { kind: 'user', userId: USER }, action: 'readLead', reason: 'not-visible', recordIds: [ID] });
   assert.equal(sinks.ops.records().length, 2);
   assert.equal(sinks.ops.headroom().lastCreditsRemaining, 21000);
-  const onDisk = sinks.stores.ops.read('2026-09-28');
+  const onDisk = await sinks.stores.ops.read('2026-09-28');
   assert.deepEqual(onDisk, JSON.parse(JSON.stringify(sinks.ops.records())));
   assert.equal(onDisk[0].endpoint, '/Leads/{id}');
   assert.deepEqual(onDisk[0].recordIds, [ID]);
   sinks.ops.clear();
   assert.equal(sinks.ops.records().length, 0);
-  assert.equal(sinks.stores.ops.read('2026-09-28').length, 2, 'clear() empties the view, never the file');
+  assert.equal((await sinks.stores.ops.read('2026-09-28')).length, 2, 'clear() empties the view, never the file');
 
   sinks.errors.write({ kind: 'route-error', at: DAY1, requestId: '3f2a9c1e-4b5d-4e6f-8a9b-0c1d2e3f4a5b', userId: null, route: '/api/data', method: 'GET', status: 500, zohoStatus: null, zohoCode: null, errorClass: 'exception', errorName: 'TypeError', durationMs: 3, note: 'Called 9876543210' });
-  const [e] = sinks.stores.errors.read('2026-09-28');
+  const [e] = await sinks.stores.errors.read('2026-09-28');
   assert.equal(e.requestId, '3f2a9c1e-4b5d-4e6f-8a9b-0c1d2e3f4a5b', 'a request UUID passes the guard');
   assert.equal(e.note, 'redacted', 'the shared guard catches what a producer let through');
 });
@@ -137,7 +137,7 @@ test('factory: a file that cannot be written never fails the caller — the ring
   assert.equal(errors.length, 1);
 });
 
-test('authority: refused page, refused action and grant change are filed as who, what, whom, when, outcome', () => {
+test('authority: refused page, refused action and grant change are filed as who, what, whom, when, outcome', async () => {
   const dir = tmp();
   const sinks = createLogSinks({ LOG_STORE: 'jsonl', LOG_DIR: dir }, { clock: () => DAY1 });
   const ev = createAuthorityEvents(createPlaneCLog(sinks.identity), () => DAY1);
@@ -146,7 +146,8 @@ test('authority: refused page, refused action and grant change are filed as who,
   ev.refusedAction(USER, 'ir', 'readLead', [ID, '9876543210']);
   ev.grantChange(USER, WHOM, 'ir-manager', 'numbers-view', 'ok');
   ev.grantChange(USER, 'anand.pillai@gmail.com', 'ir-manager', 'Sanjay Menon', 'refused');
-  const lines = sinks.stores.identity.read('2026-09-28');
+  /* Plane C lines on disk also carry the hash chain (ch, n, prev, h — chain.test.cjs); the record is the rest */
+  const lines = (await sinks.stores.identity.read('2026-09-28')).map(({ ch, n, prev, h, ...rest }) => (assert.ok(ch && n >= 0 && prev && h), rest));
   assert.deepEqual(lines[0], { at: DAY1, who: USER, action: 'refused-page', outcome: 'refused', reason: 'numbers', seat: 'ir' });
   assert.deepEqual(lines[1].recordIds, [ID], 'a phone never passes for a record id');
   assert.equal(lines[1].reason, 'readlead');
