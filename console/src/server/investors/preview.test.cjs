@@ -83,10 +83,11 @@ function rig(payouts) {
   const calls = [];
   const sink = createMemorySink();
   const log = createOpsLog(sink);
-  const events = createInvestorEvents({ log, planeC: createPlaneCLog(createPlaneCMemorySink()), clock: () => NOW });
+  const planeCSink = createPlaneCMemorySink();
+  const events = createInvestorEvents({ log, planeC: createPlaneCLog(planeCSink), clock: () => NOW });
   const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => NOW,
     fetch: async (url, init) => { const q = init && init.body ? JSON.parse(init.body).select_query : null; calls.push(q || `GET ${String(url)}`); return toResponse(route(url, q, payouts)); } });
-  return { crm, events, log, sink, calls, preview: createAppPreviewReader({ crm, events, log, clock: () => NOW }) };
+  return { crm, events, log, sink, planeCSink, calls, preview: createAppPreviewReader({ crm, events, log, clock: () => NOW }) };
 }
 
 /* ---------------- M10-S22-T02 ---------------- */
@@ -191,6 +192,10 @@ test('M10-S23: a real investor needs the warning confirmed; then one link, 10 mi
   const ev = x.sink.records().filter((r) => r.kind === 'event' && r.action === 'test-link-created');
   assert.deepEqual(ev.map((r) => [r.actor.userId, r.reason, r.recordIds]), [[SAHIL, `real.why-given.len-${WHY.length}`, [PRAKASH]]]);
   assert.ok(!JSON.stringify(x.sink.records()).includes('payouts tab'), 'the reason\'s words are never in a log line');
+  /* M15-S05-NOTE-1: the Plane C authority line — who, seat, for which Contact, how long it lives; never the URL or the words */
+  assert.deepEqual(x.planeCSink.events().map((e) => [e.action, e.outcome, e.who, e.seat, e.recordIds, e.ttlMinutes, e.reason]),
+    [['test-link-issued', 'ok', SAHIL, 'di', [PRAKASH], TEST_LINK_MINUTES, 'real-investor']]);
+  assert.ok(!JSON.stringify(x.planeCSink.events()).includes('payouts tab') && !JSON.stringify(x.planeCSink.events()).includes('https://'));
   const [row] = x.t.list('di', PRAKASH, NOW);
   assert.deepEqual([row.by, row.contactId, row.why, row.at, row.usedAt, row.state], [SAHIL, PRAKASH, WHY, NOW, null, 'live']);
 });

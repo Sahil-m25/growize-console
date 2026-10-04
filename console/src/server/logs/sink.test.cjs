@@ -319,6 +319,37 @@ test('M15-S05-NOTE-1: a reveal line carries the chosen reason as a code; every o
   assert.ok(root.rows.every((r) => r.why === null), 'no reason for a reader without pii');
 });
 
+test('M08-S08-NOTE-10 / M15-S05-NOTE-1: app-access-released and test-link-issued are chained on disk after the guard, read back labelled, with the expiry; an edit is caught', async () => {
+  const dir = tmp();
+  const sinks = createLogSinks({ LOG_STORE: 'jsonl', LOG_DIR: dir }, { clock: () => NOW });
+  const ev = createInvestorEvents({ log: createOpsLog(sinks.ops), planeC: createPlaneCLog(sinks.identity), clock: () => NOW });
+  ev.appAccessReleased(U1, 'fin', REC, 'ok', 'released');
+  ev.appAccessReleased(U1, 'kam', REC, 'refused', 'not-finance');
+  ev.testLinkIssued(U2, 'di', REC, 10, true);
+  const file = path.join(dir, `identity-${DAY}.jsonl`);
+  const lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  assert.deepEqual(lines.map((l) => [l.action, l.outcome, l.reason, l.who, l.seat, l.recordIds, l.ttlMinutes, l.n]), [
+    ['app-access-released', 'ok', 'released', U1, 'fin', [REC], undefined, 0],
+    ['app-access-released', 'refused', 'not-finance', U1, 'kam', [REC], undefined, 1],
+    ['test-link-issued', 'ok', 'real-investor', U2, 'di', [REC], 10, 2],
+  ], 'ttlMinutes survives the guard (a 9+ digit expiry timestamp would not)');
+  assert.deepEqual([...Object.keys(lines[2])].sort(), ['action', 'at', 'ch', 'h', 'n', 'outcome', 'prev', 'reason', 'recordIds', 'seat', 'ttlMinutes', 'who'].sort(), 'nothing but ids, codes and the chain');
+  const v = await auditChain(sinks).verify(DAY);
+  assert.deepEqual([v.ok, v.lines], [true, 3]);
+  const di = await queryLogs({ seat: 'di' }, { plane: 'c' }, logSourceOf(sinks), NOW);
+  assert.deepEqual(di.rows.map((r) => [r.kind, r.group, r.label, r.outcome, r.expiresAt]).sort(), [
+    ['app-access-released', 'access', 'App access release refused', 'refused', null],
+    ['app-access-released', 'access', 'App access released', 'ok', null],
+    ['test-link-issued', 'access', 'Test sign-in link issued', 'ok', NOW + 600_000],
+  ].sort());
+  const audit = await queryLogs({ seat: 'audit' }, { kind: 'access' }, logSourceOf(sinks), NOW);
+  assert.equal(audit.total, 3, 'the Auditor reads them');
+  assert.ok(audit.rows.every((r) => r.recordIds.length === 0 && r.withheld), 'without pii the Contact id is withheld');
+  const original = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean);
+  fs.writeFileSync(file, original.map((l, i) => (i === 2 ? l.replace('"ttlMinutes":10', '"ttlMinutes":600') : l)).join('\n') + '\n');
+  assert.deepEqual(kinds(await auditChain(sinks).verify(DAY)), ['edited@2'], 'a stretched expiry breaks the chain');
+});
+
 test('M06-S05-NOTE-3: lead search refuses an ops log without the success kind, so a search that went through is never filed as a refusal', () => {
   const deps = { crm: { search: async () => ({ ok: true, value: { records: [] } }) }, access: { recheck: async () => null }, recordIdPrefix: '9007199254' };
   assert.throws(() => createLeadSearch({ ...deps, log: { call() {}, refusal() {} } }), /ops log/);

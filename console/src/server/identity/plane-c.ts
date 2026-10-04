@@ -19,7 +19,11 @@ export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session
   /* M03-S04-T01: a person crossing the sign-in line — first page granted / last page taken (D40/D60) */
   | "access-granted" | "access-ended"
   /* M17-S02-T01: who someone reports to changed (their manager is their ceiling, D60) */
-  | "manager-change";
+  | "manager-change"
+  /* M08-S08-NOTE-10: "Send welcome and unlock" — app access released (or the release refused); recordIds = [Contact] */
+  | "app-access-released"
+  /* M15-S05-NOTE-1 / M10-S23: a one-time test sign-in link issued for a Contact; ttlMinutes = how long it lives */
+  | "test-link-issued";
 export type PlaneCOutcome = "ok" | "refused" | "ended";
 
 export interface PlaneCEvent {
@@ -40,6 +44,9 @@ export interface PlaneCEvent {
   readonly count?: number;
   /** M15-S05-NOTE-1: a reveal's chosen reason, a code from REVEAL_WHY — never free text, never identity. */
   readonly why?: RevealWhy;
+  /** M10-S23: a test link's lifetime in minutes (expiry = at + ttlMinutes). Minutes, not an epoch: the sink's guard nulls
+   *  any 9+ digit integer outside `at`, so an expiry timestamp would never survive it. */
+  readonly ttlMinutes?: number;
 }
 
 /**
@@ -73,7 +80,8 @@ export interface PlaneCLog {
 }
 
 const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change",
-  "refused-page", "refused-action", "grant-change", "access-granted", "access-ended", "manager-change"]);
+  "refused-page", "refused-action", "grant-change", "access-granted", "access-ended", "manager-change",
+  "app-access-released", "test-link-issued"]);
 const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;
@@ -90,6 +98,7 @@ function clean(e: PlaneCEvent): PlaneCEvent {
     seat: typeof x.seat === "string" && CODE.test(x.seat) && !looksLikeIdentity(x.seat) ? x.seat : null,
     ...(x.whom !== undefined ? { whom: typeof x.whom === "string" && USER_ID.test(x.whom) ? x.whom : "unrecognised" } : {}),
     ...(x.why !== undefined ? { why: revealWhyOf(x.why) ?? "unstated" } : {}),
+    ...(x.ttlMinutes !== undefined ? { ttlMinutes: typeof x.ttlMinutes === "number" && Number.isSafeInteger(x.ttlMinutes) && x.ttlMinutes > 0 && x.ttlMinutes <= 1440 ? x.ttlMinutes : 0 } : {}),
     ...(x.count !== undefined ? { count: typeof x.count === "number" && Number.isSafeInteger(x.count) && x.count >= 0 ? x.count : 0 } : {}),
     ...(Array.isArray(x.recordIds)
       ? { recordIds: Object.freeze([...new Set((x.recordIds as unknown[]).filter((v): v is string => typeof v === "string" && RECORD_ID.test(v)))].slice(0, 50)) }

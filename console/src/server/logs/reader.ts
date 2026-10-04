@@ -53,6 +53,8 @@ export interface LogRow {
   readonly withheld: boolean;
   /** A reveal's chosen reason, a short code from REVEAL_WHY ("tds-filing"…); null otherwise or for a reader without `pii`. */
   readonly why: string | null;
+  /** Plane C `test-link-issued`: when the link stops working (at + ttlMinutes); null otherwise. */
+  readonly expiresAt: number | null;
 }
 
 export interface LogHeadroom {
@@ -179,7 +181,7 @@ function fromOps(l: unknown): Base | null {
   const r = lineOf(l);
   if (!r) return null;
   const at = r.at as number;
-  const common = { at, when: istIso(at), plane: "b" as const, actorId: actorOf(r.actor), whom: null, seat: null, recordIds: ids(r.recordIds), label: null, why: null };
+  const common = { at, when: istIso(at), plane: "b" as const, actorId: actorOf(r.actor), whom: null, seat: null, recordIds: ids(r.recordIds), label: null, why: null, expiresAt: null };
   if (r.kind === "zoho-call") {
     const failed = r.errorClass !== null && r.errorClass !== undefined;
     return { ...common, kind: "zoho-call", group: "api", action: str(r.op) ?? "unrecognised", outcome: failed ? "failed" : "ok",
@@ -199,7 +201,7 @@ function fromErrors(l: unknown): Base | null {
   const actorId = typeof r.userId === "string" && USER_ID.test(r.userId) ? r.userId : "unrecognised";
   return { at, when: istIso(at), plane: "b", kind: r.kind, group: "error", actorId, action: str(r.route) ?? "/unrecognised",
     outcome: "failed", reason: str(r.errorClass) ?? str(r.source) ?? str(r.zohoCode), endpoint: str(r.route), status: int(r.status) ?? int(r.zohoStatus),
-    durationMs: int(r.durationMs), creditsRemaining: null, whom: null, seat: null, recordIds: [], label: null, why: null };
+    durationMs: int(r.durationMs), creditsRemaining: null, whom: null, seat: null, recordIds: [], label: null, why: null, expiresAt: null };
 }
 
 const C_GROUP: Readonly<Record<string, LogGroup>> = Object.freeze({
@@ -207,9 +209,11 @@ const C_GROUP: Readonly<Record<string, LogGroup>> = Object.freeze({
   "sign-in": "session", "sign-in-refused": "session", "sign-out": "session", "session-expired": "session", "session-revoked": "session",
   "refused-page": "access", "refused-action": "access", "grant-change": "access",
   "access-granted": "access", "access-ended": "access", "manager-change": "access",
+  "app-access-released": "access", "test-link-issued": "access",
 });
 const C_LABEL: Readonly<Record<string, string>> = Object.freeze({
   "access-granted": "Console access granted", "access-ended": "Console access ended", "manager-change": "Changed who they report to",
+  "test-link-issued": "Test sign-in link issued",
 });
 /** A seat change's count (M03-S04-T02): "3 accounts returned to the pool"; null when none moved. */
 export const pooledLabel = (n: unknown): string | null =>
@@ -229,11 +233,14 @@ function fromIdentity(l: unknown, identity: boolean): Base | null {
     ? (!identity ? "Identity event" : outcome === "ok" ? REVEALED[reason ?? ""] ?? "Revealed an identity field" : "Reveal refused")
     : action === "step-up" ? (outcome === "ok" ? "Stepped up" : "Step-up failed")
       : action === "seat-change" ? (outcome === "ok" && pooledLabel(e.count) ? `Seat changed · ${pooledLabel(e.count)}` : "Seat changed")
-        : C_LABEL[action] ?? null;
+        : action === "app-access-released" ? (outcome === "ok" ? "App access released" : "App access release refused")
+          : C_LABEL[action] ?? null;
+  const ttl = action === "test-link-issued" && typeof e.ttlMinutes === "number" && Number.isSafeInteger(e.ttlMinutes) && e.ttlMinutes > 0 && e.ttlMinutes <= 1440 ? e.ttlMinutes : null;
   return { at, when: istIso(at), plane: "c", kind: action, group: C_GROUP[action]!, actorId: typeof e.who === "string" && USER_ID.test(e.who) ? e.who : "unrecognised",
     action, outcome, reason: action === "reveal" && !identity ? null : reason, endpoint: null, status: null, durationMs: null, creditsRemaining: null,
     whom: typeof e.whom === "string" && USER_ID.test(e.whom) ? e.whom : null, seat: str(e.seat), recordIds: ids(e.recordIds), label,
-    why: action === "reveal" && identity && typeof e.why === "string" && Object.hasOwn(REVEAL_WHY_LABEL, e.why) ? e.why : null };
+    why: action === "reveal" && identity && typeof e.why === "string" && Object.hasOwn(REVEAL_WHY_LABEL, e.why) ? e.why : null,
+    expiresAt: ttl === null ? null : at + ttl * 60_000 };
 }
 
 /* ---- the query ---------------------------------------------------------------------------------- */

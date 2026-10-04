@@ -227,8 +227,16 @@ test('Plane C: sign-in events, reveals, step-ups, seat changes, refusals and gra
   for (const v of [PAN, EMAIL, PHONE_BARE, 'Sanjay Menon', BODY]) {
     ev.refusedPage(v, v, v); ev.refusedAction(USER, 'ir', v, [ID, v]); ev.grantChange(USER, v, 'ir', v, 'ok');
     inv.refusal(v, v, v, [ID, v]); inv.conflict(v, v, v); inv.reveal(v, v, 'pan', v, 'ok'); inv.stepUp(v, v, 'refused', v); inv.seatChange(v, v, v);
+    /* M08-S08-NOTE-10 / M15-S05-NOTE-1: the release and the test-link lines, fed identity in every slot (ttl an account number) */
+    inv.appAccessReleased(v, v, v, 'refused', v); inv.testLinkIssued(v, v, v, Number(ACCOUNT), true);
   }
+  inv.appAccessReleased(USER, 'fin', ID, 'ok', 'released'); inv.testLinkIssued(USER, 'di', ID, 10, false);
   ev.refusedPage(USER, 'ir', 'numbers');
   assertClean(h, 60);
   assert.ok(h.raw.identity.events().some((e) => e.action === 'refused-page' && e.reason === 'numbers' && e.who === USER));
+  const rel = h.raw.identity.events().filter((e) => e.action === 'app-access-released');
+  const tl = h.raw.identity.events().filter((e) => e.action === 'test-link-issued');
+  assert.equal(rel.length, 6); assert.equal(tl.length, 6);
+  assert.ok(tl.slice(0, 5).every((e) => e.ttlMinutes === 0 && e.who === 'unrecognised' && e.recordIds.length === 0), 'a hostile ttl or id keeps nothing');
+  assert.deepEqual([rel[5].who, rel[5].reason, rel[5].recordIds, tl[5].ttlMinutes, tl[5].reason], [USER, 'released', [ID], 10, 'test-account']);
 });

@@ -53,10 +53,13 @@ export function classify(module: string, action: string): { readonly side: Side;
 }
 
 /** Plane C actions (D47) shown on the Activity page: reveals and step-ups are Identity; seat, grant, console-access
- *  and reporting-line changes are Admin. */
-export const PLANE_C_ADMIN: ReadonlySet<string> = new Set(["seat-change", "grant-change", "access-granted", "access-ended", "manager-change"]);
+ *  and reporting-line changes and a test sign-in link (M10-S23) are Admin; an app-access release (M08-S08-NOTE-10)
+ *  is Account care. */
+export const PLANE_C_ADMIN: ReadonlySet<string> = new Set(["seat-change", "grant-change", "access-granted", "access-ended", "manager-change",
+  "test-link-issued"]);
 export function classifyPlaneC(action: string): { readonly side: Side; readonly kind: string } | null {
   if (action === "reveal" || action === "step-up") return { side: "investors", kind: "pii" };
+  if (action === "app-access-released") return { side: "investors", kind: "care" };
   if (PLANE_C_ADMIN.has(action)) return { side: "investors", kind: "admin" };
   return null;
 }

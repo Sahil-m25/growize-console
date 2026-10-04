@@ -169,7 +169,8 @@ export type ImUi = {
   DRAFTCTX: string | null;
   /** reveals this session: key `${WHO}|${invId}:${f}` */
   SHOWN: Record<string, true>;
-  REVASK: { id: string; f: "pan" | "acct" } | null;
+  /** a reveal waiting on its reason: an investor's PAN / bank account, or ("ref", M18-S05-NOTE-3) a Payments register row's reference */
+  REVASK: { id: string; f: "pan" | "acct" | "ref" } | null;
   /** the prototype's alert()/confirm(), said on the page */
   NOTE: ImNote | null;
   /** the write a NOTE of kind "ask" is waiting on; replayed by {type:"confirmYes"} */
@@ -200,7 +201,9 @@ export type ImAction =
   /* writes (section 7, plus reveal from section 2 and logField/saveDetails from section 3) */
   | { type: "reveal"; id: string; f: "pan" | "acct"; why?: string }
   /* a Payments register row's bank reference, shown in full (rule 7, D13/D22): logged, behind step-up live */
-  | { type: "revealRef"; id: string }
+  | { type: "revealRef"; id: string; why?: string }
+  /* M18-S05-NOTE-3: "Show the reference" pressed — ask the reason for that row (REVASK f "ref"); a UI step, nothing logged */
+  | { type: "refAsk"; id: string }
   | { type: "hideAll" }
   | { type: "revCancel" }
   | { type: "logField"; blk: string; st: string; head: string; d: string }

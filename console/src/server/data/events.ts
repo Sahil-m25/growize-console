@@ -37,6 +37,12 @@ export interface InvestorEvents {
    * previous KAM] — user ids only, never a name (CLAUDE.md). Names are read in Zoho's field history on KAM.
    */
   kamMove(userId: string, seat: string | null, contactId: string, fromKam: string | null, toKam: string | null): void;
+  /** M08-S08-NOTE-10: Plane C — "Send welcome and unlock" released app access (ok, reason "released") or the release was
+   *  refused (reason = the refusal code). recordIds = [Contact]; ids and codes only, never a name or an email. */
+  appAccessReleased(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string): void;
+  /** M15-S05-NOTE-1 / M10-S23: Plane C — a test sign-in link issued for a Contact, living `ttlMinutes`; `real` = a real
+   *  investor (after the warning), not a listed test account. Never the URL, the token or the reason's words. */
+  testLinkIssued(userId: string, seat: string | null, contactId: string, ttlMinutes: number, real: boolean): void;
 }
 
 /** What the person is told on a 412: an in-page refusal naming the newer change, never a silent overwrite. */
@@ -73,6 +79,13 @@ export function createInvestorEvents(deps: { readonly log: OpsLog; readonly plan
         at: clock(), who: userId, action: "grant-change", outcome: "ok", reason, seat,
         ...(whom ? { whom } : {}), recordIds: ids([contactId, fromKam]),
       });
+    },
+    appAccessReleased(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string) {
+      deps.planeC.record({ at: clock(), who: userId, action: "app-access-released", outcome, reason, seat, recordIds: ids([contactId]) });
+    },
+    testLinkIssued(userId: string, seat: string | null, contactId: string, ttlMinutes: number, real: boolean) {
+      deps.planeC.record({ at: clock(), who: userId, action: "test-link-issued", outcome: "ok", reason: real ? "real-investor" : "test-account", seat,
+        recordIds: ids([contactId]), ttlMinutes });
     },
   });
 }

@@ -8,7 +8,7 @@
    confirm(msg) → ui.NOTE = {kind:"ask", msg}, ui.PENDING = the action; the write stops.
                   {type:"confirmYes"} replays PENDING with the confirmation granted.
    ────────────────────────────────────────────────────────────────────────────────────────── */
-import { APPLOCK, BLANK_DRAFTS, CHANS, CMODE, CREF, DETF, MOODS, ROLE, SECRETS, TPL, UNIT } from "./constants";
+import { APPLOCK, BLANK_DRAFTS, CHANS, CMODE, CREF, DETF, MOODS, REVWHY, ROLE, SECRETS, TPL, UNIT } from "./constants";
 import { day6, inr, money, plusDays, stamp, when } from "./dates";
 import {
   I, bookOf, cared, dueBy, drawerReadable, finSeats, gotBy, isAM, isSuper, may, mayDetails, maySeat,
@@ -181,10 +181,13 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
     case "revealRef": {
       const t = d.TXN.find(x => x.id === a.id);
       if (!t || !t.utr || !pageReadable(W, WHO, "txn") || !may(W, WHO, "bank") || !may(W, WHO, "pay")) break;
-      u.SHOWN[WHO + "|" + t.id + ":ref"] = true;
-      log("Revealed a bank reference", t.inv, "Payments · " + maskRefTail(t.utr) + " · shown to " + who(W, WHO).n, "pii");
+      u.SHOWN[WHO + "|" + t.id + ":ref"] = true; u.REVASK = null;
+      /* M18-S05-NOTE-3: the reason chosen on screen (REVWHY.acct) closes the note, as the live Plane C line files it */
+      const why = typeof a.why === "string" && REVWHY.acct.includes(a.why) ? " · " + a.why : "";
+      log("Revealed a bank reference", t.inv, "Payments · " + maskRefTail(t.utr) + " · shown to " + who(W, WHO).n + why, "pii");
       break;
     }
+    case "refAsk": if (typeof a.id === "string" && a.id) u.REVASK = { id: a.id, f: "ref" }; break;
     case "hideAll": u.SHOWN = {}; u.REVASK = null; break;
     case "revCancel": u.REVASK = null; break;
 

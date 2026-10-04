@@ -14,7 +14,8 @@
  * confirmation after the warning. Every link lives ten minutes or until first use, whichever is first.
  *
  * Audit: Plane B `event` lines test-link-created / test-link-used (who, the Contact id, a code); a refused
- * attempt is a Plane B refusal. The register holds ids, the reason, times and the link id — never the URL
+ * attempt is a Plane B refusal. Each issued link is also a Plane C authority line `test-link-issued` (who, seat, the
+ * Contact id, ttlMinutes — M15-S05-NOTE-1), never the URL, the token or the reason's words. The register holds ids, the reason, times and the link id — never the URL
  * after it was handed over once, and never the token.
  */
 
@@ -135,6 +136,8 @@ export function createTestLinks(deps: TestLinkDeps, register: TestLinkRegister =
     if (!minted.ok || !/^https:\/\/[^\s]+$/.test(minted.url)) return refuse(me, contactId, "issuer-failed");
     register.add(entry);
     deps.log.event?.({ at, actor: { kind: "user", userId: me }, action: "test-link-created", reason: `${real ? "real" : "test"}.why-given.len-${why.length}`, recordIds: [entry.contactId] });
+    /* M15-S05-NOTE-1: the authority line — who issued it, for which Contact, from which seat, and how long it lives */
+    try { deps.events.testLinkIssued(me, seat, entry.contactId, TEST_LINK_MINUTES, real); } catch { /* the link stands */ }
     return { ok: true, link: Object.freeze({ ...entry, url: minted.url, state: "live" as const }) };
   }
 

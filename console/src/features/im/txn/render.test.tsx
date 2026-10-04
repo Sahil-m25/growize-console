@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { imDemoData } from "@fixtures/im/demo";
-import { imReducer, initialImUi } from "@/lib/im";
+import { imReducer, initialImUi, REVWHY } from "@/lib/im";
 import type { ImState } from "@/lib/im";
 import { ImTxn } from "./index";
 
@@ -51,6 +51,26 @@ describe("ImTxn (imx.js vTxn)", () => {
     expect(after.data.LOG[0]).toMatchObject({ what: "Revealed a bank reference", who: "sahil", note: "Payments · ••• 8119 · shown to Sahil Mohite" });
     /* the reveal belongs to the person who made it: Harsha still reads it masked */
     expect(renderToStaticMarkup(<ImTxn s={after} me="harsha" dispatch={() => {}} />)).toContain('SWIFT · <span class="mono">••• 8119</span>');
+  });
+  it("M18-S05-NOTE-3: 'Show the reference' asks the reason first — the bank-account chips — on that row only; nothing is logged or shown until one is chosen", () => {
+    const s: ImState = { data: imDemoData(), ui: initialImUi() };
+    expect(html("sahil")).not.toContain("Why do you need it?");
+    const asking = imReducer(s, "sahil", { type: "refAsk", id: "T-0030" });
+    expect(asking.ui.REVASK).toEqual({ id: "T-0030", f: "ref" });
+    expect(asking.data.LOG.length).toBe(s.data.LOG.length);
+    const h = renderToStaticMarkup(<ImTxn s={asking} me="sahil" dispatch={() => {}} />);
+    expect(h.match(/Why do you need it\?/g)).toHaveLength(1);
+    for (const r of REVWHY.acct) expect(h).toContain(`<button class="chip">${r}</button>`);
+    expect(h).toContain('<button class="chip">Cancel</button>');
+    expect(h).toContain('SWIFT · <span class="mono">••• 8119</span>');
+    expect(imReducer(asking, "sahil", { type: "revCancel" }).ui.REVASK).toBeNull();
+    /* the chosen reason closes the logged note; the reveal clears the ask */
+    const after = imReducer(asking, "sahil", { type: "revealRef", id: "T-0030", why: "A payout or a refund" });
+    expect(after.ui.REVASK).toBeNull();
+    expect(after.data.LOG[0]).toMatchObject({ what: "Revealed a bank reference", note: "Payments · ••• 8119 · shown to Sahil Mohite · A payout or a refund" });
+    /* words that are not one of the chips are not written */
+    const odd = imReducer(s, "sahil", { type: "revealRef", id: "T-0030", why: "HDFC1206771 because" });
+    expect(odd.data.LOG[0].note).toBe("Payments · ••• 8119 · shown to Sahil Mohite");
   });
   it("a seat that cannot reveal gets no button and no log: the Auditor reads 'Finance only', and revealRef is refused for it", () => {
     const h = html("latha");

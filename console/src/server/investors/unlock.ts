@@ -25,7 +25,8 @@
  *
  * D115 ruling 1: this unlock is THE release — the one console path that moves App_Access to Invite. Every account
  * is created Hold (add-paid at creation; money/match.ts only into an empty field) and a match never opens it.
- * Each release writes one ops-log line (Plane B, `app-access` / `unlocked`, the releaser and the Contact id only).
+ * Each release writes one ops-log line (Plane B, `app-access` / `unlocked`, the releaser and the Contact id only) and,
+ * M08-S08-NOTE-10, one Plane C authority line (`app-access-released`: who, seat, the Contact id, ok / refused + code).
  *
  * Idempotent: unlocking an invited account, or locking a held one, changes nothing and answers `already`.
  * Finance (Head of Finance, Finance Operations, the super user) controls this; every other seat reads the card
@@ -36,6 +37,7 @@ import type { TimelineEntry, UserCredential, ZohoClient, ZohoRecord } from "../.
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
+import type { InvestorEvents } from "../data/events";
 
 export const CONTACTS_MODULE = "Contacts";
 export const APP_ACCESS_FIELD = "App_Access";
@@ -80,7 +82,8 @@ export interface AppAccessCard {
   readonly historyRead: boolean;
 }
 
-export interface AppAccessPrincipal { readonly credential: UserCredential; readonly sessionId: string }
+/** `seat`: the console seat token of the session (for the Plane C line); the right itself is re-derived by `authority`. */
+export interface AppAccessPrincipal { readonly credential: UserCredential; readonly sessionId: string; readonly seat?: string | null }
 export interface AppAccessAuthority {
   /** Re-derived from the live session: may this person change app access (Finance, super user)? */
   mayChange(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
@@ -103,6 +106,8 @@ export interface AppAccessDependencies {
   readonly crm: Pick<ZohoClient, "getRecord" | "update" | "insert" | "timeline">;
   readonly authority: AppAccessAuthority;
   readonly log: OpsLog;
+  /** M08-S08-NOTE-10: Plane C — each release (and each refused release) is an authority line (data/events.ts). */
+  readonly events: Pick<InvestorEvents, "appAccessReleased">;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
 }
@@ -144,9 +149,9 @@ const retryableKind = (k: string): boolean =>
 
 export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
   if (!deps || typeof deps.crm?.getRecord !== "function" || typeof deps.crm?.update !== "function" || typeof deps.crm?.insert !== "function"
-    || typeof deps.crm?.timeline !== "function" || typeof deps.authority?.mayChange !== "function" || typeof deps.log?.refusal !== "function"
+    || typeof deps.crm?.timeline !== "function" || typeof deps.authority?.mayChange !== "function" || typeof deps.log?.refusal !== "function" || typeof deps.events?.appAccessReleased !== "function"
     || typeof deps.recordIdPrefix !== "string" || !RECORD_PREFIX.test(deps.recordIdPrefix)) {
-    throw new TypeError("app access needs crm (getRecord/update/insert/timeline), the Finance authority, the ops log and the record-id prefix");
+    throw new TypeError("app access needs crm (getRecord/update/insert/timeline), the Finance authority, the ops log, the Plane C events and the record-id prefix");
   }
   const { crm, log } = deps;
   const clock = deps.clock ?? Date.now;
@@ -160,13 +165,18 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
     note(userId, reasonCode, ids);
     return { ok: false, kind: "refused", reasonCode, message, retryable: false };
   };
+  const refuseB = refuse;
+  const released = (p: AppAccessPrincipal, contactId: unknown, outcome: "ok" | "refused", reason: string) => {
+    try { deps.events.appAccessReleased(p.credential.userId, p.seat ?? null, validId(contactId) ? contactId : "", outcome, reason); } catch { /* never take the release down */ }
+  };
   const failed = (kind: ZohoFailureKind | "unexpected"): AppAccessResult => ({
     ok: false, kind: "source-error", errorKind: kind, message: "Not changed — Zoho is not answering. Try again.", retryable: retryableKind(kind),
   });
   const trusted = (p: unknown): AppAccessPrincipal | null => {
     const c = p && typeof p === "object" ? (p as { credential?: unknown; sessionId?: unknown }) : null;
+    const seat = (c as { seat?: unknown } | null)?.seat;
     return c && isUserCredential(c.credential) && typeof c.sessionId === "string" && SESSION_ID.test(c.sessionId)
-      ? { credential: c.credential, sessionId: c.sessionId } : null;
+      ? { credential: c.credential, sessionId: c.sessionId, seat: typeof seat === "string" ? seat : null } : null;
   };
   const mayChange = async (p: AppAccessPrincipal, signal?: AbortSignal): Promise<boolean> => {
     try { return (await deps.authority.mayChange(p.credential, p.sessionId, signal)) === true; } catch { return false; }
@@ -214,6 +224,11 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
   const change = async (p: AppAccessPrincipal, contactId: unknown, from: AppAccess, to: AppAccess, expected: unknown, signal: AbortSignal | undefined,
     after?: (id: string) => Promise<boolean>): Promise<AppAccessResult> => {
     const me = p.credential.userId;
+    /* M08-S08-NOTE-10: a release's refusals are also Plane C authority lines (a lock is not a release) */
+    const refuse = (userId: string, reasonCode: AppAccessRefusal, message: string, ids: readonly unknown[] = []): AppAccessResult => {
+      if (to === "Invite") released(p, contactId, "refused", reasonCode);
+      return refuseB(userId, reasonCode, message, ids);
+    };
     if (!validId(contactId)) return refuse(me, "invalid-request", "Not changed — open the investor again.");
     if (expected !== undefined && expected !== null && (typeof expected !== "string" || !ZOHO_DATETIME.test(expected))) {
       return refuse(me, "invalid-request", "Not changed — reload the investor and try again.", [contactId]);
@@ -243,6 +258,7 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
     }
     const noteSaved = after ? await after(contactId).catch(() => false) : undefined;
     note(me, to === "Invite" ? "unlocked" : "locked", [contactId]);
+    if (to === "Invite") released(p, contactId, "ok", "released");
     // Read back what Zoho holds now; if that read fails, answer from the write.
     let fresh: ZohoRecord | null = null;
     try { fresh = await readContact(p.credential, contactId, signal); } catch { fresh = null; }
