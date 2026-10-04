@@ -40,6 +40,7 @@ const P = '9007199254';
 const HEAD = '9007199254740994090';
 const RC = (n) => `90071992547409951${String(n).padStart(2, '0')}`;
 const STMT = '9007199254740995200', ATT = '9007199254740995300';
+const INV = '9007199254740994500';
 const SESSION = 'session_fixture_00000010';
 const NOW = Date.parse('2026-09-28T10:00:00+05:30');
 const CSV = fs.readFileSync(path.join(fixtureRoot, 'statement-week-39.csv'));
@@ -71,8 +72,12 @@ function rig(f = {}, opts = {}) {
       const m = init.method;
       if (u.pathname.endsWith('/coql')) {
         const q = JSON.parse(init.body).select_query; calls.push(['coql', q]);
-        if (/from Receipts where UTR in /.test(q)) return toResponse(recorded(f.receipts ?? 'coql.receipts-by-utr'));
+        if (/from Receipts where UTR in /.test(q)) return toResponse(f.receiptsReply ?? recorded(f.receipts ?? 'coql.receipts-by-utr'));
         if (/from Statements /.test(q)) return toResponse(recorded(f.latest ?? 'statement.latest'));
+        if (/^select id, Customer from LLP_UnitAllocation_Module where id in /.test(q)) {
+          const ids = [...q.matchAll(/'(\d+)'/g)].map((x) => x[1]);
+          return toResponse({ status: 200, body: { data: ids.map((id) => ({ id, Customer: { id: (f.customerOf ?? (() => INV))(id) } })), info: { more_records: false, count: ids.length } } });
+        }
         throw new Error(`unexpected query ${q}`);
       }
       if (m === 'POST' && /\/crm\/v8\/Statements$/.test(u.pathname)) { calls.push(['insert', JSON.parse(init.body).data[0]]); return toResponse(recorded(f.insert ?? 'statement.created')); }
@@ -89,7 +94,7 @@ function rig(f = {}, opts = {}) {
   const store = opts.failAttach ? { ...zoho, async attach() { return { ok: false, code: 'server', errorKind: 'server' }; } } : zoho;
   const matches = [];
   const match = opts.match ? { async match(p, id, body) { matches.push([p.credential.userId, id, body]); return opts.match(id); } } : undefined;
-  const svc = createStatements({ crm, store, log, recordIdPrefix: P, clock: () => NOW, ...(match ? { match } : {}),
+  const svc = createStatements({ crm, store, log, recordIdPrefix: P, clock: () => NOW, ...(match ? { match } : {}), ...(opts.deps ?? {}),
     authority: { async mayUpload() { return opts.mayUpload ?? true; } } });
   return { svc, calls, sink, matches };
 }
@@ -195,7 +200,10 @@ test('D113: the stored statement auto-matches the pending inbound receipts it co
   const v = res.value;
   // only the pending CREDIT lines are offered to the match, on the uploader's own principal, after the statement is stored
   assert.deepEqual(r.matches.map((m) => [m[0], m[1]]), [[HEAD, RC(2)], [HEAD, RC(3)]]);
-  assert.deepEqual(r.calls.map((c) => c[0]), ['coql', 'insert', 'attach']);
+  // M18-S09-NOTE-3: one batched read of the allotments' investors decides the lanes (one investor's receipts serially)
+  assert.deepEqual(r.calls.map((c) => c[0]), ['coql', 'insert', 'attach', 'coql']);
+  assert.match(r.calls[3][1], /^select id, Customer from LLP_UnitAllocation_Module where id in \('9007199254740994001'\) limit 0, 100$/);
+  assert.deepEqual(v.continueWith, []);
   assert.deepEqual(v.matched.map((m) => [m.line, m.state, m.autoMatched, m.matchNote]), [
     [1, 'matched', false, null],
     [2, 'matched', true, null],
@@ -323,4 +331,69 @@ test('the route: Finance-only page guard, wrapped, and no line data logged', () 
     const t = fs.readFileSync(path.join(srcRoot, f), 'utf8');
     assert.ok(!/console\.(log|error|warn)|writeFile|createWriteStream|tmpdir/.test(t), `${f}: no console logging, no temp files`);
   }
+});
+
+/* ---- M18-S09-NOTE-3: 60 credit lines inside the request deadline ------------------------------------------ */
+const { runWithDeadline } = load('lib/zoho/deadline.js');
+const { CONTINUE_NOTE } = load('server/money/statements.js');
+const N = 60;
+const R60 = (i) => `90071992547410${String(i).padStart(5, '0')}`;           // receipt ids
+const A60 = (i) => `90071992547420${String(Math.floor(i / 2)).padStart(5, '0')}`;   // 2 receipts per allotment
+const C60 = (allot) => `90071992547430${String(Math.floor(Number(allot.slice(-5)) / 2)).padStart(5, '0')}`; // 2 allotments per investor
+const UTR60 = (i) => `SYNTN5${String(i).padStart(10, '0')}`;
+const sixtyCsv = () => Buffer.from(['Txn Date,Description,Ref No./Cheque No.,Debit,Credit,Balance',
+  ...Array.from({ length: N }, (_, i) => `2026-09-${String(22 + (i % 5)).padStart(2, '0')},NEFT SYNTHETIC PAYER ${i},${UTR60(i)},,${1000 + i}.00,5`)].join('\n'));
+const sixtyReceipts = () => ({ status: 200, headers: { 'content-type': 'application/json' }, body: { info: { more_records: false, count: N }, data: Array.from({ length: N }, (_, i) => ({
+  id: R60(i), Allotment: { id: A60(i) }, Kind: 'Advance', Amount: 1000 + i, UTR: UTR60(i), Received_On: `2026-09-${String(22 + (i % 5)).padStart(2, '0')}T00:00:00+05:30`,
+  Match_State: 'Pending', Matched_By: null, Created_By: { id: '9007199254740994091' } })) } });
+/** A match.ts stand-in: slow, idempotent (a matched receipt answers the same again), counting overlap per investor. */
+function fakeMatch(ms) {
+  const state = new Map(), inFlight = new Map();
+  let live = 0, peak = 0, sameInvestorOverlap = 0, writes = 0;
+  const investorOf = (id) => C60(A60(Number(id.slice(-5))));
+  return { state, get peak() { return peak; }, get overlap() { return sameInvestorOverlap; }, get writes() { return writes; },
+    async match(id) {
+      const inv = investorOf(id);
+      if (inFlight.get(inv)) sameInvestorOverlap++;
+      inFlight.set(inv, (inFlight.get(inv) ?? 0) + 1); live++; peak = Math.max(peak, live);
+      await new Promise((r) => setTimeout(r, ms));
+      live--; inFlight.set(inv, inFlight.get(inv) - 1);
+      if (!state.has(id)) { state.set(id, HEAD); writes++; }
+      return { ok: true, value: { receiptId: id, state: 'matched', matchedBy: HEAD, duplicate: writes === 0 } };
+    } };
+}
+
+test('M18-S09-NOTE-3: 60 credit lines are auto-matched 4 at a time, one investor at a time, each exactly once', async () => {
+  const fm = fakeMatch(5);
+  const r = rig({ receiptsReply: sixtyReceipts(), customerOf: C60 }, { match: (id) => fm.match(id) });
+  const res = await r.svc.upload(principal(), csvFile(sixtyCsv(), 'week-60.csv'));
+  assert.equal(res.ok, true, JSON.stringify(res).slice(0, 300));
+  const v = res.value;
+  assert.equal(v.counts.lines, N);
+  assert.equal(v.counts.autoMatched, N);
+  assert.equal(v.counts.awaitingMatch, 0);
+  assert.deepEqual(v.continueWith, []);
+  assert.equal(fm.writes, N, 'each receipt matched once');
+  assert.equal(r.matches.length, N);
+  assert.ok(fm.peak > 1 && fm.peak <= 4, `peak ${fm.peak}`);
+  assert.equal(fm.overlap, 0, 'two receipts of one investor never run at once (first money, hold, Contact write stay exact)');
+  assert.equal(r.calls.filter((c) => c[0] === 'coql').length, 2, 'one Receipts read + one batched Allotments read for 30 allotments');
+  noSecrets(r.sink.records(), [UTR60(0), UTR60(59), 'SYNTHETIC PAYER']);
+});
+
+test('M18-S09-NOTE-3: past the stop margin no match starts; the rest come back as continueWith and finish idempotently from the page', async () => {
+  const fm = fakeMatch(30);
+  const r = rig({ receiptsReply: sixtyReceipts(), customerOf: C60 }, { match: (id) => fm.match(id), deps: { stopMarginMs: 100 } });
+  const ac = new AbortController();
+  const res = await runWithDeadline({ signal: ac.signal, at: Date.now() + 260 }, () => r.svc.upload(principal(), csvFile(sixtyCsv(), 'week-60.csv')));
+  assert.equal(res.ok, true);
+  const v = res.value;
+  assert.ok(v.counts.autoMatched > 0 && v.counts.autoMatched < N, `matched ${v.counts.autoMatched} inside the deadline`);
+  assert.equal(v.continueWith.length, N - v.counts.autoMatched);
+  assert.equal(v.counts.awaitingMatch, v.continueWith.length);
+  for (const m of v.matched) assert.equal(m.matchNote, m.state === 'matched' ? null : CONTINUE_NOTE);
+  assert.ok(r.sink.records().some((x) => x.action === 'statement-auto-match' && x.reason === `continuing-${v.continueWith.length}`));
+  // the page: POST /api/receipts/[id]/match per remaining id (the same match.ts call), plus a double press on one already done
+  for (const id of [...v.continueWith, v.matched.find((m) => m.autoMatched).receiptId]) assert.equal((await fm.match(id)).ok, true);
+  assert.equal(fm.writes, N, 'every receipt matched exactly once across the upload and the continuation');
 });

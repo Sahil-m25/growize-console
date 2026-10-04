@@ -2,8 +2,10 @@
    GET  → { latest: { statementId, name, from, to, lines, matched, needsOwner, reconciledAt } | null }  ("last reconciled")
    POST multipart/form-data, field "file" (the net-banking CSV, ≤ 2 MB) →
         { statement: { statementId, attachmentId, name, from, to, counts, matched: [...], needsOwner: [...] } }
-        matched lines awaiting the match are matched by the Head of Finance through POST /api/receipts/[id]/match
-        (suggestions only here). Finance only ("pay"): a KAM is refused 403 before anything is read or stored.
+        D113: a credit line agreeing with a pending receipt is matched here through match.ts, 4 at a time, one investor
+        at a time; what does not fit the request deadline (M18-S09-NOTE-3) comes back as statement.continueWith
+        (receipt ids) and the page matches each through POST /api/receipts/[id]/match (idempotent). A refund waits
+        for its second hand. Finance only ("pay"): a KAM is refused 403 before anything is read or stored.
    The file is parsed in memory and streamed to Zoho as an attachment on the Statements record; nothing is kept
    on the server and no line, reference or narration is logged. Server: server/money/statements.ts. */
 import { cookies } from "next/headers";
