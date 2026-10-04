@@ -174,7 +174,42 @@ export interface ScopedCache {
   clear(): Promise<void>;
 }
 
+/**
+ * M15-S05-NOTE-10 — a rolling 24 h count of cache reads and failed loads (the System card's "Cache load errors").
+ * Two numbers per hour bucket, no keys, no values: nothing here can hold a record. A read is one `read()` call;
+ * an error is one live load that threw (a held error replayed to a later read is not a new failure).
+ */
+export interface LoadWindow {
+  record(kind: "read" | "error"): void;
+  /** Reads and failed loads in the 24 h before `now`. */
+  totals(now?: number): { readonly reads: number; readonly errors: number };
+}
+const HOUR = 3_600_000;
+export function createLoadWindow(clock: () => number = Date.now): LoadWindow {
+  const buckets = new Map<number, { reads: number; errors: number }>();
+  const prune = (now: number) => { for (const h of buckets.keys()) if (now - (h + 1) * HOUR >= 24 * HOUR) buckets.delete(h); };
+  return {
+    record(kind) {
+      const now = clock();
+      prune(now);
+      const h = Math.floor(now / HOUR);
+      const b = buckets.get(h) ?? { reads: 0, errors: 0 };
+      if (kind === "read") b.reads++; else b.errors++;
+      buckets.set(h, b);
+    },
+    totals(now = clock()) {
+      let reads = 0, errors = 0;
+      for (const [h, b] of buckets) if (now - (h + 1) * HOUR < 24 * HOUR) { reads += b.reads; errors += b.errors; }
+      return { reads, errors };
+    },
+  };
+}
+const GW = globalThis as typeof globalThis & { __gzCacheLoads?: LoadWindow };
+/** The process-wide window every cache feeds unless it is given its own (tests). Kept across dev reloads. */
+export const processLoadWindow = (): LoadWindow => (GW.__gzCacheLoads ??= createLoadWindow());
+
 export type ScopedCacheOptions = {
+  readonly loads?: LoadWindow;
   readonly store?: CacheStore;
   readonly clock?: () => number;
   readonly defaultTtlMs?: number;
@@ -343,6 +378,7 @@ export function createScopedCache(options: ScopedCacheOptions = {}): ScopedCache
   const errorHold = options.errorHoldMs ?? DEFAULT_ERROR_HOLD_MS;
   if (!Number.isFinite(errorHold) || errorHold < 0 || errorHold > MAX_AGE_MS) throw new RangeError("errorHoldMs must be between 0 and the five-minute ceiling.");
   const flights = new Map<string, Flight>();
+  const loads = options.loads ?? processLoadWindow();
 
   const launch = (k: string, load: () => Promise<AggregateValue>, ttlMs: number, lastGoodAt: number | null): Flight => {
     const startedAt = clock();
@@ -359,6 +395,7 @@ export function createScopedCache(options: ScopedCacheOptions = {}): ScopedCache
       } catch (error) {
         const failedAt = clock();
         const reason = reasonOf(error);
+        loads.record("error");
         if (!flight.cancelled) {
           const marked = await quietly(() =>
             store.set(k, { kind: "failed", failedAt, holdUntil: failedAt + holdOf(error, errorHold), lastGoodAt, reason }),
@@ -378,6 +415,7 @@ export function createScopedCache(options: ScopedCacheOptions = {}): ScopedCache
 
   const read = async <V extends AggregateValue, R extends V = V>(key: CacheKey<V>, load: AggregateLoader<R>, options?: ReadOptions): Promise<CacheRead<V>> => {
     const k = keyString(key);
+    loads.record("read");
     const ttlMs = checkTtl(options?.ttlMs ?? defaultTtl);
     const entry = await store.get(k);
     const now = clock();

@@ -19,7 +19,8 @@ import { createOpsLog, type OpsEventLog } from "../../lib/zoho/log";
 import { createPlaneCLog, type PlaneCLog } from "../identity/plane-c";
 import { sharedOpsSink, sharedPlaneCSink } from "../logs/factory";
 import { alertingOpsSink } from "../ops/runtime";
-import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
+import { oauthParts, userSessions, zohoSignInConfigured } from "../oauth/runtime";
+import { createZohoUserDirectory } from "../identity/users";
 import { SID_COOKIE } from "../oauth/user-session";
 import { createInvestorEvents, type InvestorEvents } from "./events";
 import { createLiveDataLayer, type LiveLoad, type SeatIds } from "./live";
@@ -43,6 +44,12 @@ export function dataRuntime(): DataRuntime {
   const rt: DataRuntime = Object.freeze({ gate: createGate(), cache: createScopedCache(), log, planeC, events: createInvestorEvents({ log, planeC }) });
   G.__gzDataRuntime = rt;
   return rt;
+}
+
+/** M01-S03-NOTE-4: the seat directory and the Users reader that put names into PEOPLE (the same directory the sign-in door uses). */
+function peopleDeps(rt: DataRuntime, env: NodeJS.ProcessEnv) {
+  const o = oauthParts(env);
+  return { seats: o.seats, users: createZohoUserDirectory({ seats: o.seats, gate: rt.gate, log: rt.log }) };
 }
 
 export class LiveReadError extends Error {
@@ -80,6 +87,7 @@ export async function liveContext(env: NodeJS.ProcessEnv = process.env) {
   const layer = createLiveDataLayer({
     crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
     unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,
+    ...peopleDeps(rt, env),
     recheck: async (s) => {
       const r = await sessions.credential(s);
       return r.ok ? { credential: r.credential, session: r.session } : null;
@@ -107,6 +115,7 @@ export async function loadLiveDataset(env: NodeJS.ProcessEnv = process.env): Pro
   const layer = createLiveDataLayer({
     crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
     unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,
+    ...peopleDeps(rt, env),
     recheck: async (s) => {
       const r = await sessions.credential(s);
       return r.ok ? { credential: r.credential, session: r.session } : null;

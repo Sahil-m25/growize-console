@@ -23,7 +23,15 @@ const TIMEOUT_MS = 10_000;
 export type UsersFetch = (url: string, init: { readonly method: "GET"; readonly headers: Readonly<Record<string, string>>; readonly redirect: "error"; readonly signal?: AbortSignal }) =>
   Promise<{ readonly status: number; text(): Promise<string>; readonly headers: { get(name: string): string | null } }>;
 
+/** One Zoho user as the console shows them: the seated person plus name and email (held for one response, never cached or logged). */
+export interface UserEntry extends SeatedPerson {
+  readonly name: string;
+  readonly email: string;
+}
+
 export interface ZohoUserDirectory {
+  /** M01-S03-NOTE-4: as `lookup`, with the name and email Users returns, for the signed-in person's own PEOPLE entry. */
+  entry(as: UserCredential, userId: string): Promise<UserEntry | null>;
   /** null: not found, not visible to this person, not a seated user, or Zoho could not be asked */
   lookup(as: UserCredential, userId: string): Promise<SeatedPerson | null>;
   /** the person and every manager above them (the person first); null if the person is unknown */
@@ -48,7 +56,9 @@ export function createZohoUserDirectory(d: {
   const clock = d.clock ?? Date.now;
   const get: UsersFetch = d.fetch ?? ((url, init) => fetch(url, init) as never);
 
-  async function lookup(as: UserCredential, userId: string): Promise<SeatedPerson | null> {
+  const clip = (v: unknown, max: number): string => (typeof v === "string" ? v.slice(0, max) : "");
+
+  async function fetchEntry(as: UserCredential, userId: string): Promise<UserEntry | null> {
     if (typeof userId !== "string" || !USER_ID.test(userId) || !d.seats.resolveDirectoryUser) return null;
     const deadline = new AbortController();
     const timer = setTimeout(() => deadline.abort(), TIMEOUT_MS);
@@ -73,7 +83,7 @@ export function createZohoUserDirectory(d: {
       if (!r.ok || r.value.userId !== userId) { errorClass = "unexpected"; return null; }
       const u = (body.users as Record<string, unknown>[])[0]!;
       const mgr = managerOf(u);
-      return Object.freeze({ who: userId, seat: r.value.seat, mgr: mgr === userId ? null : mgr });
+      return Object.freeze({ who: userId, seat: r.value.seat, mgr: mgr === userId ? null : mgr, name: clip(u.full_name, 200), email: clip(u.email, 320) });
     } catch {
       errorClass ??= deadline.signal.aborted ? "aborted" : "network";
       return null;
@@ -92,8 +102,14 @@ export function createZohoUserDirectory(d: {
     }
   }
 
+  async function lookup(as: UserCredential, userId: string): Promise<SeatedPerson | null> {
+    const e = await fetchEntry(as, userId);
+    return e && Object.freeze({ who: e.who, seat: e.seat, mgr: e.mgr });
+  }
+
   return Object.freeze({
     lookup,
+    entry: fetchEntry,
     async chainOf(as: UserCredential, userId: string): Promise<readonly SeatedPerson[] | null> {
       const first = await lookup(as, userId);
       if (!first) return null;

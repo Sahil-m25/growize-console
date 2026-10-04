@@ -18,6 +18,17 @@ import type { SharedState } from "../state/shared-state";
 export const ZOHO_SIGN_SIGNATURE_HEADER = "x-zs-webhook-signature";
 export const MAX_WEBHOOK_BYTES = 256 * 1024;
 
+/** M15-S05-NOTE-10: when the last HMAC-verified event arrived (epoch ms as a string), in the shared state store. Time only. */
+export const SIGN_LAST_EVENT_KEY = "sign-last-event";
+const SIGN_LAST_EVENT_TTL_S = 90 * 86_400;
+
+/** The last verified Zoho Sign event's time, or null when none is on record. Rejects if the store cannot answer. */
+export async function signLastEventAt(state: SharedState = sharedState()): Promise<number | null> {
+  const v = await state.get(SIGN_LAST_EVENT_KEY);
+  const n = v === null ? NaN : Number(v);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
 export type SignPaper = "nda" | "fema" | "supplementary" | "allocation-letter";
 
 export interface SignTarget {
@@ -202,6 +213,9 @@ async function handleOnce(
     });
     return { ok: false, kind: "invalid-signature", retryable: false };
   }
+
+  // M15-S05-NOTE-10: the signature held, so this is a verified event whatever it carries; one small write, never a failure.
+  try { await (deps.state ?? sharedState()).set(SIGN_LAST_EVENT_KEY, String((deps.clock ?? Date.now)()), SIGN_LAST_EVENT_TTL_S); } catch { /* the answer stands */ }
 
   const requestId = requestIdFrom(input.body);
   if (requestId === null) {
