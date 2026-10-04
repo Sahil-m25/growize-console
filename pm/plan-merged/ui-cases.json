@@ -90,18 +90,16 @@
    "id": "TC-E03-001",
    "story": "M03-S01",
    "seat": "rohit",
-   "title": "Sign-in screen lists exactly the six console users",
+   "title": "Sign-in screen lists everyone either side admits",
    "steps": [
     "Press Rohit Deshpande on the sign-in screen",
     "Press 'Your account' in the top bar",
     "Press 'Sign out'"
    ],
    "expected": [
-    "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-    "It does not offer Harsha Bhat.",
-    "It does not offer Gokul S.",
-    "It does not offer Jhalak Mehta.",
-    "It does not offer Arvind Menon or Pradeep Ram."
+    "The sign-in screen offers exactly fourteen people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi, Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram.",
+    "Harsha Bhat's card reads Head of Finance.",
+    "Pradeep Ram's card reads Head, Corporate Operations · by grant."
    ],
    "fixtures": [
     "DEMO_STAFF"
@@ -112,13 +110,13 @@
    "id": "TC-E03-002",
    "story": "M03-S01",
    "seat": "none",
-   "title": "Finance cannot sign in",
+   "title": "Finance signs in for the Investors side",
    "steps": [
-    "Look at the sign-in screen"
+    "Press Harsha Bhat on the sign-in screen"
    ],
    "expected": [
-    "The sign-in screen does not offer Harsha Bhat.",
-    "No console page is showing."
+    "The page heading reads Harsha's day.",
+    "The menu shows Investors, Farms, Tickets, Investor updates, Payments and Documents."
    ],
    "fixtures": [
     "DEMO_STAFF"
@@ -147,14 +145,13 @@
    "id": "TC-E03-004",
    "story": "M03-S01",
    "seat": "none",
-   "title": "Ops Lead, BU Owner and Corporate Ops without a grant are refused",
+   "title": "Corporate Operations is offered by grant",
    "steps": [
     "Look at the sign-in screen"
    ],
    "expected": [
-    "The sign-in screen does not offer Jhalak Mehta.",
-    "It does not offer Arvind Menon.",
-    "It does not offer Pradeep Ram."
+    "Pradeep Ram's card on the sign-in screen reads Head, Corporate Operations · by grant.",
+    "Sahil Mohite's card reads Super user · Digital Infrastructure."
    ],
    "fixtures": [
     "DEMO_STAFF"
@@ -2002,13 +1999,13 @@
    "id": "TC-E08-008",
    "story": "M08-S02",
    "seat": "harsha",
-   "title": "Finance has no console login",
+   "title": "Finance signs in through the merged sign-in screen",
    "steps": [
     "Look at the people offered on the sign-in screen"
    ],
    "expected": [
     "The sign-in screen offers Rohit Deshpande, Kavya Nair and Tasneem Qureshi.",
-    "The sign-in screen does not offer Harsha Bhat."
+    "The sign-in screen offers Harsha Bhat, Head of Finance."
    ],
    "fixtures": [
     "DEMO_BOOK"
@@ -3400,9 +3397,9 @@
     "Open Teams from the menu"
    ],
    "expected": [
-    "The page reads 10 active members.",
+    "The page reads 16 active members.",
     "The members include Jhalak Mehta and Harsha Bhat.",
-    "Harsha Bhat is marked 'no login here'."
+    "Harsha Bhat is marked 'Investors side' and 'no login here'."
    ],
    "fixtures": [],
    "group": "M17"
@@ -3662,18 +3659,14 @@
    "id": "TC-E15-034",
    "story": "M18-S09",
    "seat": "rohit",
-   "title": "Only the three console seats can sign in",
+   "title": "Sign-in cards carry each person's seat",
    "steps": [
     "Look at the sign-in screen"
    ],
    "expected": [
-    "The sign-in screen offers Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-    "The sign-in screen does not offer Harsha Bhat.",
-    "The sign-in screen does not offer Gokul S.",
-    "The sign-in screen does not offer Jhalak Mehta.",
-    "The sign-in screen does not offer Arvind Menon.",
-    "The sign-in screen does not offer Pradeep Ram.",
-    "The sign-in screen does not offer Vinay Shenoy."
+    "Rohit Deshpande's card reads IR Associate and Tasneem Qureshi's reads IR Manager.",
+    "Sahil Mohite's card reads Super user · Digital Infrastructure.",
+    "Harsha Bhat's card reads Head of Finance and Latha Prabhu's reads Auditor — read only."
    ],
    "fixtures": [
     "DEMO_DATA"

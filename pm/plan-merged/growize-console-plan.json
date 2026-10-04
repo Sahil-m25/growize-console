@@ -18460,7 +18460,7 @@
   {
    "id": "TC-E03-001",
    "story": "M03-S01",
-   "title": "Sign-in screen lists exactly the six console users",
+   "title": "Sign-in screen lists everyone either side admits",
    "type": "Functional",
    "seat": "rohit",
    "priority": "P1",
@@ -18469,7 +18469,7 @@
     "Sign out",
     "Read the sign-in list"
    ],
-   "expected": "Exactly Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi, Sahil Mohite — no Harsha, Gokul, Jhalak, Arvind or Pradeep",
+   "expected": "The sign-in screen offers exactly fourteen people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi, Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram. Harsha Bhat's card reads Head of Finance. Pradeep Ram's card reads Head, Corporate Operations · by grant.",
    "auto": {
     "act": "signOut('chose')\nreturn 0;",
     "observe": "return [...document.querySelectorAll('#signin .sirow b')].map(b=>b.innerText)"
@@ -18483,11 +18483,9 @@
     "Press 'Sign out'"
    ],
    "ui_expected": [
-    "The sign-in screen offers exactly six people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-    "It does not offer Harsha Bhat.",
-    "It does not offer Gokul S.",
-    "It does not offer Jhalak Mehta.",
-    "It does not offer Arvind Menon or Pradeep Ram."
+    "The sign-in screen offers exactly fourteen people: Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi, Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram.",
+    "Harsha Bhat's card reads Head of Finance.",
+    "Pradeep Ram's card reads Head, Corporate Operations · by grant."
    ],
    "ui_mode": "ui",
    "group": "A",
@@ -18497,7 +18495,7 @@
   {
    "id": "TC-E03-002",
    "story": "M03-S01",
-   "title": "Finance cannot sign in",
+   "title": "Finance signs in for the Investors side",
    "type": "Negative",
    "seat": "none",
    "priority": "P1",
@@ -18505,7 +18503,7 @@
    "steps": [
     "Try to sign in as Harsha"
    ],
-   "expected": "Not signed in (AUTHED false); consoleAccount('harsha') false",
+   "expected": "The page heading reads Harsha's day. The menu shows Investors, Farms, Tickets, Investor updates, Payments and Documents.",
    "auto": {
     "seat": "none",
     "act": "signIn('harsha')\nreturn 0;",
@@ -18515,11 +18513,11 @@
     "DEMO_STAFF"
    ],
    "ui_steps": [
-    "Look at the sign-in screen"
+    "Press Harsha Bhat on the sign-in screen"
    ],
    "ui_expected": [
-    "The sign-in screen does not offer Harsha Bhat.",
-    "No console page is showing."
+    "The page heading reads Harsha's day.",
+    "The menu shows Investors, Farms, Tickets, Investor updates, Payments and Documents."
    ],
    "ui_mode": "ui",
    "group": "A",
@@ -18564,7 +18562,7 @@
   {
    "id": "TC-E03-004",
    "story": "M03-S01",
-   "title": "Ops Lead, BU Owner and Corporate Ops without a grant are refused",
+   "title": "Corporate Operations is offered by grant",
    "type": "Permission",
    "seat": "none",
    "priority": "P1",
@@ -18572,7 +18570,7 @@
    "steps": [
     "Try to sign in as Jhalak, Arvind and Pradeep"
    ],
-   "expected": "All three refused; AUTHED false",
+   "expected": "Pradeep Ram's card on the sign-in screen reads Head, Corporate Operations · by grant. Sahil Mohite's card reads Super user · Digital Infrastructure.",
    "auto": {
     "seat": "none",
     "act": "signIn('jhalak'); signIn('arvind'); signIn('pradeep');\nreturn 0;",
@@ -18585,9 +18583,8 @@
     "Look at the sign-in screen"
    ],
    "ui_expected": [
-    "The sign-in screen does not offer Jhalak Mehta.",
-    "It does not offer Arvind Menon.",
-    "It does not offer Pradeep Ram."
+    "Pradeep Ram's card on the sign-in screen reads Head, Corporate Operations · by grant.",
+    "Sahil Mohite's card reads Super user · Digital Infrastructure."
    ],
    "ui_mode": "ui",
    "group": "A",
@@ -22597,7 +22594,7 @@
   {
    "id": "TC-E08-008",
    "story": "M08-S02",
-   "title": "Finance has no console login",
+   "title": "Finance signs in through the merged sign-in screen",
    "type": "Permission",
    "seat": "harsha",
    "priority": "P1",
@@ -22606,7 +22603,7 @@
     "Open the sign-in screen",
     "Try to sign in as Harsha"
    ],
-   "expected": "consoleAccount('harsha') is false, sign-in is refused (nobody signed in, sign-in screen still shown) and Harsha is not in the sign-in list.",
+   "expected": "The sign-in screen offers Rohit Deshpande, Kavya Nair and Tasneem Qureshi. The sign-in screen offers Harsha Bhat, Head of Finance.",
    "auto": {
     "setup": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);signOut('chose'); return true;",
     "act": "const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);signIn('harsha'); return true;",
@@ -22621,7 +22618,7 @@
    ],
    "ui_expected": [
     "The sign-in screen offers Rohit Deshpande, Kavya Nair and Tasneem Qureshi.",
-    "The sign-in screen does not offer Harsha Bhat."
+    "The sign-in screen offers Harsha Bhat, Head of Finance."
    ],
    "group": "C",
    "plan": "In 3 weeks",
@@ -26195,7 +26192,7 @@
    "steps": [
     "Open Teams"
    ],
-   "expected": "Teams shows 10 active members across 3 teams, including Jhalak Mehta, Arvind Menon, Pradeep Ram and Harsha Bhat, and Harsha is marked \"no login here\".",
+   "expected": "The page reads 16 active members. The members include Jhalak Mehta and Harsha Bhat. Harsha Bhat is marked 'Investors side' and 'no login here'.",
    "auto": {
     "act": "go('people'); return true;",
     "observe": "return {head:document.querySelector('.ph')?.innerText, doors:[...document.querySelectorAll('.door, [class*=door]')].map(d=>d.innerText).slice(0,3), members:[...document.querySelectorAll('.ux-team table tbody tr')].map(t=>t.innerText.split('\\t')[0].replace(/\\s+/g,' ').trim())}"
@@ -26207,9 +26204,9 @@
     "Open Teams from the menu"
    ],
    "ui_expected": [
-    "The page reads 10 active members.",
+    "The page reads 16 active members.",
     "The members include Jhalak Mehta and Harsha Bhat.",
-    "Harsha Bhat is marked 'no login here'."
+    "Harsha Bhat is marked 'Investors side' and 'no login here'."
    ],
    "group": "E",
    "plan": "In 3 weeks",
@@ -27684,7 +27681,7 @@
   {
    "id": "TC-E15-034",
    "story": "M18-S09",
-   "title": "Only the three console seats can sign in",
+   "title": "Sign-in cards carry each person's seat",
    "type": "Permission",
    "seat": "rohit",
    "priority": "P1",
@@ -27693,7 +27690,7 @@
     "Try to sign in as harsha, gokul, jhalak, arvind, pradeep and vinay (left)",
     "Sign in as rohit, tasneem and sahil"
    ],
-   "expected": "Every one of harsha, gokul, jhalak, arvind, pradeep and vinay is refused (not signed in, sign-in screen stays); rohit, tasneem and sahil are signed in as themselves.",
+   "expected": "Rohit Deshpande's card reads IR Associate and Tasneem Qureshi's reads IR Manager. Sahil Mohite's card reads Super user · Digital Infrastructure. Harsha Bhat's card reads Head of Finance and Latha Prabhu's reads Auditor — read only.",
    "auto": {
     "seat": null,
     "observe": "const r={}; for(const s of ['harsha','gokul','jhalak','arvind','pradeep','vinay','rohit','tasneem','sahil']){ signOut(); signIn(s); r[s]=AUTHED&&WHO===s ? 'signed in' : 'refused'+(document.querySelector('#signin')?' (sign-in screen shown)':''); } return r;"
@@ -27706,13 +27703,9 @@
     "Look at the sign-in screen"
    ],
    "ui_expected": [
-    "The sign-in screen offers Rohit Deshpande, Kavya Nair, Nikhil Rao, Ananya Iyer, Tasneem Qureshi and Sahil Mohite.",
-    "The sign-in screen does not offer Harsha Bhat.",
-    "The sign-in screen does not offer Gokul S.",
-    "The sign-in screen does not offer Jhalak Mehta.",
-    "The sign-in screen does not offer Arvind Menon.",
-    "The sign-in screen does not offer Pradeep Ram.",
-    "The sign-in screen does not offer Vinay Shenoy."
+    "Rohit Deshpande's card reads IR Associate and Tasneem Qureshi's reads IR Manager.",
+    "Sahil Mohite's card reads Super user · Digital Infrastructure.",
+    "Harsha Bhat's card reads Head of Finance and Latha Prabhu's reads Auditor — read only."
    ],
    "group": "F",
    "plan": "In 3 weeks",
