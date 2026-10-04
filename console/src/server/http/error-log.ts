@@ -14,7 +14,7 @@
  * throws never fails the request it describes.
  */
 
-import { ACTOR_ID, looksLikeIdentity } from "../../lib/zoho/log";
+import { ACTOR_ID, RECORD_ID, looksLikeIdentity } from "../../lib/zoho/log";
 import { BEACON_SOURCES, type BeaconSource } from "../../lib/zoho/error-beacon";
 
 export interface RouteErrorEntry {
@@ -74,8 +74,10 @@ const statusOrNull = (x: unknown): number | null => (typeof x === "number" && Nu
 export const safeRequestId = (x: unknown): string | null =>
   typeof x === "string" && REQUEST_ID.test(x) && !DIGITS_ONLY.test(x) && !x.includes("@") && !looksLikeIdentity(x) ? x : null;
 
+/* M01-S04-NOTE-4: a Zoho user id is 15–22 digits (RECORD_ID) — an id, not identity, and the same shape every other Plane B line
+   carries as its actor (lib/zoho/log actorOf). Any OTHER digit-only string (a mobile, an account number, an OTP) is still refused. */
 export const safeUserId = (x: unknown): string | null =>
-  typeof x === "string" && ACTOR_ID.test(x) && !DIGITS_ONLY.test(x) && !looksLikeIdentity(x) ? x : null;
+  typeof x === "string" && ACTOR_ID.test(x) && (RECORD_ID.test(x) || !DIGITS_ONLY.test(x)) && !looksLikeIdentity(x) ? x : null;
 
 export const safeZohoCode = (x: unknown): string | null => (typeof x === "string" && ZOHO_CODE.test(x) && !looksLikeIdentity(x) ? x : null);
 export const safeErrorName = (x: unknown): string | null => (typeof x === "string" && ERROR_NAME.test(x) && !looksLikeIdentity(x) ? x : null);

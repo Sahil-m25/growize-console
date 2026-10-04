@@ -33,6 +33,7 @@ import { eventOne, eventRecOf, ruleOf, sheetLoad, sheetState } from "@/lib/data/
 import { pathOf } from "@/components/shell";
 import { evDraftOf, evTitleDates } from "./eventDraft";
 import { intakeRows, parseIntake, sheetRows } from "./sheet";
+import { loadingLine, runningCounts, runningOf, sheetTag, type Running } from "./sheet-progress";
 import { UxDetails } from "./UxDetails";
 import { EventsPage } from "./EventsPage";
 
@@ -57,7 +58,7 @@ export function EventPage({ id }: { id: string }) {
   const load = useApiWrite(sheetLoad, state, dispatch);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   /* M18-S09-NOTE-3: a big sheet loads over several requests; how far it has got while it continues */
-  const [cont, setCont] = useState<{ done: number; total: number } | null>(null);
+  const [cont, setCont] = useState<Running | null>(null);
   /* M14-S03-W2: the sheet card is GET /api/events/[id]/sheet (Lead_Events' Load_State, the counts the loader wrote back, who loaded it,
      the staff in named order, the load log), never state.SHEET. Live, the rows to load are the intake sheet pasted below (PROVISIONAL). */
   const sheet = useApiRead(sheetState, state, id);
@@ -142,7 +143,7 @@ export function EventPage({ id }: { id: string }) {
     const args = { eventId: e.id, rule: ruleOf(AR, ARWHO), rows };
     let r = await load(args);
     /* a load that ran out of request time keeps its place on the server: post the same sheet again until it is done */
-    for (let n = 0; r.ok && r.data.continuing && n < 50; n++) { setCont(r.data.continuing); r = await load(args); }
+    for (let n = 0; r.ok && r.data.continuing && n < 50; n++) { setCont(runningOf(r.data)); r = await load(args); }
     setCont(null);
     /* a live load re-reads the sheet card by itself (the adapter's tick); the demo book's reducer wrote its own line */
     if (!r.ok) setLoadErr(r.error);
@@ -179,15 +180,19 @@ export function EventPage({ id }: { id: string }) {
               </div>
             </div>
           ) : (
-            <div className="card" style={ready ? { borderColor: "var(--due)" } : undefined}>
+            <div className="card" style={ready || cont ? { borderColor: "var(--due)" } : undefined}>
               <div className="ch">
                 <h3>Event leads sheet</h3><div className="sp" />
-                <span className={`tag ${ready ? "due" : "go"}`}>
-                  <span className="dot" />{ready ? "ready to load" : "loaded"}
+                <span className={`tag ${sheetTag(ready, cont).cls}`}>
+                  <span className="dot" />{sheetTag(ready, cont).text}
                 </span>
               </div>
               <div className="cb">
-                {ready ? (
+                {cont ? (
+                  <p className="sm" role="status" style={{ margin: 0 }}>
+                    <b>{loadingLine(cont)}</b> · {runningCounts(cont)}; continuing…
+                  </p>
+                ) : ready ? (
                   <>
                     {fromRoute ? (
                       <p className="sm g4-sheet-sum">
@@ -260,7 +265,6 @@ export function EventPage({ id }: { id: string }) {
                     lead, so the console stays the record.
                   </p>
                 )}
-                {cont ? <p className="sm" role="status" style={{ margin: "8px 0 0" }}>Still loading — {cont.done} of {cont.total} new rows in so far; continuing…</p> : null}
                 {!ready && loadErr ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{loadErr}</p> : null}
                 {sv.log.map((l, i) => (
                   <p key={i} className="sm" style={{ margin: "8px 0 0", color: "var(--ink-3)" }}>
