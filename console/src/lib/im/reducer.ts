@@ -12,7 +12,7 @@ import { APPLOCK, BLANK_DRAFTS, CHANS, CMODE, CREF, DETF, MOODS, ROLE, SECRETS, 
 import { day6, inr, money, plusDays, stamp, when } from "./dates";
 import {
   I, bookOf, cared, dueBy, drawerReadable, finSeats, gotBy, isAM, isSuper, may, mayDetails, maySeat,
-  mayTkt, nOpen, pageReadable, role, roundOf, tierOf, who, withholdKnown,
+  maskRefTail, mayTkt, nOpen, pageReadable, role, roundOf, tierOf, who, withholdKnown,
 } from "./selectors";
 import {
   allotGate, holdBlockGate, lapseGate, logContactGate, matchGate, recordPayGate, sendDocGate, setMarkGate,
@@ -174,6 +174,15 @@ function run(s0: ImState, WHO: string, a: ImAction, confirmed: boolean): ImState
       if (!a.why) { u.REVASK = { id: a.id, f: a.f }; break; }
       u.SHOWN[WHO + "|" + a.id + ":" + a.f] = true; u.REVASK = null;
       log("Revealed " + (a.f === "pan" ? "a PAN" : "a bank account"), a.id, a.why, "pii");
+      break;
+    }
+    /* "Show the reference" on a Payments register row: the seat that records money AND holds the bank right (Head of
+       Finance, Finance Operations, the super user — D68/D110), on a page it may read. One logged line, the value never in it. */
+    case "revealRef": {
+      const t = d.TXN.find(x => x.id === a.id);
+      if (!t || !t.utr || !pageReadable(W, WHO, "txn") || !may(W, WHO, "bank") || !may(W, WHO, "pay")) break;
+      u.SHOWN[WHO + "|" + t.id + ":ref"] = true;
+      log("Revealed a bank reference", t.inv, "Payments · " + maskRefTail(t.utr) + " · shown to " + who(W, WHO).n, "pii");
       break;
     }
     case "hideAll": u.SHOWN = {}; u.REVASK = null; break;

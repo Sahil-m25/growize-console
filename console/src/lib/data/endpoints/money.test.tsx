@@ -6,7 +6,7 @@ import { imDemoData } from "@fixtures/im/demo";
 import { imReducer, initialImUi, money, payoutSchedule as buildSchedule, type ImAction, type ImState, type ImTxn } from "@/lib/im";
 import { runWrite } from "../api";
 import type { ImBook } from "./im";
-import { paymentsRegister, moneyBlocks, arlHoldings } from "./payments";
+import { paymentsRegister, moneyBlocks, arlHoldings, revealReceiptRef } from "./payments";
 import { claimConfirm, claimList, claimNotThere, claimOne } from "./receipts";
 import { statementLatest, statementUpload } from "./statements";
 import { payoutPaid, payoutQueue, payoutSchedule, payoutScheduleRun } from "./payouts";
@@ -25,7 +25,7 @@ const pendingIn = (): ImState => {
 };
 
 describe("M10-S01-W1 — the Payments register, fixture half", () => {
-  it("Head of Finance: matched-only totals as TC-IM05-001 reads them, the chip counts, the UTR whole", () => {
+  it("Head of Finance: matched-only totals as TC-IM05-001 reads them, the chip counts, the UTR masked and offered for reveal", () => {
     const d = okd<any>(paymentsRegister.fixture(book("harsha"), {}));
     expect(money(d.totals.received)).toBe("₹8.88 Cr");
     expect(d.totals.refunded).toBe(0);
@@ -33,7 +33,7 @@ describe("M10-S01-W1 — the Payments register, fixture half", () => {
     expect(money(d.totals.stillDue)).toBe("₹1.13 Cr");
     expect(d.counts).toEqual({ all: 15, advance: 2, full: 13, out: 0, pending: 0 });
     expect(d.totals.recorded).toEqual({ received: 0, refunded: 0, net: 0 });
-    expect(d.rows.find((r: { id: string }) => r.id === "T-0030")).toMatchObject({ kind: "advance", utr: "EMIR2608119", utrHidden: false, investor: { name: "Joseph Mathew" } });
+    expect(d.rows.find((r: { id: string }) => r.id === "T-0030")).toMatchObject({ kind: "advance", utr: null, utrMask: "••• 8119", canReveal: true, utrHidden: false, investor: { name: "Joseph Mathew" } });
     expect(d.readOnly).toBe(false);
   });
   it("D21: a Pending receipt is recorded, shown apart, and in neither received nor net banked nor still due", () => {
@@ -50,14 +50,47 @@ describe("M10-S01-W1 — the Payments register, fixture half", () => {
     expect(pend.counts.all).toBe(17);                               /* the chips count before the cut */
     expect(okd<any>(paymentsRegister.fixture(book("harsha", pendingIn()), { kind: "out" })).rows.map((r: { id: string }) => r.id)).toEqual(["T-0051"]);
   });
-  it("the UTR is masked as the route masks it: the super user and the read-only Auditor read null / utrHidden (D13, rule 7)", () => {
-    for (const me of ["sahil", "latha"]) {
+  it("the UTR is masked for every seat (rule 7): a seat that records reads \"••• 8119\" and may reveal it — the super user included (D68/D110); the Auditor reads null / utrHidden", () => {
+    for (const me of ["sahil", "meena", "harsha"]) {
       const d = okd<any>(paymentsRegister.fixture(book(me), {}));
-      expect(d.rows.every((r: any) => r.utr === null && r.utrHidden)).toBe(true);
+      expect(d.rows.every((r: any) => r.utr === null && !r.utrHidden && r.canReveal && /^••• \S{4}$/.test(r.utrMask))).toBe(true);
+      expect(d.rows.find((r: { id: string }) => r.id === "T-0030").utrMask).toBe("••• 8119");
       expect(JSON.stringify(d)).not.toContain("EMIR2608119");
     }
-    expect(okd<any>(paymentsRegister.fixture(book("meena"), {})).rows[0].utrHidden).toBe(false);
+    const a = okd<any>(paymentsRegister.fixture(book("latha"), {}));
+    expect(a.rows.every((r: any) => r.utr === null && r.utrMask === null && !r.canReveal && r.utrHidden)).toBe(true);
+    expect(JSON.stringify(a)).not.toContain("EMIR2608119");
     expect(okd<any>(paymentsRegister.fixture(book("latha"), {})).readOnly).toBe(true);
+  });
+  it("Show the reference — live: POST the receipt's reveal route, no body, and read the full reference out of { reveal }", async () => {
+    expect(revealReceiptRef.path({ id: "9007199254740996304" })).toBe("/api/receipts/9007199254740996304/reveal");
+    expect(revealReceiptRef.body).toBeUndefined();
+    const f = fetchOf(200, { reveal: { receiptId: "9007199254740996304", mode: "SWIFT", utr: "EMIR2608119" } });
+    const r = await runWrite("live", revealReceiptRef, book("sahil"), () => {}, { id: "9007199254740996304" }, { fetch: f });
+    expect(r.ok && r.data).toEqual({ receiptId: "9007199254740996304", mode: "SWIFT", utr: "EMIR2608119" });
+    expect(f.mock.calls[0][0]).toBe("/api/receipts/9007199254740996304/reveal");
+    expect(f.mock.calls[0][1]?.method).toBe("POST");
+    /* the step-up refusal reaches the page as the route's own words */
+    const d = vi.fn();
+    const e = await runWrite("live", revealReceiptRef, book("sahil"), d, { id: "9007199254740996304" }, { fetch: fetchOf(403, { error: "Confirm it is you with a fresh Zoho sign-in first.", code: "step-up" }) });
+    expect(e.ok).toBe(false);
+    expect(d).toHaveBeenCalledWith({ type: "note", msg: "Confirm it is you with a fresh Zoho sign-in first." });
+  });
+  it("Show the reference — fixture: the super user's reveal runs the reducer's revealRef and logs a named, masked line (TC-E11-016)", async () => {
+    const dispatched: ImAction[] = [];
+    const r = await runWrite("fixture", revealReceiptRef, book("sahil"), (a: ImAction) => dispatched.push(a), { id: "T-0030" }, {});
+    expect(r.ok && r.data).toEqual({ receiptId: "T-0030", mode: "SWIFT", utr: "EMIR2608119" });
+    expect(dispatched).toEqual([{ type: "revealRef", id: "T-0030" }]);
+    const s = imReducer(demo(), "sahil", dispatched[0]);
+    expect(s.data.LOG[0]).toMatchObject({ what: "Revealed a bank reference", who: "sahil", kind: "pii", note: "Payments · ••• 8119 · shown to Sahil Mohite" });
+    expect(JSON.stringify(s.data.LOG[0])).not.toContain("EMIR2608119");
+    expect(s.ui.SHOWN["sahil|T-0030:ref"]).toBe(true);
+    for (const me of ["imran", "fahad", "latha"]) {
+      const none: ImAction[] = [];
+      const x = await runWrite("fixture", revealReceiptRef, book(me), (a: ImAction) => none.push(a), { id: "T-0030" }, {});
+      expect(x.ok).toBe(false);
+      expect(none).toEqual([]);
+    }
   });
   it("a KAM and Compliance are refused; the path carries every argument", () => {
     for (const me of ["imran", "fahad"]) expect(paymentsRegister.fixture(book(me), {})).toMatchObject({ ok: false, status: 403 });

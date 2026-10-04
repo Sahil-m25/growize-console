@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { imDemoData } from "@fixtures/im/demo";
-import { initialImUi } from "@/lib/im";
+import { imReducer, initialImUi } from "@/lib/im";
 import type { ImState } from "@/lib/im";
 import { ImTxn } from "./index";
 
@@ -19,7 +19,9 @@ describe("ImTxn (imx.js vTxn)", () => {
     expect(h).toContain("<b>₹8.88 Cr</b><span>received</span>");
     expect(h).toContain('<button class="sc on">Everything<i>15</i></button>');
     expect(h).toContain('<button class="sc ">Refunds and forfeits<i>0</i></button>');
-    expect(h).toContain('<td class="sm">RTGS <span class="mono">HDFC1206771</span></td>');
+    expect(h).toContain('RTGS · <span class="mono">••• 6771</span>');
+    expect(h).not.toContain("HDFC1206771");
+    expect(h).toContain("Show the reference");
     expect(h).toContain('<span class="tag go"><span class="dot"></span>matched</span>');
   });
   it("an empty cut, a pending refund row; KAM and Compliance cannot read it", () => {
@@ -32,5 +34,33 @@ describe("ImTxn (imx.js vTxn)", () => {
     expect(h).toContain('<span class="tag due"><span class="dot"></span>pending</span>');
     expect(html("imran")).toBe("");
     expect(html("fahad")).toBe("");
+  });
+  it("Sahil (D68/D110): every reference masked, each row offers 'Show the reference' (TC-E15-009); after the logged reveal that row alone shows in full (TC-E11-016)", () => {
+    const h = html("sahil");
+    expect(h).toContain('SWIFT · <span class="mono">••• 8119</span>');
+    expect(h).toContain('NEFT · <span class="mono">••• 8551</span>');
+    expect(h).toContain('RTGS · <span class="mono">••• 8430</span>');
+    expect(h).not.toContain("Finance only");
+    expect(h.match(/Show the reference/g)).toHaveLength(15);     /* the button, once per row */
+    const s: ImState = { data: imDemoData(), ui: initialImUi() };
+    const after = imReducer(s, "sahil", { type: "revealRef", id: "T-0030" });
+    const h2 = renderToStaticMarkup(<ImTxn s={after} me="sahil" dispatch={() => {}} />);
+    expect(h2).toContain('SWIFT · <span class="mono">EMIR2608119</span>');
+    expect(h2).toContain("Hide the reference");
+    expect(h2).toContain('NEFT · <span class="mono">••• 8551</span>');
+    expect(after.data.LOG[0]).toMatchObject({ what: "Revealed a bank reference", who: "sahil", note: "Payments · ••• 8119 · shown to Sahil Mohite" });
+    /* the reveal belongs to the person who made it: Harsha still reads it masked */
+    expect(renderToStaticMarkup(<ImTxn s={after} me="harsha" dispatch={() => {}} />)).toContain('SWIFT · <span class="mono">••• 8119</span>');
+  });
+  it("a seat that cannot reveal gets no button and no log: the Auditor reads 'Finance only', and revealRef is refused for it", () => {
+    const h = html("latha");
+    expect(h).toContain("Finance only");
+    expect(h).not.toContain("Show the reference");
+    const s: ImState = { data: imDemoData(), ui: initialImUi() };
+    for (const me of ["latha", "imran", "fahad"]) {
+      const r = imReducer(s, me, { type: "revealRef", id: "T-0030" });
+      expect(r.data.LOG.length).toBe(s.data.LOG.length);
+      expect(r.ui.SHOWN).toEqual({});
+    }
   });
 });

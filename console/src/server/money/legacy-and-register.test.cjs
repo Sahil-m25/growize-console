@@ -270,9 +270,19 @@ test('register filters by kind, by farm and by reconciliation; every row names i
   assert.deepEqual(out.value.rows.map((x) => x.kind), ['refund']);
 });
 
+test('a seat that records reads every reference masked ("••• 1234") and offered for reveal — never the full UTR (rule 7)', async () => {
+  const res = await registerRig().svc.read(principal());
+  assert.equal(res.ok, true);
+  assert.ok(res.value.rows.every((x) => x.utr === null && !x.utrHidden));
+  const withRef = res.value.rows.filter((x) => x.utrMask !== null);
+  assert.ok(withRef.length > 0);
+  assert.ok(withRef.every((x) => /^••• \S{4}$/.test(x.utrMask) && x.canReveal));
+  assert.ok(!JSON.stringify(res).includes('SYNTHNEF0001'), 'the full reference is not in the register answer');
+});
+
 test('a non-Finance seat reads the UTR as hidden; a viewer is read-only; a KAM is refused', async () => {
   let res = await registerRig({ seesUtr: false, canRecord: false }).svc.read(principal());
-  assert.ok(res.value.rows.every((x) => x.utr === null && x.utrHidden));
+  assert.ok(res.value.rows.every((x) => x.utr === null && x.utrHidden && x.utrMask === null && !x.canReveal));
   assert.ok(!JSON.stringify(res).includes('SYNTHNEF0001'));
   assert.equal(res.value.readOnly, true);
   const kam = registerRig({ seesRegister: false });

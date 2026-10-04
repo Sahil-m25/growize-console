@@ -64,8 +64,13 @@ export interface RegisterRow {
   readonly kind: RegisterKind;
   readonly amount: number;
   readonly mode: string | null;
-  /** null when hidden: the screen reads "Finance only". */
+  /** Always null here (rule 7, D13): the full reference is a second, logged call behind step-up — POST /api/receipts/[id]/reveal. */
   readonly utr: string | null;
+  /** The reference as "••• 1234" (its last four) for a seat that records; null when hidden. */
+  readonly utrMask: string | null;
+  /** The seat holds the reveal right: the row offers "Show the reference". */
+  readonly canReveal: boolean;
+  /** true: the screen reads "Finance only". */
   readonly utrHidden: boolean;
   readonly receivedOn: string | null;
   readonly matchState: string;
@@ -101,6 +106,8 @@ interface Allot { id: string; investorId: string; investorName: string | null; f
 class Fail { constructor(readonly kind: ZohoFailureKind | "unexpected") {} }
 class Invalid { constructor(readonly ids: string[]) {} }
 
+/** "••• 1234": the last four and no more (lib/format maskRef — the same rule, kept here so the server module stays standalone). */
+export const maskRef = (v: string): string => (v.trim().length <= 4 ? "••••" : "••• " + v.trim().slice(-4));
 const int = (v: unknown): number | null => (typeof v === "number" && Number.isSafeInteger(v) ? v : null);
 const name = (v: unknown): string | null => {
   const n = v && typeof v === "object" ? (v as { name?: unknown }).name : undefined;
@@ -175,7 +182,7 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
           const utr = typeof r.UTR === "string" ? r.UTR.slice(0, 80) : null;
           rows.push(Object.freeze({
             id: r.id, kind, amount, mode: typeof r.Mode === "string" ? r.Mode : null,
-            utr: a.seesUtr ? utr : null, utrHidden: !a.seesUtr,
+            utr: null, utrMask: a.seesUtr && utr ? maskRef(utr) : null, canReveal: a.seesUtr && !!utr, utrHidden: !a.seesUtr,
             receivedOn: typeof r.Received_On === "string" ? r.Received_On : null,
             matchState: match, reconciled: match === "Matched", allotmentId: al.id,
             investor: Object.freeze({ id: al.investorId, name: al.investorName }), farm: Object.freeze({ id: al.farmId, name: al.farmName }),

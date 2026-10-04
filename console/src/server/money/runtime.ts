@@ -13,9 +13,10 @@ import { createZohoClient } from "../../lib/zoho/client";
 import type { ReceiptMatch, Publish } from "./match";
 import type { ClaimAnswers } from "./claim-answer";
 import type { Statements } from "./statements";
+import type { RevealRef } from "./reveal-ref";
 
 type Seat = { readonly seat: string | null; readonly pay: boolean } | null;
-const G = globalThis as typeof globalThis & { __gzReceiptMatch?: ReceiptMatch; __gzClaimAnswers?: ClaimAnswers; __gzStatements?: Statements };
+const G = globalThis as typeof globalThis & { __gzReceiptMatch?: ReceiptMatch; __gzClaimAnswers?: ClaimAnswers; __gzStatements?: Statements; __gzRevealRef?: RevealRef };
 
 async function parts(env: NodeJS.ProcessEnv) {
   const { dataRuntime } = await import("../data/zoho-source");
@@ -61,6 +62,27 @@ export async function receiptMatch(env: NodeJS.ProcessEnv = process.env): Promis
         const s = await seatNow(cred.userId, sid);
         return !!s && (s.seat === "head-of-finance" || s.seat === "digital-infrastructure" || s.seat === "corporate-root");
       },
+    },
+  }));
+}
+
+/** "Show the reference" (rule 7, D13/D22): the Investors-side "bank" capability on the live session — the route asks step-up first. */
+export async function revealRef(env: NodeJS.ProcessEnv = process.env): Promise<RevealRef> {
+  if (G.__gzRevealRef) return G.__gzRevealRef;
+  const { createRevealRef } = await import("./reveal-ref");
+  const { dataRuntime } = await import("../data/zoho-source");
+  const { userSessions } = await import("../oauth/runtime");
+  const { zohoSeatOf } = await import("../data/live");
+  const { seatAccess } = await import("../access/policy");
+  const rt = dataRuntime();
+  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX! });
+  return (G.__gzRevealRef = createRevealRef({
+    crm, events: rt.events,
+    async seatNow(cred, sid) {
+      const now = await userSessions(env).credential(sid);
+      if (!now.ok || now.credential.userId !== cred.userId) return null;
+      const seat = zohoSeatOf(now.session.seat);
+      return { seat: now.session.seat, mayReveal: !!seat && seatAccess(seat, now.session.who, {}).imCan("bank") };
     },
   }));
 }
