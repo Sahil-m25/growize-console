@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 04 Oct 2026 04:19 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 04 Oct 2026 05:37 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -16,12 +16,12 @@
 |**2. Plug into Zoho**|7 of 119 (6%)|111 (93%)|1|1|0.2|![](slack_date:2026-10-04)|10.4 min/unit measured|
 |**2b. Wire screens to the API**|57 of 66 (86%)|0 (0%)|9|9|4.5|![](slack_date:2026-10-04)|assumed until 5 rounds|
 |**2c. Test contracts and security hardening** :twisted_rightwards_arrows: parallel worktree|7 of 7 (100%)|0 (0%)|0|0|0|done|assumed until 5 rounds|
-|**3. Test and harden** :arrow_left:|0 of 145 (0%)|0 (0%)|0|145|36.3|![](slack_date:2026-10-07)|assumed until 5 rounds|
+|**3. Test and harden** :arrow_left:|33 of 145 (23%)|47 (32%)|1|65|16.3|![](slack_date:2026-10-05)|assumed until 5 rounds|
 
 |Forecast|Date|
 |---|---|
-|All three phases through the loop|![](slack_date:2026-10-07)|
-|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:2026-10-07) → ![](slack_date:2026-10-13)|
+|All three phases through the loop|![](slack_date:2026-10-05)|
+|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:2026-10-05) → ![](slack_date:2026-10-11)|
 |Status|:red_circle: Behind the target|
 
 ::: {.callout}
@@ -34,45 +34,77 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|2|![](slack_date:2026-10-04)|
-|S1|Foundations, access, test suite|23|3|![](slack_date:2026-10-05)|
-|S2|Lead side daily work and Investors pages|30|0|![](slack_date:2026-10-07)|
-|S3|Journey, gates, money, paper, Zoho Sign, farms|43|0|![](slack_date:2026-10-07)|
-|S4|Updates, tickets, app push, activity, numbers, teams|24|0|![](slack_date:2026-10-07)|
-|S5|Hardening, UAT, migration, release|17|4|![](slack_date:2026-10-07)|
+|S0|Zoho org build-out and access wall|18|4|![](slack_date:2026-10-04)|
+|S1|Foundations, access, test suite|23|4|![](slack_date:2026-10-05)|
+|S2|Lead side daily work and Investors pages|30|12|![](slack_date:2026-10-05)|
+|S3|Journey, gates, money, paper, Zoho Sign, farms|43|14|![](slack_date:2026-10-05)|
+|S4|Updates, tickets, app push, activity, numbers, teams|24|13|![](slack_date:2026-10-05)|
+|S5|Hardening, UAT, migration, release|17|4|![](slack_date:2026-10-05)|
 
 # :calendar: Month by month
 
 |Month|Stories finished|Forecast to finish|Cumulative forecast|
 |---|---|---|---|
 |September 2026|9|0|9 of 155|
-|October 2026|0|145|154 of 155|
+|October 2026|42|71|122 of 155|
 
 # :spiral_calendar_pad: Week by week
 
 |Week of|Finished|Forecast|Cumulative|Burn-up|
 |---|---|---|---|---|
 |![](slack_date:2026-09-21)|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
-|![](slack_date:2026-09-28) **(this week)**|7|27|36|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 23%|
-|![](slack_date:2026-10-05)|0|118|154|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square: 99%|
+|![](slack_date:2026-09-28) **(this week)**|49|30|81|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 52%|
+|![](slack_date:2026-10-05)|0|41|122|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 79%|
 
 ## This week
 
-**Finished (7):** M18-S14, M18-S15, M19-S04, M19-S05, M19-S06, M19-S12, M19-S13
+**Finished (49):** M01-S07, M02-S03, M02-S11, M04-S02, M04-S04, M05-S01, M05-S02, M05-S03, M05-S07, M06-S01, M06-S02, M06-S03, M07-S02, M07-S06, M07-S07, M08-S01, M09-S09, M10-S03, M10-S09, M10-S20, M10-S21, M10-S22, M10-S23, M11-S04, M12-S05, M12-S07, M12-S08, M12-S09, M12-S12, M12-S14, M13-S01, M13-S05, M14-S02, M15-S01, M16-S02, M16-S04, M16-S06, M16-S07, M16-S09, M17-S01, M17-S05, M17-S06, M18-S14, M18-S15, M19-S04, M19-S05, M19-S06, M19-S12, M19-S13
 
-**Planned by the forecast (27):** M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S03, M02-S04, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S11, M02-S12, M20-S01, M20-S05, M20-S06, M20-S08, M02-S07, M01-S01, M01-S02, M01-S03, M01-S04, M01-S05, M01-S07, M01-S08
+**Planned by the forecast (30):** M02-S04, M03-S04, M10-S01, M12-S01, M14-S03, M16-S08, M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S12, M20-S01, M20-S05, M20-S06, M20-S08, M02-S07, M01-S02, M01-S03, M01-S04, M01-S05, M01-S09, M03-S02, M03-S03
 
-**Stuck: review or waiting on people (11):**
+**Stuck: review or waiting on people (43):**
 
+- **M01-S01** One Next.js shell with the rail built from the person's seat (waiting)
+- **M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot l (waiting)
+- **M01-S10** Step-up before a reveal, an export or money leaving, with a second hand on refunds (waiting)
 - **M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat (review)
 - **M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged (review)
+- **M03-S06** The Auditor (viewer) reads and never writes (waiting)
+- **M03-S07** Key account managers see and work only their own accounts (waiting)
+- **M03-S08** Compliance owns KYC (waiting)
+- **M04-S03** Contact permission at capture (waiting)
 - **M05-S04** Call times and reschedule (waiting)
+- **M05-S08** Account Management's Today (Investors side) (waiting)
+- **M08-S03** Money in: the IR reports a payment, Finance records the receipt (waiting)
+- **M08-S04** Reservation hold: clock, balance due, extend and release (waiting)
 - **M08-S07** 'Said yes' becomes the investor record (review)
+- **M08-S08** The first matched advance opens the investor app account (waiting)
+- **M09-S03** The investor record — header, banners and sections by seat (waiting)
+- **M09-S04** Who looks after the account — KAM ownership (waiting)
 - **M09-S08** An IR sees only investors from their own leads (review)
 - **M10-S01** Payments register (review)
+- **M10-S02** Match a receipt — the second hand (waiting)
+- **M10-S05** Weekly bank statement upload and reconciliation (waiting)
+- **M10-S07** Receipts belong to the allotment (investor × farm) (waiting)
+- **M11-S01** Farms are the LLP shelf (waiting)
+- **M11-S02** An allotment links an investor to a farm LLP (waiting)
+- **M11-S03** The shelf — released, held and free per farm LLP (waiting)
+- **M11-S05** Allotment on the verified allocation letter (waiting)
+- **M11-S07** No unit is sold twice — the oversell guard (waiting)
 - **M12-S01** Documents in three scopes, with who sees what (review)
+- **M12-S02** Upload a document straight from the console to Zoho (waiting)
+- **M12-S03** Documents page: out for signature and on file, scoped to the seat (waiting)
+- **M12-S04** Send a document for signature through Zoho Sign (waiting)
+- **M12-S06** Signed PDF filed to the allotment and Agreement_Signed set (waiting)
+- **M12-S10** Isolation suite: no user sees another user's leads, investors, documents, sign requests, e (waiting)
 - **M12-S11** NDA loop on the lead page, and the IR's word beside Finance's queue (review)
+- **M13-S02** Tickets register scoped by seat (waiting)
+- **M13-S03** Open, wait and close a ticket (waiting)
+- **M13-S04** A KAM hands a bank or compliance ticket to Finance and keeps watching (waiting)
+- **M13-S06** Publish an investor update to a reconstructable segment (waiting)
+- **M14-S01** Events list and event page (waiting)
 - **M14-S03** Capture and sheet load tie leads to the event (review)
+- **M15-S03** Activity page: who did what, each seat its own scope, Lead side | Investors side (waiting)
 - **M15-S05** Console logs for refusals, reveals and API headroom (Planes B and C), filterable (review)
 - **M16-S08** Investors side of Numbers: collection, paper and compliance (review)
 
@@ -91,38 +123,38 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 
 |Epic|Stage|Stories|Done|Progress|Goal|
 |---|---|---|---|---|---|
-|**M01** Foundations & the one app shell|S1|10|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|One Next.js + TypeScript app, one sign-in, one rail built from the seat, live Zoho reads through one client with scope-keyed cache, honest s|
-|**M02** Zoho org build-out|S0|14|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 14%|The one Enterprise org ready for both sides before any second seat: fields, modules, the FLS wall, Receipts, document slots, Zoho Sign field|
+|**M01** Foundations & the one app shell|S1|10|1|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 10%|One Next.js + TypeScript app, one sign-in, one rail built from the seat, live Zoho reads through one client with scope-keyed cache, honest s|
+|**M02** Zoho org build-out|S0|14|4|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 29%|The one Enterprise org ready for both sides before any second seat: fields, modules, the FLS wall, Receipts, document slots, Zoho Sign field|
 |**M03** Access, seats & super user|S1|9|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Who may sign in and what each seat may read and do on both sides, enforced by Zoho and the data layer; Sahil as super user with PII masked; |
-|**M04** Lead capture|S2|4|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Leads added one at a time, by CSV or from an event sheet, with duplicates refused and contact permission recorded.|
-|**M05** Today (both sides)|S2|7|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|One Today page with a 'Lead side / Investors side' switch: the IR's follow-ups and paperwork moves, and Finance's and Account Management's d|
-|**M06** Leads book & lead search|S2|4|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Each person sees their own book of leads as an ordered list with honest counts, and finds a lead from the top bar — leads only, inside their|
-|**M07** Lead page|S2|7|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|One lead page where an IR sees the next step, reaches the investor, logs a contact once with Undo, emails through Zoho, closes as lost and r|
-|**M08** Journey, gates & hand-offs between the sides|S3|7|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|The lead's journey is true in Zoho, money gates are opened only by Finance, and Said yes hands the investor to the Investors side of the sam|
-|**M09** Investors & the investor record|S2|7|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|One Investors page and one sectioned investor record, scoped per seat: Finance sees the book, a KAM their accounts, an IR only the investors|
-|**M10** Payments & receipts|S3|11|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Every rupee is a Receipt linked to an allotment (investor × farm LLP), recorded by Finance, matched by a second person, reconciled against t|
-|**M11** Farms (the LLP shelf) & allotments|S3|6|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Farms are the LLP records in Zoho (LLP_Creation_Module): the shelf counts free units off the records, and every allotment links an investor |
-|**M12** Documents, upload & Zoho Sign|S3|14|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Every document lives in Zoho in one of three scopes (personal on the Contact, per allotment, per farm LLP), is uploaded straight from the co|
-|**M13** Tickets & investor updates (pushed to the investor app)|S4|6|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Tickets (Zoho Cases) and investor updates are worked in the console and reach the existing investor app through the signed event contracts, |
-|**M14** Events|S3|3|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Events are the lead side's diary (Lead_Events module, D85): list, event page, add/correct/remove by the IR Manager, capture and CSV/sheet lo|
-|**M15** Updates & Activity|S4|3|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|People see what others changed on their book (bell and Updates), managers review who did what on one Activity page with a Lead side / Invest|
-|**M16** Numbers, Plan & Transfers|S4|8|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|One Numbers page with a Lead side / Investors side switch, a Plan page and a Transfers page, all worked out live from Zoho within the viewer|
-|**M17** Teams, Profile & System|S4|4|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|Admin pages of the one app: Teams (members plus an Investors side seats section), seat and page grants, temporary access, own profile, Syste|
+|**M04** Lead capture|S2|4|2|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 50%|Leads added one at a time, by CSV or from an event sheet, with duplicates refused and contact permission recorded.|
+|**M05** Today (both sides)|S2|7|4|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 57%|One Today page with a 'Lead side / Investors side' switch: the IR's follow-ups and paperwork moves, and Finance's and Account Management's d|
+|**M06** Leads book & lead search|S2|4|3|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 75%|Each person sees their own book of leads as an ordered list with honest counts, and finds a lead from the top bar — leads only, inside their|
+|**M07** Lead page|S2|7|3|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 43%|One lead page where an IR sees the next step, reaches the investor, logs a contact once with Undo, emails through Zoho, closes as lost and r|
+|**M08** Journey, gates & hand-offs between the sides|S3|7|1|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 14%|The lead's journey is true in Zoho, money gates are opened only by Finance, and Said yes hands the investor to the Investors side of the sam|
+|**M09** Investors & the investor record|S2|7|1|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 14%|One Investors page and one sectioned investor record, scoped per seat: Finance sees the book, a KAM their accounts, an IR only the investors|
+|**M10** Payments & receipts|S3|11|6|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 55%|Every rupee is a Receipt linked to an allotment (investor × farm LLP), recorded by Finance, matched by a second person, reconciled against t|
+|**M11** Farms (the LLP shelf) & allotments|S3|6|1|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 17%|Farms are the LLP records in Zoho (LLP_Creation_Module): the shelf counts free units off the records, and every allotment links an investor |
+|**M12** Documents, upload & Zoho Sign|S3|14|6|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 43%|Every document lives in Zoho in one of three scopes (personal on the Contact, per allotment, per farm LLP), is uploaded straight from the co|
+|**M13** Tickets & investor updates (pushed to the investor app)|S4|6|2|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 33%|Tickets (Zoho Cases) and investor updates are worked in the console and reach the existing investor app through the signed event contracts, |
+|**M14** Events|S3|3|1|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 33%|Events are the lead side's diary (Lead_Events module, D85): list, event page, add/correct/remove by the IR Manager, capture and CSV/sheet lo|
+|**M15** Updates & Activity|S4|3|1|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 33%|People see what others changed on their book (bell and Updates), managers review who did what on one Activity page with a Lead side / Invest|
+|**M16** Numbers, Plan & Transfers|S4|8|5|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 62%|One Numbers page with a Lead side / Investors side switch, a Plan page and a Transfers page, all worked out live from Zoho within the viewer|
+|**M17** Teams, Profile & System|S4|4|3|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 75%|Admin pages of the one app: Teams (members plus an Investors side seats section), seat and page grants, temporary access, own profile, Syste|
 |**M18** Hardening, security & release|S5|12|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 17%|Prove the one app is fast inside Zoho's limits, leaks nothing across seats or users, works on a phone and by keyboard, fails visibly, can be|
 |**M19** Quality — Jev UI suite|S1|12|5|:large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 42%|A Jev UI suite that runs the same plain-language cases against the merged prototype (growize-console-merged.html) and the built app, per sea|
 |**M20** Launch readiness & operations|S0|7|0|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 0%|The brief, KPIs, status rhythm and change control that keep the plan honest, the guides and support model for go-live, and the two outside p|
-# :card_index_dividers: Backlog in BLOCKED.md — 426 open, 50 ticked
+# :card_index_dividers: Backlog in BLOCKED.md — 444 open, 50 ticked
 
 |Kind|Open|What it is|
 |---|---|---|
 |FRONT-END LOOP|22|Screens to wire to their API route (now phase 2b units)|
-|PROVISIONAL|117|Choices the build made at low confidence — owner confirms or reverses|
-|FACT CHANGE PROPOSED|61|Test cases that contradict a decision — owner rules, then the case changes|
-|BLOCK|7|Do-not-activate blocks (a design or decision gap)|
+|PROVISIONAL|125|Choices the build made at low confidence — owner confirms or reverses|
+|FACT CHANGE PROPOSED|66|Test cases that contradict a decision — owner rules, then the case changes|
+|BLOCK|8|Do-not-activate blocks (a design or decision gap)|
 |STAGING PROOF|4|Proofs to run on the sandbox|
 |OWNER ACTION|2|Owner actions in Zoho|
 |Tasks for people|23|Sahil 11, Autopilot 11, Tester 1|
-|Other notes|190|Zoho fields/modules the code expects, secrets and config, staging steps|
+|Other notes|194|Zoho fields/modules the code expects, secrets and config, staging steps|
 
 Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line in BLOCKED.md when it is done; the loop reads the ticks.
 
@@ -544,6 +576,24 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 - [ ] M11-S07-NOTE-6 (M11-S07) FACT CHANGE PROPOSED: M11-S07 AC1 says recording the advance is refused; D21/rule 3 say recording money is always allowed — built as: the reservation is refused, money against an existing reservation is always recorded. Proposed AC1: "the reservation is refused, and any mone
 - [ ] M12-S01-NOTE-7 (M12-S01) PROVISIONAL: typed-slot files carry the slot but no uploader/time (Zoho file-upload value does not say who); plain Attachments carry the uploader but no slot; file-upload value keys copied from the uploader, unverified live.
 - [ ] M01-S08-NOTE-9 (M01-S08) FIXED 4 Oct (d95c79d): Investors record-a-receipt now goes through the save queue (4-min renew, 5-min offline cap, queuedAt = preparedAt + monotonic time, retry = new key); TC-IM01-008/009 PASS. Still open: the live prepare → offline press → reconnect integration case agains
+- [ ] M01-S01-NOTE-7 (M01-S01) PROVISIONAL: Google Fonts links removed from the layout (TC-IM01-001: Inter is embedded; mono now falls back to system monospace — embed IBM Plex Mono as a data URL if it must stay); the shell keeps two polite live regions (#live, #save-status) though TC-IM01-001 says one.
+- [ ] M01-S07-NOTE-1 (M01-S07) PROVISIONAL: CI grep gate scripts/no-native-dialogs.cjs (npm run check:dialogs) allows alert/confirm/prompt only where a file binds them itself; last native window.confirm (useUntick) replaced by an in-page confirmation.
+- [ ] M02-S03-NOTE-1 (M02-S03) FACT CHANGE PROPOSED: TC-E02-005 lists Touches, Events, Paper, Payment_Claims, Plan — later decisions: Lead_Events (D85), Sales_Plans (D82), no Paper module (D77/D79), claims live in Receipts (D82). Module register: docs/zoho-module-register.md (API names of Receipts/Touches
+- [ ] M02-S04-NOTE-1 (M02-S04) PROVISIONAL: zoho/field-register.json is still hand-authored; the new test ties it to the mapping, identity.ts and SENSITIVE_CONTACT_FIELDS. Its pan/bank_account/aadhaar_* names are stale aliases — real names PAN_Number, Bank_Account_Number, Aadhaar_*.
+- [ ] M08-S03-NOTE-7 (M08-S03) FIXED 4 Oct: the in-page note no longer says "Not done." before "Recorded. It cannot be matched until…" (D21). TC-IM05-007 fact 1 true on screen but judge-unstable (0.42–0.65) — treat as stale under M19-S12-NOTE-5.
+- [ ] M09-S09-NOTE-6 (M09-S09) FACT CHANGE PROPOSED: AC2/AC3 say the Contact is created with App_Access = Hold; under D93 App_Access stays empty until the first matched receipt (the add-paid receipt is Pending). AC should read "no app account until the first matched receipt (D93)".
+- [ ] M11-S07-NOTE-7 (M11-S07) M11-S07-NOTE-3 looks stale: add-paid.ts and allot.ts already call the oversell guard; the other allotment writers never change units (tests in onboarding/allot/oversell.test.cjs). Close NOTE-3 if you agree.
+- [ ] M10-S02-NOTE-7 (M10-S02) BLOCKED ON OWNER: TC-IM05-006 fails until you decide whether a recorded receipt is pending until "Match it" (D21; M10-S02-NOTE-2/-6).
+- [ ] M10-S05-NOTE-5 (M10-S05) PROVISIONAL: docs/runbooks/weekly-reconciliation.md leaves the upload weekday to Finance; bank charges/debits with no receipt cannot be closed in the console.
+- [ ] M10-S05-NOTE-6 (M10-S05) FACT CHANGE PROPOSED: TC-IM05-019 step "Transactions" → "Payments".
+- [ ] M10-S07-NOTE-4 (M10-S07) PROVISIONAL: 13 proposed UI cases for stories with no/ui-todo cases (M10-S07/S09/S20/S21/S22/S23, M16-S02/S04) in docs/reports/p3-money-proposed-ui-cases.json — promote into ui-cases.json if approved; negative facts score 0.61–0.63 (borderline, D63).
+- [ ] M12-S01-NOTE-8 (M12-S01) FACT CHANGE PROPOSED: D70 lists the originating IR under personal-scope documents, AC6 says an IR never sees them; code and the new isolation suite follow AC6. Scope table for owner confirmation: docs/reports/m12-document-scope-table.md.
+- [ ] M12-S04-NOTE-9 (M12-S04) PROVISIONAL: TC-IM07-005/006 and TC-E09-011..013 exist in the plan but not in ui-cases.json, so story runs skip them; proved from scratch copies (all pass) — add them to ui-cases.json if wanted.
+- [ ] M12-S10-NOTE-1 (M12-S10) Local isolation suite built: console/src/server/http/contract/isolation.test.cjs (63 cases, seat × record-owner over documents, emails, tickets, search, embed signing). Real-Zoho sharing / restricted-user (T11) proof, sign-request listing and two-user probe need the sandbox.
+- [ ] M13-S01-NOTE-5 (M13-S01) PROVISIONAL: all-events.test.cjs covers 31 schemas incl. update.published; contracts/README still says 30.
+- [ ] M13-S06-NOTE-6 (M13-S06) FACT CHANGE PROPOSED: TC-IM08-012 is true on screen but scores 0.71 — reword to "The kind list reads Produce, Notice" (drop "only").
+- [ ] M15-S05-NOTE-6 (M15-S05) BUG OPEN: TC-E11-016 — the Investors-side Payments register offers Sahil no "Show the reference" control (reveal behind D22 step-up), so there is no reveal to log. Feature-sized; needs the reveal control or a case rewrite.
+- [ ] M15-S05-NOTE-7 (M15-S05) PROVISIONAL: sign-in history checked weekly on Monday plus on demand by Digital Infrastructure (ops/runbooks/sign-in-history.md) — owner confirms.
 
 # :clipboard: Stories
 
@@ -551,33 +601,33 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M01-S01** One Next.js shell with the rail built from the person's seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|7/10|
+|**M01-S01** One Next.js shell with the rail built from the person's seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S1|Must|8/10|
+|**M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Built (demo data)|S1|Must|5/6|
+|**M01-S10** Step-up before a reveal, an export or money leaving, with a second hand on refunds|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|5/10|
 |**M01-S02** Sign in with my own Zoho account; signing out or changing person clears everything|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Partly built|S1|Must|4/6|
 |**M01-S03** Live reads and writes through one Zoho client, gate and scope-keyed cache|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S1|Must|5/7|
 |**M01-S04** Operations and identity logs|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S1|Must|1/2|
 |**M01-S05** Staging and production environments|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S1|Must|1/2|
 |**M01-S06** Pending saves while offline|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|1/2|
-|**M01-S07** Refusals and confirmations said in the page, never in alert() or confirm()|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S1|Must|4/6|
-|**M01-S08** Every write goes through commit(): one press, one record, 'Not saved yet' when it cannot land|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S1|Must|4/6|
 |**M01-S09** Honest connection and freshness line in the top bar|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|3/4|
-|**M01-S10** Step-up before a reveal, an export or money leaving, with a second hand on refunds|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|4/10|
+|**M01-S07** Refusals and confirmations said in the page, never in alert() or confirm()|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S1|Must|6/6|
 
 ## M02 · Zoho org build-out
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat|:white_check_mark: Done|:eyes: Review|—|—|To do|Not a screen|S0|Must|2/10|
+|**M02-S04** Roles, profiles, Private sharing and the field-level security wall for every seat|:white_check_mark: Done|:eyes: Review|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S0|Must|3/10|
 |**M02-S01** Enterprise renewed and seats ordered|—|—|—|—|To do|Not a screen|S0|Must|0/3|
 |**M02-S02** Lead fields, rungs and picklists per the mapping|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S0|Must|3/4|
-|**M02-S03** Custom modules for the lead side; LLP modules adopted|—|:white_check_mark: Done|—|—|To do|Not a screen|S0|Must|1/3|
 |**M02-S05** Restricted test user and T11|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S0|Must|1/3|
 |**M02-S06** Native Lead conversion stopped|—|—|—|—|To do|Not a screen|S0|Must|0/2|
 |**M02-S07** Calls, Meetings and Tasks visible to the seats that schedule, with meetings in Zoho Calendar|—|—|—|—|To do|Not a screen|S0|Should|0/2|
 |**M02-S08** Email sent from the person's own mailbox|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S0|Must|1/2|
 |**M02-S09** Cover windows as record-level sharing|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S0|Must|2/3|
 |**M02-S10** Sandbox and the console's OAuth client|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S0|Must|1/3|
-|**M02-S11** Decide the canonical allotment module: LLP_UnitAllocation_Module or LLP_Unit_Allocation|—|:white_check_mark: Done|—|—|To do|Not a screen|S0|Must|3/4|
 |**M02-S12** Receipts module linked to the allotment, the Contact and the LLP|—|:white_check_mark: Done|—|—|To do|Not a screen|S0|Must|3/4|
+|**M02-S03** Custom modules for the lead side; LLP modules adopted|—|:white_check_mark: Done|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S0|Must|2/3|
+|**M02-S11** Decide the canonical allotment module: LLP_UnitAllocation_Module or LLP_Unit_Allocation|—|:white_check_mark: Done|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S0|Must|4/4|
 |**M02-S13** Document-slot file-upload fields on the Contact, the allotment and the LLP|—|:white_check_mark: Done|—|—|—|Not a screen|S0|Must|4/4|
 |**M02-S14** Zoho Sign request id and status fields on the allotment and the Contact; Zoho Sign plan and webhooks|—|:white_check_mark: Done|—|—|—|Not a screen|S0|Must|4/4|
 
@@ -585,176 +635,176 @@ Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S1|Must|3/6|
+|**M03-S04** Grant and seat changes move the sign-in list, follow the job and are logged|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|:white_check_mark: Done|Built (demo data)|S1|Must|4/6|
+|**M03-S06** The Auditor (viewer) reads and never writes|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S1|Must|2/4|
+|**M03-S07** Key account managers see and work only their own accounts|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Partly built|S1|Must|2/4|
+|**M03-S08** Compliance owns KYC|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S1|Must|2/3|
 |**M03-S01** Only people with a seat or a granted page sign in|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S1|Must|3/4|
 |**M03-S02** Sahil grants pages to other people, read-only by default|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|3/4|
 |**M03-S03** Extra pages for IRs, and the IR Manager's limits|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S1|Must|2/3|
 |**M03-S05** Zoho users provisioned seat by seat, both sides|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S1|Must|2/5|
-|**M03-S06** The Auditor (viewer) reads and never writes|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S1|Must|1/4|
-|**M03-S07** Key account managers see and work only their own accounts|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S1|Must|1/4|
-|**M03-S08** Compliance owns KYC|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S1|Must|1/3|
 |**M03-S09** An IR sees investor data only for investors from their own leads, enforced at the data layer|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S1|Must|2/4|
 
 ## M04 · Lead capture
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
+|**M04-S03** Contact permission at capture|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S2|Must|2/3|
 |**M04-S01** Add a single lead|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|3/4|
-|**M04-S02** Duplicate mobile refused|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
-|**M04-S03** Contact permission at capture|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|1/3|
-|**M04-S04** CSV import with preview|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Should|2/3|
+|**M04-S02** Duplicate mobile refused|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|3/3|
+|**M04-S04** CSV import with preview|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Should|3/3|
 
 ## M05 · Today (both sides)
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
 |**M05-S04** Call times and reschedule|—|:hourglass_flowing_sand: Waiting on people|—|—|—|Partly built|S2|Should|1/2|
-|**M05-S01** My day list (Lead side)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
-|**M05-S02** One action per row and the focus panel|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
-|**M05-S03** Paperwork 'your move' on Today|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|1/2|
+|**M05-S08** Account Management's Today (Investors side)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|4/5|
 |**M05-S06** Headline figures on Today (Investors side)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M05-S07** Waiting on you: the Investors-side queue per seat, including IR payment claims|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|5/6|
-|**M05-S08** Account Management's Today (Investors side)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/5|
+|**M05-S01** My day list (Lead side)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|3/3|
+|**M05-S02** One action per row and the focus panel|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|3/3|
+|**M05-S03** Paperwork 'your move' on Today|:white_check_mark: Done|—|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|2/2|
+|**M05-S07** Waiting on you: the Investors-side queue per seat, including IR payment claims|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|6/6|
 
 ## M06 · Leads book & lead search
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M06-S01** Leads list with Personal and Team scope|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
-|**M06-S02** Filters, sort and the Overdue fix|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|1/2|
-|**M06-S03** Find a lead in the top bar (leads only, own book)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/4|
 |**M06-S05** Search wall: the lead search never reaches investor data|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/4|
+|**M06-S01** Leads list with Personal and Team scope|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Built (demo data)|S2|Must|3/3|
+|**M06-S02** Filters, sort and the Overdue fix|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S2|Must|2/2|
+|**M06-S03** Find a lead in the top bar (leads only, own book)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|4/4|
 
 ## M07 · Lead page
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
 |**M07-S01** Lead page shell and Next step card|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|2/3|
-|**M07-S02** Logging flow — one question at a time|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Must|1/2|
 |**M07-S03** Save on the last tap, recorded once, with 10-second Undo|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
 |**M07-S04** Call time and Zoho activity mapping|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
 |**M07-S05** Email composer sent through Zoho send_mail|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/4|
-|**M07-S06** Close as lost in one step, undo and re-open|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S2|Must|1/2|
-|**M07-S07** Latest note, all notes and inline note|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S2|Should|1/2|
+|**M07-S02** Logging flow — one question at a time|:white_check_mark: Done|—|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|2/2|
+|**M07-S06** Close as lost in one step, undo and re-open|—|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Partly built|S2|Must|2/2|
+|**M07-S07** Latest note, all notes and inline note|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S2|Should|2/2|
 
 ## M08 · Journey, gates & hand-offs between the sides
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
 |**M08-S07** 'Said yes' becomes the investor record|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S3|Must|2/5|
-|**M08-S01** Journey bar, ticks, un-tick and skip|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S3|Must|2/3|
+|**M08-S03** Money in: the IR reports a payment, Finance records the receipt|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|6/8|
+|**M08-S04** Reservation hold: clock, balance due, extend and release|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|7/8|
+|**M08-S08** The first matched advance opens the investor app account|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/5|
 |**M08-S02** Finance gates read live from Zoho|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|2/3|
-|**M08-S03** Money in: the IR reports a payment, Finance records the receipt|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|5/8|
-|**M08-S04** Reservation hold: clock, balance due, extend and release|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|6/8|
 |**M08-S05** Owners and cover (D44)|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Partly built|S3|Must|2/3|
-|**M08-S08** The first matched advance opens the investor app account|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
+|**M08-S01** Journey bar, ticks, un-tick and skip|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Built (demo data)|S3|Must|3/3|
 
 ## M09 · Investors & the investor record
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
 |**M09-S08** An IR sees only investors from their own leads|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S2|Must|2/5|
+|**M09-S03** The investor record — header, banners and sections by seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S2|Must|4/5|
+|**M09-S04** Who looks after the account — KAM ownership|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S2|Must|4/5|
 |**M09-S01** Investors list for Finance|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S2|Must|2/3|
 |**M09-S02** KAM book and Head of AM book|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/5|
-|**M09-S03** The investor record — header, banners and sections by seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/5|
-|**M09-S04** Who looks after the account — KAM ownership|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/5|
 |**M09-S07** Investor search on the Investors page|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/4|
-|**M09-S09** Add an investor who has already paid, straight from the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S2|Must|3/4|
+|**M09-S09** Add an investor who has already paid, straight from the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S2|Must|4/4|
 
 ## M10 · Payments & receipts
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M10-S01** Payments register|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S3|Must|3/6|
-|**M10-S02** Match a receipt — the second hand|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|4/6|
-|**M10-S03** Answer an IR's payment report|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M10-S05** Weekly bank statement upload and reconciliation|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/7|
-|**M10-S07** Receipts belong to the allotment (investor × farm)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S3|Must|2/4|
+|**M10-S01** Payments register|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/6|
+|**M10-S02** Match a receipt — the second hand|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|5/6|
+|**M10-S05** Weekly bank statement upload and reconciliation|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|5/7|
+|**M10-S07** Receipts belong to the allotment (investor × farm)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|3/4|
 |**M10-S08** Per-farm payment view for an investor with several allotments|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Should|3/4|
-|**M10-S09** ARL holdings and transactions — read-only panel|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Should|3/4|
-|**M10-S20** Monthly payouts: 60-month schedule per allotment, Finance due queue|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M10-S21** Unlock the investor app and send the welcome from the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M10-S22** Preview the investor's app screens (mock-up with their data)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Should|3/4|
-|**M10-S23** Test sign-in link to check the real app on another device|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Should|3/4|
+|**M10-S03** Answer an IR's payment report|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/4|
+|**M10-S09** ARL holdings and transactions — read-only panel|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Should|4/4|
+|**M10-S20** Monthly payouts: 60-month schedule per allotment, Finance due queue|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/4|
+|**M10-S21** Unlock the investor app and send the welcome from the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/4|
+|**M10-S22** Preview the investor's app screens (mock-up with their data)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S4|Should|4/4|
+|**M10-S23** Test sign-in link to check the real app on another device|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S4|Should|4/4|
 
 ## M11 · Farms (the LLP shelf) & allotments
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M11-S01** Farms are the LLP shelf|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M11-S02** An allotment links an investor to a farm LLP|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M11-S03** The shelf — released, held and free per farm LLP|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M11-S04** Release a farm LLP's units or take them back|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M11-S05** Allotment on the verified allocation letter|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|4/7|
-|**M11-S07** No unit is sold twice — the oversell guard|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
+|**M11-S01** Farms are the LLP shelf|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/5|
+|**M11-S02** An allotment links an investor to a farm LLP|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/5|
+|**M11-S03** The shelf — released, held and free per farm LLP|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/5|
+|**M11-S05** Allotment on the verified allocation letter|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|5/7|
+|**M11-S07** No unit is sold twice — the oversell guard|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/5|
+|**M11-S04** Release a farm LLP's units or take them back|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/4|
 
 ## M12 · Documents, upload & Zoho Sign
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M12-S01** Documents in three scopes, with who sees what|—|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Partly built|S3|Must|1/5|
+|**M12-S01** Documents in three scopes, with who sees what|—|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|:hourglass_flowing_sand: Waiting on people|Partly built|S3|Must|3/5|
 |**M12-S11** NDA loop on the lead page, and the IR's word beside Finance's queue|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S3|Must|3/6|
-|**M12-S02** Upload a document straight from the console to Zoho|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M12-S03** Documents page: out for signature and on file, scoped to the seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M12-S04** Send a document for signature through Zoho Sign|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|4/7|
-|**M12-S05** Live signature status from Zoho Sign webhooks, with reminders and recall|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|:white_check_mark: Done|To do|Built (demo data)|S3|Must|6/7|
-|**M12-S06** Signed PDF filed to the allotment and Agreement_Signed set|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M12-S07** Block or supersede a document|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M12-S08** The investor signs by email or inside the investor app|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S3|Should|2/3|
-|**M12-S09** See a record's emails in the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Should|3/4|
-|**M12-S10** Isolation suite: no user sees another user's leads, investors, documents, sign requests, emails or tickets|—|—|—|—|To do|Partly built|S3|Must|0/8|
-|**M12-S12** Supplementary agreement draft loop|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S3|Must|2/3|
+|**M12-S02** Upload a document straight from the console to Zoho|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/5|
+|**M12-S03** Documents page: out for signature and on file, scoped to the seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/5|
+|**M12-S04** Send a document for signature through Zoho Sign|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|5/7|
+|**M12-S06** Signed PDF filed to the allotment and Agreement_Signed set|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/5|
+|**M12-S10** Isolation suite: no user sees another user's leads, investors, documents, sign requests, emails or tickets|—|—|—|—|:hourglass_flowing_sand: Waiting on people|Partly built|S3|Must|4/8|
 |**M12-S13** Material follows the NDA; deck email marks the deck sent|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
-|**M12-S14** 'Your move' on Today and Documents|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S3|Should|1/2|
+|**M12-S05** Live signature status from Zoho Sign webhooks, with reminders and recall|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|7/7|
+|**M12-S07** Block or supersede a document|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/4|
+|**M12-S08** The investor signs by email or inside the investor app|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Partly built|S3|Should|3/3|
+|**M12-S09** See a record's emails in the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Should|4/4|
+|**M12-S12** Supplementary agreement draft loop|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Built (demo data)|S3|Must|3/3|
+|**M12-S14** 'Your move' on Today and Documents|:white_check_mark: Done|—|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Should|2/2|
 
 ## M13 · Tickets & investor updates (pushed to the investor app)
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M13-S01** Push to the investor app through the signed contracts, with a stub receiver|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S4|Must|3/4|
-|**M13-S02** Tickets register scoped by seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|3/5|
-|**M13-S03** Open, wait and close a ticket|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|3/5|
-|**M13-S04** A KAM hands a bank or compliance ticket to Finance and keeps watching|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|3/5|
-|**M13-S05** Investor requests arrive as tickets and replies go back to the app|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Should|4/5|
-|**M13-S06** Publish an investor update to a reconstructable segment|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|3/5|
+|**M13-S02** Tickets register scoped by seat|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S4|Must|4/5|
+|**M13-S03** Open, wait and close a ticket|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S4|Must|4/5|
+|**M13-S04** A KAM hands a bank or compliance ticket to Finance and keeps watching|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S4|Must|4/5|
+|**M13-S06** Publish an investor update to a reconstructable segment|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S4|Must|4/5|
+|**M13-S01** Push to the investor app through the signed contracts, with a stub receiver|—|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Partly built|S4|Must|4/4|
+|**M13-S05** Investor requests arrive as tickets and replies go back to the app|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S4|Should|5/5|
 
 ## M14 · Events
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M14-S03** Capture and sheet load tie leads to the event|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S3|Must|2/4|
-|**M14-S01** Events list and event page|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/5|
-|**M14-S02** Add, correct and remove an event|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S3|Must|3/4|
+|**M14-S03** Capture and sheet load tie leads to the event|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|3/4|
+|**M14-S01** Events list and event page|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/5|
+|**M14-S02** Add, correct and remove an event|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Must|4/4|
 
 ## M15 · Updates & Activity
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M15-S05** Console logs for refusals, reveals and API headroom (Planes B and C), filterable|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S4|Must|2/5|
-|**M15-S01** Updates: what others changed on my book|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S4|Must|2/3|
-|**M15-S03** Activity page: who did what, each seat its own scope, Lead side / Investors side|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|6/9|
+|**M15-S05** Console logs for refusals, reveals and API headroom (Planes B and C), filterable|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|:eyes: Review|Built (demo data)|S4|Must|2/5|
+|**M15-S03** Activity page: who did what, each seat its own scope, Lead side / Investors side|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S4|Must|8/9|
+|**M15-S01** Updates: what others changed on my book|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Built (demo data)|S4|Must|3/3|
 
 ## M16 · Numbers, Plan & Transfers
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M16-S08** Investors side of Numbers: collection, paper and compliance|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|To do|Built (demo data)|S4|Should|2/4|
+|**M16-S08** Investors side of Numbers: collection, paper and compliance|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:eyes: Review|—|:white_check_mark: Done|Built (demo data)|S4|Should|3/4|
 |**M16-S01** Assignments by IR report|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S4|Must|2/3|
-|**M16-S02** Open one IR's row and list the leads behind a count|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S4|Should|1/2|
 |**M16-S03** Lead-side Numbers sections computed live, one scope at a time|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S4|Must|2/3|
-|**M16-S04** Read the plan|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S4|Must|1/2|
-|**M16-S06** Transfers per month: leads that became investors|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S4|Must|2/3|
-|**M16-S07** Open a month to its investors|:white_check_mark: Done|—|—|—|To do|Built (demo data)|S4|Should|1/2|
-|**M16-S09** Money figures only to seats that may see them|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Partly built|S4|Must|2/3|
+|**M16-S02** Open one IR's row and list the leads behind a count|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S4|Should|2/2|
+|**M16-S04** Read the plan|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Partly built|S4|Must|2/2|
+|**M16-S06** Transfers per month: leads that became investors|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S4|Must|3/3|
+|**M16-S07** Open a month to its investors|:white_check_mark: Done|—|—|—|:white_check_mark: Done|Built (demo data)|S4|Should|2/2|
+|**M16-S09** Money figures only to seats that may see them|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Partly built|S4|Must|3/3|
 
 ## M17 · Teams, Profile & System
 
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
-|**M17-S01** Teams: members, seats and what each seat may do, from Zoho|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|4/5|
 |**M17-S02** Grant pages and change seats|—|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|To do|Built (demo data)|S4|Must|2/3|
-|**M17-S05** My profile|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Built (demo data)|S4|Must|1/2|
-|**M17-S06** System health and administration|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Partly built|S4|Must|1/2|
+|**M17-S01** Teams: members, seats and what each seat may do, from Zoho|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S4|Must|5/5|
+|**M17-S05** My profile|—|:hourglass_flowing_sand: Waiting on people|—|—|:white_check_mark: Done|Built (demo data)|S4|Must|2/2|
+|**M17-S06** System health and administration|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Partly built|S4|Must|2/2|
 
 ## M18 · Hardening, security & release
 

@@ -4,7 +4,7 @@
 //   node autopilot/fanout.mjs worktrees <plan.json> <parent-dir> [base] one worktree per batch: branch agent/<batch>, node_modules linked
 //   node autopilot/fanout.mjs record <results.json> [--dry]            record every agent's result in one pass (progress + BLOCKED)
 // results.json: [{ "story": "M11-S03", "phase": "wire", "status": "done|review|waiting", "note": "one line: built · acceptance met · decisions",
-//                  "commits": ["sha"], "notes": ["PROVISIONAL: …", "FACT CHANGE PROPOSED: …"] }]
+//                  "commits": ["sha"], "notes": ["PROVISIONAL: …", "FACT CHANGE PROPOSED: …"], "subtasks": ["optional: ids actually done"] }]
 // Models (AUTOPILOT.md "Fan-out"): builders = sonnet; the pattern for a new kind of unit, cross-cutting/security work,
 // the Jev layer, and the integration merge = opus.
 import fs from "node:fs"; import path from "node:path"; import { execFileSync } from "node:child_process";
@@ -42,7 +42,8 @@ if (cmd === "plan") {
     const S = (pr.stories[r.story] ||= { status: "pending", attempts: 0 }); S.phases ||= {}; S.phase_attempts ||= {};
     S.phase_attempts[r.phase] = (S.phase_attempts[r.phase] || 0) + 1; S.attempts = (S.attempts || 0) + 1;
     S.phases[r.phase] = r.status; S.at = now; S.note = r.note; S.commits = [...new Set([...(S.commits || []), ...(r.commits || [])])];
-    for (const t of s.subtasks.filter(t => /^Autopilot/.test(t.doer) && phaseOf(t) === r.phase))
+    // r.subtasks (optional): only these were completed — e.g. the local half of a phase whose sandbox half waits
+    for (const t of s.subtasks.filter(t => /^Autopilot/.test(t.doer) && phaseOf(t) === r.phase && (!r.subtasks || r.subtasks.includes(t.id))))
       pr.subtasks[t.id] = { status: r.status === "review" ? "review" : "done", at: now, phase: r.phase };
     const need = phasesFor(s), got = need.filter(p => ["done", "waiting"].includes(S.phases[p]));
     const peopleOpen = s.subtasks.some(t => !/^Autopilot/.test(t.doer) && pr.subtasks[t.id]?.status !== "done");

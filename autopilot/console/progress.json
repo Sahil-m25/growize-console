@@ -31,34 +31,39 @@
    "commits": []
   },
   "M02-S03": {
-   "status": "pending",
-   "attempts": 0,
-   "at": "2026-09-25T18:38:51.764785Z",
-   "note": "Touches, Investor_Updates, Mail_Templates, Sales_Plans, Lead_Events, Investor_Payouts modules created; LLP_Creation_Module and LLP_UnitAllocation_Module adopted. Applied in Zoho from the Cowork session (D74-D85) and verified by COQL/field metadata; see docs/decisions/D82-payouts-claims-events-plan-ladder.md",
+   "status": "done",
+   "attempts": 1,
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "phases": {
     "zoho": "done",
-    "test": "pending"
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 0,
-    "test": 0
+    "test": 1
    },
-   "commits": []
+   "commits": [
+    "74872c5"
+   ],
+   "notes": 1
   },
   "M02-S11": {
-   "status": "pending",
-   "attempts": 0,
-   "at": "2026-09-25T18:38:51.764785Z",
-   "note": "Decided by the owner: LLP_UnitAllocation_Module is canonical (D75); the duplicate LLP_Unit_Allocation's extra fields were removed (D77).",
+   "status": "done",
+   "attempts": 1,
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "phases": {
     "zoho": "done",
-    "test": "pending"
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 0,
-    "test": 0
+    "test": 1
    },
-   "commits": []
+   "commits": [
+    "74872c5"
+   ]
   },
   "M02-S12": {
    "status": "pending",
@@ -104,23 +109,25 @@
   },
   "M02-S04": {
    "status": "review",
-   "attempts": 1,
-   "at": "2026-09-27T22:56:00.056Z",
-   "note": "Jev run 28 Sep: app 6/7 vs prototype 6/7; TC-IM04-012 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour",
+   "attempts": 2,
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
     "400a678",
-    "3c6435a"
+    "3c6435a",
+    "74872c5"
    ],
    "phases": {
     "fe": "done",
     "zoho": "review",
-    "test": "pending"
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
     "zoho": 0,
-    "test": 0
-   }
+    "test": 1
+   },
+   "notes": 1
   },
   "M02-S05": {
    "status": "pending",
@@ -237,22 +244,25 @@
    ]
   },
   "M01-S08": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:01.269Z",
-   "note": "Jev run 28 Sep: app 1/3 vs prototype 0/3",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "commits": [
     "e31dc2d",
-    "3c6435a"
+    "3c6435a",
+    "74872c5"
    ]
   },
   "M03-S05": {
@@ -272,20 +282,23 @@
    ]
   },
   "M03-S07": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T15:20:19.639Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "KAM book service (own book, Head-of-AM team+pool, guarded detail and Touch writes, identity wall) with 20 recorded-fixture tests; typecheck clean. Waiting on T01 Zoho sharing config and the sharing proof (NOTE-1); T03 Jev UI cases and T04 UAT follow in later phases.",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
-    "9bcc4e3"
+    "9bcc4e3",
+    "74872c5"
    ]
   },
   "M04-S01": {
@@ -309,106 +322,121 @@
    ]
   },
   "M04-S02": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "zoho": "waiting",
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "zoho": 1,
-    "fe": 1
-   },
-   "current_phase": "zoho",
-   "at": "2026-09-27T22:56:03.813Z",
-   "notes": 2,
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2",
-   "commits": [
-    "9a18fed",
-    "3c6435a"
-   ]
-  },
-  "M06-S01": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "zoho": "waiting",
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "zoho": 1,
-    "fe": 1
-   },
-   "current_phase": "zoho",
-   "at": "2026-09-27T22:56:05.736Z",
-   "notes": 1,
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3",
-   "commits": [
-    "a817cd6",
-    "3c6435a"
-   ]
-  },
-  "M05-S01": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "zoho": "waiting",
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "zoho": 1,
-    "fe": 1
-   },
-   "current_phase": "zoho",
-   "at": "2026-09-27T22:56:04.437Z",
-   "notes": 2,
-   "note": "Jev run 28 Sep: app 0/3 vs prototype 0/3",
-   "commits": [
-    "d069836",
-    "3c6435a"
-   ]
-  },
-  "M05-S02": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "zoho": "waiting",
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "zoho": 1,
-    "fe": 1
-   },
-   "current_phase": "zoho",
-   "at": "2026-09-27T22:56:04.741Z",
-   "notes": 1,
-   "note": "Jev run 28 Sep: app 1/4 vs prototype 1/4",
-   "commits": [
-    "48628f4",
-    "3c6435a"
-   ]
-  },
-  "M06-S03": {
-   "status": "pending",
+   "status": "done",
    "attempts": 2,
    "phases": {
     "zoho": "waiting",
     "fe": "done",
-    "wire": "done"
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 1,
     "fe": 1,
-    "wire": 1
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-30T12:29:34.185Z",
+   "at": "2026-10-04T00:07:29.251Z",
+   "notes": 2,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "commits": [
+    "9a18fed",
+    "3c6435a",
+    "cd20ff4"
+   ]
+  },
+  "M06-S01": {
+   "status": "done",
+   "attempts": 2,
+   "phases": {
+    "zoho": "waiting",
+    "fe": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "zoho": 1,
+    "fe": 1,
+    "test": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-10-04T00:07:29.251Z",
+   "notes": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "commits": [
+    "a817cd6",
+    "3c6435a",
+    "cd20ff4"
+   ]
+  },
+  "M05-S01": {
+   "status": "done",
+   "attempts": 2,
+   "phases": {
+    "zoho": "waiting",
+    "fe": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1,
+    "fe": 1,
+    "test": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-10-04T00:07:29.251Z",
+   "notes": 2,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "commits": [
+    "d069836",
+    "3c6435a",
+    "cd20ff4"
+   ]
+  },
+  "M05-S02": {
+   "status": "done",
+   "attempts": 2,
+   "phases": {
+    "zoho": "waiting",
+    "fe": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1,
+    "fe": 1,
+    "test": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-10-04T00:07:29.251Z",
+   "notes": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "commits": [
+    "48628f4",
+    "3c6435a",
+    "cd20ff4"
+   ]
+  },
+  "M06-S03": {
+   "status": "done",
+   "attempts": 3,
+   "phases": {
+    "zoho": "waiting",
+    "fe": "done",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1,
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 3,
-   "note": "D110 search scope follows the seat (seat-search.ts); investors in results for org seats; 4/4",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
     "2c92b62",
     "3c6435a",
-    "f387f44"
+    "f387f44",
+    "cd20ff4"
    ]
   },
   "M07-S03": {
@@ -449,40 +477,46 @@
    ]
   },
   "M07-S06": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "zoho": "waiting"
-   },
-   "phase_attempts": {
-    "zoho": 1
-   },
-   "current_phase": "zoho",
-   "at": "2026-09-27T16:27:47.328Z",
-   "notes": 1,
-   "note": "Loss in the same guarded save with Undo, money-in refusal and guarded re-open, 3 tests; waits on the Lead_Status-on-loss blueprint choice and staging proof.",
-   "commits": [
-    "d6c3c4b"
-   ]
-  },
-  "M04-S04": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "test": "done"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:09.770Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "commits": [
+    "d6c3c4b",
+    "cd20ff4"
+   ]
+  },
+  "M04-S04": {
+   "status": "done",
+   "attempts": 2,
+   "phases": {
+    "zoho": "waiting",
+    "fe": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1,
+    "fe": 1,
+    "test": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-10-04T00:07:29.251Z",
+   "notes": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
     "74f8d1d",
-    "3c6435a"
+    "3c6435a",
+    "cd20ff4"
    ]
   },
   "M05-S04": {
@@ -502,43 +536,49 @@
    ]
   },
   "M08-S01": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:11.370Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "commits": [
     "105ba18",
-    "3c6435a"
+    "3c6435a",
+    "b5b3d98"
    ]
   },
   "M15-S01": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:22.799Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "Jev run 28 Sep: app 4/5 vs prototype 4/5",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "commits": [
     "ad93c95",
-    "3c6435a"
+    "3c6435a",
+    "af147c0"
    ]
   },
   "M16-S01": {
@@ -582,57 +622,66 @@
    ]
   },
   "M16-S04": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "zoho": "waiting"
-   },
-   "phase_attempts": {
-    "zoho": 1
-   },
-   "current_phase": "zoho",
-   "at": "2026-09-27T17:00:02.359Z",
-   "notes": 1,
-   "note": "Plan read from Sales_Plans with paid units and banked money from matched Receipts, 2 tests; waits on plan records, Receipts read for managers and a source for decisions/rates.",
-   "commits": [
-    "cacd7f7"
-   ]
-  },
-  "M16-S06": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "zoho": "waiting",
-    "fe": "done"
+    "test": "waiting"
    },
    "phase_attempts": {
     "zoho": 1,
-    "fe": 1
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T22:56:24.318Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "Jev run 28 Sep: app 5/5 vs prototype 5/5",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "commits": [
+    "cacd7f7",
+    "6c25a1b"
+   ]
+  },
+  "M16-S06": {
+   "status": "done",
+   "attempts": 2,
+   "phases": {
+    "zoho": "waiting",
+    "fe": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "zoho": 1,
+    "fe": 1,
+    "test": 1
+   },
+   "current_phase": "zoho",
+   "at": "2026-10-04T00:07:29.251Z",
+   "notes": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
     "063bd68",
-    "3c6435a"
+    "3c6435a",
+    "6c25a1b"
    ]
   },
   "M17-S05": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "done"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T17:07:42.298Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "Own-profile name/mobile update on the person's own Zoho user with email read-only, 3 tests; waits on staging proof that a restricted user may update self and the access store for initials.",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "commits": [
-    "2916a9e"
+    "2916a9e",
+    "74872c5"
    ]
   },
   "M20-S07": {
@@ -656,20 +705,23 @@
    ]
   },
   "M17-S06": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "zoho": 1
+    "zoho": 1,
+    "test": 1
    },
    "current_phase": "zoho",
-   "at": "2026-09-27T17:16:33.621Z",
+   "at": "2026-10-04T00:07:29.251Z",
    "notes": 1,
-   "note": "System checks computed from Plane B and held facts with owners and fixes, DI only, 3 tests; waits on a licence-expiry source and the Plane B/C store.",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
-    "5995b1c"
+    "5995b1c",
+    "74872c5"
    ]
   },
   "M03-S01": {
@@ -706,25 +758,28 @@
    "note": "no UI cases; screens built from the acceptance criteria on demo data (unit-tested rules)"
   },
   "M01-S01": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "1690a59",
-    "f387f44"
+    "f387f44",
+    "74872c5"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Page guard template + live Investors-side people/access from GET /api/session (session-access.ts); fixture unchanged",
-   "notes": 6
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 7
   },
   "M01-S03": {
    "status": "pending",
@@ -745,19 +800,23 @@
    "notes": 6
   },
   "M01-S07": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "74872c5"
    ],
-   "at": "2026-09-27T22:56:00.967Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 1
   },
   "M01-S09": {
    "status": "pending",
@@ -803,54 +862,63 @@
   },
   "M03-S04": {
    "status": "review",
-   "attempts": 1,
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "review",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "5d6893b",
-    "f387f44"
+    "f387f44",
+    "74872c5"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Seat dropdown via PUT /api/users/{id}, never root/di, never own or super-admin row; 3/7 as baseline",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 6
   },
   "M03-S06": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "waiting",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "74872c5"
    ],
-   "at": "2026-09-27T22:56:02.602Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
   },
   "M03-S08": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "waiting",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "74872c5"
    ],
-   "at": "2026-09-27T22:56:02.901Z",
-   "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
   },
   "M01-S06": {
    "status": "pending",
@@ -868,70 +936,82 @@
    "note": "Jev run 28 Sep: app 0/1 vs prototype 0/1"
   },
   "M04-S03": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a"
-   ],
-   "at": "2026-09-27T22:56:04.118Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
-  },
-  "M05-S03": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a"
-   ],
-   "at": "2026-09-27T22:56:05.051Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
-  },
-  "M05-S08": {
-   "status": "pending",
+   "status": "waiting",
    "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "cd20ff4"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
+  },
+  "M05-S03": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "fe": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "cd20ff4"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left"
+  },
+  "M05-S08": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "846c0a8",
-    "2fc5aea"
+    "2fc5aea",
+    "cd20ff4"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "KAM Today tiles and cadence cards from /api/queues/investors side am",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 6
   },
   "M06-S02": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "cd20ff4"
    ],
-   "at": "2026-09-27T22:56:06.046Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
   },
   "M07-S01": {
    "status": "pending",
@@ -949,19 +1029,22 @@
    "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4"
   },
   "M07-S02": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "cd20ff4"
    ],
-   "at": "2026-09-27T22:56:06.978Z",
-   "note": "Jev run 28 Sep: app 6/6 vs prototype 6/6"
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left"
   },
   "M07-S05": {
    "status": "pending",
@@ -1025,46 +1108,52 @@
    "notes": 5
   },
   "M09-S03": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "a4b0e76",
-    "0973b9b"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Record header, banners and section bar from GET /api/investors/[id]/record; M09-S03 2/2 PASS",
-   "notes": 4
-  },
-  "M09-S04": {
-   "status": "pending",
+   "status": "waiting",
    "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "a4b0e76",
+    "0973b9b",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 4
+  },
+  "M09-S04": {
+   "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "03c8a5f",
     "fe49f1c",
-    "afb0436"
+    "afb0436",
+    "b5b3d98"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "New GET /api/investors/am/managers; manager drawer reads it; 2/2",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 7
   },
   "M09-S07": {
@@ -1110,39 +1199,45 @@
    "notes": 4
   },
   "M07-S07": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a"
-   ],
-   "at": "2026-09-27T22:56:10.089Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
-  },
-  "M01-S10": {
-   "status": "pending",
+   "status": "done",
    "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "cd20ff4"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
+  },
+  "M01-S10": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "3eb18d2",
-    "f387f44"
+    "f387f44",
+    "74872c5"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Step-up panel asks reason, then /api/auth/step-up; M01-S10 4/4 (was 2/4)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 8
   },
   "M05-S06": {
@@ -1167,66 +1262,75 @@
    "notes": 4
   },
   "M05-S07": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "846c0a8",
-    "2fc5aea"
+    "2fc5aea",
+    "cd20ff4"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Waiting-on-you rows and actions from GET /api/queues/investors",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 5
   },
   "M08-S03": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "20f9187",
-    "057b4c1"
+    "057b4c1",
+    "b5b3d98"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Claim drawer and record-a-receipt drawer via /api/receipts/prepare + record; IM05-007 FAIL→REVIEW",
-   "notes": 6
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 7
   },
   "M08-S04": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "cbe5734",
-    "057b4c1"
+    "057b4c1",
+    "b5b3d98"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Holds running, Land cards, reservation alert/drawer, Extend/Release from /api/holds; IM03-009 and IM05-017 FAIL→PASS",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 7
   },
   "M08-S07": {
@@ -1251,393 +1355,447 @@
    "notes": 5
   },
   "M08-S08": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "waiting",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "13062e9",
     "057b4c1",
-    "afb0436"
+    "afb0436",
+    "b5b3d98"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "App-account panel reads the card route incl. Tentative/Permanent mark; 1/2 (TC-IM11-006 fails on base too)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 8
   },
   "M10-S01": {
    "status": "review",
-   "attempts": 1,
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "review",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "58ae166",
-    "5aae3b8"
+    "5aae3b8",
+    "6c25a1b"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Register via new GET /api/payments; UTR masked for super user and read-only seats (fixes TC-E11-016/TC-E15-009); matched-only totals, recorded apart (D21)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 7
   },
   "M10-S02": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "12914d3",
-    "0973b9b"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Match it posts /api/receipts/[id]/match with expectedModifiedTime; passes with merged rail names (scratch copies)",
-   "notes": 6
-  },
-  "M10-S03": {
-   "status": "pending",
-   "attempts": 2,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 2
-   },
-   "commits": [
-    "3c6435a",
-    "12914d3",
-    "5aae3b8",
-    "afb0436"
-   ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "New GET /api/leads/[id]/claim; lead page shows \"Finance did not find it\" for a not-found answer",
-   "notes": 6
-  },
-  "M10-S05": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "13062e9",
-    "5aae3b8"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Bank statement upload + reconcile (multipart)",
-   "notes": 4
-  },
-  "M10-S07": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a",
-    "bd9bcf4"
-   ],
-   "at": "2026-09-28T06:47:03.143Z",
-   "note": "Guard layer built and tested; waiting on Sahil's T01 Zoho config (lookups, Payment_Status workflow, Idempotency_Key) and sandbox proof.",
-   "notes": 3
-  },
-  "M11-S01": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "421f8d9",
-    "0973b9b"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Farms LLP list + drawer via endpoints/farms.ts (D104 pattern); M11-S03/S04 UI cases pass; no /api calls in fixture mode",
-   "notes": 5
-  },
-  "M11-S02": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "31fa384",
-    "fe49f1c"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Allotment rows from the two allotments routes",
-   "notes": 5
-  },
-  "M11-S03": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "e4c3d05",
-    "fe49f1c"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Tiles and per-LLP bars from /api/farms/shelf; 3/3",
-   "notes": 4
-  },
-  "M11-S04": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "7242913",
-    "fe49f1c"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Release N / Take it back via /release; 3/3",
-   "notes": 4
-  },
-  "M11-S05": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "b2f2527",
-    "fe49f1c"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Verify posts /allot (verify + allot in one write); 4/4",
-   "notes": 7
-  },
-  "M11-S07": {
-   "status": "pending",
-   "attempts": 2,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 2
-   },
-   "commits": [
-    "3c6435a",
-    "7242913",
-    "fe49f1c",
-    "8e5df5d"
-   ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Receipt drawer refuses a first receipt that would open a reservation on a full block; TC-IM06-012 FAIL→PASS 0.93",
-   "notes": 6
-  },
-  "M12-S02": {
-   "status": "pending",
-   "attempts": 2,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 2
-   },
-   "commits": [
-    "3c6435a",
-    "9b84356",
-    "9444836",
-    "8593446",
-    "d690a88"
-   ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "HoldingLine.version carries the allotment Modified_Time; upload sends it as expected",
-   "notes": 4
-  },
-  "M12-S03": {
-   "status": "pending",
-   "attempts": 2,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 2
-   },
-   "commits": [
-    "3c6435a",
-    "9b84356",
-    "9444836",
-    "8593446",
-    "8e5df5d"
-   ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Lead-side Documents page on /api/documents/list; lead rail badge = outCount; 3/3",
-   "notes": 4
-  },
-  "M12-S04": {
-   "status": "pending",
-   "attempts": 2,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 2
-   },
-   "commits": [
-    "3c6435a",
-    "d4be812",
-    "9444836",
-    "8593446",
-    "8e5df5d"
-   ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "New GET /api/documents/sign/templates; template picker in send drawer and Send one; 2/2",
-   "notes": 8
-  },
-  "M12-S05": {
-   "status": "pending",
+   "status": "waiting",
    "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
     "wire": "done",
-    "harden": "done"
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
     "wire": 1,
-    "harden": 1
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "12914d3",
+    "0973b9b",
+    "6c25a1b"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 7
+  },
+  "M10-S03": {
+   "status": "done",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "12914d3",
+    "5aae3b8",
+    "afb0436",
+    "6c25a1b"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 6
+  },
+  "M10-S05": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "13062e9",
+    "5aae3b8",
+    "6c25a1b"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 6
+  },
+  "M10-S07": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "bd9bcf4",
+    "6c25a1b"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 4
+  },
+  "M11-S01": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "421f8d9",
+    "0973b9b",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 5
+  },
+  "M11-S02": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "31fa384",
+    "fe49f1c",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 5
+  },
+  "M11-S03": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "e4c3d05",
+    "fe49f1c",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 4
+  },
+  "M11-S04": {
+   "status": "done",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "7242913",
+    "fe49f1c",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 4
+  },
+  "M11-S05": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "b2f2527",
+    "fe49f1c",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 7
+  },
+  "M11-S07": {
+   "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "7242913",
+    "fe49f1c",
+    "8e5df5d",
+    "b5b3d98"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 7
+  },
+  "M12-S02": {
+   "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "9b84356",
+    "9444836",
+    "8593446",
+    "d690a88",
+    "a88383f"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 4
+  },
+  "M12-S03": {
+   "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "9b84356",
+    "9444836",
+    "8593446",
+    "8e5df5d",
+    "a88383f"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 4
+  },
+  "M12-S04": {
+   "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "d4be812",
     "9444836",
     "8593446",
-    "0c47041"
+    "8e5df5d",
+    "a88383f"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "25 webhook tests (HMAC, replay, concurrent duplicate, dead letter, 4 s abort); fixed unlinked-event drop and concurrent double-processing",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 9
+  },
+  "M12-S05": {
+   "status": "done",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "harden": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "harden": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "d4be812",
+    "9444836",
+    "8593446",
+    "0c47041",
+    "a88383f"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 8
   },
   "M12-S06": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "d4be812",
     "9444836",
-    "8593446"
+    "8593446",
+    "a88383f"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Upload then sign/verify; 3/3",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 4
   },
   "M12-S07": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "d4be812",
     "9444836",
-    "8593446"
+    "8593446",
+    "a88383f"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Block via sign/block; TC-IM07-015 now passes",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 3
   },
   "M12-S11": {
@@ -1663,21 +1821,24 @@
    "notes": 6
   },
   "M12-S12": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "done"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
-    "3db50dc"
+    "3db50dc",
+    "a88383f"
    ],
-   "at": "2026-09-28T14:39:55.559Z",
-   "note": "Draft loop built; waiting on the Supp_ fields and the send hand-over.",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 2
   },
   "M12-S13": {
@@ -1703,68 +1864,77 @@
    "notes": 3
   },
   "M14-S01": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "waiting",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "421f8d9",
-    "89a5226"
+    "89a5226",
+    "af147c0"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Events list and page read the routes",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 4
   },
   "M14-S02": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "77f1666",
     "89a5226",
-    "d690a88"
+    "d690a88",
+    "af147c0"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Event rows carry modifiedTime; PATCH sends it; 409 conflict shows reload; 4/5 (TC-E10-007 known)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 6
   },
   "M14-S03": {
    "status": "review",
-   "attempts": 2,
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "review",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "77f1666",
     "89a5226",
-    "a90ac74"
+    "a90ac74",
+    "af147c0"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "GET /api/events/[id]/sheet serves state, counts, who/when, staff, load log; live Load from a pasted sheet; 4/5 (TC-E10-012 known)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 7
   },
   "M10-S08": {
@@ -1789,285 +1959,327 @@
    "notes": 3
   },
   "M10-S09": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "31fa384",
-    "5aae3b8"
+    "5aae3b8",
+    "6c25a1b"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "ARL holdings panel, read-only",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 2
   },
   "M12-S09": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "9b84356",
     "9444836",
-    "8593446"
+    "8593446",
+    "a88383f"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Emails tab via /api/emails",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 3
   },
   "M12-S14": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "phases": {
-    "fe": "done"
+    "fe": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "fe": 1
+    "fe": 1,
+    "test": 1
    },
    "commits": [
-    "3c6435a"
+    "3c6435a",
+    "a88383f"
    ],
-   "at": "2026-09-27T22:56:21.218Z",
-   "note": "Jev run 28 Sep: app 3/4 vs prototype 3/4; TC-E09-019 borderline (0.77-0.8), passed on rerun or fails on the prototype at this hour"
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left"
   },
   "M13-S02": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "421f8d9",
-    "89a5226"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Tickets page reads GET /api/cases; 3/3",
-   "notes": 5
-  },
-  "M13-S03": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "4447586",
-    "89a5226"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Open/park/close via POST/PATCH /api/cases; 3/3",
-   "notes": 4
-  },
-  "M13-S04": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "19ec347",
-    "89a5226"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Hand it to Finance via the handover route; 3/3",
-   "notes": 5
-  },
-  "M13-S06": {
-   "status": "pending",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "done"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "4447586",
-    "89a5226"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Updates page and publish drawer via /api/updates; 3/3",
-   "notes": 5
-  },
-  "M15-S03": {
-   "status": "pending",
+   "status": "waiting",
    "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "421f8d9",
+    "89a5226",
+    "af147c0"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 5
+  },
+  "M13-S03": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "4447586",
+    "89a5226",
+    "af147c0"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 4
+  },
+  "M13-S04": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "19ec347",
+    "89a5226",
+    "af147c0"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 5
+  },
+  "M13-S06": {
+   "status": "waiting",
+   "attempts": 2,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "4447586",
+    "89a5226",
+    "af147c0"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "notes": 6
+  },
+  "M15-S03": {
+   "status": "waiting",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "ab04ccf",
     "2fc5aea",
     "8e5df5d",
-    "d95c79d"
+    "d95c79d",
+    "af147c0"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Lead-side Activity on GET /api/activity?side=lead; Auditor (comp seat) now reads the Finance trail; 6/8 (TC-IM10-008 FAIL→PASS)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 8
   },
   "M15-S05": {
    "status": "review",
-   "attempts": 1,
-   "phases": {
-    "fe": "done",
-    "zoho": "waiting",
-    "wire": "review"
-   },
-   "phase_attempts": {
-    "fe": 1,
-    "wire": 1
-   },
-   "commits": [
-    "3c6435a",
-    "89793a0",
-    "2fc5aea"
-   ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "System activity log drawer from /api/logs",
-   "notes": 5
-  },
-  "M17-S01": {
-   "status": "pending",
    "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "review",
+    "test": "review"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "89793a0",
+    "2fc5aea",
+    "af147c0"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; real bug open",
+   "notes": 7
+  },
+  "M17-S01": {
+   "status": "done",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "5ab7650",
     "f387f44",
-    "a90ac74"
+    "a90ac74",
+    "74872c5"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Teams person drawer from GET /api/teams/{id} (clash, changed, availability); 2/7 identical to base (old rail names)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 6
   },
   "M13-S05": {
-   "status": "pending",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "5ab7650",
     "89a5226",
-    "a90ac74"
+    "a90ac74",
+    "af147c0"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "GET /api/cases/[id]/messages (Notes oldest first) + GET /api/cases/deliveries?ids= (no N+1); thread opens on demand; 1/1",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 9
   },
   "M16-S02": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a"
-   ],
-   "at": "2026-09-27T22:56:25.285Z",
-   "note": "Jev run 28 Sep: app 1/1 vs prototype 1/1"
-  },
-  "M16-S07": {
-   "status": "pending",
-   "attempts": 0,
-   "phases": {
-    "fe": "done"
-   },
-   "phase_attempts": {
-    "fe": 1
-   },
-   "commits": [
-    "3c6435a"
-   ],
-   "at": "2026-09-27T22:56:25.595Z",
-   "note": "Jev run 28 Sep: app 2/2 vs prototype 2/2"
-  },
-  "M16-S08": {
-   "status": "review",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 1,
    "phases": {
     "fe": "done",
-    "zoho": "waiting",
-    "wire": "review"
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "6c25a1b"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
+  },
+  "M16-S07": {
+   "status": "done",
+   "attempts": 1,
+   "phases": {
+    "fe": "done",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "test": 1
+   },
+   "commits": [
+    "3c6435a",
+    "6c25a1b"
+   ],
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
+  },
+  "M16-S08": {
+   "status": "review",
+   "attempts": 3,
+   "phases": {
+    "fe": "done",
+    "zoho": "waiting",
+    "wire": "review",
+    "test": "done"
+   },
+   "phase_attempts": {
+    "fe": 1,
+    "wire": 2,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "dc2cbc6",
     "2fc5aea",
-    "afb0436"
+    "afb0436",
+    "6c25a1b"
    ],
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Service section from /api/numbers/investors-side?section=svc; Jev 0/3 as before (cases press \"Insights\")",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "notes": 5
   },
   "M18-S03": {
@@ -2086,108 +2298,123 @@
    "note": "Jev run 28 Sep: app 3/3 vs prototype 3/3"
   },
   "M09-S09": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "33a7028",
-    "fe49f1c"
+    "fe49f1c",
+    "b5b3d98"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Add investor posts /api/investors/add-paid with Idempotency-Key; 409 links to existing",
-   "notes": 5
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "notes": 6
   },
   "M10-S20": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "27706c1",
-    "5aae3b8"
+    "5aae3b8",
+    "6c25a1b"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Payouts tab and due queue from /api/payouts",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 4
   },
   "M10-S21": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "33a7028",
-    "5aae3b8"
+    "5aae3b8",
+    "6c25a1b"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "App unlock/welcome via /api/investors/[id]/app",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 4
   },
   "M10-S22": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "89793a0",
-    "5aae3b8"
+    "5aae3b8",
+    "6c25a1b"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "App preview from /api/investors/[id]/preview",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 3
   },
   "M10-S23": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
    "commits": [
     "3c6435a",
     "89793a0",
-    "5aae3b8"
+    "5aae3b8",
+    "6c25a1b"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Test sign-in link drawer; 409 confirm-needed carries its question",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "notes": 4
   },
   "M01-S02": {
@@ -2367,17 +2594,21 @@
    ]
   },
   "M13-S01": {
-   "status": "pending",
-   "attempts": 0,
-   "notes": 4,
+   "status": "done",
+   "attempts": 1,
+   "notes": 5,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "done"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T09:16:42.922Z",
-   "note": "Outbox, inbound and stub built and tested; waiting on the investor app URL/key (MA1) and sandbox Case proof.",
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
    "commits": [
-    "ab04ccf"
+    "ab04ccf",
+    "af147c0"
    ]
   },
   "M19-S06": {
@@ -2442,22 +2673,25 @@
   },
   "M12-S01": {
    "status": "review",
-   "attempts": 2,
-   "notes": 7,
+   "attempts": 3,
+   "notes": 8,
    "phases": {
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "review",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 2
+    "wire": 2,
+    "test": 1
    },
-   "at": "2026-10-03T22:49:25.049Z",
-   "note": "Uploader and slot back on the attachment line (slot from typed-slot fields)",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
     "5ab7650",
     "9444836",
     "8593446",
-    "8e5df5d"
+    "8e5df5d",
+    "a88383f"
    ]
   },
   "M17-S02": {
@@ -2479,35 +2713,42 @@
    ]
   },
   "M12-S08": {
-   "status": "pending",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "notes": 2,
    "phases": {
-    "zoho": "waiting"
+    "zoho": "waiting",
+    "test": "waiting"
    },
-   "phase_attempts": {},
-   "at": "2026-09-28T13:46:02.927Z",
-   "note": "Embed token and contract built; waiting on the investor app (MA1).",
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
-    "d4be812"
+    "d4be812",
+    "a88383f"
    ]
   },
   "M16-S09": {
-   "status": "pending",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "notes": 4,
    "phases": {
     "zoho": "waiting",
-    "wire": "done"
+    "wire": "done",
+    "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 1
+    "wire": 1,
+    "test": 1
    },
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "Money-hidden 403 mirrored in the fixture; per-seat sections from the route",
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
    "commits": [
     "dc2cbc6",
-    "2fc5aea"
+    "2fc5aea",
+    "6c25a1b"
    ]
   },
   "M18-S01": {
@@ -2606,6 +2847,22 @@
     "6cca053"
    ],
    "notes": 1
+  },
+  "M12-S10": {
+   "status": "waiting",
+   "attempts": 1,
+   "phases": {
+    "test": "waiting"
+   },
+   "phase_attempts": {
+    "test": 1
+   },
+   "at": "2026-10-04T00:07:29.251Z",
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "commits": [
+    "a88383f"
+   ],
+   "notes": 1
   }
  },
  "subtasks": {
@@ -2648,9 +2905,9 @@
    "note": "done in the Cowork Zoho session (D74-D85)"
   },
   "M02-S03-T02": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reset — the Jev run never executed (fixture errors)"
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   },
   "M02-S03-T03": {
    "status": "pending",
@@ -2663,9 +2920,9 @@
    "note": "done in the Cowork Zoho session (D74-D85)"
   },
   "M02-S11-T02": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reset — the Jev run never executed (fixture errors)"
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   },
   "M02-S11-T04": {
    "status": "done",
@@ -2738,9 +2995,9 @@
    "note": "done in the Cowork Zoho session (D74-D85)"
   },
   "M02-S04-T05": {
-   "status": "pending",
-   "at": "2026-09-27T11:30:00.000Z",
-   "note": "D98: reset — the Jev run never executed (fixture errors)"
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   },
   "M02-S04-T06": {
    "status": "review",
@@ -2997,9 +3254,9 @@
    "phase": "zoho"
   },
   "M16-S04-T02": {
-   "status": "blocked",
-   "at": "2026-09-27T16:56:50.322Z",
-   "note": "waiting on Autopilot (Jev)"
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   },
   "M16-S06-T01": {
    "status": "done",
@@ -3012,9 +3269,9 @@
    "phase": "zoho"
   },
   "M17-S05-T02": {
-   "status": "blocked",
-   "at": "2026-09-27T17:04:02.813Z",
-   "note": "waiting on Autopilot (Jev)"
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   },
   "M20-S07-T01": {
    "status": "done",
@@ -3042,9 +3299,9 @@
    "phase": "zoho"
   },
   "M17-S06-T02": {
-   "status": "blocked",
-   "at": "2026-09-27T17:13:09.158Z",
-   "note": "waiting on Autopilot (Jev)"
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   },
   "M03-S01-T04": {
    "status": "done",
@@ -4600,6 +4857,416 @@
    "status": "done",
    "at": "2026-09-30T12:29:34.185Z",
    "phase": "harden"
+  },
+  "M01-S01-T08": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M01-S07-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M01-S07-T06": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M01-S08-T05": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M01-S10-T07": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M03-S04-T05": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M03-S06-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M03-S07-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M03-S08-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M17-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M04-S02-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M04-S03-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M04-S04-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M05-S01-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M05-S02-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M05-S03-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M05-S08-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M05-S07-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M06-S01-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M06-S02-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M06-S03-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M07-S02-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M07-S06-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M07-S07-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M08-S01-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M08-S03-T06": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M08-S04-T07": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M08-S08-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M09-S03-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M09-S04-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M09-S09-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M11-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M11-S02-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M11-S03-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M11-S04-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M11-S05-T05": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M11-S07-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S01-T05": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S02-T05": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S03-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S05-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S05-T06": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S07-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S09-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S20-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S21-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S22-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M10-S23-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M16-S06-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M16-S09-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M16-S02-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M16-S07-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M16-S08-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S01-T01": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S02-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S03-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S04-T06": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S05-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S06-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S07-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S10-T01": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S10-T05": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S10-T06": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S10-T07": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S12-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S08-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S09-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M12-S14-T02": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M13-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M13-S02-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M13-S03-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M13-S04-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M13-S06-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M13-S05-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M14-S01-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M14-S02-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M14-S03-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M15-S01-T03": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M15-S03-T04": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M15-S03-T07": {
+   "status": "done",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
+  },
+  "M15-S05-T03": {
+   "status": "review",
+   "at": "2026-10-04T00:07:29.251Z",
+   "phase": "test"
   }
  },
  "rounds": [
@@ -8351,6 +9018,735 @@
    "status": "review",
    "attempt": 2,
    "note": "Uploader and slot back on the attachment line (slot from typed-slot fields)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M01-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M01-S07",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M01-S08",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M01-S10",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M02-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M02-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M02-S11",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M03-S04",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M03-S06",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M03-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M03-S08",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M17-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M17-S05",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M17-S06",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M04-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M04-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M04-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M05-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M05-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M05-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M05-S08",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M05-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M06-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M06-S02",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M06-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M07-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M07-S06",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M07-S07",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-leads): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M08-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M08-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M08-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M08-S08",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M09-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M09-S04",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M09-S09",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M11-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M11-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M11-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M11-S04",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M11-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M11-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S07",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S09",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S20",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S21",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S22",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M10-S23",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M16-S04",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M16-S06",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M16-S09",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M16-S02",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M16-S07",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M16-S08",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S04",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S06",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S07",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S10",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S12",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S08",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S09",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M12-S14",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M13-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M13-S02",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M13-S03",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M13-S04",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M13-S06",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M13-S05",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M14-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M14-S02",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M14-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M15-S01",
+   "phase": "test",
+   "status": "done",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M15-S03",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T00:07:29.251Z",
+   "story": "M15-S05",
+   "phase": "test",
+   "status": "review",
+   "attempt": 1,
+   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; real bug open",
    "by": "fan-out (D111)"
   }
  ],
