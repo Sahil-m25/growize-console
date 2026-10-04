@@ -3079,7 +3079,7 @@
    "steps": [
     "Press Tasneem Qureshi on the sign-in screen",
     "Open Numbers from the menu",
-    "Press the first '1 not worked' on Kavya's row"
+    "Press the '1 not worked' link in the This week column of Kavya's row"
    ],
    "expected": [
     "Under Kavya's row the page shows 'Not yet worked · This week · Kavya Nair'.",
@@ -4242,12 +4242,12 @@
    "title": "The Head of AM may move only her own team's people",
    "steps": [
     "Press Divya Kamath on the sign-in screen",
-    "Press 'Team' in the menu"
+    "Press 'Teams' in the menu"
    ],
    "expected": [
-    "Imran Sheikh's seat dropdown offers 2 seats: Head of Account Management and Key Account Manager.",
+    "Imran Sheikh's seat dropdown lists Head of Account Management and Key Account Manager.",
     "Harsha Bhat's row says 'another team's seat'.",
-    "Divya Kamath's own row is marked 'you' and shows her seat 'Head of Account Management' with no list of seats to choose from."
+    "Divya Kamath's own row is marked 'you' and shows 'Head of Account Management' as plain text."
    ],
    "fixtures": [
     "DEMO_PORTAL"
@@ -4261,9 +4261,9 @@
    "title": "Moving a KAM off the seat returns their book to the pool",
    "steps": [
     "Press Divya Kamath on the sign-in screen",
-    "Press 'Team' in the menu",
+    "Press 'Teams' in the menu",
     "Choose 'Head of Account Management' in the seat dropdown on Imran Sheikh's row",
-    "Press 'Activity log' in the menu"
+    "Press 'Activity' in the menu"
    ],
    "expected": [
     "The log shows 'Changed a seat' with 'Imran Sheikh: Key Account Manager → Head of Account Management · 4 accounts returned to the pool'.",
@@ -5035,7 +5035,7 @@
    "title": "Transactions totals and filter counts",
    "steps": [
     "Press Harsha Bhat on the sign-in screen",
-    "Press 'Transactions'"
+    "Press 'Payments'"
    ],
    "expected": [
     "Received reads ₹8.88 Cr.",
