@@ -171,6 +171,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/receipts": { kind: "page", page: "pay" },
   "/api/statements": { kind: "page", page: "pay" },   /* M10-S05 bank statement upload on the Payments page: Finance ("pay") decided inside too */
   "/api/claims": { kind: "page", page: "pay" },          /* M10-S03 claim answers: Finance ("pay") decided inside too */
+  "/api/availability": { kind: "session" },   /* D49 out of office / back on, read back from Plane C (server/roster): everyone reads the roster; writing is yourself, or a manager's team, decided inside */
   "/api/teams": { kind: "session" },   /* M17-S01 Teams from Zoho: server/teams teamsAccess decides inside (IR refused, lead vs Investors side) */
   "/api/payouts": { kind: "page", page: "pay" },   /* M10-S20-T02 payouts: Finance pay/bank read, pay writes — server/payouts/authority decides inside */
   "/api/documents": { kind: "session" },   /* M12-S01-T03: not page "docs" — KAM/Head of AM (AC5) do not reach it; server/documents/scope + ir-guard decide inside */

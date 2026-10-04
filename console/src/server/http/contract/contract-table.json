@@ -9,6 +9,26 @@
     "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
    }
   },
+  "/api/availability": {
+   "GET": {},
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "from",
+      "to"
+     ],
+     "schema": "route doc"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "json",
+     "required": [],
+     "schema": "route doc"
+    }
+   }
+  },
   "/api/cases": {
    "GET": {},
    "POST": {

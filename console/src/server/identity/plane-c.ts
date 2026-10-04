@@ -23,7 +23,10 @@ export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session
   /* M08-S08-NOTE-10: "Send welcome and unlock" — app access released (or the release refused); recordIds = [Contact] */
   | "app-access-released"
   /* M15-S05-NOTE-1 / M10-S23: a one-time test sign-in link issued for a Contact; ttlMinutes = how long it lives */
-  | "test-link-issued";
+  | "test-link-issued"
+  /* D49 / M08-S05-NOTE-4: out of office / back on. who = the person who recorded it, whom = the person it is about (omitted when
+     the same); from and to are IST days (YYYY-MM-DD), `to` the first day back. outcome ok = set, ended = cleared (back early / cancelled). */
+  | "availability";
 export type PlaneCOutcome = "ok" | "refused" | "ended";
 
 export interface PlaneCEvent {
@@ -47,6 +50,9 @@ export interface PlaneCEvent {
   /** M10-S23: a test link's lifetime in minutes (expiry = at + ttlMinutes). Minutes, not an epoch: the sink's guard nulls
    *  any 9+ digit integer outside `at`, so an expiry timestamp would never survive it. */
   readonly ttlMinutes?: number;
+  /** D49 availability: the first day out and the first day back, as YYYY-MM-DD; never a reason (it is private). */
+  readonly from?: string;
+  readonly to?: string;
 }
 
 /**
@@ -81,11 +87,12 @@ export interface PlaneCLog {
 
 const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change",
   "refused-page", "refused-action", "grant-change", "access-granted", "access-ended", "manager-change",
-  "app-access-released", "test-link-issued"]);
+  "app-access-released", "test-link-issued", "availability"]);
 const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;
 const CODE = /^[a-z][a-z0-9-]{0,47}$/;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function clean(e: PlaneCEvent): PlaneCEvent {
   const x = (typeof e === "object" && e !== null ? e : {}) as Partial<Record<keyof PlaneCEvent, unknown>>;
@@ -97,6 +104,8 @@ function clean(e: PlaneCEvent): PlaneCEvent {
     reason: typeof x.reason === "string" && CODE.test(x.reason) && !looksLikeIdentity(x.reason) ? x.reason : "unrecognised",
     seat: typeof x.seat === "string" && CODE.test(x.seat) && !looksLikeIdentity(x.seat) ? x.seat : null,
     ...(x.whom !== undefined ? { whom: typeof x.whom === "string" && USER_ID.test(x.whom) ? x.whom : "unrecognised" } : {}),
+    ...(x.from !== undefined ? { from: typeof x.from === "string" && DAY.test(x.from) ? x.from : "0000-00-00" } : {}),
+    ...(x.to !== undefined ? { to: typeof x.to === "string" && DAY.test(x.to) ? x.to : "0000-00-00" } : {}),
     ...(x.why !== undefined ? { why: revealWhyOf(x.why) ?? "unstated" } : {}),
     ...(x.ttlMinutes !== undefined ? { ttlMinutes: typeof x.ttlMinutes === "number" && Number.isSafeInteger(x.ttlMinutes) && x.ttlMinutes > 0 && x.ttlMinutes <= 1440 ? x.ttlMinutes : 0 } : {}),
     ...(x.count !== undefined ? { count: typeof x.count === "number" && Number.isSafeInteger(x.count) && x.count >= 0 ? x.count : 0 } : {}),

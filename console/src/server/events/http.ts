@@ -3,18 +3,25 @@
  * from the live session on every call — the seat's `events · edit` / `events · load` through the front
  * end's own rule over the guard's one-person context (./caps) with the person's stored grants — and the services on the shared runtime.
  *
- * No roster reader is wired yet (Plane C availability, D49), so eligibleStaffIds is null and staff are
- * checked for shape only (GAP in BLOCKED.md). ZOHO_UNASSIGNED_QUEUE_USER_ID names the unassigned queue.
+ * Staff are checked for shape and uniqueness here (eligibleStaffIds stays null — there is no org-wide list of who carries a
+ * book) and then by `staffCheck`: in on the event's days (the roster read from Plane C, server/roster) and carrying a book
+ * (Zoho counts on the viewer's own token). ZOHO_UNASSIGNED_QUEUE_USER_ID names the unassigned queue.
  */
 
 import { cookies } from "next/headers";
 import type { RouteContext } from "../cases/http";
-import type { EventsWriteAccess, EventsWriteAuthority } from "./writes";
+import type { ZohoClient } from "../../lib/zoho/client";
+import type { EventsWriteAccess, EventsWriteAuthority, StaffVerdict } from "./writes";
 import { createEventWrites } from "./writes";
 import { createSheetLoader } from "./loader";
 
-export function sessionEventsAuthority(env: NodeJS.ProcessEnv = process.env): EventsWriteAuthority {
+export function sessionEventsAuthority(env: NodeJS.ProcessEnv = process.env, crm?: Pick<ZohoClient, "aggregate">): EventsWriteAuthority {
   return {
+    async staffCheck(cred, ids, from, to, signal): Promise<StaffVerdict> {
+      if (!crm) return { ok: true, refused: [] };
+      const [{ rosterRuntime }, { checkStaff }] = await Promise.all([import("../roster/runtime"), import("../roster/staff")]);
+      return checkStaff({ roster: rosterRuntime(), crm }, cred, ids, from, to, signal);
+    },
     async recheck(cred, signal): Promise<EventsWriteAccess | null> {
       if (signal?.aborted) return null;
       const [{ userSessions }, { SID_COOKIE }, { zohoSeatOf }, { readGrants, ZOHO_SEAT_SIDES }, { sharedGrantReader }, { eventCaps }] = await Promise.all([
@@ -39,7 +46,7 @@ export function sessionEventsAuthority(env: NodeJS.ProcessEnv = process.env): Ev
 }
 
 export function eventServices(ctx: RouteContext, env: NodeJS.ProcessEnv = process.env) {
-  const authority = sessionEventsAuthority(env);
+  const authority = sessionEventsAuthority(env, ctx.crm);
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX ?? "";
   return {
     authority,

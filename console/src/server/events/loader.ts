@@ -175,7 +175,15 @@ export function createSheetLoader(deps: LoaderDeps) {
       if (rule.kind === "me") ownerFor = () => me;
       else if (rule.kind === "one") {
         const to = rule.ownerId as string;
-        const may = validId(to) && (to === me || staff.includes(to) || (a.eligibleStaffIds?.includes(to) ?? false));
+        let may = validId(to) && (to === me || staff.includes(to) || (a.eligibleStaffIds?.includes(to) ?? false));
+        if (!may && validId(to) && authority.staffCheck) {
+          // Not on the event's staff: a roster-eligible person (in today, carries a book) may still take the sheet (M14-S03-NOTE-1).
+          const today = new Date(clock() + 5.5 * 3_600_000).toISOString().slice(0, 10);
+          let v: Awaited<ReturnType<NonNullable<typeof authority.staffCheck>>>;
+          try { v = await authority.staffCheck(cred, [to], today, today, signal); } catch { return srcErr("unexpected"); }
+          if (!v.ok) return srcErr(v.errorKind);
+          may = v.refused.length === 0;
+        }
         if (!may) return refuse(me, "owner-not-assignable", [eventId]);
         ownerFor = () => to;
       } else if (rule.kind === "round-robin") {

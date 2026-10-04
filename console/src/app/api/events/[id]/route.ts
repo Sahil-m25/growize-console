@@ -34,7 +34,7 @@ async function patch(req: Request, { params }: Ctx) {
   const seen = body && typeof body.modifiedTime === "string" ? body.modifiedTime : null;
   const r = await eventServices(c.ctx).writes.update(c.ctx.credential, id, body as never, seen, req.signal);
   if (r.ok) return Response.json({ event: r.value }, { headers: NO_STORE });
-  if (r.kind === "refused") return Response.json({ error: r.reason, code: r.reasonCode, ...(r.gaps ? { gaps: r.gaps } : {}) }, { status: WRITE_STATUS[r.reasonCode] ?? 403, headers: NO_STORE });
+  if (r.kind === "refused") return Response.json({ error: r.reason, code: r.reasonCode, ...(r.gaps ? { gaps: r.gaps } : {}), ...(r.staff ? { staff: r.staff } : {}) }, { status: WRITE_STATUS[r.reasonCode] ?? 403, headers: NO_STORE });
   return failureResponse(r);
 }
 

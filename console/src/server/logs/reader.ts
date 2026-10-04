@@ -209,11 +209,11 @@ const C_GROUP: Readonly<Record<string, LogGroup>> = Object.freeze({
   "sign-in": "session", "sign-in-refused": "session", "sign-out": "session", "session-expired": "session", "session-revoked": "session",
   "refused-page": "access", "refused-action": "access", "grant-change": "access",
   "access-granted": "access", "access-ended": "access", "manager-change": "access",
-  "app-access-released": "access", "test-link-issued": "access",
+  "app-access-released": "access", "test-link-issued": "access", availability: "access",
 });
 const C_LABEL: Readonly<Record<string, string>> = Object.freeze({
   "access-granted": "Console access granted", "access-ended": "Console access ended", "manager-change": "Changed who they report to",
-  "test-link-issued": "Test sign-in link issued",
+  "test-link-issued": "Test sign-in link issued", availability: "Availability changed",
 });
 /** A seat change's count (M03-S04-T02): "3 accounts returned to the pool"; null when none moved. */
 export const pooledLabel = (n: unknown): string | null =>

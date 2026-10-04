@@ -27,7 +27,7 @@ async function post(req: Request) {
   const { eventServices, WRITE_STATUS } = await import("@/server/events/http");
   const r = await eventServices(c.ctx).writes.create(c.ctx.credential, body as never, req.signal);
   if (r.ok) return Response.json({ event: r.value }, { headers: NO_STORE });
-  if (r.kind === "refused") return Response.json({ error: r.reason, code: r.reasonCode, ...(r.gaps ? { gaps: r.gaps } : {}) }, { status: WRITE_STATUS[r.reasonCode] ?? 403, headers: NO_STORE });
+  if (r.kind === "refused") return Response.json({ error: r.reason, code: r.reasonCode, ...(r.gaps ? { gaps: r.gaps } : {}), ...(r.staff ? { staff: r.staff } : {}) }, { status: WRITE_STATUS[r.reasonCode] ?? 403, headers: NO_STORE });
   return failureResponse(r);
 }
 

@@ -25,6 +25,7 @@ import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/clie
 import type { OpsLog } from "../../lib/zoho/log";
 import { createKamBookService, type KamBookEntry } from "../investors/book";
 import { createLeadsBook, type LeadRow, type LeadsAccess } from "../leads/book";
+import type { RosterReader } from "../leads/cover";
 import { LOST_REASONS } from "../leads/followup";
 import { RUNGS } from "../leads/journey";
 import type { ZohoProfileName, ZohoRoleName, ZohoSeat } from "../oauth/seat";
@@ -51,6 +52,8 @@ export interface SeatIds {
 }
 
 export interface LiveDeps {
+  /** Plane C's roster (D49), so an absent owner's secondary reads their personal book (D44). Absent → windows only. */
+  readonly roster?: RosterReader;
   /** The one shared client of this request — on the process-wide gate. */
   readonly crm: Pick<ZohoClient, "coql" | "aggregate" | "getRecord" | "update" | "insert"> & Partial<Pick<ZohoClient, "listUsers">>;
   /**
@@ -259,7 +262,7 @@ export function createLiveDataLayer(deps: LiveDeps) {
 
   async function readLeads(p: LivePrincipal, scope: BookScope, problems: string[], signal?: AbortSignal): Promise<Lead[]> {
     if (scope.kind === "none" || scope.kind === "own-lead" || scope.kind === "own-book" || scope.kind === "org") return [];
-    const book = createLeadsBook({ crm: deps.crm, access: leadsAccess(p.session), log: deps.log, recordIdPrefix: deps.recordIdPrefix, clock });
+    const book = createLeadsBook({ crm: deps.crm, access: leadsAccess(p.session), log: deps.log, recordIdPrefix: deps.recordIdPrefix, clock, roster: deps.roster });
     const which: ("personal" | "team")[] = scope.kind === "user" ? ["personal"] : scope.kind === "subtree" ? ["personal", "team"] : ["team"];
     const rows = new Map<string, LeadRow>();
     for (const s of which) {

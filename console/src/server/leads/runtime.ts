@@ -10,7 +10,8 @@
  * Access is re-derived from the live session on every recheck, the way the data layer does it
  * (server/data/live.ts): the leads scope of the seat; an IR Manager with no subtree reader reads under
  * Zoho's role hierarchy (teamOrgWide, PROVISIONAL as there); Digital Infrastructure org-wide.
- * No roster reader is wired yet (Plane C availability, D49): a secondary is admitted only by a window.
+ * The roster (Plane C availability, D49) is read from the log sink (server/roster): a secondary is admitted by a window, or by the
+ * owner's live absence when they are themself in; a failed roster read admits nobody.
  */
 
 import { createHmac, randomBytes } from "node:crypto";
@@ -24,6 +25,7 @@ import { createServiceTokenProvider, type ServiceTokenProvider } from "../oauth/
 import type { LeadsAccess, LeadsAccessAuthority } from "./book";
 import { createCover, sweepExpiredCovers, type CoverShare } from "./cover";
 import { createGates } from "./gates";
+import { rosterRuntime } from "../roster/runtime";
 import { createLeadSearch } from "./search";
 
 export const leadsConfigured = (env: NodeJS.ProcessEnv = process.env): boolean =>
@@ -85,9 +87,9 @@ function build(env: NodeJS.ProcessEnv) {
   };
 
   return {
-    search: createLeadSearch({ crm, access, log: rt.log, recordIdPrefix, cache: rt.cache, termKey }),
-    gates: createGates({ crm, access, log: rt.log, recordIdPrefix }),
-    cover: createCover({ crm, access, share, log: rt.log, planeC: rt.planeC, recordIdPrefix }),
+    search: createLeadSearch({ crm, access, log: rt.log, recordIdPrefix, cache: rt.cache, termKey, roster: rosterRuntime() }),
+    gates: createGates({ crm, access, log: rt.log, recordIdPrefix, roster: rosterRuntime() }),
+    cover: createCover({ crm, access, share, log: rt.log, planeC: rt.planeC, recordIdPrefix, roster: rosterRuntime() }),
     /** For the schedule: close expired windows on the service token. null when the grant is not set. */
     async sweep(signal?: AbortSignal) {
       const p = serviceCredential();
