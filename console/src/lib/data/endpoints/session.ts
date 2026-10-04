@@ -65,7 +65,7 @@ export function withSessionAccess(ds: Dataset, who: PersonKey, a: SessionAccess)
 export const signedOutWhy = (a: SessionAnswer | null): SignOutWhy | null => a?.signedOut ?? null;
 
 /* ---- step-up (M01-S10-W1) --------------------------------------------------------------------- */
-export type StepUpAction = "reveal" | "export" | "erase" | "release" | "seat";
+export type StepUpAction = "reveal" | "export" | "erase" | "release" | "seat" | "refund";
 /** GET /api/auth/step-up/status — the route's own answer */
 export type StepUpStatus = { valid: true; until: number } | { valid: false; code: string; message: string };
 /** what the step-up callback put on the address when it sent the person back */

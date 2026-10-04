@@ -103,7 +103,8 @@ function rig(f = {}, opts = {}) {
   const publish = opts.publish ?? (async (event) => { events.push(event); const v = validateEvent(schemas, event); return v.ok ? { ok: true, eventId: event.event_id } : { ok: false, reason: v.reason, errors: v.errors }; });
   const svc = createReceiptMatch({ crm, writes, publish, log, recordIdPrefix: P, clock: () => opts.now ?? NOW,
     authority: { async mayMatch() { return opts.mayMatch ?? true; },
-      ...(opts.mayApproveOutbound === undefined ? {} : { async mayApproveOutbound() { return opts.mayApproveOutbound; } }) } });
+      ...(opts.mayApproveOutbound === undefined ? {} : { async mayApproveOutbound() { return opts.mayApproveOutbound; } }),
+      ...(opts.stepUp === undefined ? {} : { async stepUpOutbound(sid) { (opts.stepUpAsked ??= []).push(sid); if (opts.stepUp instanceof Error) throw opts.stepUp; return opts.stepUp; } }) } });
   return { svc, calls, events, sink };
 }
 const puts = (calls) => calls.filter((c) => c[0] === 'put');
@@ -172,6 +173,40 @@ test('D22 kept for money leaving: the recorder of a refund cannot match it; a se
     investorReceipts: 'receipts.first-advance', allotmentReceipts: 'receipts.first-advance' }, { mayApproveOutbound: true });
   res = await r.svc.match(principal(), RADV);
   assert.equal(res.ok, true, JSON.stringify(res));
+});
+
+test('M01-S10-NOTE-6 / D22: approving a refund needs a live step-up "refund"; without it nothing is written', async () => {
+  const ok = { receipt: 'receipt.pending-refund', allotment: 'allotment.first-advance', investorAllotments: 'allotments.investor-first',
+    investorReceipts: 'receipts.first-advance', allotmentReceipts: 'receipts.first-advance' };
+  for (const [stepUp, code] of [['step-up', 'step-up'], ['locked', 'step-up-locked'], [new Error('state store down'), 'step-up']]) {
+    const o = { mayApproveOutbound: true, stepUp };
+    const r = rig(ok, o);
+    const res = await r.svc.match(principal(), RADV);
+    assert.equal(res.ok, false);
+    assert.equal(res.reasonCode, code, String(stepUp));
+    assert.equal(puts(r.calls).length, 0, 'no write without the step-up');
+    assert.equal(r.events.length, 0);
+    assert.equal(o.stepUpAsked.length, 1);
+  }
+  const o = { mayApproveOutbound: true, stepUp: 'ok' };
+  const r = rig(ok, o);
+  const res = await r.svc.match(principal(), RADV);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(o.stepUpAsked.length, 1);
+  // the approver and same-hand checks come first: a non-approver or the recorder is never sent to step up
+  const na = { mayApproveOutbound: false, stepUp: 'ok' };
+  assert.equal((await rig({ receipt: 'receipt.pending-refund' }, na).svc.match(principal(), RADV)).reasonCode, 'not-approver');
+  assert.equal(na.stepUpAsked, undefined);
+  const own = { mayApproveOutbound: true, stepUp: 'ok' };
+  assert.equal((await rig({ receipt: 'receipt.pending-refund-own' }, own).svc.match(principal(), RADV)).reasonCode, 'same-hand');
+  assert.equal(own.stepUpAsked, undefined);
+});
+
+test('M01-S10-NOTE-6: inbound money is never asked for a step-up (recording and matching are not money leaving)', async () => {
+  const o = { stepUp: 'step-up' };
+  const res = await rig({}, o).svc.match(principal(), R, { expectedModifiedTime: '2026-09-02T08:00:00+05:30' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(o.stepUpAsked, undefined);
 });
 
 test('Zoho\'s validation rule refusing Matched_By: a refund\'s same hand (TC-IM05-024); on inbound money the old two-person rule (D113)', async () => {

@@ -12,7 +12,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const test = require('node:test');
+const baseTest = require('node:test');
 
 const consoleRoot = path.resolve(__dirname, '..', '..', '..');
 const srcRoot = path.join(consoleRoot, 'src');
@@ -32,6 +32,8 @@ const sources = [
   'lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib/zoho/log.ts', 'lib/zoho/client.ts',
   'server/identity/plane-c.ts', 'server/oauth/seat.ts', 'server/oauth/service-token.ts',
   'server/oauth/crypto.ts', 'server/oauth/zoho-accounts.ts', 'server/oauth/user-session.ts',
+  'server/state/shared-state.ts', 'server/state/memory.ts', 'server/state/catalyst.ts', 'server/state/fake-catalyst.ts',
+  'server/oauth/session-store.ts', 'server/oauth/session-end.ts',
 ].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
@@ -57,6 +59,56 @@ const { createZohoAccounts, redirectUriOf } = load('server/oauth/zoho-accounts.j
 const {
   createUserSessions, createMemorySessionStore, NO_GRANTS, SIGNIN_REFUSALS, SESSION_ABSOLUTE_MS, FLOW_TTL_MS,
 } = load('server/oauth/user-session.js');
+const { createMemoryState } = load('server/state/memory.js');
+const { createCatalystState } = load('server/state/catalyst.js');
+const { createFakeCatalyst, FAKE_CONFIG } = load('server/state/fake-catalyst.js');
+const { createSharedSessionStore, sessionSealerFromEnv, sessionStoreStartupCheck } = load('server/oauth/session-store.js');
+const { onSessionEnd, notifySessionEnd } = load('server/oauth/session-end.js');
+
+/* M18-S09-NOTE-1: every test runs against each session store — the process-local map (the old behaviour, kept for
+   doubles), SessionStore on the memory SharedState, and on the catalyst SharedState over the fake Catalyst REST. */
+const KINDS = ['map', 'state-memory', 'state-catalyst'];
+let KIND = 'map';
+const test = (name, fn) => { for (const k of KINDS) baseTest(`${name} [${k}]`, async (t) => { KIND = k; return fn(t); }); };
+const sharedOnly = (name, fn) => { for (const k of KINDS.slice(1)) baseTest(`${name} [${k}]`, async (t) => { KIND = k; return fn(t); }); };
+const ENC_KEY = crypto.randomBytes(32).toString('base64');
+const RECORD_AAD = 'gz-session-v1|';
+
+/** A SharedState that mirrors what is set/released, so a test can look at what sits in the backend (sync). */
+function mirrored(state, mirror) {
+  return Object.freeze({
+    kind: state.kind,
+    claim: (k, t) => state.claim(k, t),
+    release: async (k) => { await state.release(k); mirror.delete(k); },
+    get: (k) => state.get(k),
+    set: async (k, v, t) => { await state.set(k, v, t); mirror.set(k, v); },
+    incr: (k, t) => state.incr(k, t),
+    take: (k, c, r) => state.take(k, c, r),
+  });
+}
+
+/** The session store for KIND. `backend` (optional) is a SharedState shared with another harness: a second instance. */
+function makeStore(clock, backend) {
+  if (KIND === 'map' && !backend) return createMemorySessionStore();
+  const fake = KIND === 'state-catalyst' ? createFakeCatalyst() : null;
+  const state = backend ?? (fake
+    ? createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock, sleep: async () => undefined })
+    : createMemoryState({ clock }));
+  const mirror = new Map();
+  const sealer = sessionSealerFromEnv(state.kind === 'memory' ? 'memory' : 'catalyst', { SESSION_ENC_KEY: ENC_KEY });
+  const store = createSharedSessionStore(mirrored(state, mirror), sealer, { clock });
+  const recs = () => [...mirror].filter(([k]) => k.startsWith('sess|'));
+  return {
+    ...store,
+    state,
+    size: () => recs().length,
+    raw: () => recs().map(([k, v]) => JSON.parse(sealer.open(v, RECORD_AAD + k.slice(5)))),
+    /** what the backend itself holds, ciphertext and all */
+    backend: () => (fake ? [...fake.items.values()] : [...mirror.entries()]),
+    fake,
+    mirror,
+  };
+}
 
 const readJson = (n) => JSON.parse(fs.readFileSync(path.join(fixtureRoot, n), 'utf8'));
 const seats = readJson('current-user.seats.response.json');
@@ -98,12 +150,12 @@ const streamReply = (status, obj) => {
 };
 const clockAt = (t) => { let now = t; const c = () => now; c.advance = (ms) => { now += ms; }; return c; };
 
-function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {} } = {}) {
-  const clock = clockAt(1_800_000_000_000);
+function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}, backend, clock: sharedClock, onEnd } = {}) {
+  const clock = sharedClock ?? clockAt(1_800_000_000_000);
   const planeB = createMemorySink();
   const log = createOpsLog(planeB);
   const planeCSink = createPlaneCMemorySink();
-  const store = createMemorySessionStore();
+  const store = makeStore(clock, backend);
   const calls = { token: [], revoke: [], identity: [] };
   const state = { user, identityStatus: 200, answers: { authorization_code: codeGrant, refresh_token: refreshGrant, ...token } };
   const fetch = async (url, init) => {
@@ -123,7 +175,7 @@ function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}
     accounts, sealer: createSealer(KEY), store,
     seats: createZohoSeatDirectory({ recordIdPrefix: seats.recordIdPrefix, roleIds: seats.roleIds, profileIds: seats.profileIds }),
     grants, planeC: createPlaneCLog(planeCSink), gate: createGate(), log, recordIdPrefix: seats.recordIdPrefix,
-    identityFetch, clock,
+    identityFetch, clock, ...(onEnd ? { onSessionEnd: onEnd } : {}),
   });
   return { sessions, store, planeB, planeCSink, calls, clock, state };
 }
@@ -137,7 +189,7 @@ async function signIn(h, over = {}) {
 }
 
 function assertNothingSecret(h) {
-  const dump = JSON.stringify([h.planeB.records ? h.planeB.records() : null, h.planeCSink.events(), h.store.raw()]);
+  const dump = JSON.stringify([h.planeB.records ? h.planeB.records() : null, h.planeCSink.events(), h.store.raw(), h.store.backend ? h.store.backend() : null]);
   for (const s of [CLIENT_ID, CLIENT_SECRET, CODE, REFRESH, ACCESS, ACCESS2, EMAIL, FULL_NAME]) {
     assert.ok(!dump.includes(s), `logs and store must not contain ${JSON.stringify(s)}`);
   }
@@ -480,4 +532,144 @@ test('M03-S04-T01: endSessionsOf ends every session of that person at once, and 
   const ended = h.planeCSink.events().filter((e) => e.action === 'session-revoked');
   assert.equal(ended.length, 2); assert.ok(ended.every((e) => e.reason === 'seat-changed' && e.who === '554023000000300005'));
   assert.equal(await h.sessions.endSessionsOf('not-an-id', 'x'), 0);
+});
+
+/* ---- M18-S09-NOTE-1: sessions on SharedState ------------------------------------------------------------- */
+
+const sessKeyOf = (h) => [...h.store.mirror.keys()].find((k) => k.startsWith('sess|'));
+
+sharedOnly('shared store: the record is sealed at rest with SESSION_ENC_KEY; who, seat and the session id never sit in the clear', async () => {
+  const h = harness();
+  const { result } = await signIn(h);
+  const dump = JSON.stringify(h.store.backend());
+  for (const s of [result.sid, REFRESH, ACCESS, 'conv']) assert.ok(!dump.includes(s), `backend must not hold ${s}`);
+  if (KIND === 'state-catalyst') assert.ok(!dump.includes(result.session.who), 'catalyst holds hashed keys and sealed values only');
+  const [rec] = h.store.raw();
+  assert.deepEqual(Object.keys(rec).sort(), ['createdAt', 'expiresAt', 'sealedRefresh', 'seat', 'who'], 'only what the memory store kept');
+  assertNothingSecret(h);
+});
+
+sharedOnly('shared store: TTL is the session lifetime (plus the end-processing grace) — the backend forgets it by itself', async () => {
+  const { SESSION_TTL_GRACE_S } = load('server/oauth/session-store.js');
+  const h = harness();
+  await signIn(h);
+  const key = sessKeyOf(h);
+  h.clock.advance(SESSION_ABSOLUTE_MS + SESSION_TTL_GRACE_S * 1_000 - 1);
+  assert.notEqual(await h.store.state.get(key), null);
+  h.clock.advance(1);
+  assert.equal(await h.store.state.get(key), null);
+});
+
+sharedOnly('shared store: a tampered record, or one moved under another key, is treated as signed out and released', async () => {
+  const h = harness();
+  const { result } = await signIn(h);
+  const key = sessKeyOf(h);
+  const sealed = await h.store.state.get(key);
+  const flipped = sealed.slice(0, -2) + (sealed.at(-2) === 'A' ? 'B' : 'A') + sealed.at(-1);
+  await h.store.state.set(key, flipped);
+  assert.deepEqual(await h.sessions.current(result.sid), { ok: false, why: null });
+  assert.deepEqual(await h.sessions.credential(result.sid), { ok: false, why: null });
+  assert.equal(await h.store.state.get(key), null, 'the bad record is released');
+
+  const b = (await signIn(h)).result;
+  const c = (await signIn(h)).result;
+  const keys = [...h.store.mirror.keys()].filter((k) => k.startsWith('sess|') && h.store.mirror.get(k));
+  const kc = await h.store.state.get(keys[1]);
+  await h.store.state.set(keys[0], kc);   // c's record copied under b's key
+  const answers = [await h.sessions.current(b.sid), await h.sessions.current(c.sid)];
+  assert.equal(answers.filter((a) => a.ok).length, 1, 'only the record under its own key opens');
+});
+
+sharedOnly('shared store: a record sealed under another SESSION_ENC_KEY does not open (decrypt failure = signed out)', async () => {
+  const clock = clockAt(1_800_000_000_000);
+  const a = harness({ clock });
+  const { result } = await signIn(a);
+  const other = createSharedSessionStore(a.store.state, sessionSealerFromEnv('catalyst', { SESSION_ENC_KEY: crypto.randomBytes(32).toString('base64') }), { clock });
+  const key = sessKeyOf(a).slice(5);
+  assert.equal(await other.get(key), null);
+  assert.deepEqual(await a.sessions.current(result.sid), { ok: false, why: null }, 'and the record was released by that read');
+});
+
+sharedOnly('two instances share one session: sign in on A, served on B, signed out on B, gone on A', async () => {
+  const clock = clockAt(1_800_000_000_000);
+  const a = harness({ clock });
+  const b = harness({ clock, backend: a.store.state });
+  const { result } = await signIn(a);
+  const onB = await b.sessions.current(result.sid);
+  assert.equal(onB.ok, true);
+  assert.deepEqual(onB.session, result.session);
+  clock.advance(3_600_000);
+  const cred = await b.sessions.credential(result.sid);
+  assert.equal(cred.ok, true, 'B mints its own access token from the shared, sealed refresh token');
+  assert.equal(cred.credential.accessToken, ACCESS2);
+  await b.sessions.signOut(result.sid);
+  assert.deepEqual(await a.sessions.current(result.sid), { ok: false, why: null });
+  assert.deepEqual(await a.sessions.credential(result.sid), { ok: false, why: null });
+  assert.equal(b.calls.revoke.length, 1);
+});
+
+sharedOnly('two instances: an instance recycle keeps the session (a fresh process over the same backend)', async () => {
+  const clock = clockAt(1_800_000_000_000);
+  const a = harness({ clock });
+  const { result } = await signIn(a);
+  const fresh = harness({ clock, backend: a.store.state });   // nothing in memory: a new process
+  assert.equal((await fresh.sessions.current(result.sid)).ok, true);
+});
+
+sharedOnly('two instances: endSessionsOf on one ends that person\'s sessions made on any instance', async () => {
+  const clock = clockAt(1_800_000_000_000);
+  const a = harness({ clock, user: accepted('investor-relations') });
+  const b = harness({ clock, user: accepted('investor-relations'), backend: a.store.state });
+  const s1 = (await signIn(a)).result, s2 = (await signIn(b)).result, s3 = (await signIn(a)).result;
+  a.state.user = accepted('ir-manager');
+  const other = (await signIn(a)).result;
+  assert.equal(await b.sessions.endSessionsOf('554023000000300005', 'seat-changed'), 3);
+  for (const s of [s1, s2, s3]) assert.equal((await a.sessions.current(s.sid)).ok, false);
+  assert.equal((await b.sessions.current(other.sid)).ok, true);
+});
+
+/* ---- M01-S08-NOTE-6: sign-out tells the replay service before the session is destroyed ---------------------- */
+
+test('sign-out and change of person call onSessionEnd(who, sid) before the record is deleted', async () => {
+  const seen = [];
+  let h;
+  h = harness({ onEnd: (who, sid) => { seen.push({ who, sid, stillStored: h.store.size() }); } });
+  const first = (await signIn(h)).result;
+  await h.sessions.signOut(first.sid, 'chose');
+  assert.deepEqual(seen, [{ who: first.session.who, sid: first.sid, stillStored: 1 }]);
+  /* change of person: the callback route signs the prior session out first — the same path */
+  const prior = (await signIn(h)).result;
+  await h.sessions.signOut(prior.sid, 'chose');
+  assert.equal(seen.at(-1).sid, prior.sid);
+  assert.equal(h.store.size(), 0);
+});
+
+test('expiry and revocation also call onSessionEnd; a throwing listener never blocks the sign-out', async () => {
+  const seen = [];
+  const h = harness({ onEnd: (who, sid) => { seen.push(sid); throw new Error('listener failed'); } });
+  const { result } = await signIn(h);
+  h.clock.advance(SESSION_ABSOLUTE_MS);
+  assert.deepEqual(await h.sessions.current(result.sid), { ok: false, why: 'expired' });
+  assert.deepEqual(seen, [result.sid]);
+  assert.equal(h.store.size(), 0);
+});
+
+baseTest('session-end registry: listeners hear (who, sid); a throw is swallowed; unregister works', () => {
+  const heard = [];
+  const off1 = onSessionEnd(() => { throw new Error('x'); });
+  const off2 = onSessionEnd((who, sid) => heard.push([who, sid]));
+  notifySessionEnd('554023000000300004', 'S'.repeat(43));
+  assert.deepEqual(heard, [['554023000000300004', 'S'.repeat(43)]]);
+  off1(); off2();
+  notifySessionEnd('554023000000300004', 'T'.repeat(43));
+  assert.equal(heard.length, 1);
+});
+
+baseTest('SESSION_ENC_KEY: required (fail closed) when STATE_STORE=catalyst; 32 bytes; not ZOHO_SESSION_KEY; optional under memory', () => {
+  assert.throws(() => sessionStoreStartupCheck('catalyst', {}), /SESSION_ENC_KEY is required/);
+  assert.throws(() => sessionStoreStartupCheck('catalyst', { SESSION_ENC_KEY: Buffer.alloc(16).toString('base64') }), /32 random bytes/);
+  assert.throws(() => sessionStoreStartupCheck('memory', { SESSION_ENC_KEY: 'short' }), /32 random bytes/);
+  assert.throws(() => sessionStoreStartupCheck('catalyst', { SESSION_ENC_KEY: KEY, ZOHO_SESSION_KEY: KEY }), /must differ/);
+  assert.doesNotThrow(() => sessionStoreStartupCheck('catalyst', { SESSION_ENC_KEY: ENC_KEY, ZOHO_SESSION_KEY: KEY }));
+  assert.doesNotThrow(() => sessionStoreStartupCheck('memory', {}));
 });

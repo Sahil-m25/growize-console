@@ -11,6 +11,8 @@
  *   ZOHO_CRM_RECORD_ID_PREFIX  this org's id prefix
  *   ZOHO_SEAT_IDS              JSON {"roleIds":{…},"profileIds":{…}} from the sanitized settings export
  *   ZOHO_OAUTH_SCOPES          optional, comma-separated; defaults to DEFAULT_USER_SCOPES
+ *   SESSION_ENC_KEY            32 random bytes, base64 — seals each stored session record (./session-store.ts);
+ *                              required when STATE_STORE=catalyst, optional under memory (M18-S09-NOTE-1)
  *   ZOHO_STEPUP_REDIRECT_URI   optional (M01-S10): this deployment's exact https …/api/auth/step-up/callback,
  *                              registered on the same Zoho client; without it every step-up is refused
  *
@@ -24,7 +26,10 @@ import { createPlaneCLog } from "../identity/plane-c";
 import { sharedOpsSink, sharedPlaneCSink } from "../logs/factory";
 import { createSealer, type Sealer } from "./crypto";
 import { createZohoSeatDirectory, type ZohoSeatDirectory, type ZohoSeatDirectoryConfig } from "./seat";
-import { createMemorySessionStore, createUserSessions, type UserSessions } from "./user-session";
+import { createUserSessions, type UserSessions } from "./user-session";
+import { createSharedSessionStore, sessionSealerFromEnv } from "./session-store";
+import { notifySessionEnd } from "./session-end";
+import { sharedState } from "../state/runtime";
 import { createZohoAccounts, type ZohoAccounts } from "./zoho-accounts";
 import { sharedGrantReader } from "../access/grants";
 import { alertingOpsSink } from "../ops/runtime";
@@ -83,10 +88,13 @@ export function oauthParts(env: NodeJS.ProcessEnv = process.env): OAuthParts {
   const sealer = createSealer(env.ZOHO_SESSION_KEY!);
   const seats = createZohoSeatDirectory({ recordIdPrefix, roleIds: seatIds.roleIds, profileIds: seatIds.profileIds });
   const gate = createGate();
+  /* M18-S09-NOTE-1: sessions live in the process's SharedState (STATE_STORE), sealed with SESSION_ENC_KEY */
+  const state = sharedState();
   const sessions = createUserSessions({
     accounts,
     sealer,
-    store: createMemorySessionStore(),
+    store: createSharedSessionStore(state, sessionSealerFromEnv(state.kind, env)),
+    onSessionEnd: notifySessionEnd,
     seats,
     grants: sharedGrantReader(),
     planeC: createPlaneCLog(sharedPlaneCSink()),

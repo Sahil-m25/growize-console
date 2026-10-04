@@ -1,4 +1,4 @@
-/* /api/auth/step-up?action=reveal|export|erase|release&back=/path — start a fresh Zoho sign-in before an
+/* /api/auth/step-up?action=reveal|export|erase|release|seat|refund&back=/path — start a fresh Zoho sign-in before an
    authoritative action (M01-S10-T01). Redirects to Zoho (prompt=login, max_age) with a ten-minute sealed
    flow cookie bound to this session; ./callback finishes it. Locked, signed out or not configured: straight
    back to `back` with ?stepup=<code>. The session itself is read here, so this navigation is not wrapped

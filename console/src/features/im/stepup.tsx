@@ -19,6 +19,7 @@ const WHAT: Record<StepUpAction, string> = {
   export: "before the export is made",
   erase: "before anything is erased",
   seat: "before the seat is changed",
+  refund: "before the refund is approved",
 };
 
 /** ?stepup=<code> as the callback left it on the address (read once, after the first paint). */

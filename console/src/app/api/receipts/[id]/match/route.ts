@@ -4,6 +4,8 @@
    refund keeps D22's second hand: the Head of Finance or an administrator, never the person who recorded it.
    200 → { match: { receiptId, state: "matched", duplicate, matchedBy, matchedAt, kind, amountRupees, link, gate,
            paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, hold } }
+   A refund is money leaving: after the approver and same-hand checks it needs a live step-up "refund" on this session
+   (D22, M01-S10-NOTE-6) — 403 { code: "step-up", start } / 423 { code: "locked" } until then, and nothing is written.
    403 not the matcher / not the approver / same hand (refund) · 409 not pending / changed / paper not verified · 503 Zoho not answering.
    Server: server/money/match.ts. */
 import { cookies } from "next/headers";
@@ -26,6 +28,11 @@ async function post_(req: Request, { params }: Ctx) {
   const { receiptMatch, moneyFailure } = await import("@/server/money/runtime");
   const r = await (await receiptMatch()).match({ credential: s.credential, sessionId: sid }, (await params).id, body, req.signal);
   if (r.ok) return Response.json({ match: r.value }, { headers: NO_STORE });
+  /* a refund (money leaving) needs a live step-up "refund" (D22): say where to start it, as requireStepUp does */
+  if (r.kind === "refused" && (r.reasonCode === "step-up" || r.reasonCode === "step-up-locked")) {
+    return Response.json({ error: r.message, code: r.reasonCode === "step-up" ? "step-up" : "locked", saved: false, retry: false, start: "/api/auth/step-up?action=refund" },
+      { status: r.reasonCode === "step-up" ? 403 : 423, headers: NO_STORE });
+  }
   return moneyFailure(r, NO_STORE);
 }
 

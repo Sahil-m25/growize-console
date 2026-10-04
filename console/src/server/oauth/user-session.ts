@@ -84,7 +84,7 @@ export interface StoredSession extends ConsoleSession {
   readonly expiresAt: number;
 }
 
-/** M01-S04 supplies the durable store; until then a process-local map. */
+/** Where sessions live: ./session-store.ts on SharedState in the app (M18-S09-NOTE-1); the process-local map below for tests. */
 export interface SessionStore {
   get(key: string): Promise<StoredSession | null>;
   put(key: string, record: StoredSession): Promise<void>;
@@ -123,6 +123,9 @@ export interface UserSessionDeps {
   readonly recordIdPrefix: string;
   readonly identityFetch?: UserIdentityFetchLike;
   readonly clock?: () => number;
+  /** M01-S08-NOTE-6: told (Zoho user id, raw session id) just before a session whose id is known is destroyed, so
+   *  work queued on it (receipt-replay `discardSession`) is aborted first. Must not throw; a throw is swallowed. */
+  readonly onSessionEnd?: (who: string, sid: string) => void;
 }
 
 export interface CallbackParams {
@@ -211,7 +214,10 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     return admitZohoSeat(zseat, who, grants);
   }
 
-  async function end(key: string, rec: StoredSession, why: SignOutWhy, revoke: boolean, reason: string = why): Promise<void> {
+  async function end(key: string, rec: StoredSession, why: SignOutWhy, revoke: boolean, reason: string = why, sid?: string): Promise<void> {
+    if (sid !== undefined && d.onSessionEnd) {
+      try { d.onSessionEnd(rec.who, sid); } catch { /* discarding queued work never blocks the sign-out */ }
+    }
     live.delete(key);
     await d.store.delete(key);
     if (revoke) await revokeQuietly(d.sealer.open(rec.sealedRefresh, key) ?? undefined, rec.who);
@@ -219,35 +225,35 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     d.planeC.record({ at: clock(), who: rec.who, action, outcome: "ended", reason, seat: rec.seat });
   }
 
-  async function load(sid: string | null | undefined): Promise<{ key: string; rec: StoredSession } | CurrentResult> {
+  async function load(sid: string | null | undefined): Promise<{ key: string; sid: string; rec: StoredSession } | CurrentResult> {
     if (typeof sid !== "string" || !SID.test(sid)) return { ok: false, why: null };
     const key = idHash(sid);
     const rec = await d.store.get(key);
     if (!rec) return { ok: false, why: null };
     if (clock() >= rec.expiresAt) {
-      await end(key, rec, "expired", true);
+      await end(key, rec, "expired", true, "expired", sid);
       return { ok: false, why: "expired" };
     }
     /* M03-S04-T01: the door is asked again on every read, so a person whose last page was taken
        (or whose grant store entry went) is signed out by their very next request, on any process. */
     const zseat = ZOHO_SEAT_OF.get(rec.seat);
     if (!zseat || !(await admit(zseat, rec.who)).ok) {
-      await end(key, rec, "revoked", true, "access-ended");
+      await end(key, rec, "revoked", true, "access-ended", sid);
       return { ok: false, why: "revoked" };
     }
-    return { key, rec };
+    return { key, sid, rec };
   }
 
-  async function refresh(key: string, rec: StoredSession): Promise<CredentialResult> {
+  async function refresh(key: string, rec: StoredSession, sid: string): Promise<CredentialResult> {
     const token = d.sealer.open(rec.sealedRefresh, key);
     if (token === null) {
-      await end(key, rec, "revoked", false);
+      await end(key, rec, "revoked", false, "revoked", sid);
       return { ok: false, why: "revoked" };
     }
     const r = await d.accounts.refresh(token, actorOf(rec.who));
     if (!r.ok) {
       if (r.reason === "unavailable") return { ok: false, why: null, unavailable: true };
-      await end(key, rec, "revoked", false);
+      await end(key, rec, "revoked", false, "revoked", sid);
       return { ok: false, why: "revoked" };
     }
     const id = await identify(r.value);
@@ -256,7 +262,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     const still = id.resolution.ok && id.credential.userId === rec.who
       && (await admit(id.resolution.value.seat, rec.who)).ok;
     if (id.credential.userId !== rec.who || seat !== rec.seat || !still) {
-      await end(key, rec, "revoked", true);
+      await end(key, rec, "revoked", true, "revoked", sid);
       return { ok: false, why: "revoked" };
     }
     live.set(key, id.credential);
@@ -335,14 +341,14 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     async credential(sid: string | null | undefined): Promise<CredentialResult> {
       const got = await load(sid);
       if (!("key" in got)) return got.ok ? { ok: false, why: null } : got;
-      const { key, rec } = got;
+      const { key, sid: liveSid, rec } = got;
       const held = live.get(key);
       if (held && held.expiresAt !== null && held.expiresAt > clock() + ACCESS_REFRESH_SKEW_MS) {
         return { ok: true, credential: held, session: { who: rec.who, seat: rec.seat } };
       }
       let pending = refreshing.get(key);
       if (!pending) {
-        pending = refresh(key, rec).finally(() => refreshing.delete(key));
+        pending = refresh(key, rec, liveSid).finally(() => refreshing.delete(key));
         refreshing.set(key, pending);
       }
       return pending;
@@ -356,7 +362,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
         live.delete(key);
         return;
       }
-      await end(key, rec, why, true);
+      await end(key, rec, why, true, why, sid);
     },
 
     async endSessionsOf(who: string, reason: string): Promise<number> {
