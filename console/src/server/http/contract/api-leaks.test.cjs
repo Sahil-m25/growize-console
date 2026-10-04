@@ -99,6 +99,17 @@ test('H3: every GET yields a body the suite can judge, or the table says needsSa
   assert.deepEqual(problems, [], problems.join('\n'));
 });
 
+test('M18-S02-NOTE-4: the detector knows every mask the console emits, and still flags an unmasked PAN', () => {
+  const { maskPan, maskLast4 } = { maskPan: (v) => v.slice(0, 3) + '•••••' + v.slice(-1), maskLast4: (v) => '•••• •••• ' + v.slice(-4) };
+  for (const ok of [maskPan('ABCDE1234F'), 'AFT•••••L', 'ABC•••••', '•••••234F', maskLast4('50100288714520'), '••• 8119', '••••', '—', 'XXXXXX234F'])
+    assert.equal(L.looksMasked(ok), true, `${ok} is masked`);
+  for (const bad of ['ABCDE1234F', 'ABCDE•••1234F', 'ABCD••••F', 'ABC••L', 'ABC•••••L9999X', '50100288714520', 'XXXXX1234F', ''])
+    assert.equal(L.looksMasked(bad), false, `${bad} is not masked`);
+  assert.deepEqual(L.maskedFindings({ pan: 'AFT•••••L', pan_number: '•••••234F', bank_account: '•••• •••• 4520', utr: '••• 8119' }, ''), [], 'both PAN mask forms pass');
+  assert.deepEqual(L.maskedFindings({ pan: 'ABCDE1234F' }, '').map((x) => x.kind), ['pan']);
+  assert.deepEqual(L.maskedFindings({ pan: 'ABCDE•••1234F' }, '').map((x) => x.kind), ['pan'], 'a half-masked PAN still leaks');
+});
+
 test('H3: masked-field detector — names and value shapes', () => {
   assert.deepEqual(L.maskedFindings({ investor: { pan: 'ABCDE1234F', bank: { acct: '50100288714520' }, dob: '1990-04-01' } }, '').map((x) => x.kind), ['pan', 'bank_account', 'dob']);
   assert.deepEqual(L.maskedFindings({ pan: 'XXXXXX234F', bank_account: '••••4520', utrMasked: 'XXXXXXX8551', aadhaar: null }, ''), []);

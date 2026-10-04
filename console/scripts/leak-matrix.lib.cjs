@@ -66,7 +66,16 @@ const MASKED_NAMES = Object.freeze({
   utr: /^(utr|payout_?utr|bank_?ref(erence)?_?no)$/i,
   dob: /^(dob|date_?of_?birth|birth_?date)$/i,
 });
-const looksMasked = (v) => typeof v === 'string' && /^[X*•·.\- ]{2,}[A-Za-z0-9]{0,4}$/.test(v.trim());
+/* Every mask the console emits (lib/zoho/identity maskPan/maskLast4, lib/im/selectors maskPan/maskAcct/maskRefTail, lib/format maskRef):
+   'AFT•••••L' (PAN: first 3 + last 1), '•••• •••• 1208' (account/Aadhaar), '••• 8119' (reference), '••••', '—' (empty), and the
+   legacy 'XXXXXX234F'. Shape: at most 3 leading characters, a run of 3+ mask characters, at most 4 trailing. The owner has not ruled
+   on the PAN mask, so 3+1 and last-four are both accepted. A value with 4+ leading characters, a short mask run or 5+ trailing
+   characters is not masked ('ABCDE1234F', 'ABCDE•••1234F'). */
+const MASK_SHAPES = [
+  new RegExp(`^[X*•·.\\- ]{2,}[A-Za-z0-9]{0,4}$`),
+  new RegExp(`^[A-Za-z0-9]{1,3}[X*•·.\\- ]{3,}[A-Za-z0-9]{0,4}$`),
+];
+const looksMasked = (v) => typeof v === 'string' && (v.trim() === '—' || MASK_SHAPES.some((re) => re.test(v.trim())));
 
 /** Every masked-by-name field in a JSON body whose value is present and not masked, with its path. Also value shapes of the text. */
 function maskedFindings(body, text) {
@@ -147,4 +156,4 @@ function cookieFromStorageState(state, baseUrl) {
     .map((c) => `${c.name}=${c.value}`).join('; ');
 }
 
-module.exports = { MASKED_NAMES, maskedFindings, discoverRoutes, collectIds, unmaskedIdentity, judge, planCalls, cookieFromStorageState, cacheHeaderOk, EXCLUDED, ZOHO_ID };
+module.exports = { looksMasked, MASKED_NAMES, maskedFindings, discoverRoutes, collectIds, unmaskedIdentity, judge, planCalls, cookieFromStorageState, cacheHeaderOk, EXCLUDED, ZOHO_ID };
