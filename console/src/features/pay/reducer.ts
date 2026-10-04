@@ -166,7 +166,7 @@ function acctAuto(s: ConsoleState, id: LeadId, at: Stamp): ConsoleState {
     DOCS: s.DOCS.map(d => (d.lead === id ? { ...d, ref: d.ref || code } : d)),
   };
   return addLog(next, at, "Growize account created", id,
-    code + " · automatic on the confirmed receipt · welcome sent", "admin");
+    code + " · automatic on the confirmed receipt · app on hold until Finance releases it", "admin");
 }
 
 /* acctLapsed — 03-app.js:1980. Not a control of its own: the account follows the reservation. */

@@ -475,7 +475,7 @@ function AppAccount({ s, me, dispatch, x, due }: ImPageProps & { x: ImInvestor; 
   const card = r.state === "ok" ? r.data.card : null;
   if (r.state === "idle" || r.state === "loading") return <p className="sm" style={{ margin: "8px 0" }}>Reading the app account…</p>;
   if (!card) return r.state === "error" && r.err.status !== 403 ? <p className="sm" role="alert" style={{ margin: "8px 0" }}>The app account: {r.err.error}</p> : null;
-  if (!card.access && !card.mark) return <p className="sm" style={{ margin: "8px 0" }}>The app account opens when the first receipt is matched — recording a receipt does not open it.</p>;
+  if (!card.access && !card.mark) return <p className="sm" style={{ margin: "8px 0" }}>No app account yet. It is created on hold, and sign-in stays locked until Finance presses Send welcome and unlock — a match never unlocks it.</p>;
   const perm = card.mark === "Permanent";
   const w = wall(s, card.markAt), age = w == null ? null : Math.floor((nowDay(s.data.NOW) - mid(w)!) / DAY);
   const lock = perm && age != null && age >= APPLOCK, left = age == null ? null : Math.max(0, APPLOCK - age);

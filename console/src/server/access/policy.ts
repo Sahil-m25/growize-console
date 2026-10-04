@@ -82,12 +82,27 @@ export interface AccessBook {
   readonly SIGNINS: PersonKey[];
 }
 
+const ZOHO_USER_ID = /^\d{15,25}$/;
+/**
+ * D115 ruling 2: who the super administrator is (Sahil, D68). Zoho gives every Digital Infrastructure member the same
+ * role and profile, so the person is named by configuration: CONSOLE_SUPER_ADMIN_IDS, comma-separated Zoho user ids.
+ * Unset or malformed = nobody is the super administrator (fail closed: no Digital Infrastructure member loads a sheet
+ * until named or granted). Read on every call, never cached.
+ */
+export function superAdminIds(env: NodeJS.ProcessEnv = process.env): ReadonlySet<string> {
+  return new Set((env.CONSOLE_SUPER_ADMIN_IDS ?? "").split(",").map((x) => x.trim()).filter((x) => ZOHO_USER_ID.test(x)));
+}
+/** The `sup` mark on a lead-side Person: only a Digital Infrastructure seat ("ops") named in CONSOLE_SUPER_ADMIN_IDS. */
+export const superAdminMark = (who: string, lead: SeatKey, env: NodeJS.ProcessEnv = process.env): { sup?: true } =>
+  lead === "ops" && superAdminIds(env).has(who) ? { sup: true } : {};
+
 export function accessBook(who: PersonKey, sides: SeatSides, grants: CapGrid, imNowIso = "1970-01-01T00:00:00.000Z"): AccessBook {
   const nosign = (NOSIGN as readonly string[]).includes(sides.lead);
   const person: Person = {
     n: "", i: "", seat: sides.lead, mgr: null, on: true, c: 1, em: "", ph: "",
     /* the merged prototype marks the Investors-side staff `ext` on the lead record; NOSIGN never admits anyway */
     ...(nosign ? { ext: "the Investors pages" } : {}),
+    ...superAdminMark(who, sides.lead),
   };
   const im = emptyImData(imNowIso);
   if (sides.im) {

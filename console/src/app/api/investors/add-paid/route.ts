@@ -1,6 +1,6 @@
 /* POST /api/investors/add-paid — Add investor (M09-S09-T02): an investor who already paid, from the Investors page.
    Body: { name, email, mobile, llpId, units, amountPaid, investmentDate }. Optional header Idempotency-Key.
-   Writes one Contact (App_Access empty — it opens On hold when the receipt is matched; no email), one allotment
+   Writes one Contact (App_Access = Hold — sign-in locked until Finance releases it with Send welcome and unlock; no email), one allotment
    (free units checked by server/farms/oversell first) and one Pending receipt on the signed-in person's own token
    (server/investors/add-paid). Finance and the super user only; everyone else 403.
    200 → { investor: { contactId, code, allotmentId, allocationStatus, receiptId, app, replayed } }

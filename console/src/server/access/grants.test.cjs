@@ -242,6 +242,24 @@ test('M03-S03 acceptance 1: Sahil (DI) grants Rohit Numbers — Numbers is in hi
   assert.ok(!after.pages.includes('system')); assert.ok(!after.pages.includes('people'));
 });
 
+test('D115 ruling 2: the super administrator may grant events · load to another Digital Infrastructure member; that member, not holding it, may not hand it on', () => {
+  const OTHER_DI = '554023000000300090', OTHER_DI2 = '554023000000300091';
+  const was = process.env.CONSOLE_SUPER_ADMIN_IDS;
+  try {
+    process.env.CONSOLE_SUPER_ADMIN_IDS = SAHIL;
+    const di = (who) => ({ who, seat: 'digital-infrastructure', mgr: PRADEEP });
+    const b = { people: [person(PRADEEP), person(SAHIL), di(OTHER_DI), di(OTHER_DI2)], grants: {} };
+    const v = decideGrant(SAHIL, { op: 'add', whom: OTHER_DI, page: 'events', cap: 'load' }, b);
+    assert.equal(v.ok, true, JSON.stringify(v));
+    assert.deepEqual([...v.caps].sort(), ['edit', 'load', 'view']);
+    assert.equal(v.code, 'events-load-add');
+    const w = decideGrant(OTHER_DI, { op: 'add', whom: OTHER_DI2, page: 'events', cap: 'load' }, b);
+    assert.equal(w.ok, false); assert.equal(w.refusal, 'not-held');
+  } finally {
+    if (was === undefined) delete process.env.CONSOLE_SUPER_ADMIN_IDS; else process.env.CONSOLE_SUPER_ADMIN_IDS = was;
+  }
+});
+
 test('M03-S03 acceptance 2: Tasneem grants her IR Numbers; System is refused because she does not hold it; an IR outside her chain is refused', () => {
   const b = bookPlus([PRADEEP, SAHIL, TASNEEM, ROHIT], [IR3P]);
   assert.equal(decideGrant(TASNEEM, { op: 'add', whom: ROHIT, page: 'numbers', cap: 'view' }, b).ok, true);

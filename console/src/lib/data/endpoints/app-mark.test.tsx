@@ -10,7 +10,7 @@ const data = <T,>(r: ApiResult<T>): T => { if (!r.ok) throw new Error(r.error); 
 const demo = (): ImState => ({ data: imDemoData(), ui: initialImUi() });
 
 describe("the app account's mark on the card", () => {
-  it("an investor with no app account yet has no mark: the page says the account opens when the first receipt is matched", () => {
+  it("an investor with no app account yet has no mark: the page says it is created On hold and waits for the release (D115)", () => {
     const s = demo(), id = s.data.INV[0]!.id;
     delete s.data.APP[id];
     const c = data(appCard.fixture({ s, me: "harsha" }, id)).card;

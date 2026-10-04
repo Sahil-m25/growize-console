@@ -131,6 +131,9 @@ export interface Person {
   /** Where this person actually works, when it is not this console. Its presence is what says
    *  they are a name here and never a login — see `PEOPLE.harsha`. */
   ext?: string;
+  /** D115 ruling 2: the super administrator (a Digital Infrastructure seat; Sahil, D68). Their preset is
+   *  SUPERCAPS — the Digital Infrastructure preset plus `events · load`. Meaningless on any other seat. */
+  sup?: boolean;
 }
 
 /** Somebody is carrying somebody else's lead for a while. The owner of record does not change —

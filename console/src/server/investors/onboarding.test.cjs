@@ -157,17 +157,17 @@ test('the form asks for name, email, mobile, farm, units, amount and date — no
 
 /* ---- M09-S09: add an investor who already paid ------------------------------------------------------ */
 
-test('paid in full: one Contact (App_Access empty — it opens on match, M08-S08), one Issued allotment, one Pending Full receipt — on the person\'s token, no email', async () => {
+test('paid in full: one Contact (App_Access = Hold — D115 ruling 1), one Issued allotment, one Pending Full receipt — on the person\'s token, no email', async () => {
   const r = rig();
   const res = await r.add.add(principal(), form());
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.deepEqual({ ...res.value }, { contactId: CONTACT, code: 'ARL-INV-0206', allotmentId: ALLOT, allocationStatus: 'Issued',
-    receiptId: RECEIPT, app: 'App: not open yet — it opens On hold when Finance matches the receipt', replayed: false });
+    receiptId: RECEIPT, app: 'App: on hold — data synced, sign-in locked, no email sent. It stays locked until Finance presses Send welcome and unlock', replayed: false });
   const w = r.writes();
   assert.deepEqual(w.map((c) => c[0] + ' ' + c[1]), ['POST /Contacts', 'POST /LLP_UnitAllocation_Module', 'POST /Receipts']);
   assert.deepEqual(w[0][2].data[0], { First_Name: 'Synthetic Paid', Last_Name: 'Investor', Email: 'synthetic.paid@example.invalid',
-    Mobile: '+91 90000 00001', ARL_ID: 'ARL-INV-0206' });
-  assert.equal('App_Access' in w[0][2].data[0], false, 'no second account-opening path: money/match.ts opens it on the matched receipt');
+    Mobile: '+91 90000 00001', ARL_ID: 'ARL-INV-0206', App_Access: 'Hold' });
+  assert.ok(!w.some((c) => JSON.stringify(c[2]).includes('Invite')), 'D115: nothing add-paid writes opens app access');
   assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
     Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Issued', Issued_Units: 2, Reserved_Units: 0, Capital_Invested: 5_000_000 });
   const rc = w[2][2].data[0];
@@ -301,7 +301,7 @@ test('the same Idempotency-Key from the same person gets the first answer back a
 test('what the card reads, from App_Access, the welcome write-back and the history', () => {
   const opened = [{ at: '2026-09-20T11:00:00+05:30', byId: ACTOR }];
   const unlocked = [{ at: '2026-09-28T10:30:00+05:30', byId: ACTOR }, ...opened];
-  assert.equal(cardState(null, null, null, []).text, 'No account yet — it opens On hold at the first matched receipt');
+  assert.equal(cardState(null, null, null, []).text, 'No account yet — it is created On hold, and sign-in stays locked until Finance presses Send welcome and unlock');
   assert.equal(cardState('Hold', null, null, opened).text, 'On hold — data synced, sign-in locked, no email sent');
   assert.equal(cardState('Invite', null, null, unlocked).text, 'Welcome sending…');
   assert.equal(cardState('Invite', '2026-09-28T10:32:00+05:30', 'Email', unlocked).text, 'Welcome delivered 28 Sep 10:32 · Email');
@@ -414,5 +414,36 @@ test('Lock app access: a reason is required; Invite → Hold, the reason is a No
   assert.deepEqual(w[0][2].data[0], { App_Access: 'Hold' });
   assert.deepEqual(w[1][2].data[0], { Note_Title: 'App access locked', Note_Content: 'the investor asked us to pause access',
     Parent_Id: { module: { api_name: 'Contacts' }, id: CONTACT } });
+  noIdentity(r.sink);
+});
+
+/* ---- D115 ruling 1: app access stays Hold until a person with the release right releases it ------------ */
+
+test('D115: add-paid creates the account Hold whether paid in full or reserved; the add answer says it waits for the release', async () => {
+  for (const amountPaid of [5_000_000, 500_000]) {
+    const r = rig();
+    const res = await r.add.add(principal(), form({ amountPaid }));
+    assert.equal(res.ok, true, JSON.stringify(res));
+    const contact = r.writes().find((c) => c[0] === 'POST' && c[1] === '/Contacts');
+    assert.equal(contact[2].data[0].App_Access, 'Hold');
+    assert.match(res.value.app, /locked until Finance presses Send welcome and unlock/);
+    assert.doesNotMatch(res.value.app, /match/i, 'the answer no longer says a match opens it');
+  }
+});
+
+test('D115: the release (Send welcome and unlock) is the one Hold → Invite write, logged in the ops log; without the right it is refused before any read', async () => {
+  let r = rig({ contact: (n) => (n === 0 ? 'contact.hold' : 'contact.invite'), timeline: 'timeline.unlocked' });
+  let res = await r.app.unlock(principal(), CONTACT, T1);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(r.writes().map((c) => [c[0], c[1], c[2].data[0]]), [['PUT', `/Contacts/${CONTACT}`, { App_Access: 'Invite' }]]);
+  const line = r.sink.records().find((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'unlocked');
+  assert.ok(line, 'one app-access / unlocked line');
+  assert.deepEqual([...line.recordIds], [CONTACT]);
+  assert.equal(line.actor.userId, ACTOR, 'under the releaser\'s own id');
+  r = rig({ finance: false });
+  res = await r.app.unlock(principal(), CONTACT, T1);
+  assert.deepEqual([res.ok, res.reasonCode, res.message], [false, 'not-finance', 'Finance controls app access.']);
+  assert.equal(r.calls.length, 0, 'no Zoho call at all without the release right');
+  assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'not-finance'));
   noIdentity(r.sink);
 });

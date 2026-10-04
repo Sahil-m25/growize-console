@@ -32,7 +32,7 @@ export const PEOPLE: Record<PersonKey, Person> = {
   divya  :{n:"Divya Kamath",    i:"DK", seat:"am",     mgr:"arvind",  on:true,  c:6, sq:true, em:"divya@agresearchlabs.com",  ph:"+91 99640 18327", ext:"the Investors pages"},
   imran  :{n:"Imran Sheikh",    i:"IS", seat:"am",     mgr:"divya",   on:true,  c:2, sq:true, em:"imran@agresearchlabs.com",  ph:"+91 98451 70036", ext:"the Investors pages"},
   neha   :{n:"Neha Bhandari",   i:"NB", seat:"am",     mgr:"divya",   on:true,  c:5, sq:true, em:"neha@agresearchlabs.com",   ph:"+91 99802 63391", ext:"the Investors pages"},
-  sahil  :{n:"Sahil Mohite",    i:"SM", seat:"ops",    mgr:"pradeep", on:true,  c:3, sq:true, em:"sahil@agresearchlabs.com", ph:"+91 97318 44026"},
+  sahil  :{n:"Sahil Mohite",    i:"SM", seat:"ops",    mgr:"pradeep", on:true,  c:3, sq:true, sup:true, em:"sahil@agresearchlabs.com", ph:"+91 97318 44026"},  /* D115: the super administrator */
   arvind :{n:"Arvind Menon",    i:"AM", seat:"bu",     mgr:null,      on:true,  c:1, sq:true, em:"arvind@agresearchlabs.com", ph:"+91 98450 10002"},
   pradeep:{n:"Pradeep Ram",     i:"PR", seat:"corp",   mgr:null,      on:true,  c:8, sq:true, em:"pradeep@agresearchlabs.com", ph:"+91 98450 10001"},
   vinay  :{n:"Vinay Shenoy",    i:"VS", seat:"ir",   mgr:"tasneem", on:false, c:5, sq:true, em:"vinay@agresearchlabs.com", ph:""}   /* left the org */

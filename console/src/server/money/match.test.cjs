@@ -393,6 +393,24 @@ test('M08-S08: an account already On hold (added as paid) gets only the mark; Ho
   assert.equal(b.value.accountOpened.ok, true, 'account.opened is still (re)sent — same event id, the app applies it once');
 });
 
+test('D115 ruling 1: a match never opens app access — an account added On hold stays Hold, an unlocked one stays Invite, and no write ever carries Invite', async () => {
+  for (const [contact, was] of [['contact.hold-no-mark', 'Hold'], ['contact.invite-no-mark', 'Invite'], ['contact.no-app', null]]) {
+    const r = rig({ ...FIRST, contact });
+    const res = await r.svc.match(principal(), RADV);
+    assert.equal(res.ok, true, JSON.stringify(res));
+    const contactWrites = puts(r.calls).filter((c) => c[1] === 'Contacts').map((c) => c[3]);
+    if (was) {
+      assert.deepEqual(res.value.appAccess, { ok: true, value: 'already-set', code: null }, `${contact}: App_Access left as ${was}`);
+      assert.ok(contactWrites.every((f) => !('App_Access' in f)), `${contact}: the match writes no App_Access`);
+    } else {
+      // no account at all: the match creates it — On hold, never open (the ruling's "by a match" path)
+      assert.deepEqual(contactWrites.map((f) => f.App_Access), ['Hold']);
+    }
+    assert.ok(!JSON.stringify(puts(r.calls)).includes('Invite'), `${contact}: no write the match sends opens access`);
+    assert.ok(!r.events.some((e) => /welcome|access/i.test(String(e.type))), 'no access or welcome event on match');
+  }
+});
+
 test('M08-S08: if Zoho refuses the mark (T01 made it a formula), App_Access is still opened alone', async () => {
   const r = rig({ ...FIRST, contactPuts: ['contact.validation-mark', 'contact.updated'] });
   const res = await r.svc.match(principal(), RADV);

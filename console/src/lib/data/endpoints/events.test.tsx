@@ -148,6 +148,29 @@ describe("M14-S03-W1 — the sheet card", () => {
   });
 });
 
+describe("D115 ruling 2 — loading an event sheet is the super administrator's (TC-E10-012)", () => {
+  /* a second Digital Infrastructure member, not the super administrator, on the demo book */
+  const withDi = (grant?: string[]): ConsoleState => {
+    const book = demoBook();
+    book.PEOPLE = { ...book.PEOPLE, dimember: { ...book.PEOPLE.sahil!, n: "Di Member", i: "DM", em: "di.member@example.test", sup: undefined } };
+    book.SIGNINS = [...book.SIGNINS, "dimember" as PersonKey];
+    if (grant) book.GRANT = { ...(book.GRANT ?? {}), dimember: { events: grant } } as typeof book.GRANT;
+    return reducer(initialState(book), { type: "signIn", k: "dimember" as PersonKey });
+  };
+  const readyOf = (s: ConsoleState) => Object.keys(s.SHEET).find(k => s.SHEET[k]!.state === "ready")!;
+  const mayLoad = (s: ConsoleState) => { const r = sheetState.fixture(s, readyOf(s)); if (!r.ok) throw new Error(r.error); return r.data.mayLoad; };
+  it("Sahil (the super administrator) is offered the load; another Digital Infrastructure member is not, and the load is refused", () => {
+    expect(mayLoad(as("sahil"))).toBe(true);
+    const di = withDi();
+    expect(mayLoad(di)).toBe(false);
+    const r = sheetLoad.fixture(di, () => {}, { eventId: readyOf(di), rule: { kind: "round-robin" }, rows: [] });
+    expect(r).toMatchObject({ ok: false, status: 403 });
+  });
+  it("granted events · load through seat rights, the other member loads", () => {
+    expect(mayLoad(withDi(["view", "edit", "load"]))).toBe(true);
+  });
+});
+
 describe("M14-S03-W2 — the sheet card's state, and the event page's Owner, Total and later bars", () => {
   const prestige = (who: string) => { const s = as(who); return { s, id: s.EVENTS.find(e => e.n === "Prestige Falcon City")!.id }; };
   const view = (s: ConsoleState, id: string) => { const r = sheetState.fixture(s, id); if (!r.ok) throw new Error(r.error); return r.data; };
