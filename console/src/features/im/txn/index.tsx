@@ -10,6 +10,8 @@ import { day6, fmtDate, money, pageReadable, refShown, TXNF } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { paymentsRegister, revealReceiptRef, type RegisterArgs, type RegisterRowView } from "@/lib/data/endpoints/payments";
+import { claimList } from "@/lib/data/endpoints/receipts";
+import { claimLine } from "../dash";
 import { ImPname, type ImPageProps } from "../common";
 import { StepUp } from "../stepup";
 import { MatchCell, PayoutsDue } from "../money/pages";
@@ -60,6 +62,25 @@ function RefCells({ s, me, dispatch, t }: ImPageProps & { t: RegisterRowView }) 
   );
 }
 
+/** M10-S03-W2 — the IR's payment reports still waiting on Finance (GET /api/claims). A report is not money and is not in the register
+ *  below: "Answer it" opens the claim drawer, which confirms it (a receipt, one per press) or says why it is not there yet. A seat
+ *  that does not answer reports (the route's 403) sees nothing here, and so does Finance when none is waiting. */
+function ClaimsWaiting({ s, me, dispatch }: ImPageProps) {
+  const r = useApiRead(claimList, { s, me }, undefined);
+  if (r.state !== "ok" || !r.data.claims.length) return r.state === "error" && r.err.status !== 403 ? <div className="note bad" role="alert">{r.err.error}</div> : null;
+  const { claims } = r.data;
+  return (
+    <div className="card fill" style={{ marginBottom: 12 }}><div className="ch"><h3>Payment reports waiting on Finance</h3><div className="sp" />
+      <span className="tag due"><span className="dot" />{claims.length}</span></div>
+      <div className="cb"><div className="q">{claims.map(c => (
+        <div className="qc now" key={c.claimId}>
+          <div className="who2"><b>{claimLine(c)}</b>
+            <span>{"reported by "}<ImPname s={s} k={c.byId} first />{" · "}<span className="mono">{c.claimId}</span></span></div>
+          <button className="act" onClick={() => dispatch({ type: "openDrawer", k: "claim", id: c.claimId })}>Answer it</button>
+        </div>))}</div></div></div>
+  );
+}
+
 export function ImTxn({ s, me, dispatch }: ImPageProps) {
   const TFILT = s.ui.TFILT;
   const f = TFILT && TXNF[TFILT] ? TFILT : "all";
@@ -75,6 +96,7 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
         <span className="sub">every rupee, with the reason it moved</span><div className="sp"></div>
         <span className="sm">{counts.pending} not reconciled</span></div>
       <StatementCard s={s} me={me} dispatch={dispatch} />
+      <ClaimsWaiting s={s} me={me} dispatch={dispatch} />
       <div className="stats">
         <div className="stat"><b>{money(totals.received)}</b><span>received</span></div>
         <div className="stat"><b>{money(totals.refunded)}</b><span>refunded</span></div>

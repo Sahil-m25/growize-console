@@ -25,10 +25,11 @@ import { BlockIt } from "../paper2/BlockIt";
 import { InvUploads } from "../paper2/Upload";
 import { useApiMode, useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { appCard } from "@/lib/data/endpoints/app";
-import { amBook, investorRecord, investorSearch, irInvestorList } from "@/lib/data/endpoints/investors";
+import { amBook, financeInvestors, investorRecord, investorSearch, irInvestorList } from "@/lib/data/endpoints/investors";
 import { useGoLead } from "@/features/leads/nav";
 import type { NavKey } from "@/domain";
 import type { IrInvestorRow } from "@/server/investors/ir-list";
+import type { FinanceInvestorRow } from "@/server/investors/finance-list";
 import { holdExtend, holdOne, holdRelease, type HoldOne } from "@/lib/data/endpoints/holds";
 import type { InvestorRecord, RecordSection } from "@/server/investors/record";
 
@@ -67,29 +68,47 @@ function useDebounced<T>(v: T, ms: number): T {
   return d;
 }
 
+/* M09-S01-W1: Finance's cuts, over the rows of GET /api/investors/finance (the same four, in the words of invExceptions) */
+const FIN_EXC: Record<string, [string, (r: FinanceInvestorRow) => boolean]> = {
+  kyc: ["KYC not passed", r => r.kyc !== "passed" && r.kyc !== "na"],
+  hold: ["Balance outstanding", r => r.due > 0],
+  nri: ["NRI", r => r.nri],
+  fema: ["FEMA outstanding", r => r.fema === "outstanding"],
+};
+const farmsText = (r: FinanceInvestorRow) => r.farms.map(f => "Block " + f.block + " ×" + f.units).join(", ");
+
 function VInv({ s, me, dispatch }: ImPageProps) {
-  const am = isAM(s, me), base = am ? myBook(s, me).filter(cared) : s.data.INV;
-  /* M09-S02-W1: "N under care" and "No manager" are GET /api/investors/am; M09-S07-W1: the box is GET /api/investors/search */
+  const am = isAM(s, me), base = am ? myBook(s, me).filter(cared) : [];
+  /* M09-S02-W1: "N under care" and "No manager" are GET /api/investors/am; M09-S07-W1: the box is GET /api/investors/search;
+     M09-S01-W1: Finance's rows, counts and units are GET /api/investors/finance */
   const amR = useApiRead(amBook, { s, me }, am);
+  const fin = useApiRead(financeInvestors, { s, me }, !am);
   const dq = useDebounced(s.ui.IQ, 200);
   const sr = useApiRead(investorSearch, { s, me }, { q: dq, farm: null });
-  const EXC = invExceptions(s, me);
+  const frows = fin.state === "ok" ? fin.data.rows : [];
+  /* each cut is its title and the ids it holds (the AM seat's over the book, Finance's over the route's rows) */
+  const EXC: Record<string, [string, Set<string>]> = {};
+  if (am) for (const [k, [t, f]] of Object.entries(invExceptions(s, me))) EXC[k] = [t, new Set(base.filter(f).map(x => x.id))];
+  else for (const [k, [t, f]] of Object.entries(FIN_EXC)) EXC[k] = [t, new Set(frows.filter(f).map(x => x.id))];
   /* the prototype clears an IFILT this seat has no cut for; the render simply reads it as none */
   const IFILT = s.ui.IFILT && EXC[s.ui.IFILT] ? s.ui.IFILT : null;
   const cut = IFILT ? EXC[IFILT][1] : null;
   const hits = sr.state === "ok" ? sr.data.hits : null;
   /* a term the route finds too short is no search at all; anything else it refuses is said in the page */
   const searchErr = sr.state === "error" && sr.err.status !== 400 ? sr.err.error : null;
-  const rows = base.filter(x => (!cut || cut(x)) && (!hits || hits.some(h => h.id === x.id)));
+  const pick = <T extends { id: string }>(l: readonly T[]) => l.filter(x => (!cut || cut.has(x.id)) && (!hits || hits.some(h => h.id === x.id)));
+  const rows = pick(base), finShown = pick(frows);
   /* hits the book does not hold (live: the Investors book is not read yet) still open their record */
-  const stubs = hits && !cut ? hits.filter(h => !base.some(x => x.id === h.id)) : [];
+  const stubs = hits && !cut ? hits.filter(h => !(am ? base : frows).some(x => x.id === h.id)) : [];
   const shown = amR.state === "ok" ? amR.data.summary : null;
   const count = (k: string, n: number) => (k === "nokam" && shown ? shown.noManager : n);
   const go = (id: string) => dispatch({ type: "go", v: "inv", id });
+  const finSum = fin.state === "ok" ? fin.data.summary : null;
+  const total = am ? (shown ? shown.underCare : "…") : finSum ? finSum.onBook : "…";
   return (
     <>
       <div className="ph"><h1>{am ? (who(s, me).r === "kam" ? "My accounts" : "Accounts") : "Investors"}</h1>
-        <span className="sub" id="inv-sub">{(am ? (shown ? shown.underCare : "…") : base.length) + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (allocated(s) + reserved(s)) + " units")}</span>
+        <span className="sub" id="inv-sub">{total + " " + (am ? "under care" : "on the book") + (am ? "" : " · " + (finSum ? finSum.units : "…") + " units")}</span>
         <div className="sp" />
         <AddInvestorButton s={s} me={me} dispatch={dispatch} />
         <input className="inp" style={{ width: 210 }} placeholder="Name, ARL ID, city…" value={s.ui.IQ}
@@ -97,10 +116,11 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           aria-labelledby="inv-sub"
           id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
       {searchErr ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{searchErr}</div> : null}
+      {fin.state === "error" && fin.err.status !== 403 ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{fin.err.error}</div> : null}
       <div className="secbar">
-        <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{am && shown ? shown.underCare : base.length}</i></button>
+        <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{am ? (shown ? shown.underCare : base.length) : frows.length}</i></button>
         {Object.entries(EXC).map(([k, [t, f]]) => {
-          const n = count(k, base.filter(f).length);
+          const n = count(k, f.size);
           return n ? (
             <button key={k} className={`sc ${IFILT === k ? "on" : ""}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: k } })}>{t}{" "}
               <i className={["kyc", "fema", "quiet", "nokam", "conc"].includes(k) ? "warn" : ""}>{n}</i></button>
@@ -112,31 +132,33 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           {am ? <><th>Tier</th><th>Manager</th><th>Last heard</th><th>Next owed</th><th>Land</th></>
             : <><th>Land</th><th>State</th><th>KYC</th><th className="n">Paid</th><th className="n">Due</th><th>IR</th></>}
         </tr></thead>
-        <tbody>{rows.length || stubs.length ? rows.map(x => {
-          const l = lastC(s, me, x.id), o = overdue(s, me, x), T = tierOf(x)!, due = dueBy(s, me, x.id);
+        <tbody>{(am ? rows.length : finShown.length) || stubs.length ? (am ? rows.map(x => {
+          const l = lastC(s, me, x.id), o = overdue(s, me, x), T = tierOf(x)!;
           return (
             <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
               <td><b>{x.n}</b><div className="sm">{x.city + (x.nri ? " · NRI" : "")}</div></td>
               <td className="mono sm">{x.id}</td>
               <td className="n">{x.units}</td>
-              {am ? <>
-                <td><span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span></td>
-                <td className="sm">{x.kam ? <ImPname s={s} k={x.kam} first /> : <span className="tag late">nobody</span>}</td>
-                <td className="sm">{l ? CHANS[l.ch] + " · " + ago(s.data.NOW, l.at) : <span className="tag late">never</span>}</td>
-                <td>{o == null ? <span className="sm">—</span>
-                  : o > 0 ? <span className="tag late"><span className="dot" />{o}d overdue</span>
-                    : <span className={`tag ${o > -14 ? "due" : ""}`}>in {-o}d</span>}</td>
-                <td className="sm">{blocksText(x) || "—"}</td>
-              </> : <>
-                <td className="sm">{Object.keys(x.blocks).length ? blocksText(x) : "—"}</td>
-                <td><StTag x={x} /></td><td><KycTag x={x} /></td>
-                <td className="n mono">{money(gotBy(s, me, x.id))}</td>
-                <td className={`n mono ${due ? "" : "sm"}`}>{due ? money(due) : "—"}</td>
-                <td className="sm"><ImPname s={s} k={x.ir} first /></td>
-              </>}
+              <td><span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span></td>
+              <td className="sm">{x.kam ? <ImPname s={s} k={x.kam} first /> : <span className="tag late">nobody</span>}</td>
+              <td className="sm">{l ? CHANS[l.ch] + " · " + ago(s.data.NOW, l.at) : <span className="tag late">never</span>}</td>
+              <td>{o == null ? <span className="sm">—</span>
+                : o > 0 ? <span className="tag late"><span className="dot" />{o}d overdue</span>
+                  : <span className={`tag ${o > -14 ? "due" : ""}`}>in {-o}d</span>}</td>
+              <td className="sm">{blocksText(x) || "—"}</td>
             </tr>
           );
-        }).concat(stubs.map(h => (
+        }) : finShown.map(x => (
+          <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
+            <td><b>{x.name}</b><div className="sm">{x.city + (x.nri ? " · NRI" : "")}</div></td>
+            <td className="mono sm">{x.code}</td>
+            <td className="n">{x.units}</td>
+            <td className="sm">{x.farms.length ? farmsText(x) : "—"}</td>
+            <td><StTag x={null} st={x.stateLabel} /></td><td><KycTag x={x} /></td>
+            <td className="n mono">{money(x.paid)}</td>
+            <td className={`n mono ${x.due ? "" : "sm"}`}>{x.due ? money(x.due) : "—"}</td>
+            <td className="sm">{x.ir ? <ImPname s={s} k={x.ir} first /> : "—"}</td>
+          </tr>))).concat(stubs.map(h => (
           <tr key={h.id} className="k" tabIndex={0} onClick={() => go(h.id)} onKeyDown={e => { if (e.key === "Enter") go(h.id); }}>
             <td><b>{h.name}</b><div className="sm">{h.city ?? ""}</div></td>
             <td className="mono sm">{h.code}</td>

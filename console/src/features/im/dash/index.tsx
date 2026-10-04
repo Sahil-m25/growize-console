@@ -13,6 +13,8 @@ import type { ImInvestor } from "@/lib/im";
 import { useApiRead, type Read } from "@/lib/data/api";
 import { careRowOf, investorQueue, type MoneyRowView } from "@/lib/data/endpoints/queues";
 import { investorsToday } from "@/lib/data/endpoints/today";
+import { claimList } from "@/lib/data/endpoints/receipts";
+import type { ClaimRow } from "@/server/money/claim-answer";
 import type { CareRow } from "@/server/queues/rules";
 import type { AmToday } from "@/server/queues/queue";
 import type { InvestorsToday } from "@/server/numbers/investors-today";
@@ -146,6 +148,9 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
   const r = useApiRead(investorQueue, { s, me }, undefined);
   const today = useApiRead(investorsToday, { s, me }, undefined);
   /* M08-S04-W1: Holds running and Land are GET /api/holds and /api/holds/land (lib/data/endpoints/holds) */
+  /* M10-S03-W2: the reports behind the queue's "Answer it" rows — kind, amount, method and the day the IR says it was paid (GET /api/claims) */
+  const cl = useApiRead(claimList, { s, me }, undefined);
+  const claims = new Map((cl.state === "ok" ? cl.data.claims : []).map(c => [c.claimId, c]));
   const hl = useApiRead(holdsList, { s, me }, undefined), land = useApiRead(holdsLand, { s, me }, undefined);
   if (!pageReadable(s, me, "dash") || isAM(s, me) || isSys(s, me)) return null;
   const sup = isSuper(s, me);
@@ -182,7 +187,7 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
       <div className="card fill"><div className="ch"><h3>{sup ? "Finance's queue" + (fin ? " · primary: " + fin : "") : "Waiting on you"}</h3><div className="sp" />
         {d.today ? <span className="tag late"><span className="dot" />{d.today} today</span>
           : <span className="tag go"><span className="dot" />clear</span>}</div>
-        <div className="cb">{q.length ? <div className="q">{q.map(x => <QRow key={x.key} s={s} me={me} dispatch={dispatch} x={x} />)}</div>
+        <div className="cb">{q.length ? <div className="q">{q.map(x => <QRow key={x.key} s={s} me={me} dispatch={dispatch} x={x} claims={claims} />)}</div>
           : <div className="empty">Nothing is waiting on this seat.<br />
             <span className="sm">{!d.readOnly
               ? "Every document is out or signed, every claim is answered and no hold is close."
@@ -200,17 +205,24 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
   );
 }
 
+/** "Balance · ₹22.5 L · RTGS · said 23 Sep" — the report as the IR wrote it (route: ISO day; demo book: its own "23 Sep …") */
+const KIND_WORD: Record<ClaimRow["kind"], string> = { advance: "Advance", balance: "Balance", full: "Paid in full" };
+export const claimLine = (c: ClaimRow): string =>
+  KIND_WORD[c.kind] + " · " + money(c.amountRupees) + " · " + c.mode + " · said " + (/^\d{4}-\d{2}-\d{2}/.test(c.saidOn) ? fmtDay(Date.parse(c.saidOn.slice(0, 10) + "T00:00:00Z")) : c.saidOn.slice(0, 6));
+
 /* qRow(x) — imx.js 1447–1466. One queue row, carrying the control that does it — the route's `action` names it. */
-export function QRow({ dispatch, x }: ImPageProps & { x: MoneyRowView | CareRow }) {
+export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | CareRow; claims?: ReadonlyMap<string, ClaimRow> }) {
   const id = x.investor.id;
   const stop = (run: () => void) => (e: MouseEvent) => { e.stopPropagation(); run(); };
   const talk = () => dispatch({ type: "openDrawer", k: "talk", id, seed: { CT: { ch: "call", mood: "good", note: "", next: "" } } });
   const ref = "ref" in x ? x.ref : {};
+  /* the row's own words stay as the route sends them; the report's figures are the button's tooltip (the card on Payments lists them in full) */
+  const report = x.kind === "claim" && ref.claimId ? claims?.get(ref.claimId) : undefined;
   const b =
     x.action === "Assign manager" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "kam", id, seed: { KSEL: null } }))}>Assign manager</button>
       : x.action === null ? <span className="tag late">no manager</span>
         : x.action === "Record the introduction" || x.action === "Log a conversation" ? <button className="act" onClick={stop(talk)}>{x.action}</button>
-          : x.action === "Answer it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "claim", id: ref.claimId ?? null }))}>Answer it</button>
+          : x.action === "Answer it" ? <button className="act" title={report ? claimLine(report) : undefined} onClick={stop(() => dispatch({ type: "openDrawer", k: "claim", id: ref.claimId ?? null }))}>Answer it</button>
             : x.action === "Verify it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "verify", id: ref.paper ?? null, seed: { DREF: "" } }))}>Verify it</button>
               : x.action === "Check it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "kyc", id }))}>Check it</button>
                 : x.action === "Remind" ? <button className="act" onClick={stop(() => { dispatch({ type: "go", v: "inv", id }); dispatch({ type: "setSec", v: "inv:" + id, k: "paper" }); })}>Remind</button>
@@ -221,7 +233,8 @@ export function QRow({ dispatch, x }: ImPageProps & { x: MoneyRowView | CareRow 
     <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} role="button" tabIndex={0}
       onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
       <div className="who2"><b>{x.investor.name ?? id}</b><span>{x.text}{x.kind === "claim" && from ? <>{" · "}<ProvIR t={"from " + from} /></> : null}
-        {" · "}<span className="mono">{id}</span></span></div>{b}</div>
+        {" · "}<span className="mono">{id}</span>
+      </span></div>{b}</div>
   );
 }
 
