@@ -42,6 +42,7 @@ import type { OpsLog } from "../../lib/zoho/log";
 import type { AllotmentReceiptWrites } from "../money/allotment-receipts";
 import type { OversellGuard } from "../farms/oversell";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE, type ReceiptReplayResult } from "../money/receipt-replay";
+import { ALLOTMENT_UNLINKED, unlinkedMessage, writeMissing } from "./allotment-guard";
 
 export const CONTACTS_MODULE = "Contacts";
 export const LLPS_MODULE = "LLP_Creation_Module";
@@ -93,6 +94,7 @@ export type AddPaidRefusal =
   | "farm-not-visible"
   | "farm-closed"
   | "units-not-free"
+  | "allotment-unlinked"
   | "overpaid"
   | "idempotency-key-invalid"
   | "in-progress";
@@ -396,6 +398,12 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
         ? { Allocation_Status: "Issued", Issued_Units: f.units, Reserved_Units: 0, Capital_Invested: total }
         : { Allocation_Status: "Reserved", Reserved_Units: f.units, Issued_Units: 0, Hold_Until: addDays(today, ADD_PAID_HOLD_DAYS) }),
     };
+    // M11-S02 AC1: no allotment is written without its Customer and its LLP; what this call wrote so far is taken back.
+    const unlinked = writeMissing("create", allot);
+    if (unlinked.length) {
+      await rollBack(cred, "allotment", ALLOTMENT_UNLINKED, contactId, null, null);
+      return refuse(me, ALLOTMENT_UNLINKED, "Not saved yet — " + unlinkedMessage(unlinked), [f.llpId]);
+    }
     const firstOf = async (q: string): Promise<string | null> => {
       const r = await crm.coql(cred, q, { signal });
       if (!r.ok) return null;

@@ -5,7 +5,7 @@
    nothing kept (D45). */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
-import { jsonBody, NO_STORE, routeContext, writeFailure } from "@/server/cases/http";
+import { investorAppPush, jsonBody, NO_STORE, routeContext, writeFailure } from "@/server/cases/http";
 import { createFarmRelease, type ReleaseResult } from "@/server/farms/release";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
 
 function answer(r: ReleaseResult): Response {
-  if (r.ok) return Response.json({ llpId: r.llpId, label: r.label, released: r.released, version: r.version }, { headers: NO_STORE });
+  if (r.ok) return Response.json({ llpId: r.llpId, label: r.label, released: r.released, version: r.version, delivery: r.delivery }, { headers: NO_STORE });
   if (r.kind === "refused" && r.held !== undefined) {
     return Response.json({ error: r.message, code: r.reason, held: r.held }, { status: 422, headers: NO_STORE });
   }
@@ -27,7 +27,7 @@ async function post(req: Request, { params }: Ctx) {
   if (!c.ok) return c.response;
   const { id } = await params;
   const body = await jsonBody(req);
-  return answer(await createFarmRelease(c.ctx).release({ credential: c.ctx.credential, seat: c.ctx.seat }, id, versionOf(body), req.signal));
+  return answer(await createFarmRelease({ ...c.ctx, push: await investorAppPush() }).release({ credential: c.ctx.credential, seat: c.ctx.seat }, id, versionOf(body), req.signal));
 }
 
 async function del(req: Request, { params }: Ctx) {
@@ -35,7 +35,7 @@ async function del(req: Request, { params }: Ctx) {
   if (!c.ok) return c.response;
   const { id } = await params;
   const body = await jsonBody(req);
-  return answer(await createFarmRelease(c.ctx).takeBack({ credential: c.ctx.credential, seat: c.ctx.seat }, id, versionOf(body), req.signal));
+  return answer(await createFarmRelease({ ...c.ctx, push: await investorAppPush() }).takeBack({ credential: c.ctx.credential, seat: c.ctx.seat }, id, versionOf(body), req.signal));
 }
 
 export const POST = withErrorCapture(guardApi("/api/farms", post), "/api/farms/[id]/release");

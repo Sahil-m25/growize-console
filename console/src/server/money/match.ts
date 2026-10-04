@@ -59,6 +59,7 @@ import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { AllotmentReceiptWrites, PaymentStatusReading } from "./allotment-receipts";
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "./receipt-replay";
+import { ALLOTMENT_UNLINKED, missingLinks } from "../investors/allotment-guard";
 import { holdChangedEvent } from "../holds/rules";
 
 export const CONTACTS_MODULE = "Contacts";
@@ -84,7 +85,7 @@ const STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not found", 
 /** Receipts.Kind → money.confirmed kind. Part is the live name of D70's Balance. */
 const EVENT_KIND: Readonly<Record<string, "advance" | "balance" | "full">> = Object.freeze({ Advance: "advance", Part: "balance", Balance: "balance", Full: "full" });
 const RECEIPT_FIELDS = Object.freeze(["Allotment", "Kind", "Amount", "Match_State", "Matched_By", "Created_By", "Modified_Time"]);
-const ALLOTMENT_FIELDS = Object.freeze(["Allocation_Status", "Customer", "Hold_Until", "Supplementary_Verified_At", "Modified_Time"]);
+const ALLOTMENT_FIELDS = Object.freeze(["Allocation_Status", "Customer", "LLP", "Hold_Until", "Supplementary_Verified_At", "Modified_Time"]);
 const CONTACT_FIELDS = Object.freeze(["ARL_ID", "App_Access", "App_Account_Mark", "Modified_Time"]);
 const MARK_FIELDS: ReadonlySet<string> = new Set(["App_Account_Mark", "App_Mark_At"]);
 
@@ -371,6 +372,11 @@ export function createReceiptMatch(deps: MatchDependencies) {
   }
 
   async function startHold(cred: UserCredential, allot: ZohoRecord, t: Target, signal?: AbortSignal): Promise<MatchView["hold"]> {
+    // M11-S02 AC1: an allotment missing its Customer or LLP is not written to at all; the match itself stands.
+    if (missingLinks(allot.Customer, allot.LLP).length) {
+      note(cred.userId, "hold-not-started", [allot.id, t.id]);
+      return { ok: false, value: null, code: ALLOTMENT_UNLINKED };
+    }
     const until = holdUntilFrom(t.matchedAt);
     const current = typeof allot.Hold_Until === "string" && DAY.test(allot.Hold_Until.slice(0, 10)) ? allot.Hold_Until.slice(0, 10) : null;
     if (current !== null && current >= until) return { ok: true, value: { until: current, written: false }, code: null };

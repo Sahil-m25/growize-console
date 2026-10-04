@@ -171,9 +171,11 @@ function LlpBody(c: Ctx) {
         {who_.state === "ok" ? (rows.length ? rows.map(a => (
           <div className="led" key={a.id}>
             <span className={`tag ${a.status === "Issued" ? "go" : a.status === "Cancelled" ? "late" : "hold"}`}>{a.status}</span>
-            <span style={{ minWidth: 0 }}><a className="lnk" role="button" tabIndex={0}
+            <span style={{ minWidth: 0 }}>{a.investor.id ? <a className="lnk" role="button" tabIndex={0}
               onClick={() => dispatch({ type: "go", v: "inv", id: a.investor.id })}
               onKeyDown={e => { if (e.key === "Enter") dispatch({ type: "go", v: "inv", id: a.investor.id }); }}>{a.investor.name ?? a.investor.id}</a>
+              : <b>No customer on this allotment</b>}
+              {a.linked ? null : <div><span className="tag late" data-testid="needs-link">Needs a link</span> <span className="sm">no {a.investor.id ? "LLP" : "Customer"} — link it in Zoho</span></div>}
               <div className="sm">{a.committedUnits} unit{a.committedUnits === 1 ? "" : "s"}{fin && a.amount != null ? " · " + money(a.amount) + " · " + a.paymentStatus : ""}</div></span>
           </div>
         )) : <p className="sm" style={{ margin: 0 }}>Nobody holds units on this farm{superUser || fin ? "" : " that you look after"}.</p>) : null}

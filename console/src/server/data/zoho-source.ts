@@ -14,6 +14,7 @@
 import type { Dataset } from "../../lib/data/types";
 import { createScopedCache, type ScopedCache } from "../../lib/zoho/cache";
 import { createZohoClient } from "../../lib/zoho/client";
+import { guardAllotmentWrites } from "../investors/allotment-guard";
 import { createGate, type Gate } from "../../lib/zoho/gate";
 import { createOpsLog, type OpsEventLog } from "../../lib/zoho/log";
 import { createPlaneCLog, type PlaneCLog } from "../identity/plane-c";
@@ -76,7 +77,7 @@ export async function liveContext(env: NodeJS.ProcessEnv = process.env) {
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
   let seatIds: SeatIds | undefined;
   try { seatIds = JSON.parse(env.ZOHO_SEAT_IDS!) as SeatIds; } catch { seatIds = undefined; }
-  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  const crm = guardAllotmentWrites(createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix }), rt.log);
   const layer = createLiveDataLayer({
     crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
     unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,
@@ -103,7 +104,7 @@ export async function loadLiveDataset(env: NodeJS.ProcessEnv = process.env): Pro
   const recordIdPrefix = env.ZOHO_CRM_RECORD_ID_PREFIX!;
   let seatIds: SeatIds | undefined;
   try { seatIds = JSON.parse(env.ZOHO_SEAT_IDS!) as SeatIds; } catch { seatIds = undefined; }
-  const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix });
+  const crm = guardAllotmentWrites(createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix }), rt.log);
   const layer = createLiveDataLayer({
     crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
     unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,

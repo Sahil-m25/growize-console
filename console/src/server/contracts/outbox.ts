@@ -108,6 +108,17 @@ export const farmProgress = (a: { contactId: string; project: string; phase: str
   newEvent("farm.progress", { actor: { kind: "system" }, ids: { investor_contact_id: a.contactId },
     payload: { project: a.project, phase: a.phase, ...(a.note ? { note: a.note } : {}), at: istIso(a.at ?? clock()) }, occurredAt: a.at }, clock);
 
+/**
+ * A farm LLP's units put on the shelf or taken back (M13-S01-NOTE-4, PROVISIONAL schema). One event per change,
+ * no investor in it: the app reads it as the farm's availability.
+ */
+export const farmShelfChanged = (a: {
+  llpId: string; label: string; action: "released" | "taken_back"; unitsReleased: number; totalUnits?: number | null; byUserId: string; at?: number;
+}, clock: () => number = Date.now) =>
+  newEvent("farm.shelf_changed", { actor: { kind: "user", zoho_user_id: a.byUserId }, ids: {},
+    payload: { llp_id: a.llpId, project: a.label, action: a.action, units_released: a.unitsReleased,
+      ...(typeof a.totalUnits === "number" && a.totalUnits >= 0 ? { total_units: a.totalUnits } : {}), at: istIso(a.at ?? clock()), by: a.byUserId }, occurredAt: a.at }, clock);
+
 /** An investor update for one investor in the resolved segment (M13-S06). `text` is exactly what the console shows. */
 export const updatePublished = (a: {
   updateId: string; contactId: string; headline: string; kind: "Produce" | "Statement" | "Compliance" | "Notice"; body: string; byUserId: string; at: number;

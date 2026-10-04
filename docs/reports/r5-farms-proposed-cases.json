@@ -1,0 +1,53 @@
+[
+  {
+    "id": "TC-IM06-025",
+    "story": "M11-S02",
+    "seat": "harsha",
+    "title": "An allotment without its Customer or LLP is shown as needing a link, not hidden",
+    "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Farms'",
+      "Press the farm whose allotment list holds a row with no Customer (needs a fixture row with Customer empty)"
+    ],
+    "expected": [
+      "The 'Who holds units here' list shows the row with 'No customer on this allotment' and a 'Needs a link' tag.",
+      "The row is not dropped and no investor link opens from it."
+    ],
+    "fixtures": ["DEMO_BOOK (+ one allotment with Customer empty: PROPOSED)"],
+    "group": "M11"
+  },
+  {
+    "id": "TC-IM06-026",
+    "story": "M11-S02",
+    "seat": "harsha",
+    "title": "An investor's allotment with no LLP shows a Needs a link tag",
+    "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Investors'",
+      "Open the investor whose allotment has no LLP (needs a fixture row with LLP empty)",
+      "Press 'What they hold'"
+    ],
+    "expected": [
+      "The Allotments card lists that allotment with a 'Needs a link' tag and 'no LLP on this allotment'."
+    ],
+    "fixtures": ["DEMO_BOOK (+ one allotment with LLP empty: PROPOSED)"],
+    "group": "M11"
+  },
+  {
+    "id": "TC-IM06-027",
+    "story": "M13-S01",
+    "seat": "harsha",
+    "title": "Releasing a farm tells the investor app",
+    "steps": [
+      "Press Harsha Bhat on the sign-in screen",
+      "Press 'Farms'",
+      "Press 'Release 54' on Block C"
+    ],
+    "expected": [
+      "Block C shows 54 more units released.",
+      "The response's delivery label reads as queued or delivered to the app (stub receiver), and a refused take-back sends nothing."
+    ],
+    "fixtures": ["DEMO_BOOK"],
+    "group": "M13"
+  }
+]

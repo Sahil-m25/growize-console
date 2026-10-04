@@ -27,17 +27,25 @@ import { zohoSeatOf } from "../data/live";
 import { RECORD_ID } from "../cases/predicate";
 import { heldOn } from "./occupancy";
 import { readGuardedLlp, type GuardedLlp } from "./oversell";
+import { farmShelfChanged } from "../contracts/outbox";
 import { LLP_MODULE } from "./shelf";
 
 export interface ReleasePrincipal { readonly credential: UserCredential; readonly seat: string }
+/** The push to the investor app (server/contracts/runtime publishToInvestorApp); absent → nothing is sent. */
+export type ShelfPush = (event: Record<string, unknown>) => Promise<{ readonly ok: boolean; readonly eventId?: string; readonly state?: { readonly label: string; readonly status: string } }>;
 export interface ReleaseDeps {
   readonly crm: Pick<ZohoClient, "coql" | "aggregate" | "update">;
   readonly events: Pick<InvestorEvents, "refusal" | "conflict">;
+  /** M13-S01-NOTE-4: farm.shelf_changed goes out after Zoho accepted the write, never before and never on a failure. */
+  readonly push?: ShelfPush;
+  readonly clock?: () => number;
 }
+/** farm.shelf_changed: sent, or why not (the shelf change stands either way; the outbox retries what it holds). */
+export type ShelfDelivery = { readonly sent: boolean; readonly eventId: string | null; readonly label: string };
 
 export type ReleaseRefusalReason = "read-only" | "invalid-request" | "not-found" | "no-total" | "already-released" | "not-released" | "units-held";
 export type ReleaseResult =
-  | { readonly ok: true; readonly llpId: string; readonly label: string; readonly released: number; readonly version: string | null }
+  | { readonly ok: true; readonly llpId: string; readonly label: string; readonly released: number; readonly version: string | null; readonly delivery: ShelfDelivery }
   | { readonly ok: false; readonly kind: "refused"; readonly reason: ReleaseRefusalReason; readonly message: string; readonly held?: number }
   | { readonly ok: false; readonly kind: "conflict"; readonly recordId: string | null; readonly reason: string }
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
@@ -81,10 +89,21 @@ export function createFarmRelease(deps: ReleaseDeps) {
     return { ok: true, cred: p.credential, llp: read.llp };
   }
 
+  /** After a successful Zoho write only: tell the app. A failed or thrown push never undoes the write. */
+  async function announce(p: ReleasePrincipal, action: string, llp: GuardedLlp, released: number): Promise<ShelfDelivery> {
+    if (!deps.push) return { sent: false, eventId: null, label: "Not sent to the app" };
+    const clock = deps.clock ?? Date.now;
+    try {
+      const r = await deps.push(farmShelfChanged({ llpId: llp.id, label: llp.label, action: action === "farm-release" ? "released" : "taken_back",
+        unitsReleased: released, totalUnits: llp.totalUnits, byUserId: p.credential.userId, at: clock() }, clock));
+      return r.ok ? { sent: true, eventId: r.eventId ?? null, label: r.state?.label ?? "Queued for the app" } : { sent: false, eventId: null, label: "Not delivered — needs attention" };
+    } catch { return { sent: false, eventId: null, label: "Not delivered — needs attention" }; }
+  }
+
   async function write(p: ReleasePrincipal, action: string, llp: GuardedLlp, released: number, signal?: AbortSignal): Promise<ReleaseResult> {
     const me = p.credential.userId;
     const r = await deps.crm.update(p.credential, LLP_MODULE, llp.id, { Units_Released: released }, { ifUnmodifiedSince: llp.version, signal });
-    if (r.ok) return { ok: true, llpId: llp.id, label: llp.label, released, version: r.value.modifiedTime };
+    if (r.ok) return { ok: true, llpId: llp.id, label: llp.label, released, version: r.value.modifiedTime, delivery: await announce(p, action, llp, released) };
     if (r.error.kind === "conflict") {
       deps.events.conflict(me, action, llp.id);
       return { ok: false, kind: "conflict", recordId: llp.id, reason: `${llp.label} changed since you loaded it. Reload it and try again.` };
