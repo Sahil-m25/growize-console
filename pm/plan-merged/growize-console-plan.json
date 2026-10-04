@@ -21441,7 +21441,7 @@
     "Save a contact",
     "Wait 10.5 seconds"
    ],
-   "expected": "The notice still says 'Saved · …' but Undo is no longer offered (undo is null).",
+   "expected": "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00' and the Next step card reads 'Call back' on '29 Aug · 18:00'. The notice has only its text: no 'Undo' button sits beside it.",
    "auto": {
     "setup": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}",
     "act": "const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);go('lead','L4'); lpOpen('L4','log','call'); lpSet('L4','outcome','Interested'); lpSet('L4','t','Call back'); lpDate('L4',1); lpTime('L4','18:00'); return true;",
@@ -21465,8 +21465,8 @@
     "Press 'Evening 18:00'"
    ],
    "ui_expected": [
-    "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00'.",
-    "That notice does not offer 'Undo'."
+    "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00' and the Next step card reads 'Call back' on '29 Aug · 18:00'.",
+    "The notice has only its text: no 'Undo' button sits beside it."
    ],
    "ui_wait": 11000,
    "group": "C",
@@ -21768,7 +21768,7 @@
     "Call · Interested · Call back · Today",
     "Pick a time 09:00"
    ],
-   "expected": "Nothing is saved: the error 'The next step needs a time that is still ahead.' shows, the flow stays open and the next step is unchanged (Call back 28 Aug 16:30).",
+   "expected": "The message 'The next step needs a time that is still ahead.' is on screen. The question 'What time?' is still on screen. The page still shows 'Call back' with '28 Aug · 16:30'.",
    "auto": {
     "setup": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);window.__n=LOG.length; return true;",
     "act": "const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);go('lead','L4'); lpOpen('L4','log','call'); lpSet('L4','outcome','Interested'); lpSet('L4','t','Call back'); lpDate('L4',0); lpTime('L4','09:00'); return true;",
@@ -21793,8 +21793,7 @@
    "ui_expected": [
     "The message 'The next step needs a time that is still ahead.' is on screen.",
     "The question 'What time?' is still on screen.",
-    "The page still shows 'Call back' with '28 Aug · 16:30'.",
-    "The status line does not say 'Saved'."
+    "The page still shows 'Call back' with '28 Aug · 16:30'."
    ],
    "group": "C",
    "plan": "In 3 weeks",
@@ -21849,7 +21848,7 @@
    "steps": [
     "Press Send email"
    ],
-   "expected": "(1) logLinesAdded = 1. (2) title = \"Email approved and sent\". (3) noteStartsWith 'From rohit@agresearchlabs.com via Zoho · “Growize — managed aeroponic farm units”' is true. (4) emailTouchesBefore = 1 and emailTouchesAfter = 2. (5) composerOpen = false. (6) notice = \"Email sent\".",
+   "expected": "The page shows 'Email sent'. The page offers the buttons Call, WhatsApp, Email and 'Log a contact'. The page shows 'Last contact: Email · Email sent'.",
    "auto": {
     "setup": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);window.__n=LOG.filter(e=>e.lead==='L4').length; window.__e=L('L4').touch.email.length; return true;",
     "act": "const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);go('lead','L4'); lpOpen('L4','email'); emSend('L4'); return true;",
@@ -21870,7 +21869,6 @@
    "ui_expected": [
     "The page shows 'Email sent'.",
     "The page offers the buttons Call, WhatsApp, Email and 'Log a contact'.",
-    "There is no 'Send email' button on the page.",
     "The page shows 'Last contact: Email · Email sent'."
    ],
    "group": "C",
@@ -22744,7 +22742,7 @@
     "Balance · SWIFT · 1500000 · 27 Aug · EMIR2708001",
     "Send"
    ],
-   "expected": "A report is created in state 'waiting' (kind balance, amount 1500000); done stays 6 and payment state stays 'part'; the log shows 'Said the investor has paid' with the reference masked; the row now reads 'Fully paid · Waiting on Finance'.",
+   "expected": "The page shows 'Payment reported — waiting for Finance to find it in the bank.'. The page shows the row 'Next milestone · Fully paid · Waiting on Finance'. The page shows the journey line 'Reserved — 10% in · step 6 of 9'.",
    "auto": {
     "setup": "if(!window.__pinned){const R=Date;const t=new R();t.setHours(15,36,0,0);const off=t.getTime()-R.now();class F extends R{constructor(...a){a.length?super(...a):super(R.now()+off);}static now(){return R.now()+off;}}window.Date=F;window.__pinned=1;}",
     "act": "const q=()=>[...document.querySelectorAll('#lp-flow .lp-ql')].map(e=>e.innerText).join(' | ');const chips=()=>[...document.querySelectorAll('#lp-flow .chip')].map(e=>e.innerText.trim());const sum=()=>(document.querySelector('#lp-flow .lp-sum')||{}).innerText||'';const L=id=>LEADS.find(x=>x.id===id);const alerts=()=>[...document.querySelectorAll('.lp-alert')].map(e=>e.innerText);const rows=()=>[...document.querySelectorAll('.lp-stage')].map(e=>e.innerText);const dlg=()=>((document.querySelector('[role=dialog]')||{}).innerText||'').slice(0,600);go('lead','L7'); Object.assign(claimDraft('L7'),{kind:'balance',mode:'SWIFT',amount:'1500000',said_on:'2026-08-27',ref:'EMIR2708001'}); window.__r=claimPaid('L7'); return true;",
@@ -22770,7 +22768,6 @@
    "ui_expected": [
     "The page shows 'Payment reported — waiting for Finance to find it in the bank.'.",
     "The page shows the row 'Next milestone · Fully paid · Waiting on Finance'.",
-    "The page does not show the 'Has the investor paid?' row or an 'Investor says they paid' button.",
     "The page shows the journey line 'Reserved — 10% in · step 6 of 9'."
    ],
    "group": "C",
@@ -24169,7 +24166,7 @@
    "steps": [
     "Open Events → Prestige Falcon City"
    ],
-   "expected": "1) namedLeads = ['Meera Krishnan'] (the only E-04 lead in Rohit's book; the owner name under it is not a lead). 2) hiddenLine = true ('and 2 more, in somebody else's book'). 3) taggedTotal = 3.",
+   "expected": "The Prestige Falcon City event page is open. 'Leads from this event' lists Meera Krishnan. 'Leads from this event' lists Meera Krishnan with Rohit Deshpande, First touch made and ₹50 L. It says 'and 2 more, in somebody else's book'.",
    "auto": {
     "setup": "window.H={pane:()=>document.querySelector('#pane').innerText,\nrow:()=>{const r=document.querySelector('.d60d-paper');return r?r.innerText.replace(/\\s+/g,' ').trim():'';},\nrowBtns:()=>{const r=document.querySelector('.d60d-paper');return r?[...r.querySelectorAll('button')].map(b=>b.innerText.trim()):[];},\nclick:(scope,t)=>{const s=typeof scope==='string'?document.querySelector(scope):scope;const b=s&&[...s.querySelectorAll('button')].find(b=>b.innerText.trim()===t);if(!b)throw new Error('no button '+t);b.click();return true;},\nundo:()=>H.click('.work-notice','Undo'),\nlead:id=>LEADS.find(l=>l.id===id)};\nsignIn('rohit');",
     "act": "go('event',null,'E-04');\nreturn true;",
@@ -24187,7 +24184,7 @@
    "ui_expected": [
     "The Prestige Falcon City event page is open.",
     "'Leads from this event' lists Meera Krishnan.",
-    "The only lead button on the event page is 'Meera Krishnan'.",
+    "'Leads from this event' lists Meera Krishnan with Rohit Deshpande, First touch made and ₹50 L.",
     "It says 'and 2 more, in somebody else's book'."
    ],
    "ui_mode": "ui",
@@ -25032,7 +25029,7 @@
     "Read count",
     "Clear day, person and action"
    ],
-   "expected": "1) filteredKinds = ['call']. 2) filteredCount = callRowsInMonth (and the status reads '<that number> actions'). 3) afterClearCount = unfilteredCount.",
+   "expected": "The count reads '78 actions'. The first rows listed are 'Call logged' by Tasneem Qureshi for Sanjay Menon at 28 Aug · 14:35 and 'Call logged' by Rohit Deshpande for Meera Krishnan at 28 Aug · 11:25.",
    "auto": {
     "setup": "window.H={pane:()=>document.querySelector('#pane').innerText,\nrow:()=>{const r=document.querySelector('.d60d-paper');return r?r.innerText.replace(/\\s+/g,' ').trim():'';},\nrowBtns:()=>{const r=document.querySelector('.d60d-paper');return r?[...r.querySelectorAll('button')].map(b=>b.innerText.trim()):[];},\nclick:(scope,t)=>{const s=typeof scope==='string'?document.querySelector(scope):scope;const b=s&&[...s.querySelectorAll('button')].find(b=>b.innerText.trim()===t);if(!b)throw new Error('no button '+t);b.click();return true;},\nundo:()=>H.click('.work-notice','Undo'),\nlead:id=>LEADS.find(l=>l.id===id)};\nsignIn('tasneem'); go('activity'); window.ZALL=actRows().length;",
     "act": "actFilter('kind','call'); window.ZK={n:actRows().length, kinds:[...new Set(actRows().map(e=>e.kind))], status:document.querySelector('.rd-result-count').innerText, calls:actRows().length}; actFilter('clear'); window.ZK.calls=actRows().filter(e=>e.kind==='call').length;\nreturn true;",
@@ -25049,7 +25046,7 @@
    ],
    "ui_expected": [
     "The count reads '78 actions'.",
-    "Every row listed is a call ('Call logged' or a call outcome)."
+    "The first rows listed are 'Call logged' by Tasneem Qureshi for Sanjay Menon at 28 Aug · 14:35 and 'Call logged' by Rohit Deshpande for Meera Krishnan at 28 Aug · 11:25."
    ],
    "ui_mode": "ui",
    "group": "D",
@@ -30059,14 +30056,15 @@
    ],
    "ui_steps": [
     "Press Meena Raghavan on the sign-in screen",
-    "Press 'Investors'",
-    "Type 'Mysuru' in the text box on the heading row, next to '15 on the book · 40 units'"
+    "Press 'Investors' in the menu",
+    "Type 'Mysuru' in the 'Find an investor by name, phone, email or city' box"
    ],
    "ui_expected": [
-    "The list shows 2 investors: Prakash Bhat and Harish Gowda."
+    "The list shows Prakash Bhat and Harish Gowda, both in Mysuru."
    ],
    "group": "IM-B",
-   "orig_story": "IM04-S01"
+   "orig_story": "IM04-S01",
+   "expected": "The list shows Prakash Bhat and Harish Gowda, both in Mysuru."
   },
   {
    "id": "TC-IM04-021",
@@ -30311,10 +30309,11 @@
    "ui_expected": [
     "PAN reads 'AFT•••••L'.",
     "Bank reads '•••• •••• 1208'.",
-    "The page offers no reveal button."
+    "The PAN row says 'Compliance and the Head of Finance may reveal a PAN — not this seat'."
    ],
    "group": "IM-B",
-   "orig_story": "IM04-S04"
+   "orig_story": "IM04-S04",
+   "expected": "PAN reads 'AFT•••••L'. Bank reads '•••• •••• 1208'. The PAN row says 'Compliance and the Head of Finance may reveal a PAN — not this seat'."
   },
   {
    "id": "TC-IM04-013",

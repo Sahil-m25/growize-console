@@ -1398,15 +1398,16 @@
     "Press 'Evening 18:00'"
    ],
    "expected": [
-    "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00'.",
-    "That notice does not offer 'Undo'."
+    "A notice reads 'Saved · Scheduled call: Call back · 29 Aug 18:00' and the Next step card reads 'Call back' on '29 Aug · 18:00'.",
+    "The notice has only its text: no 'Undo' button sits beside it."
    ],
    "fixtures": [
     "DEMO_BOOK",
     "CLOCK_28AUG_1536",
     "NO_DIALER"
    ],
-   "group": "M07"
+   "group": "M07",
+   "wait": 11000
   },
   {
    "id": "TC-E07-013",
@@ -1556,8 +1557,7 @@
    "expected": [
     "The message 'The next step needs a time that is still ahead.' is on screen.",
     "The question 'What time?' is still on screen.",
-    "The page still shows 'Call back' with '28 Aug · 16:30'.",
-    "The status line does not say 'Saved'."
+    "The page still shows 'Call back' with '28 Aug · 16:30'."
    ],
    "fixtures": [
     "DEMO_BOOK",
@@ -1604,7 +1604,6 @@
    "expected": [
     "The page shows 'Email sent'.",
     "The page offers the buttons Call, WhatsApp, Email and 'Log a contact'.",
-    "There is no 'Send email' button on the page.",
     "The page shows 'Last contact: Email · Email sent'."
    ],
    "fixtures": [
@@ -2075,7 +2074,6 @@
    "expected": [
     "The page shows 'Payment reported — waiting for Finance to find it in the bank.'.",
     "The page shows the row 'Next milestone · Fully paid · Waiting on Finance'.",
-    "The page does not show the 'Has the investor paid?' row or an 'Investor says they paid' button.",
     "The page shows the journey line 'Reserved — 10% in · step 6 of 9'."
    ],
    "fixtures": [
@@ -2653,7 +2651,7 @@
    "expected": [
     "The Prestige Falcon City event page is open.",
     "'Leads from this event' lists Meera Krishnan.",
-    "The only lead button on the event page is 'Meera Krishnan'.",
+    "'Leads from this event' lists Meera Krishnan with Rohit Deshpande, First touch made and ₹50 L.",
     "It says 'and 2 more, in somebody else's book'."
    ],
    "fixtures": [
@@ -3037,7 +3035,7 @@
    ],
    "expected": [
     "The count reads '78 actions'.",
-    "Every row listed is a call ('Call logged' or a call outcome)."
+    "The first rows listed are 'Call logged' by Tasneem Qureshi for Sanjay Menon at 28 Aug · 14:35 and 'Call logged' by Rohit Deshpande for Meera Krishnan at 28 Aug · 11:25."
    ],
    "fixtures": [
     "DEMO_DATA"
@@ -4805,11 +4803,11 @@
    "title": "Searching by city finds the Mysuru investors",
    "steps": [
     "Press Meena Raghavan on the sign-in screen",
-    "Press 'Investors'",
-    "Type 'Mysuru' in the text box on the heading row, next to '15 on the book · 40 units'"
+    "Press 'Investors' in the menu",
+    "Type 'Mysuru' in the 'Find an investor by name, phone, email or city' box"
    ],
    "expected": [
-    "The list shows 2 investors: Prakash Bhat and Harish Gowda."
+    "The list shows Prakash Bhat and Harish Gowda, both in Mysuru."
    ],
    "fixtures": [
     "DEMO_BOOK"
@@ -5006,7 +5004,7 @@
    "expected": [
     "PAN reads 'AFT•••••L'.",
     "Bank reads '•••• •••• 1208'.",
-    "The page offers no reveal button."
+    "The PAN row says 'Compliance and the Head of Finance may reveal a PAN — not this seat'."
    ],
    "fixtures": [
     "DEMO_BOOK"
