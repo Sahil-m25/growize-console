@@ -5,7 +5,7 @@
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { sessionCredential } from "@/server/oauth/request";
-import { logSource, planeBLog } from "@/server/logs/runtime";
+import { auditChain, logSource, planeBLog } from "@/server/logs/runtime";
 import { planeBBetween } from "@/server/logs/reader";
 import { auditArchive } from "@/server/activity/runtime";
 import { investorAppOutbox } from "@/server/contracts/runtime";
@@ -27,9 +27,11 @@ async function get(): Promise<Response> {
   const now = Date.now();
   const archive = auditArchive();
   const facts = await gatherFacts({
-    ops: planeBBetween(logSource(), now - DAY, now + 1),
+    ops: await planeBBetween(logSource(), now - DAY, now + 1),
     archiveLastRun: async () => (archive ? archive.lastRun() : null),
     outbox: investorAppOutbox(),
+    // Plane C hash chain for the last closed India day (r4-cat-audit, docs/architecture/log-sink.md)
+    auditChain: () => auditChain().verify(new Date(now + 5.5 * 3_600_000 - DAY).toISOString().slice(0, 10)),
   }, now);
   return Response.json({ ...systemView(systemChecks(facts, now)), asOf: now }, { headers: NO_STORE });
 }

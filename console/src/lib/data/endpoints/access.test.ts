@@ -145,9 +145,10 @@ describe("Teams rows — GET /api/teams", () => {
       { seat: "ir", label: "IR Associate", zohoRole: "Investor Relations", im: null, rights: [] },
     ]);
   });
-  it("fixture: 13 seat columns, no root, Auditor and Administrator on their D80 roles; same seats as the live half", () => {
+  it("fixture: 8 Investors seat columns, no root, no lead seats, Auditor and Administrator on their D80 roles; same seats as the live half", () => {
     const g = fixtureGrid().columns;
-    expect(g).toHaveLength(13);
+    expect(g).toHaveLength(8);
+    expect(g.every((c) => c.im !== null)).toBe(true);
     expect(g.some((c) => c.seat === "root")).toBe(false);
     expect(g.find((c) => c.seat === "audit")).toMatchObject({ zohoRole: "Compliance and Audit", rights: ["view"] });
     expect(g.find((c) => c.seat === "admin")).toMatchObject({ zohoRole: "Digital Infrastructure" });

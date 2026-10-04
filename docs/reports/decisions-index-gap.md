@@ -1,5 +1,7 @@
 # Decisions index gap (4 Oct 2026)
 
+> **Resolved 4 Oct 2026 (D115 #6, D116):** the rows are in docs/DECISIONS.md, linking to docs/decisions/PROJECT-DOCS.md.
+
 `docs/DECISIONS.md` jumps from D93 to D104. This report lists which D-numbers are cited in `docs/` or `autopilot/phases.json` but have no file in `docs/decisions/` and/or no row in the index. `docs/DECISIONS.md` was not edited. The decision texts live in the claude.ai Growize project (`decisions-and-changes-d*.md`, per `docs/launch/stage-reviews.md` line 192).
 
 ## Cited, no row and no file

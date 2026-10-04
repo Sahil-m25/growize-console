@@ -108,10 +108,10 @@
    "commits": []
   },
   "M02-S04": {
-   "status": "review",
-   "attempts": 2,
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "status": "waiting",
+   "attempts": 3,
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Local part built (identity shaper, reveal, field register); Sahil's profile/field-security setup and restricted-user probes left (sandbox)",
    "commits": [
     "400a678",
     "3c6435a",
@@ -119,12 +119,12 @@
    ],
    "phases": {
     "fe": "done",
-    "zoho": "review",
+    "zoho": "waiting",
     "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "zoho": 0,
+    "zoho": 1,
     "test": 1
    },
    "notes": 1
@@ -861,17 +861,17 @@
    "notes": 5
   },
   "M03-S04": {
-   "status": "review",
-   "attempts": 2,
+   "status": "done",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review",
+    "wire": "done",
     "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1,
+    "wire": 2,
     "test": 1
    },
    "commits": [
@@ -880,8 +880,8 @@
     "f387f44",
     "74872c5"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-access): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed by the 4 Oct reconcile (D116): seat dropdown on PUT /api/users/{id} wired; local Jev cases pass; Zoho part is the zoho phase's",
    "notes": 6
   },
   "M03-S06": {
@@ -1335,24 +1335,24 @@
    "notes": 7
   },
   "M08-S07": {
-   "status": "review",
-   "attempts": 1,
+   "status": "pending",
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review"
+    "wire": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1
+    "wire": 2
    },
    "commits": [
     "3c6435a",
     "a4b0e76",
     "057b4c1"
    ],
-   "at": "2026-09-30T12:29:34.185Z",
-   "note": "\"said yes\" state added (ImSt); live investorOf derives it",
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed by the 4 Oct reconcile (D116): 'said yes' state in ImSt; live derives it",
    "notes": 5
   },
   "M08-S08": {
@@ -1378,20 +1378,20 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 8
+   "notes": 10
   },
   "M10-S01": {
-   "status": "review",
-   "attempts": 2,
+   "status": "waiting",
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review",
+    "wire": "done",
     "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1,
+    "wire": 2,
     "test": 1
    },
    "commits": [
@@ -1400,8 +1400,8 @@
     "5aae3b8",
     "6c25a1b"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed by the 4 Oct reconcile (D116): register on GET /api/payments, matched-only totals, masked reference",
    "notes": 7
   },
   "M10-S02": {
@@ -1820,7 +1820,7 @@
    ],
    "at": "2026-09-30T12:29:34.185Z",
    "note": "Paperwork row GETs /api/leads/[id]/paperwork; 8/10 as baseline",
-   "notes": 6
+   "notes": 9
   },
   "M12-S12": {
    "status": "done",
@@ -1863,7 +1863,7 @@
    ],
    "at": "2026-09-30T12:29:34.185Z",
    "note": "Deck follow-up hidden before NDA; 4/4",
-   "notes": 3
+   "notes": 5
   },
   "M14-S01": {
    "status": "waiting",
@@ -1915,17 +1915,17 @@
    "notes": 6
   },
   "M14-S03": {
-   "status": "review",
-   "attempts": 3,
+   "status": "done",
+   "attempts": 4,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review",
+    "wire": "done",
     "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2,
+    "wire": 3,
     "test": 1
    },
    "commits": [
@@ -1935,9 +1935,9 @@
     "a90ac74",
     "af147c0"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-tickets): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 7
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed (D116): sheet route wired; D115 #2 load right built (super administrator, grantable)",
+   "notes": 9
   },
   "M10-S08": {
    "status": "pending",
@@ -2150,17 +2150,17 @@
    "notes": 8
   },
   "M15-S05": {
-   "status": "review",
-   "attempts": 3,
+   "status": "done",
+   "attempts": 4,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review",
+    "wire": "done",
     "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 1,
+    "wire": 2,
     "test": 2
    },
    "commits": [
@@ -2170,9 +2170,9 @@
     "af147c0",
     "02cd2ce"
    ],
-   "at": "2026-10-04T08:29:27.974Z",
-   "note": "TC-E11-016 fixed: Payments register masks every reference; \"Show the reference\" behind step-up with a logged Plane C reveal (POST /api/receipts/[id]/reveal)",
-   "notes": 8
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed (D116): Logs view on /api/logs, reveal behind step-up with reason; /api/system feeds the System card",
+   "notes": 11
   },
   "M17-S01": {
    "status": "done",
@@ -2261,17 +2261,17 @@
    "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho"
   },
   "M16-S08": {
-   "status": "review",
-   "attempts": 3,
+   "status": "done",
+   "attempts": 4,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
-    "wire": "review",
+    "wire": "done",
     "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
-    "wire": 2,
+    "wire": 3,
     "test": 1
    },
    "commits": [
@@ -2281,8 +2281,8 @@
     "afb0436",
     "6c25a1b"
    ],
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; nothing needs Zoho",
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed by the 4 Oct reconcile (D116): Investors-side sections read /api/numbers/investors-side",
    "notes": 5
   },
   "M18-S03": {
@@ -2675,20 +2675,20 @@
    ]
   },
   "M12-S01": {
-   "status": "review",
-   "attempts": 3,
+   "status": "waiting",
+   "attempts": 4,
    "notes": 8,
    "phases": {
     "zoho": "waiting",
-    "wire": "review",
+    "wire": "done",
     "test": "waiting"
    },
    "phase_attempts": {
-    "wire": 2,
+    "wire": 3,
     "test": 1
    },
-   "at": "2026-10-04T00:07:29.251Z",
-   "note": "Phase 3 local half (4 Oct fan-out, p3-docs): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
+   "at": "2026-10-04T11:28:25.173Z",
+   "note": "Review closed by the 4 Oct reconcile (D116): investor and farm DOCS read the routes; uploader and slot shown",
    "commits": [
     "5ab7650",
     "9444836",
@@ -2817,7 +2817,7 @@
     "09575ca",
     "4e60dca"
    ],
-   "notes": 1
+   "notes": 2
   },
   "M19-S12": {
    "status": "done",
@@ -2943,7 +2943,8 @@
    "note": "Written: docs/launch/backup-restore-plan.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
    "commits": [
     "6f3b47f"
-   ]
+   ],
+   "notes": 3
   },
   "M18-S09": {
    "status": "waiting",
@@ -2958,7 +2959,8 @@
    "note": "Written: docs/launch/go-live-checklist.md; the drill/rehearsal waits for hosting (AP4) and the log store (D47)",
    "commits": [
     "6f3b47f"
-   ]
+   ],
+   "notes": 4
   },
   "M18-S10": {
    "status": "waiting",
@@ -3188,8 +3190,9 @@
    "phase": "test"
   },
   "M02-S04-T06": {
-   "status": "review",
-   "at": "2026-09-25T18:47:29.461Z"
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
+   "phase": "zoho"
   },
   "M02-S04-T07": {
    "status": "done",
@@ -4667,8 +4670,8 @@
    "phase": "wire"
   },
   "M03-S04-W1": {
-   "status": "review",
-   "at": "2026-09-30T12:29:34.185Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M17-S01-W1": {
@@ -4707,8 +4710,8 @@
    "phase": "wire"
   },
   "M16-S08-W1": {
-   "status": "review",
-   "at": "2026-10-03T22:49:25.049Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M15-S03-W1": {
@@ -4717,8 +4720,8 @@
    "phase": "wire"
   },
   "M15-S05-W1": {
-   "status": "review",
-   "at": "2026-09-30T12:29:34.185Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M08-S03-W1": {
@@ -4747,8 +4750,8 @@
    "phase": "wire"
   },
   "M08-S07-W1": {
-   "status": "review",
-   "at": "2026-09-30T12:29:34.185Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M08-S08-W1": {
@@ -4842,8 +4845,8 @@
    "phase": "wire"
   },
   "M10-S01-W1": {
-   "status": "review",
-   "at": "2026-09-30T12:29:34.185Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M10-S03-W1": {
@@ -4887,8 +4890,8 @@
    "phase": "wire"
   },
   "M12-S01-W1": {
-   "status": "review",
-   "at": "2026-10-03T22:49:25.049Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M12-S02-W1": {
@@ -4942,8 +4945,8 @@
    "phase": "wire"
   },
   "M14-S03-W1": {
-   "status": "review",
-   "at": "2026-10-03T22:49:25.049Z",
+   "status": "done",
+   "at": "2026-10-04T11:28:25.173Z",
    "phase": "wire"
   },
   "M18-S14-H1": {
@@ -10180,6 +10183,78 @@
    "status": "done",
    "attempt": 1,
    "note": "Written: docs/launch/change-control.md + change-log.md",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M03-S04",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 2,
+   "note": "Review closed by the 4 Oct reconcile (D116): seat dropdown on PUT /api/users/{id} wired; local Jev cases pass; Zoho part is the zoho phase's",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M08-S07",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 2,
+   "note": "Review closed by the 4 Oct reconcile (D116): 'said yes' state in ImSt; live derives it",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M10-S01",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 2,
+   "note": "Review closed by the 4 Oct reconcile (D116): register on GET /api/payments, matched-only totals, masked reference",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M14-S03",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 3,
+   "note": "Review closed (D116): sheet route wired; D115 #2 load right built (super administrator, grantable)",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M15-S05",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 2,
+   "note": "Review closed (D116): Logs view on /api/logs, reveal behind step-up with reason; /api/system feeds the System card",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M16-S08",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 3,
+   "note": "Review closed by the 4 Oct reconcile (D116): Investors-side sections read /api/numbers/investors-side",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M12-S01",
+   "phase": "wire",
+   "status": "done",
+   "attempt": 3,
+   "note": "Review closed by the 4 Oct reconcile (D116): investor and farm DOCS read the routes; uploader and slot shown",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T11:28:25.173Z",
+   "story": "M02-S04",
+   "phase": "zoho",
+   "status": "waiting",
+   "attempt": 1,
+   "note": "Local part built (identity shaper, reveal, field register); Sahil's profile/field-security setup and restricted-user probes left (sandbox)",
    "by": "fan-out (D111)"
   }
  ],

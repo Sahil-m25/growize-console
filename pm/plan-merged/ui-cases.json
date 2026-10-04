@@ -2823,7 +2823,7 @@
    "id": "TC-E10-012",
    "story": "M14-S03",
    "seat": "sahil",
-   "title": "Digital Infrastructure (super user) can load an event sheet",
+   "title": "The super administrator (Sahil) can load an event sheet (D115 #2)",
    "steps": [
     "Press Sahil Mohite on the sign-in screen",
     "Open Events from the menu",
@@ -4366,7 +4366,7 @@
     "Under the Teams heading the page says 'who holds which seat on the Investors pages' and then 'read only'.",
     "'Who is here' lists 9 people: Harsha Bhat, Meena Raghavan, Fahad Rizvi, Latha Prabhu, Divya Kamath, Imran Sheikh, Neha Bhandari, Sahil Mohite and Pradeep Ram.",
     "The page shows exactly 1 email address: imran@agresearchlabs.com.",
-    "'What each seat holds' has 9 seat columns."
+    "'What each seat holds' has 8 seat columns."
    ],
    "fixtures": [
     "DEMO_PORTAL"
@@ -4403,7 +4403,7 @@
    ],
    "expected": [
     "The page shows the 'Who is here' table.",
-    "The page shows a 'What each seat holds' table with 9 seat columns."
+    "The page shows a 'What each seat holds' table with 8 seat columns."
    ],
    "fixtures": [
     "DEMO_PORTAL"
@@ -6280,7 +6280,7 @@
    "id": "TC-IM11-005",
    "story": "M08-S08",
    "seat": "harsha",
-   "title": "Recording the 10% opens the app account on hold (D93)",
+   "title": "Recording the 10% creates the app account on hold; it stays locked until released (D93, D115 #1)",
    "steps": [
     "Press Harsha Bhat on the sign-in screen",
     "Press 'Investors' in the menu",
@@ -6295,7 +6295,8 @@
    "expected": [
     "The app account reads 'On hold — data synced, sign-in locked, no email sent'.",
     "The app account says it was created automatically, on the first confirmed receipt.",
-    "The page header shows Kiran Joshi as reserved."
+    "The page header shows Kiran Joshi as reserved.",
+    "The app account offers 'Send welcome and unlock'."
    ],
    "fixtures": [
     "KIRAN_SUPP_VERIFIED"
@@ -6306,7 +6307,7 @@
    "id": "TC-IM11-006",
    "story": "M08-S08",
    "seat": "meena",
-   "title": "A receipt recorded but not matched opens no app account",
+   "title": "A matched receipt creates the app account on hold; it stays locked until released (D115 #1)",
    "steps": [
     "Press Meena Raghavan on the sign-in screen",
     "Press 'Investors' in the menu",

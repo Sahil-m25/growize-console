@@ -68,10 +68,10 @@ export function fixtureSeats(s: ImState, me: string): SeatRow[] | null {
   });
 }
 
-/** Every seat and what it holds (SEAT_COLUMNS: the Investors seats less the super administrator, then the lead-side seats), each
+/** Every seat and what it holds (SEAT_COLUMNS: the Investors seats less the super administrator; lead-side seats are not columns here, D115 #3), each
  *  with its D80 Zoho role; live: the same list, built from Zoho's roles and profiles (server/teams rightsGrid). */
 export const fixtureGrid = (): TeamsAnswer["grid"] =>
-  ({ columns: SEAT_COLUMNS.map((c) => ({ seat: c.seat, label: c.label, zohoRole: c.zohoRole as GridCol["zohoRole"], im: c.im, rights: c.im ? [...ROLE[c.im].can] : [] })) });
+  ({ columns: SEAT_COLUMNS.filter((c) => c.im).map((c) => ({ seat: c.seat, label: c.label, zohoRole: c.zohoRole as GridCol["zohoRole"], im: c.im, rights: c.im ? [...ROLE[c.im].can] : [] })) });
 
 export const teamsRead: ReadEndpoint<ConsoleState, void, TeamsAnswer> = {
   path: () => "/api/teams",

@@ -21,6 +21,8 @@ export function mayReadSystem(seat: string): boolean {
 
 export interface FactSources {
   readonly ops: readonly unknown[];
+  /** Plane C chain verdict for the last closed day; omitted → no card. */
+  readonly auditChain?: () => Promise<{ readonly day: string; readonly ok: boolean | null; readonly problems?: readonly { readonly kind: string }[] }>;
   readonly archiveLastRun: () => Promise<number | null>;
   readonly outbox: { stats(): { readonly lastDeliveredAt: number | null; readonly failures24h: number } };
   readonly env?: Readonly<Record<string, string | undefined>>;
@@ -34,11 +36,14 @@ export async function gatherFacts(src: FactSources, now: number): Promise<System
   const lic = /^\d{4}-\d{2}-\d{2}$/.test((src.env ?? process.env).ZOHO_LICENCE_EXPIRES_ON ?? "") ? Date.parse(`${(src.env ?? process.env).ZOHO_LICENCE_EXPIRES_ON}T23:59:59+05:30`) : NaN;
   let archive: number | null = null;
   try { archive = await src.archiveLastRun(); } catch { archive = null; }
+  let chain: SystemFacts["auditChain"] = null;
+  if (src.auditChain) { try { chain = await src.auditChain(); } catch { chain = null; } }
   const push = src.outbox.stats();
   return {
     ops, serviceTokenExpiry: {}, cache: { reads: 0, errors: 0 }, auditArchiveLastRun: archive,
     licenceExpiry: Number.isFinite(lic) ? lic : null,
     sign: { lastEventAt: null, failedHmac24h: badSigs },
     push: { lastDeliveredAt: push.lastDeliveredAt, failures24h: push.failures24h },
+    ...(src.auditChain ? { auditChain: chain } : {}),
   };
 }

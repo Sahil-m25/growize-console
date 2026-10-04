@@ -431,7 +431,7 @@ export interface PinnedSeatIds {
 export function rightsGrid(roles: readonly ZohoRoleRow[] | null, profiles: readonly ZohoProfileRow[] | null, pinned: PinnedSeatIds, now: Date = new Date(0)): RightsGrid {
   const zoho = roles !== null && profiles !== null;
   const presets = seatPresets(now);
-  const columns = SEAT_COLUMNS.map((sc): GridColumn => {
+  const columns = SEAT_COLUMNS.filter((sc) => sc.im).map((sc): GridColumn => {
     const roleName = sc.zohoRole as ZohoRoleName;
     const p = ZOHO_SEAT_POLICIES[roleName];
     const role = roles?.find((r) => r.name === roleName) ?? null;
