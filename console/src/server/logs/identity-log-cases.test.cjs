@@ -232,13 +232,19 @@ test('TC-E15-024: a 500 on the lead read lands in Plane B with ids only, and thr
   assert.match(text, /save-req-20000/); assert.ok(!text.includes('kavya') && !text.includes(PHONE));
 });
 
-/* GAP found while writing TC-E15-024 (reported, not fixed here: server/http/error-capture is r6-deadlines' file): userIdOf reads the
-   fixture-mode cookie gz_session (a person key), and safeUserId refuses an all-digit string — which every Zoho user id is. A live
-   session carries gz_zsid, so a live route-error line files userId null, where the case wants the user id. */
-test('TC-E15-024 (live half): a route-error line for a Zoho-signed-in person carries their Zoho user id', { todo: 'GAP: live error lines file userId null (userIdOf reads gz_session; safeUserId drops digit-only ids)' }, async () => {
+/* M01-S04-NOTE-4 (fixed R7): safeUserId refused every all-digit string, which a Zoho user id is; it now takes a 15–22 digit id (the shape
+   every Plane B actor carries) and still refuses a mobile, an account number or an OTP. */
+test('TC-E15-024 (live half): a route-error line for a Zoho-signed-in person carries their Zoho user id', async () => {
   const r = run();
   const wrap = createErrorCapture({ log: r.errorLog, clock: r.clock, newId: () => 'live-500-0001' });
   const session = 'gz_session=' + Buffer.from(JSON.stringify({ who: r.user.id, seat: 'ir' })).toString('base64url');
   await wrap(async () => { throw new Error('x'); }, '/api/leads/[id]')(new Request('http://x/api/leads/1', { headers: { cookie: session } }), {});
   assert.equal(r.shared.errors.records()[0].userId, r.user.id);
+  assert.deepEqual(leaks([r.shared.errors.records()[0], ...r.dayLines()]), [], 'the id is not an identity value');
+  /* a mobile, a 12-digit Aadhaar-shaped or an account-number-shaped cookie value is still not recorded */
+  for (const who of ['9876543210', '123456789012', '12345678901234']) {
+    const bad = 'gz_session=' + Buffer.from(JSON.stringify({ who, seat: 'ir' })).toString('base64url');
+    await wrap(async () => { throw new Error('x'); }, '/api/leads/[id]')(new Request('http://x/api/leads/1', { headers: { cookie: bad } }), {});
+  }
+  assert.deepEqual(r.shared.errors.records().slice(1).map((l) => l.userId), [null, null, null]);
 });

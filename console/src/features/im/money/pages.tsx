@@ -4,13 +4,15 @@
    this month queue (M10-S20), the farm LLP rows on Farms (M11-S01/S02), the Add investor button
    (M09-S09) and the test sign-in audit on System (M10-S23). */
 
-import type { MouseEvent, ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import {
   auditText, mayPayouts, fmtAt, fmtDate, inr, may, mayAddInvestor, mayMatch,
   matchWhy, money, nowFull, testLinkState, testLinks,
 } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
+import { StepUp, useStepUpReturn } from "../stepup";
+import { dropMatch, holdMatch, pressMatch, takeHeldMatch } from "./match-step-up";
 import { useApiRead, useApiWrite } from "@/lib/data/api";
 import { receiptMatch } from "@/lib/data/endpoints/receipts";
 import { farmList } from "@/lib/data/endpoints/farms";
@@ -25,11 +27,24 @@ export function MatchCell({ s, me, dispatch, t }: ImPageProps & { t: ImTxn }) {
   /* M10-S02-W1: the match is POST /api/receipts/[id]/match (lib/data/endpoints/receipts); a refusal or a 409
      lands in the page note. Whether to offer it is the book's rule (lib/im mayMatch) until M10-S01-W1 wires the rows. */
   const match = useApiWrite(receiptMatch, { s, me }, dispatch);
+  /* M10-S02-NOTE-10: a refund match answers 403 step-up → the step-up panel opens; once confirmed the match is pressed again */
+  const [ask, setAsk] = useState(false);
+  const back = useStepUpReturn();
+  const run = (retry: boolean) => {
+    void pressMatch(() => match({ id: t.id, expectedModifiedTime: t.version ?? null }), retry).then(r => {
+      if (r === "step-up") { holdMatch(t.id); setAsk(true); } else dropMatch();
+    });
+  };
+  const runRef = useRef(run); runRef.current = run;
+  /* back from Zoho with ?stepup=ok: press the match that was waiting (once) */
+  useEffect(() => { if (takeHeldMatch(t.id, back)) runRef.current(true); }, [back, t.id]);
   if (t.rec !== "pending") return null;
   const stop = (e: MouseEvent) => e.stopPropagation();
   if (mayMatch(s, me, t)) return (
     <div className="chips" style={{ marginTop: 5 }} onClick={stop}>
-      <button className="chip on" onClick={e => { e.stopPropagation(); void match({ id: t.id, expectedModifiedTime: t.version ?? null }); }}>Match it</button></div>
+      <button className="chip on" onClick={e => { e.stopPropagation(); run(false); }}>Match it</button>
+      {ask ? <StepUp action="refund" what="before the refund is matched"
+        onOpen={() => { setAsk(false); run(true); }} onCancel={() => { setAsk(false); dropMatch(); }} /> : null}</div>
   );
   const why = matchWhy(s, me, t);
   return why ? <div className="sm" style={{ marginTop: 4 }}>{why}</div> : null;
