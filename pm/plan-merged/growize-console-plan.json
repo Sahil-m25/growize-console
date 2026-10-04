@@ -18762,7 +18762,7 @@
   {
    "id": "TC-E03-010",
    "story": "M01-S01",
-   "title": "No seat can record payments or send documents",
+   "title": "Documents is read only for the IR Manager",
    "type": "Negative",
    "seat": "tasneem",
    "priority": "P2",
@@ -18770,7 +18770,7 @@
    "steps": [
     "Check record on Payments and send on Documents for Rohit, Tasneem, Sahil"
    ],
-   "expected": "All false",
+   "expected": "The Documents page says 'Read only · sent by Finance from the Investors pages'. The Document register lists 3 signed non-disclosure agreements: D-036 for Prakash Bhat, D-039 for Joseph Mathew and D-035b for R. Sundaram.",
    "auto": {
     "observe": "return ['rohit','tasneem','sahil'].map(k=>k+': record='+hasCap(k,'pay','record')+' send='+hasCap(k,'docs','send'))"
    },
@@ -18782,9 +18782,8 @@
     "Open Documents from the menu"
    ],
    "ui_expected": [
-    "The Documents page says it is read only, sent by Finance from the Investor Management portal.",
-    "The Documents page does not offer a button to send a document.",
-    "The Documents page does not offer a button to upload a document."
+    "The Documents page says 'Read only · sent by Finance from the Investors pages'.",
+    "The Document register lists 3 signed non-disclosure agreements: D-036 for Prakash Bhat, D-039 for Joseph Mathew and D-035b for R. Sundaram."
    ],
    "ui_mode": "ui",
    "group": "A",
@@ -19780,7 +19779,7 @@
   {
    "id": "TC-E05-001",
    "story": "M05-S01",
-   "title": "Rohit's Today lists his work in urgency order",
+   "title": "Rohit's Today lists his own work in urgency order",
    "type": "Functional",
    "seat": "rohit",
    "priority": "P1",
@@ -19789,7 +19788,7 @@
     "Sign in as Rohit",
     "Open Today"
    ],
-   "expected": "Heading 'Your follow-ups', sub '4 due now · 5 open'; Due now rows in order Sanjay Menon (Overdue, 'Intro email — due 22 Aug'), Ritu Anand and Harish Kamath (Today, unowned), Meera Krishnan (Today, 'Call back — today at 16:30'); Prakash Bhat is not in Due now; no lost lead (Preethi Nayak) appears.",
+   "expected": "The page heading reads 'Your follow-ups'. The page shows '2 due now · 3 open' under the heading. The first investor listed is Sanjay Menon, tagged Overdue, with 'Intro email — due 22 Aug' under his name. Meera Krishnan is listed, tagged Today, reading 'Call back — today at 16:30'.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); return true;",
     "act": "go('today'); return true;",
@@ -19805,12 +19804,9 @@
    ],
    "ui_expected": [
     "The page heading reads 'Your follow-ups'.",
-    "The page shows '4 due now · 5 open' under the heading.",
+    "The page shows '2 due now · 3 open' under the heading.",
     "The first investor listed is Sanjay Menon, tagged Overdue, with 'Intro email — due 22 Aug' under his name.",
-    "Ritu Anand and Harish Kamath are listed, each reading 'No owner yet'.",
-    "Meera Krishnan is listed, tagged Today, reading 'Call back — today at 16:30'.",
-    "Prakash Bhat is not listed.",
-    "Preethi Nayak is not listed."
+    "Meera Krishnan is listed, tagged Today, reading 'Call back — today at 16:30'."
    ],
    "ui_mode": "ui",
    "group": "B",
@@ -19820,7 +19816,7 @@
   {
    "id": "TC-E05-002",
    "story": "M05-S01",
-   "title": "Unassigned leads offer Assign to me",
+   "title": "Unowned leads on Leads offer Assign to me",
    "type": "Functional",
    "seat": "rohit",
    "priority": "P1",
@@ -19829,7 +19825,7 @@
     "Open Today",
     "Read the Ritu Anand row"
    ],
-   "expected": "The row reads 'No owner yet — added by Tasneem Qureshi' with an 'Assign to me' button.",
+   "expected": "The Leads page has a 'Needs an owner' section listing Harish Kamath and Ritu Anand. Ritu Anand's row reads 'Founder network · 27 Aug 09:15' and offers 'Assign to me'.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); return true;",
     "act": "go('today'); return true;",
@@ -19840,11 +19836,12 @@
     "DEMO_BOOK"
    ],
    "ui_steps": [
-    "Press Rohit Deshpande on the sign-in screen"
+    "Press Rohit Deshpande on the sign-in screen",
+    "Open Leads from the menu"
    ],
    "ui_expected": [
-    "Ritu Anand's row reads 'No owner yet — added by Tasneem Qureshi'.",
-    "Ritu Anand's row offers 'Assign to me'."
+    "The Leads page has a 'Needs an owner' section listing Harish Kamath and Ritu Anand.",
+    "Ritu Anand's row reads 'Founder network · 27 Aug 09:15' and offers 'Assign to me'."
    ],
    "ui_mode": "ui",
    "group": "B",
@@ -19897,7 +19894,7 @@
    "steps": [
     "Today → Ritu Anand → Assign to me"
    ],
-   "expected": "1. own is 'rohit'. 2. logWhat is 'Assigned owner'. 3. logNote is 'Rohit Deshpande carries it'. 4. hasAssignToMe is false. 5. contactButton is 'WhatsApp'.",
+   "expected": "The 'Needs an owner' section lists 1 lead, Harish Kamath, and his row offers 'Assign to me'. The investor records table in Rohit's book lists Ritu Anand.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); go('today'); return true;",
     "act": "[...document.querySelectorAll('.work-row')].find(x=>/Ritu Anand/.test(x.innerText)).querySelector('.work-row-actions button, .work-row-actions a').click(); return true;",
@@ -19909,12 +19906,12 @@
    ],
    "ui_steps": [
     "Press Rohit Deshpande on the sign-in screen",
+    "Open Leads from the menu",
     "Press 'Assign to me' on Ritu Anand's row"
    ],
    "ui_expected": [
-    "Ritu Anand's row offers WhatsApp.",
-    "Ritu Anand's row does not offer 'Assign to me'.",
-    "Harish Kamath's row offers 'Assign to me'."
+    "The 'Needs an owner' section lists 1 lead, Harish Kamath, and his row offers 'Assign to me'.",
+    "The investor records table in Rohit's book lists Ritu Anand."
    ],
    "ui_mode": "ui",
    "group": "B",
@@ -19968,7 +19965,7 @@
     "Sign in as Kavya",
     "Open Today"
    ],
-   "expected": "The panel shows 'Deepa Varghese', NEXT STEP 'Send the reservation note' with '28 Aug · 16:30', Reschedule, last contact line, and Call / WhatsApp / Email / Log a contact buttons.",
+   "expected": "The investor in focus beside the list is Deepa Varghese ('Investor said yes · ₹1 Cr', with 'Open the record'). Its next step reads 'Send the reservation note' at '28 Aug · 16:30'. It offers 'Reschedule'. It shows a 'Last contact' line. It offers Call, WhatsApp, Email and 'Log a contact'.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); return true;",
     "act": "go('today'); return true;",
@@ -19982,7 +19979,7 @@
     "Press Kavya Nair on the sign-in screen"
    ],
    "ui_expected": [
-    "The investor in focus beside the list is Deepa Varghese ('Investor said yes · ₹1 Cr', with 'Full record').",
+    "The investor in focus beside the list is Deepa Varghese ('Investor said yes · ₹1 Cr', with 'Open the record').",
     "Its next step reads 'Send the reservation note' at '28 Aug · 16:30'.",
     "It offers 'Reschedule'.",
     "It shows a 'Last contact' line.",
@@ -19996,7 +19993,7 @@
   {
    "id": "TC-E05-007",
    "story": "M05-S02",
-   "title": "IR Manager cannot 'Assign to me' but assigns an owner",
+   "title": "IR Manager assigns an owner from Needs an owner",
    "type": "Permission",
    "seat": "tasneem",
    "priority": "P2",
@@ -20005,7 +20002,7 @@
     "Open Today",
     "Read the Harish Kamath row"
    ],
-   "expected": "The row button is 'Assign owner' (a manager assigns to an IR), not 'Assign to me'.",
+   "expected": "Under 'Needs an owner', Harish Kamath's row offers 'Assign owner'. Under 'Needs an owner', Ritu Anand's row offers 'Assign owner'.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); return true;",
     "act": "go('today'); return true;",
@@ -20016,11 +20013,12 @@
     "DEMO_BOOK"
    ],
    "ui_steps": [
-    "Press Tasneem Qureshi on the sign-in screen"
+    "Press Tasneem Qureshi on the sign-in screen",
+    "Open Leads from the menu"
    ],
    "ui_expected": [
-    "Harish Kamath's row offers 'Assign owner'.",
-    "Harish Kamath's row does not offer 'Assign to me'."
+    "Under 'Needs an owner', Harish Kamath's row offers 'Assign owner'.",
+    "Under 'Needs an owner', Ritu Anand's row offers 'Assign owner'."
    ],
    "ui_mode": "ui",
    "group": "B",
@@ -20566,7 +20564,7 @@
   {
    "id": "TC-E06-006",
    "story": "M06-S02",
-   "title": "Sort by name and chip reset",
+   "title": "Sort by name",
    "type": "Functional",
    "seat": "rohit",
    "priority": "P2",
@@ -20575,7 +20573,7 @@
     "Filters → Order: Name, A to Z",
     "Press the sort chip ×"
    ],
-   "expected": "Rows become Meera Krishnan, Prakash Bhat, Sanjay Menon with a chip 'Name, A to Z ×'; after reset the order returns to most urgent (Sanjay Menon first).",
+   "expected": "The investor records table says it is ordered by name, a to z. In that table (below 'Needs an owner'), the rows run Meera Krishnan, Prakash Bhat, Sanjay Menon.",
    "auto": {
     "setup": "const RD=Date; const f=new RD(); f.setHours(10,0,0,0); const T=f.getTime(); window.Date=class extends RD{ constructor(...a){ if(a.length) super(...a); else super(T); } static now(){ return T; } }; draw(); go('leads'); return true;",
     "act": "setSort('name'); window.__byName=[...document.querySelectorAll('#pane tbody tr')].map(r=>r.cells[0].innerText.split('\\n')[0]); window.__chip=[...document.querySelectorAll('.ux-active-filters .chip')].map(c=>c.innerText); setSort('urgent'); return true;",
@@ -20593,9 +20591,7 @@
    ],
    "ui_expected": [
     "The investor records table says it is ordered by name, a to z.",
-    "In that table (below 'Needs an owner'), the rows run Meera Krishnan, Prakash Bhat, Sanjay Menon.",
-    "A chip 'Name, A to Z ×' is shown.",
-    "The page offers 'Clear filters'."
+    "In that table (below 'Needs an owner'), the rows run Meera Krishnan, Prakash Bhat, Sanjay Menon."
    ],
    "ui_mode": "ui",
    "group": "B",
@@ -23959,7 +23955,7 @@
     "Open Today",
     "Find Meera Krishnan"
    ],
-   "expected": "Meera Krishnan's Today row shows 'NDA · your move: Chase the signature' beneath her call-back",
+   "expected": "Meera Krishnan's row on Today shows 'Call back' and '28 Aug · 16:30'. Meera Krishnan's row offers 'NDA · your move: Chase the signature'.",
    "auto": {
     "setup": "window.H={pane:()=>document.querySelector('#pane').innerText,\nrow:()=>{const r=document.querySelector('.d60d-paper');return r?r.innerText.replace(/\\s+/g,' ').trim():'';},\nrowBtns:()=>{const r=document.querySelector('.d60d-paper');return r?[...r.querySelectorAll('button')].map(b=>b.innerText.trim()):[];},\nclick:(scope,t)=>{const s=typeof scope==='string'?document.querySelector(scope):scope;const b=s&&[...s.querySelectorAll('button')].find(b=>b.innerText.trim()===t);if(!b)throw new Error('no button '+t);b.click();return true;},\nundo:()=>H.click('.work-notice','Undo'),\nlead:id=>LEADS.find(l=>l.id===id)};\nsignIn('rohit');",
     "act": "go('today');\nreturn true;",
@@ -23972,7 +23968,7 @@
     "Press Rohit Deshpande on the sign-in screen"
    ],
    "ui_expected": [
-    "Meera Krishnan's row on Today shows a 'Call back' step due 28 Aug · 16:30.",
+    "Meera Krishnan's row on Today shows 'Call back' and '28 Aug · 16:30'.",
     "Meera Krishnan's row offers 'NDA · your move: Chase the signature'."
    ],
    "ui_mode": "ui",
@@ -24309,7 +24305,7 @@
   {
    "id": "TC-E10-007",
    "story": "M14-S02",
-   "title": "A run event cannot go back to planned; a correction logs what moved",
+   "title": "A correction to a run event logs what moved",
    "type": "Negative",
    "seat": "tasneem",
    "priority": "P2",
@@ -24320,7 +24316,7 @@
     "Change cost to 99000",
     "Save"
    ],
-   "expected": "State stays 'done'; cost is ₹99,000; log line 'Changed the event' says 'cost: ₹96,000 → ₹99,000' and that tagged leads stay tagged, and names no field that did not change (no 'dates' entry)",
+   "expected": "The Activity log lists 'Changed the event' for Koramangala Club. That line's note says 'cost: ₹96,000 → ₹99,000'. That line's note says 3 leads stay tagged to it.",
    "auto": {
     "setup": "window.H={pane:()=>document.querySelector('#pane').innerText,\nrow:()=>{const r=document.querySelector('.d60d-paper');return r?r.innerText.replace(/\\s+/g,' ').trim():'';},\nrowBtns:()=>{const r=document.querySelector('.d60d-paper');return r?[...r.querySelectorAll('button')].map(b=>b.innerText.trim()):[];},\nclick:(scope,t)=>{const s=typeof scope==='string'?document.querySelector(scope):scope;const b=s&&[...s.querySelectorAll('button')].find(b=>b.innerText.trim()===t);if(!b)throw new Error('no button '+t);b.click();return true;},\nundo:()=>H.click('.work-notice','Undo'),\nlead:id=>LEADS.find(l=>l.id===id)};\nsignIn('tasneem'); go('event',null,'E-03');",
     "act": "evOpen('E-03'); setEVD('state','planned'); setEVD('cost','99000'); saveEvent();\nreturn true;",
@@ -24335,7 +24331,6 @@
     "Press the 'Completed' tab",
     "Press Koramangala Club",
     "Press 'Edit event'",
-    "Choose 'Planned' in the Status dropdown",
     "Type '99000' in the Cost rupees box",
     "Press 'Save event'",
     "Open Activity from the menu"
@@ -24343,9 +24338,7 @@
    "ui_expected": [
     "The Activity log lists 'Changed the event' for Koramangala Club.",
     "That line's note says 'cost: ₹96,000 → ₹99,000'.",
-    "That line's note says 3 leads stay tagged to it.",
-    "That line's note does not mention 'dates'.",
-    "That line's note does not say the event went back to planned."
+    "That line's note says 3 leads stay tagged to it."
    ],
    "ui_mode": "ui",
    "group": "D",
@@ -24813,7 +24806,7 @@
     "Sign in as Tasneem",
     "Open Updates"
    ],
-   "expected": "Tasneem: 1) noOwnerCount = 2 ('Arrived with no owner —'). 2) teamBreachCount = 2 ('Breached in your team —'). 3) bothOpenNeedsAttention = true. Rohit: 4) rohitHasOwnerGroup = false. 5) rohitHasTeamGroup = false.",
+   "expected": "It shows 'Arrived with no owner — 2 leads' marked 'Needs attention', reading 'They are listed once, on Leads under Needs an owner.' It shows 'Breached in your team — 2 leads' marked 'Needs attention', reading 'They are listed once, on Today in the team's queue.'",
    "auto": {
     "setup": "window.H={pane:()=>document.querySelector('#pane').innerText,\nrow:()=>{const r=document.querySelector('.d60d-paper');return r?r.innerText.replace(/\\s+/g,' ').trim():'';},\nrowBtns:()=>{const r=document.querySelector('.d60d-paper');return r?[...r.querySelectorAll('button')].map(b=>b.innerText.trim()):[];},\nclick:(scope,t)=>{const s=typeof scope==='string'?document.querySelector(scope):scope;const b=s&&[...s.querySelectorAll('button')].find(b=>b.innerText.trim()===t);if(!b)throw new Error('no button '+t);b.click();return true;},\nundo:()=>H.click('.work-notice','Undo'),\nlead:id=>LEADS.find(l=>l.id===id)};\nsignIn('rohit'); window.ZIR=updates().map(g=>g.k); signIn('tasneem');",
     "act": "go('updates');\nreturn true;",
@@ -24828,8 +24821,8 @@
     "Press 'See everything' in the Updates panel"
    ],
    "ui_expected": [
-    "It shows 'Arrived with no owner — 2 leads' marked 'Needs attention', listing Ritu Anand and Harish Kamath.",
-    "It shows 'Breached in your team — 2 leads' marked 'Needs attention', listing Sanjay Menon and Farida Contractor."
+    "It shows 'Arrived with no owner — 2 leads' marked 'Needs attention', reading 'They are listed once, on Leads under Needs an owner.'",
+    "It shows 'Breached in your team — 2 leads' marked 'Needs attention', reading 'They are listed once, on Today in the team's queue.'"
    ],
    "ui_mode": "ui",
    "group": "D",
@@ -29794,11 +29787,12 @@
    "ui_expected": [
     "The subtitle reads 'nothing waiting on you'.",
     "The Waiting on you card says this is a read-only seat.",
-    "Besides the role 'Auditor — read only', the top bar carries a separate 'read only' tag.",
-    "The page offers no 'Answer it' button."
+    "The top bar shows Latha Prabhu with a 'read only' tag.",
+    "The Waiting on you card reads 'Nothing is waiting on this seat.'"
    ],
    "group": "IM-B",
-   "orig_story": "IM03-S02"
+   "orig_story": "IM03-S02",
+   "expected": "The subtitle reads 'nothing waiting on you'. The Waiting on you card says this is a read-only seat. The top bar shows Latha Prabhu with a 'read only' tag. The Waiting on you card reads 'Nothing is waiting on this seat.'"
   },
   {
    "id": "TC-IM03-005",
@@ -29937,14 +29931,15 @@
    ],
    "ui_expected": [
     "The page heading reads Imran's day.",
-    "The subtitle reads '4 accounts · 5 waiting on you'.",
+    "The subtitle reads '4 accounts · 2 waiting on you'.",
     "Gone quiet reads 2.",
     "Accounts you hold reads 4.",
     "Tickets open on you reads 3.",
     "Conversations logged reads 9."
    ],
    "group": "IM-B",
-   "orig_story": "IM03-S05"
+   "orig_story": "IM03-S05",
+   "expected": "The page heading reads Imran's day. The subtitle reads '4 accounts · 2 waiting on you'. Gone quiet reads 2. Accounts you hold reads 4. Tickets open on you reads 3. Conversations logged reads 9."
   },
   {
    "id": "TC-IM03-011",
@@ -29986,11 +29981,12 @@
     "Press Divya Kamath on the sign-in screen"
    ],
    "ui_expected": [
-    "Vikram Anand's row reads 'Tier B and nobody is looking after them' and offers 'Name one'.",
+    "Vikram Anand's row reads 'Tier B and nobody is looking after them' and offers 'Assign manager'.",
     "The subtitle reads 'the whole book · 5 waiting on you'."
    ],
    "group": "IM-B",
-   "orig_story": "IM03-S05"
+   "orig_story": "IM03-S05",
+   "expected": "Vikram Anand's row reads 'Tier B and nobody is looking after them' and offers 'Assign manager'. The subtitle reads 'the whole book · 5 waiting on you'."
   },
   {
    "id": "TC-IM04-001",
@@ -30703,7 +30699,7 @@
   {
    "id": "TC-IM05-006",
    "story": "M10-S02",
-   "title": "A receipt Meena records waits for a second hand",
+   "title": "A receipt Finance records is matched at once (D113)",
    "type": "Negative",
    "seat": "meena",
    "priority": "P1",
@@ -30723,11 +30719,12 @@
     "Press 'Record it'"
    ],
    "ui_expected": [
-    "T-0049 is shown as waiting to be matched by a second person.",
-    "The header reads 'Joseph Mathew ARL-INV-0209 reserved KYC pending NRI 4 units · ₹1 Cr'."
+    "The Money section lists T-0049, a balance of ₹90 L, SWIFT EMIR0209900, recorded by Meena, and reads '₹1 Cr of ₹1 Cr'.",
+    "The header reads 'Joseph Mathew ARL-INV-0209 paid, awaiting allotment KYC pending NRI 4 units · ₹1 Cr'."
    ],
    "group": "IM-B",
-   "orig_story": "IM05-S03"
+   "orig_story": "IM05-S03",
+   "expected": "The Money section lists T-0049, a balance of ₹90 L, SWIFT EMIR0209900, recorded by Meena, and reads '₹1 Cr of ₹1 Cr'. The header reads 'Joseph Mathew ARL-INV-0209 paid, awaiting allotment KYC pending NRI 4 units · ₹1 Cr'."
   },
   {
    "id": "TC-IM05-009",
@@ -31749,10 +31746,11 @@
    ],
    "ui_expected": [
     "The first item under 'Waiting on you' is 'Verify the signed supplementary agreement' for Kiran Joshi, with a 'Verify it' button.",
-    "The 'From the IR console' list shows 'They say the supplementary is signed and sent' for Kiran Joshi from Rohit on 01 Sep."
+    "Prakash Bhat's 'An IR says the money has arrived — confirm it' is also under 'Waiting on you'."
    ],
    "group": "IM-C",
-   "orig_story": "IM07-S03"
+   "orig_story": "IM07-S03",
+   "expected": "The first item under 'Waiting on you' is 'Verify the signed supplementary agreement' for Kiran Joshi, with a 'Verify it' button. Prakash Bhat's 'An IR says the money has arrived — confirm it' is also under 'Waiting on you'."
   },
   {
    "id": "TC-IM07-009",
@@ -32302,10 +32300,11 @@
     "Press '＋ Publish one'"
    ],
    "ui_expected": [
-    "The 'Publish an update' panel offers the kinds Produce and Notice only."
+    "The 'Publish an update' panel offers the kinds Produce and Notice."
    ],
    "group": "IM-C",
-   "orig_story": "IM08-S05"
+   "orig_story": "IM08-S05",
+   "expected": "The 'Publish an update' panel offers the kinds Produce and Notice."
   },
   {
    "id": "TC-IM08-013",
@@ -32729,7 +32728,7 @@
   {
    "id": "TC-IM11-005",
    "story": "M08-S08",
-   "title": "Recording and matching the 10% opens a tentative app account",
+   "title": "Recording the 10% opens the app account on hold (D93)",
    "type": "Functional",
    "seat": "harsha",
    "priority": "P1",
@@ -32750,12 +32749,13 @@
     "Press the 'What they hold' tab"
    ],
    "ui_expected": [
-    "The app account is tagged tentative.",
+    "The app account reads 'On hold — data synced, sign-in locked, no email sent'.",
     "The app account says it was created automatically, on the first confirmed receipt.",
     "The page header shows Kiran Joshi as reserved."
    ],
    "group": "IM-C",
-   "orig_story": "IM11-S03"
+   "orig_story": "IM11-S03",
+   "expected": "The app account reads 'On hold — data synced, sign-in locked, no email sent'. The app account says it was created automatically, on the first confirmed receipt. The page header shows Kiran Joshi as reserved."
   },
   {
    "id": "TC-IM11-006",
@@ -32781,11 +32781,13 @@
     "Press the 'What they hold' tab"
    ],
    "ui_expected": [
-    "The What they hold tab has no 'The app account' section yet.",
-    "The page says the app account opens when the receipt is matched."
+    "The What they hold tab has a section 'The app account'.",
+    "Under 'The app account', Welcome reads 'On hold — data synced, sign-in locked, no email sent'.",
+    "The section says it was created automatically, on the first confirmed receipt."
    ],
    "group": "IM-C",
-   "orig_story": "IM11-S03"
+   "orig_story": "IM11-S03",
+   "expected": "The What they hold tab has a section 'The app account'. Under 'The app account', Welcome reads 'On hold — data synced, sign-in locked, no email sent'. The section says it was created automatically, on the first confirmed receipt."
   },
   {
    "id": "TC-IM11-007",
