@@ -28,7 +28,9 @@ describe("Team (vTeam)", () => {
     expect(t).toContain("read only");
     expect(t).not.toContain("harsha@agresearchlabs.com");
     expect(t).toContain("LP Latha Prabhu you latha@agresearchlabs.com");
-    expect(t).toContain("What each seat holds Right Head of Finance Operations Compliance & KYC Auditor");
+    expect(t).toContain("What each seat holds Right Head of Finance Head of Finance Finance Operations Finance Operations Compliance & KYC Compliance and Audit Auditor Compliance and Audit");
+    expect(t).toContain("Administrator Digital Infrastructure");
+    expect(t).not.toContain("Super administrator Digital");
     expect(t).toContain("Seeing a bank account and revealing a PAN are deliberately different rights.");
   });
   it("ImTeamBody drops the heading block only", () => {

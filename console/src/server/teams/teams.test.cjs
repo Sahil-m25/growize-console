@@ -241,18 +241,24 @@ test('rights grid: one column per seat from Zoho roles and profiles; drift named
   const res = await listAs(rig(), '07', 'head');
   const g = res.grid;
   assert.equal(g.source, 'zoho');
-  assert.equal(g.columns.length, 12);
+  assert.equal(g.columns.length, 13);
+  assert.deepEqual(g.columns.slice(0, 8).map((c) => c.seat), ['head', 'ops', 'comp', 'audit', 'amlead', 'kam', 'di', 'admin']);
+  assert.ok(!g.columns.some((c) => c.seat === 'root'));
+  const zr = (k) => g.columns.find((c) => c.seat === k).zohoRole;
+  assert.equal(zr('audit'), 'Compliance and Audit'); assert.equal(zr('comp'), 'Compliance and Audit'); assert.equal(zr('admin'), 'Digital Infrastructure'); assert.equal(zr('kam'), 'Key Account Manager');
+  assert.deepEqual(g.columns.find((c) => c.seat === 'audit').rights, ['view']);
+  assert.ok(g.columns.slice(8).every((c) => c.im === null && c.provisional && c.rights.length === 0));
   assert.ok(g.columns.every((c) => !c.drift));
-  const head = g.columns.find((c) => c.seat === 'head-of-finance');
+  const head = g.columns.find((c) => c.seat === 'head');
   assert.equal(head.profileName, 'Finance Head'); assert.equal(head.im, 'head'); assert.ok(head.rights.includes('team'));
-  assert.equal(g.columns.filter((c) => c.im !== null).length, 7);
-  assert.ok(g.columns.find((c) => c.seat === 'digital-infrastructure').pages.length > 0);
+  assert.equal(g.columns.filter((c) => c.im !== null).length, 8);
+  assert.ok(g.columns.find((c) => c.seat === 'di').pages.length > 0);
   assert.ok(g.rights.some((x) => x.key === 'pii'));
   const drift = await listAs(rig({ profiles: 'settings.profiles.drift' }), '07', 'head');
-  assert.deepEqual(drift.grid.columns.filter((c) => c.drift).map((c) => c.seat), ['key-account-manager']);
+  assert.deepEqual(drift.grid.columns.filter((c) => c.drift).map((c) => c.seat), ['kam']);
   const pin = await listAs(rig({ roles: 'settings.roles.no-permission' }), '11', 'kam');
-  assert.equal(pin.ok, true); assert.equal(pin.grid.source, 'pinned'); assert.equal(pin.grid.columns.length, 12);
-  assert.deepEqual(rightsGrid(null, null, pinned).columns.map((c) => c.drift), new Array(12).fill(false));
+  assert.equal(pin.ok, true); assert.equal(pin.grid.source, 'pinned'); assert.equal(pin.grid.columns.length, 13);
+  assert.deepEqual(rightsGrid(null, null, pinned).columns.map((c) => c.drift), new Array(13).fill(false));
 });
 
 test('M17-S01-W2: the person drawer\'s clash, changed-from-the-seat and availability come with the member (no new read, no identity)', async () => {

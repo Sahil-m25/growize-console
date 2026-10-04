@@ -36,7 +36,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
   if (!pageReadable(s, me, "team")) return null;
   const activity = activityBase(s, me), actors = activityActors(s, me);
   const rows = r.state === "ok" ? r.data.investorsSide ?? [] : [];
-  const cols = r.state === "ok" ? r.data.grid.columns.filter((c): c is typeof c & { im: ImRoleKey } => !!c.im) : [];
+  const cols = r.state === "ok" ? r.data.grid.columns : [];
   const order = Object.keys(ROLE) as ImRoleKey[];
   return (
     <>
@@ -69,13 +69,13 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
           })}
           </tbody></table></div></div>
         <div className="card fill"><div className="ch"><h3>What each seat holds</h3></div><div className="tw"><table>
-          <thead><tr><th>Right</th>{cols.map(c => <th key={c.im} style={{ textAlign: "center" }}>{
-            (c.imLabel ?? ROLE[c.im].t).replace("Finance ", "").replace(" — read only", "")}</th>)}</tr></thead>
+          <thead><tr><th>Right</th>{cols.map(c => <th key={c.seat} style={{ textAlign: "center" }}>{
+            c.label.replace(" — read only", "")}<div className="sm" style={{ fontWeight: 400 }}>{c.zohoRole}</div></th>)}</tr></thead>
           <tbody>{(Object.keys(CAN) as ImCan[]).map(c => (
             <tr key={c}><td><b>{CAN[c]}</b></td>
               {cols.map(col => {
                 const on = col.rights.includes(c);
-                return <td key={col.im} style={{ textAlign: "center", fontWeight: 700, color: on ? "var(--go)" : "var(--ink-3)", opacity: on ? 1 : .35 }}>{on ? "●" : "○"}</td>;
+                return <td key={col.seat} style={{ textAlign: "center", fontWeight: 700, color: on ? "var(--go)" : "var(--ink-3)", opacity: on ? 1 : .35 }}>{on ? "●" : "○"}</td>;
               })}</tr>
           ))}
           </tbody></table></div>

@@ -19,6 +19,26 @@ export const ROLE: Record<ImRoleKey, ImRole> = {
   admin: { tm: "sys", t: "Administrator", can: ["view", "team", "log"] },
   root: { tm: "sys", t: "Super administrator", can: ["view", "team", "log", "sys", "root"] },
 };
+/** R4 ruling 3 (D115): the rights grid's columns are SEATS, each labelled with the D80 Zoho role it sits on (rights are seat
+ *  capabilities; the Zoho role decides whose records are visible). Super administrator (root) is the owner's own seat: no column.
+ *  Auditor sits on "Compliance and Audit" (read-only profile); Administrator on "Digital Infrastructure". Lead-side seats
+ *  hold no Investors right (all hollow) and their role mapping is PROVISIONAL. `im` null = a lead-side seat. */
+export type SeatColumn = { seat: string; label: string; zohoRole: string; im: ImRoleKey | null; provisional?: true };
+export const SEAT_COLUMNS: readonly SeatColumn[] = [
+  { seat: "head", label: "Head of Finance", zohoRole: "Head of Finance", im: "head" },
+  { seat: "ops", label: "Finance Operations", zohoRole: "Finance Operations", im: "ops" },
+  { seat: "comp", label: "Compliance & KYC", zohoRole: "Compliance and Audit", im: "comp" },
+  { seat: "audit", label: "Auditor — read only", zohoRole: "Compliance and Audit", im: "audit" },
+  { seat: "amlead", label: "Head of Account Management", zohoRole: "Head of Account Management", im: "amlead" },
+  { seat: "kam", label: "Key Account Manager", zohoRole: "Key Account Manager", im: "kam" },
+  { seat: "di", label: "Super user — Digital Infrastructure", zohoRole: "Digital Infrastructure", im: "di" },
+  { seat: "admin", label: "Administrator", zohoRole: "Digital Infrastructure", im: "admin" },
+  { seat: "conv", label: "IR Manager", zohoRole: "IR Manager", im: null, provisional: true },
+  { seat: "ir", label: "IR Associate", zohoRole: "Investor Relations", im: null, provisional: true },
+  { seat: "cp", label: "Channel Partner", zohoRole: "Channel Partner", im: null, provisional: true },
+  { seat: "bu", label: "Growize BU Owner", zohoRole: "BU Owner", im: null, provisional: true },
+  { seat: "exec", label: "Operations Lead — ARL", zohoRole: "Exec", im: null, provisional: true },
+];
 export const CAN: Record<ImCan, string> = {
   view: "Open the Investors pages", bank: "See bank details", pii: "Reveal PAN and Aadhaar",
   pay: "Record money", doc: "Send and verify documents", tkt: "Work tickets",

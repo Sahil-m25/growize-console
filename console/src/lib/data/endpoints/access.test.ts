@@ -6,7 +6,7 @@ import { initialImUi, type ImAction, type ImState } from "@/lib/im";
 import { initialState, reducer, type Action, type ConsoleState } from "@/lib/state";
 import { liveRead, runWrite } from "../api";
 import { grantAdd, grantRemove, imSeatChange, leadSeatChange, managerChange } from "./access";
-import { teamMember, teamSeats, teamsRead } from "./teams";
+import { fixtureGrid, teamMember, teamSeats, teamsRead } from "./teams";
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const as = (k: string): ConsoleState => reducer(reducer(initialState(), { type: "hydrate", ds: demoBook(), version: 1, fixtures: true }), { type: "signIn", k });
@@ -133,12 +133,24 @@ describe("Teams rows — GET /api/teams", () => {
     if (!k.ok) throw new Error("refused");
     expect(k.data.investorsSide!.filter((x) => x.email).map((x) => x.email)).toEqual(["imran@agresearchlabs.com"]);
   });
-  it("live: one grid column per Investors seat", () => {
+  it("live: one grid column per seat, each with its Zoho role", () => {
+    const col = (seat: string, label: string, zohoRole: string, im: string | null, rights: string[]) => ({ seat, label, zohoRole, im, imLabel: im ? label : null, rights });
     const a = teamsRead.pick({
       view: { canChangeSeats: true, activeMembers: 2, members: null, investorsSide: [] },
-      grid: { columns: [{ im: "head", imLabel: "Head of Finance", rights: ["view"] }, { im: null, imLabel: null, rights: [] }, { im: "head", imLabel: "x", rights: [] }] },
+      grid: { columns: [col("comp", "Compliance & KYC", "Compliance and Audit", "comp", ["view"]), col("audit", "Auditor — read only", "Compliance and Audit", "audit", ["view"]), col("ir", "IR Associate", "Investor Relations", null, [])] },
     });
-    expect(a.grid.columns).toEqual([{ im: "head", imLabel: "Head of Finance", rights: ["view"] }]);
+    expect(a.grid.columns).toEqual([
+      { seat: "comp", label: "Compliance & KYC", zohoRole: "Compliance and Audit", im: "comp", rights: ["view"] },
+      { seat: "audit", label: "Auditor — read only", zohoRole: "Compliance and Audit", im: "audit", rights: ["view"] },
+      { seat: "ir", label: "IR Associate", zohoRole: "Investor Relations", im: null, rights: [] },
+    ]);
+  });
+  it("fixture: 13 seat columns, no root, Auditor and Administrator on their D80 roles; same seats as the live half", () => {
+    const g = fixtureGrid().columns;
+    expect(g).toHaveLength(13);
+    expect(g.some((c) => c.seat === "root")).toBe(false);
+    expect(g.find((c) => c.seat === "audit")).toMatchObject({ zohoRole: "Compliance and Audit", rights: ["view"] });
+    expect(g.find((c) => c.seat === "admin")).toMatchObject({ zohoRole: "Digital Infrastructure" });
   });
 });
 
