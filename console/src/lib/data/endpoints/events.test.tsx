@@ -129,6 +129,14 @@ describe("M14-S03-W1 — the sheet card", () => {
     expect(JSON.parse(f.mock.calls[0][1]!.body as string)).toEqual({ rule: { kind: "round-robin" }, rows });
     expect(r).toMatchObject({ ok: true, data: { loaded: 1 } });
   });
+  it("M18-S09-NOTE-3 live: a load that ran out of request time answers continuing {done,total}; the page posts the same body again", async () => {
+    const { s, id } = ready("rohit");
+    const f = fetchOf(200, { load: { eventId: id, rule: "round-robin", inFile: 2000, loaded: 800, duplicates: 0, refused: 0, split: [], assigned: [], rows: [], countsSaved: false, continuing: { done: 800, total: 2000 } } });
+    const r = await runWrite("live", sheetLoad, s, () => {}, { eventId: id, rule: { kind: "round-robin" }, rows: [] }, { fetch: f });
+    expect(r).toMatchObject({ ok: true, data: { loaded: 800, continuing: { done: 800, total: 2000 } } });
+    const fx = await runWrite("fixture", sheetLoad, s, () => {}, { eventId: id, rule: { kind: "round-robin" }, rows: [] });
+    expect(fx).toMatchObject({ ok: true, data: { continuing: null } });
+  });
   it("fixture: round-robin across the staff runs loadSheet; a second load is a 409 'A sheet loads once.'", async () => {
     const { s, id } = ready("rohit");
     const seen: Action[] = [];

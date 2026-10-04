@@ -12,6 +12,13 @@ import type { RouteContext } from "../cases/http";
 import type { EventsWriteAccess, EventsWriteAuthority } from "./writes";
 import { createEventWrites } from "./writes";
 import { createSheetLoader } from "./loader";
+import { sharedState } from "../state/runtime";
+import type { SharedState } from "../state/shared-state";
+
+/** The process's SharedState, or none when STATE_STORE is misconfigured (the load then runs to the end, as before). */
+function progressStore(): SharedState | undefined {
+  try { return sharedState(); } catch { return undefined; }
+}
 
 export function sessionEventsAuthority(env: NodeJS.ProcessEnv = process.env): EventsWriteAuthority {
   return {
@@ -44,7 +51,8 @@ export function eventServices(ctx: RouteContext, env: NodeJS.ProcessEnv = proces
   return {
     authority,
     writes: createEventWrites({ crm: ctx.crm, authority, events: ctx.events, recordIdPrefix, cache: ctx.cache }),
-    loader: createSheetLoader({ crm: ctx.crm, authority, events: ctx.events, recordIdPrefix, cache: ctx.cache }),
+    /* M18-S09-NOTE-3: a load that runs out of request time keeps its place in shared state (ids, counts, a hash) */
+    loader: createSheetLoader({ crm: ctx.crm, authority, events: ctx.events, recordIdPrefix, cache: ctx.cache, progress: progressStore() }),
   };
 }
 
@@ -52,4 +60,5 @@ export const WRITE_STATUS: Readonly<Record<string, number>> = Object.freeze({
   "invalid-request": 400, "session-changed": 401, "capability-missing": 403, "not-found": 404, gaps: 422, conflict: 409,
   "confirm-needed": 428, "source-invalid": 502, "event-not-run": 409, "sheet-not-ready": 409, "already-loaded": 409,
   "owner-missing": 422, "owner-not-assignable": 422, "no-staff": 422, "unassigned-queue-missing": 503, "too-many-rows": 413, "no-rows": 422,
+  "load-in-progress": 409,
 });

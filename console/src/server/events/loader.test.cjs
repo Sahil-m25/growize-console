@@ -6,7 +6,7 @@ const { test } = require('node:test');
 const { compile } = require('../cases/fixture-rig.cjs');
 const { makeWriteRig, P } = require('./write-rig.cjs');
 
-const load = compile(['server/events/loader.ts', 'server/data/events.ts', 'server/identity/plane-c.ts']);
+const load = compile(['server/events/loader.ts', 'server/data/events.ts', 'server/identity/plane-c.ts', 'server/state/memory.ts']);
 const { createSheetLoader, spellings, phoneKey } = load('server/events/loader.js');
 const ROHIT = `${P}740995001`, KAVYA = `${P}740995003`, MGR = `${P}740995002`;
 const PRESTIGE = `${P}740997601`;
@@ -117,4 +117,121 @@ test('unassigned needs the queue user; when every insert fails the claim is hand
 test('number spellings and keys', () => {
   assert.deepEqual(spellings('+919400000001'), ['+919400000001', '919400000001', '9400000001', '09400000001']);
   assert.equal(phoneKey('+91 94000 00001'), '9400000001');
+});
+
+/* ---- M18-S09-NOTE-3: 2,000 rows inside the request deadline -------------------------------------------- */
+const { runWithDeadline } = load('lib/zoho/deadline.js');
+const { createMemoryState } = load('server/state/memory.js');
+const BIG = 2_000;
+const bigRows = () => Array.from({ length: BIG }, (_, i) => ({ name: `Synthetic Person${String.fromCharCode(65 + (i % 26))}`, mobile: `94${String(10_000_000 + i)}`, consent: yes }));
+const json = (status, body) => ({ status, headers: { 'content-type': 'application/json' }, body });
+/** A stateful Zoho stand-in: the event's claim, one lead per number (a repeat is DUPLICATE_DATA), slow inserts, overlap counted. */
+function bigZoho(insertMs = 0) {
+  const ev = { Load_State: 'Ready', Loaded_By: null, Modified_Time: '2026-09-25T10:00:00+05:30' };
+  const leads = new Map(); const owners = new Map();
+  let live = 0, peak = 0, coqls = 0, counts = [];
+  const route = async (c) => {
+    if (c.method === 'POST' && c.path === '/coql') {
+      if (/from Lead_Events_X_Users/.test(c.query)) return 'coql.sheet-staff';
+      if (/from Lead_Events where/.test(c.query)) return json(200, { data: [{ id: PRESTIGE, Name: 'Prestige Falcon City', Event_City: 'Bengaluru', Event_State: 'Done', ...ev }], info: { count: 1, more_records: false } });
+      if (/from Leads where \(Mobile in/.test(c.query)) { coqls++; return 'coql.none'; }
+      return 'coql.none';
+    }
+    if (c.method === 'PUT' && c.path === `/Lead_Events/${PRESTIGE}`) {
+      const f = c.body.data[0];
+      if (f.Load_State === 'Loaded') { if (ev.Load_State !== 'Ready') return 'update.conflict'; Object.assign(ev, { Load_State: 'Loaded', Loaded_By: { id: f.Loaded_By.id } }); }
+      else counts.push({ ...f, guard: c.headers['If-Unmodified-Since'] });
+      return 'update.sheet-claim';
+    }
+    if (c.method === 'POST' && c.path === '/Leads') {
+      live++; peak = Math.max(peak, live);
+      if (insertMs) await new Promise((r) => setTimeout(r, insertMs));
+      live--;
+      return json(201, { data: c.body.data.map((x) => {
+        if (leads.has(x.Mobile)) return { code: 'DUPLICATE_DATA', details: { api_name: 'Mobile' }, message: 'duplicate data', status: 'error' };
+        const id = `${P}75${String(leads.size).padStart(7, '0')}`; leads.set(x.Mobile, id); owners.set(x.Mobile, x.Owner.id);
+        return { code: 'SUCCESS', details: { id, Modified_Time: '2026-09-28T11:30:00+05:30' }, message: 'record added', status: 'success' };
+      }) });
+    }
+    throw new Error(`unrouted ${c.method} ${c.path}`);
+  };
+  return { route, ev, leads, owners, counts, get peak() { return peak; }, get coqls() { return coqls; } };
+}
+async function asyncRig(z, extra = {}) {
+  // the write rig's route is synchronous: resolve the stand-in's answer inside a fetch wrapper
+  const rig = await makeWriteRig(load, () => 'coql.none');
+  const { createZohoClient } = load('lib/zoho/client.js');
+  const { createOpsLog, createMemorySink } = load('lib/zoho/log.js');
+  const { recorded } = require('../cases/fixture-rig.cjs');
+  const toResponse = (r) => new Response(r.status === 204 ? null : JSON.stringify(r.body), { status: r.status, headers: r.headers || {} });
+  rig.crm = createZohoClient({ recordIdPrefix: P, gate: { async acquire() { return { waitedMs: 0, release() {} }; } }, log: createOpsLog(createMemorySink()), maxAttempts: 1, clock: rig.clock,
+    fetch: async (url, init) => {
+      const body = init.body ? JSON.parse(init.body) : null;
+      const call = { method: init.method, path: new URL(url).pathname.replace(/^\/crm\/v\d+/, ''), query: body && body.select_query, body, headers: init.headers };
+      rig.calls.push(call);
+      const r = await z.route(call);
+      return toResponse(typeof r === 'string' ? recorded('events', r) : r);
+    } });
+  return Object.assign(rig, extra);
+}
+
+test('M18-S09-NOTE-3: 2,000 rows load in one call — book check and inserts 4 at a time, counts written once', async () => {
+  const z = bigZoho(2);
+  const progress = createMemoryState();
+  const rig = await asyncRig(z, { progress });
+  const r = await createSheetLoader(rig).load(await rig.cred(ROHIT), PRESTIGE, { kind: 'round-robin' }, intake(bigRows()));
+  assert.equal(r.ok, true, JSON.stringify(r).slice(0, 200));
+  assert.deepEqual([r.value.inFile, r.value.loaded, r.value.duplicates, r.value.refused, r.value.continuing], [BIG, BIG, 0, 0, null]);
+  assert.equal(z.coqls, 80, '25 numbers × 4 spellings per COQL');
+  assert.ok(z.peak > 1 && z.peak <= 4, `insert peak ${z.peak}`);
+  assert.equal(z.leads.size, BIG);
+  assert.deepEqual(z.counts.map((c) => [c.Rows_Loaded, c.Rows_In_File, c.guard]), [[BIG, BIG, '2026-09-28T11:29:00+05:30']]);
+  assert.deepEqual(r.value.split.map((x) => ({ ...x })), [{ ownerId: ROHIT, count: 1000 }, { ownerId: KAVYA, count: 1000 }]);
+  assert.equal(await progress.get(`event-sheet-load|${PRESTIGE}`), null, 'nothing kept once done');
+});
+
+test('M18-S09-NOTE-3: past the deadline the load stops between batches and the same sheet posted again continues — each row once', async () => {
+  const z = bigZoho(15);
+  const progress = createMemoryState();
+  const rig = await asyncRig(z, { progress, stopMarginMs: 40 });
+  const loader = createSheetLoader(rig);
+  const cred = await rig.cred(ROHIT);
+  const rows = bigRows();
+  let r, calls = 0;
+  const seen = [];
+  do {
+    const ac = new AbortController();
+    r = await runWithDeadline({ signal: ac.signal, at: Date.now() + 110 }, () => loader.load(cred, PRESTIGE, { kind: 'round-robin' }, intake(rows)));
+    assert.equal(r.ok, true, JSON.stringify(r).slice(0, 200));
+    seen.push(r.value.continuing && r.value.continuing.done);
+    calls++;
+  } while (r.value.continuing && calls < 40);
+  assert.ok(calls > 2, `took ${calls} calls`);
+  assert.equal(r.value.continuing, null);
+  assert.deepEqual([r.value.loaded, r.value.duplicates, r.value.refused], [BIG, 0, 0]);
+  assert.equal(z.leads.size, BIG, 'no number inserted twice (a repeat would have been DUPLICATE_DATA)');
+  assert.ok(seen.slice(0, -1).every((d, i, a) => d % 100 === 0 && (i === 0 || d > a[i - 1])), `progress ${seen}`);
+  // round-robin holds across calls: row i goes to staff[i % 2]
+  rows.forEach((x, i) => assert.equal(z.owners.get(`+91${x.mobile}`), i % 2 === 0 ? ROHIT : KAVYA));
+  assert.deepEqual(z.counts.map((c) => c.Rows_Loaded), [BIG], 'the counts are written once, at the end');
+  const logs = JSON.stringify(rig.sink.records());
+  assert.ok(!/94100|Synthetic Person/.test(logs));
+  assert.equal(await progress.get(`event-sheet-load|${PRESTIGE}`), null);
+});
+
+test('M18-S09-NOTE-3: only the loader, posting the same sheet, continues; anyone else (or a changed sheet) meets "A sheet loads once"', async () => {
+  const z = bigZoho(15);
+  const progress = createMemoryState();
+  const rig = await asyncRig(z, { progress, stopMarginMs: 40 });
+  const loader = createSheetLoader(rig);
+  const rows = bigRows();
+  const r1 = await runWithDeadline({ signal: new AbortController().signal, at: Date.now() + 110 }, async () => loader.load(await rig.cred(ROHIT), PRESTIGE, { kind: 'round-robin' }, intake(rows)));
+  assert.ok(r1.ok && r1.value.continuing, 'stopped part-way');
+  const other = await loader.load(await rig.cred(KAVYA), PRESTIGE, { kind: 'round-robin' }, intake(rows));
+  assert.equal(other.reasonCode, 'already-loaded');
+  const changed = await loader.load(await rig.cred(ROHIT), PRESTIGE, { kind: 'round-robin' }, intake(rows.slice(1)));
+  assert.equal(changed.reasonCode, 'already-loaded');
+  const done = await loader.load(await rig.cred(ROHIT), PRESTIGE, { kind: 'round-robin' }, intake(rows));
+  assert.equal(done.ok && done.value.continuing, null);
+  assert.equal(z.leads.size, BIG);
 });

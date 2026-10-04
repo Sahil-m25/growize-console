@@ -8,7 +8,10 @@
    POST /api/events/[id]/sheet — load the event's tablet sheet once (M14-S03-T01).
    Body: { rule: { kind: "round-robin" | "me" | "unassigned" } | { kind: "one", ownerId }, rows: [{ name, mobile, email?, city?, units?, consent: { msg, call, email? } }] }.
    PROVISIONAL (jev 0.95): the rows are the sheet as the page read it; every row is re-checked here. A Sheet reader replaces the body later.
-   200 → { load: { inFile, loaded, duplicates, refused, split[{ownerId,count}], assigned[{leadId,ownerId}], rows[], countsSaved } }
+   200 → { load: { inFile, loaded, duplicates, refused, split[{ownerId,count}], assigned[{leadId,ownerId}], rows[], countsSaved, continuing } }
+   M18-S09-NOTE-3: continuing { done, total } = the request deadline came first; the load kept its place — the same person
+   posts the same body again to continue (each row inserted once; counts written at the end). null = done.
+   409 load-in-progress: another request is continuing this load right now.
    403 capability-missing ("Your seat does not load event sheets; …"); 409 already-loaded ("A sheet loads once."); 422 owner-missing. */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
