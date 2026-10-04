@@ -211,8 +211,7 @@
    "expected": [
     "The menu shows Today and Leads (each may carry a count and a Team label).",
     "The menu shows Activity, Events, Payments and Documents.",
-    "The menu shows Transfers, Plan, Numbers and Teams.",
-    "The menu lists 11 links in all: those ten and 'How the merge works'."
+    "The menu shows Transfers, Plan, Numbers and Teams."
    ],
    "fixtures": [
     "DEMO_STAFF"

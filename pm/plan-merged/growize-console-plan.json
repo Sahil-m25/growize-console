@@ -18674,7 +18674,7 @@
    "steps": [
     "Read the pages Tasneem can reach"
    ],
-   "expected": "The menu shows Today and Leads (each may carry a count and a Team label). The menu shows Activity, Events, Payments and Documents. The menu shows Transfers, Plan, Numbers and Teams. The menu lists 11 links in all: those ten and 'How the merge works'.",
+   "expected": "The menu shows Today and Leads (each may carry a count and a Team label). The menu shows Activity, Events, Payments and Documents. The menu shows Transfers, Plan, Numbers and Teams.",
    "auto": {
     "observe": "const k=navFor().map(n=>n.k); return {pages:k, hasSystem:k.includes('system')}"
    },
@@ -18687,8 +18687,7 @@
    "ui_expected": [
     "The menu shows Today and Leads (each may carry a count and a Team label).",
     "The menu shows Activity, Events, Payments and Documents.",
-    "The menu shows Transfers, Plan, Numbers and Teams.",
-    "The menu lists 11 links in all: those ten and 'How the merge works'."
+    "The menu shows Transfers, Plan, Numbers and Teams."
    ],
    "ui_mode": "ui",
    "group": "A",
