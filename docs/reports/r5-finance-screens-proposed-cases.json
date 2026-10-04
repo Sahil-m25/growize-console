@@ -1,0 +1,51 @@
+{
+ "cases": [
+  {
+   "id": "M10-S03-B",
+   "story": "M10-S03",
+   "seat": "harsha",
+   "title": "Payments lists the IR's waiting payment report and offers Answer it",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Payments'"
+   ],
+   "expected": [
+    "A card titled 'Payment reports waiting on Finance' shows 1 report.",
+    "The report reads Balance, ₹22.5 L, RTGS and offers 'Answer it'."
+   ],
+   "fixtures": ["DEMO_BOOK"],
+   "group": "M10"
+  },
+  {
+   "id": "M10-S03-C",
+   "story": "M10-S03",
+   "seat": "harsha",
+   "title": "Answering the report from Payments clears the card",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Payments'",
+    "Press 'Answer it'",
+    "Press 'Not there yet'"
+   ],
+   "expected": [
+    "Payments opens on the bank statement upload and the register, with 15 receipts, and no 'Payment reports waiting on Finance' card above them."
+   ],
+   "fixtures": ["DEMO_BOOK"],
+   "group": "M10"
+  },
+  {
+   "id": "M10-S03-D",
+   "story": "M10-S03",
+   "seat": "fahad",
+   "title": "Compliance sees no payment reports on Payments",
+   "steps": [
+    "Press Fahad Rizvi on the sign-in screen"
+   ],
+   "expected": [
+    "The page does not mention payment reports waiting on Finance."
+   ],
+   "fixtures": ["DEMO_BOOK"],
+   "group": "M10"
+  }
+ ]
+}

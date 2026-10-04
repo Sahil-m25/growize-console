@@ -23,6 +23,7 @@ describe("ImDash — vDash", () => {
     expect(t).toContain("6 tickets open · Tickets→");
     expect(t).toContain("An IR says the money has arrived — confirm it · from Rohit · ARL-INV-0208Answer it");
     expect(t).toContain("Balance due — hold ends in 21 days · ARL-INV-0208Open the record");
+    expect(html).toContain('title="Balance · ₹22.5 L · RTGS · said 27 Aug"');   /* M10-S03-W2: the report behind the row, from GET /api/claims */
     expect(html).toContain('aria-label="Elsewhere today — each opens its page"');
     expect(t).not.toContain("Super user.");
   });

@@ -11,6 +11,7 @@ import type { KamAssigned } from "@/server/investors/kam-assign";
 import type { AddPaidCreated } from "@/server/investors/add-paid";
 import type { InvestorSearchResult } from "@/server/investors/search";
 import type { IrInvestorRow } from "@/server/investors/ir-list";
+import type { FinanceInvestorRow, FinanceSummary } from "@/server/investors/finance-list";
 import {
   I, KAMS, allots, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
   overdue, pageReadable, poolBook, quiet, tierOf, when, who, MOODS,
@@ -102,6 +103,43 @@ export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
       farms: Object.entries(x.blocks).map(([block, units]) => ({ llpId: block, name: s.data.FARMS.find(f => f.k === block)?.n ?? "", block, units })),
     })).sort((a, b) => a.name.localeCompare(b.name, "en-IN") || a.id.localeCompare(b.id));
     return ok({ rows, truncated: false });
+  },
+};
+
+/* ---- M09-S01-W1 — Finance's Investors list: GET /api/investors/finance (server/investors/finance-list) ----
+   One row per investor on the book with the summary counts. Org-wide seats only (Finance, Head of Finance, Compliance, the viewers,
+   the super user); an account-management seat reads its own book (amBook / amManagers) and is refused here, as the route refuses it.
+   Live: `id` is the Contact id (what the record route takes) and `code` the ARL ID. Fixture: both are the book's ARL id, the
+   same word the reducer and the record route's fixture use. The demo book has no email, residency beyond NRI, KYC date, FEMA
+   "done" or said-yes stamp: those come back null / derived and the screen reads none of them yet. */
+export type FinanceList = { rows: readonly FinanceInvestorRow[]; summary: FinanceSummary; truncated: boolean };
+
+/** args: whether this seat is on the Finance side (nothing to read for an account-management seat) */
+export const financeInvestors: ReadEndpoint<ImBook, boolean, FinanceList> = {
+  path: fin => (fin ? "/api/investors/finance" : null),
+  pick: j => j as FinanceList,
+  fixture({ s, me }) {
+    if (!pageReadable(s, me, "inv") || isAM(s, me)) return fail(403, "seat-denied", "This page is not part of your seat.");
+    const rows = s.data.INV.map((x): FinanceInvestorRow => {
+      const units = x.st === "lapsed" ? 0 : x.units;   /* the route counts live allotments only */
+      return {
+        id: x.id, code: x.id, name: x.n, city: x.city, email: x.em, residency: x.nri ? "NRI" : null, nri: x.nri,
+        kyc: x.kyc === "passed" ? "passed" : x.kyc === "failed" ? "failed" : "pending", kycOn: x.kycOn,
+        fema: x.fema === "outstanding" ? "outstanding" : null,
+        units, farms: Object.entries(x.blocks).map(([block, n]) => ({ llpId: block, name: s.data.FARMS.find(f => f.k === block)?.n ?? "", block, units: n })),
+        state: x.st === "said yes" ? null : x.st, stateLabel: x.st, paid: gotBy(s, me, x.id), due: dueBy(s, me, x.id),
+        ir: x.ir || null, lead: x.lead ?? null, saidYesAt: null,
+      };
+    });
+    return ok({
+      rows, truncated: false,
+      summary: {
+        onBook: rows.length, units: rows.reduce((t, r) => t + r.units, 0),
+        kycNotPassed: rows.filter(r => r.kyc !== "passed" && r.kyc !== "na").length, balanceOutstanding: rows.filter(r => r.due > 0).length,
+        nri: rows.filter(r => r.nri).length, femaOutstanding: rows.filter(r => r.fema === "outstanding").length,
+        saidYes: rows.filter(r => r.stateLabel === "said yes").length,
+      },
+    });
   },
 };
 
