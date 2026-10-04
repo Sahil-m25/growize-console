@@ -1,9 +1,9 @@
 # UAT-HOF — Head of Finance
 
 - **Run by:** Harsha Bhat. The real seat holder runs it, not a stand-in.
-- **Second person:** Meena (Finance) for the second-hand steps.
-- **What this proves:** The Head of Finance is the second hand on money, the only one who releases holds and farm units, and the one who issues the allotment and unlocks the app. Every reveal needs step-up and is logged.
-- **Before you start:** Meena's receipts (FIN-11, FIN-12) are recorded and pending. The seed has one hold that ran out 3 days ago. The Zoho approval process for forfeit and refund is on (M01-S10-T03). Prakash Bhat's allocation letter is on his allotment.
+- **Second person:** Meena (Finance) for the refund second-hand steps.
+- **What this proves:** The Head of Finance is the second hand on refunds and money leaving (D22), the one who matches what is still pending, the only one who releases holds and farm units, and the one who issues the allotment and unlocks the app. Every reveal needs step-up and is logged.
+- **Before you start:** Meena's receipts (FIN-11, FIN-12) are recorded and already matched by her (D113). Add a pending item to work: an IR claim not yet confirmed, or a statement line that did not auto-match (FIN-17). The seed has one hold that ran out 3 days ago. The Zoho approval process for forfeit and refund is on (M01-S10-T03). Prakash Bhat's allocation letter is on his allotment.
 - **Hand-offs:** BATON in: FIN-11, FIN-12. BATON out: HOF-02 and HOF-07 (for IR-17), HOF-11 (app unlocked).
 - **How to mark:** write Pass or Fail for every step in `../signoff-sheet.csv` (same step number). A Fail needs a defect (see `../defect-intake.md`). P1 = go-live blocker if it fails. P2 = needs a written workaround if it fails.
 - **Labels:** "Refused check" means the seat must be denied. Passing it means you were stopped, with a sentence on the page and no browser pop-up.
@@ -15,12 +15,12 @@
 - **Expect on screen:** Today reads "Harsha's day". Banked to date, balance outstanding, units reserved of released and tickets open agree with the seed. Recorded-but-unmatched money is not counted. No lead-side switch unless she also holds a lead seat.
 - **Expect in Zoho:** Read only.
 
-## HOF-02 · Match the receipts (the second hand)
+## HOF-02 · Match what is still pending
 *Step · P1 · Must · [M10-S02], [M08-S02], [M10-S07]*
 
-- **Do:** Open Payments, Not reconciled. Open Meena's receipt for Prakash Bhat (₹22.5 L). Press 'Match it'. Do the same for the UAT Lead A advance.
-- **Expect on screen:** Row offers 'Match it'. After matching: banked to date rises by the amount, the allotment's Payment_Status is recomputed, the lead's gate opens on the IR's next read.
-- **Expect in Zoho:** Receipts: Match_State = Matched, Matched_By = Harsha, Matched_At set. Allotment: Payment_Status = Partial or Full. Lead gate fields set. money.confirmed sent.
+- **Do:** Open Payments, Not reconciled. Match what is still pending: IR claims and statement lines that did not auto-match. Meena's own receipts (Prakash Bhat ₹22.5 L, UAT Lead A advance) are already matched and show no 'Match it'. Then try a refund you raised yourself: it needs a second hand, not you (D22).
+- **Expect on screen:** Each pending row offers 'Match it'. After matching: banked to date rises by the amount, the allotment's Payment_Status is recomputed, the lead's gate opens on the IR's next read.
+- **Expect in Zoho:** Receipts: Match_State = Matched, Matched_By = Harsha, Matched_At set (on the items you matched; Meena's stay Matched_By = Meena). Allotment: Payment_Status = Partial or Full. Lead gate fields set. money.confirmed sent.
 
 ## HOF-03 · First matched advance opens the app account on hold
 *Step · P1 · Must · [M08-S08], [M10-S02], [M10-S21]*

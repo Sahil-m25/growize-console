@@ -43,7 +43,7 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `FOLLOWUP_UNDO_SECRET` | **S** | ≥ 32 chars, its own | ≥ 32 chars, its own | leads/email-runtime.ts |
 | `ALERT_EMAIL_TO` | V | ops alert inbox | ops alert inbox | ops/runtime.ts |
 | `LOG_STORE` | V | `jsonl` | `jsonl` | logs/factory.ts (`memory` loses logs on restart) |
-| `LOG_DIR` | V | persistent volume path | persistent volume (Object Lock bucket mount, AP4) | logs/factory.ts |
+| `LOG_DIR` | V | persistent volume path | persistent volume. Log store: OPEN — owner (D47); no Object Lock on Plane B (C-07, M18-S05-T01); hosting AP4 open | logs/factory.ts |
 | `GZ_SIGNIN_LIST` | V | `staging` (shows the tester's sign-in list) | **—** | access/signin-list.ts |
 | `ZOHO_STUB_USER` | V | **—** | **—** (ignored in production anyway) | lib/data/stub-user.ts, api/auth/zoho |
 | `FIXTURE_MODE` | V | **—** | **—** (`local` = fixtures, never deployed) | lib/fixture-mode.ts |

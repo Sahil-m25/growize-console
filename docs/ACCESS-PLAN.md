@@ -1,6 +1,6 @@
 # Access-control plan: who sees and changes what in Zoho (approved 25 Sep 2026, D78)
 
-**Status:** approved by the owner, not yet applied to Zoho. Owner calls: R1 (Sahil stays Administrator) accepted; R2 answered (Compliance and Auditor become one seat).
+**Status:** approved by the owner, not yet applied to Zoho. Owner calls: R1 superseded by D110 (Sahil moves to a non-admin Digital Infrastructure profile); R2 answered (Compliance and Auditor become one seat).
 **Basis:** the seat rules in both prototypes, plus decisions D13/D22, D45, D51–D54, D68, D69/D74 and D70–D76.
 **Principle:** Zoho enforces the rules. The console re-checks every rule and logs what happens, but it is never the only protection (D52).
 
@@ -10,7 +10,7 @@
 |---|---|---|---|
 | Pradeep Ram | Corp / root | CEO (top) | Administrator |
 | Arvind Menon | BU owner | BU Owner, under CEO | Leadership |
-| Sahil Mohite | Digital Infrastructure / super user (D68) | Digital Infrastructure, under CEO | Administrator (see risk R1) |
+| Sahil Mohite | Digital Infrastructure / super user (D68) | Digital Infrastructure, under CEO | Digital Infrastructure (non-administrator, least privileges; D110, risk R1) |
 | Tasneem Qureshi | IR Manager | IR Manager, under BU Owner | IR Manager |
 | Rohit, Kavya, Nikhil, Ananya | Investor Relations | IR, under IR Manager | IR |
 | Jhalak Mehta | Exec (read) | Exec, under BU Owner | Viewer |
@@ -76,10 +76,9 @@ The console masks every one of these fields by default. Each reveal needs step-u
 
 ## 7. Risks and decisions needed
 
-**R1: Administrators see everything. RESOLVED (D78):** the owner accepts this. Sahil owns and develops the app and stays Administrator; every reveal is still logged by the console. Zoho's Administrator profile ignores field-level security, so whoever holds it sees all PAN, bank and Aadhaar data.
-- Proposal: Sahil stays Administrator during the build and testing (D68). Before go-live he moves to a custom "Digital Infrastructure" profile: manage users and customisation, with identity fields hidden.
-- Pradeep stays the one Administrator (Zoho requires at least one).
-- **Owner decision needed.**
+**R1: Administrators see everything. RESOLVED (D110, supersedes the D78 acceptance):** Sahil keeps every page and action of both sides, including logged PAN, Aadhaar and bank reveals (D68), but on a dedicated non-administrator **Digital Infrastructure** profile with least privileges, not Administrator. Every reveal is logged by the console. The permanent super admin (Tech Team) is a separate seat. No administrator token in the app (CLAUDE.md rule 2). Zoho's Administrator profile ignores field-level security, so it is held only by the Corporate root (Pradeep) and the separate super admin.
+- Owner task: create the profile in Zoho and move Sahil's user (M03-S05-T02).
+- **Business owner = the `bu` seat; seats, roles and responsibilities are assigned by Sahil (admin and Digital Infrastructure) and can be added later (D113 5c).**
 
 **R2: Compliance and Auditor seats (OD3). RESOLVED (D78):** merged into one Compliance & Audit seat and profile.
 

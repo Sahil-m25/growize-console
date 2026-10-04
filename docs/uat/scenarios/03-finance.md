@@ -1,10 +1,10 @@
 # UAT-FIN — Finance (Finance Operations)
 
 - **Run by:** Meena Raghavan. The real seat holder runs it, not a stand-in.
-- **Second person:** Harsha (Head of Finance) does the match, release and unlock steps.
-- **What this proves:** Finance does the money and paper work the IR hands over: send papers for signature, record what arrives, answer IR payment reports, reconcile the bank. Finance may record money but may not match its own receipt.
+- **Second person:** Harsha (Head of Finance) does the release and unlock steps, and the second hand on any refund.
+- **What this proves:** Finance does the money and paper work the IR hands over: send papers for signature, record what arrives, answer IR payment reports, reconcile the bank. A receipt Finance records is matched by that recording (D113): automatically from the bank statement where possible, else by the Finance person by hand.
 - **Before you start:** Sandbox seeded (Prakash Bhat and Joseph Mathew have balances due; Rohit has a payment report waiting on Prakash). Zoho Sign live on the sandbox with NDA and Supplementary templates (M12-S04-T02). A sample bank statement CSV (MA3, still owed by Finance).
-- **Hand-offs:** BATON in: IR-05 (send NDA), IR-08 (says signed), IR-13 (final draft), IR-14 (report). BATON out: FIN-06 (NDA sent), FIN-09 (supplementary), FIN-11, FIN-12 and FIN-13 (receipts wait for Harsha to match).
+- **Hand-offs:** BATON in: IR-05 (send NDA), IR-08 (says signed), IR-13 (final draft), IR-14 (report). BATON out: FIN-06 (NDA sent), FIN-09 (supplementary), FIN-11, FIN-12 and FIN-13 (receipts are matched by Meena, D113).
 - **How to mark:** write Pass or Fail for every step in `../signoff-sheet.csv` (same step number). A Fail needs a defect (see `../defect-intake.md`). P1 = go-live blocker if it fails. P2 = needs a written workaround if it fails.
 - **Labels:** "Refused check" means the seat must be denied. Passing it means you were stopped, with a sentence on the page and no browser pop-up.
 
@@ -83,13 +83,13 @@
 
 - **Do:** Open 'Waiting on you'. On UAT Lead A's report press Answer it, then 'Not there yet' with a reason. On Prakash Bhat's report (from Rohit) press Answer it, then 'Confirm and record it'.
 - **Expect on screen:** Drawer shows the IR's words, already paid, outstanding and hold end. 'Not there yet' leaves the IR's report as written. 'Confirm and record it' lists a balance receipt for Prakash Bhat of ₹22.5 L, RTGS HDFC2708994, by Meena, linked to the report and the allotment.
-- **Expect in Zoho:** Receipts: new record, Created_By = Meena, Match_State pending. The claim is linked. UAT Lead A's report stays as written.
+- **Expect in Zoho:** Receipts: new record, Created_By = Meena, Match_State = Matched, Matched_By = Meena (D113; the IR's claim stayed pending until Meena confirmed it). The claim is linked. UAT Lead A's report stays as written.
 
 ## FIN-12 · Record the advance for UAT Lead A
 *Step · P1 · Must · [M08-S03], [M10-S07], [M01-S08]*
 
 - **Do:** Open the investor's Money. Press Record a receipt for the 10% advance. On an investor with two farms, first try to save without picking an allotment.
-- **Expect on screen:** Save is refused until an allotment is picked. The receipt lists as advance, by Meena, under that farm. If the supplementary is not verified it says 'cannot be matched until the supplementary is verified' but is recorded, never refused.
+- **Expect on screen:** Save is refused until an allotment is picked. The receipt lists as advance, by Meena, under that farm, and shows matched (D113). If the supplementary is not verified it says 'cannot be matched until the supplementary is verified' but is recorded, never refused.
 - **Expect in Zoho:** Receipts: linked to the allotment (Contact and LLP follow it). One record on a double press.
 
 ## FIN-13 · Record a balance by SWIFT
@@ -99,12 +99,12 @@
 - **Expect on screen:** Listed as balance, SWIFT EMIR0209900, by Meena, under that farm.
 - **Expect in Zoho:** Receipts: one record, linked to the allotment.
 
-## FIN-14 · Finance cannot match its own receipt
-*Refused check · P1 · Must · [M10-S02], [M01-S08]*
+## FIN-14 · A recorded receipt is already matched
+*Step · P1 · Must · [M10-S02], [M01-S08]*
 
-- **Do:** Open Payments, Not reconciled. Open a receipt you recorded.
-- **Expect on screen:** It shows pending and offers no 'Match it'. It says a receipt is matched by someone other than the person who recorded it.
-- **Expect in Zoho:** A write with Matched_By = Created_By is refused by Zoho's validation rule too.
+- **Do:** Open Payments. Open the receipt Meena recorded in FIN-12 or FIN-13.
+- **Expect on screen:** It shows matched, by Meena, and offers no 'Match it'. No second person is asked. (An IR's payment report, a claim, stays pending until Finance confirms it.)
+- **Expect in Zoho:** Receipts: Match_State = Matched, Matched_By = Meena (D113 item 1).
 
 ## FIN-15 · Work offline
 *Step · P2 · Must · [M01-S08], [M01-S09]*

@@ -28,7 +28,7 @@ Until these are filled the on-call answer is "Sahil, and nobody else". That is a
 | `ops/runbooks/webhook-stopped.md` | A provider callback stopped arriving (Zoho Sign, mail, bank) | Valid, re-scoped 23 Sep |
 | `ops/runbooks/api-budget.md` | Zoho credits or concurrency running out, 429s | Valid, re-scoped 23 Sep |
 | `ops/runbooks/pii-leak.md` | An identity field got past the wall | Rewritten 23 Sep |
-| `ops/runbooks/money-mismatch.md` | Ledger and bank statement disagree | Valid. Step on "matched by a second person" predates D113 |
+| `ops/runbooks/money-mismatch.md` | Ledger and bank statement disagree | Valid. Updated to D113 (refunds keep D22's second hand) |
 | `ops/runbooks/heartbeat-silent.md` | The dead-man heartbeat stopped | Re-scoped. Where jobs run is not settled |
 | `ops/runbooks/sign-in-history.md` | Who signed in, from where, who failed | Written 4 Oct |
 | `ops/runbooks/outbox-stuck.md` | Nothing. Void: there is no outbox (D45) | Void, kept as record |
@@ -149,7 +149,7 @@ Do not: tell investors "delivered" when the page says "not delivered yet".
 
 - Leaked field: go straight to `ops/runbooks/pii-leak.md`. Stop the path before you diagnose.
 - Money mismatch: `ops/runbooks/money-mismatch.md`. The first two causes (timing, a typo) are almost always it. Wrong receipts are reversed and re-recorded, never edited. Weekly routine: `docs/runbooks/weekly-reconciliation.md`.
-- D113 changed who matches a receipt. Where those pages say a second person matches, follow D113: a receipt Finance records is matched, automatically from the statement where possible, else by Finance. Refunds and money leaving keep a second hand (D22). Ask the owner if unsure.
+- D113 changed who matches a receipt: a receipt Finance records is matched, automatically from the statement where possible, else by Finance. Refunds and money leaving keep a second hand (D22). The runbook pages now say so.
 
 ## 11. Routine tasks
 

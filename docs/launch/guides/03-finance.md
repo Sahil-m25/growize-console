@@ -19,7 +19,7 @@ Send papers for signature, record the money that arrives, answer the IR's paymen
 **Answer an IR's payment report.** Press **Answer it**. If you cannot find the money, press **Not there yet** and give a reason. The IR's words stay as written. If you find it, press **Confirm and record it** with the bank reference.
 
 **Record a receipt.** Open the investor's **Money** and press **Record a receipt** (advance, balance, SWIFT and so on). If the investor has two farms, pick the allotment first. Recording is always allowed. If the supplementary is not verified yet, it says so but still records.
-Check: D113 (4 Oct) says a receipt Finance records is matched, automatically from the bank statement where possible, otherwise by Finance. The UAT script still says only the Head of Finance can match. Ask Sahil which applies on your first receipt.
+A receipt you record is matched (D113, 4 Oct): automatically from the bank statement where possible, otherwise by you by hand. No second person is needed. An IR's payment report stays pending until you confirm it. Refunds and money leaving need the Head of Finance's second hand (D22).
 
 **No unit is sold twice.** If the farm has no free units, the page refuses and creates nothing.
 

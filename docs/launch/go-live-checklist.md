@@ -142,12 +142,12 @@ The full dated order, including the HUMAN notes, is in `autopilot/PEOPLE-CALENDA
 |---|---|
 | Farm ops: not provisioned now, persona kept | No Farm ops seat at go-live. UAT-FARM is not run. See `docs/uat/scenarios/08-farm-ops.md` |
 | 401 body stays as built | M18-S14 acceptance 1 now reads: "answers 401 with no session cookie and **no record data** in the body". The body is `{error, code, landing, session, signedOut}` |
-| Receipt Finance records is matched, no second person | Several documents still say "second hand". See section 8 |
+| Receipt Finance records is matched, no second person | UAT scripts, sign-off sheet, guides and runbooks aligned to D113 (docs sync, 4 Oct) |
 | `bu` seat is the business owner; roles are assigned by Sahil | Add or change seats through Sahil, later if needed |
 | Compliance reads the Finance trail read-only; no separate Auditor profile | One profile for Compliance and Audit |
 | Log store (D47) and hosting (AP4) | Still open |
 
 ## 8. Conflicts found while writing this page
-- `docs/ACCESS-PLAN.md` and `ops/SEAT-PLAN.md` give Sahil the Administrator profile. D110 moves him to a non-admin Digital Infrastructure profile. Follow D110.
-- UAT steps FIN-12, FIN-14, HOF-02 and gap 8 in `docs/uat/README.md`, and `docs/runbooks/weekly-reconciliation.md` and `ops/runbooks/money-mismatch.md`, still describe a second person matching a receipt. D113 item 1 says recording by Finance is the match. The tester must follow D113 or ask the owner before UAT.
+- RESOLVED (docs sync, 4 Oct): `docs/ACCESS-PLAN.md` and `ops/SEAT-PLAN.md` now follow D110 (Sahil on a non-admin Digital Infrastructure profile).
+- RESOLVED (docs sync, 4 Oct): UAT steps FIN-12, FIN-14, HOF-02, gap 8, the sign-off sheet, the Finance guides and both runbook pages now follow D113 item 1.
 - `TC-E15-034` is titled "only the three console seats" and then expects six names on the sign-in list. `GZ_SIGNIN_LIST` is unset in production, so production signs in with Zoho only. Settle what the production check reads.

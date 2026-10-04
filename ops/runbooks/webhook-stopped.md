@@ -20,7 +20,7 @@ GET is the truth (D52), so nothing is lost yet — it is late, not gone.
 1. Plane B's entries for that source — IDs and status codes, never bodies (D47, D52); until Plane B
    exists (A-05), the receiver's own request log. If requests are arriving and failing signature
    verification, someone rotated a key on one side only. Two keys are meant to be live during
-   rotation; put the previous key back in `SEAM_HMAC_KEY_PREVIOUS`.
+   rotation; put the previous key back in `ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS` (Zoho Sign; the contract push key is `CONTRACT_SIGNING_KEY_PREVIOUS`).
 2. If nothing is arriving at all: check the sender. eMudhra and the bank both have status pages; the FMS has ours.
 3. Run the poller for that source manually. Zoho, eMudhra and the bank all have a GET that answers
    the same question the webhook would have. **The poller is the truth; the webhook is a hint.**

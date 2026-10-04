@@ -26,7 +26,7 @@ An upload that fails ("Not reconciled yet - Zoho is not answering") keeps nothin
 ## What each list means
 **Matched.** The line agrees with a receipt on reference (UTR), amount to the paisa, direction, and a date within 3 days of the receipt's Received_On (India time).
 - `matched`: the receipt is already matched. Nothing to do.
-- `awaiting match`: a receipt exists, recorded by Finance, and the second hand has not pressed "Match it". The Head of Finance does that on Payments. The recorder cannot.
+- `awaiting match`: a receipt exists that the statement did not confirm automatically (an IR's payment report, a claim, or a line that did not match). Finance confirms it by hand on Payments (D113). A receipt a Finance seat records is already matched; nothing waits for a second person. Refunds and money leaving still need D22's second hand (Head of Finance, Digital Infrastructure or Corporate root, never the recorder).
 
 **Needs an owner.** The line has no clean receipt behind it. Every row names an owner and a reason, and debits are included (bank charges have no receipt).
 
@@ -40,11 +40,11 @@ An upload that fails ("Not reconciled yet - Zoho is not answering") keeps nothin
 | the receipt was reversed | Head of Finance | Money moved after a reversal: confirm what the bank shows is the reversal's counterpart, or record the right receipt |
 | the same line appears twice | Head of Finance | Check whether the bank repeated a row or two payments share a reference |
 
-A line is closed when it is matched against a receipt a second hand has matched. Bank charges and other debits with no receipt cannot be closed in the console; the Head of Finance accounts for them outside it. Nothing is closed by deleting anything: no receipt is deleted, and the statement file is kept.
+A line is closed when it is matched against a receipt that is matched (automatically from this statement, or by Finance by hand, D113). Bank charges and other debits with no receipt cannot be closed in the console; the Head of Finance accounts for them outside it. Nothing is closed by deleting anything: no receipt is deleted, and the statement file is kept.
 
 ## Check before you finish
 - The count of `need an owner` is zero, or every remaining row is a bank debit the Head of Finance has accounted for, or has an owner who has been told.
-- Every `awaiting match` receipt has been matched by the Head of Finance (or is waiting on her, today).
+- Every `awaiting match` item has been confirmed by Finance (or has an owner who has been told). Refunds waiting on the second hand are with the Head of Finance.
 - Payments reads "Last reconciled" with this week's date.
 
 ## Limits

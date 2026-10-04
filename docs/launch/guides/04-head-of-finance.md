@@ -3,15 +3,15 @@
 Seat: Head of Finance, Investors side. Dated 4 Oct 2026. Screenshots from staging go here when staging exists.
 
 ## Your job in one line
-Be the second hand on money and the only one who releases holds and farm units, issues allotments and unlocks the app. Every reveal needs step-up and is logged.
+Be the second hand on refunds and money leaving, match what is still pending, and be the only one who releases holds and farm units, issues allotments and unlocks the app. Every reveal needs step-up and is logged.
 
 ## Start of day
 1. Sign in with Zoho.
 2. **Today** reads "Harsha's day": banked to date, balance outstanding, units reserved of released, tickets open. Money that is only recorded and not matched is not counted. **Holds running** and the **Land** card are on Today.
 
 ## Your day
-**Match receipts.** Open **Payments**, then **Not reconciled**. Open a receipt and press **Match it**. Banked to date rises, the allotment's payment status is recalculated, and the IR's gate opens on their next read.
-Check: D113 (4 Oct) says a receipt that Finance records is already matched (automatically from the statement where possible, else by hand). Ask Sahil which receipts still wait for your match, because your queue may look different from the script. Refunds and money leaving still need a second hand (D22).
+**Match what is still pending.** A receipt Finance records is already matched (D113). Open **Payments**, then **Not reconciled**: IR claims and statement lines that did not auto-match show **Match it**. Press it. Banked to date rises, the allotment's payment status is recalculated, and the IR's gate opens on their next read.
+Refunds and money leaving need your second hand, never the recorder's (D22).
 
 **The first matched advance** opens the investor's app account **On hold**. The hold runs 30 days. No welcome email goes out.
 

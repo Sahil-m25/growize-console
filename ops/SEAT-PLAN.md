@@ -6,7 +6,7 @@ One Enterprise org. Everyone, viewers included, holds a full seat (D53). Renewal
 | Order | Seat | Who | Zoho role | Zoho profile | Added |
 |---|---|---|---|---|---|
 | 1 | Restricted test user | T11 Test | IR (then each role in turn) | IR (then each profile in turn) | S0, the one bought seat |
-| 2 | Working admin, split from super admin | Sahil Mohite | Digital Infrastructure, under CEO | Administrator | after T11 |
+| 2 | Digital Infrastructure, split from the permanent super admin | Sahil Mohite | Digital Infrastructure, under CEO | Digital Infrastructure (non-administrator, least privileges; D110) | after T11 |
 | 3 | IR Manager | Tasneem Qureshi | IR Manager, under BU Owner | IR Manager | after T11 |
 | 4 | Investor Relations (4) | Rohit, Kavya, Nikhil, Ananya | IR, under IR Manager | IR | after T11 |
 | 5 | Finance | Meena Raghavan | Finance Ops, under Head of Finance | Finance Ops | after T11 |
@@ -17,7 +17,9 @@ One Enterprise org. Everyone, viewers included, holds a full seat (D53). Renewal
 | 7 | Viewers | Jhalak Mehta (Exec) | Exec, under BU Owner | Viewer | after T11 |
 | 7 | Farm ops, channel partners | as named by the owner | Partner, under IR Manager (partners) | Channel Partner | after T11 |
 
-Seats already in the org: Tech Team (super admin). Pradeep Ram and Arvind Menon are existing owner seats (Administrator, Leadership) and are not bought.
+Business owner = the `bu` seat. Seats and roles are assigned by Sahil and can be added later (D113 5c). Farm ops is not provisioned now; the persona is kept for later (D113 5b).
+
+Seats already in the org: Tech Team (the permanent super admin). Pradeep Ram and Arvind Menon are existing owner seats (Administrator, Leadership) and are not bought.
 
 ## Gate
 T11 (the restricted test user cannot read PAN or bank on any screen, in the console or in Zoho) must pass before rows 2–7 are created. Until then Setup → Users → Active Users lists only Tech Team and the restricted test user (TC-E02-002).

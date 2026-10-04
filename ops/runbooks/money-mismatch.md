@@ -27,5 +27,7 @@ receipt, or a receipt with no line.
 someone recorded; a correction is a new row plus a reversal, never an edit. An edited receipt destroys
 the only evidence of what actually happened.
 
-**Do not:** let the same person who recorded a receipt be the one who matches it. The validation rule
-refuses it, and if you find a way around the rule you have removed the second hand entirely (D22).
+**Do not:** let the person who recorded a refund, or any money leaving, be the one who approves it. The
+second hand there is the Head of Finance, Digital Infrastructure or the Corporate root (D22). An ordinary
+receipt a Finance seat records is matched by that recording, automatically from the statement where
+possible, else by the Finance person by hand (D113); no second person is needed.

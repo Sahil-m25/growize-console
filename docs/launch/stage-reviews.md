@@ -67,7 +67,7 @@ Sources: `docs/DECISIONS.md` and decision files D104 to D113, `docs/SESSIONS.md`
 
 **What went well.** One wiring pattern (`docs/WIRING.md`) and three pilots, then six Sonnet builders in parallel. The stale-edit guard now rides every read (`Modified_Time`), so a stale save gets "Changed by someone else, reload" (D112). Seven new routes. Real bugs fixed: offline Investors receipts now queue; Auditor Activity reads the Finance trail.
 
-**What did not.** The laptop CLI lost the API in round 2 on 30 Sep (`ENOTFOUND`, 15 minute pause). Round 1 and 2 of 4 Oct ran in a cloud workspace, "laptop not linked" (D112). The unit count is quoted three ways: 64 units from 66 notes (D104), 68 units (SESSIONS, D111), 66 (status.json).
+**What did not.** The laptop CLI lost the API in round 2 on 30 Sep (`ENOTFOUND`, 15 minute pause). Round 1 and 2 of 4 Oct ran in a cloud workspace, "laptop not linked" (D112). The unit count: 66 units (68 subtasks); older text quotes 64 (D104) or 68 (D111) for the same work.
 
 **Risks seen.** The 9 review units need owner rulings or Zoho fields: D113 answered several (items 2, 5d, 6).
 
@@ -191,4 +191,4 @@ Rules: numbers come from `autopilot/status.json` and the defects list. Say "bloc
 ## 9. Conflicts found while writing this
 - Decisions D94 to D103 are cited (D98 is cited by `phases.json`, D104, D105, D108) but have no file in `docs/decisions/` and no row in `docs/DECISIONS.md`. The index jumps from D93 to D104. D67 and D86 to D92 are also absent. The decision files exist in the claude.ai project (`decisions-and-changes-d97` to `d103`, per its doc list), not in the repo.
 - Forecast: D66 says built by 3 Oct. `status.json` says finish 5 Oct and `on_track: false`. The UAT README projects UAT 4 to 9 Oct. The people calendar says testing 5 to 11 Oct.
-- Phase 2b unit count: 64 (D104), 68 (SESSIONS, D111 text), 66 (status.json).
+- Phase 2b unit count: 66 units (68 subtasks). D104 says 64 and D111 text says 68; both stay as history.

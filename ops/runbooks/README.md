@@ -10,7 +10,7 @@ The operations entry point is `docs/ops/runbook.md`: who is on call, alerts to a
 
 | Page | Use it when | State (4 Oct 2026) |
 |---|---|---|
-| [webhook-stopped.md](webhook-stopped.md) | INBOUND: a provider callback stopped arriving (Zoho Sign, mail, bank) | Re-scoped 23 Sep. Names `SEAM_HMAC_KEY_PREVIOUS`; the Sign secret in `ops/env/README.md` is `ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS` |
+| [webhook-stopped.md](webhook-stopped.md) | INBOUND: a provider callback stopped arriving (Zoho Sign, mail, bank) | Re-scoped 23 Sep. Names `ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS`, as in `ops/env/README.md` |
 | [api-budget.md](api-budget.md) | PLATFORM: the Zoho API budget is running out, or 429s | Re-scoped 23 Sep |
 | [pii-leak.md](pii-leak.md) | PII: an identity field got past the wall. Act before you diagnose. | Rewritten 23 Sep |
 | [money-mismatch.md](money-mismatch.md) | MONEY: the ledger and the bank statement disagree | Valid. The "same person matches" step predates D113 item 1 |
