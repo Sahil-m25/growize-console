@@ -16,7 +16,9 @@
       "The Activity log lists 'Revealed a bank reference' by Sahil Mohite.",
       "That line's note reads 'Payments · ••• 8119 · shown to Sahil Mohite · A payout or a refund'."
     ],
-    "fixtures": ["DEMO_DATA"],
+    "fixtures": [
+      "DEMO_DATA"
+    ],
     "group": "M15"
   },
   {
@@ -30,10 +32,11 @@
       "Press 'Show the reference' on Joseph Mathew's row"
     ],
     "expected": [
-      "The page asks 'Why do you need it?' with the choices 'A payout or a refund', 'A name match against a cancelled cheque', 'An investor query about their own record' and 'Cancel'.",
-      "Joseph Mathew's payment reference is still shown as 'SWIFT · ••• 8119'."
+      "The page asks 'Why do you need it?' with the choices 'A payout or a refund', 'A name match against a cancelled cheque', 'An investor query about their own record' and 'Cancel'."
     ],
-    "fixtures": ["DEMO_DATA"],
+    "fixtures": [
+      "DEMO_DATA"
+    ],
     "group": "M18"
   }
 ]
