@@ -42,13 +42,15 @@ import type {
   QueuedReceiptReplay, ReceiptKind, ReceiptMode, ReceiptReplayPrincipal, ReceiptReplayService, ReceiptReplaySnapshot,
 } from "./receipt-replay";
 import { RECEIPT_MODES } from "./receipt-replay";
+import { createMemoryState } from "../state/memory";
+import { createIdempotency } from "../state/idempotent";
+import type { SharedState } from "../state/shared-state";
 
 export const READ_ONLY_TEXT = "Read only — Finance Operations and the Head of Finance record money.";
 export const MATCH_BLOCKED_TEXT = "Recorded. It cannot be matched until the supplementary agreement is signed and verified.";
 /** The receipt is recorded but the immediate match did not land: Finance presses "Match it" on Payments. */
 export const NOT_MATCHED_YET_TEXT = "Recorded, not matched yet — press 'Match it' on Payments.";
 export const RECORD_REPLAY_TTL_MS = 10 * 60 * 1_000;
-const MAX_HELD = 500;
 
 /** The Money drawer's words → Receipts.Kind. "Part" is the live name of D70's Balance. Refunds have their own flow. */
 export const RECORD_KINDS: Readonly<Record<string, ReceiptKind>> = Object.freeze({ advance: "Advance", balance: "Part", full: "Full" });
@@ -121,6 +123,8 @@ export interface RecordReceiptDependencies {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
+  /** Where the double-press guard lives (runtime: sharedState()); default an in-process store. */
+  readonly state?: SharedState;
 }
 
 /** What a refusal from the write path says, in the drawer's words. Every one begins "Not saved yet". */
@@ -171,7 +175,14 @@ export function createRecordReceipt(deps: RecordReceiptDependencies) {
   const { replay, writes, authority, log } = deps;
   const clock = deps.clock ?? Date.now;
   const validId = (v: unknown): v is string => typeof v === "string" && RECORD_ID.test(v) && v.startsWith(deps.recordIdPrefix);
-  const held = new Map<string, { readonly at: number; readonly fingerprint: string; readonly result: Promise<RecordResult> }>();
+  // The double-press guard (../state/idempotent): claimed in SharedState, so a second press on another instance
+  // joins the first. Only a confirmed id is held; the stored answer carries no reference (re-filled on replay).
+  const presses = createIdempotency<RecordResult>({
+    state: deps.state ?? createMemoryState({ clock }), ns: "record-receipt", ttlSeconds: RECORD_REPLAY_TTL_MS / 1_000, clock,
+    keep: (r) => r.ok,
+    save: (r) => JSON.stringify(r.ok ? { ...r, value: { ...r.value, ref: "" } } : r),
+    load: (s) => { try { return JSON.parse(s) as RecordResult; } catch { return null; } },
+  });
 
   const refuse = (me: string, code: string, ids: readonly unknown[] = []): Fail => {
     let at = 0;
@@ -308,23 +319,14 @@ export function createRecordReceipt(deps: RecordReceiptDependencies) {
       if ("ok" in i) return i;
       if (!(await may(p, signal))) return refuse(me, "read-only", [i.allotmentId]);
 
-      const now = clock();
-      for (const [k, v] of held) if (now - v.at > RECORD_REPLAY_TTL_MS) held.delete(k);
       const slot = `${me}\u0000${p.sessionId}\u0000${idempotencyKey}`;
       const fingerprint = JSON.stringify([i.allotmentId, i.kind, i.mode, i.ref, i.receivedOn, i.amountRupees]);
-      const first = held.get(slot);
-      if (first) {
-        if (first.fingerprint !== fingerprint) return refuse(me, "idempotency-key-reused", [i.allotmentId]);
-        const r = await first.result;
-        return r.ok ? { ok: true, value: Object.freeze({ ...r.value, duplicate: true }) } : r;
-      }
-      if (held.size >= MAX_HELD) return refuse(me, "busy");
-      const result = run(p, idempotencyKey, i, signal);
-      held.set(slot, { at: now, fingerprint, result });
-      const r = await result;
-      // Only a confirmed id is held; anything else may be pressed again with the same key (replay() recovers by it).
-      if (!r.ok && held.get(slot)?.result === result) held.delete(slot);
-      return r;
+      const o = await presses.once(slot, fingerprint, () => run(p, idempotencyKey, i, signal));
+      if (o.kind === "reused") return refuse(me, "idempotency-key-reused", [i.allotmentId]);
+      if (o.kind === "busy" || o.kind === "unavailable") return refuse(me, "busy", [i.allotmentId]);
+      const r = o.result;
+      if (o.kind === "ran") return r;
+      return r.ok ? { ok: true, value: Object.freeze({ ...r.value, ref: i.ref, duplicate: true }) } : r;
     },
   });
 }

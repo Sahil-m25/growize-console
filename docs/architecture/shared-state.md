@@ -42,6 +42,12 @@ own `exp`.
 | Zoho Sign webhook | answers `provider-failed`, retryable | Zoho Sign redelivers. |
 | Investor-app inbound webhook | throws → 5xx | The app redelivers. |
 | Step-up (`step-up.ts`) | rejects → the route fails | Fail closed: no window is opened and no lock is skipped. |
+| Money Idempotency-Key guards (mark-paid, add-paid, record-receipt) | refuses "busy" / "in-progress", writes nothing | A money write never runs without its guard. |
+| Payout schedule job | skips the allotment as "busy" | Nothing is written; the next run fills it. |
+| Grant store (`shared`) | rejects → the door refuses a granted-only seat; a grant change answers an error | Fail closed. |
+| Seen-ids / request index | rejects → the webhook answers 5xx / retryable | The sender redelivers. |
+| Push outbox queue | the event stays in this process and the write is retried on the next drain; `push-failed` alert `queue-unavailable` | A queued push is not dropped while the instance lives. |
+| Job endpoints | 503 `state-unavailable`, nothing runs | The next scheduled call runs it. |
 
 ## Inventory — every piece of cross-request mutable server state
 
@@ -63,17 +69,17 @@ semantics — per instance only means more fetches, never staler data).
 | 5 | Investor-app inbound in-flight claim | server/contracts/inbound.ts | S | **moved** (`claim`, TTL 120 s) | Same, for request.raised / push.delivered |
 | 6 | **User sessions** (`createMemorySessionStore`: sid → sealed refresh token, who, seat) | server/oauth/user-session.ts, oauth/runtime.ts | S | **not moved — GAP, blocking for AppSail** | Everyone is signed out on every instance hop and every ~5-min recycle. `SessionStore` is already an interface (get/put/delete/keysOf); a SharedState-backed store needs a per-user key index for `keysOf` |
 | 7 | Live user access tokens + one-refresh-at-a-time map | server/oauth/user-session.ts | L | unchanged | Re-minted per instance from the stored session. Watch Zoho's per-refresh-token mint limit (spike item 9) |
-| 8 | Webhook "seen" event ids (Sign webhook, Sign embed, inbound) | contracts/inbound.ts `createSeenEvents` + jsonl plane store | S | **not moved — GAP** (writer wired through the Plane store, owned by another agent) | On ephemeral disk, dedupe is forgotten on recycle and differs per instance. Next step: a `SeenEvents` on `claim(key, 14 d)` |
-| 9 | Request index (app_request_id → Case) | server/contracts/requests.ts | S | not moved — GAP (same jsonl pattern) | A replayed request.raised may open a second Case |
-| 10 | Push outbox queue + dead-letter shelf | server/contracts/outbox.ts | S | not moved — GAP | Queued pushes to the investor app are lost when the instance recycles |
-| 11 | Sign dead-letter list | server/zoho-sign/runtime.ts | S | not moved (jsonl; Plane-store owned) | Dead letters are lost per instance |
-| 12 | Grant store (`GRANT_STORE=memory\|jsonl`) | server/access/grants.ts | S | not moved — GAP | Grants given on one instance are invisible on others and lost on recycle (jsonl is on ephemeral disk) |
-| 13 | Idempotency replay maps (`held`/`inFlight`/`replays`): record-receipt, receipt-replay, add-paid, mark-paid, Sign send, document upload, payment claim, lead email | money/*, investors/add-paid.ts, payouts/mark-paid.ts, zoho-sign/send.ts, documents/upload.ts, leads/claim.ts, leads/email.ts | S (money) / L (others) | not moved | A double-press reaching two instances writes twice. Receipts are protected at Zoho once the unique `Idempotency_Key` field exists (receipt-replay.ts header). Mark-paid and add-paid rely on these maps only. Candidate for `claim(idempotencyKey, 30 min)` |
-| 14 | Payout schedule job `running` set | server/payouts/schedule.ts | S | not moved | Two instances can run the same schedule at once. Candidate for `claim` |
+| 8 | Webhook "seen" event ids (Sign webhook, Sign embed, inbound) | contracts/inbound.ts `createSeenEvents` / `createSharedSeenEvents` | S | **moved** with `STATE_STORE=catalyst`: `seen\|<receiver>\|<id>`, TTL 14 d (`get`/`set`); file/memory otherwise as before | — |
+| 9 | Request index (app_request_id → Case) | server/contracts/requests.ts `createSharedRequestIndex` | S | **moved** with `STATE_STORE=catalyst`: `req\|<app_request_id>` → `caseId\|contactId`, no expiry | — |
+| 10 | Push outbox queue + dead-letter shelf | server/contracts/outbox.ts + outbox-queue.ts | S | **moved** with `STATE_STORE=catalyst`: queue in SharedState, one claim per delivery attempt, drained by `POST /api/jobs/outbox-drain`; the push ledger → log sink plane `push` | — |
+| 11 | Sign dead-letter list | server/zoho-sign/runtime.ts | S | **moved** to the log sink plane `sign-dead` (day file with `LOG_STORE=jsonl`, Stratus with `LOG_SINK=stratus`); memory only when there is no durable sink | — |
+| 12 | Grant store (`GRANT_STORE=memory\|jsonl\|shared`) | server/access/grants.ts `createSharedGrantStore` | S | **moved**: `shared` (default with `STATE_STORE=catalyst`) is a SharedState list of grant lines | — |
+| 13 | Idempotency replay maps: record-receipt, add-paid, mark-paid (money) — and receipt-replay, Sign send, document upload, payment claim, lead email (others) | money/record-receipt.ts, investors/add-paid.ts, payouts/mark-paid.ts (+ the others) | S (money) / L (others) | **money moved** to `state/idempotent.ts` (claim + stored answer, TTL 10 min); mark-paid's per-payout lock is a claim too. receipt-replay.ts (owned by r6-money) and the L-class maps are unchanged | The others: a double press on two instances is joined only per instance. Receipts are still protected at Zoho once `Idempotency_Key` is unique |
+| 14 | Payout schedule job `running` set | server/payouts/schedule.ts | S | **moved**: `claim(payout-run\|<allotment>, 300 s)`, released when the run ends | — |
 | 15 | Alert engine windows, last-fired, fired-day, history; credit samples | server/ops/alerts.ts, ops/runtime.ts | S (degrades) | not moved | Thresholds count per instance (alerts fire late or never); "once a day" alerts fire once per instance |
 | 16 | Alert outbox mailer (held alerts until mail is configured) | server/ops/alerts.ts `createOutboxMailer` | L today | not moved | Held alerts are lost on recycle. Matters once mail is wired |
 | 17 | Test-link register | server/investors/test-link.ts | S (small) | not moved | A link issued on one instance is unknown on another |
-| 18 | Background timers: Sign re-check every 10 min (`ensureSignCheck`), outbox drain | zoho-sign/runtime.ts, ops/runtime.ts | S (scheduling) | not moved — GAP | 5 instances run 5 timers. An instance that lives ~5 min never reaches a 10-min tick. Needs a platform cron (Catalyst Job Scheduling) plus a `claim` per run |
+| 18 | Background timers: Sign re-check every 10 min (`ensureSignCheck`), outbox drain | zoho-sign/runtime.ts, contracts/runtime.ts | S (scheduling) | **moved**: `POST /api/jobs/sign-recheck` and `/api/jobs/outbox-drain` (JOB_SECRET, platform cron, catalyst/README.md), each run `claim(job\|<name>)`; the Sign timer stays only with `SIGN_CHECK_TIMER=on` (default on a single-process store) and claims too | — |
 | 19 | Service-token caches (provider-callback, kam-pool-return) | zoho-sign/runtime.ts, access/runtime.ts | L | unchanged | Re-minted per instance (spike item 9) |
 | 20 | Scoped aggregate cache + in-flight coalescing | lib/zoho/cache.ts, lib/zoho/coalesce.ts (via data/zoho-source.ts, teams/runtime.ts) | R8 | unchanged — keep per instance | More Zoho reads, never staler data. Do **not** share: rule 8 keys it per viewer and forbids copies |
 | 21 | Last-good-read times (freshness banner) | server/data/freshness.ts, documents/list.ts | R8 | unchanged | A banner may say "could not refresh" on one instance and not on another; still honest |
@@ -101,10 +107,68 @@ Each item names the line of `catalyst.ts` that changes if the answer differs.
 13. **Data Store `IsUnique` alternative:** what a duplicate insert answers (undocumented). Only needed if NoSQL fails item 1.
 14. **Does `instrumentation.ts` `register()` throwing stop `next start` on AppSail?** It should refuse to serve. If not, `sharedState()` still throws on first use, so every rate-limited route returns 500. That is closed, but noisy.
 
+## Round 6 — the rest of the per-instance state (M18-S09-NOTE-2, 4 Oct 2026)
+
+**One switch.** `STATE_STORE=catalyst` moves every item below at once (`instanceStateShared()` in `state/runtime.ts`);
+unset, each item keeps the exact behaviour it had (memory, or day files under `LOG_DIR` / `GRANT_DIR`). There is no
+per-item switch to forget on a multi-instance host, except `GRANT_STORE`, which keeps its explicit values.
+
+**Per item, and why that store.**
+
+| Item | Store | Why this one |
+|---|---|---|
+| Webhook seen-ids (Sign webhook, Sign embed, inbound) | SharedState `get`/`set`, TTL 14 d | Small keyed state, read on every callback; the in-flight `claim` already guards concurrency, so a plain mark is enough. The log sink cannot answer "seen?" without reading days back |
+| Request index | SharedState `get`/`set`, no TTL | Keyed lookup by app_request_id; ids only. Kept forever like the file index (each entry ~60 bytes) |
+| Grant store | SharedState **list** (`state/shared-log.ts`) | Append-only lines that every door must see within seconds and that must replay in full on a fresh instance. Stratus fits "append-only" but buffers 30 s per instance and lists objects on each read — wrong for authority. Lines carry their slot; the highest slot per person+page wins, so the list needs no order |
+| Sign dead-letters | **log sink**, plane `sign-dead` | Diagnostic, append-only, read only by Digital Infrastructure's list. Exactly what the sink is for; a 30 s flush delay is harmless. Stratus reads merge every instance's segments |
+| Push ledger | **log sink**, plane `push` | Same: append-only delivery lines (ids, status, codes) read for the 14-day history |
+| Push outbox queue | SharedState (`contracts/outbox-queue.ts`) | Mutable per-event state plus a claim per attempt; needs set-if-absent, which the sink does not have |
+| Money Idempotency-Key guards | SharedState `claim` + stored answer (`state/idempotent.ts`) | The claim is the only cross-instance mutual exclusion we have |
+| Payout run set, job runs | SharedState `claim` | Same |
+
+**Building blocks (all on the existing five SharedState calls, no new dependency).**
+
+- `state/shared-log.ts` — a list without scan: `incr` hands out a slot, `set` writes it. Readers return what they
+  find in any order, keep missing slots as holes, re-read them and give one up after 10 minutes (a writer that
+  crashed between `incr` and `set`). Cost: one `get` of the counter per poll plus one per new slot (25 in parallel).
+- `state/idempotent.ts` — `once(scope, fingerprint, work)`: join a press running in this process; else replay a
+  stored answer (fingerprint must match, else `reused`); else `claim`; the winner stores the fingerprint hash, runs,
+  keeps the answer for the TTL (or releases the claim when the answer is retryable); a loser polls for the answer
+  up to 20 s, then answers busy. A store failure answers `unavailable` and the money route refuses ("busy") — a
+  money write never runs unguarded. Stored answers carry no reference: record-receipt blanks `ref`, mark-paid blanks
+  `utrMasked`; both are re-filled from the replayed press, whose fingerprint (hashed) matched.
+- `contracts/outbox-queue.ts` — keys and the delivery rule are in its header. The outbox keeps its synchronous
+  in-process view (`state`, `forRecord`, `stats` answer from it; `sync()` refreshes from the queue; the deliveries
+  routes sync at most every 5 s). `drain()` first picks up what other instances listed, then for each due event
+  claims `ob|send|<id>` (120 s), re-reads the shared state, sends only if still due, and stores the new state before
+  releasing. A push.delivered on an instance that never saw the event sets `ob|done|<id>`, which every reader
+  applies over a stale "retrying".
+- `jobs/claim.ts` — `claimJob(state, name, run)` and the endpoint door: `JOB_SECRET` (≥ 32 chars) in `X-Job-Secret`,
+  compared with `timingSafeEqual` over sha256 digests. Routes `POST /api/jobs/sign-recheck`, `/api/jobs/outbox-drain`
+  (guard rule `open`; not rate-limited; no Origin header from a scheduler, so the Origin check passes).
+
+**Rule 7 on these values.** Keys are ids, hashes and codes (the catalyst adapter hashes every key again). The one
+value that carries text is a queued push event (a reply, an update body): it passed the outbox's identity guard and
+schema check, and is deleted on delivery or after 14 days (**PROVISIONAL**: owner to confirm a Catalyst NoSQL row may
+hold an investor-facing message until delivered; the alternative is to re-build the event at drain time from Zoho).
+Grant lines, seen-ids, the request index and idempotency answers are ids and codes only.
+
+**Known limits (documented, not fixed here).**
+
+- Grant changes reach other instances within `GRANT_REFRESH_MS` (2 s); each guarded request on a shared store costs
+  at most one Catalyst `get` per 2 s per instance for the refresh. A fresh instance replays every grant line (25 reads in
+  parallel); past a few thousand lines add a snapshot.
+- The outbox low-water mark is a hint: an event replayed by an operator on one instance after others marked it dead
+  is drained by that instance (it holds it), not picked up by a fresh one until it is listed again.
+- The payout claim store failing skips the allotment as "busy" (nothing written); the System page's outbox stats are
+  this instance's view.
+- `receipt-replay.ts` keeps its own in-process guards (r6-money owns it); the Zoho unique `Idempotency_Key` is still
+  what makes a receipt land once across instances (BLOCKED elsewhere).
+- Catalyst Job Scheduling's expression grammar and minimum interval are UNVERIFIED (catalyst/README.md).
+
 ## Next, in order (not built here)
 
-1. **User sessions onto SharedState** (inventory 6). AppSail cannot ship without this.
-2. **Seen-event ids and the request index** onto `claim(key, 14 days)` (inventory 8, 9). This touches the Plane-store wiring, so coordinate with the log-writer owner.
-3. **Money idempotency maps and the payout job lock** onto `claim` (inventory 13, 14).
-4. **Background timers to a platform scheduler** with a per-run `claim` (inventory 18).
-5. **Alert windows** (inventory 15), once mail is wired.
+1. **User sessions onto SharedState** (inventory 6) — r6-sessions, this round.
+2. **Alert windows** (inventory 15), once mail is wired; the test-link register (17).
+3. The L-class idempotency maps (Sign send, document upload, payment claim, lead email) onto `state/idempotent.ts`
+   if a double write there turns out to matter.

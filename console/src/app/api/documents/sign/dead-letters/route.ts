@@ -12,7 +12,7 @@ async function get() {
   const seat = c.ctx.principal.session.seat;
   if (seat !== "di" && seat !== "ops") return Response.json({ error: "The callback dead-letter list belongs to Digital Infrastructure.", code: "seat-denied" }, { status: 403, headers: NO_STORE });
   const { signDeadLetters } = await import("@/server/zoho-sign/runtime");
-  return Response.json({ deadLetters: signDeadLetters().slice(-200) }, { headers: NO_STORE });
+  return Response.json({ deadLetters: (await signDeadLetters()).slice(-200) }, { headers: NO_STORE });
 }
 
 export const GET = withErrorCapture(guardApi("/api/documents", get), "/api/documents/sign/dead-letters");

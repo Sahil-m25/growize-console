@@ -27,6 +27,7 @@ async function post_(req: Request) {
   const { userSessions } = await import("@/server/oauth/runtime");
   const { zohoSeatOf } = await import("@/server/data/live");
   const { seatAccess } = await import("@/server/access/policy");
+  const { sharedState } = await import("@/server/state/runtime");
   const { rt, crm, principal } = c.ctx;
   const recordIdPrefix = process.env.ZOHO_CRM_RECORD_ID_PREFIX!;
   const receipts = createAllotmentReceiptWrites({
@@ -35,7 +36,7 @@ async function post_(req: Request) {
     replay: { async replay() { return { ok: false, kind: "source-error", source: "zoho", errorKind: "refused", retryable: false } as const; } },
   });
   const service = createAddPaid({
-    crm, receipts, log: rt.log, recordIdPrefix, oversell: createOversellGuard({ crm, events: rt.events }),
+    crm, receipts, log: rt.log, recordIdPrefix, state: sharedState(), oversell: createOversellGuard({ crm, events: rt.events }),
     authority: {
       // Re-derived from the live session: the Investors-side "pay" capability (Finance, Head of Finance, super user).
       async mayAdd(cred, sid) {

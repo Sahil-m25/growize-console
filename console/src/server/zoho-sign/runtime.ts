@@ -10,7 +10,10 @@ import { alertingOpsSink } from "../ops/runtime";
 import { createZohoClient } from "../../lib/zoho/client";
 import { logSinks } from "../logs/factory";
 import { createJsonlStore } from "../logs/jsonl";
-import { createSeenEvents } from "../contracts/inbound";
+import { createSeenEvents, createSharedSeenEvents } from "../contracts/inbound";
+import type { SeenEvents } from "../contracts/events";
+import { instanceStateShared, sharedState } from "../state/runtime";
+import { claimJob, type JobRun } from "../jobs/claim";
 import { contractKeys, loadSchemas, investorAppMode } from "../contracts/stub";
 import { dataRuntime } from "../data/zoho-source";
 import { createSignApi, type SignApi } from "./api";
@@ -72,26 +75,39 @@ const planeStore = (plane: string) => {
   return s.kind === "jsonl" && s.dir ? createJsonlStore({ dir: s.dir, plane }) : null;
 };
 
-/* ---- M12-S05-T01: dedupe and the dead-letter list (ids and codes only; survive a restart when LOG_DIR is set) ---- */
+/**
+ * Applied Sign event ids (webhook, embed): SharedState when STATE_STORE=catalyst (every instance, survives a
+ * recycle), else the day files under LOG_DIR as before (docs/architecture/shared-state.md inventory 8).
+ */
+function seenFor(ns: "sign-webhook" | "sign-embed"): SeenEvents {
+  return instanceStateShared() ? createSharedSeenEvents(sharedState(), ns) : createSeenEvents(planeStore(ns));
+}
+
+/* ---- M12-S05-T01: dedupe and the dead-letter list (ids and codes only) ----
+ * The dead letters are append-only records, so they go to the log sink's "sign-dead" plane (day file with
+ * LOG_STORE=jsonl, Stratus with LOG_SINK=stratus): durable, and the list reads every instance's lines. A process
+ * with no durable sink keeps its own last 1,000 in memory (inventory 11). */
 export interface DeadLetter { readonly at: number; readonly reason: string; readonly requestId: string | null; readonly retryable: boolean }
 const G = globalThis as typeof globalThis & {
-  __gzSignSeen?: ReturnType<typeof createSeenEvents>; __gzSignDead?: DeadLetter[]; __gzSignPerson?: SignPersonRuntime;
+  __gzSignSeen?: SeenEvents; __gzSignDead?: DeadLetter[]; __gzSignPerson?: SignPersonRuntime;
   __gzSignService?: { api: SignApi; filer: SignedFiler }; __gzSignTimer?: ReturnType<typeof setInterval> | null; __gzSignEmbed?: EmbedEndpoint;
 };
-const seen = () => (G.__gzSignSeen ??= createSeenEvents(planeStore("sign-webhook")));
-export function signDeadLetters(): readonly DeadLetter[] {
-  const mem = (G.__gzSignDead ??= []);
-  if (mem.length) return mem.slice();
-  const store = planeStore("sign-dead");
+const seen = () => (G.__gzSignSeen ??= seenFor("sign-webhook"));
+const deadStore = () => logSinks().planeStore("sign-dead");
+const DEAD_LETTER_DAYS = 14;
+export async function signDeadLetters(): Promise<readonly DeadLetter[]> {
+  const store = deadStore();
+  if (!store) return (G.__gzSignDead ??= []).slice();
   const out: DeadLetter[] = [];
-  if (store) for (const day of store.days().slice(-14)) for (const l of store.read(day)) out.push(l as DeadLetter);
-  return out;
+  for (const day of (await store.days()).slice(-DEAD_LETTER_DAYS)) for (const l of await store.read(day)) out.push(l as DeadLetter);
+  return out.sort((a, b) => a.at - b.at);
 }
 function deadLetter(entry: DeadLetter): void {
+  const store = deadStore();
+  if (store) { store.append(entry); return; }
   const mem = (G.__gzSignDead ??= []);
   mem.push(entry);
   if (mem.length > 1_000) mem.splice(0, mem.length - 1_000);
-  planeStore("sign-dead")?.append(entry);
 }
 
 /** The service half (provider-callback): Sign API + the M12-S06 filer. */
@@ -158,8 +174,14 @@ function opsLine(reason: string): void {
   try { log.refusal({ at: Date.now(), actor: { kind: "service", job: "provider-callback" }, action: "sign-check", reason, recordIds: [] }); } catch { /* ignore */ }
 }
 
-/* ---- M12-S05-T02: the periodic check of open requests (every 10 minutes while the process runs) ---- */
+/* ---- M12-S05-T02: the periodic check of open requests (every 10 minutes) ----
+ * AppSail instances live ~5 minutes, so an in-process 10-minute timer may never fire. The check therefore runs
+ * when a platform scheduler calls POST /api/jobs/sign-recheck (catalyst/README.md has the cron line), and every
+ * run — scheduler or timer — first claims "job|sign-recheck" in SharedState, so overlapping runs do nothing.
+ * The in-process timer is kept for a single long-lived process only: SIGN_CHECK_TIMER=on|off, default on unless
+ * STATE_STORE=catalyst. */
 export const SIGN_CHECK_EVERY_MS = 10 * 60_000;
+export const SIGN_CHECK_JOB = "sign-recheck";
 export async function runSignCheck(): Promise<void> {
   const svc = serviceHalf();
   const crm = createZohoServiceClient({ gate, log, recordIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"), maxAttempts: 2 });
@@ -169,10 +191,22 @@ export async function runSignCheck(): Promise<void> {
   const r = await check.run(cred);
   if (!r.ok) opsLine(`sign-check-${r.errorKind}`);
 }
-/** Starts the timer once per process (idempotent). Needs Zoho Sign configured; otherwise does nothing. */
+/** One claimed run of the check (the job endpoint and the timer both call this). */
+export function runSignCheckClaimed(): Promise<JobRun> {
+  return claimJob(sharedState(), SIGN_CHECK_JOB, runSignCheck);
+}
+/** SIGN_CHECK_TIMER: "on" | "off"; unset → on for a single-process store, off when STATE_STORE=catalyst. */
+export function signCheckTimerOn(env: NodeJS.ProcessEnv = process.env): boolean {
+  const v = (env.SIGN_CHECK_TIMER ?? "").trim();
+  if (v === "on") return true;
+  if (v === "off") return false;
+  if (v !== "") throw new Error(`SIGN_CHECK_TIMER must be "on" or "off".`);
+  return !instanceStateShared(env);
+}
+/** Starts the timer once per process (idempotent). Needs Zoho Sign configured and SIGN_CHECK_TIMER on; otherwise does nothing. */
 export function ensureSignCheck(): void {
-  if (G.__gzSignTimer || !process.env.ZOHO_SIGN_API_ORIGIN || !process.env.ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN) return;
-  G.__gzSignTimer = setInterval(() => { void runSignCheck().catch(() => opsLine("sign-check-threw")); }, SIGN_CHECK_EVERY_MS);
+  if (G.__gzSignTimer || !process.env.ZOHO_SIGN_API_ORIGIN || !process.env.ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN || !signCheckTimerOn()) return;
+  G.__gzSignTimer = setInterval(() => { void runSignCheckClaimed().catch(() => opsLine("sign-check-threw")); }, SIGN_CHECK_EVERY_MS);
   (G.__gzSignTimer as { unref?: () => void }).unref?.();
 }
 
@@ -187,7 +221,7 @@ export function signEmbedEndpoint(env: NodeJS.ProcessEnv = process.env): EmbedEn
   const svc = serviceHalf();
   const crm = createZohoServiceClient({ gate, log, recordIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"), maxAttempts: 1 });
   G.__gzSignEmbed = createEmbedEndpoint({
-    schemas: loadSchemas(), keys: keys.all, seen: createSeenEvents(planeStore("sign-embed")), allowedHosts: hosts,
+    schemas: loadSchemas(), keys: keys.all, seen: seenFor("sign-embed"), allowedHosts: hosts,
     crm, sign: svc.api, credential: (signal) => provider().credential(signal), log,
   });
   return G.__gzSignEmbed;

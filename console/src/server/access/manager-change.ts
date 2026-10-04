@@ -109,7 +109,7 @@ export function createManagerChangeService(d: ManagerChangeDeps): ManagerChangeS
       const people = new Map<string, SeatedPerson>();
       for (const p of [...mine, ...theirs, ...above]) people.set(p.who, p);
       const grants: Record<string, CapGrid> = {};
-      for (const k of people.keys()) grants[k] = d.store ? d.store.grantsOf(k) : {};
+      for (const k of people.keys()) grants[k] = d.store ? await d.store.grantsOf(k) : {};
       const v = decideManager(by, whom, mgr, { people: [...people.values()], grants }, new Date(clock()));
       if (!v.ok) return no(v.refusal, v.lose);
 

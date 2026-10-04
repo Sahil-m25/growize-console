@@ -25,7 +25,8 @@ const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
 const sources = ['lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib/zoho/log.ts', 'lib/zoho/client.ts', 'server/money/receipt-replay.ts',
-  'server/money/allotment-receipts.ts', 'server/investors/add-paid.ts', 'server/investors/unlock.ts', 'server/farms/oversell.ts'].map((f) => path.join(srcRoot, f));
+  'server/money/allotment-receipts.ts', 'server/investors/add-paid.ts', 'server/investors/unlock.ts', 'server/farms/oversell.ts',
+  'server/state/memory.ts', 'server/state/catalyst.ts', 'server/state/fake-catalyst.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -128,11 +129,12 @@ function rig(o = {}) {
   const allow = { mayAdd: async () => o.finance !== false, mayChange: async () => o.finance !== false };
   const guardRefusals = [];
   const oversell = createOversellGuard({ crm, events: { refusal: (...a) => guardRefusals.push(a) } });
-  const add = createAddPaid({ crm, receipts, oversell, authority: allow, log, recordIdPrefix: P, clock: () => NOW });
+  const addOn = (state) => createAddPaid({ crm, receipts, oversell, authority: allow, log, recordIdPrefix: P, clock: () => NOW, state });
+  const add = addOn(undefined);
   const planeC = [];
   const app = createAppAccess({ crm, authority: allow, log, events: { appAccessReleased: (...x) => planeC.push(x) }, recordIdPrefix: P, clock: () => NOW });
   const writes = () => calls.filter((c) => c[0] !== 'GET' && c[1] !== '/coql');
-  return { add, app, calls, sink, writes, guardRefusals, planeC };
+  return { add, addOn, app, calls, sink, writes, guardRefusals, planeC };
 }
 
 /* ---- pure pieces ---------------------------------------------------------------------------------- */
@@ -296,6 +298,30 @@ test('the same Idempotency-Key from the same person gets the first answer back a
   const bad = await r.add.add(principal(), form(), 'x');
   assert.equal(bad.reasonCode, 'idempotency-key-invalid');
 });
+
+/* M18-S09-NOTE-2: the route builds the service per request, so the replay lived nowhere; now the key is claimed in SharedState */
+{
+  const { createMemoryState } = load('server/state/memory.js');
+  const { createCatalystState } = load('server/state/catalyst.js');
+  const { createFakeCatalyst, FAKE_CONFIG } = load('server/state/fake-catalyst.js');
+  for (const [name, two] of [
+    ['memory', () => { const st = createMemoryState({ clock: () => NOW }); return [st, st]; }],
+    ['fake catalyst', () => { const fake = createFakeCatalyst({ seed: 3 }); const mk = () => createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => NOW, sleep: async () => undefined }); return [mk(), mk()]; }],
+  ]) {
+    test(`two instances (${name}): one Idempotency-Key pressed on both at once adds the investor once; the other gets the first answer`, async () => {
+      const r = rig();
+      const [s1, s2] = two();
+      const [a, b] = await Promise.all([r.addOn(s1).add(principal(), form(), 'add-investor-key-0900'), r.addOn(s2).add(principal(), form(), 'add-investor-key-0900')]);
+      assert.equal(a.ok && b.ok, true, JSON.stringify([a, b]));
+      assert.deepEqual([a.value.replayed, b.value.replayed].sort(), [false, true]);
+      assert.equal(a.value.contactId, b.value.contactId);
+      assert.equal(r.writes().filter((c) => c[1] === '/Contacts').length, 1, 'one Contact across both instances');
+      // a fresh service (a new request on either instance) still replays
+      const c = await r.addOn(s2).add(principal(), form(), 'add-investor-key-0900');
+      assert.equal(c.ok && c.value.replayed, true);
+    });
+  }
+}
 
 /* ---- M10-S21: the App account card ------------------------------------------------------------------ */
 

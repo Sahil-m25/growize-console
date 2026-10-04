@@ -189,7 +189,7 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
     const people = new Map<string, SeatedPerson>();
     for (const p of [...mine, ...theirs]) people.set(p.who, p);
     const grants: Record<string, CapGrid> = {};
-    for (const k of people.keys()) grants[k] = d.store ? d.store.grantsOf(k) : {};
+    for (const k of people.keys()) grants[k] = d.store ? await d.store.grantsOf(k) : {};
     const v = decideLeadSeat(by, whom, to, { people: [...people.values()], grants }, new Date(clock()));
     if (v) return no(v);
     const target = LEAD_SEAT_TO_ZOHO[to]!;
@@ -198,8 +198,8 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
     const put = await d.crm.updateUserSeat(as, whom, { roleId: write.roleId, roleName: write.roleName, profileId: write.profileId, profileName: write.profileName });
     if (!put.ok) return no(putFailure(put.error.kind));
     /* the new seat's preset replaces the grid (prototype: delete GRANT[k]) */
-    const held = d.store ? Object.keys(d.store.grantsOf(whom)) : [];
-    for (const page of held) d.store!.set({ at: clock(), by, whom, page, caps: null });
+    const held = d.store ? Object.keys(await d.store.grantsOf(whom)) : [];
+    for (const page of held) await d.store!.set({ at: clock(), by, whom, page, caps: null });
     d.events.seatChanged(by, whom, session.seat, from, to, "ok");
     try { await d.sessions?.endSessionsOf(whom, "seat-changed"); } catch { /* their next refresh ends it (seat mismatch) */ }
     return { ok: true, side: "lead", whom, from: from as SeatKey, to, overridesCleared: held.length };

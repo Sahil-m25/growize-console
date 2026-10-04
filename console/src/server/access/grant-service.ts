@@ -64,18 +64,18 @@ export function createGrantService(d: {
       const people = new Map<string, SeatedPerson>();
       for (const p of [...mine, ...theirs]) people.set(p.who, p);
       const grants: Record<string, CapGrid> = {};
-      for (const k of people.keys()) grants[k] = d.store.grantsOf(k);
+      for (const k of people.keys()) grants[k] = await d.store.grantsOf(k);
       const v = (d.decide ?? decideGrant)(by, { ...ask, whom }, { people: [...people.values()], grants }, new Date(clock()));
       if (!v.ok) return refuse(v.refusal, v.code);
 
-      d.store.set({ at: clock(), by, whom, page: ask.page, caps: v.caps });
+      await d.store.set({ at: clock(), by, whom, page: ask.page, caps: v.caps });
       d.events.grantChange(by, whom, session.seat, code(v.code), "ok");
       if (!v.accountBefore && v.accountAfter) d.events.accessGranted(by, whom, session.seat, ask.page);
       if (v.accountBefore && !v.accountAfter) {
         d.events.accessEnded(by, whom, session.seat);
         try { await d.sessions?.endSessionsOf(whom, "access-ended"); } catch { /* the next read ends it (the door is re-asked) */ }
       }
-      return { ok: true, whom, page: ask.page, grants: d.store.grantsOf(whom), consoleAccount: v.accountAfter };
+      return { ok: true, whom, page: ask.page, grants: await d.store.grantsOf(whom), consoleAccount: v.accountAfter };
     },
   });
 }
