@@ -10,6 +10,9 @@ It serves story M18-S08 (subtasks M18-S08-H5 and M18-S08-H6). Every step cites t
 | `scenarios/01-ir.md` … `10-auditor-viewer.md` | One script per seat. Each walks that seat's real day, step by step. |
 | `signoff-sheet.csv` | One row per step: expected result, pass/fail, evidence, defect id, notes, tester, date. Open it in Excel or Sheets. |
 | `defect-intake.md` | One page: how to report a problem, where it goes, how fast it is looked at. |
+| `usability-tasks.md` | The two-IR observed session: ten tasks, what counts as a stumble, how a session passes [M18-S08-T03]. |
+| `usability-consent.md` | The text read out and signed before a usability session. |
+| `usability-timing-sheet.csv` | One row per task per participant: times, help, stumbles, severity, defect id. The observer fills it in. |
 
 ## The day the scripts follow
 
@@ -109,4 +112,4 @@ The pack follows the newest ruling (D110 is the latest on seats and search). Whe
 8. **Recorded receipts show as matched. Settled by D113.** A receipt a Finance seat records is matched (automatically from the statement where possible, else by Finance); an IR's claim stays pending until Finance confirms it; refunds keep D22's second hand. FIN-12 and FIN-14 expect matched; HOF-02 works what is still pending. M10-S02-NOTE-2 is closed. No longer a defect.
 9. **Unassigned leads.** The owner of an unassigned lead is still undecided [M04-S01-NOTE-2]; IM-03 depends on it.
 10. **No scenario for** the business owner (Arvind), Corporate (Pradeep), Exec beyond Jhalak's grant check, channel partners, or the investor in the app. D110 makes the business owner's search org-wide. The investor app is tested through the stub receiver only [M13-S01].
-11. **Not in this pack.** The 2-hour exploratory charters and the usability timing sheet (M18-S08-T02, T03, T04) and the regression re-run (TC-E15-033, automated). IR-23 covers one usability task only.
+11. **Not in this pack.** The 2-hour exploratory charters (M18-S08-T02) and the regression re-run (TC-E15-033, automated). The usability session (M18-S08-T03, T04) is in the pack as `usability-*`; IR-23 is its summary. The task times in `usability-tasks.md` are provisional until the first session.

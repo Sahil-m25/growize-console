@@ -135,6 +135,12 @@ describe("allotments and receipts (M10-S07, M10-S08, M11-S01, M11-S02)", () => {
     expect(allotsOnLlp(s, "kam1", "LLP-X").map(a => a.id)).toEqual(["AL-A1"]);
     expect(allotsOnLlp(s, "fin", "LLP-X").length).toBe(4);
   });
+  it("lists a row with no Customer to a Money seat, not to a KAM (Needs a link, M11-S02-NOTE-6)", () => {
+    const s = book();
+    s.data.ALLOT!.push({ ...s.data.ALLOT![0], id: "AL-ORPHAN", Customer: "" });
+    expect(allotsOnLlp(s, "fin", "LLP-X").map(a => a.id)).toContain("AL-ORPHAN");
+    expect(allotsOnLlp(s, "kam1", "LLP-X").map(a => a.id)).not.toContain("AL-ORPHAN");
+  });
 });
 
 describe("app access (M10-S21, D93)", () => {

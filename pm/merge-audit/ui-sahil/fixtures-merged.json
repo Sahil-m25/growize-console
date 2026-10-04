@@ -484,5 +484,22 @@
   "prototype": "",
   "staging": "In the sandbox: a second LLP_UnitAllocation_Module record for the test Contact, App_Access = Hold on it.",
   "after_signin": false
+ },
+ "L3_NDA_SENT_BACK": {
+  "description": "Girish Rao (Kavya's lead) \u2014 Finance sent the NDA for signature, Kavya told him, then Finance checked and found it was not signed: the round holds back {by: Harsha, at: 27 Aug 10:15, why: 'The Zoho Sign request is still open; nothing has come back signed'}.",
+  "prototype": "PAPER.L3={nda:{sent:{by:'harsha',at:'20 Aug 11:20',via:'Zoho Sign'},told:{by:'kavya',at:'20 Aug 11:30',ch:'email'},chase:[],back:{by:'harsha',at:'27 Aug 10:15',why:'The Zoho Sign request is still open; nothing has come back signed'}}}; draw();",
+  "staging": "On Girish Rao's NDA agreement record set Sent = 20 Aug 11:20 by Harsha via Zoho Sign, Told = 20 Aug 11:30 by Kavya (email), then Finance 'Not signed after all' on 27 Aug 10:15 with the reason; Said and Verified empty."
+ },
+ "IM:ALLOTMENT_NO_CUSTOMER": {
+  "description": "As DEMO_BOOK, plus one Reserved allotment on Block A (AL-ORPHAN-1, 1 unit) whose Customer is empty \u2014 a row that exists in Zoho without its link and must be shown as needing one, not hidden.",
+  "prototype": "IMX.evalIn(\"ALLOT.push({id:'AL-ORPHAN-1',Customer:'',LLP_Lookup:'LLP-A',Committed_Units:1,Issued_Units:0,Unit_Price:2500000,Ticket_Snapshot:2500000,Allocation_Status:'Reserved',Issued_On:null,Annual_Rental_Yield:12});draw();\");",
+  "staging": "In the sandbox, create one LLP_UnitAllocation_Module row on Block A with Customer left empty (insert it directly in Zoho; the console refuses to save one, M11-S02 AC1).",
+  "after_signin": false
+ },
+ "IM:ALLOTMENT_NO_LLP": {
+  "description": "As DEMO_BOOK, but Fatima Zaidi's (ARL-INV-0213) only allotment (AL-0213, 4 units) has its LLP empty \u2014 a row that exists in Zoho without its link.",
+  "prototype": "IMX.evalIn(\"ALLOT.find(a=>a.Customer==='ARL-INV-0213').LLP_Lookup='';draw();\");",
+  "staging": "In the sandbox, clear the LLP lookup on Fatima Zaidi's allotment directly in Zoho (the console refuses to save one without it, M11-S02 AC1).",
+  "after_signin": false
  }
 }
