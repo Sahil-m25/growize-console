@@ -102,7 +102,7 @@ function rig(routes, overrides = {}) {
     fetch: async (url, init) => {
       const u = new URL(url);
       const key = `${init.method} ${u.pathname.replace('/crm/v8', '')}`;
-      calls.push({ key, headers: init.headers, body: init.body ? JSON.parse(init.body) : null });
+      calls.push({ key, search: u.search, headers: init.headers, body: init.body ? JSON.parse(init.body) : null });
       let name = routes[key] ?? routes[`${init.method} /${u.pathname.split('/')[3]}`];
       if (Array.isArray(name)) name = name.shift();
       if (!name) throw new Error(`unexpected synthetic CRM request ${key}`);
@@ -145,6 +145,17 @@ test('one tap writes the lead (guarded) first, then exactly one touch, the compl
   assert.deepEqual(call.body.data[0], { Subject: 'Call back after the deck', Call_Type: 'Outbound', Call_Start_Time: '2026-09-29T11:00:00+05:30',
     Reminder: '15 mins', What_Id: { id: LEAD }, $se_module: 'Leads' });
   assert.ok(!JSON.stringify(r.sink.records()).includes('Synthetic call note'), 'the note never reaches Plane B');
+});
+
+test('M12-S11-NOTE-5: the guard read never asks Zoho for Consent_Visit (the org has none), and a visit next step needs no consent flag', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig({ ...ROUTES(), 'POST /Tasks': 'call.created' });
+  const res = await r.svc.save(principal(), { ...CMD, next: { text: 'Book a farm visit', at: '2026-09-29T11:00:00+05:30', channel: 'visit' } });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const reads = r.calls.filter((c) => c.key.startsWith('GET /Leads/'));
+  assert.ok(reads.length >= 1);
+  for (const c of reads) assert.ok(!decodeURIComponent(c.search).includes('Consent_Visit'), c.search);
+  assert.ok(decodeURIComponent(reads[0].search).includes('Consent_Call'));
 });
 
 test('Undo within ten seconds restores the lead and deletes what the save created; after ten seconds it is refused', async () => {

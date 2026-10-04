@@ -31,12 +31,16 @@ export type ContactChannel = "msg" | "email" | "call" | "visit" | "reply" | "oth
 export type NextChannel = "msg" | "email" | "call" | "visit" | "other";
 const TOUCH_CHANNEL: Readonly<Record<string, string>> = { msg: "WhatsApp", email: "Email", call: "Call", visit: "Farm visit" };
 const NEXT_CHANNEL: Readonly<Record<string, string | null>> = { msg: "WhatsApp", email: "Email", call: "Call", visit: "Farm visit", other: null };
-const CONSENT: Readonly<Record<string, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call", visit: "Consent_Visit" };
+/** Consent flags the org really has on Leads (live metadata, 4 Oct 2026). There is no Consent_Visit, so a farm visit has
+ *  no consent gate: PROVISIONAL (M12-S11-NOTE-5) — a visit is the team meeting the investor in person, not a message
+ *  sent to them, and the follow-up rules gate messaging channels only. */
+const CONSENT: Readonly<Record<string, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call" };
+// HUMAN: if the plan needs visit consent recorded, create the checkbox Leads.Consent_Visit (proposed; not in the org), then restore it here.
 const ACTIVITY_MODULES: ReadonlySet<string> = new Set(["Tasks", "Calls", "Events"]);
 /** The Lead fields a follow-up may change, and so the ones Undo restores. */
 const STAMPS = ["Next_Step", "Next_Step_At", "Next_Step_Channel", "Last_Reply_At", "First_Touch_At", "Lost_At", "Lost_Reason"] as const;
 const GUARD_FIELDS = [...STAMPS, "Modified_Time", "Created_Time", "Lost_At", "Onboarded_At", "Owner", "Secondary_Owner",
-  "Cover_By", "Cover_Until", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit", "Reserved_At", "Fully_Paid_At"];
+  "Cover_By", "Cover_Until", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Reserved_At", "Fully_Paid_At"];
 /** The eight reasons (prototype LOSTWHY) and the value Zoho's Lost_Reason picklist holds for each. */
 export const LOST_REASONS: Readonly<Record<string, string>> = Object.freeze({
   "Price too high": "Price too high", "Went cold — no reply": "Went cold - no reply", "Lock-in too long": "Lock-in too long",
@@ -375,7 +379,7 @@ export function createFollowups(deps: FollowupDependencies) {
         || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
         || (owner !== null && a.teamOwnerIds.includes(owner));
       if (!inBook) return refuse(me, "not-in-book", [leadId]);
-      if (next && next.channel !== "other" && L[CONSENT[next.channel]] !== true) return refuse(me, "no-consent", [leadId]);
+      if (next && next.channel !== "other" && !!CONSENT[next.channel] && L[CONSENT[next.channel]] !== true) return refuse(me, "no-consent", [leadId]);
       const fields: Record<string, ZohoFields[string]> = { Lost_At: null, Lost_Reason: null };
       if (next) Object.assign(fields, { Next_Step: next.text.trim(), Next_Step_At: next.at, Next_Step_Channel: NEXT_CHANNEL[next.channel] });
       let put: Awaited<ReturnType<typeof crm.update>>;

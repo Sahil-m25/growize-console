@@ -78,6 +78,13 @@ export interface DeckMailer {
   send(credential: UserCredential, leadId: string, mail: SendMailRequest, signal?: AbortSignal): ReturnType<ZohoClient["sendMail"]>;
 }
 
+/** The deck mailer over a configured deck file id (GROWIZE_DECK_FILE_ID, an id from Zoho's Files API). No id → null, so Deck follow-up stays "deck-not-ready". */
+export function createDeckMailer(crm: Pick<ZohoClient, "sendMail">, deckFileId: string | undefined | null): DeckMailer | null {
+  const id = typeof deckFileId === "string" ? deckFileId.trim() : "";
+  if (!id) return null;
+  return { send: (credential, leadId, mail, signal) => crm.sendMail(credential, LEADS_MODULE, leadId, { ...mail, attachmentFileIds: [id] }, { signal }) };
+}
+
 export interface EmailCommand {
   readonly leadId: string;
   /** The lead's Modified_Time as the composer loaded it. */

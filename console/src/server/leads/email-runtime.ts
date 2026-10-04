@@ -8,9 +8,9 @@
  * Access is re-derived from the live session on every recheck: only a seat whose leads scope is its own
  * book (IR, channel partner) or a team (IR Manager) may send. PROVISIONAL: with no subtree reader yet a
  * manager sends only on leads they own or cover (teamOwnerIds empty). The NDA reader is the Lead's own
- * NDA_Verified_At (M12-S13: Zoho Sign's completion filing and Finance's verification stamp it). No deck mailer is
- * wired until the client's send_mail carries an attachment and the approved deck is on file (MA4), so Deck
- * follow-up answers "deck-not-ready" rather than going out bare.
+ * NDA_Verified_At (M12-S13: Zoho Sign's completion filing and Finance's verification stamp it). The deck mailer is
+ *   GROWIZE_DECK_FILE_ID  the approved deck's file id from Zoho's Files API (MA4); unset → Deck follow-up answers
+ *                         "deck-not-ready" rather than going out bare. PROVISIONAL until TC-E07-024 on the sandbox.
  *
  * Also composes the lead page's paperwork row (M12-S11/S12, POST|GET /api/leads/[id]/paperwork) on the same
  * access and FOLLOWUP_UNDO_SECRET, and the IR-hint reader (GET /api/leads/[id]/hints).
@@ -21,7 +21,7 @@ import { dataRuntime } from "../data/zoho-source";
 import { zohoSeatOf } from "../data/live";
 import { scopesFor } from "../data/scope";
 import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
-import { createEmailSender, createLeadNdaReader, type NdaReader } from "./email";
+import { createDeckMailer, createEmailSender, createLeadNdaReader, type NdaReader } from "./email";
 import { createHintReader } from "./hints";
 import { createPaperwork } from "./paperwork";
 import { createFollowups, type FollowupAccessAuthority } from "./followup";
@@ -64,7 +64,7 @@ export function emailSender(env: NodeJS.ProcessEnv = process.env, nda: NdaReader
   });
   const followups = createFollowups({ crm, access, log: rt.log, recordIdPrefix, undoSecret: env.FOLLOWUP_UNDO_SECRET! });
   const sender = createEmailSender({ crm, followups, access, log: rt.log, recordIdPrefix, orgDomains: orgDomainsOf(env.ORG_EMAIL_DOMAINS),
-    nda: nda ?? createLeadNdaReader(crm), deck: null });
+    nda: nda ?? createLeadNdaReader(crm), deck: createDeckMailer(crm, env.GROWIZE_DECK_FILE_ID) });
   G.__gzEmailSender = sender;
   return sender;
 }
