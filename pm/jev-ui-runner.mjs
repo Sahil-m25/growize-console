@@ -98,7 +98,7 @@ async function controls(page) {
         if (t.length > name.length + 3) { ctx = t.slice(0, 110); break; }
       }
       const where = e.closest("dialog, [role=dialog], [class*=drawer], [class*=modal], [class*=panel]") ? "panel" : e.closest("nav, aside") ? "menu" : e.closest("header") ? "top bar" : "page";
-      const opts = e.tagName === "SELECT" ? [...e.options].map(o => o.text).slice(0, 8).join(" / ") : "";
+      const opts = e.tagName === "SELECT" ? [...e.options].map(o => o.text).slice(0, 16).join(" / ") : "";
       // a whole row that is clickable AND contains its own named control: keep the inner, more specific one
       const inner = [...e.querySelectorAll(sel)].find(x => x !== e && x.offsetParent && name.startsWith((x.innerText || "").trim().replace(/\s+/g, " ").slice(0, 20)) && (x.innerText || "").trim());
       if (inner) continue;
@@ -137,6 +137,9 @@ const screen = page => page.evaluate(() => {
     return n;
   };
   const rows = [], boxes = [];
+  // R5 (TC-IM10-001): a dropdown's options are in the row's text, and collapsing whitespace glued them into one run
+  // ("Head of Finance Finance Operations ..."). Mark where the options start and stop, and separate them.
+  const optsApart = b => { let t = b.innerText.trim(); for (const x of b.querySelectorAll("select")) { const raw = (x.innerText || "").trim(); if (raw && t.includes(raw)) t = t.replace(raw, "(options: " + [...x.options].map(o => o.text.trim()).join(" | ") + ")"); } return t; };
   const ctlSel = "button, a, [role=button], select, input";
   const rowsOf = (root, where) => {
     const boxes = [];
@@ -150,7 +153,7 @@ const screen = page => page.evaluate(() => {
     }
     // keep the outermost of nested boxes, and list each row's own controls so "offers X" / "X is locked" can be judged
     for (const b of boxes.filter(b => !boxes.some(o => o !== b && o.contains(b))))
-      rows.push({ where, text: b.innerText.trim().replace(/\s+/g, " ").slice(0, 500), buttons: [...b.querySelectorAll(ctlSel)].filter(x => x.offsetParent).map(desc).filter(Boolean) });
+      rows.push({ where, text: optsApart(b).replace(/\s+/g, " ").slice(0, 500), buttons: [...b.querySelectorAll(ctlSel)].filter(x => x.offsetParent).map(desc).filter(Boolean) });
   };
   rowsOf(main, "page"); panelsTop.forEach(p => rowsOf(p, "panel"));
   const top = document.querySelector("header, [class*=topbar], [class*=top-bar]");

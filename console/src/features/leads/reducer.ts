@@ -236,9 +236,13 @@ const dClsOf = (t: string): DocClass | null =>
 
 /* ============================================================================================== */
 
+const NOT_A_LEAD_ID: ReadonlySet<string> = new Set(["revokeTemp"]);
+
 export function pagesAReducer(state: ConsoleState, action: Action): ConsoleState | null {
   /* a duplicate flagged at capture is, by definition, a record the flagger may not open — it is add's write */
-  if ("id" in action && action.id && action.type !== "flagDupe" && !openable(state).some(l => l.id === action.id)) return state;
+  /* Only a lead's id is checked here: revokeTemp carries a temporary grant's id, and the people slice owns it —
+     returning state for it made every such write a silent no-op ("1 save failed"). R5 / TC-E14-014. */
+  if ("id" in action && action.id && action.type !== "flagDupe" && !NOT_A_LEAD_ID.has(action.type) && !openable(state).some(l => l.id === action.id)) return state;
   const a = action;
   switch (a.type) {
     /* ===== TOUCHES ==========================================================================
