@@ -1,0 +1,1765 @@
+[
+ {
+  "story": "M01-S01",
+  "subtask": "M01-S01-T07",
+  "verdict": "partial",
+  "evidence": "Local: rail and landing per seat on the demo build, 143 generated cases (pm/generated/ui-cases-seats.json, both sides, Sahil's set included) plus the 10 story cases. Left: the tester signing in on staging as each seat and TYPING every page URL (deep links are not exercised by Jev); the page x seat matrix sheet. GEN-TASNEEM-OPEN-TODAY (0.79) and GEN-DIVYA-OPEN-INVESTORS (0.76) stay REVIEW on the judge (stable on rerun); the screen text confirms both (Tasneem: 'Team follow-ups'; Divya: 'Accounts 13 under care'). TC-IM01-003 REVIEW 0.78: the app menu lists all 15 pages named in the fact. Node/vitest: src/lib/selectors/access-d60.test.ts (6 pass); src/server/access/policy.test.cjs (8 pass).",
+  "cases": [
+   {
+    "id": "TC-E01-001",
+    "verdict": "PASS",
+    "p": 0.9
+   },
+   {
+    "id": "TC-E03-006",
+    "verdict": "PASS",
+    "p": 0.87
+   },
+   {
+    "id": "TC-E03-007",
+    "verdict": "PASS",
+    "p": 0.91
+   },
+   {
+    "id": "TC-E03-008",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "TC-E03-010",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "TC-IM01-002",
+    "verdict": "PASS",
+    "p": 0.86
+   },
+   {
+    "id": "TC-IM01-003",
+    "verdict": "REVIEW",
+    "p": 0.78
+   },
+   {
+    "id": "TC-IM02-003",
+    "verdict": "PASS",
+    "p": 0.8
+   },
+   {
+    "id": "TC-IM02-004",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "TC-IM02-005",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "GEN-ROHIT-RAIL",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ROHIT-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-ROHIT-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "GEN-ROHIT-OPEN-LEADS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ROHIT-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-ROHIT-OPEN-EVENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ROHIT-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ROHIT-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-KAVYA-RAIL",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-KAVYA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-KAVYA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "GEN-KAVYA-OPEN-LEADS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-KAVYA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-KAVYA-OPEN-EVENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-KAVYA-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-KAVYA-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NIKHIL-RAIL",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-NIKHIL-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-NIKHIL-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.92
+   },
+   {
+    "id": "GEN-NIKHIL-OPEN-LEADS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NIKHIL-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NIKHIL-OPEN-EVENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NIKHIL-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NIKHIL-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ANANYA-RAIL",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ANANYA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-ANANYA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "GEN-ANANYA-OPEN-LEADS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ANANYA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-ANANYA-OPEN-EVENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ANANYA-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-ANANYA-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-RAIL",
+    "verdict": "PASS",
+    "p": 0.91
+   },
+   {
+    "id": "GEN-TASNEEM-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-TODAY",
+    "verdict": "REVIEW",
+    "p": 0.79
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-LEADS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-EVENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-TRANSFERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-PLAN",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-TASNEEM-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-RAIL",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-HARSHA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-HARSHA-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-MEENA-RAIL",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-MEENA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-MEENA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-MEENA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-MEENA-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-FAHAD-RAIL",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-FAHAD-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-FAHAD-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-LATHA-RAIL",
+    "verdict": "PASS",
+    "p": 0.91
+   },
+   {
+    "id": "GEN-LATHA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-LATHA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-LATHA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-LATHA-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-DIVYA-RAIL",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "GEN-DIVYA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-INVESTORS",
+    "verdict": "REVIEW",
+    "p": 0.76
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-DIVYA-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-IMRAN-RAIL",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "GEN-IMRAN-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.84
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-IMRAN-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-NEHA-RAIL",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "GEN-NEHA-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-NEHA-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "GEN-NEHA-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NEHA-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.81
+   },
+   {
+    "id": "GEN-NEHA-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NEHA-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NEHA-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NEHA-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-NEHA-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-SAHIL-RAIL",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-SAHIL-SIDES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-TODAY",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-LEADS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-ACTIVITY",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-EVENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-INVESTORS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-FARMS",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-TICKETS",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-INVESTORUPDATES",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-PAYMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-DOCUMENTS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-TRANSFERS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-PLAN",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-NUMBERS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "GEN-SAHIL-OPEN-SYSTEM",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-PRADEEP-RAIL",
+    "verdict": "PASS",
+    "p": 0.92
+   },
+   {
+    "id": "GEN-PRADEEP-LANDING",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "GEN-PRADEEP-OPEN-TEAMS",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "GEN-PRADEEP-OPEN-SYSTEM",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M01-S02",
+  "subtask": "M01-S02-T05",
+  "verdict": "partial",
+  "evidence": "Local: the four Jev session cases (change of person, sign-out; Harsha and Meena now sign out, so the 30 Sep bug-open TC-IM01-016/-020 pass) and the node session suite (12 h end, revoke on sign-out, seat/person change ends session). Left: the staging sign-in cases TC-E01-003 and TC-IM01-017 (ui-staging). Node/vitest: src/server/oauth/user-session.test.cjs (22 pass); src/components/shell/drawers/account.test.tsx (6 pass); src/server/oauth/seat.test.cjs (12 pass).",
+  "cases": [
+   {
+    "id": "TC-E01-005",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "TC-E01-006",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "TC-IM01-016",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM01-020",
+    "verdict": "PASS",
+    "p": 0.82
+   }
+  ]
+ },
+ {
+  "story": "M01-S03",
+  "subtask": "M01-S03-T07",
+  "verdict": "partial",
+  "evidence": "Local, on recorded fixtures: TC-E01-007 and TC-IM01-018 (cached counts never cross scopes), no projection selects pan/bank_account, Plane B refusals hold ids and status only (data.test.cjs), error paths log no value or token (scrub.test.cjs). Left: the subtask is 'against the sandbox with the restricted test user' and TC-E01-008 (ui-staging); TC-E01-009 (rate limit back-off) and TC-IM01-019 have no test carrying their id (zoho-lib.test.cjs covers 429 behaviour but is not tagged). Node/vitest: src/server/data/data.test.cjs (15 pass); src/server/logs/scrub.test.cjs (6 pass); src/lib/zoho/zoho-lib.test.cjs (56 pass).",
+  "cases": []
+ },
+ {
+  "story": "M01-S04",
+  "subtask": "M01-S04-T02",
+  "verdict": "partial",
+  "evidence": "Local: node tests prove log line content is identity-free and chained: sink.test.cjs (chain, Stratus adapter receives scrubbed lines only), scrub.test.cjs (Plane B and Plane C lines keep ids and codes only), reader.test.cjs, store.test.cjs. TC-E01-010/011 carry no test id in code. Left: the tester performing a sign-in, a grant and a refused route and reading both logs on staging. Node/vitest: src/server/logs/sink.test.cjs (14 pass); src/server/logs/scrub.test.cjs (6 pass); src/server/logs/reader.test.cjs (12 pass); src/server/logs/store.test.cjs (10 pass).",
+  "cases": []
+ },
+ {
+  "story": "M01-S06",
+  "subtask": "M01-S06-T02",
+  "verdict": "partial",
+  "evidence": "Local: TC-E01-012 (offline save waits, does not apply) passes; receipt-queue and shell-offline node/vitest pass (offline queue, D112). Left: TC-E01-013/014 (ui-staging) and the tester's DevTools run for double-press, reconnect, sign-out and the 5-minute expiry. Node/vitest: src/lib/receipt-queue.test.ts (9 pass); src/app/shell-offline.test.cjs (4 pass).",
+  "cases": [
+   {
+    "id": "TC-E01-012",
+    "verdict": "PASS",
+    "p": 0.92
+   }
+  ]
+ },
+ {
+  "story": "M01-S09",
+  "subtask": "M01-S09-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-IM01-011 and TC-IM01-012 pass; freshness.test.ts covers live/stale/error/ceiling states. Left: the staging case TC-IM01-013. Node/vitest: src/lib/data/freshness.test.ts (9 pass).",
+  "cases": [
+   {
+    "id": "TC-IM01-011",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM01-012",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M01-S10",
+  "subtask": "M01-S10-T05",
+  "verdict": "partial",
+  "evidence": "Local: Jev TC-IM02-018/019/021/022 pass; stepup.test.tsx and step-up.test.cjs (PKCE + prompt=login URL, 5-minute window on one session, three failures lock and alert, fourth refused) pass against a mocked Zoho. Left: success/cancel/three failures/lock against the real Zoho sandbox (prompt=login), TC-IM02-020, TC-E01-015/016 (ui-staging). Node/vitest: src/features/im/stepup.test.tsx (3 pass); src/server/identity/step-up.test.cjs (9 pass).",
+  "cases": [
+   {
+    "id": "TC-IM02-018",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM02-019",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM02-021",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM02-022",
+    "verdict": "PASS",
+    "p": 0.93
+   }
+  ]
+ },
+ {
+  "story": "M01-S10",
+  "subtask": "M01-S10-T06",
+  "verdict": "partial",
+  "evidence": "Local: the four reveal step-up Jev cases pass; reveal-ref.test.cjs (right gives full reference + Plane C line; no right refused before Zoho; reason code rides to the log) and the Payments render/endpoint tests pass. Left: the staging case with three wrong attempts against real Zoho (the lock logic itself is proven in step-up.test.cjs with a mocked Zoho). Node/vitest: src/server/money/reveal-ref.test.cjs (5 pass); src/features/im/txn/render.test.tsx (4 pass); src/server/identity/step-up.test.cjs (9 pass).",
+  "cases": [
+   {
+    "id": "TC-IM02-018",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM02-019",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM02-021",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM02-022",
+    "verdict": "PASS",
+    "p": 0.93
+   }
+  ]
+ },
+ {
+  "story": "M02-S01",
+  "subtask": "M02-S01-T02",
+  "verdict": "proven",
+  "evidence": "ops/SEAT-PLAN.md exists and is the one page asked for: order (test user, Sahil's working admin split from super admin, Tasneem, 4 IRs, Finance and Investors-side seats), Zoho role and profile per seat, gated on T11, renewal before 13 Oct. Document deliverable, no test.",
+  "cases": []
+ },
+ {
+  "story": "M02-S02",
+  "subtask": "M02-S02-T04",
+  "verdict": "partial",
+  "evidence": "Local: the offline diff of zoho/field-register.json against pm/plan-merged/zoho-field-mapping.json and the as-found org doc passes (every Contacts row resolves; identity fields registered; reveal rights equal register readers; gate columns have one writer). Left: the live getFields export from Zoho against the workbook (TC-E02-003/004 api, needs sandbox). Node/vitest: src/lib/zoho/field-register.test.cjs (6 pass).",
+  "cases": []
+ },
+ {
+  "story": "M02-S04",
+  "subtask": "M02-S04-T10",
+  "verdict": "partial",
+  "evidence": "Local: 7 Jev identity-row cases pass (Finance Operations bank only, Compliance PAN only, Head of Finance both, Auditor none, KAM sees Finance only); field-register.test.cjs app half of TC-E02-007/008/009, TC-IM02-017, TC-IM04-020, TC-IM11-001/002 (no seat but the reveal seats ever receives an identity value) and book.test.cjs (KAM book never selects identity). Left: the Zoho half of those cases is skipped 'needs sandbox' (a restricted test-user token against real field-level security), and the KAM-token GET against live Zoho. Node/vitest: src/lib/zoho/field-register.test.cjs (6 pass); src/server/investors/book.test.cjs (20 pass).",
+  "cases": [
+   {
+    "id": "TC-IM02-015",
+    "verdict": "PASS",
+    "p": 0.92
+   },
+   {
+    "id": "TC-IM02-016",
+    "verdict": "PASS",
+    "p": 0.9
+   },
+   {
+    "id": "TC-IM04-009",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM04-010",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM04-011",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM04-012",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-IM04-013",
+    "verdict": "PASS",
+    "p": 0.88
+   }
+  ]
+ },
+ {
+  "story": "M03-S01",
+  "subtask": "M03-S01-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E03-001/002/004/005 pass; policy.test.cjs (every Zoho seat admitted or refused with and without a grant; server book equals the front end on every person of the demo roster; the sign-in list offers exactly who the callback admits) and user-session.test.cjs (every Zoho seat through the callback, named refusals for no-seat, Administrator, granted-only without page) pass. Left: a tester trying each staff type on staging; TC-E03-023 (ui-staging). Node/vitest: src/server/access/policy.test.cjs (8 pass); src/server/oauth/user-session.test.cjs (22 pass); src/lib/selectors/access-d60.test.ts (6 pass).",
+  "cases": [
+   {
+    "id": "TC-E03-001",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E03-002",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-E03-004",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-E03-005",
+    "verdict": "PASS",
+    "p": 0.96
+   }
+  ]
+ },
+ {
+  "story": "M03-S02",
+  "subtask": "M03-S02-T03",
+  "verdict": "proven",
+  "evidence": "TC-E03-011..014 pass on the demo build; grants.test.cjs (Sahil grants Jhalak Leads and she signs in; edit/assign refused for her seat; IR Manager cannot grant the Ops Lead; taking view takes the page) and access endpoint tests pass. The 4 cases are exactly the grant and remove flows the subtask names. Node/vitest: src/server/access/grants.test.cjs (19 pass); src/lib/data/endpoints/access.test.ts (21 pass).",
+  "cases": [
+   {
+    "id": "TC-E03-011",
+    "verdict": "PASS",
+    "p": 0.86
+   },
+   {
+    "id": "TC-E03-012",
+    "verdict": "PASS",
+    "p": 0.82
+   },
+   {
+    "id": "TC-E03-013",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E03-014",
+    "verdict": "PASS",
+    "p": 0.93
+   }
+  ]
+ },
+ {
+  "story": "M03-S03",
+  "subtask": "M03-S03-T02",
+  "verdict": "proven",
+  "evidence": "TC-E03-015..018 pass; policy.test.cjs and grants.test.cjs cover the grantor x grantee x page rules (Sahil grants Rohit Numbers; Tasneem grants her IR Numbers but not System; an IR cannot change another IR's, own or manager's access; D115 ruling 2 super-admin-only event-sheet load grant). Node/vitest: src/server/access/grants.test.cjs (19 pass); src/server/access/policy.test.cjs (8 pass); src/lib/data/endpoints/access.test.ts (21 pass).",
+  "cases": [
+   {
+    "id": "TC-E03-015",
+    "verdict": "PASS",
+    "p": 0.84
+   },
+   {
+    "id": "TC-E03-016",
+    "verdict": "PASS",
+    "p": 0.89
+   },
+   {
+    "id": "TC-E03-017",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E03-018",
+    "verdict": "PASS",
+    "p": 0.97
+   }
+  ]
+ },
+ {
+  "story": "M04-S01",
+  "subtask": "M04-S01-T04",
+  "verdict": "proven",
+  "evidence": "TC-E04-001..004 pass on the demo build (add with name/mobile/source, invalid mobile blocked, Events source needs the event, a seat without capture cannot add). The cases use Rohit and a granted viewer (Jhalak); Tasneem's seat is not in these four. Node/vitest: src/lib/selectors/leads-list.test.ts (5 pass).",
+  "cases": [
+   {
+    "id": "TC-E04-001",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E04-002",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-E04-003",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-E04-004",
+    "verdict": "PASS",
+    "p": 0.91
+   }
+  ]
+ },
+ {
+  "story": "M05-S06",
+  "subtask": "M05-S06-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-IM03-001/002/013 pass; investors-today.test.cjs asserts TC-IM03-015 offline (a cold render spends at most five COQL calls, a reload inside the TTL spends none and reads the same). Left: the same count measured against Zoho on staging (TC-IM03-015 is ui-staging). Node/vitest: src/server/numbers/investors-today.test.cjs (8 pass).",
+  "cases": [
+   {
+    "id": "TC-IM03-001",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM03-002",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "TC-IM03-013",
+    "verdict": "PASS",
+    "p": 0.87
+   }
+  ]
+ },
+ {
+  "story": "M06-S05",
+  "subtask": "M06-S05-T03",
+  "verdict": "partial",
+  "evidence": "Local: seat-search.test.cjs (an IR or IR Manager naming Contacts is refused before anything is read; an owner filter is ignored for every seat; per-seat halves) and wall.test.cjs pass; isolation.test.cjs asserts an IR's top-bar search never reaches the investor half. No Jev case exists for this story. Left: the restricted test user on the IR profile finding nothing outside the book (Zoho sharing rule, M06-S05 HUMAN proof). Node/vitest: src/server/leads/seat-search.test.cjs (21 pass); src/server/leads/wall.test.cjs (20 pass); src/server/http/contract/isolation.test.cjs (63 pass).",
+  "cases": []
+ },
+ {
+  "story": "M07-S01",
+  "subtask": "M07-S01-T03",
+  "verdict": "proven",
+  "evidence": "TC-E07-001..004 pass. The 390px check was run here: Rohit and Sahil, Today, Leads and a lead page (Meera Krishnan / Farida Contractor) at 390x844 have scrollWidth 390 = viewport, no sideways scroll; screenshots in docs/reports/test-record-2026-10-04-screens/. Kavya's seat was not probed (the cases use Rohit and Sahil). Node/vitest: src/features/lead/lp.test.ts (8 pass).",
+  "cases": [
+   {
+    "id": "TC-E07-001",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E07-002",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E07-003",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E07-004",
+    "verdict": "PASS",
+    "p": 0.84
+   }
+  ]
+ },
+ {
+  "story": "M07-S03",
+  "subtask": "M07-S03-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E07-010..013 pass. TC-E07-012 (Undo gone after 10 s) passes only with SETTLE_CAP_MS=15000: the runner's default 6 s settle cap is shorter than the 10 s window, so on the default run it scores 0.26-0.31 REVIEW (a runner limit, not an app defect; the app timer is LeadPage.tsx:366-369). Left: TC-E07-014 (ui-staging) and checking Zoho Calls/Tasks records appear once and vanish on Undo. Node/vitest: src/features/lead/lp.test.ts (8 pass); src/server/leads/followup.test.cjs (22 pass).",
+  "cases": [
+   {
+    "id": "TC-E07-010",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E07-011",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-E07-012",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "TC-E07-013",
+    "verdict": "PASS",
+    "p": 0.89
+   }
+  ]
+ },
+ {
+  "story": "M07-S04",
+  "subtask": "M07-S04-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E07-015..018 and TC-E07-035 pass. Left: TC-E07-019 (ui-staging) and the CRM calendar / Zoho Calendar check. Node/vitest: src/server/leads/followup.test.cjs (22 pass).",
+  "cases": [
+   {
+    "id": "TC-E07-015",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-E07-016",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E07-017",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "TC-E07-018",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E07-035",
+    "verdict": "PASS",
+    "p": 0.88
+   }
+  ]
+ },
+ {
+  "story": "M07-S05",
+  "subtask": "M07-S05-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E07-020/021/023/025 pass; email.test.cjs and jev-calibration-gate.test.cjs pass. Left: TC-E07-022 (api, no test carries the id), TC-E07-024 (ui-staging) and the real send to a test inbox with the Emails related list check. Node/vitest: src/server/leads/email.test.cjs (14 pass); scripts/jev-calibration-gate.test.cjs (8 pass).",
+  "cases": [
+   {
+    "id": "TC-E07-020",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E07-021",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "TC-E07-023",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E07-025",
+    "verdict": "PASS",
+    "p": 0.91
+   }
+  ]
+ },
+ {
+  "story": "M08-S02",
+  "subtask": "M08-S02-T02",
+  "verdict": "partial",
+  "evidence": "Local: TC-E08-007/008/009/024 pass; wall.test.cjs asserts 007/009/024 and the gate read (a reported balance waits on Finance; IR Manager sees no confirm; Zoho failing never opens the gate). Left: TC-E08-010 (ui-staging) and Finance matching a receipt on staging then the IR reopening the lead. Node/vitest: src/server/leads/wall.test.cjs (20 pass).",
+  "cases": [
+   {
+    "id": "TC-E08-007",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "TC-E08-008",
+    "verdict": "PASS",
+    "p": 0.99
+   },
+   {
+    "id": "TC-E08-009",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E08-024",
+    "verdict": "PASS",
+    "p": 0.93
+   }
+  ]
+ },
+ {
+  "story": "M08-S05",
+  "subtask": "M08-S05-T02",
+  "verdict": "partial",
+  "evidence": "Local: TC-E08-017/018/020 pass; wall.test.cjs asserts TC-E08-018 (handover writes the window and opens the share), -019 and -025 (ending cover clears the window and revokes the share) against a mocked Zoho. Left: TC-E08-025 (ui-staging) and checking the share in real Zoho. Node/vitest: src/server/leads/wall.test.cjs (20 pass); src/server/cases/handover.test.cjs (10 pass).",
+  "cases": [
+   {
+    "id": "TC-E08-017",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "TC-E08-018",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E08-020",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M08-S07",
+  "subtask": "M08-S07-T04",
+  "verdict": "partial",
+  "evidence": "Local: TC-IM11-004 passes; record.test.cjs passes. Left: the staging case (move a sandbox lead to Said yes, check Investors as Finance and the IR), TC-IM11-003 (ui-staging) and TC-IM11-013 (api, no test carries the id). Node/vitest: src/server/investors/record.test.cjs (11 pass).",
+  "cases": [
+   {
+    "id": "TC-IM11-004",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M09-S01",
+  "subtask": "M09-S01-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-IM04-001/002/003/021 pass on demo data; finance-list.test.cjs passes. Left: M09-S01-NOTE-1 says the Finance list client endpoint and table are not wired to live data yet, so these cases prove the demo fixtures only; the viewer-without-access case is not among the four. Node/vitest: src/server/investors/finance-list.test.cjs (6 pass).",
+  "cases": [
+   {
+    "id": "TC-IM04-001",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM04-002",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM04-003",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-IM04-021",
+    "verdict": "PASS",
+    "p": 0.99
+   }
+  ]
+ },
+ {
+  "story": "M09-S02",
+  "subtask": "M09-S02-T04",
+  "verdict": "partial",
+  "evidence": "Local: TC-IM04-004/006 pass; TC-IM04-005 REVIEW 0.90 (the facts pass: '4 under care', no rows, 'Nobody matches that'; the runner scored one typing step 0.58). am-scope.test.cjs and am-service.test.cjs pass. Left: the KAM test user on staging. Node/vitest: src/server/data/am-scope.test.cjs (7 pass); src/server/investors/am-service.test.cjs (8 pass).",
+  "cases": [
+   {
+    "id": "TC-IM04-004",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "TC-IM04-005",
+    "verdict": "REVIEW",
+    "p": 0.9
+   },
+   {
+    "id": "TC-IM04-006",
+    "verdict": "PASS",
+    "p": 0.91
+   }
+  ]
+ },
+ {
+  "story": "M09-S07",
+  "subtask": "M09-S07-T03",
+  "verdict": "partial",
+  "evidence": "Local: search.test.cjs (Finance 'Mysuru' finds exactly the two Mysuru investors; ARL code exact match; a KAM only their book; an IR only own-lead investors; wall refuses other modules) and the isolation search cases pass; TC-IM04-003 (carried over) passes in Jev. Left: COQL matching on the sandbox for the three seats (M09-S07-NOTE-2). Node/vitest: src/server/investors/search.test.cjs (10 pass); src/server/http/contract/isolation.test.cjs (63 pass).",
+  "cases": [
+   {
+    "id": "TC-IM04-003",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M09-S08",
+  "subtask": "M09-S08-T04",
+  "verdict": "partial",
+  "evidence": "Local: the 9 cases of docs/reports/m09-s08-cases.json pass (A..I, 0.82-0.96, both calibration cases caught); ir-investors.test.cjs, ir-guard.test.cjs and endpoints/ir-investors.test.tsx pass (own-lead filter, another IR's investor refused and nothing read, no money or identity columns). Left: two IR test users on staging and the API read with the restricted Zoho user (M09-S08-NOTE-1/2). Node/vitest: src/server/investors/ir-investors.test.cjs (10 pass); src/server/data/ir-guard.test.cjs (15 pass); src/lib/data/endpoints/ir-investors.test.tsx (12 pass).",
+  "cases": [
+   {
+    "id": "M09-S08-A",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "M09-S08-B",
+    "verdict": "PASS",
+    "p": 0.92
+   },
+   {
+    "id": "M09-S08-C",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "M09-S08-D",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "M09-S08-E",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "M09-S08-F",
+    "verdict": "PASS",
+    "p": 0.87
+   },
+   {
+    "id": "M09-S08-G",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "M09-S08-H",
+    "verdict": "PASS",
+    "p": 0.82
+   },
+   {
+    "id": "M09-S08-I",
+    "verdict": "PASS",
+    "p": 0.83
+   }
+  ]
+ },
+ {
+  "story": "M10-S08",
+  "subtask": "M10-S08-T03",
+  "verdict": "partial",
+  "evidence": "Local: the two-farm case TC-IM05-029 (Harsha, one money block per farm) and TC-IM06-022 (Joseph Mathew on two farms) pass on IM:MONEY_DEMO. Left: the one-farm investor, 'KAM or IR is not shown Money', and 'totals equal the Investors row' have no case of their own; totals are proven only by by-allotment/allotment-receipts node tests, and M10-S08-NOTE-2/3 (blocks per allotment; matched refunds not subtracted in record.ts) are open. Node/vitest: src/server/money/by-allotment.test.cjs (7 pass); src/server/money/allotment-receipts.test.cjs (14 pass); src/server/investors/record.test.cjs (11 pass).",
+  "cases": [
+   {
+    "id": "TC-IM05-029",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM06-022",
+    "verdict": "PASS",
+    "p": 0.97
+   }
+  ]
+ },
+ {
+  "story": "M12-S10",
+  "subtask": "M12-S10-T08",
+  "verdict": "partial",
+  "evidence": "Local: isolation.test.cjs, 63 cases, all pass (every seat x scope table; investor A x B documents, project papers only of held LLPs; emails; tickets; embedded signing refused for another investor's request; search halves). The subtask is to run it in the sandbox on every staging deploy and block promotion on a P1, which is external. Node/vitest: src/server/http/contract/isolation.test.cjs (63 pass).",
+  "cases": []
+ },
+ {
+  "story": "M12-S11",
+  "subtask": "M12-S11-T05",
+  "verdict": "partial",
+  "evidence": "Local: TC-E09-001..005/007/008 and TC-IM07-008..010 pass in Jev; paperwork.test.cjs (incl. TC-E09-006/009 api) passes. Left: the 'wrong-document regression, restricted user' on the sandbox. Node/vitest: src/server/leads/paperwork.test.cjs (31 pass).",
+  "cases": [
+   {
+    "id": "TC-E09-001",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-E09-002",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E09-003",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E09-004",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E09-005",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-E09-007",
+    "verdict": "PASS",
+    "p": 0.9
+   },
+   {
+    "id": "TC-E09-008",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-IM07-008",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-IM07-009",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-IM07-010",
+    "verdict": "PASS",
+    "p": 0.96
+   }
+  ]
+ },
+ {
+  "story": "M12-S13",
+  "subtask": "M12-S13-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E09-015..018 pass; paperwork.test.cjs asserts 015 and 017. Left: checking on staging that the sent item has the deck attached. Node/vitest: src/server/leads/paperwork.test.cjs (31 pass).",
+  "cases": [
+   {
+    "id": "TC-E09-015",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-E09-016",
+    "verdict": "PASS",
+    "p": 0.91
+   },
+   {
+    "id": "TC-E09-017",
+    "verdict": "PASS",
+    "p": 0.96
+   },
+   {
+    "id": "TC-E09-018",
+    "verdict": "PASS",
+    "p": 0.9
+   }
+  ]
+ },
+ {
+  "story": "M15-S05",
+  "subtask": "M15-S05-T04",
+  "verdict": "partial",
+  "evidence": "Local: TC-E11-016 now passes (the 30 Sep bug-open is closed), TC-IM10-011/012 pass; reader.test.cjs asserts TC-E11-017/018 and the IM10 cases; reveal-ref.test.cjs and Payments render tests pass. Left: TC-E11-019 (manual), TC-IM10-013 (ui-staging) and verifying Object Lock retention on Stratus. Node/vitest: src/server/logs/reader.test.cjs (12 pass); src/server/money/reveal-ref.test.cjs (5 pass); src/server/logs/sink.test.cjs (14 pass).",
+  "cases": [
+   {
+    "id": "TC-E11-016",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-IM10-011",
+    "verdict": "PASS",
+    "p": 0.92
+   },
+   {
+    "id": "TC-IM10-012",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M16-S01",
+  "subtask": "M16-S01-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E12-001..004 pass (E12-002's runner pick used to score 0.43; passes now); AssignReport.test.tsx passes. Left: TC-E12-021 (ui-staging) and the hand count from Zoho. Node/vitest: src/features/numbers/AssignReport.test.tsx (4 pass).",
+  "cases": [
+   {
+    "id": "TC-E12-001",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E12-002",
+    "verdict": "PASS",
+    "p": 0.93
+   },
+   {
+    "id": "TC-E12-003",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E12-004",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M16-S03",
+  "subtask": "M16-S03-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E12-008/009/010/011 pass. Left: TC-E12-012 on staging with two seats. Node/vitest: src/server/numbers/numbers.test.cjs (12 pass).",
+  "cases": [
+   {
+    "id": "TC-E12-008",
+    "verdict": "PASS",
+    "p": 0.95
+   },
+   {
+    "id": "TC-E12-009",
+    "verdict": "PASS",
+    "p": 0.86
+   },
+   {
+    "id": "TC-E12-010",
+    "verdict": "PASS",
+    "p": 0.91
+   },
+   {
+    "id": "TC-E12-011",
+    "verdict": "PASS",
+    "p": 0.95
+   }
+  ]
+ },
+ {
+  "story": "M17-S02",
+  "subtask": "M17-S02-T02",
+  "verdict": "partial",
+  "evidence": "Local only the api half: seat-change.test.cjs (TC-IM02-023/024/025; never super admin or Administrator as a target) and teams-writes.test.cjs (TC-E14-005: IR Manager may give only 'ir' to her own IRs; TC-E14-007: a reporting loop refused, nothing written) pass. TC-E14-004..007 as UI flows are ui-todo (multi-step Teams runner not built; not run); TC-E14-004 and -006 carry no test id; TC-E14-022 (api) has none. Left: all of it with a real restricted Zoho user on staging. Node/vitest: src/server/access/seat-change.test.cjs (11 pass); src/server/access/teams-writes.test.cjs (10 pass).",
+  "cases": []
+ },
+ {
+  "story": "M18-S01",
+  "subtask": "M18-S01-T04",
+  "verdict": "partial",
+  "evidence": "Local, offline counts: investors-today.test.cjs TC-IM03-015 (cold render at most 5 COQL, reload inside the TTL none), investors-side.test.cjs (collection cached under the money scope, a reload spends no COQL), numbers.test.cjs (cold read 5-6 COQL), coalesce/gate tests in zoho-lib.test.cjs. Left: the per-page budget assertion exists for Investors Today and Numbers only, not Today, Leads, lead page, Documents or Tickets; TC-E15-001/002/004 and TC-IM12-001/015 carry no test id; the load test and live credit counting are sandbox-only. Node/vitest: src/server/numbers/investors-today.test.cjs (8 pass); src/server/numbers/investors-side.test.cjs (18 pass); src/server/numbers/numbers.test.cjs (12 pass); src/lib/zoho/zoho-lib.test.cjs (56 pass).",
+  "cases": []
+ },
+ {
+  "story": "M18-S02",
+  "subtask": "M18-S02-T01",
+  "verdict": "partial",
+  "evidence": "Local: pm/gen-seat-cases.mjs reads the console's seat tables and writes 143 UI cases for every seat of both sides including Sahil; all 143 run: 141 PASS, 2 REVIEW (judge borderline, screen text matches). Left: the subtask also asks for API cases (write allowed/refused) with ids TC-PM-seat-page-action; the generator emits UI cases only (GEN-<seat>-<page>), so the API half and the id scheme are not built. Node/vitest: src/server/rules/seat-permissions.test.ts (8 pass); src/server/access/policy.test.cjs (8 pass).",
+  "cases": [
+   {
+    "id": "TC-E15-005",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E15-006",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E15-007",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "TC-E15-009",
+    "verdict": "PASS",
+    "p": 0.84
+   },
+   {
+    "id": "TC-IM12-005",
+    "verdict": "PASS",
+    "p": 0.93
+   }
+  ]
+ },
+ {
+  "story": "M18-S02",
+  "subtask": "M18-S02-T05",
+  "verdict": "partial",
+  "evidence": "Local: TC-E15-005/006/007/009 and TC-IM12-005 pass (IR cannot open a lead by id, search returns own book, no management pages, payment refs masked for Sahil, KAM book); security-headers.test.ts (six headers, CSP nonce, no unsafe-eval in production), request-gate.test.ts, limited-body.test.cjs, api-refusals/api-leaks contract tests pass (D105). Left: the sandbox half, and TC-E15-008/010/011, TC-E16-013 and TC-IM12-006 (api) carry no test id. Node/vitest: src/server/http/security-headers.test.ts (6 pass); src/server/http/request-gate.test.ts (25 pass); src/server/http/limited-body.test.cjs (6 pass); src/server/http/contract/api-leaks.test.cjs (122 pass); src/server/http/contract/api-refusals.test.cjs (423 pass).",
+  "cases": [
+   {
+    "id": "TC-E15-005",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E15-006",
+    "verdict": "PASS",
+    "p": 0.94
+   },
+   {
+    "id": "TC-E15-007",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "TC-E15-009",
+    "verdict": "PASS",
+    "p": 0.84
+   },
+   {
+    "id": "TC-IM12-005",
+    "verdict": "PASS",
+    "p": 0.93
+   }
+  ]
+ },
+ {
+  "story": "M18-S03",
+  "subtask": "M18-S03-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-IM12-007 (Meena, Documents) and TC-IM12-008 (Imran, Tickets) pass at 390px and TC-E15-020 passes (keyboard search). Extra probe here: Documents, Tickets, Investors and Numbers as Meena at 390x844 have no sideways scroll; four screenshots in docs/reports/test-record-2026-10-04-screens/. Left: there are no Jev cases for Investors and Numbers at 390px (the screenshots are a probe, not a case), and the Jev runner does not itself save screenshots.",
+  "cases": [
+   {
+    "id": "TC-E15-020",
+    "verdict": "PASS",
+    "p": 0.88
+   },
+   {
+    "id": "TC-IM12-007",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-IM12-008",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M18-S04",
+  "subtask": "M18-S04-T03",
+  "verdict": "partial",
+  "evidence": "Local: TC-E15-022 (refused write visible and retryable) and TC-E15-023 (offline write queued) pass; alerts.test.cjs (failed saves, 5xx spike, credits header, mailer never throws, no identity in the alert), error-capture.test.cjs and process-hooks.test.cjs pass. Left: triggering a server error in the sandbox and receiving the alert (mailer external, M18-S04-NOTE-1); TC-E15-024 (api) carries no test id. Node/vitest: src/server/ops/alerts.test.cjs (11 pass); src/server/http/error-capture.test.cjs (11 pass); src/server/ops/process-hooks.test.cjs (3 pass).",
+  "cases": [
+   {
+    "id": "TC-E15-022",
+    "verdict": "PASS",
+    "p": 0.97
+   },
+   {
+    "id": "TC-E15-023",
+    "verdict": "PASS",
+    "p": 0.97
+   }
+  ]
+ },
+ {
+  "story": "M18-S08",
+  "subtask": "M18-S08-T01",
+  "verdict": "proven",
+  "evidence": "docs/uat holds the pack: README, 10 seat scenarios (scenarios/01-ir.md .. 10-auditor-viewer.md, both sides), signoff-sheet.csv (131 steps with P1-P3 and level) and defect-intake.md (P1-P3 template). Document deliverable, no test. Caveat in README: no scenario for the business owner, channel partners or the app investor (M18-S08-NOTE-2).",
+  "cases": []
+ },
+ {
+  "story": "M18-S08",
+  "subtask": "M18-S08-T03",
+  "verdict": "failed",
+  "evidence": "Nothing exists to record: docs/uat/README.md:112 lists 'the usability timing sheet (M18-S08-T02, T03, T04)' as 'Not in this pack' (IR-23 covers one usability task only). The tasks list, consent form and timing sheet are not written.",
+  "cases": []
+ },
+ {
+  "story": "M19-S01",
+  "subtask": "M19-S01-T02",
+  "verdict": "failed",
+  "evidence": "The one-page UI test contract in docs/ is not written (no file under docs/ carries the labels / role=status / disabled rules; the rules sit only in D63 line 84 and the lint). The enforcement exists and passes: lib/a11y-lint.test.ts and the no-placeholder-only-label rule. Deliverable of this subtask is the page, so not done. Node/vitest: src/lib/a11y-lint.test.ts (3 pass).",
+  "cases": []
+ },
+ {
+  "story": "M19-S01",
+  "subtask": "M19-S01-T03",
+  "verdict": "partial",
+  "evidence": "Local: the Jev runner's control listing drives Today, Leads and the lead page by visible label across the whole run (the rail, Add lead and lead cases resolve 'by label' at 0.9-1.0), and the lint (a11y-lint.test.ts) fails any unlabelled control. Left: a recorded 'every box shows its label, not its value' check on staging; NOTE-1 says some prototype controls carry a title instead of an aria-label. Node/vitest: src/lib/a11y-lint.test.ts (3 pass).",
+  "cases": [
+   {
+    "id": "TC-E04-001",
+    "verdict": "PASS",
+    "p": 0.98
+   },
+   {
+    "id": "TC-E07-001",
+    "verdict": "PASS",
+    "p": 0.98
+   }
+  ]
+ },
+ {
+  "story": "M19-S03",
+  "subtask": "M19-S03-T02",
+  "verdict": "proven",
+  "evidence": "zoho/sandbox/README.md section 'How to add a fixture' exists: name in fixtures-merged.json (IM: prefix), cite in ui-cases.json, local seed via POST /api/test/fixture/<NAME> (404 when unknown, absent in production), sandbox seed via manifest and reset.mjs; reset.test.mjs exists.",
+  "cases": []
+ },
+ {
+  "story": "M20-S07",
+  "subtask": "M20-S07-T05",
+  "verdict": "partial",
+  "evidence": "Local, against the stub receiver: all-events.test.cjs (all 31 schemas, 34 tests: both directions, another type's name fails), events.test.cjs and push.test.cjs (signature refusal, duplicate delivery applied once, PAN/Aadhaar/IFSC refused before queue, retry and dead-letter), requests.test.cjs (request.raised makes exactly one Case; a request naming another Contact refused; another KAM cannot read the delivery) pass. Left: real receivers; and 'one investor never receives another's events' has no outbound test of its own (only the inbound Contact check). Node/vitest: src/server/contracts/all-events.test.cjs (34 pass); src/server/contracts/events.test.cjs (4 pass); src/server/contracts/push.test.cjs (10 pass); src/server/contracts/requests.test.cjs (7 pass).",
+  "cases": []
+ }
+]
