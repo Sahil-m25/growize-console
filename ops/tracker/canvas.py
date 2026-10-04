@@ -157,8 +157,16 @@ out.append(f"|Tasks for people|{kc.get('task', 0)}|" + ", ".join(f"{w} {n}" for 
 out.append(f"|Other notes|{kc.get('note', 0)}|Zoho fields/modules the code expects, secrets and config, staging steps|")
 out.append("\nDecisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line in BLOCKED.md when it is done; the loop reads the ticks.\n")
 out.append("\n# :hammer_and_wrench: People's to-do (from the build)\n")
-items = [l[5:].strip() for l in blocked.splitlines() if l.startswith('- [ ]') and ', Autopilot' not in l]
-out += [f"- [ ] {i[:300]}" for i in items] or ["- Nothing waiting on people."]
+# D116: only what a person must do — people's tasks and HUMAN/OWNER steps; provisional calls and fact changes live on the rulings sheet
+_open = [l[6:].strip() for l in blocked.splitlines() if l.startswith('- [ ] ')]
+_tasks = [i for i in _open if re.match(r'M\d+-S\d+-T\d+ \(M\d+-S\d+, (?!Autopilot)', i)]
+_human = [i for i in _open if re.search(r'\) (HUMAN|OWNER ACTION|OWNER)\b', i) and 'HUMAN PROOF' not in i]
+_proof = [i for i in _open if 'HUMAN PROOF' in i or 'STAGING PROOF' in i]
+_cut = lambda i, n: i if len(i) <= n else i[:n].rsplit(' ', 1)[0] + ' …'
+out.append("Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provisional calls and fact changes are on the rulings sheet (docs/reports/rulings-sheet-*.csv), not here.\n")
+out.append(f"**Tasks for people ({len(_tasks)})**\n"); out += [f"- [ ] {_cut(i, 230)}" for i in _tasks] or ["- None."]
+out.append(f"\n**Zoho and setup steps for the owner ({len(_human)})**\n"); out += [f"- [ ] {_cut(i, 200)}" for i in _human] or ["- None."]
+out.append(f"\n**Proofs on the sandbox or staging ({len(_proof)})** — run once the Zoho sandbox, test user and hosting exist; listed in BLOCKED.md.")
 out.append("\n# :clipboard: Stories\n")
 order = {'in_progress': 0, 'review': 1, 'regressed': 1, 'waiting': 2, None: 3, 'done': 4}
 for e in P.get('epics', []):
