@@ -71,7 +71,7 @@ function NumbersMgmt() {
               <div className="g6-kpi-r">{r ? <><span>{r.act}</span><span className="sm">{P(state.PEOPLE, r.who).n.split(" ")[0]} · by {r.by}</span></>
                 : red ? <span className="tag late"><span className="dot" />no recovery action</span> : <span className="sm">on track</span>}
                 {red && canRecov(state) ? (
-                  <button type="button" className="chip" id={`rc-${m.k}`} onClick={() => dispatch({
+                  <button type="button" className="chip" id={`rc-${m.k}`} aria-label={`${r ? "Change action" : "Set action"} — ${m.t}`} onClick={() => dispatch({
                     type: "openDrawer", k: "recov", id: m.k,
                     seed: { RCACT: (state.RECOV[m.k] || {}).act ?? null, RCWHO: (state.RECOV[m.k] || {}).who ?? null,
                       RCDATE: "", RCERR: "" } })}>{r ? "Change" : "Set action"}</button>
