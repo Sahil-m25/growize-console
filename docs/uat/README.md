@@ -64,7 +64,7 @@ UAT takes **six days, starting the day the loop finishes** (story M18-S08, day 6
 | 2 | Mon 5 Oct | IR, Finance | Finish UAT-IR up to IR-13. Start UAT-FIN. The two seats hand off to each other. |
 | 3 | Tue 6 Oct | Finance, Head of Finance | Finish UAT-FIN. UAT-HOF. IR finishes IR-14 to IR-24. |
 | 4 | Wed 7 Oct | Head of AM, KAMs, Compliance | UAT-HAM (before UAT-KAM). UAT-KAM. UAT-CMP. |
-| 5 | Thu 8 Oct | Farm ops, viewers, Sahil | UAT-FARM (if the owner has decided). UAT-AUD. Fixes for P1 and P2. |
+| 5 | Thu 8 Oct | Viewers, Sahil | UAT-FARM is not run: persona kept, not provisioned, D113. UAT-AUD. Fixes for P1 and P2. |
 | 6 | Fri 9 Oct | Tester, Sahil | Retest fixes. Re-run the regression pack. Go/no-go. Sign the list. |
 
 Hours already planned: IR and IR Manager 8 h, Finance 6 h, KAM 5 h [M18-S08-T05, T06, T07].
@@ -82,7 +82,7 @@ Each seat holder signs after their last step. Sahil signs the whole pack on Day 
 | KAM | | 12 | | | |
 | Head of AM | | 8 | | | |
 | Compliance and Audit | | 9 | | | |
-| Farm ops | | 5 | | | |
+| Farm ops (not run, persona kept, D113) | | 5 | n/a | | |
 | Digital Infrastructure (Sahil) | | 16 | | | |
 | Auditor / viewer | | 7 | | | |
 | **UAT accepted (Sahil)** | | 131 | | | |
@@ -99,7 +99,7 @@ Each seat holder signs after their last step. Sahil signs the whole pack on Day 
 
 The pack follows the newest ruling (D110 is the latest on seats and search). Where the documents disagree, the step says so and the tester writes down what the app does. These need an owner answer before go-live:
 
-1. **Farm ops has no Zoho role yet** [M03-S05-NOTE-2]. UAT-FARM is blocked until the owner names it. `docs/ACCESS-PLAN.md` has no Farm-ops row, and `ops/SEAT-PLAN.md` puts Farm ops and Channel Partner on one row.
+1. **Farm ops: persona kept, not provisioned — D113 (4 Oct 2026).** The owner ruled it is not provisioned now. UAT-FARM is not run for go-live and its 5 steps do not block acceptance. `docs/ACCESS-PLAN.md` has no Farm-ops row, and `ops/SEAT-PLAN.md` puts Farm ops and Channel Partner on one row. Kept for later (M03-S05-NOTE-2).
 2. **Sahil and identity reveals.** D110 says he keeps "logged PAN/Aadhaar/bank reveals". M01-S10, M12-S10 and M15-S03 say his PAN stays masked with no reveal, and the plan hides those fields on his profile [M02-S04-T02]. DI-03 records what the app does.
 3. **Search scope.** M06-S03 and M03-S02 still say search is "leads only"; D110 makes it org-wide for Digital Infrastructure and the business owner, with wiring units M06-S03-W2 and M06-S05-W2. DI-04 follows D110.
 4. **Auditor versus Compliance.** M03-S06 makes Latha a read-only Auditor; D78 merged Compliance and Audit into one seat that passes and fails KYC. AUD-01 and CMP-01 both cover Latha's seat; the owner must say which profile she holds.

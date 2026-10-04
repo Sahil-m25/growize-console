@@ -1,8 +1,10 @@
 # UAT-FARM — Farm operations
 
+> **Persona kept, not provisioned — D113 (4 Oct 2026).** The owner ruled that Farm ops is not provisioned now and the persona (seat definition and this script) is kept for later. Do not run this scenario at go-live. Run it only when the owner names the role, profile, capabilities and parent. The steps below stay as written.
+
 - **Run by:** The person the owner names (open decision). The real seat holder runs it, not a stand-in.
 - **Second person:** none.
-- **What this proves:** OPEN OWNER DECISION: Farm ops has no Zoho role or profile yet (M03-S05-NOTE-2). ACCESS-PLAN has no Farm-ops row and SEAT-PLAN combines it with Channel Partner. Do not run this scenario until the owner names the role, profile, capabilities and parent. The steps below are what M03-S05, M11 and M17 already say; the owner's answer may add or remove steps.
+- **What this proves:** Farm ops has no Zoho role or profile yet and is not provisioned now (D113 5b). Earlier note: it had no role or profile (M03-S05-NOTE-2). ACCESS-PLAN has no Farm-ops row and SEAT-PLAN combines it with Channel Partner. Do not run this scenario until the owner names the role, profile, capabilities and parent. The steps below are what M03-S05, M11 and M17 already say; the owner's answer may add or remove steps.
 - **Before you start:** Owner has approved the exact role and profile name and both exist in the sandbox; ids exported; the seat policy updated (M03-S05-NOTE-2).
 - **Hand-offs:** No baton.
 - **How to mark:** write Pass or Fail for every step in `../signoff-sheet.csv` (same step number). A Fail needs a defect (see `../defect-intake.md`). P1 = go-live blocker if it fails. P2 = needs a written workaround if it fails.
