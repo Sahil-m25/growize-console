@@ -1,4 +1,4 @@
-*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D117`.*
+*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D118`.*
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 

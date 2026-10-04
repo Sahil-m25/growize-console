@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 04 Oct 2026 22:14 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 04 Oct 2026 22:15 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -32,7 +32,7 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 
 # :newspaper: Recent developments
 
-*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D117`.*
+*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D118`.*
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 
