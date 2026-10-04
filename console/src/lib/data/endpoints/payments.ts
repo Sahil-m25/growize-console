@@ -8,12 +8,12 @@ import type { RegisterResult } from "@/server/money/register";
 import type { MoneyByAllotment, MoneyBlock } from "@/server/money/by-allotment";
 import type { ArlHoldingLine } from "@/server/investors/holdings";
 import {
-  I, allotOf, allotOfTxn, allotPayStatus, allotsOf, arlTxnsOf, holdingsOf, isAM, isSuper, llpOf, may, mayHoldings,
+  I, allotOf, maskRefTail, allotOfTxn, allotPayStatus, allotsOf, arlTxnsOf, holdingsOf, isAM, isSuper, llpOf, may, mayHoldings,
   pageReadable, UNIT,
 } from "@/lib/im";
 import type { ImAllot, ImTxn } from "@/lib/im";
-import { fail, ok, type ReadEndpoint } from "../api";
-import type { ImBook } from "./im";
+import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
+import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
 
 /* ── the register ─────────────────────────────────────────────────────────────────────────── */
 export type RegisterView = Extract<RegisterResult, { ok: true }>["value"];
@@ -36,21 +36,22 @@ const CUT: Record<NonNullable<RegisterArgs["kind"]>, (t: ImTxn) => boolean> = {
   out: t => t.kind === "refund" || t.kind === "forfeit",
 };
 
-/** The register's answer from the demo book. The UTR follows the route: only a Finance seat that records reads it whole —
- *  the super user (an identity-wall seat, rule 7 / D13) and read-only seats get null and the page says "Finance only".
+/** The register's answer from the demo book. The reference follows the route (rule 7): a seat that records reads it MASKED
+ *  ("••• 8119", utrMask) — the super user included (D68/D110) — and may reveal it (canReveal); the full UTR is never in the
+ *  register's answer. Read-only seats get no mask and the page says "Finance only".
  *  `receivedOn` carries the demo book's own stamp ("02 Sep 10:00"); the route sends "YYYY-MM-DD". */
 export const paymentsRegister: ReadEndpoint<ImBook, RegisterArgs, RegisterView> = {
   path: a => "/api/payments" + qs(a),
   pick: j => j as RegisterView,
   fixture({ s, me }, a) {
     if (!pageReadable(s, me, "txn")) return fail(403, "capability-missing", "This page is not part of your seat.");
-    const seesUtr = may(s, me, "pay") && !isSuper(s, me);
+    const seesUtr = may(s, me, "pay"), mayShow = seesUtr && may(s, me, "bank");
     const rowOf = (t: ImTxn): RegisterRowView => {
       const al = allotOf(s, allotOfTxn(s, t)), l = al ? llpOf(s, al.LLP_Lookup) : null;
       const x = s.data.INV.find(y => y.id === t.inv);
       const blk = x ? Object.keys(x.blocks)[0] : undefined;
       return {
-        id: t.id, kind: t.kind, amount: t.amt, mode: t.mode || null, utr: seesUtr ? t.utr : null, utrHidden: !seesUtr,
+        id: t.id, kind: t.kind, amount: t.amt, mode: t.mode || null, utr: null, utrMask: seesUtr && t.utr ? maskRefTail(t.utr) : null, canReveal: mayShow && !!t.utr, utrHidden: !seesUtr,
         receivedOn: t.on, matchState: t.rec === "matched" ? "Matched" : "Pending", reconciled: t.rec === "matched",
         allotmentId: al ? al.id : "", investor: { id: t.inv, name: x ? x.n : null },
         farm: l ? { id: l.id, name: l.Name } : { id: blk || "", name: blk ? "Block " + blk : null },
@@ -79,6 +80,24 @@ export const paymentsRegister: ReadEndpoint<ImBook, RegisterArgs, RegisterView> 
       readOnly: !may(s, me, "pay"),
     });
   },
+};
+
+/* ── "Show the reference" — POST /api/receipts/[id]/reveal (server/money/reveal-ref), behind step-up "reveal" ─────────────
+   Live: the route, on the person's own token; it answers the full reference and writes the Plane C line. The screen asks
+   step-up first (StepUp). Fixture: the reducer's revealRef (the demo has no Zoho to sign in to again), which writes the
+   Investors-side log line the Activity page lists; the answer is the book's own reference. */
+export type RevealedRef = { receiptId: string; mode: string | null; utr: string };
+export const revealReceiptRef: WriteEndpoint<ImBook, { id: string }, RevealedRef, ImDispatch> = {
+  method: "POST",
+  path: a => `/api/receipts/${encodeURIComponent(a.id)}/reveal`,
+  pick: j => (j as { reveal: RevealedRef }).reveal,
+  fixture(b, d, a) {
+    const t = b.s.data.TXN.find(x => x.id === a.id);
+    if (!t || !pageReadable(b.s, b.me, "txn")) return fail(404, "not-visible", "This payment is not available to you.");
+    if (!may(b.s, b.me, "bank") || !may(b.s, b.me, "pay") || !t.utr) return fail(403, "not-allowed", "Showing a bank reference is for Finance and Digital Infrastructure.");
+    return imFixtureWrite(b, d, { type: "revealRef", id: a.id }, { receiptId: t.id, mode: t.mode || null, utr: t.utr });
+  },
+  onLiveError: imLiveError,
 };
 
 /* ── the Money section per allotment ──────────────────────────────────────────────────────── */

@@ -5,11 +5,13 @@
    (lib/data/endpoints/payments) — received, refunded, net banked and still due are MATCHED money only (D21); what
    is recorded and not yet matched is shown apart. The Match it button is M10-S02 (../money/pages). */
 
-import { day6, fmtDate, money, pageReadable, TXNF } from "@/lib/im";
+import { useState } from "react";
+import { day6, fmtDate, money, pageReadable, refShown, TXNF } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
-import { useApiRead } from "@/lib/data/api";
-import { paymentsRegister, type RegisterArgs, type RegisterRowView } from "@/lib/data/endpoints/payments";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { paymentsRegister, revealReceiptRef, type RegisterArgs, type RegisterRowView } from "@/lib/data/endpoints/payments";
 import { ImPname, type ImPageProps } from "../common";
+import { StepUp } from "../stepup";
 import { MatchCell, PayoutsDue } from "../money/pages";
 import { StatementCard } from "../money/statement";
 
@@ -22,6 +24,41 @@ const asTxn = (r: RegisterRowView): ImTxn => ({ id: r.id, inv: r.investor.id, ki
   on: r.receivedOn ?? "", by: r.recordedById ?? "", rec: r.reconciled ? "matched" : "pending" });
 /** the demo book stamps "02 Sep 10:00"; the route sends "2026-09-02" */
 const dayOf = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? fmtDate(v).slice(0, 6) : day6(v));
+
+/** The reference, masked ("SWIFT · ••• 8119"), with "Show the reference" for a seat that holds the reveal right (rule 7, D13/D22).
+ *  Live: step-up first, then POST /api/receipts/[id]/reveal answers the full reference for this row. Fixture: the reducer's
+ *  logged revealRef (no Zoho to sign in to again). Either way the line is logged and "Hide" covers it again. */
+function RefCells({ s, me, dispatch, t }: ImPageProps & { t: RegisterRowView }) {
+  const mode = useApiMode();
+  const reveal = useApiWrite(revealReceiptRef, { s, me }, dispatch);
+  const [full, setFull] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const fixtureFull = mode === "fixture" && refShown(s, me, t.id) ? s.data.TXN.find(x => x.id === t.id)?.utr ?? null : null;
+  const open = fixtureFull ?? full;
+  if (t.utrHidden) return <><td className="sm">{t.mode ?? "—"} <span className="mono">Finance only</span></td><td></td></>;
+  const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
+  /* the control sits in a cell of its own, so the row's text (the investor, the amount) is what names it */
+  return (
+    <>
+      <td className="sm">{t.mode ?? "—"} · <span className="mono">{open ?? t.utrMask ?? "—"}</span>
+        {open ? <span className="sm" style={{ display: "block" }}>shown — this is in the activity log</span> : null}</td>
+      <td className="sm" onClick={stop} onKeyDown={stop}>
+        {open ? (
+          <button className="chip" title="Cover it again"
+            onClick={() => { setFull(null); if (fixtureFull) dispatch({ type: "hideAll" }); }}>Hide the reference</button>
+        ) : t.canReveal ? (
+          <>
+            <button className="chip" title="Shows the whole reference and writes your name and the minute into the log"
+              onClick={() => { if (mode === "fixture") void reveal({ id: t.id }); else setAsking(true); }}>Show the reference</button>
+            <StepUp action={asking ? "reveal" : null} what="before the reference is shown"
+              onOpen={() => { setAsking(false); void reveal({ id: t.id }).then(r => { if (r.ok) setFull(r.data.utr); }); }}
+              onCancel={() => setAsking(false)} />
+          </>
+        ) : null}
+      </td>
+    </>
+  );
+}
 
 export function ImTxn({ s, me, dispatch }: ImPageProps) {
   const TFILT = s.ui.TFILT;
@@ -53,7 +90,7 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
       ))}</div>
       <div className="secw"><div className="card fill"><div className="tw"><table>
         <thead><tr><th>Reference</th><th>Investor</th><th>Kind</th><th className="n">Amount</th>
-          <th>Mode · UTR</th><th>Recorded</th><th>Reconciled</th></tr></thead>
+          <th>Mode · UTR</th><th aria-label="Show or hide the reference"></th><th>Recorded</th><th>Reconciled</th></tr></thead>
         <tbody>{rows.length ? rows.map(t => (
           <tr className="k" key={t.id} onClick={() => dispatch({ type: "go", v: "inv", id: t.investor.id })} tabIndex={0}>
             <td className="mono">{t.id}</td>
@@ -61,12 +98,12 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
             <td><span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold"
               : t.kind === "forfeit" ? "due" : "go"}`}>{t.kind}</span></td>
             <td className="n mono"><b>{t.kind === "refund" ? "−" : ""}{money(t.amount)}</b></td>
-            <td className="sm">{t.mode ?? "—"} <span className="mono">{t.utrHidden ? "Finance only" : t.utr}</span></td>
+            <RefCells s={s} me={me} dispatch={dispatch} t={t} />
             <td className="sm">{t.recordedById ? <ImPname s={s} k={t.recordedById} first /> : null} <span className="mono">{dayOf(t.receivedOn)}</span></td>
             <td>{t.reconciled ? <span className="tag go"><span className="dot"></span>matched</span>
               : <span className="tag due"><span className="dot"></span>pending</span>}
               <MatchCell s={s} me={me} dispatch={dispatch} t={asTxn(t)} /></td></tr>
-        )) : <tr><td colSpan={7}><div className="empty">Nothing in this cut.</div></td></tr>}
+        )) : <tr><td colSpan={8}><div className="empty">Nothing in this cut.</div></td></tr>}
         </tbody></table></div></div>
         <PayoutsDue s={s} me={me} dispatch={dispatch} /></div>
     </>

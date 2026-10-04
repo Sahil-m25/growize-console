@@ -199,6 +199,8 @@ export type ImQ =
 export type ImAction =
   /* writes (section 7, plus reveal from section 2 and logField/saveDetails from section 3) */
   | { type: "reveal"; id: string; f: "pan" | "acct"; why?: string }
+  /* a Payments register row's bank reference, shown in full (rule 7, D13/D22): logged, behind step-up live */
+  | { type: "revealRef"; id: string }
   | { type: "hideAll" }
   | { type: "revCancel" }
   | { type: "logField"; blk: string; st: string; head: string; d: string }

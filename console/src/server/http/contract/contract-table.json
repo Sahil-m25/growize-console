@@ -706,6 +706,15 @@
     }
    }
   },
+  "/api/receipts/[id]/reveal": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (no body; step-up reveal first)"
+    }
+   }
+  },
   "/api/receipts/prepare": {
    "POST": {
     "body": {

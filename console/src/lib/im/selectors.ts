@@ -61,6 +61,11 @@ export const shown = (s: ImState, WHO: string, id: string, f: "pan" | "acct"): b
   !!I(s, WHO, id) && (f === "pan" ? may(s, WHO, "pii") : f === "acct" && may(s, WHO, "bank"))
   && !!s.ui.SHOWN[WHO + "|" + id + ":" + f];
 
+/** the register's "••• 8119" — the last four and no more (lib/format maskRef, kept in step) */
+export const maskRefTail = (r: string | null | undefined): string => { const v = String(r ?? "").trim(); return !v ? "—" : v.length <= 4 ? "••••" : "••• " + v.slice(-4); };
+/** has this person shown this receipt's bank reference this session (and do they still hold the right) */
+export const refShown = (s: ImState, WHO: string, tid: string): boolean => may(s, WHO, "bank") && !!s.ui.SHOWN[WHO + "|" + tid + ":ref"];
+
 export function withholdKnown(value: unknown, values: (string | null | undefined)[], marker: string): string {
   let out = String(value == null ? "" : value);
   values.filter((v): v is string => !!v && String(v).length >= 4).map(String).sort((a, b) => b.length - a.length).forEach(v => {

@@ -51,9 +51,12 @@ export function AssignReport() {
   );
 
   /* a count that lists its leads; zero is plain text, because a button that opens nothing is dead */
-  const arCount = (n: number, label: string, k: string, p: string, m: string, late?: boolean) => !n
+  /* `period` names the column in the button's accessible name ("This week: 1 not worked"): every row repeats the same
+     "1 not worked" in several columns, and a screen reader (or a test) has to tell them apart. The visible text is unchanged. */
+  const arCount = (n: number, label: string, k: string, p: string, m: string, late?: boolean, period?: string) => !n
     ? <span className="ar-z">{label ? "0 " + label : "0"}</span>
     : <button type="button"
+        aria-label={period ? `${period}: ${n}${label ? " " + label : ""}` : undefined}
         className={`ar-n${late ? " ar-late" : ""}${arPick && arPick.k === k && arPick.p === p && arPick.m === m ? " on" : ""}`}
         onClick={e => { e.stopPropagation(); arTap(k, p, m); }}>{n}{label ? " " + label : ""}</button>;
 
@@ -88,9 +91,9 @@ export function AssignReport() {
       ))}</tbody></table></div>
   );
 
-  const cellH = (c: ArData["tot"]["per"][number], k: string, p: string, key: number) => (
+  const cellH = (c: ArData["tot"]["per"][number], k: string, p: string, key: number, period: string) => (
     <td key={key}><div className="ar-c"><b>{c.n}</b>{c.n ? <> <span className="sm">· {rateOf(c.w, c.n)} worked</span></> : null}</div>
-      {c.nw.length ? <div>{arCount(c.nw.length, "not worked", k, p, "nw", true)}</div> : null}</td>
+      {c.nw.length ? <div>{arCount(c.nw.length, "not worked", k, p, "nw", true, period)}</div> : null}</td>
   );
 
   const on = assignees(state);
@@ -109,7 +112,7 @@ export function AssignReport() {
                   onClick={e => { e.stopPropagation(); arToggle(r.k); }}>
                   <Pav k={r.k} /><span>{P(state.PEOPLE, r.k).n.split(" ")[0]}{off
                     ? <> <span className="sm">({pp && pp.on ? "off" : "left"})</span></> : null}</span></button></th>
-                {r.per.map((c, i) => cellH(c, r.k, D.P5[i].k, i))}
+                {r.per.map((c, i) => cellH(c, r.k, D.P5[i].k, i, D.P5[i].t))}
                 <td>{r.missed.length ? arCount(r.missed.length, "", r.k, "all", "miss", true) : <span className="ar-z">0</span>}</td></tr>
               {open || pickHere ? (
                 <tr className="ar-x"><td colSpan={D.P5.length + 2}>{pickHere ? arNames(D) : null}{open ? arMacros(r, D) : null}</td></tr>
@@ -117,7 +120,7 @@ export function AssignReport() {
             </Fragment>
           );
         })}</tbody>
-        <tfoot><tr className="ar-tot"><th scope="row">Team</th>{T.per.map((c, i) => cellH(c, "_tot", D.P5[i].k, i))}
+        <tfoot><tr className="ar-tot"><th scope="row">Team</th>{T.per.map((c, i) => cellH(c, "_tot", D.P5[i].k, i, D.P5[i].t))}
           <td>{T.missed.length ? arCount(T.missed.length, "", "_tot", "all", "miss", true) : <span className="ar-z">0</span>}</td></tr>
           {arPick && arPick.k === "_tot" ? <tr className="ar-x"><td colSpan={D.P5.length + 2}>{arNames(D)}</td></tr> : null}</tfoot></table></div>
       <div className="cb ar-foot"><p className="sm">Tap an IR for what happened inside the row. Worked = at least one contact attempt by that IR after the lead reached them.

@@ -20,7 +20,7 @@
                 tkOf ticketBook tkOpen fieldOf logFor roundOf roundsFor finQueue careQueue mineQueue
                 appOf appMark markAge markLocked markLeft mayTkt watchedTkt finSeats needsFin maySeat
                 navFor pageReadable count secOf holdDays readOnlySeat drawerReadable shown
-                maskPan maskAcct safeNote auditText withholdKnown activityActors isAuditor activityBase
+                maskPan maskAcct maskRefTail refShown safeNote auditText withholdKnown activityActors isAuditor activityBase
                 activityRows · page reads: kamLoad outstandingReserved forfeitExposure publishCount
                 invExceptions invRows TXNF tktFilters farmShelf ageing stuckDocs sysChecks journey
    RULES        mayReveal piiView recordPayGate oversellGate setMarkGate matchGate holdExpired lapseGate oversold
