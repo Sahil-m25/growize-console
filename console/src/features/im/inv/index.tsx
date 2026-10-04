@@ -10,7 +10,7 @@ import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, accessOf, accessView, fmtDay, fmtStamp, mid, nowDay, when, DAY,
+  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtDay, fmtStamp, mid, nowDay, when, DAY,
 } from "@/lib/im";
 import { EXTDAYS } from "@/domain";
 import type { ImInvestor } from "@/lib/im";
@@ -25,7 +25,10 @@ import { BlockIt } from "../paper2/BlockIt";
 import { InvUploads } from "../paper2/Upload";
 import { useApiMode, useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { appCard } from "@/lib/data/endpoints/app";
-import { amBook, investorRecord, investorSearch } from "@/lib/data/endpoints/investors";
+import { amBook, investorRecord, investorSearch, irInvestorList } from "@/lib/data/endpoints/investors";
+import { useGoLead } from "@/features/leads/nav";
+import type { NavKey } from "@/domain";
+import type { IrInvestorRow } from "@/server/investors/ir-list";
 import { holdExtend, holdOne, holdRelease, type HoldOne } from "@/lib/data/endpoints/holds";
 import type { InvestorRecord, RecordSection } from "@/server/investors/record";
 
@@ -36,9 +39,20 @@ export function ImInv(p: ImPageProps) {
   const { s, me } = p;
   /* M09-S03-W1: the record is GET /api/investors/[id]/record (lib/data/endpoints/investors) */
   const one = useApiRead(investorRecord, { s, me }, s.ui.SEL);
-  if (!pageReadable(s, me, "inv")) return null;
+  /* M09-S08 (D113 ruling 2): an IR holds this same page on the investors of their own leads — the same record, read-only */
+  if (!p.irSeat && !pageReadable(s, me, "inv")) return null;
   if (one.state === "ok") return <VOne {...p} x={one.data.record.investor} rec={one.data.record} />;
   if (one.state === "loading") return <div className="empty">Reading the record…</div>;
+  if (p.irSeat) return (
+    <>
+      {one.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>
+        {one.err.status === 404 || one.err.status === 403
+          ? <><b>Not opened.</b> That is not an investor from one of your own leads, so nothing on that record was read.</>
+          : one.err.error}
+        {" "}<button type="button" className="chip" onClick={() => p.dispatch({ type: "go", v: "inv", id: null })}>OK</button></div> : null}
+      <VIrInv {...p} />
+    </>
+  );
   if (one.state === "error" && one.err.status !== 404 && one.err.status !== 403) return (
     <><div className="note bad" role="alert" style={{ marginBottom: 8 }}>{one.err.error}</div><VInv {...p} /></>
   );
@@ -136,13 +150,114 @@ function VInv({ s, me, dispatch }: ImPageProps) {
   );
 }
 
+/* M09-S08 (D113 ruling 2) — the Investors page for an IR: the same page, rows scoped to the investors who came from this IR's
+   own leads, read-only, in the columns of M09-S08-NOTE-3 (IR_COLS: Investor, ARL ID, Farms, State, Lead). It shares the page's table,
+   section bar, search box, state tag and record opening; it is its own function because VInv's rows, subtitle, filter cuts and
+   "Add investor" all read the whole book (Paid, Due, KYC, KAM tiers). The rows are GET /api/investors/mine — never the book. */
+const irText = (r: IrInvestorRow) => [r.name, r.code, r.state ?? "", ...r.farms.map(f => "Block " + f.block + " " + f.name)].join(" ").toLowerCase();
+const irFarms = (r: IrInvestorRow) => r.farms.map(f => "Block " + f.block + " ×" + f.units).join(", ") || "—";
+
+/** the lead an investor came from: opens that lead (the lead page decides whether it is still yours to open) */
+function LeadLink({ id, name }: { id: string; name: string }) {
+  const goLead = useGoLead("inv" as NavKey);
+  return <button type="button" className="chip" aria-label={"Open lead for " + name}
+    onClick={e => { e.stopPropagation(); goLead(id); }}>Open lead ›</button>;
+}
+
+function VIrInv({ s, me, dispatch }: ImPageProps) {
+  const r = useApiRead(irInvestorList, { s, me }, true);
+  const q = s.ui.IQ.trim().toLowerCase();
+  const all = r.state === "ok" ? r.data.rows : [];
+  const rows = q ? all.filter(x => irText(x).includes(q)) : all;
+  const go = (id: string) => dispatch({ type: "go", v: "inv", id });
+  return (
+    <>
+      <div className="ph"><h1>Investors</h1>
+        <span className="sub" id="inv-sub">{(r.state === "ok" ? all.length : "…") + " from your leads"}</span>
+        <div className="sp" />
+        <input className="inp" style={{ width: 210 }} placeholder="Name, ARL ID, farm…" value={s.ui.IQ} aria-labelledby="inv-sub"
+          id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
+      {r.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{r.err.error}</div> : null}
+      <div className="secbar"><button className="sc on">Everyone <i>{all.length}</i></button></div>
+      <div className="secw"><div className="card fill"><div className="tw"><table>
+        <thead><tr>{IR_COLS.map(c => <th key={c}>{c}</th>)}</tr></thead>
+        <tbody>{rows.length ? rows.map(x => (
+          <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
+            <td><b>{x.name}</b></td>
+            <td className="mono sm">{x.code}</td>
+            <td className="sm">{irFarms(x)}</td>
+            <td>{x.state ? <StTag x={{ st: x.state } as ImInvestor} st={x.state} /> : <span className="sm">—</span>}</td>
+            <td>{x.leadId ? <LeadLink id={x.leadId} name={x.name} /> : <span className="sm">—</span>}</td>
+          </tr>
+        )) : <tr><td colSpan={IR_COLS.length}>{r.state === "loading" || r.state === "idle" ? <div className="empty">Reading your investors…</div>
+          : <div className="empty">{q ? "Nobody matches that." : "None of your leads has said yes yet."}
+            {q ? <div className="sm">{"No investor from your leads matches “" + s.ui.IQ.trim() + "”."}</div> : null}</div>}</td></tr>}
+        </tbody></table></div></div></div>
+    </>
+  );
+}
+
+/* the IR's record: who they are, what they hold, the journey — no money, paper or care, and no identity beyond the name and how to reach them */
+function IrWho({ x }: { x: ImInvestor }) {
+  return (
+    <div className="card"><div className="ch"><h3>Who they are</h3><div className="sp" />
+      <span className="sm">from your lead</span></div><div className="cb">
+      <dl className="kv" style={{ marginTop: 0 }}>
+        <dt>Name</dt><dd><b>{x.n}</b></dd>
+        <dt>ARL ID</dt><dd className="mono">{x.id}</dd>
+        <dt>Mobile</dt><dd className="mono">{x.ph || "—"}</dd>
+        <dt>Email</dt><dd className="mono" style={{ fontSize: "12.5px" }}>{x.em || "—"}</dd>
+        <dt>Residency</dt><dd>{x.nri ? "Non-resident" : "Resident"}</dd>
+        <dt>On the book</dt><dd className="mono">{x.since || "—"}</dd>
+        <dt>Your lead</dt><dd>{x.lead ? <LeadLink id={x.lead} name={x.n} /> : "—"}</dd>
+      </dl>
+      <div className="note" style={{ marginTop: 12 }}><b>This is your own investor, read only.</b>{" "}
+        The rest of their record — paperwork, payments and identity — belongs to the Investors side and is not on your screen.</div>
+    </div></div>
+  );
+}
+
+function IrHold({ s, x }: { s: ImPageProps["s"]; x: ImInvestor }) {
+  return (
+    <div className="card"><div className="ch"><h3>What they hold</h3><div className="sp" /><StTag x={x} /></div><div className="cb">
+      <dl className="kv" style={{ marginTop: 0 }}>
+        <dt>Units</dt><dd><b>{x.units}</b></dd>
+        <dt>Land</dt><dd>{Object.keys(x.blocks).length
+          ? Object.entries(x.blocks).map(([k, n], i) => {
+            const f = s.data.FARMS.find(y => y.k === k);
+            return <Fragment key={k}>{i ? <br /> : null}<b>{n}</b> on {f ? f.n : "Block " + k}</Fragment>;
+          })
+          : <span className="tag late">none — the units went back on the shelf</span>}</dd>
+        <dt>State</dt><dd>{x.st === "said yes" ? "Said yes. Nothing is reserved yet."
+          : x.st === "allocated" ? "Allotted. The units are theirs."
+            : x.st === "paid" ? "Paid in full and awaiting allotment."
+              : x.st === "reserved" ? "Reserved. Not allotted until the balance lands."
+                : "Lapsed. The reservation ran out and the land went back on the shelf."}</dd>
+      </dl>
+    </div></div>
+  );
+}
+
+function IrJourney({ x }: { x: ImInvestor }) {
+  return (
+    <div className="card fill"><div className="ch"><h3>The journey</h3></div>
+      <div className="cb"><div className="jrn">
+        <div className="jev ir"><b>Said yes</b>
+          <div className="m"><span className="mono">{x.since}</span>{" · Brought in by you" + (x.src ? " from " + x.src : "") + (x.lead ? " · lead " + x.lead : "")}</div></div>
+      </div>
+      <p className="sm" style={{ margin: "12px 0 0" }}>What happens after Said yes belongs to the Investors side and is not shown here.</p>
+    </div></div>
+  );
+}
+
 /* vOne(x) — imx.js 1531–1842 */
 /* The record's header, banners and section bar come from the record the route answered (M09-S03-W1). The badge
    counts on Care, Paper and Tickets are still the book's until their own units wire them. */
 function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   const { s, me, dispatch, x, rec } = p;
   /* M08-S04-W1: the hold clock is GET /api/holds/[allotmentId] on the record's Reserved allotment (lib/data/endpoints/holds) */
-  const ho = useApiRead(holdOne, { s, me }, rec.holdings.find(h => h.status === "Reserved")?.id ?? null);
+  /* an IR's record has no hold clock: its banner carries what a lapse forfeits (money) */
+  const ho = useApiRead(holdOne, { s, me }, p.irSeat ? null : rec.holdings.find(h => h.status === "Reserved")?.id ?? null);
   if (!x) return null;
   const am = isAM(s, me), o = overdue(s, me, x), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
   const showMoney = rec.sections.includes("money");
@@ -167,7 +282,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         <button className="btn" onClick={() => dispatch({ type: "go", v: "inv", id: null })} aria-label="Back to the list">←</button>
         <h1>{x.n}</h1><span className="mono sm">{x.id}</span>
         <StTag x={x} st={rec.state} />{showMoney ? <KycTag x={x} /> : null}{x.nri ? <span className="tag">NRI</span> : null}
-        {cared(x) ? <span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span> : null}
+        {!p.irSeat && cared(x) ? <span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span> : null}
         <div className="sp" />
         <span className="sm">{x.units + " unit" + plural(x.units) + (showMoney ? " · " + money(x.units * UNIT) : "")}</span></div>
 
@@ -180,11 +295,11 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
 
       <ImSecBar s={s} dispatch={dispatch} v={v} list={SECS} />
       <div className="secw">
-        {S === "who" ? <SecWho {...p} /> : null}
+        {S === "who" ? (p.irSeat ? <IrWho x={x} /> : <SecWho {...p} />) : null}
         {/* M12-S09 — the record's emails sit under "Who they are" rather than as a section of their own,
             so the record keeps exactly the prototype's sections */}
         {S === "who" ? <InvEmails s={s} me={me} id={x.id} /> : null}
-        {S === "hold" ? <SecHold {...p} ho={ho} rec={rec} /> : null}
+        {S === "hold" ? (p.irSeat ? <IrHold s={s} x={x} /> : <SecHold {...p} ho={ho} rec={rec} />) : null}
         {S === "care" ? <SecCare {...p} /> : null}
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
@@ -214,7 +329,8 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
           </div></div>
         ) : null}
         {S === "paper" ? <SecPaper {...p} /> : null}
-        {S === "jrn" ? (
+        {S === "jrn" && p.irSeat ? <IrJourney x={x} /> : null}
+        {S === "jrn" && !p.irSeat ? (
           <div className="card fill"><div className="ch"><h3>The journey</h3><div className="sp" />
             <span className="tag ir">Lead side</span><span className="tag br">Investors side</span></div>
             <div className="cb"><div className="jrn">{journey(s, me, x, money).map((e, i) => (

@@ -41,7 +41,7 @@ export function useIm(): ImPageProps {
       if (k) router.push(pathOf(k as View));
     }
   }, [dispatch, router]);
-  return { s, me: state.WHO, dispatch: d };
+  return { s, me: state.WHO, dispatch: d, irSeat: state.ROLE === "ir" && !state.IM.P[state.WHO] };
 }
 
 /* IMX.page(v, me) — the Investors view by its own key */

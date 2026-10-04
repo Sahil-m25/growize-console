@@ -458,8 +458,15 @@ export const MORDER = ["today","leads","activity","events","inv","farms","tkt","
   "goals","numbers","people","system","me","updates"];
 /** fuller — only the Investors half shows; section — the Investors half is a section of the lead page */
 export const MBOTH: Record<string, "fuller" | "section"> = {pay:"fuller", docs:"fuller", people:"section"};
-export const imReachOf = (ctx: Ctx): string[] =>
-  ctx.IM && ctx.WHO ? imReach({ data: ctx.IM }, ctx.WHO) : [];
+/** D113 ruling 2 (M09-S08): an IR holds the Investors page — the same page, scoped to the investors of their own leads and
+ *  read-only. It is the IR seat's own half of `inv`, never a seat on the Investors side (no Investors seat, no book). */
+export const IR_INVESTORS_VIEW = "inv";
+export const holdsIrInvestors = (ctx: Ctx): boolean =>
+  !!ctx.WHO && !(ctx.IM && ctx.IM.P[ctx.WHO]) && roleOf(ctx.PEOPLE, ctx.WHO) === "ir" && may(ctx, "me", "view");
+export const imReachOf = (ctx: Ctx): string[] => {
+  const base: string[] = ctx.IM && ctx.WHO ? imReach({ data: ctx.IM }, ctx.WHO) : [];
+  return holdsIrInvestors(ctx) && !base.includes(IR_INVESTORS_VIEW) ? [...base, IR_INVESTORS_VIEW] : base;
+};
 export const sidesOf = (ctx: Ctx, k: string): { ir: boolean; im: boolean } => ({
   ir: navForIR(ctx).some(n => n.k === k),
   im: !!MERGE[k] && imReachOf(ctx).includes(MERGE[k]),

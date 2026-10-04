@@ -1,0 +1,23 @@
+/* GET /api/investors/mine — an IR's Investors list (M09-S08, D69, D113 ruling 2): the investors that came from the
+   signed-in IR's own leads (Contacts.Originating_IR = me, Origin_Lead present), read on their own token with the IR's
+   own filter in the WHERE and every row re-admitted by the IR guard. Columns only: id, ARL code, name, farms (name,
+   block, units), state, lead link. Never a price, amount, yield, receipt, phone, email, address or identity field.
+   Any seat but the IR is refused 403 by the list itself (no Zoho call). Nothing kept (D45).
+   200 → { rows: [{ id, code, name, farms, state, leadId }], truncated }   · 403 → { error, code } */
+import { guardApi } from "@/server/access/guard";
+import { withErrorCapture } from "@/server/ops/runtime";
+import { failureResponse, investorsContext, NO_STORE } from "@/server/investors/http";
+
+export const dynamic = "force-dynamic";
+
+async function get(req: Request) {
+  const c = await investorsContext();
+  if (!c.ok) return c.response;
+  const { createIrInvestorList } = await import("@/server/investors/ir-list");
+  const { rt, crm, principal } = c.ctx;
+  const r = await createIrInvestorList({ crm, events: rt.events }).list(principal.credential, principal.session.seat, req.signal);
+  if (!r.ok) return failureResponse(r);
+  return Response.json({ rows: r.rows, truncated: r.truncated }, { headers: NO_STORE });
+}
+
+export const GET = withErrorCapture(guardApi("/api/investors/mine", get), "/api/investors/mine");

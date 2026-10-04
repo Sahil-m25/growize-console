@@ -2,17 +2,19 @@
 
 /* A direct link to one investor — /inv?id=ARL-INV-0208 (M09-S08, M12-S09). It opens the record only
    when the signed-in seat reads that investor; otherwise the page says so in-page and nothing of the
-   record is read. (In the merged prototype an IR has no Investors page, so an IR never gets here;
-   the IR rule itself — irMayOpen — is in @/lib/im for phase 2.) */
+   record is read. An IR (D113 ruling 2, M09-S08) opens it only for an investor from their own lead (irMayOpen); live the
+   record route's IR guard decides and the page says so in-page. */
 
 import { useEffect, useRef, useState } from "react";
-import { I } from "@/lib/im";
+import { I, irMayOpen } from "@/lib/im";
+import { useApiMode } from "@/lib/data/api";
 import { useConsole } from "@/lib/store";
 import { useIm } from "../host";
 
 export function InvLink() {
   const { state } = useConsole();
-  const { s, me, dispatch } = useIm();
+  const { s, me, dispatch, irSeat } = useIm();
+  const mode = useApiMode();
   const [refused, setRefused] = useState<string | null>(null);
   const done = useRef(false);
   useEffect(() => {
@@ -20,9 +22,9 @@ export function InvLink() {
     done.current = true;
     const id = new URLSearchParams(window.location.search).get("id");
     if (!id) return;
-    if (I(s, me, id)) dispatch({ type: "go", v: "inv", id });
+    if (I(s, me, id) || (irSeat && (mode === "live" || irMayOpen(s, me, id)))) dispatch({ type: "go", v: "inv", id });
     else setRefused(id);
-  }, [state.authed, state.loaded, s, me, dispatch]);
+  }, [state.authed, state.loaded, s, me, dispatch, irSeat, mode]);
   if (!refused || s.ui.SEL) return null;
   return (
     <div className="note bad" role="alert" style={{ marginBottom: 8 }}>
