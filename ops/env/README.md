@@ -32,6 +32,7 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `ZOHO_OAUTH_REDIRECT_URI` | V | `https://<staging-host>/api/auth/zoho/callback` | `https://<prod-host>/api/auth/zoho/callback` | oauth/runtime.ts (https ⇒ secure cookies) |
 | `ZOHO_OAUTH_SCOPES` | V | optional (defaults in code) | optional | oauth/runtime.ts |
 | `ZOHO_SESSION_KEY` | **S** | 32 random bytes, base64 — its own | 32 random bytes, base64 — its own | oauth/crypto.ts (session sealing) |
+| `SESSION_ENC_KEY` | **S** | 32 random bytes, base64 — its own, not `ZOHO_SESSION_KEY` (optional while `STATE_STORE` is memory: absent, a per-process key is made) | 32 random bytes, base64 — its own; **required** with `STATE_STORE=catalyst` (the server refuses to start without it) | oauth/session-store.ts — seals each stored user session record (AES-256-GCM, bound to its key); rotating it signs everyone out |
 | `ZOHO_CRM_RECORD_ID_PREFIX` | V | sandbox org's record-id prefix | live org's prefix | oauth, data, email, zoho-sign |
 | `ZOHO_SEAT_IDS` | V | JSON `{roleIds,profileIds}` of the **sandbox** roles | same, live ids | oauth/runtime.ts, data/zoho-source.ts |
 | `ZOHO_UNASSIGNED_QUEUE_USER_ID` | V | sandbox queue user id | live queue user id | data/zoho-source.ts |
@@ -95,11 +96,11 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 - Only `NEXT_PUBLIC_*` reaches the browser; none of the secrets above may be renamed to it. CI's
   `bundle secret scan` step builds and greps `.next/static` for `client_secret`, `refresh_token` and each
   secret's value (TC-E01-018).
-- **Rate limits, step-up locks and webhook dedupe live in a SharedState (M18-S15-H3).** `console/src/server/state/`
+- **Rate limits, step-up locks, webhook dedupe and user sessions live in a SharedState (M18-S15-H3, M18-S09-NOTE-1).** `console/src/server/state/`
   — `STATE_STORE` unset keeps them in the Node process's memory, which is correct only for **one instance**; a host
   that runs more than one (autoscaling, Catalyst AppSail's up-to-5, serverless) must set `STATE_STORE=catalyst` (or
   add another adapter behind the same interface). A misconfigured store refuses to start; it never falls back to
-  memory. User sessions and several other stores are still per-process: `docs/architecture/shared-state.md`.
+  memory. Sessions are sealed with `SESSION_ENC_KEY`. Several other stores are still per-process: `docs/architecture/shared-state.md`.
 - **The client IP comes from the proxy.** The limiter reads the right-most `X-Forwarded-For` hop (else
   `X-Real-IP`) — the address the host's own edge appended. Confirm the chosen host sets it that way (one trusted
   hop); with no proxy header every caller shares one "unknown" bucket per session.

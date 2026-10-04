@@ -4,7 +4,7 @@ Hosting is undecided (D47, AP4). The lead candidate, Zoho Catalyst AppSail, runs
 each one **about 5 minutes after it starts**, gives each its own **ephemeral disk**, and cuts a request at **30 s**
 (Catalyst docs, checked 4 Oct). The console was written for one long-lived process. This page lists every piece of
 mutable server state in `console/src` that lives across requests, says which of it must be shared, and describes
-the `SharedState` interface that the first three items now use.
+the `SharedState` interface that the first items (limits, step-up, webhook claims, user sessions) now use.
 
 Nothing here is a store of records. Rule 1 and D45 still hold: Zoho is the only store of facts. What is listed
 below is counters, claims, short-lived windows and queues. Rule 7 applies to it: keys and values carry ids and
@@ -61,7 +61,7 @@ semantics — per instance only means more fetches, never staler data).
 | 3 | Step-up failure counts and locks | server/identity/step-up.ts | S | **moved** (`incr`, no expiry; lock = `claim`, no expiry, so it alerts once) | Three failures spread over instances never lock; a lock lifts itself on recycle |
 | 4 | Zoho Sign webhook in-flight claim (`inFlight`) | server/zoho-sign/webhook.ts | S | **moved** (`claim`, TTL 120 s, released in `finally`; seen mark re-read after claiming) | Two deliveries on two instances are both processed |
 | 5 | Investor-app inbound in-flight claim | server/contracts/inbound.ts | S | **moved** (`claim`, TTL 120 s) | Same, for request.raised / push.delivered |
-| 6 | **User sessions** (`createMemorySessionStore`: sid → sealed refresh token, who, seat) | server/oauth/user-session.ts, oauth/runtime.ts | S | **not moved — GAP, blocking for AppSail** | Everyone is signed out on every instance hop and every ~5-min recycle. `SessionStore` is already an interface (get/put/delete/keysOf); a SharedState-backed store needs a per-user key index for `keysOf` |
+| 6 | **User sessions** (sid hash → who, seat, sealed refresh token, createdAt, expiresAt) | server/oauth/session-store.ts (wired in oauth/runtime.ts) | S | **moved** (4 Oct, M18-S09-NOTE-1): `sess\|<sha256(sid)>` = the whole record AES-256-GCM sealed with `SESSION_ENC_KEY`, bound to its key, TTL = the rest of the 12 h + 10 min grace (so the first late read still ends it: "expired" note, refresh token revoked, Plane C); `sess-n\|<who>` (`incr`) + `sess-ix\|<who>\|<n>` slots give `keysOf` (newest 64). A record that will not open = signed out, and released. Sign-out / change of person delete it and first tell `session-end.ts` listeners (receipt-replay `discardSession`). `SESSION_ENC_KEY` is required with `STATE_STORE=catalyst` (start refused) | Was: everyone signed out on every instance hop and every ~5-min recycle |
 | 7 | Live user access tokens + one-refresh-at-a-time map | server/oauth/user-session.ts | L | unchanged | Re-minted per instance from the stored session. Watch Zoho's per-refresh-token mint limit (spike item 9) |
 | 8 | Webhook "seen" event ids (Sign webhook, Sign embed, inbound) | contracts/inbound.ts `createSeenEvents` + jsonl plane store | S | **not moved — GAP** (writer wired through the Plane store, owned by another agent) | On ephemeral disk, dedupe is forgotten on recycle and differs per instance. Next step: a `SeenEvents` on `claim(key, 14 d)` |
 | 9 | Request index (app_request_id → Case) | server/contracts/requests.ts | S | not moved — GAP (same jsonl pattern) | A replayed request.raised may open a second Case |
@@ -103,7 +103,7 @@ Each item names the line of `catalyst.ts` that changes if the answer differs.
 
 ## Next, in order (not built here)
 
-1. **User sessions onto SharedState** (inventory 6). AppSail cannot ship without this.
+1. ~~User sessions onto SharedState~~ (inventory 6) — done 4 Oct (M18-S09-NOTE-1). Catalyst cost: a session read is 1 query; sign-in is 4 calls (set, incr = 2, set); `keysOf` reads up to 65 items (seat change / access ended only).
 2. **Seen-event ids and the request index** onto `claim(key, 14 days)` (inventory 8, 9). This touches the Plane-store wiring, so coordinate with the log-writer owner.
 3. **Money idempotency maps and the payout job lock** onto `claim` (inventory 13, 14).
 4. **Background timers to a platform scheduler** with a per-run `claim` (inventory 18).
