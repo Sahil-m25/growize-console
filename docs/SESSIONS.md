@@ -312,3 +312,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-04: Launch and operations documents written (docs/launch/, docs/ops/, ops/runbooks/README.md index; UAT Farm ops marked persona kept, D113) for M18-S05, M18-S09, M18-S10, M20-S01, M20-S03 to S06; docs only, many lines OPEN — owner; serves D113, D47, D66.
 - 4 Oct 2026 · Round 3 (D114): D113 receipts rule, M09-S08 IR Investors page, fact changes applied (M19-S10/S11), smoke + flake (M19-S07/S08), launch and ops docs (M18-S05/S09/S10, M20), 3 bugs fixed; UI suite 344 PASS / 5 REVIEW / 0 FAIL of 349.
 - 2026-10-04 · tracker reconcile report: 410 open lines, 9 review units, test-phase local work; no tracker files edited · D111, docs/reports/tracker-reconcile-2026-10-04.md
+- 2026-10-04 · Rulings sheet for bulk approval (165 BLOCKED lines + 19 owner-input rows, 18 superseded) and draft index rows for the D67/D86-D103 gap · D113, D114, D115 rulings, D67, D86-D103
