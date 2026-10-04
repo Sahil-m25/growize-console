@@ -38,14 +38,14 @@ Sources: `docs/DECISIONS.md` and decision files D104 to D113, `docs/SESSIONS.md`
 
 | | |
 |---|---|
-| Ran | In parallel with phase 1, 24 Sep to 30 Sep |
+| Ran | In parallel with phase 1 from 24 Sep (D98). Code half finished by 30 Sep |
 | Gate | The same screens read and write Zoho through `src/lib/zoho` as the signed-in person; unit and API tests pass; UI cases still pass on demo data. |
 | Result (status.json, 4 Oct) | 119 units: 7 done, 111 waiting, 1 in review |
 | Gate met? | The code half, yes. The proof against real Zoho, no. There is no sandbox yet. |
 
 **What went well.** The owner's rulings on the Zoho shape were recorded as decisions (D74 to D85). 36 fields were created in production and later reconciled (D74, D75, D77).
 
-**What did not.** The tracker said "Phase 2: 118 of 119 done" while 111 units were waiting for proof (D104). That hid about 32 loop hours of wiring and made the forecast too good. Sahil's Zoho setup tasks are still open on 4 Oct (ten task lines in BLOCKED.md, list in `go-live-checklist.md` section 6) even though D66 said the Zoho admin work comes first.
+**What did not.** The tracker said "Phase 2: 118 of 119 done" while 111 units were waiting for proof (D104). That hid about 32 loop hours of wiring and made the forecast too good. Sahil's Zoho setup tasks are still open on 4 Oct (twelve task lines in BLOCKED.md, list in `go-live-checklist.md` section 6) even though D66 said the Zoho admin work comes first.
 
 **Risks seen.**
 - Enterprise expires 13 Oct 2026 (A-20). Nothing renewed yet.
@@ -109,7 +109,7 @@ Measured so far:
 - Audits: rulings sheet D106 (109 open lines: 15 reverse, 4 confirm, 12 for the owner, 78 undecided); decisions audit D108 (88 rows, 7 real conflicts); build audit D109 (134 stories: 114 aligned, 5 drifted, 9 incomplete, 6 unclear).
 - Owner rulings D110 (30 Sep) and D113 (4 Oct) closed the conflicts the audits raised.
 
-**What went well.** The audits found one story text that lags a decision and nothing built that contradicts a decision in force (D109). Rulings turned 110 waiting lines into 31 decisions in one sitting.
+**What went well.** The audits found one story text that lags a decision and nothing built that contradicts a decision in force (D109). The owner ruled on 31 of the 110 waiting lines (the top three tiers of D106); 78 stay open and are read by cost.
 
 **What did not.** Forecast: D66 aimed for everything built by Sat 3 Oct. `autopilot/status.json` (4 Oct 00:07 UTC) says `on_track: false`, loop finish 5 Oct 11:59 UTC, testing end 11 Oct. The UAT pack says UAT runs to about 9 Oct. These are projections that do not agree. D113 leaves log store and hosting open, and the sandbox half of 47 units waits on both.
 
