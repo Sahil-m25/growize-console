@@ -108,9 +108,12 @@ export function planProfiles(spec, current) {
     }
     for (const [key, g] of Object.entries(spec.general)) {
       if (key === "_") continue;
-      const re = new RegExp(g.label, "i");
       const desired = g.on.includes(prof.name);
-      const hits = (details.permissions_details || []).filter((p) => re.test(String(p.display_label)) && !ACTIONS_SET.has(String(p.display_label)));
+      // Live 5 Oct probe: these are per-module permissions named Crm_Implied_<Prefix>_<Module>; match by name prefix.
+      const re = g.label ? new RegExp(g.label, "i") : null;
+      const hits = (details.permissions_details || []).filter((p) => g.prefix
+        ? String(p.name).startsWith(`Crm_Implied_${g.prefix}_`)
+        : re.test(String(p.display_label)) && !ACTIONS_SET.has(String(p.display_label)));
       if (!hits.length) { missing.push(`${key}=${desired ? "on" : "off"}`); continue; }
       for (const p of hits) if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired, rank: 4 });
     }

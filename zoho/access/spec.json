@@ -1,131 +1,639 @@
 {
-  "_": "Growize sandbox access configuration (D120 draft). Derived from docs/ACCESS-PLAN.md §1-§5, D78, D80, D110, D115-2, zoho/field-register.json, CLAUDE.md rule 7. Module perms: v=view c=create e=edit d=delete; a module not listed = no access. Field values: hidden | read_only | read_write. Every choice the plan does not state is listed under provisional and in docs/decisions/D120-sandbox-access-config-draft.md.",
-  "org": { "sandboxZgid": "60090668120", "liveZgid": "60061770791" },
-  "cloneFrom": "Standard",
-  "modules": ["Leads", "Contacts", "LLP_UnitAllocation_Module", "LLP_Creation_Module", "Receipts", "Touches", "Cases", "Investor_Updates", "Mail_Templates", "Investor_Payouts", "Sales_Plans", "Lead_Events", "Tasks", "Calls", "Notes"],
-  "general": {
-    "_": "Matched against profile permission display_label (case-insensitive). Not found in the profile detail -> a manual step. export: rule 7 (identity never leaves through an export not run on the requester's token) - off for every profile we create; Administrator is not touched.",
-    "export": { "label": "^export", "on": [] },
-    "mass_delete": { "label": "^mass\\s*delete", "on": [] },
-    "mass_update": { "label": "^mass\\s*update", "on": ["Leadership", "IR Manager", "Finance Head", "AM Head"] },
-    "import": { "label": "^import", "on": ["Digital Infrastructure"] }
+ "_": "Growize sandbox access configuration (D120 draft). Derived from docs/ACCESS-PLAN.md \u00a71-\u00a75, D78, D80, D110, D115-2, zoho/field-register.json, CLAUDE.md rule 7. Module perms: v=view c=create e=edit d=delete; a module not listed = no access. Field values: hidden | read_only | read_write. Every choice the plan does not state is listed under provisional and in docs/decisions/D120-sandbox-access-config-draft.md.",
+ "org": {
+  "sandboxZgid": "60090668120",
+  "liveZgid": "60061770791"
+ },
+ "cloneFrom": "Standard",
+ "modules": [
+  "Leads",
+  "Contacts",
+  "LLP_UnitAllocation_Module",
+  "LLP_Creation_Module",
+  "Receipts",
+  "Touches",
+  "Cases",
+  "Investor_Updates",
+  "Mail_Templates",
+  "Investor_Payouts",
+  "Sales_Plans",
+  "Lead_Events",
+  "Tasks",
+  "Calls",
+  "Notes"
+ ],
+ "general": {
+  "_": "Per-module permissions matched by name prefix Crm_Implied_<prefix>_ (live probe 5 Oct 2026: Standard has Export, Import, Mass Delete/Transfer/Update, Change Owner, Share, Merge, Delete Mail on for most modules). View All / Edit All bypass sharing and stay off everywhere. Export off for all (rule 7). Share off for all: manual sharing would open the wall; the console's share job actor is undecided (PROVISIONAL P12).",
+  "export": {
+   "prefix": "Export",
+   "on": []
   },
-  "profiles": [
-    { "name": "Leadership", "seat": "BU owner", "role": "BU Owner",
-      "description": "BU owner: reads everything except money modules (ACCESS-PLAN 3); plans and tasks.",
-      "modules": { "Leads": "v", "Contacts": "v", "LLP_UnitAllocation_Module": "v", "LLP_Creation_Module": "v", "Touches": "v", "Cases": "v", "Investor_Updates": "v", "Mail_Templates": "v", "Sales_Plans": "vce", "Lead_Events": "v", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "Digital Infrastructure", "seat": "super user (D68, D110)", "role": "Digital Infrastructure",
-      "description": "D110: non-administrator super user. Every page of both sides; no money writes (ACCESS-PLAN 5); identity read for logged reveals.",
-      "modules": { "Leads": "vce", "Contacts": "vce", "LLP_UnitAllocation_Module": "vce", "LLP_Creation_Module": "v", "Receipts": "v", "Touches": "vce", "Cases": "vce", "Investor_Updates": "vce", "Mail_Templates": "vce", "Investor_Payouts": "v", "Sales_Plans": "vce", "Lead_Events": "vce", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "IR Manager", "seat": "IR Manager", "role": "IR Manager",
-      "description": "IR team lead: team's leads via the role tree, own investors read-only by record share.",
-      "modules": { "Leads": "vce", "Contacts": "v", "LLP_Creation_Module": "v", "Touches": "vce", "Investor_Updates": "v", "Mail_Templates": "vce", "Sales_Plans": "vce", "Lead_Events": "vce", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "IR", "seat": "Investor Relations", "role": "Investor Relations",
-      "description": "Investor Relations: own leads; own investors read-only by record share; identity and money hidden (rule 7).",
-      "modules": { "Leads": "vce", "Contacts": "v", "LLP_Creation_Module": "v", "Touches": "vce", "Investor_Updates": "v", "Mail_Templates": "vce", "Sales_Plans": "v", "Lead_Events": "vce", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "Viewer", "seat": "Exec (read)", "role": "Exec",
-      "description": "Read-only seat. No money modules.",
-      "modules": { "Leads": "v", "Contacts": "v", "LLP_UnitAllocation_Module": "v", "LLP_Creation_Module": "v", "Touches": "v", "Cases": "v", "Investor_Updates": "v", "Mail_Templates": "v", "Sales_Plans": "v", "Lead_Events": "v", "Tasks": "v", "Calls": "v", "Notes": "v" } },
-    { "name": "Finance Head", "seat": "Head of Finance", "role": "Head of Finance",
-      "description": "Head of Finance: money, payouts, farm release fields; reversals.",
-      "modules": { "Leads": "v", "Contacts": "vce", "LLP_UnitAllocation_Module": "vce", "LLP_Creation_Module": "ve", "Receipts": "vce", "Touches": "vc", "Cases": "vce", "Investor_Updates": "vce", "Mail_Templates": "vce", "Investor_Payouts": "vce", "Sales_Plans": "vce", "Lead_Events": "v", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "Finance Ops", "seat": "Finance Operations", "role": "Finance Operations",
-      "description": "Finance Operations: records and matches money, bank details, payouts.",
-      "modules": { "Leads": "v", "Contacts": "vce", "LLP_UnitAllocation_Module": "vce", "LLP_Creation_Module": "v", "Receipts": "vce", "Touches": "vc", "Cases": "vce", "Investor_Updates": "vce", "Mail_Templates": "vce", "Investor_Payouts": "vce", "Sales_Plans": "v", "Lead_Events": "v", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "Compliance and Audit", "seat": "Compliance & Audit (D78 one seat)", "role": "Compliance and Audit",
-      "description": "Reads everything, passes or fails KYC, sees PAN; no money writes. Named without '&' to match the D80 role.",
-      "modules": { "Leads": "v", "Contacts": "ve", "LLP_UnitAllocation_Module": "v", "LLP_Creation_Module": "v", "Receipts": "v", "Touches": "v", "Cases": "v", "Investor_Updates": "v", "Mail_Templates": "v", "Investor_Payouts": "v", "Sales_Plans": "v", "Lead_Events": "v", "Tasks": "vce", "Calls": "v", "Notes": "vce" } },
-    { "name": "AM Head", "seat": "Head of Account Management", "role": "Head of Account Management",
-      "description": "Head of AM: investors, allotments (no money fields), tickets, updates.",
-      "modules": { "Leads": "v", "Contacts": "ve", "LLP_UnitAllocation_Module": "ve", "LLP_Creation_Module": "v", "Touches": "vce", "Cases": "vce", "Investor_Updates": "vce", "Mail_Templates": "vce", "Sales_Plans": "vce", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "KAM", "seat": "Key Account Manager", "role": "Key Account Manager",
-      "description": "KAM: own investors and allotments by record share; identity and money hidden.",
-      "modules": { "Contacts": "ve", "LLP_UnitAllocation_Module": "ve", "LLP_Creation_Module": "v", "Touches": "vce", "Cases": "vce", "Investor_Updates": "vce", "Mail_Templates": "vce", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "Channel Partner", "seat": "Partner", "role": "Channel Partner",
-      "description": "Partner: own leads only. No investor, money or identity access.",
-      "modules": { "Leads": "vce", "LLP_Creation_Module": "v", "Touches": "vc", "Mail_Templates": "v", "Tasks": "vce", "Calls": "vce", "Notes": "vce" } },
-    { "name": "Integration", "seat": "investor-app contract receiver (service)", "role": null,
-      "description": "Service profile: creates Cases only (ACCESS-PLAN 1). Identity hidden (rule 7).",
-      "modules": { "Cases": "vc" } }
-  ],
-  "fieldSecurity": {
-    "_": "Every profile listed under profiles gets a value for every field below: its entry in 'grant', else 'default'. Administrator is never touched (it ignores FLS anyway).",
-    "groups": [
-      { "id": "bank", "source": "ACCESS-PLAN 3 row 1; field-register Contacts.bank_account (writer finance)",
-        "fields": { "Contacts": ["Bank_Account_Number", "ISFC_Code", "Account_Holder_Full_name", "Bank_Name", "Bank_Branch", "Account_Type", "Bank_Proof", "Bank_Verification"] },
-        "default": "hidden", "grant": { "Finance Ops": "read_write", "Finance Head": "read_only", "Digital Infrastructure": "read_only" } },
-      { "id": "identity", "source": "ACCESS-PLAN 3 row 2; field-register Contacts.pan (writer compliance); rule 7",
-        "fields": { "Contacts": ["PAN_Number", "PAN_Proof", "Aadhaar_Last4", "Aadhaar_Ref", "KYC", "KYC_Completed_On", "FEMA_Declaration"], "Leads": ["PAN"] },
-        "default": "hidden", "grant": { "Compliance and Audit": "read_write", "Finance Head": "read_only", "Digital Infrastructure": "read_only" } },
-      { "id": "aadhaar_full", "source": "ACCESS-PLAN 3 row 3; field-register hiddenFromAll",
-        "fields": { "Contacts": ["Aadhaar_Number"] },
-        "default": "hidden", "grant": {} },
-      { "id": "receipt_money", "source": "ACCESS-PLAN 3 row 4 and 5",
-        "fields": { "Receipts": ["Amount", "UTR", "Mode", "Kind", "Received_On", "Match_State", "Matched_By", "Reversal_Of"] },
-        "default": "hidden", "grant": { "Finance Head": "read_write", "Finance Ops": "read_write", "Compliance and Audit": "read_only", "Digital Infrastructure": "read_only" } },
-      { "id": "allotment_money", "source": "ACCESS-PLAN 3 row 4 (Amount_n/UTR_n/Date_n do not exist in the sandbox)",
-        "fields": { "LLP_UnitAllocation_Module": ["Total_Amount_Received", "Total_Amount_Receivable", "Capital_Invested", "Token_Advance_Amount"] },
-        "default": "hidden", "grant": { "Finance Head": "read_write", "Finance Ops": "read_write", "Compliance and Audit": "read_only", "Digital Infrastructure": "read_only" } },
-      { "id": "payout_money", "source": "ACCESS-PLAN 3 row 4 by analogy (D82 payouts)",
-        "fields": { "Investor_Payouts": ["Gross_Amount", "TDS_Amount", "Net_Amount", "Payout_UTR", "Paid_On", "Payout_Mode", "Paid_By"] },
-        "default": "hidden", "grant": { "Finance Head": "read_write", "Finance Ops": "read_write", "Compliance and Audit": "read_only", "Digital Infrastructure": "read_only" } },
-      { "id": "farm_release", "source": "ACCESS-PLAN 2 and 3 row 5",
-        "fields": { "LLP_Creation_Module": ["Units_Released", "LLP_Status"] },
-        "default": "read_only", "grant": { "Finance Head": "read_write" } }
-    ]
+  "import": {
+   "prefix": "Import",
+   "on": [
+    "Digital Infrastructure"
+   ]
   },
-  "defaultSharing": {
-    "_": "Verify only (D80 applied these). Values per GET /crm/v8/settings/data_sharing share_type.",
-    "private": ["Leads", "Contacts", "LLP_UnitAllocation_Module", "Receipts", "Touches", "Cases"],
-    "public_read_only": ["LLP_Creation_Module", "Investor_Updates", "Mail_Templates"]
+  "mass_delete": {
+   "prefix": "Mass_Delete",
+   "on": []
   },
-  "sharingRules": {
-    "_": "Record_Owner_Based: records owned by CEO and every role under it (= every user) shared to one role, no subordinates, superiors not allowed. Names are the idempotency key.",
-    "fromRole": "CEO",
-    "rules": [
-      { "module": "Contacts", "to": "Head of Finance", "permission": "read_write" },
-      { "module": "Contacts", "to": "Finance Operations", "permission": "read_write" },
-      { "module": "Contacts", "to": "Compliance and Audit", "permission": "read" },
-      { "module": "LLP_UnitAllocation_Module", "to": "Head of Finance", "permission": "read_write" },
-      { "module": "LLP_UnitAllocation_Module", "to": "Finance Operations", "permission": "read_write" },
-      { "module": "LLP_UnitAllocation_Module", "to": "Compliance and Audit", "permission": "read" },
-      { "module": "Receipts", "to": "Head of Finance", "permission": "read_write" },
-      { "module": "Receipts", "to": "Finance Operations", "permission": "read_write" },
-      { "module": "Receipts", "to": "Compliance and Audit", "permission": "read" },
-      { "module": "Investor_Payouts", "to": "Head of Finance", "permission": "read_write" },
-      { "module": "Investor_Payouts", "to": "Finance Operations", "permission": "read_write" },
-      { "module": "Investor_Payouts", "to": "Compliance and Audit", "permission": "read" },
-      { "module": "Leads", "to": "Compliance and Audit", "permission": "read", "provisional": true },
-      { "module": "Touches", "to": "Compliance and Audit", "permission": "read", "provisional": true },
-      { "module": "Cases", "to": "Compliance and Audit", "permission": "read", "provisional": true }
-    ]
+  "mass_update": {
+   "prefix": "Mass_Update",
+   "on": [
+    "Leadership",
+    "IR Manager",
+    "Finance Head",
+    "AM Head"
+   ]
   },
-  "personas": {
-    "sandbox": [
-      { "key": "ir-a", "label": "IR A", "role": "Investor Relations", "profile": "IR" },
-      { "key": "ir-b", "label": "IR B", "role": "Investor Relations", "profile": "IR" },
-      { "key": "kam", "label": "KAM", "role": "Key Account Manager", "profile": "KAM" },
-      { "key": "finance-ops", "label": "Finance Ops", "role": "Finance Operations", "profile": "Finance Ops" },
-      { "key": "compliance", "label": "Compliance & Audit", "role": "Compliance and Audit", "profile": "Compliance and Audit" }
-    ],
-    "later": [
-      { "key": "ir-manager", "label": "IR Manager", "role": "IR Manager", "profile": "IR Manager" },
-      { "key": "finance-head", "label": "Finance Head", "role": "Head of Finance", "profile": "Finance Head" },
-      { "key": "digital-infra", "label": "Digital Infrastructure (non-super-admin member)", "role": "Digital Infrastructure", "profile": "Digital Infrastructure" },
-      { "key": "viewer", "label": "Viewer", "role": "Exec", "profile": "Viewer" }
-    ]
+  "mass_transfer": {
+   "prefix": "Mass_Transfer",
+   "on": [
+    "Leadership",
+    "IR Manager",
+    "Finance Head",
+    "AM Head"
+   ]
   },
-  "provisional": [
-    "P1 Module permissions where ACCESS-PLAN is silent follow least privilege; no non-admin profile gets Delete on any module (corrections go through edit or an administrator).",
-    "P2 Digital Infrastructure reads bank and identity fields (read_only) so the D68/D110 logged reveals work on Sahil's own token; it never writes them. ACCESS-PLAN 3 predates D110. Flip grant to hidden if the owner reads D110 otherwise.",
-    "P3 Bank fields: Finance Ops writes, Finance Head reads (field-register: one writer, 'finance'). Identity: Compliance and Audit writes, Finance Head reads.",
-    "P4 Aadhaar_Last4 hidden from IR/KAM per ACCESS-PLAN 3; field-register lists them as readers - the plan wins (stricter), register to be reconciled.",
-    "P5 Leadership and Viewer get no Receipts/Investor_Payouts and money fields hidden (ACCESS-PLAN 3 'hidden from every profile except Finance').",
-    "P6 Investor_Payouts treated like Receipts (Finance writes, Compliance reads, sharing rules to Finance roles).",
-    "P7 Token_Advance_Amount added to allotment money; Receipts Mode/Kind/Received_On/Match_State/Matched_By/Reversal_Of hidden with Amount/UTR.",
-    "P8 Lead_Events create/edit for IR, IR Manager and Digital Infrastructure. D115-2 (event-sheet load = super administrator only among Digital Infrastructure) cannot be expressed per user in a Zoho profile; it stays a console seat right (CONSOLE_SUPER_ADMIN_IDS).",
-    "P9 Integration gets Cases view+create only (Zoho pairs create with view); no Contacts access - if the Case-to-Contact lookup needs it, add Contacts view; identity stays hidden either way.",
-    "P10 Compliance and Audit also gets read sharing rules on Leads, Touches, Cases ('reads everything', D80).",
-    "P11 Mass update on for heads only; import only for Digital Infrastructure; export and mass delete off for every created profile."
+  "change_owner": {
+   "prefix": "Change_Owner",
+   "on": [
+    "Leadership",
+    "IR Manager",
+    "Finance Head",
+    "AM Head",
+    "Digital Infrastructure"
+   ]
+  },
+  "share": {
+   "prefix": "Share",
+   "on": []
+  },
+  "merge": {
+   "prefix": "Merge",
+   "on": []
+  },
+  "delete_mail": {
+   "prefix": "Delete_Mail",
+   "on": []
+  },
+  "view_all": {
+   "prefix": "View_All",
+   "on": []
+  },
+  "edit_all": {
+   "prefix": "Edit_All",
+   "on": []
+  }
+ },
+ "profiles": [
+  {
+   "name": "Leadership",
+   "seat": "BU owner",
+   "role": "BU Owner",
+   "description": "BU owner: reads everything except money modules (ACCESS-PLAN 3); plans and tasks.",
+   "modules": {
+    "Leads": "v",
+    "Contacts": "v",
+    "LLP_UnitAllocation_Module": "v",
+    "LLP_Creation_Module": "v",
+    "Touches": "v",
+    "Cases": "v",
+    "Investor_Updates": "v",
+    "Mail_Templates": "v",
+    "Sales_Plans": "vce",
+    "Lead_Events": "v",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "Digital Infrastructure",
+   "seat": "super user (D68, D110)",
+   "role": "Digital Infrastructure",
+   "description": "D110: non-administrator super user. Every page of both sides; no money writes (ACCESS-PLAN 5); identity read for logged reveals.",
+   "modules": {
+    "Leads": "vce",
+    "Contacts": "vce",
+    "LLP_UnitAllocation_Module": "vce",
+    "LLP_Creation_Module": "v",
+    "Receipts": "v",
+    "Touches": "vce",
+    "Cases": "vce",
+    "Investor_Updates": "vce",
+    "Mail_Templates": "vce",
+    "Investor_Payouts": "v",
+    "Sales_Plans": "vce",
+    "Lead_Events": "vce",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "IR Manager",
+   "seat": "IR Manager",
+   "role": "IR Manager",
+   "description": "IR team lead: team's leads via the role tree, own investors read-only by record share.",
+   "modules": {
+    "Leads": "vce",
+    "Contacts": "v",
+    "LLP_Creation_Module": "v",
+    "Touches": "vce",
+    "Investor_Updates": "v",
+    "Mail_Templates": "vce",
+    "Sales_Plans": "vce",
+    "Lead_Events": "vce",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "IR",
+   "seat": "Investor Relations",
+   "role": "Investor Relations",
+   "description": "Investor Relations: own leads; own investors read-only by record share; identity and money hidden (rule 7).",
+   "modules": {
+    "Leads": "vce",
+    "Contacts": "v",
+    "LLP_Creation_Module": "v",
+    "Touches": "vce",
+    "Investor_Updates": "v",
+    "Mail_Templates": "vce",
+    "Sales_Plans": "v",
+    "Lead_Events": "vce",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "Viewer",
+   "seat": "Exec (read)",
+   "role": "Exec",
+   "description": "Read-only seat. No money modules.",
+   "modules": {
+    "Leads": "v",
+    "Contacts": "v",
+    "LLP_UnitAllocation_Module": "v",
+    "LLP_Creation_Module": "v",
+    "Touches": "v",
+    "Cases": "v",
+    "Investor_Updates": "v",
+    "Mail_Templates": "v",
+    "Sales_Plans": "v",
+    "Lead_Events": "v",
+    "Tasks": "v",
+    "Calls": "v",
+    "Notes": "v"
+   }
+  },
+  {
+   "name": "Finance Head",
+   "seat": "Head of Finance",
+   "role": "Head of Finance",
+   "description": "Head of Finance: money, payouts, farm release fields; reversals.",
+   "modules": {
+    "Leads": "v",
+    "Contacts": "vce",
+    "LLP_UnitAllocation_Module": "vce",
+    "LLP_Creation_Module": "ve",
+    "Receipts": "vce",
+    "Touches": "vc",
+    "Cases": "vce",
+    "Investor_Updates": "vce",
+    "Mail_Templates": "vce",
+    "Investor_Payouts": "vce",
+    "Sales_Plans": "vce",
+    "Lead_Events": "v",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "Finance Ops",
+   "seat": "Finance Operations",
+   "role": "Finance Operations",
+   "description": "Finance Operations: records and matches money, bank details, payouts.",
+   "modules": {
+    "Leads": "v",
+    "Contacts": "vce",
+    "LLP_UnitAllocation_Module": "vce",
+    "LLP_Creation_Module": "v",
+    "Receipts": "vce",
+    "Touches": "vc",
+    "Cases": "vce",
+    "Investor_Updates": "vce",
+    "Mail_Templates": "vce",
+    "Investor_Payouts": "vce",
+    "Sales_Plans": "v",
+    "Lead_Events": "v",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "Compliance and Audit",
+   "seat": "Compliance & Audit (D78 one seat)",
+   "role": "Compliance and Audit",
+   "description": "Reads everything, passes or fails KYC, sees PAN; no money writes. Named without '&' to match the D80 role.",
+   "modules": {
+    "Leads": "v",
+    "Contacts": "ve",
+    "LLP_UnitAllocation_Module": "v",
+    "LLP_Creation_Module": "v",
+    "Receipts": "v",
+    "Touches": "v",
+    "Cases": "v",
+    "Investor_Updates": "v",
+    "Mail_Templates": "v",
+    "Investor_Payouts": "v",
+    "Sales_Plans": "v",
+    "Lead_Events": "v",
+    "Tasks": "vce",
+    "Calls": "v",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "AM Head",
+   "seat": "Head of Account Management",
+   "role": "Head of Account Management",
+   "description": "Head of AM: investors, allotments (no money fields), tickets, updates.",
+   "modules": {
+    "Leads": "v",
+    "Contacts": "ve",
+    "LLP_UnitAllocation_Module": "ve",
+    "LLP_Creation_Module": "v",
+    "Touches": "vce",
+    "Cases": "vce",
+    "Investor_Updates": "vce",
+    "Mail_Templates": "vce",
+    "Sales_Plans": "vce",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "KAM",
+   "seat": "Key Account Manager",
+   "role": "Key Account Manager",
+   "description": "KAM: own investors and allotments by record share; identity and money hidden.",
+   "modules": {
+    "Contacts": "ve",
+    "LLP_UnitAllocation_Module": "ve",
+    "LLP_Creation_Module": "v",
+    "Touches": "vce",
+    "Cases": "vce",
+    "Investor_Updates": "vce",
+    "Mail_Templates": "vce",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "Channel Partner",
+   "seat": "Partner",
+   "role": "Channel Partner",
+   "description": "Partner: own leads only. No investor, money or identity access.",
+   "modules": {
+    "Leads": "vce",
+    "LLP_Creation_Module": "v",
+    "Touches": "vc",
+    "Mail_Templates": "v",
+    "Tasks": "vce",
+    "Calls": "vce",
+    "Notes": "vce"
+   }
+  },
+  {
+   "name": "Integration",
+   "seat": "investor-app contract receiver (service)",
+   "role": null,
+   "description": "Service profile: creates Cases only (ACCESS-PLAN 1). Identity hidden (rule 7).",
+   "modules": {
+    "Cases": "vc"
+   }
+  }
+ ],
+ "fieldSecurity": {
+  "_": "Every profile listed under profiles gets a value for every field below: its entry in 'grant', else 'default'. Administrator is never touched (it ignores FLS anyway).",
+  "groups": [
+   {
+    "id": "bank",
+    "source": "ACCESS-PLAN 3 row 1; field-register Contacts.bank_account (writer finance)",
+    "fields": {
+     "Contacts": [
+      "Bank_Account_Number",
+      "ISFC_Code",
+      "Account_Holder_Full_name",
+      "Bank_Name",
+      "Bank_Branch",
+      "Account_Type",
+      "Bank_Proof",
+      "Bank_Verification"
+     ]
+    },
+    "default": "hidden",
+    "grant": {
+     "Finance Ops": "read_write",
+     "Finance Head": "read_only",
+     "Digital Infrastructure": "read_only"
+    }
+   },
+   {
+    "id": "identity",
+    "source": "ACCESS-PLAN 3 row 2; field-register Contacts.pan (writer compliance); rule 7",
+    "fields": {
+     "Contacts": [
+      "PAN_Number",
+      "PAN_Proof",
+      "Aadhaar_Last4",
+      "Aadhaar_Ref",
+      "KYC",
+      "KYC_Completed_On",
+      "FEMA_Declaration"
+     ],
+     "Leads": [
+      "PAN"
+     ]
+    },
+    "default": "hidden",
+    "grant": {
+     "Compliance and Audit": "read_write",
+     "Finance Head": "read_only",
+     "Digital Infrastructure": "read_only"
+    }
+   },
+   {
+    "id": "aadhaar_full",
+    "source": "ACCESS-PLAN 3 row 3; field-register hiddenFromAll",
+    "fields": {
+     "Contacts": [
+      "Aadhaar_Number"
+     ]
+    },
+    "default": "hidden",
+    "grant": {}
+   },
+   {
+    "id": "receipt_money",
+    "source": "ACCESS-PLAN 3 row 4 and 5",
+    "fields": {
+     "Receipts": [
+      "Amount",
+      "UTR",
+      "Mode",
+      "Kind",
+      "Received_On",
+      "Match_State",
+      "Matched_By",
+      "Reversal_Of"
+     ]
+    },
+    "default": "hidden",
+    "grant": {
+     "Finance Head": "read_write",
+     "Finance Ops": "read_write",
+     "Compliance and Audit": "read_only",
+     "Digital Infrastructure": "read_only"
+    }
+   },
+   {
+    "id": "allotment_money",
+    "source": "ACCESS-PLAN 3 row 4 (Amount_n/UTR_n/Date_n do not exist in the sandbox)",
+    "fields": {
+     "LLP_UnitAllocation_Module": [
+      "Total_Amount_Received",
+      "Total_Amount_Receivable",
+      "Capital_Invested",
+      "Token_Advance_Amount"
+     ]
+    },
+    "default": "hidden",
+    "grant": {
+     "Finance Head": "read_write",
+     "Finance Ops": "read_write",
+     "Compliance and Audit": "read_only",
+     "Digital Infrastructure": "read_only"
+    }
+   },
+   {
+    "id": "payout_money",
+    "source": "ACCESS-PLAN 3 row 4 by analogy (D82 payouts)",
+    "fields": {
+     "Investor_Payouts": [
+      "Gross_Amount",
+      "TDS_Amount",
+      "Net_Amount",
+      "Payout_UTR",
+      "Paid_On",
+      "Payout_Mode",
+      "Paid_By"
+     ]
+    },
+    "default": "hidden",
+    "grant": {
+     "Finance Head": "read_write",
+     "Finance Ops": "read_write",
+     "Compliance and Audit": "read_only",
+     "Digital Infrastructure": "read_only"
+    }
+   },
+   {
+    "id": "farm_release",
+    "source": "ACCESS-PLAN 2 and 3 row 5",
+    "fields": {
+     "LLP_Creation_Module": [
+      "Units_Released",
+      "LLP_Status"
+     ]
+    },
+    "default": "read_only",
+    "grant": {
+     "Finance Head": "read_write"
+    }
+   }
   ]
+ },
+ "defaultSharing": {
+  "_": "Verify only (D80 applied these). Values per GET /crm/v8/settings/data_sharing share_type.",
+  "private": [
+   "Leads",
+   "Contacts",
+   "LLP_UnitAllocation_Module",
+   "Receipts",
+   "Touches",
+   "Cases"
+  ],
+  "public_read_only": [
+   "LLP_Creation_Module",
+   "Investor_Updates",
+   "Mail_Templates"
+  ]
+ },
+ "sharingRules": {
+  "_": "Record_Owner_Based: records owned by CEO and every role under it (= every user) shared to one role, no subordinates, superiors not allowed. Names are the idempotency key.",
+  "fromRole": "CEO",
+  "rules": [
+   {
+    "module": "Contacts",
+    "to": "Head of Finance",
+    "permission": "read_write"
+   },
+   {
+    "module": "Contacts",
+    "to": "Finance Operations",
+    "permission": "read_write"
+   },
+   {
+    "module": "Contacts",
+    "to": "Compliance and Audit",
+    "permission": "read"
+   },
+   {
+    "module": "LLP_UnitAllocation_Module",
+    "to": "Head of Finance",
+    "permission": "read_write"
+   },
+   {
+    "module": "LLP_UnitAllocation_Module",
+    "to": "Finance Operations",
+    "permission": "read_write"
+   },
+   {
+    "module": "LLP_UnitAllocation_Module",
+    "to": "Compliance and Audit",
+    "permission": "read"
+   },
+   {
+    "module": "Receipts",
+    "to": "Head of Finance",
+    "permission": "read_write"
+   },
+   {
+    "module": "Receipts",
+    "to": "Finance Operations",
+    "permission": "read_write"
+   },
+   {
+    "module": "Receipts",
+    "to": "Compliance and Audit",
+    "permission": "read"
+   },
+   {
+    "module": "Investor_Payouts",
+    "to": "Head of Finance",
+    "permission": "read_write"
+   },
+   {
+    "module": "Investor_Payouts",
+    "to": "Finance Operations",
+    "permission": "read_write"
+   },
+   {
+    "module": "Investor_Payouts",
+    "to": "Compliance and Audit",
+    "permission": "read"
+   },
+   {
+    "module": "Leads",
+    "to": "Compliance and Audit",
+    "permission": "read",
+    "provisional": true
+   },
+   {
+    "module": "Touches",
+    "to": "Compliance and Audit",
+    "permission": "read",
+    "provisional": true
+   },
+   {
+    "module": "Cases",
+    "to": "Compliance and Audit",
+    "permission": "read",
+    "provisional": true
+   }
+  ]
+ },
+ "personas": {
+  "sandbox": [
+   {
+    "key": "ir-a",
+    "label": "IR A",
+    "role": "Investor Relations",
+    "profile": "IR"
+   },
+   {
+    "key": "ir-b",
+    "label": "IR B",
+    "role": "Investor Relations",
+    "profile": "IR"
+   },
+   {
+    "key": "kam",
+    "label": "KAM",
+    "role": "Key Account Manager",
+    "profile": "KAM"
+   },
+   {
+    "key": "finance-ops",
+    "label": "Finance Ops",
+    "role": "Finance Operations",
+    "profile": "Finance Ops"
+   },
+   {
+    "key": "compliance",
+    "label": "Compliance & Audit",
+    "role": "Compliance and Audit",
+    "profile": "Compliance and Audit"
+   }
+  ],
+  "later": [
+   {
+    "key": "ir-manager",
+    "label": "IR Manager",
+    "role": "IR Manager",
+    "profile": "IR Manager"
+   },
+   {
+    "key": "finance-head",
+    "label": "Finance Head",
+    "role": "Head of Finance",
+    "profile": "Finance Head"
+   },
+   {
+    "key": "digital-infra",
+    "label": "Digital Infrastructure (non-super-admin member)",
+    "role": "Digital Infrastructure",
+    "profile": "Digital Infrastructure"
+   },
+   {
+    "key": "viewer",
+    "label": "Viewer",
+    "role": "Exec",
+    "profile": "Viewer"
+   }
+  ]
+ },
+ "provisional": [
+  "P1 Module permissions where ACCESS-PLAN is silent follow least privilege; no non-admin profile gets Delete on any module (corrections go through edit or an administrator).",
+  "P2 Digital Infrastructure reads bank and identity fields (read_only) so the D68/D110 logged reveals work on Sahil's own token; it never writes them. ACCESS-PLAN 3 predates D110. Flip grant to hidden if the owner reads D110 otherwise.",
+  "P3 Bank fields: Finance Ops writes, Finance Head reads (field-register: one writer, 'finance'). Identity: Compliance and Audit writes, Finance Head reads.",
+  "P4 Aadhaar_Last4 hidden from IR/KAM per ACCESS-PLAN 3; field-register lists them as readers - the plan wins (stricter), register to be reconciled.",
+  "P5 Leadership and Viewer get no Receipts/Investor_Payouts and money fields hidden (ACCESS-PLAN 3 'hidden from every profile except Finance').",
+  "P6 Investor_Payouts treated like Receipts (Finance writes, Compliance reads, sharing rules to Finance roles).",
+  "P7 Token_Advance_Amount added to allotment money; Receipts Mode/Kind/Received_On/Match_State/Matched_By/Reversal_Of hidden with Amount/UTR.",
+  "P8 Lead_Events create/edit for IR, IR Manager and Digital Infrastructure. D115-2 (event-sheet load = super administrator only among Digital Infrastructure) cannot be expressed per user in a Zoho profile; it stays a console seat right (CONSOLE_SUPER_ADMIN_IDS).",
+  "P9 Integration gets Cases view+create only (Zoho pairs create with view); no Contacts access - if the Case-to-Contact lookup needs it, add Contacts view; identity stays hidden either way.",
+  "P10 Compliance and Audit also gets read sharing rules on Leads, Touches, Cases ('reads everything', D80).",
+  "P11 Mass update on for heads only; import only for Digital Infrastructure; export and mass delete off for every created profile."
+ ]
 }

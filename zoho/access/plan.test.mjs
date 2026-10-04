@@ -10,14 +10,14 @@ const SANDBOX = "60090668120", LIVE = "60061770791";
 const ROLES = ["CEO", "Manager", "BU Owner", "Digital Infrastructure", "IR Manager", "Investor Relations", "Channel Partner", "Head of Finance",
   "Finance Operations", "Compliance and Audit", "Head of Account Management", "Key Account Manager", "Exec"];
 const MODULES = spec.modules.concat(["Accounts", "Deals"]);
-const GENERAL = ["Export", "Mass Update", "Mass Delete", "Import"];
+const GENERAL = ["Export", "Mass_Update", "Mass_Delete", "Import", "Mass_Transfer", "Change_Owner", "Share", "Merge", "Delete_Mail", "View_All", "Edit_All"];
 
 function fakeZoho(zgid = SANDBOX) {
   let seq = 1000;
   const nid = () => String(++seq);
   const perms = []; // org-wide permission ids (UNVERIFIED assumption mirrored here)
   for (const m of MODULES) for (const a of ["View", "Create", "Edit", "Delete"]) perms.push({ id: nid(), name: `Crm_Implied_${a}_${m}`, module: m, display_label: a });
-  for (const m of MODULES) for (const a of GENERAL) perms.push({ id: nid(), name: `Crm_${a.replace(" ", "_")}_${m}`, module: m, display_label: a });
+  for (const m of MODULES) for (const a of GENERAL) perms.push({ id: nid(), name: `Crm_Implied_${a}_${m}`, module: m, display_label: m }); // live shape: label is the module name
   const enabled = {}; // profileId -> Set(permId)
   const profiles = [{ id: "P-ADMIN", display_label: "Administrator" }, { id: "P-STD", display_label: "Standard" }];
   for (const p of profiles) enabled[p.id] = new Set(perms.map((x) => x.id));
@@ -140,7 +140,7 @@ test("rule 7 wall: bank only Finance (+DI reveal, D110); PAN never IR/Integratio
   for (const p of spec.profiles) assert.equal(has(p.name, "Receipts", "Create"), ["Finance Head", "Finance Ops"].includes(p.name), p.name);
   for (const m of spec.modules) assert.equal(has("Integration", m, "View"), m === "Cases", m);
   for (const p of spec.profiles) for (const m of spec.modules) assert.equal(has(p.name, m, "Delete"), false);
-  const exp = (name) => z.perms.filter((x) => x.display_label === "Export").some((x) => z.enabled[idOf(z, name)].has(x.id));
+  const exp = (name) => z.perms.filter((x) => x.name.startsWith("Crm_Implied_Export_")).some((x) => z.enabled[idOf(z, name)].has(x.id));
   for (const p of spec.profiles) assert.equal(exp(p.name), false, `export ${p.name}`);
   assert.equal(exp("Administrator"), true, "Administrator untouched");
 });
