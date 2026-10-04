@@ -64,9 +64,21 @@ export interface EventsWriteAccess {
   /** The "Needs an owner" queue user; null = not set up. */
   readonly unassignedQueueUserId: string | null;
 }
+/** Why someone named to work an event may not: out of office on the event's days (back on `backOn`), or no book (M14-S02-NOTE-3). */
+export interface StaffRefusal { readonly userId: string; readonly why: "out" | "no-book"; readonly backOn: string | null }
+export type StaffVerdict = { readonly ok: true; readonly refused: readonly StaffRefusal[] } | { readonly ok: false; readonly errorKind: string };
 export interface EventsWriteAuthority {
   recheck(credential: UserCredential, signal?: AbortSignal): Promise<EventsWriteAccess | null>;
+  /** The roster check (D44/D49): of `ids`, who may not work an event from `from` to `to` (IST days). Absent → shape and uniqueness only. */
+  staffCheck?(credential: UserCredential, ids: readonly string[], from: string, to: string, signal?: AbortSignal): Promise<StaffVerdict>;
 }
+
+/** The page's sentence for a staff refusal; ids only here — the page puts names to them from its own people list. */
+export const staffMessage = (refused: readonly StaffRefusal[]): string => {
+  const out = refused.filter((r) => r.why === "out").length, nb = refused.length - out;
+  const part = [out ? `${out} ${out === 1 ? "is" : "are"} out of office on the event dates` : "", nb ? `${nb} ${nb === 1 ? "carries" : "carry"} no book` : ""].filter(Boolean).join(" and ");
+  return `${refused.length === 1 ? "One person" : `${refused.length} people`} named to work this event cannot: ${part}. Pick someone who is in and carries a book.`;
+};
 
 export type EventGap =
   | "event name" | "valid start date" | "valid end date" | "end date on or after start" | "city" | "event kind"
@@ -78,6 +90,8 @@ export type EventWriteRefusal =
 export type Refused = {
   readonly ok: false; readonly kind: "refused"; readonly reasonCode: EventWriteRefusal; readonly reason: string;
   readonly gaps?: readonly EventGap[]; readonly taggedLeads?: number; readonly eventName?: string;
+  /** M14-S02-NOTE-3: who may not work the event and why (set with gaps ["eligible staff"]). */
+  readonly staff?: readonly StaffRefusal[];
 };
 export type SourceError = { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
 export interface Moved { readonly field: "name" | "kind" | "channel" | "dates" | "city" | "cost" | "staff" | "state" | "namesTaken"; readonly from: string | number | readonly string[] | null; readonly to: string | number | readonly string[] | null }
@@ -186,7 +200,7 @@ export function createEventWrites(deps: EventWriteDeps) {
 
   const refuse = (userId: string, action: string, reasonCode: EventWriteRefusal, extra: Partial<Refused> = {}, ids: readonly string[] = []): Refused => {
     events.refusal(userId, action, reasonCode, ids);
-    return { ok: false, kind: "refused", reasonCode, reason: REASON[reasonCode], ...extra };
+    return { ok: false, kind: "refused", reasonCode, reason: extra.staff?.length ? staffMessage(extra.staff) : REASON[reasonCode], ...extra };
   };
   const srcErr = (errorKind: string): SourceError => ({ ok: false, kind: "source-error", errorKind, retryable: retryable(errorKind) });
 
@@ -198,6 +212,16 @@ export function createEventWrites(deps: EventWriteDeps) {
     if (!a || a.userId !== cred.userId) return refuse(cred.userId, action, "session-changed");
     if (!a.mayEdit) return refuse(cred.userId, action, "capability-missing");
     return a;
+  };
+  /** After the shape gaps pass: every newly named person must be in on the event's days and carry a book (not already on it). */
+  const staffRefused = async (cred: UserCredential, draft: EventDraft, existing: Pick<ExistingEvent, "staff"> | null, signal?: AbortSignal): Promise<readonly StaffRefusal[] | SourceError> => {
+    if (!authority.staffCheck) return [];
+    const already = new Set((existing?.staff ?? []).map((x) => x.userId));
+    const named = draft.staffIds.filter((u) => !already.has(u));
+    if (!named.length) return [];
+    let v: StaffVerdict;
+    try { v = await authority.staffCheck(cred, named, draft.startsOn, draft.endsOn, signal); } catch { return srcErr("unexpected"); }
+    return v.ok ? v.refused : srcErr(v.errorKind);
   };
   const isAccess = (v: EventsWriteAccess | Refused | SourceError): v is EventsWriteAccess => "mayEdit" in v;
 
@@ -243,6 +267,9 @@ export function createEventWrites(deps: EventWriteDeps) {
       if (!draft || typeof draft !== "object") return refuse(cred.userId, "event-add", "invalid-request");
       const gaps = eventGaps(draft, null, a.eligibleStaffIds);
       if (gaps.length) return refuse(cred.userId, "event-add", "gaps", { gaps: Object.freeze(gaps) });
+      const no = await staffRefused(cred, draft, null, signal);
+      if (!Array.isArray(no)) return no as SourceError;
+      if (no.length) return refuse(cred.userId, "event-add", "gaps", { gaps: Object.freeze(["eligible staff"] as EventGap[]), staff: Object.freeze([...no]) });
       const staff = draft.staffIds.map((u) => ({ [STAFF_USER]: { id: u } }));
       const namesTaken = draft.state === "done" ? draft.namesTaken ?? 0 : null;
       let res: Awaited<ReturnType<typeof crm.insert>>;
@@ -271,6 +298,9 @@ export function createEventWrites(deps: EventWriteDeps) {
       }
       const gaps = eventGaps(draft, e, a.eligibleStaffIds);
       if (gaps.length) return refuse(cred.userId, "event-change", "gaps", { gaps: Object.freeze(gaps) }, [id]);
+      const no = await staffRefused(cred, draft, e, signal);
+      if (!Array.isArray(no)) return no as SourceError;
+      if (no.length) return refuse(cred.userId, "event-change", "gaps", { gaps: Object.freeze(["eligible staff"] as EventGap[]), staff: Object.freeze([...no]) }, [id]);
       const tagged = await taggedCount(cred, id, signal);
       const ran = e.state === "done" || draft.state === "done";
       // The names taken on the night are never fewer than the leads tagged to it (prototype: max(off, tag)).

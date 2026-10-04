@@ -23,6 +23,7 @@ import { alertingOpsSink } from "../ops/runtime";
 import { oauthParts, userSessions, zohoSignInConfigured } from "../oauth/runtime";
 import { createZohoUserDirectory } from "../identity/users";
 import { SID_COOKIE } from "../oauth/user-session";
+import { rosterRuntime } from "../roster/runtime";
 import { createInvestorEvents, type InvestorEvents } from "./events";
 import { createLiveDataLayer, type LiveLoad, type SeatIds } from "./live";
 import { noteLiveFailure, noteLiveRead } from "./freshness";
@@ -86,7 +87,7 @@ export async function liveContext(env: NodeJS.ProcessEnv = process.env) {
   try { seatIds = JSON.parse(env.ZOHO_SEAT_IDS!) as SeatIds; } catch { seatIds = undefined; }
   const crm = guardAllotmentWrites(createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix }), rt.log);
   const layer = createLiveDataLayer({
-    crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
+    crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds, roster: rosterRuntime(),
     unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,
     ...peopleDeps(rt, env),
     recheck: async (s) => {
@@ -114,7 +115,7 @@ export async function loadLiveDataset(env: NodeJS.ProcessEnv = process.env): Pro
   try { seatIds = JSON.parse(env.ZOHO_SEAT_IDS!) as SeatIds; } catch { seatIds = undefined; }
   const crm = guardAllotmentWrites(createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix }), rt.log);
   const layer = createLiveDataLayer({
-    crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds,
+    crm, cache: rt.cache, log: rt.log, events: rt.events, recordIdPrefix, seatIds, roster: rosterRuntime(),
     unassignedQueueUserId: env.ZOHO_UNASSIGNED_QUEUE_USER_ID || null,
     ...peopleDeps(rt, env),
     recheck: async (s) => {

@@ -104,6 +104,20 @@ test('"All to one person" without the person is refused (Load is disabled); a pe
   assert.deepEqual([...ok.value.assigned], []);
 });
 
+test('M14-S03-NOTE-1: a roster-eligible person off the event\'s staff may take "All to one person"; one out or with no book may not', async () => {
+  const NOBODY = `${P}740995999`;
+  const verdict = { refused: [] };
+  const asked = [];
+  const rig = await makeWriteRig(load, route());
+  const authority = { ...rig.authority, async staffCheck(_c, ids, from, to) { asked.push([ids, from, to]); return { ok: true, refused: verdict.refused }; } };
+  const l = createSheetLoader({ ...rig, authority });
+  assert.equal((await l.load(await rig.cred(MGR), PRESTIGE, { kind: 'one', ownerId: NOBODY }, intake())).ok, true, 'in today and carries a book');
+  assert.deepEqual(asked[0][0], [NOBODY]);
+  assert.equal(asked[0][1], asked[0][2], 'checked for the load day');
+  verdict.refused = [{ userId: NOBODY, why: 'out', backOn: '2026-10-09' }];
+  assert.equal((await l.load(await rig.cred(MGR), PRESTIGE, { kind: 'one', ownerId: NOBODY }, intake())).reasonCode, 'owner-not-assignable');
+});
+
 test('unassigned needs the queue user; when every insert fails the claim is handed back (Ready)', async () => {
   const rig = await makeWriteRig(load, route());
   assert.equal((await createSheetLoader(rig).load(await rig.cred(ROHIT), PRESTIGE, { kind: 'unassigned' }, intake())).reasonCode, 'unassigned-queue-missing');

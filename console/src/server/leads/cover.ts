@@ -8,7 +8,9 @@
  *     window never falls back to automatic access; or
  *   - with no explicit window, a live roster absence of the owner (Plane C availability, D49) says so:
  *     the roster names them as covering that owner, or names the owner absent and they are the lead's
- *     named secondary. With no roster reader wired, nobody is admitted this way.
+ *     named secondary — and the person admitted is themself in, not on a roster absence (D44: "actively available
+ *     to cover"). server/roster/roster.ts reads the roster from Plane C; with no reader, or a failed read, nobody
+ *     is admitted this way (fail closed).
  * search.ts, book.ts and every lead read/write in this folder ask `activeFor`, or its COQL twin.
  *
  * THE WINDOW. Handover {duration} is started by the owner, a manager over the owner, or a secondary who
@@ -38,7 +40,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 const SWEEP_PAGE = 200;
 
-/** The prototype's DUR. "back" (until the owner is back) is 14 days while no roster reader says when (PROVISIONAL, the prototype's own fallback). */
+/** The prototype's DUR. "back" (until the owner is back) ends the day before the roster's first day back; 14 days only when the roster does not say when. */
 export const COVER_DURATIONS = Object.freeze({ today: 1, d3: 3, w1: 7, w2: 14, back: 14 } as const);
 export type CoverDuration = keyof typeof COVER_DURATIONS;
 
@@ -50,8 +52,10 @@ export interface RosterNow {
   readonly absentOwnerIds: readonly string[];
   /** Per-owner roster cover: while the owner is away, `coverById` works their leads. */
   readonly covers: readonly { readonly ownerId: string; readonly coverById: string }[];
+  /** The first day back of each absent person (IST, YYYY-MM-DD); lets "until they are back" end on the real day. */
+  readonly backOn?: Readonly<Record<string, string>>;
 }
-/** Plane C's availability reader (D49). Not built yet (identity owner); absent → no roster admission. */
+/** Plane C's availability reader (D49): server/roster/roster.ts `createRoster` over the log sink. Absent → no roster admission. */
 export interface RosterReader {
   current(signal?: AbortSignal): Promise<RosterNow>;
 }
@@ -73,6 +77,7 @@ export function activeFor(L: ZohoRecord, me: string, today: string, roster: Rost
     // Explicit window: only its named, current recipient. No fallback to the roster.
     return by === me && typeof L.Cover_Until === "string" && DATE.test(L.Cover_Until) && L.Cover_Until >= today ? "cover" : null;
   }
+  if (roster.absentOwnerIds.includes(me)) return null; // the cover is away too
   if (roster.covers.some((c) => c.ownerId === owner && c.coverById === me)) return "roster";
   if (idOf(L.Secondary_Owner) === me && roster.absentOwnerIds.includes(owner)) return "roster";
   return null;
@@ -81,6 +86,7 @@ export function activeFor(L: ZohoRecord, me: string, today: string, roster: Rost
 /** The personal-book COQL clause for "working as someone else" — the twin of `activeFor`. */
 export function activeClause(me: string, today: string, roster: RosterNow = NO_ROSTER): string {
   const parts = [`(Cover_By = '${me}' and Cover_Until >= '${today}')`];
+  if (roster.absentOwnerIds.includes(me)) return parts[0]!; // away themselves: no roster admission
   const covered = [...new Set(roster.covers.filter((c) => c.coverById === me && c.ownerId !== me).map((c) => c.ownerId))].filter((x) => RECORD_ID.test(x)).slice(0, 100);
   const absent = [...new Set(roster.absentOwnerIds)].filter((x) => RECORD_ID.test(x) && x !== me).slice(0, 100);
   const inList = (ids: string[]) => ids.map((x) => `'${x}'`).join(", ");
@@ -98,6 +104,7 @@ export async function rosterNow(reader: RosterReader | undefined, signal?: Abort
     return Object.freeze({
       absentOwnerIds: Object.freeze((Array.isArray(r?.absentOwnerIds) ? r.absentOwnerIds : []).filter(ok)),
       covers: Object.freeze((Array.isArray(r?.covers) ? r.covers : []).filter((c) => c && ok(c.ownerId) && ok(c.coverById))),
+      backOn: Object.freeze(Object.fromEntries(Object.entries(r?.backOn ?? {}).filter(([k, v]) => ok(k) && typeof v === "string" && DATE.test(v)))),
     });
   } catch {
     return NO_ROSTER;
@@ -220,7 +227,8 @@ export function createCover(deps: CoverDependencies) {
       // D44: owner, a manager over the owner, or a secondary who already holds it. A dormant secondary: nothing changes.
       const allowed = owner === me || isManagerOf(a, owner) || (sec === me && activeFor(L, me, today, roster) !== null);
       if (!allowed) return refuse(me, a, "cover-start", "not-yours-to-cover", [leadId]);
-      const until = addDays(today, COVER_DURATIONS[duration]);
+      const back = duration === "back" ? roster.backOn?.[owner] : undefined;
+      const until = back && DATE.test(back) && addDays(back, -1) >= today ? addDays(back, -1) : addDays(today, COVER_DURATIONS[duration]);
       const put = await write(p.credential, leadId, expected, { Cover_By: { id: sec }, Cover_Until: until }, signal);
       if (!put) return zoho("unexpected");
       if (!put.ok) return put.error.kind === "conflict" ? refuse(me, a, "cover-start", "lead-changed", [leadId]) : zoho(put.error.kind);
