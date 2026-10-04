@@ -19,7 +19,8 @@
 import type { Channel, Lead, LostWhy, Source } from "../../domain/types";
 import type { Dataset } from "../../lib/data/types";
 import { emptyDataset } from "../../lib/data/empty";
-import type { ImAllot, ImInvestor } from "../../lib/im/types";
+import type { ImAllot, ImInvestor, ImTxn, ImTxnKind } from "../../lib/im/types";
+import { ledgerOf } from "../money/ledger";
 import type { CacheError, CacheFresh, CacheStale, ScopedCache } from "../../lib/zoho/cache";
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
@@ -202,6 +203,28 @@ export function holdOf(allots: readonly Pick<AllotmentRow, "Allocation_Status" |
   return d[0] ?? null;
 }
 
+const TXN_KIND: Readonly<Record<string, ImTxnKind>> = Object.freeze({
+  Advance: "advance", Part: "balance", Balance: "balance", Full: "full", Refund: "refund", Forfeit: "forfeit",
+});
+
+/**
+ * M01-S08-NOTE-3 — the receipts as the Dataset's money rows, per ../money/ledger (the register's own arithmetic):
+ * a refund is money out; a matched reversal (Reversal_Of) cancels the receipt it names, so neither appears; a pending
+ * reversal is a pending row taking its target back (a refund of an inbound receipt; money back for a refunded one);
+ * Not found / Claimed / Reversed rows count nowhere and are left out (the Payments register, /api/payments, lists the
+ * full history). Part is D70's Balance. So Σ matched (signed) = the register's net banked, Σ pending = its recorded.
+ */
+export function txnOf(receipts: readonly ReceiptRow[], custOf: ReadonlyMap<string, string>): ImTxn[] {
+  const byId = new Map(receipts.map((x) => [x.id, x]));
+  return ledgerOf(receipts).lines.flatMap((l): ImTxn[] => {
+    const x = byId.get(l.id), inv = custOf.get(l.allotmentId);
+    const kind: ImTxnKind | undefined = l.reverses === null ? TXN_KIND[l.kind] : l.signed < 0 ? "refund" : "balance";
+    if (!x || !inv || !kind) return [];
+    return [{ id: x.id, inv, kind, amt: Math.abs(l.signed) || x.amount, mode: x.mode ?? "", utr: x.utr ?? "", on: x.on ?? "", by: x.byId ?? "",
+      rec: l.matchState === "Matched" ? "matched" : "pending", Allotment: l.allotmentId }];
+  });
+}
+
 /** An allotment row as the Dataset carries it: the server-only fields dropped. */
 export const toImAllot = ({ received: _r, receivable: _v, token: _t, holdUntil: _h, holdExtension: _e, agreementSignedAt: _a, ...a }: AllotmentRow): ImAllot => a;
 
@@ -330,10 +353,7 @@ export function createLiveDataLayer(deps: LiveDeps) {
     im.INV = contacts.map((c) => investorOf(c, byContact.get(c.id) ?? [], (id) => blockOf.get(id) ?? ""));
     im.LLP = [...llps];
     im.ALLOT = allots.map(toImAllot);
-    im.TXN = receipts.filter((x) => x.allotmentId && custOf.has(x.allotmentId)).map((x) => ({
-      id: x.id, inv: custOf.get(x.allotmentId!)!, kind: x.reversalOf ? "refund" : x.kind === "Advance" ? "advance" : x.kind === "Balance" ? "balance" : x.kind === "Refund" ? "refund" : "full",
-      amt: x.amount, mode: x.mode ?? "", utr: x.utr ?? "", on: x.on ?? "", by: x.byId ?? "", rec: x.matched ? "matched" : "pending", Allotment: x.allotmentId!,
-    }));
+    im.TXN = txnOf(receipts.filter((x) => x.allotmentId && custOf.has(x.allotmentId)), custOf);
     im.TKT = cases.map(({ contactId: _c, ...t }) => t);
     im.HOLDING = [...holdings];
     im.ARLTXN = [...arl];

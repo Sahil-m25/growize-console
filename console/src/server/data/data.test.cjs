@@ -28,7 +28,7 @@ const options = {
   noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot,
 };
 const sources = ['server/data/scope.ts', 'server/data/projections.ts', 'server/data/events.ts', 'server/data/adapters.ts',
-  'server/data/live.ts', 'server/data/zoho-source.ts'].map((f) => path.join(srcRoot, f));
+  'server/data/live.ts', 'server/data/zoho-source.ts', 'server/money/register.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -51,7 +51,8 @@ const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-
 const { scopesFor, scopedKey, scopedKeyString, cacheScopeOf } = load('server/data/scope.js');
 const { PROJECTIONS, checkProjection, isForbiddenField } = load('server/data/projections.js');
 const { createInvestorEvents, conflictOf } = load('server/data/events.js');
-const { createLiveDataLayer } = load('server/data/live.js');
+const { createLiveDataLayer, txnOf } = load('server/data/live.js');
+const { createPaymentsRegister } = load('server/money/register.js');
 const { loadLiveDataset, mustFail, dataRuntime } = load('server/data/zoho-source.js');
 
 const P = '9007199254';
@@ -352,4 +353,48 @@ test('without Zoho sign-in configured the live source answers null (the empty bo
   assert.equal(await loadLiveDataset({ FIXTURE_MODE: 'local', NODE_ENV: 'development' }), null);
   assert.equal(dataRuntime(), dataRuntime(), 'one gate and cache per process');
   assert.equal(dataRuntime().gate.snapshot().maxInFlight, 12);
+});
+
+/* ---- M01-S08-NOTE-3: the Dataset's money rows follow money/ledger, so their sums are the register's ---- */
+test('NOTE-3: a reversal cancels its target (not a refund); a refund is money out; Σ matched / Σ pending = the register', async () => {
+  const id = (n) => `${P}74099${String(n).padStart(4, '0')}`;
+  const C = id(8001), A = id(8101), LLP = id(8201);
+  let n = 0;
+  const rc = (kind, amount, matchState, reversalOf = null) => ({ id: id(8300 + (++n)), allotmentId: A, kind, amount, mode: 'NEFT', utr: `SYNTHTXN${n}`,
+    on: '2026-09-01', byId: FIN, matched: matchState === 'Matched', matchState, reversalOf });
+  const r = [];
+  r.push(rc('Advance', 250000, 'Matched'));                 // 0 stands
+  r.push(rc('Refund', 50000, 'Matched'));                   // 1 money out
+  r.push(rc('Part', 300000, 'Matched'));                    // 2 …cancelled by 3
+  r.push(rc('Refund', 300000, 'Matched', r[2].id));         // 3 matched reversal of a matched receipt
+  r.push(rc('Part', 200000, 'Reversed'));                   // 4 flipped …and 5 reverses it
+  r.push(rc('Refund', 200000, 'Matched', r[4].id));         // 5 — the old mapping made this a −₹2 L refund
+  r.push(rc('Advance', 500000, 'Pending'));                 // 6 …cancelled by 7
+  r.push(rc('Refund', 500000, 'Matched', r[6].id));         // 7 matched reversal of a pending receipt — the old mapping: −₹5 L
+  r.push(rc('Balance', 400000, 'Matched'));                 // 8 …taken back, in pending only, by 9
+  r.push(rc('Refund', 400000, 'Pending', r[8].id));         // 9 pending reversal of a matched receipt
+  r.push(rc('Full', 100000, 'Pending'));                    // 10 pending
+  r.push(rc('Part', 70000, 'Not found'));                   // 11 counts nowhere
+  r.push({ ...rc('Forfeit', 50000, 'Matched'), mode: null, utr: null });   // 12 kept money, not money in
+  const txn = txnOf(r, new Map([[A, C]]));
+  assert.deepEqual(txn.map((t) => [t.id, t.kind, t.rec, t.amt]), [
+    [r[0].id, 'advance', 'matched', 250000], [r[1].id, 'refund', 'matched', 50000], [r[8].id, 'balance', 'matched', 400000],
+    [r[9].id, 'refund', 'pending', 400000], [r[10].id, 'full', 'pending', 100000], [r[12].id, 'forfeit', 'matched', 50000],
+  ]);
+  const sign = (t) => (t.kind === 'refund' ? -t.amt : t.kind === 'forfeit' ? 0 : t.amt);
+  const sum = (rec) => txn.filter((t) => t.rec === rec).reduce((a, t) => a + sign(t), 0);
+
+  const crm = { async coql(_c, q) {
+    const records = /from Receipts/.test(q)
+      ? r.map((x) => ({ id: x.id, Allotment: { id: A }, Kind: x.kind, Amount: x.amount, Mode: x.mode, UTR: x.utr, Received_On: x.on, Match_State: x.matchState,
+        Reversal_Of: x.reversalOf ? { id: x.reversalOf } : null, Created_By: { id: FIN } }))
+      : [{ id: A, Customer: { id: C, name: 'x' }, LLP: { id: LLP, name: 'Block S' }, Allocation_Status: 'Reserved', Issued_Units: 0, Reserved_Units: 1, Unit_Price: 2500000 }];
+    return { ok: true, value: { records, moreRecords: false, invalidRecordIds: null } };
+  } };
+  const reg = createPaymentsRegister({ crm, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW,
+    access: { async recheck(cred) { return { actor: { userId: cred.userId }, seesRegister: true, seesUtr: true, canRecord: true }; } } });
+  const out = await reg.read({ credential: creds.get(FIN), sessionId: 'synthetic-session-0001' });
+  assert.equal(out.ok, true, JSON.stringify(out));
+  assert.deepEqual([sum('matched'), sum('pending')], [out.value.totals.netBanked, out.value.totals.recorded.net], 'the Dataset rows sum to the register');
+  assert.deepEqual([out.value.totals.netBanked, out.value.totals.recorded.net], [600000, -300000]);
 });

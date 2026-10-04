@@ -57,6 +57,23 @@ export interface Ledger {
   readonly byAllotment: ReadonlyMap<string, LedgerSums>;
   /** Receipt ids of reversal rows that break the convention (see the header). Empty on a clean ledger. */
   readonly anomalies: readonly string[];
+  /** The rows as the ledger counts them, for a screen that lists money row by row (server/data/live → im.TXN): every
+   *  Matched or Pending row that is not a reversal and not cancelled, with its signed amount (a Forfeit: 0), plus each
+   *  live pending reversal as a Pending line taking its target's signed amount back. A matched reversal and the receipt
+   *  it cancels are absent, as are Not found / Claimed / Reversed rows. Σ signed by state equals the sums exactly. */
+  readonly lines: readonly LedgerLine[];
+}
+
+export interface LedgerLine {
+  readonly id: string;
+  readonly allotmentId: string;
+  /** The row's own Kind; for a pending reversal line, the Kind of the receipt it takes back. */
+  readonly kind: string;
+  readonly matchState: "Matched" | "Pending";
+  /** +in, −out, 0 for a Forfeit. A pending reversal line is the negation of its target's signed amount. */
+  readonly signed: number;
+  /** The receipt a pending reversal line takes back; null otherwise. */
+  readonly reverses: string | null;
 }
 
 const LIVE: ReadonlySet<string> = new Set(["Matched", "Pending"]);
@@ -97,19 +114,28 @@ export function ledgerOf(rows: readonly LedgerEntry[]): Ledger {
 
   const acc = new Map<string, { matchedIn: number; matchedOut: number; pendingIn: number; pendingOut: number; forfeited: number }>();
   const at = (id: string) => { let s = acc.get(id); if (!s) acc.set(id, (s = { matchedIn: 0, matchedOut: 0, pendingIn: 0, pendingOut: 0, forfeited: 0 })); return s; };
+  const lines: LedgerLine[] = [];
+  const line = (id: string, allotmentId: string, kind: string, matchState: "Matched" | "Pending", signed: number, reverses: string | null = null) =>
+    lines.push(Object.freeze({ id, allotmentId, kind, matchState, signed, reverses }));
   for (const r of rows) {
-    if (!r.allotmentId || r.reversalOf !== null || cancelled.has(r.id)) continue;
-    if (r.kind === FORFEIT_KIND) { if (r.matchState === "Matched") at(r.allotmentId).forfeited += r.amount; continue; }
+    if (!r.allotmentId || r.reversalOf !== null || cancelled.has(r.id) || !r.kind) continue;
+    if (r.matchState !== "Matched" && r.matchState !== "Pending") continue;
+    if (r.kind === FORFEIT_KIND) {
+      if (r.matchState === "Matched") at(r.allotmentId).forfeited += r.amount;
+      line(r.id, r.allotmentId, r.kind, r.matchState, 0);
+      continue;
+    }
     const v = signedOf(r);
     if (v === 0) continue;
     const s = at(r.allotmentId);
     if (r.matchState === "Matched") { if (v > 0) s.matchedIn += v; else s.matchedOut -= v; }
-    else if (r.matchState === "Pending") { if (v > 0) s.pendingIn += v; else s.pendingOut -= v; }
-    else continue;
+    else { if (v > 0) s.pendingIn += v; else s.pendingOut -= v; }
+    line(r.id, r.allotmentId, r.kind, r.matchState, v);
     // a pending reversal of this receipt: taken back in pending, never in matched (D21)
-    if (pendingReversal.has(r.id)) { if (v > 0) s.pendingOut += v; else s.pendingIn -= v; }
+    const pr = pendingReversal.get(r.id);
+    if (pr !== undefined) { if (v > 0) s.pendingOut += v; else s.pendingIn -= v; line(pr, r.allotmentId, r.kind, "Pending", -v, r.id); }
   }
   const byAllotment = new Map<string, LedgerSums>();
   for (const [id, s] of acc) byAllotment.set(id, Object.freeze({ ...s }));
-  return Object.freeze({ byAllotment, anomalies: Object.freeze([...anomalies].sort()) });
+  return Object.freeze({ byAllotment, anomalies: Object.freeze([...anomalies].sort()), lines: Object.freeze(lines) });
 }
