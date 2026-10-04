@@ -348,3 +348,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · sandbox seed runnable through the browser session: fields plan (Test_Seed/Seed_Key), real api names, seed-key → id resolution, persona owners, seed.js bundle · M19-S03
 - 2026-10-05 · wall test for the sandbox: zoho/wall (expectations, check, bundle, 18 tests) + docs/uat/sandbox-wall-test.md · T11, M12-S10, M02-S05
 - 2026-10-05 · zoho/access: parent-permission pruning/ordering, planLayoutRequired (mandatory fields before FLS), sharing-rule busy retry with call budget; D120 'Applied 5 Oct 2026' · D120
+- 2026-10-05 · sandbox test users (4), external syncs off in sandbox, 132-record seed applied · D120

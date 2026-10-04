@@ -118,3 +118,12 @@ Verified: org, get profiles, clone, update permissions, field meta, update custo
 - **Four fields were required on the Standard layouts and are now not required in the sandbox, so that they can be hidden:** Contacts.PAN_Number, Contacts.Aadhaar_Number, LLP_UnitAllocation_Module.Token_Advance_Amount, LLP_Creation_Module.LLP_Status.
   - **HUMAN: the owner confirms before this goes to live.** The console and the Finance process now enforce these values, not Zoho. The same layout change would apply on live.
 - **Tasks and Calls permissions** are not exposed in the API. They stay as cloned from Standard. Manual check in Setup > Profiles.
+
+## Test users, sync workflows and seed (5 Oct 2026, later)
+- Test users added as sandbox developers (licence-free): IR A Test and IR B Test (Investor Relations / IR), KAM Test (Key Account Manager / KAM), Finance Ops Test (Finance Operations / Finance Ops). They were added on Standard (Add Developer lists only live-org profiles) and moved to their sandbox profiles via PUT /crm/v8/users/{id}. Emails are in the sandbox Users page, not in this repo.
+- Limit: 5 developers per sandbox; a failed fifth (Compliance) attempt was counted. Compliance runs reuse Finance Ops Test, switched to Compliance and Audit and back.
+- Add Developer rejects "+" in addresses.
+- The 7 external-sync workflows are switched off in the sandbox: 6 "Supabase Sync" Deluge pushes on Contacts / LLP_Creation_Module / LLP_UnitAllocation_Module, plus "ARL Sync - Contacts" (webhook). Leave these 7 out of any deploy to live unless the owner retires the sync.
+  - Disable body: `PUT /crm/v8/settings/automation/workflow_rules/{id}` with `{workflow_rules:[{id, status:{active:false, delete_schedule_action:false}}]}`.
+- Seed applied: 132 records (farms 4, leads 18, contacts 15, touches 57, allotments 15, receipts 15, cases 8), split IR A / IR B / KAM / Finance Ops as in zoho/sandbox/README.md. Compliance's one case falls back to admin.
+- Verify the seed with list endpoints; search lags behind new records.
