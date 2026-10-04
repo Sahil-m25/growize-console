@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 04 Oct 2026 16:58 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 04 Oct 2026 17:19 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -30,11 +30,90 @@
 
 Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are through. Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumptions until each phase has 5 measured rounds; then the measured pace takes over. Stories count once per phase they have work in.
 
+# :newspaper: Recent developments
+
+*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D116`.*
+
+**How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
+
+**Round 1–2 (D112):**
+- New screens and routes.
+- Offline Investors receipts, the Auditor's Activity view and the oversell guard fixed.
+- Phase 3 local half started.
+
+**Owner rulings (D113):**
+- A Finance-recorded receipt is matched by Finance. The bank statement auto-matches where it can.
+- IR sees investors through the Investors page.
+- All test-wording changes approved.
+- Farm ops persona kept.
+
+**Round 3 (D114):**
+- The D113 receipts rule built.
+- IR Investors page.
+- Smoke suite and flaky-test quarantine.
+- Launch and ops docs: backup, go-live, runbook, guides, support, change control.
+- Browser test suite **344 pass, 5 review, 0 fail of 349**.
+
+**Hosting research (AP4 / D47, not decided):**
+- **Zoho Catalyst AppSail** (India data centre) is the lead option. It needs code changes first, because AppSail recycles instances and its disk isn't kept.
+- **PostHog** is fine for everyday logs. Neither PostHog nor **Datadog** can hold the audit trail, and neither has an India region.
+- **Catalyst cost** at our size:
+  - **~₹1,250–1,500/month** running in business hours (Basic plan ₹1,500);
+  - ~₹3,450 kept warm 24×7;
+  - ~₹6,900 at worst (2 GB).
+- A 1-day Catalyst trial is waiting for a Catalyst project in the India data centre and a CLI login.
+
+**Owner rulings (D115):**
+- App access stays **Hold until released** with "Send welcome and unlock". A match never opens it.
+- Loading an event sheet is the **super administrator's** right, and he can grant it.
+- The rights grid shows **seats as columns** (8 Investors seats, each labelled with its Zoho role).
+- Provisional calls go to one rulings sheet for bulk approval.
+
+**Round 4 (D116):**
+- Tracker reconciled with the code: **410 → 354 open**, 7 wire units moved to done.
+- Code gaps closed:
+  - live System checks (`/api/system`);
+  - mail attachments for the deck;
+  - Consent_How uses Zoho's own picklist values;
+  - Consent_Visit is no longer read;
+  - searches logged as successes, and reveals logged with a reason.
+- D115 built.
+- Catalyst prep done without an account:
+  - shared state store;
+  - audit-log storage with a hash chain;
+  - Docker image (135 MB, healthy at 512 MB);
+  - 30-second limit audit.
+- **Blocker for Catalyst:** sign-in sessions are still kept in memory.
+
+**Checks:** tsc clean · 635 + 1,851 tests pass · build ok · smoke 7/7.
+
+**Waiting on the owner:**
+- Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
+- Decide whether the Zoho rule Matched_By ≠ Created_By should apply to refunds only.
+- Set `CONSOLE_SUPER_ADMIN_IDS`.
+- The Zoho sandbox, test user and tester seat.
+- Catalyst project access.
+
+**Next local work:**
+- Move sessions into the shared store.
+- Add a request time limit and fix the 3 actions that can exceed 30 s.
+- Record the 47 test steps that can run here.
+- M12-S11 (Finance's paperwork queue).
+
+**Latest decisions**
+
+- **D111** (30 Sep 2026): Fan-out: parallel agents in git worktrees, Sonnet builders, Opus for pattern/security/Jev layer/integration; one coordinator records; first run 30 Sep — phase 2b 44/66 done + 22 review, phase 2c 7/7, next 15.5.26
+- **D112** (4 Oct 2026): Fan-out rounds 1–2 (4 Oct): Modified_Time plumbing + 7 new routes; phase 2b 57/66; offline Investors receipts, Auditor Activity, oversell fixed; phase 3 local half 33 done / 47 waiting / 1 review; suites 1,792 server tests
+- **D113** (4 Oct 2026): Owner rulings 4 Oct: Finance-recorded receipt is matched (auto from statement where possible, else Finance by hand; IR claims pending); IR investors view reuses the Investors page; all fact changes approved; 401 body as built; Farm ops persona kept; bu = business owner; NOTE-3 closed; comp reads Finance trail; D47/AP4 open
+- **D114** (4 Oct 2026): Round 3 on the 4 Oct rulings: receipts matched by Finance built, IR Investors page, fact changes applied (UI suite 344/349, 0 FAIL), smoke suite + flake quarantine, launch/ops docs, 3 bugs fixed
+- **D115** (4 Oct 2026): Owner rulings 4 Oct (second set): app access stays Hold until released (a match never opens it); event-sheet load is the super administrator's right (grantable); rights grid = 8 Investors seats as columns labelled with their Zoho role; provisional calls bulk-reviewed on one sheet; decisions index gap filled from the project docs
+- **D116** (4 Oct 2026): Round 4: tracker reconciled with the code; code gaps closed (/api/system, mail attachments, Consent_How picklist, Consent_Visit dropped, log success kind, reveal reason); D115 built; host-agnostic prep for Catalyst (shared-state interface + NoSQL adapter, log sink + Stratus adapter + Plane C hash chain, standalone Docker image, 30 s audit)
+
 ## Stages
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|7|![](slack_date:2026-10-04)|
+|S0|Zoho org build-out and access wall|18|7|![](slack_date:2026-10-05)|
 |S1|Foundations, access, test suite|23|5|![](slack_date:2026-10-05)|
 |S2|Lead side daily work and Investors pages|30|13|![](slack_date:2026-10-05)|
 |S3|Journey, gates, money, paper, Zoho Sign, farms|43|16|![](slack_date:2026-10-05)|
@@ -53,14 +132,14 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 |Week of|Finished|Forecast|Cumulative|Burn-up|
 |---|---|---|---|---|
 |![](slack_date:2026-09-21)|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
-|![](slack_date:2026-09-28) **(this week)**|59|14|75|:large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 48%|
-|![](slack_date:2026-10-05)|0|38|113|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 73%|
+|![](slack_date:2026-09-28) **(this week)**|59|13|74|:large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 48%|
+|![](slack_date:2026-10-05)|0|39|113|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square: 73%|
 
 ## This week
 
 **Finished (59):** M01-S07, M02-S03, M02-S11, M03-S04, M04-S02, M04-S04, M05-S01, M05-S02, M05-S03, M05-S07, M06-S01, M06-S02, M06-S03, M07-S02, M07-S06, M07-S07, M08-S01, M09-S09, M10-S03, M10-S09, M10-S20, M10-S21, M10-S22, M10-S23, M11-S04, M12-S05, M12-S07, M12-S08, M12-S09, M12-S12, M12-S14, M13-S01, M13-S05, M14-S02, M14-S03, M15-S01, M15-S05, M16-S02, M16-S04, M16-S06, M16-S07, M16-S08, M16-S09, M17-S01, M17-S05, M17-S06, M18-S14, M18-S15, M19-S04, M19-S05, M19-S06, M19-S08, M19-S10, M19-S12, M19-S13, M20-S01, M20-S04, M20-S05, M20-S06
 
-**Planned by the forecast (14):** M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S12, M20-S08, M02-S07
+**Planned by the forecast (13):** M03-S01, M19-S01, M19-S02, M19-S03, M02-S01, M02-S02, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S12, M20-S08
 
 **Stuck: review or waiting on people (43):**
 

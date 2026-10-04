@@ -56,6 +56,19 @@ ok = ':large_green_circle: On track' if S.get('on_track') else ':red_circle: Beh
 out.append(f"\n|Forecast|Date|\n|---|---|\n|All three phases through the loop|![](slack_date:{fin.date()})|\n|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:{fin.date()}) → ![](slack_date:{tend.date()})|\n|Status|{ok}|\n")
 out.append("::: {.callout}\n**What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be proven without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); its code is written and unit-tested, so it sits in *Waiting on people*, not *Done*. Phase 2b wires each screen to its API route on demo data and needs nothing. Phase 3 needs the sandbox for every live proof, then the tester's reviews and UAT by the business users (M18-S08).\n:::\n")
 out.append(("Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are through. " if S.get('parallel') else "") + f"Forecast = loop hours left ÷ {S['loop_hours_per_day']} loop hours a day. Minutes per unit are assumptions until each phase has 5 measured rounds; then the measured pace takes over. Stories count once per phase they have work in.\n")
+# Recent developments: hand-kept highlights (ops/tracker/recent.md, coordinator-written) + the latest decisions from docs/DECISIONS.md
+if os.path.exists('ops/tracker/recent.md'):
+    out.append("# :newspaper: Recent developments\n")
+    out.append(open('ops/tracker/recent.md', encoding='utf-8').read().strip() + "\n")
+    import re as _re
+    _rows = [l for l in open('docs/DECISIONS.md', encoding='utf-8').read().splitlines() if _re.match(r'\| \[D\d+\]', l)]
+    _rows.sort(key=lambda l: int(_re.match(r'\| \[D(\d+)\]', l).group(1)))
+    out.append("**Latest decisions**\n")
+    for l in _rows[-6:]:
+        c = [x.strip() for x in l.strip('|').split(' | ')]
+        num = _re.match(r'\[(D\d+)\]', c[0]).group(1)
+        out.append(f"- **{num}** ({c[-1]}): {c[1].replace('**', '')}")
+    out.append("")
 done_at = {k: d(v['at']) for k, v in PR['stories'].items() if v.get('status') == 'done' and v.get('at')}
 proj = {}
 for k, v in S.get('projected', {}).items():
