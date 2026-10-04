@@ -8,7 +8,7 @@ import { runWrite } from "../api";
 import type { ImBook } from "./im";
 import { paymentsRegister, moneyBlocks, arlHoldings, revealReceiptRef } from "./payments";
 import { claimConfirm, claimList, claimNotThere, claimOne } from "./receipts";
-import { statementLatest, statementUpload } from "./statements";
+import { statementContinue, statementLatest, statementUpload } from "./statements";
 import { payoutPaid, payoutQueue, payoutSchedule, payoutScheduleRun } from "./payouts";
 import { appCard, appLock, appPreview, appUnlock, testLinkList, testLinkMake } from "./app";
 
@@ -171,6 +171,16 @@ describe("M10-S05-W1 — the bank statement", () => {
     expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
     expect(await runWrite("fixture", statementUpload, book("meena"), () => {}, { form })).toMatchObject({ ok: false, status: 503, code: "not-configured" });
     expect(await runWrite("fixture", statementUpload, book("imran"), () => {}, { form })).toMatchObject({ ok: false, status: 403 });
+  });
+  it("M18-S09-NOTE-3: a receipt left in continueWith is matched through POST /api/receipts/[id]/match {}; the fixture has nothing to continue", async () => {
+    const f = fetchOf(200, { match: { receiptId: "9007199254741000001", state: "matched", matchedBy: "9007199254740994090", duplicate: false } });
+    const r = await runWrite("live", statementContinue, book("meena"), () => {}, { receiptId: "9007199254741000001" }, { fetch: f });
+    expect(r).toMatchObject({ ok: true, data: { receiptId: "9007199254741000001", state: "matched", matchedBy: "9007199254740994090" } });
+    expect(f.mock.calls[0][0]).toBe("/api/receipts/9007199254741000001/match");
+    expect(f.mock.calls[0][1]!.method).toBe("POST");
+    expect(f.mock.calls[0][1]!.body).toBe("{}");
+    expect(await runWrite("fixture", statementContinue, book("meena"), () => {}, { receiptId: "x" })).toMatchObject({ ok: false, status: 503 });
+    expect(await runWrite("fixture", statementContinue, book("imran"), () => {}, { receiptId: "x" })).toMatchObject({ ok: false, status: 403 });
   });
 });
 

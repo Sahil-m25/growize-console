@@ -29,9 +29,10 @@ import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/clie
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
-import { RECEIPTS_MODULE } from "./receipt-replay";
 import type { MatchResult } from "./match";
 import { MAX_STATEMENT_BYTES, parseStatement, type StatementDirection, type StatementLine } from "./statement-parse";
+import { DEFAULT_STOP_MARGIN_MS, pastStopMargin, runBounded } from "../../lib/zoho/deadline";
+import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "./receipt-replay";
 
 export const STATEMENTS_MODULE = "Statements";
 export const DATE_SLACK_DAYS = 3;
@@ -111,6 +112,10 @@ export interface UploadView extends Reconciliation {
   readonly statementId: string;
   readonly attachmentId: string;
   readonly name: string;
+  /** M18-S09-NOTE-3: receipts this statement confirms whose automatic match was not finished inside the request
+   *  deadline (not started, or cut off). The page matches each through POST /api/receipts/[id]/match — the same
+   *  match.ts call, idempotent on a receipt already matched. Empty when everything was tried. */
+  readonly continueWith: readonly string[];
 }
 
 type StoreFail = { readonly ok: false; readonly code: string; readonly errorKind?: ZohoFailureKind | "unexpected" };
@@ -142,6 +147,10 @@ export interface StatementDependencies {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
+  /** How many automatic matches run at once (default 4; one investor's receipts always run one after another). */
+  readonly matchConcurrency?: number;
+  /** No match is started with less than this left on the request deadline (default 8 s). */
+  readonly stopMarginMs?: number;
 }
 
 export type StatementRefusal = "invalid-request" | "not-finance" | "file-type" | "too-large" | "unreadable" | "too-many-refs" | "source-invalid";
@@ -162,6 +171,8 @@ const MESSAGE: Readonly<Record<Exclude<StatementRefusal, "unreadable">, string>>
 export const REFUND_NOTE = "Money leaving — the Head of Finance or an administrator matches it.";
 export const NOT_MATCHED_NOTE = "Finance confirms it with 'Match it'.";
 export const PAPER_NOTE = "It cannot be matched until the supplementary agreement is signed and verified.";
+export const CONTINUE_NOTE = "Still to match — the console is continuing.";
+export const MATCH_CONCURRENCY = 4;
 
 const retryableKind = (k: string): boolean =>
   k === "network" || k === "server" || k === "busy" || k === "concurrency-exceeded" || k === "rate-limited-unclassified" || k === "unexpected";
@@ -246,7 +257,8 @@ export function createStatements(deps: StatementDependencies) {
     return out;
   }
 
-  async function reconcileLines(cred: UserCredential, lines: readonly StatementLine[], from: string, to: string, skipped: number, signal?: AbortSignal): Promise<Reconciliation> {
+  async function reconcileLines(cred: UserCredential, lines: readonly StatementLine[], from: string, to: string, skipped: number, signal?: AbortSignal,
+    allotOf: Map<string, string> = new Map()): Promise<Reconciliation> {
     const me = cred.userId;
     const refs = [...new Set(lines.flatMap((l) => l.refs.slice(0, REFS_PER_LINE)).filter((r) => SAFE_REF.test(r)))];
     if (refs.length > IN_LIMIT * MAX_REF_QUERIES) throw new RangeError("too-many-refs");
@@ -280,6 +292,8 @@ export function createStatements(deps: StatementDependencies) {
       if (state === "Reversed") { owner("head-of-finance", "receipt-reversed", best.id, ref); continue; }
       if (state !== "Matched" && state !== "Pending") throw new Unreadable();
       used.add(best.id);
+      const on = idOf(best.Allotment);
+      if (on) allotOf.set(best.id, on);
       matched.push(Object.freeze({
         line: l.line, date: l.date, direction: l.direction, amountPaise: l.amountPaise, utr: ref, receiptId: best.id, kind: String(best.Kind),
         state: state === "Matched" ? "matched" as const : "awaiting-match" as const,
@@ -298,25 +312,65 @@ export function createStatements(deps: StatementDependencies) {
     });
   }
 
-  /** D113: the stored statement confirms the pending inbound receipts it agrees with — each matched through match.ts. */
-  async function autoMatch(cred: UserCredential, sid: string, rec: Reconciliation, signal?: AbortSignal): Promise<Reconciliation> {
-    if (!deps.match) return rec;
-    const out: MatchedLine[] = [];
-    for (const m of rec.matched) {
-      if (m.state !== "awaiting-match" || m.direction !== "credit") { out.push(m); continue; }
-      let r: MatchResult;
-      try { r = await deps.match.match({ credential: cred, sessionId: sid }, m.receiptId, {}, signal); }
-      catch { r = { ok: false, kind: "source-error", errorKind: "unexpected", message: "", retryable: true }; }
-      if (r.ok) out.push(Object.freeze({ ...m, state: "matched" as const, matchedBy: r.value.matchedBy, autoMatched: true, matchNote: null }));
-      else {
-        event(cred.userId, "statement-auto-match", `not-matched.${r.kind === "refused" ? r.reasonCode : r.errorKind}`.slice(0, 64), [m.receiptId]);
-        out.push(Object.freeze({ ...m, matchNote: r.kind === "refused" && r.reasonCode === "supplementary-not-verified" ? PAPER_NOTE : NOT_MATCHED_NOTE }));
-      }
+  /** Allotment → its Customer, in one COQL per 100 allotments (the lanes below). Unreadable: each allotment is its own lane. */
+  async function customersOf(cred: UserCredential, allotments: readonly string[], signal?: AbortSignal): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    for (let i = 0; i < allotments.length; i += IN_LIMIT) {
+      const chunk = allotments.slice(i, i + IN_LIMIT);
+      let r: Awaited<ReturnType<typeof crm.coql>>;
+      try { r = await crm.coql(cred, `select id, Customer from ${ALLOTMENTS_MODULE} where id in (${chunk.map((x) => `'${x}'`).join(", ")}) limit 0, ${IN_LIMIT}`, { signal }); }
+      catch { continue; }
+      if (!r.ok || r.value.invalidRecordIds) continue;
+      for (const row of r.value.records) { const c = idOf(row.Customer); if (validId(row.id) && c) out.set(row.id, c); }
     }
+    return out;
+  }
+
+  /**
+   * D113: the stored statement confirms the pending inbound receipts it agrees with — each matched through match.ts.
+   * M18-S09-NOTE-3: up to `matchConcurrency` at once, in lanes by investor (one investor's receipts one after another,
+   * so "first matched money", the hold start and the Contact write see each other exactly as when run serially). No
+   * match is started inside the deadline's stop margin; what is left (or cut off) comes back as `continueWith`.
+   */
+  async function autoMatch(cred: UserCredential, sid: string, rec: Reconciliation, allotOf: ReadonlyMap<string, string>, signal?: AbortSignal)
+    : Promise<{ rec: Reconciliation; continueWith: string[] }> {
+    if (!deps.match) return { rec, continueWith: [] };
+    const match = deps.match;
+    const todo = rec.matched.map((m, i) => ({ m, i })).filter(({ m }) => m.state === "awaiting-match" && m.direction === "credit");
+    if (!todo.length) return { rec, continueWith: [] };
+    const allotments = [...new Set(todo.map(({ m }) => allotOf.get(m.receiptId)).filter((x): x is string => !!x))];
+    const customer = allotments.length ? await customersOf(cred, allotments, signal) : new Map<string, string>();
+    const lanes = new Map<string, number[]>();
+    for (const { m, i } of todo) {
+      const a = allotOf.get(m.receiptId);
+      const key = (a && customer.get(a)) ?? a ?? m.receiptId;
+      lanes.set(key, [...(lanes.get(key) ?? []), i]);
+    }
+    const margin = deps.stopMarginMs ?? DEFAULT_STOP_MARGIN_MS;
+    const out: MatchedLine[] = [...rec.matched];
+    const continueAt = new Set<number>();
+    await runBounded([...lanes.values()], deps.matchConcurrency ?? MATCH_CONCURRENCY, async (lane) => {
+      for (const i of lane) {
+        const m = out[i]!;
+        if (signal?.aborted || pastStopMargin(margin)) { continueAt.add(i); continue; }
+        let r: MatchResult;
+        try { r = await match.match({ credential: cred, sessionId: sid }, m.receiptId, {}, signal); }
+        catch { r = { ok: false, kind: "source-error", errorKind: "unexpected", message: "", retryable: true }; }
+        if (r.ok) out[i] = Object.freeze({ ...m, state: "matched" as const, matchedBy: r.value.matchedBy, autoMatched: true, matchNote: null });
+        else if (r.kind === "source-error" && r.errorKind === "aborted") continueAt.add(i);
+        else {
+          event(cred.userId, "statement-auto-match", `not-matched.${r.kind === "refused" ? r.reasonCode : r.errorKind}`.slice(0, 64), [m.receiptId]);
+          out[i] = Object.freeze({ ...m, matchNote: r.kind === "refused" && r.reasonCode === "supplementary-not-verified" ? PAPER_NOTE : NOT_MATCHED_NOTE });
+        }
+      }
+    });
+    for (const i of continueAt) out[i] = Object.freeze({ ...out[i]!, matchNote: CONTINUE_NOTE });
+    const continueWith = [...continueAt].sort((a, b) => a - b).map((i) => out[i]!.receiptId);
+    if (continueWith.length) event(cred.userId, "statement-auto-match", `continuing-${continueWith.length}`, continueWith);
     const auto = out.filter((m) => m.autoMatched).length;
     if (auto) event(cred.userId, "statement-auto-match", `matched-${auto}`, out.filter((m) => m.autoMatched).map((m) => m.receiptId));
-    return Object.freeze({ ...rec, matched: Object.freeze(out),
-      counts: Object.freeze({ ...rec.counts, awaitingMatch: out.filter((m) => m.state === "awaiting-match").length, autoMatched: auto }) });
+    return { continueWith, rec: Object.freeze({ ...rec, matched: Object.freeze(out),
+      counts: Object.freeze({ ...rec.counts, awaitingMatch: out.filter((m) => m.state === "awaiting-match").length, autoMatched: auto }) }) };
   }
 
   return Object.freeze({
@@ -339,7 +393,8 @@ export function createStatements(deps: StatementDependencies) {
       const s = parsed.value;
 
       let rec: Reconciliation;
-      try { rec = await reconcileLines(cred, s.lines, s.from, s.to, s.skipped, signal); }
+      const allotOf = new Map<string, string>();
+      try { rec = await reconcileLines(cred, s.lines, s.from, s.to, s.skipped, signal, allotOf); }
       catch (e) {
         if (e instanceof RangeError) return refuse(me, "too-many-refs");
         if (e instanceof Unreadable) return refuse(me, "source-invalid");
@@ -362,8 +417,9 @@ export function createStatements(deps: StatementDependencies) {
         return sourceError(attached.errorKind ?? attached.code, "stored");
       }
       event(me, "statement-upload", `lines-${rec.counts.lines}.matched-${rec.counts.matched}.owner-${rec.counts.needsOwner}`, [created.id]);
-      const done = await autoMatch(cred, sid, rec, signal);
-      return { ok: true, value: Object.freeze({ ...done, statementId: created.id, attachmentId: attached.attachmentId, name: title }) };
+      const done = await autoMatch(cred, sid, rec, allotOf, signal);
+      return { ok: true, value: Object.freeze({ ...done.rec, statementId: created.id, attachmentId: attached.attachmentId, name: title,
+        continueWith: Object.freeze(done.continueWith) }) };
     },
 
     /** The last statement uploaded: "last reconciled <when>" on the Payments page (TC-IM05-019). */

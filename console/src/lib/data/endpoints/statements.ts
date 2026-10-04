@@ -5,9 +5,13 @@
                             D113 — `autoMatched`; a refund waits for its second hand) and the lines that "need an owner"
    Live: the routes ("pay" seats only; a KAM or a viewer is refused 403 before anything is read).
    Fixture: the demo book keeps no statements — the read answers "none yet" for a seat that uploads, and the upload
-   answers that it needs the live console (no reducer action stands in for parsing a bank file). */
+   answers that it needs the live console (no reducer action stands in for parsing a bank file).
+     POST /api/receipts/[id]/match {}   M18-S09-NOTE-3: the upload matches what fits in the request deadline and returns the
+                            rest as `continueWith`; the card matches each of those through "Match it" (the same match.ts call
+                            the upload makes, idempotent on a matched receipt), one at a time, showing how far it has got. */
 
 import type { StatementSummary, UploadView } from "@/server/money/statements";
+import type { MatchView } from "@/server/money/match";
 import { may } from "@/lib/im";
 import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
 import type { ImBook, ImDispatch } from "./im";
@@ -34,5 +38,20 @@ export const statementUpload: WriteEndpoint<ImBook, UploadArgs, UploadView, ImDi
   fixture({ s, me }): ReturnType<WriteEndpoint<ImBook, UploadArgs, UploadView, ImDispatch>["fixture"]> {
     if (!may(s, me, "pay")) return FINANCE_ONLY();
     return fail(503, "not-configured", "Not uploaded — the demo book keeps no bank statements. Upload works against the live console.");
+  },
+};
+
+/* M18-S09-NOTE-3: one receipt the statement confirmed that the upload did not finish matching inside its deadline.
+   Same route as "Match it" (endpoints/receipts receiptMatch) without the in-page note per refusal: the card shows the line's own note.
+   Fixture: never reached — a fixture upload is refused above, so it has nothing to continue. */
+export type ContinueArgs = { receiptId: string };
+export const statementContinue: WriteEndpoint<ImBook, ContinueArgs, Pick<MatchView, "receiptId" | "state" | "matchedBy">, ImDispatch> = {
+  method: "POST",
+  path: a => `/api/receipts/${encodeURIComponent(a.receiptId)}/match`,
+  body: () => ({}),
+  pick: j => { const m = (j as { match: MatchView }).match; return { receiptId: m.receiptId, state: m.state, matchedBy: m.matchedBy }; },
+  fixture({ s, me }) {
+    if (!may(s, me, "pay")) return FINANCE_ONLY();
+    return fail(503, "not-configured", "Not matched — the demo book keeps no bank statements.");
   },
 };

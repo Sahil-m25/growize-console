@@ -17,8 +17,16 @@ import { randomUUID } from "node:crypto";
 import type { ZohoFailure } from "../../lib/zoho/errors";
 import { decodeSession, SESSION_COOKIE } from "../../lib/data/session";
 import { safeErrorName, safeRequestId, safeUserId, safeZohoCode, type ErrorLog, type ErrorRecord } from "./error-log";
+import { anySignal, DeadlineExceeded, requestDeadlineMs, runWithDeadline } from "../../lib/zoho/deadline";
 
 export const REQUEST_ID_HEADER = "x-request-id";
+
+/** M18-S09-NOTE-3: what a route answers when its deadline passes. 503 like every other "Zoho is not answering, try
+ *  again" answer here (statusForZohoFailure busy/concurrency, the money routes' retry: same-key) — not 504, which is
+ *  what AppSail's own gateway answers at 30 s, so a Plane B line and the page can tell ours from the platform's. */
+export const DEADLINE_STATUS = 503;
+export const DEADLINE_CODE = "deadline";
+export const DEADLINE_MESSAGE = "Zoho took too long, so the console stopped waiting. Reload to see what was saved, then try again — nothing is done twice.";
 
 /** Thrown by a handler to fail with Zoho's verdict attached. */
 export class ZohoRouteError extends Error {
@@ -96,6 +104,18 @@ export interface ErrorCaptureOptions {
   readonly onRecord?: (record: ErrorRecord) => void;
   readonly clock?: () => number;
   readonly newId?: () => string;
+  /** The request deadline in ms (default REQUEST_DEADLINE_MS, 25 s). Read per request so a test can change it. */
+  readonly deadlineMs?: () => number;
+}
+
+/** The handler sees the combined signal as `request.signal`. The Request object is kept (a NextRequest stays one; its
+ *  body is untouched); only the instance's `signal` is shadowed. */
+function withSignal(request: Request, signal: AbortSignal): Request {
+  try {
+    Object.defineProperty(request, "signal", { value: signal, configurable: true, enumerable: false, writable: false });
+    if (request.signal === signal) return request;
+  } catch { /* fall through */ }
+  return new Request(request, { signal });
 }
 
 export type RouteHandler<C> = (request: Request, context: C) => Response | Promise<Response>;
@@ -119,8 +139,28 @@ export function createErrorCapture(options: ErrorCaptureOptions) {
       const ctx: Context = { requestId, zoho: null };
       const base = { requestId, route, method: request.method };
       let response: Response;
+      const ms = (() => { try { return options.deadlineMs?.() ?? requestDeadlineMs(); } catch { return requestDeadlineMs(); } })();
+      const timer = new AbortController();
+      const at = Date.now() + ms;
+      const signal = anySignal(request.signal as AbortSignal | undefined, timer.signal)!;
+      let expired!: () => void;
+      const deadline = new Promise<"deadline">((resolve) => { expired = () => resolve("deadline"); });
+      const t = setTimeout(() => { timer.abort(new DeadlineExceeded()); expired(); }, ms);
+      const req = withSignal(request, signal);
       try {
-        response = await store.run(ctx, () => handler(request, context));
+        const run = store.run(ctx, () => runWithDeadline({ signal, at }, () => handler(req, context)));
+        const first = await Promise.race([Promise.resolve(run), deadline]);
+        if (first === "deadline") {
+          /* The handler keeps whatever it already wrote; its Zoho calls are aborted by the signal. Ids only, no user id. */
+          void Promise.resolve(run).catch(() => undefined);
+          file({
+            ...base, at: startedAt, userId: null, status: DEADLINE_STATUS, zohoStatus: ctx.zoho?.status ?? null, zohoCode: safeZohoCode(ctx.zoho?.code),
+            errorClass: DEADLINE_CODE, errorName: "DeadlineExceeded", durationMs: clock() - startedAt,
+          });
+          return withRequestId(Response.json({ error: DEADLINE_MESSAGE, code: DEADLINE_CODE, requestId, retry: "same-key" },
+            { status: DEADLINE_STATUS, headers: { "Cache-Control": "no-store" } }), requestId);
+        }
+        response = first;
       } catch (error) {
         const zoho = error instanceof ZohoRouteError ? zohoNoteOf(error.failure) : ctx.zoho;
         const status = error instanceof ZohoRouteError ? statusForZohoFailure(error.failure) : 500;
@@ -131,6 +171,8 @@ export function createErrorCapture(options: ErrorCaptureOptions) {
         });
         const message = status >= 500 ? "Something went wrong on our side." : "Zoho refused the request.";
         return withRequestId(Response.json({ error: message, requestId }, { status, headers: { "Cache-Control": "no-store" } }), requestId);
+      } finally {
+        clearTimeout(t);
       }
       if (response.status >= 500 || ctx.zoho) {
         file({

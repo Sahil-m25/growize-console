@@ -3,7 +3,9 @@
      PUT { seat, side: "lead" }   seat = a Leads seat key ("ir", "conv", "cp", "bu", "exec"): canGrant/seatClash
                                   decide it (an IR Manager gives only "ir"); 200 → { whom, from, to, side, overridesCleared }
    A live step-up ("seat", D22) is asked first: 403 { code: "step-up", start } until the person has confirmed.
-   200 → { whom, from, to, returned, notReturned }   (returned = Contacts put back in the pool)
+   200 → { whom, from, to, returned, notReturned, continueFrom }   (returned = Contacts put back in the pool)
+   M18-S09-NOTE-3: continueFrom = the KAM's book did not fit the request deadline; PUT { seat, continueFrom } again (same
+   checks, the seat is not re-written, the clears go on from that Contact id). null = done.
    4xx/5xx → { error, code } — 400 bad request · 403 own seat / super admin / not yours to move / your seat moved
    · 404 not a Zoho user you see · 409 already that seat · 502 Zoho refused · 503 Zoho not answering, the book
    unreadable (nothing changed) or the write unconfirmed ("unconfirmed").
@@ -27,18 +29,19 @@ async function put(req: Request, ctx: Ctx) {
   if (!s.ok) return s.response;
   const { id } = await ctx.params;
   const raw = await req.text().catch(() => "");
-  let seat: unknown = null, side: unknown = undefined;
+  let seat: unknown = null, side: unknown = undefined, continueFrom: unknown = undefined;
   if (raw.length <= MAX_BODY) {
     try {
       const p: unknown = JSON.parse(raw);
-      const o = p && typeof p === "object" && !Array.isArray(p) ? (p as { seat?: unknown; side?: unknown }) : null;
-      seat = o ? o.seat : null; side = o ? o.side : undefined;
+      const o = p && typeof p === "object" && !Array.isArray(p) ? (p as { seat?: unknown; side?: unknown; continueFrom?: unknown }) : null;
+      seat = o ? o.seat : null; side = o ? o.side : undefined; continueFrom = o ? o.continueFrom : undefined;
     } catch { seat = null; }
   }
-  const r = await seatChanges().change(s.credential, s.session, { whom: id, to: seat, side });
+  const r = await seatChanges().change(s.credential, s.session, { whom: id, to: seat, side, continueFrom });
   if (!r.ok) return Response.json({ error: r.message, code: r.refusal }, { status: r.status, headers: NO_STORE });
   if ("side" in r) return Response.json({ whom: r.whom, from: r.from, to: r.to, side: r.side, overridesCleared: r.overridesCleared }, { headers: NO_STORE });
-  return Response.json({ whom: r.whom, from: r.from, to: r.to, returned: r.returned.length, returnedIds: r.returned, notReturned: r.notReturned }, { headers: NO_STORE });
+  return Response.json({ whom: r.whom, from: r.from, to: r.to, returned: r.returned.length, returnedIds: r.returned, notReturned: r.notReturned,
+    continueFrom: r.continueFrom }, { headers: NO_STORE });
 }
 
 export const PUT = withErrorCapture(guardApi("/api/users", requireStepUp("seat", put)), "/api/users");

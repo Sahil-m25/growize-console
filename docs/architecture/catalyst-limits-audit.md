@@ -32,6 +32,15 @@ the 10 s start window, ephemeral disk and instance recycling. Measured numbers a
 5. **Local-disk stores are ephemeral on AppSail:** `LOG_STORE=jsonl` (Plane B), `GRANT_STORE=jsonl`, `AUDIT_ARCHIVE_DIR` (the audit archive). All lost on recycle; with `memory` the grants are lost too. GAP: rule 7/8 evidence cannot live there.
 6. Module-level state (fixture lanes, rate limits `GZ_RATE_LIMITS`, Sign dedupe and dead letters) is per instance.
 
+**Built in R6 (M18-S09-NOTE-3):** `withErrorCapture` gives every route `REQUEST_DEADLINE_MS` (default 25 s): `request.signal` is
+the request's signal + the deadline (the instance's `signal` is shadowed, the Request kept), also carried in
+AsyncLocalStorage (`lib/zoho/deadline.ts`). On expiry: 503 `{ code: "deadline", retry: "same-key" }` (503, not 504, so ours
+is told apart from AppSail's gateway) and a Plane B line with no user id. The Zoho client abandons an attempt after
+`ZOHO_ATTEMPT_TIMEOUT_MS` (default 10 s) as `network` (reads retry, writes do not) and never sleeps a retry past the
+deadline. The three routes below that fail by design now run 4-way and stop inside an 8 s margin with a resumable answer:
+statements `continueWith` (the page matches each through `/api/receipts/[id]/match`), sheet load `continuing` (progress
+in shared state, same body re-posted), seat change `continueFrom` (Contact id cursor).
+
 ## 3. Routes that can pass 30 s
 
 Call counts are sequential Zoho calls read from the code. "Expected" uses the real book (about 200 investors, one page per read).

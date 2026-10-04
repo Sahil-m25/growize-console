@@ -56,6 +56,8 @@ export function EventPage({ id }: { id: string }) {
   /* M14-S03-W1: 'Load N leads' is POST /api/events/[id]/sheet {rule, rows}; a refusal reads under the button */
   const load = useApiWrite(sheetLoad, state, dispatch);
   const [loadErr, setLoadErr] = useState<string | null>(null);
+  /* M18-S09-NOTE-3: a big sheet loads over several requests; how far it has got while it continues */
+  const [cont, setCont] = useState<{ done: number; total: number } | null>(null);
   /* M14-S03-W2: the sheet card is GET /api/events/[id]/sheet (Lead_Events' Load_State, the counts the loader wrote back, who loaded it,
      the staff in named order, the load log), never state.SHEET. Live, the rows to load are the intake sheet pasted below (PROVISIONAL). */
   const sheet = useApiRead(sheetState, state, id);
@@ -137,7 +139,11 @@ export function EventPage({ id }: { id: string }) {
     if (!sv) return;
     setLoadErr(null);
     const rows = fromRoute ? intakeRows(state, e.id, { ok: sv.willLoad! }, e.city) : pasted.rows;
-    const r = await load({ eventId: e.id, rule: ruleOf(AR, ARWHO), rows });
+    const args = { eventId: e.id, rule: ruleOf(AR, ARWHO), rows };
+    let r = await load(args);
+    /* a load that ran out of request time keeps its place on the server: post the same sheet again until it is done */
+    for (let n = 0; r.ok && r.data.continuing && n < 50; n++) { setCont(r.data.continuing); r = await load(args); }
+    setCont(null);
     /* a live load re-reads the sheet card by itself (the adapter's tick); the demo book's reducer wrote its own line */
     if (!r.ok) setLoadErr(r.error);
   };
@@ -254,6 +260,8 @@ export function EventPage({ id }: { id: string }) {
                     lead, so the console stays the record.
                   </p>
                 )}
+                {cont ? <p className="sm" role="status" style={{ margin: "8px 0 0" }}>Still loading — {cont.done} of {cont.total} new rows in so far; continuing…</p> : null}
+                {!ready && loadErr ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{loadErr}</p> : null}
                 {sv.log.map((l, i) => (
                   <p key={i} className="sm" style={{ margin: "8px 0 0", color: "var(--ink-3)" }}>
                     {stampText(l.at)} · {l.what} — {l.note.startsWith(row.name + " — ") ? l.note.slice(row.name.length + 3) : l.note}

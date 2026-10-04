@@ -34,7 +34,8 @@ export type EventOne = { event: EventRow; leads: EventLead[]; othersCount: numbe
 export type EventAdded = { eventId: string; name: string; startsOn: string; endsOn: string; city: string; staffIds: string[]; state: "planned" | "done" };
 export type EventChanged = { eventId: string; name: string; moved: Moved[]; taggedStay: number | null; modifiedTime: string | null };
 export type EventRemoved = { eventId: string; name: string; leadsUntagged: number };
-export type SheetLoaded = Pick<LoadSummary, "eventId" | "rule" | "inFile" | "loaded" | "duplicates" | "refused" | "split" | "countsSaved">;
+/* continuing (M18-S09-NOTE-3): non-null while a big sheet is still loading across requests — post the same sheet again */
+export type SheetLoaded = Pick<LoadSummary, "eventId" | "rule" | "inFile" | "loaded" | "duplicates" | "refused" | "split" | "countsSaved" | "continuing">;
 
 const NO_PAGE = () => fail(403, "no-book", "This page is not part of your seat.");
 const NO_EDIT = () => fail(403, "capability-missing", "your seat cannot add or change events (it needs edit on Events)");
@@ -253,7 +254,7 @@ export const sheetLoad: WriteEndpoint<ConsoleState, SheetArgs, SheetLoaded, Lead
     const after = n.SHEET[a.eventId];
     d(act);
     return ok({ eventId: a.eventId, rule: a.rule.kind, inFile: sh.rows, loaded: loaded.length, duplicates: after?.skipped ?? 0, refused: sh.bad,
-      split: [...by].map(([ownerId, count]) => ({ ownerId, count })), countsSaved: true });
+      split: [...by].map(([ownerId, count]) => ({ ownerId, count })), countsSaved: true, continuing: null });
   },
 };
 

@@ -20,6 +20,13 @@
  * Loaded with Loaded_By/Loaded_At, written with If-Unmodified-Since so two loads racing cannot both pass —
  * then inserts, then writes Rows_In_File/Rows_Loaded/Rows_Duplicate/Rows_Refused. If nothing could be
  * inserted for a Zoho failure, the claim is handed back (Ready) so the sheet can be loaded again.
+ *
+ * M18-S09-NOTE-3 — 2,000 rows inside a 30 s request: the book check runs its COQLs 4 at a time and the inserts go 4
+ * batches (of 100) at a time. When the request deadline's stop margin is reached with batches left, the load stops
+ * between batches and keeps its place in shared state (`progress`: who, a hash of the rows and rule, which rows were
+ * planned, the next batch, the counts so far — no number, name or lead id). The page posts the same sheet again and
+ * the load continues from that batch: the claim stays (Load_State Loaded, by the loader), each row is inserted once,
+ * and the counts are written to the event only when the last batch is done. Without a progress store it runs to the end.
  */
 
 import type { ScopedCache } from "../../lib/zoho/cache";
@@ -30,6 +37,9 @@ import { LEADS_MODULE } from "../leads/capture";
 import { idOf, pagedSelect, RECORD_ID, str } from "../cases/predicate";
 import { EVENTS_MODULE, STAFF_EVENT, STAFF_MODULE, STAFF_USER } from "./events";
 import type { EventsWriteAuthority } from "./writes";
+import { createHash } from "node:crypto";
+import { DEFAULT_STOP_MARGIN_MS, pastStopMargin, runBounded } from "../../lib/zoho/deadline";
+import type { SharedState } from "../state/shared-state";
 
 /** One intake row as the sheet holds it. */
 export interface SheetRow extends ImportRow {
@@ -47,7 +57,8 @@ export type SheetRule =
 
 export type LoadRefusal =
   | "invalid-request" | "session-changed" | "capability-missing" | "not-found" | "event-not-run" | "sheet-not-ready"
-  | "already-loaded" | "owner-missing" | "owner-not-assignable" | "no-staff" | "unassigned-queue-missing" | "too-many-rows" | "no-rows" | "source-invalid";
+  | "already-loaded" | "owner-missing" | "owner-not-assignable" | "no-staff" | "unassigned-queue-missing" | "too-many-rows" | "no-rows" | "source-invalid"
+  | "load-in-progress";
 
 export type LoadRowVerdict =
   | { readonly row: number; readonly status: "added"; readonly leadId: string; readonly ownerId: string | null }
@@ -67,6 +78,9 @@ export interface LoadSummary {
   readonly rows: readonly LoadRowVerdict[];
   /** false when the counts could not be written back to the event (the leads are in; the card may read stale counts). */
   readonly countsSaved: boolean;
+  /** M18-S09-NOTE-3: rows still to insert. Non-null = not finished inside this request: post the same sheet again to
+   *  continue (counts above are so far; `rows`/`assigned` are this call's). null = done. */
+  readonly continuing: { readonly done: number; readonly total: number } | null;
 }
 
 export type LoadResult =
@@ -89,6 +103,7 @@ const REASON: Readonly<Record<LoadRefusal, string>> = Object.freeze({
   "too-many-rows": `a sheet holds at most ${MAX_IMPORT_ROWS} rows`,
   "no-rows": "the sheet could not be read",
   "source-invalid": "Zoho returned a record this console cannot read",
+  "load-in-progress": "This sheet is being loaded right now. Wait a moment, then reload the page.",
 });
 
 const ZDT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
@@ -115,7 +130,51 @@ export interface LoaderDeps {
   readonly cache?: Pick<ScopedCache, "invalidate">;
   readonly clock?: () => number;
   readonly maxPages?: number;
+  /** M18-S09-NOTE-3: where a load that runs out of request time keeps its place (server/state). Absent: no stopping early. */
+  readonly progress?: Pick<SharedState, "get" | "set" | "release" | "claim">;
+  /** Insert batches / book-check COQLs at once (default 4). */
+  readonly concurrency?: number;
+  /** No insert batch starts with less than this left on the request deadline (default 8 s). */
+  readonly stopMarginMs?: number;
 }
+
+/** What a stopped load keeps between requests. Ids, counts and a hash only — never a number, a name or a lead id. */
+interface Progress {
+  readonly v: 1;
+  readonly by: string;
+  /** sha256 of the rule and the rows as posted: the continuation must post the same sheet */
+  readonly h: string;
+  /** the planned rows (fresh after the checks and the book check), as a bitmap over row indices, base64 */
+  readonly plan: string;
+  /** the next batch to insert (index into the plan, a multiple of the batch size) */
+  readonly n: number;
+  readonly owners: readonly (string | null)[] | null;
+  readonly owner: string | null;
+  readonly kind: SheetRule["kind"];
+  readonly city: string | null;
+  readonly at: string;
+  readonly mt: string | null;
+  readonly added: number;
+  readonly dup: number;
+  readonly refused: number;
+  readonly zf: number;
+  readonly split: Readonly<Record<string, number>>;
+}
+const PROGRESS_TTL_S = 3_600;
+const LOCK_TTL_S = 60;
+const progressKey = (eventId: string) => `event-sheet-load|${eventId}`;
+const lockKey = (eventId: string) => `event-sheet-load-lock|${eventId}`;
+const sheetHash = (rule: SheetRule, rows: readonly SheetRow[]): string => createHash("sha256").update(JSON.stringify([rule, rows])).digest("hex");
+const toBitmap = (idx: readonly number[], size: number): string => {
+  const b = Buffer.alloc(Math.ceil(size / 8));
+  for (const i of idx) b[i >> 3] |= 1 << (i & 7);
+  return b.toString("base64");
+};
+const fromBitmap = (s: string, size: number): number[] => {
+  const b = Buffer.from(s, "base64"), out: number[] = [];
+  for (let i = 0; i < size; i++) if (b[i >> 3]! & (1 << (i & 7))) out.push(i);
+  return out;
+};
 
 export function createSheetLoader(deps: LoaderDeps) {
   if (!deps || typeof deps.crm?.insert !== "function" || typeof deps.authority?.recheck !== "function" || !/^\d{6,16}$/.test(deps.recordIdPrefix ?? "")) {
@@ -134,11 +193,14 @@ export function createSheetLoader(deps: LoaderDeps) {
   const onBook = async (cred: UserCredential, e164s: readonly string[], signal?: AbortSignal): Promise<Set<string> | LoadResult> => {
     const seen = new Set<string>();
     const PER = 25; // 4 spellings each → ≤100 values in one IN
-    for (let i = 0; i < e164s.length; i += PER) {
-      const values = e164s.slice(i, i + PER).flatMap(spellings);
-      const r = await pagedSelect(crm, cred, ["id", "Mobile"], LEADS_MODULE, `Mobile in (${values.map((v) => `'${v}'`).join(", ")})`, "id asc", signal, deps.maxPages);
-      if (!r.ok) return r.kind === "refused" ? refuse(cred.userId, "source-invalid") : srcErr(r.errorKind);
-      for (const x of r.rows) { const k = phoneKey(x.Mobile); if (k) seen.add(k); }
+    const chunks: string[][] = [];
+    for (let i = 0; i < e164s.length; i += PER) chunks.push(e164s.slice(i, i + PER).flatMap(spellings));
+    // M18-S09-NOTE-3: 2,000 rows = 80 COQLs; 4 at a time (the gate's complex pool is shared with everyone else)
+    const r = await runBounded(chunks, deps.concurrency ?? 4, (values) =>
+      pagedSelect(crm, cred, ["id", "Mobile"], LEADS_MODULE, `Mobile in (${values.map((v) => `'${v}'`).join(", ")})`, "id asc", signal, deps.maxPages));
+    for (const { value: page } of r.done) {
+      if (!page.ok) return page.kind === "refused" ? refuse(cred.userId, "source-invalid") : srcErr(page.errorKind);
+      for (const x of page.rows) { const k = phoneKey(x.Mobile); if (k) seen.add(k); }
     }
     return seen;
   };
@@ -155,13 +217,17 @@ export function createSheetLoader(deps: LoaderDeps) {
       // "All to one person" without the person: Load is disabled on the card, and refused here.
       if (rule.kind === "one" && !rule.ownerId) return refuse(me, "owner-missing");
 
-      const ev = await pagedSelect(crm, cred, ["id", "Name", "Event_City", "Event_State", "Load_State", "Modified_Time"], EVENTS_MODULE, `id = '${eventId}'`, "id asc", signal, 1);
+      const ev = await pagedSelect(crm, cred, ["id", "Name", "Event_City", "Event_State", "Load_State", "Loaded_By", "Modified_Time"], EVENTS_MODULE, `id = '${eventId}'`, "id asc", signal, 1);
       if (!ev.ok) return ev.kind === "refused" ? refuse(me, "source-invalid", [eventId]) : srcErr(ev.errorKind);
       const rec = ev.rows.find((x) => x.id === eventId);
       if (!rec) return refuse(me, "not-found", [eventId]);
       if (str(rec, "Event_State", 20) !== "Done") return refuse(me, "event-not-run", [eventId]);
       const loadState = str(rec, "Load_State", 20);
-      if (loadState === "Loaded") return refuse(me, "already-loaded", [eventId]);
+      if (loadState === "Loaded") {
+        // M18-S09-NOTE-3: the same person posting the same sheet continues a load that ran out of request time.
+        const go = idOf(rec.Loaded_By) === me ? await resume(cred, eventId, rule, intake, a.unassignedQueueUserId ?? null, signal) : null;
+        return go ?? refuse(me, "already-loaded", [eventId]);
+      }
       if (loadState !== "Ready") return refuse(me, "sheet-not-ready", [eventId]);
       const eventMt = typeof rec.Modified_Time === "string" && ZDT.test(rec.Modified_Time) ? rec.Modified_Time : null;
       const eventCity = str(rec, "Event_City", 80);
@@ -218,59 +284,134 @@ export function createSheetLoader(deps: LoaderDeps) {
       }
 
       const planned = fresh.map((g, i) => ({ ...g, ownerId: ownerFor(i) }));
-      let zohoFailures = 0;
-      for (let i = 0; i < planned.length; i += MAX_UPSERT_RECORDS) {
-        const batch = planned.slice(i, i + MAX_UPSERT_RECORDS);
+      const pre = { dup: verdicts.filter((v) => v.status === "duplicate").length, refused: verdicts.filter((v) => v.status === "refused").length };
+      const prog: Progress = {
+        v: 1, by: me, h: sheetHash(rule, rows), plan: toBitmap(planned.map((p) => p.row), rows.length), n: 0,
+        owners: rule.kind === "round-robin" ? staff : null, owner: rule.kind === "me" ? me : rule.kind === "one" ? rule.ownerId : null, kind: rule.kind,
+        city: eventCity, at, mt: claim.value.modifiedTime ?? null, added: 0, dup: pre.dup, refused: pre.refused, zf: 0, split: {},
+      };
+      return insertFrom(cred, eventId, rule, rows, planned, prog, verdicts, a.unassignedQueueUserId ?? null, signal);
+    },
+  });
+
+  type Planned = ReturnType<typeof checkRows>["good"][number] & { readonly ownerId: string | null };
+
+  /** Keep the load's place; false when it cannot be kept (the load then runs on rather than stop). */
+  async function keep(eventId: string, prog: Progress): Promise<boolean> {
+    if (!deps.progress) return false;
+    const value = JSON.stringify(prog);
+    if (value.length > 4_000) return false;
+    try { await deps.progress.set(progressKey(eventId), value, PROGRESS_TTL_S); return true; } catch { return false; }
+  }
+
+  /** Continue a stopped load: same person, same sheet and rule, the event still claimed by them. */
+  async function resume(cred: UserCredential, eventId: string, rule: SheetRule, intake: IntakeReader, queueUser: string | null, signal?: AbortSignal): Promise<LoadResult | null> {
+    if (!deps.progress) return null;
+    let raw: string | null = null;
+    try { raw = await deps.progress.get(progressKey(eventId)); } catch { return null; }
+    if (!raw) return null;
+    let prog: Progress;
+    try { prog = JSON.parse(raw) as Progress; } catch { return null; }
+    if (prog?.v !== 1 || prog.by !== cred.userId) return null;
+    let rows: readonly SheetRow[] | null;
+    try { rows = await intake.rows(eventId, signal); } catch { rows = null; }
+    if (!Array.isArray(rows) || rows.length > MAX_IMPORT_ROWS || sheetHash(rule, rows) !== prog.h) return null;
+    const rowIdx = new Set(fromBitmap(prog.plan, rows.length));
+    const fresh = checkRows(rows).good.filter((g) => rowIdx.has(g.row));
+    if (fresh.length !== rowIdx.size) return null;
+    const ownerFor = (i: number): string | null => prog.kind === "round-robin" ? (prog.owners?.length ? prog.owners[i % prog.owners.length]! : null)
+      : prog.kind === "unassigned" ? null : prog.owner;
+    const planned = fresh.map((g, i) => ({ ...g, ownerId: ownerFor(i) }));
+    return insertFrom(cred, eventId, rule, rows, planned, prog, [], queueUser, signal);
+  }
+
+  /** Insert from batch `prog.n` on, `concurrency` batches at a time, stopping between batches near the deadline. */
+  async function insertFrom(cred: UserCredential, eventId: string, rule: SheetRule, rows: readonly SheetRow[], planned: readonly Planned[], prog0: Progress,
+    verdicts: LoadRowVerdict[], queueUser: string | null, signal?: AbortSignal): Promise<LoadResult> {
+    const me = cred.userId;
+    const lock = deps.progress ? await deps.progress.claim(lockKey(eventId), LOCK_TTL_S).catch(() => true) : true;
+    if (!lock) return refuse(me, "load-in-progress", [eventId]);
+    try {
+      let prog = prog0;
+      const batches: (readonly Planned[])[] = [];
+      for (let i = prog.n; i < planned.length; i += MAX_UPSERT_RECORDS) batches.push(planned.slice(i, i + MAX_UPSERT_RECORDS));
+      const margin = deps.stopMarginMs ?? DEFAULT_STOP_MARGIN_MS;
+      let resumable = deps.progress ? await keep(eventId, prog) : false;
+      const runBatch = async (batch: readonly Planned[]): Promise<LoadRowVerdict[]> => {
         const records: ZohoFields[] = batch.map((p) => ({
-          ...p.fields, ...(p.fields.City === undefined && eventCity ? { City: eventCity } : {}),
+          ...p.fields, ...(p.fields.City === undefined && prog.city ? { City: prog.city } : {}),
           Lead_Source: "Events", Lead_Event: { id: eventId },
-          Owner: { id: p.ownerId ?? (a!.unassignedQueueUserId as string) },
-          ...(p.ownerId ? { Owner_Assigned_At: at } : {}),
+          Owner: { id: p.ownerId ?? (queueUser as string) },
+          ...(p.ownerId ? { Owner_Assigned_At: prog.at } : {}),
           Consent_WhatsApp: true, Consent_Call: true,
-          ...(rows![p.row]?.consent?.email === true && p.fields.Email ? { Consent_Email: true } : {}),
-          Consent_How: "Event sheet", Consent_At: at, Consent_By: { id: me },
+          ...(rows[p.row]?.consent?.email === true && p.fields.Email ? { Consent_Email: true } : {}),
+          Consent_How: "Event sheet", Consent_At: prog.at, Consent_By: { id: me },
         }));
         let res: Awaited<ReturnType<typeof crm.insert>> | null = null;
         try { res = await crm.insert(cred, LEADS_MODULE, records, { signal }); } catch { res = null; }
         const outcomes = res && (res.ok ? res.value : res.error.kind === "partial" ? res.error.records : null);
-        batch.forEach((p, k) => {
+        return batch.map((p, k): LoadRowVerdict => {
           const o = outcomes?.[k];
-          if (o && o.ok && validId(o.id)) verdicts.push({ row: p.row, status: "added", leadId: o.id, ownerId: p.ownerId });
-          else if (o && o.code === "DUPLICATE_DATA") verdicts.push({ row: p.row, status: "duplicate" });
-          else { zohoFailures++; verdicts.push({ row: p.row, status: "refused", reason: "zoho" }); }
+          if (o && o.ok && validId(o.id)) return { row: p.row, status: "added", leadId: o.id, ownerId: p.ownerId };
+          if (o && o.code === "DUPLICATE_DATA") return { row: p.row, status: "duplicate" };
+          return { row: p.row, status: "refused", reason: "zoho" };
         });
+      };
+      let pos = 0;
+      for (;;) {
+        const r = await runBounded(batches.slice(pos), deps.concurrency ?? 4, runBatch, () => resumable && pastStopMargin(margin));
+        const fresh = r.done.flatMap((d) => d.value);
+        verdicts.push(...fresh);
+        const split = { ...prog.split };
+        for (const v of fresh) if (v.status === "added") { const k = v.ownerId ?? ""; split[k] = (split[k] ?? 0) + 1; }
+        prog = { ...prog, n: prog.n + r.done.reduce((t, d) => t + d.value.length, 0),
+          added: prog.added + fresh.filter((v) => v.status === "added").length,
+          dup: prog.dup + fresh.filter((v) => v.status === "duplicate").length,
+          refused: prog.refused + fresh.filter((v) => v.status === "refused").length,
+          zf: prog.zf + fresh.filter((v) => v.status === "refused").length, split };
+        pos += r.done.length;
+        if (!r.notStarted.length) break;
+        if (await keep(eventId, prog)) {
+          events.refusal(me, "event-sheet-load", `continuing-${planned.length - prog.n}`, [eventId]);
+          return { ok: true, value: summary(eventId, rule, rows.length, prog, verdicts, false, { done: prog.n, total: planned.length }) };
+        }
+        resumable = false;    // the place cannot be kept: run the rest now rather than lose it
       }
-      verdicts.sort((x, y) => x.row - y.row);
-      const added = verdicts.filter((v): v is Extract<LoadRowVerdict, { status: "added" }> => v.status === "added");
-      const duplicates = verdicts.filter((v) => v.status === "duplicate").length;
 
       // Nothing landed because Zoho failed: hand the claim back so the sheet can be loaded again.
-      const handBack = added.length === 0 && zohoFailures > 0;
+      const handBack = prog.added === 0 && prog.zf > 0;
       const counts: ZohoFields = handBack
         ? { Load_State: "Ready", Loaded_By: null, Loaded_At: null }
-        : { Rows_In_File: rows.length, Rows_Loaded: added.length, Rows_Duplicate: duplicates, Rows_Refused: verdicts.length - added.length - duplicates };
+        : { Rows_In_File: rows.length, Rows_Loaded: prog.added, Rows_Duplicate: prog.dup, Rows_Refused: prog.refused };
       let saved = false;
-      try { saved = (await crm.update(cred, EVENTS_MODULE, eventId, counts, { ifUnmodifiedSince: claim.value.modifiedTime, signal })).ok; } catch { saved = false; }
+      try { saved = (await crm.update(cred, EVENTS_MODULE, eventId, counts, { ifUnmodifiedSince: prog.mt, signal })).ok; } catch { saved = false; }
+      if (deps.progress) await deps.progress.release(progressKey(eventId)).catch(() => undefined);
       if (handBack) return srcErr("insert-failed");
 
       if (deps.cache) {
-        const owners = new Set<string>([me, ...added.map((v) => v.ownerId ?? (a!.unassignedQueueUserId as string))]);
+        const owners = new Set<string>([me, ...Object.keys(prog.split).map((k) => k || (queueUser as string)).filter(Boolean)]);
         await Promise.all([...owners].map((userId) => deps.cache!.invalidate({ scope: { kind: "user", userId } }).catch(() => 0)));
       }
-      const split = new Map<string | null, number>();
-      if (rule.kind === "round-robin") for (const s of staff) split.set(s, 0);
-      for (const v of added) split.set(v.ownerId, (split.get(v.ownerId) ?? 0) + 1);
-      return {
-        ok: true,
-        value: Object.freeze({
-          eventId, rule: rule.kind, inFile: rows.length, loaded: added.length, duplicates, refused: verdicts.length - added.length - duplicates,
-          split: Object.freeze([...split.entries()].map(([ownerId, count]) => Object.freeze({ ownerId, count }))),
-          // One "Assigned owner" line per dealt lead: only the round-robin picks an owner nobody chose by hand (prototype loadSheet).
-          assigned: Object.freeze(rule.kind === "round-robin" ? added.filter((v) => v.ownerId).map((v) => Object.freeze({ leadId: v.leadId, ownerId: v.ownerId as string })) : []),
-          rows: Object.freeze(verdicts), countsSaved: saved,
-        }),
-      };
-    },
-  });
+      return { ok: true, value: summary(eventId, rule, rows.length, prog, verdicts, saved, null) };
+    } finally {
+      if (deps.progress) await deps.progress.release(lockKey(eventId)).catch(() => undefined);
+    }
+  }
+
+  function summary(eventId: string, rule: SheetRule, inFile: number, prog: Progress, verdicts: LoadRowVerdict[], saved: boolean,
+    continuing: LoadSummary["continuing"]): LoadSummary {
+    verdicts.sort((x, y) => x.row - y.row);
+    const added = verdicts.filter((v): v is Extract<LoadRowVerdict, { status: "added" }> => v.status === "added");
+    const split = new Map<string | null, number>();
+    if (prog.kind === "round-robin") for (const st of prog.owners ?? []) split.set(st, 0);
+    for (const [k, n] of Object.entries(prog.split)) split.set(k || null, (split.get(k || null) ?? 0) + n);
+    return Object.freeze({
+      eventId, rule: rule.kind, inFile, loaded: prog.added, duplicates: prog.dup, refused: prog.refused,
+      split: Object.freeze([...split.entries()].map(([ownerId, count]) => Object.freeze({ ownerId, count }))),
+      // One "Assigned owner" line per dealt lead: only the round-robin picks an owner nobody chose by hand (prototype loadSheet).
+      assigned: Object.freeze(rule.kind === "round-robin" ? added.filter((v) => v.ownerId).map((v) => Object.freeze({ leadId: v.leadId, ownerId: v.ownerId as string })) : []),
+      rows: Object.freeze(verdicts), countsSaved: saved, continuing,
+    });
+  }
 }
 export type SheetLoader = ReturnType<typeof createSheetLoader>;

@@ -33,7 +33,20 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
   const r = useApiRead(teamSeats, { s, me }, undefined);
   const seat = useApiWrite(imSeatChange, { s, me }, dispatch);
   const [err, setErr] = useState<string | null>(null);
+  /* M18-S09-NOTE-3: a big KAM book goes back to the pool over several requests; how many so far while it continues */
+  const [pooling, setPooling] = useState<{ name: string; returned: number } | null>(null);
   if (!pageReadable(s, me, "team")) return null;
+  const move = async (whom: string, name: string, to: ImRoleKey) => {
+    let x = await seat({ whom, seat: to });
+    let returned = x.ok ? x.data.returned : 0;
+    for (let n = 0; x.ok && x.data.continueFrom && n < 50; n++) {
+      setPooling({ name, returned });
+      x = await seat({ whom, seat: to, continueFrom: x.data.continueFrom });
+      if (x.ok) returned += x.data.returned;
+    }
+    setPooling(null);
+    setErr(x.ok ? null : x.error);
+  };
   const activity = activityBase(s, me), actors = activityActors(s, me);
   const rows = r.state === "ok" ? r.data.investorsSide ?? [] : [];
   const cols = r.state === "ok" ? r.data.grid.columns : [];
@@ -44,6 +57,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
       {r.state === "loading" ? <p className="sm">Reading the team…</p> : null}
       {r.state === "error" ? <p className="note bad" role="alert">{r.err.error}</p> : null}
       {err ? <p className="note bad" role="alert">{err}</p> : null}
+      {pooling ? <p className="note" role="status">Returning {pooling.name}&apos;s accounts to the pool — {pooling.returned} so far; continuing…</p> : null}
       <div className="secw">
         <div className="card"><div className="ch"><h3>Who is here</h3></div><div className="tw"><table>
           <thead><tr><th>Name</th><th>Team</th><th>Seat</th><th>May</th><th className="n">Actions logged</th><th></th></tr></thead>
@@ -59,7 +73,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
                   {w.accounts !== null ? <div className="sm">{w.accounts} account{w.accounts === 1 ? "" : "s"}</div> : null}</td>
                 <td>{w.seatOptions.length && w.role
                   ? <select className="selw" title={"Seat — " + w.name} aria-label={"Seat for " + w.name} style={{ maxWidth: "100%", minWidth: "200px" }} value={w.role}
-                    onChange={e => void seat({ whom: k, seat: e.target.value as ImRoleKey }).then(x => setErr(x.ok ? null : x.error))}>
+                    disabled={!!pooling} onChange={e => void move(k, w.name, e.target.value as ImRoleKey)}>
                     {opts.map(x => <option key={x} value={x}>{ROLE[x].t}</option>)}</select>
                   : <><b>{w.seatLabel}</b>{w.otherTeam ? <div className="sm">another team&apos;s seat</div> : null}</>}</td>
                 <td className="sm">{w.may.map(c => CAN[c]).join(" · ") || "read only"}</td>

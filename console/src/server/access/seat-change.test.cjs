@@ -230,3 +230,99 @@ test('client: updateUserSeat is a user-token write only, never to oneself', asyn
   await assert.rejects(() => crm.updateUserSeat(as, DIVYA, w));
   await assert.rejects(() => crm.updateUserSeat(as, IMRAN, { ...w, roleId: 'x' }));
 });
+
+/* ---- M18-S09-NOTE-3: a KAM book of 200 inside the request deadline ---------------------------------------- */
+const { runWithDeadline } = load('src/lib/zoho/deadline.js');
+const BIG = 200;
+const CID = (i) => `5540230000005${String(i).padStart(5, '0')}`;
+/** Imran's book of 200 in a stateful stand-in: KAM cleared per Contact (slow), his seat flips on the Users PUT. */
+async function bigRig({ putMs = 0, refuse = () => false, deps = {} } = {}) {
+  const kam = new Map(Array.from({ length: BIG }, (_, i) => [CID(i), true]));
+  let moved = false, live = 0, peak = 0, seatPuts = 0;
+  const writes = new Map();
+  const log = createOpsLog(createMemorySink());
+  const crm = createZohoClient({ recordIdPrefix: '554023', gate: gate(), log, maxAttempts: 1, clock: () => T0,
+    fetch: async (url, init) => {
+      const seg = new URL(url).pathname.split('/');
+      if (init.method === 'PUT' && seg[3] === 'users') { seatPuts++; moved = true; return toResponse(FX('users', 'put.seat.success.response.json')); }
+      if (init.method === 'PUT' && seg[3] === 'Contacts') {
+        live++; peak = Math.max(peak, live);
+        if (putMs) await new Promise((r) => setTimeout(r, putMs));
+        live--;
+        writes.set(seg[4], (writes.get(seg[4]) ?? 0) + 1);
+        if (refuse(seg[4])) return toResponse(FX('users', 'contact.pool.already-modified.response.json'));
+        kam.set(seg[4], false);
+        return toResponse(FX('users', 'contact.pool.success.response.json'));
+      }
+      throw new Error(`unexpected ${init.method}`);
+    } });
+  const service = createZohoServiceClient({ recordIdPrefix: '554023', gate: gate(), log, maxAttempts: 1, clock: () => T0,
+    fetch: async (url, init) => {
+      const q = JSON.parse(init.body).select_query;
+      const [, off, n] = /limit (\d+), (\d+)$/.exec(q).map(Number);
+      const all = [...kam].filter(([, k]) => k).map(([id]) => id);
+      const page = all.slice(off, off + n);
+      return toResponse({ status: 200, body: { data: page.map((id) => ({ id, Modified_Time: '2026-09-20T10:00:00+05:30' })), info: { count: page.length, more_records: off + n < all.length } } });
+    } });
+  const svcCred = serviceCredential('kam-pool-return', { access_token: 'synthetic-pool-token-never-live', api_domain: 'https://www.zohoapis.in', expires_in: 3600 }, T0);
+  const asAmLead = () => fs.readFileSync(userFile(DIVYA), 'utf8').replaceAll(DIVYA, IMRAN);
+  const users = createZohoUserDirectory({ seats, gate: gate(), log, clock: () => T0,
+    fetch: async (url) => {
+      const id = url.split('/').pop();
+      const text = id === IMRAN && moved ? asAmLead() : fs.readFileSync(userFile(id), 'utf8');
+      return { status: 200, text: async () => text, headers: { get: () => null } };
+    } });
+  const sink = createPlaneCMemorySink();
+  const svc = createSeatChangeService({ users, seats, crm, kamBook: kamBookOrgRead(service, async () => svcCred),
+    events: createAuthorityEvents(createPlaneCLog(sink), () => T0), clock: () => T0, sessions: { endSessionsOf: async () => 1 }, ...deps });
+  return { svc, as: await credentialOf(DIVYA), session: { who: DIVYA, seat: 'amlead' }, kam, writes, sink,
+    get peak() { return peak; }, get seatPuts() { return seatPuts; } };
+}
+
+test('M18-S09-NOTE-3: 200 investors go back to the pool 4 at a time in one call when time allows', async () => {
+  const r = await bigRig({ putMs: 1 });
+  const out = await r.svc.change(r.as, r.session, { whom: IMRAN, to: 'amlead' });
+  assert.equal(out.ok, true, JSON.stringify(out));
+  assert.equal(out.returned.length, BIG);
+  assert.equal(out.continueFrom, null);
+  assert.ok(r.peak > 1 && r.peak <= 4, `peak ${r.peak}`);
+  assert.ok([...r.kam.values()].every((k) => !k));
+  assert.deepEqual([...out.returned], Array.from({ length: BIG }, (_, i) => CID(i)), 'reported in book order');
+});
+
+test('M18-S09-NOTE-3: past the stop margin the clears stop; the page continues with continueFrom until done — each Contact written once, the seat once', async () => {
+  const bad = CID(7);
+  const r = await bigRig({ putMs: 10, refuse: (id) => id === bad, deps: { stopMarginMs: 30 } });
+  let out = await runWithDeadline({ signal: new AbortController().signal, at: Date.now() + 90 }, () => r.svc.change(r.as, r.session, { whom: IMRAN, to: 'amlead' }));
+  assert.equal(out.ok, true);
+  assert.ok(out.continueFrom, 'stopped part-way');
+  const returned = [...out.returned], notReturned = [...out.notReturned];
+  let calls = 1;
+  while (out.ok && out.continueFrom && calls < 60) {
+    const from = out.continueFrom;
+    out = await runWithDeadline({ signal: new AbortController().signal, at: Date.now() + 90 },
+      () => r.svc.change(r.as, r.session, { whom: IMRAN, to: 'amlead', continueFrom: from }));
+    assert.equal(out.ok, true, JSON.stringify(out));
+    returned.push(...out.returned); notReturned.push(...out.notReturned);
+    calls++;
+  }
+  assert.ok(calls > 2, `${calls} calls`);
+  assert.equal(out.continueFrom, null);
+  assert.equal(r.seatPuts, 1, 'the seat is written once');
+  assert.deepEqual(notReturned, [bad], 'the refused Contact is reported, and not retried by a continuation');
+  assert.equal(returned.length, BIG - 1);
+  assert.ok([...r.writes.values()].every((n) => n === 1), 'no Contact written twice');
+  const lines = r.sink.events().filter((x) => x.action === 'seat-change');
+  assert.equal(lines[0].reason, 'kam-to-amlead');
+  assert.ok(lines.slice(1).every((x) => x.reason === 'kam-to-amlead-continued' && x.outcome === 'ok'));
+  assert.equal(lines.reduce((t, x) => t + x.count, 0), BIG - 1);
+});
+
+test('M18-S09-NOTE-3: a continuation for someone still a KAM, or with a bad cursor, is refused and writes nothing', async () => {
+  const r = await bigRig();
+  const a = await r.svc.change(r.as, r.session, { whom: IMRAN, to: 'kam', continueFrom: CID(0) });
+  assert.equal(a.ok, false); assert.equal(a.refusal, 'bad-request');
+  const b = await r.svc.change(r.as, r.session, { whom: IMRAN, to: 'amlead', continueFrom: 'x' });
+  assert.equal(b.ok, false); assert.equal(b.refusal, 'bad-request');
+  assert.equal(r.writes.size, 0); assert.equal(r.seatPuts, 0);
+});

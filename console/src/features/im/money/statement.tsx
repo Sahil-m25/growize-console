@@ -3,13 +3,14 @@
 /* The bank statement card on Payments (M10-S05-W1): "Upload the bank statement", when the last one was reconciled, and
    after an upload the lines that matched and the lines that need an owner. Finance ("pay") seats only. D113: a credit line
    that agrees with a pending receipt matches it automatically; what does not land (paper, a refund's second hand) stays
-   "awaiting the match" with the reason. */
+   "awaiting the match" with the reason. M18-S09-NOTE-3: what the upload could not finish inside its request deadline comes
+   back as `continueWith`; the card matches those one by one through "Match it" and says how far it has got. */
 
 import { useRef, useState } from "react";
 import { fmtDate, may, money } from "@/lib/im";
-import type { OwnerLine, OwnerReason, UploadView } from "@/server/money/statements";
+import type { MatchedLine, OwnerLine, OwnerReason, UploadView } from "@/server/money/statements";
 import { useApiRead, useApiWrite } from "@/lib/data/api";
-import { statementLatest, statementUpload } from "@/lib/data/endpoints/statements";
+import { statementContinue, statementLatest, statementUpload } from "@/lib/data/endpoints/statements";
 import type { ImPageProps } from "../common";
 
 const WHY: Record<OwnerReason, string> = {
@@ -27,20 +28,40 @@ const day = (iso: string | null) => (iso ? fmtDate(iso.slice(0, 10)) : "—");
 export function StatementCard({ s, me, dispatch }: ImPageProps) {
   const last = useApiRead(statementLatest, { s, me }, undefined);
   const upload = useApiWrite(statementUpload, { s, me }, dispatch);
+  const matchOne = useApiWrite(statementContinue, { s, me }, dispatch);
   const pick = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
   const [got, setGot] = useState<UploadView | null>(null);
+  const [cont, setCont] = useState<{ done: number; of: number } | null>(null);
   if (!may(s, me, "pay")) return null;
+
+  /* the receipts the upload left for later, one "Match it" at a time (each its own request, inside its own deadline) */
+  const carryOn = async (u: UploadView) => {
+    let view = u;
+    const ids = u.continueWith ?? [];
+    for (let k = 0; k < ids.length; k++) {
+      setCont({ done: k, of: ids.length });
+      const r = await matchOne({ receiptId: ids[k]! });
+      const line = (m: MatchedLine): MatchedLine => m.receiptId !== ids[k] ? m : r.ok
+        ? { ...m, state: "matched", matchedBy: r.data.matchedBy, autoMatched: true, matchNote: null }
+        : { ...m, matchNote: r.error };
+      const matched = view.matched.map(line);
+      view = { ...view, matched, continueWith: ids.slice(k + 1),
+        counts: { ...view.counts, awaitingMatch: matched.filter(m => m.state === "awaiting-match").length, autoMatched: matched.filter(m => m.autoMatched).length } };
+      setGot(view);
+    }
+    setCont(null);
+  };
 
   const send = async (f: File | undefined) => {
     if (!f) return;
     const form = new FormData(); form.append("file", f);
     setBusy(true); setSaid(null);
     const r = await upload({ form });
-    setBusy(false);
     if (pick.current) pick.current.value = "";
-    if (r.ok) setGot(r.data); else setSaid(r.error);
+    if (r.ok) { setGot(r.data); if (r.data.continueWith?.length) await carryOn(r.data); } else setSaid(r.error);
+    setBusy(false);
   };
   const latest = last.state === "ok" ? last.data.latest : null;
   return (
@@ -50,10 +71,11 @@ export function StatementCard({ s, me, dispatch }: ImPageProps) {
         : "Last reconciled: none yet — no statement has been uploaded"}</span></div>
       <div className="cb">
         <input ref={pick} type="file" accept=".csv,.txt,text/csv" hidden aria-label="Bank statement file" onChange={e => void send(e.target.files?.[0])} />
-        <button className="act" disabled={busy} onClick={() => pick.current?.click()}>{busy ? "Reading the statement…" : "Upload the bank statement"}</button>
+        <button className="act" disabled={busy} onClick={() => pick.current?.click()}>{busy ? (cont ? "Matching the rest…" : "Reading the statement…") : "Upload the bank statement"}</button>
         <p className="sm" style={{ margin: "8px 0 0" }}>One week's CSV from net banking, up to 2 MB. The statement confirms receipts from the bank: a
           pending receipt it agrees with is matched, and it lists what has no owner.</p>
         {said ? <p className="sm" role="alert" style={{ margin: "8px 0 0" }}>{said}</p> : null}
+        {cont ? <p className="sm" role="status" style={{ margin: "8px 0 0" }}>Continuing — matching the rest: {cont.done} of {cont.of} done…</p> : null}
         {got ? <Reconciled u={got} /> : null}
       </div></div>
   );

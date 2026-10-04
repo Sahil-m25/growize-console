@@ -74,23 +74,32 @@ export const grantRemove: WriteEndpoint<ConsoleState, GrantArgs, Granted, LeadDi
 /* ---- seats ------------------------------------------------------------------------------------ */
 type SeatOk = Extract<SeatChangeResult, { ok: true }>;
 /** The Investors seat change's answer the Team page reads (how many accounts went back to the pool). */
-export type ImSeated = Pick<Extract<SeatOk, { returned: readonly string[] }>, "whom" | "to">;
+export type ImSeated = Pick<Extract<SeatOk, { returned: readonly string[] }>, "whom" | "to" | "continueFrom"> & {
+  /** how many accounts this call returned to the pool (the route's count) */
+  returned: number;
+};
 export type LeadSeated = Pick<Extract<SeatOk, { side: "lead" }>, "whom" | "to">;
 
-export const imSeatChange: WriteEndpoint<ImBook, { whom: string; seat: ImRoleKey }, ImSeated, ImDispatch> = {
+/* M18-S09-NOTE-3: continueFrom — a KAM's book that did not fit one request; the page sends the same seat again with it. */
+export const imSeatChange: WriteEndpoint<ImBook, { whom: string; seat: ImRoleKey; continueFrom?: string | null }, ImSeated, ImDispatch> = {
   method: "PUT",
   path: (a) => `/api/users/${encodeURIComponent(a.whom)}`,
-  body: (a) => ({ seat: a.seat }),
-  pick: (j) => { const r = j as { whom: string; to: ImRoleKey }; return { whom: r.whom, to: r.to }; },
-  /* the route's refusals (server/access/seat-change SEAT_REFUSALS), asked of the reducer's own maySeat; then its setSeat */
+  body: (a) => (a.continueFrom ? { seat: a.seat, continueFrom: a.continueFrom } : { seat: a.seat }),
+  pick: (j) => {
+    const r = j as { whom: string; to: ImRoleKey; returned?: unknown; continueFrom?: unknown };
+    return { whom: r.whom, to: r.to, returned: typeof r.returned === "number" ? r.returned : 0, continueFrom: typeof r.continueFrom === "string" ? r.continueFrom : null };
+  },
+  /* the route's refusals (server/access/seat-change SEAT_REFUSALS), asked of the reducer's own maySeat; then its setSeat.
+     The reducer returns the whole book at once, so the fixture never has anything to continue (continueFrom: null). */
   fixture(b, d, a) {
     const { s, me } = b;
+    if (a.continueFrom) return ok({ whom: a.whom, to: a.seat, returned: 0, continueFrom: null });
     if (!s.data.P[a.whom]) return fail(404, "unknown-person", "That person is not a Zoho user you can see.");
     if (a.whom === me) return fail(403, "own-seat", "Nobody changes their own seat.");
     if (who(s, a.whom).r === "root" || a.seat === "root" || a.seat === "di") return fail(403, "super-admin", "The super admin's seat is not changed here, and nobody is made super admin.");
     if (who(s, a.whom).r === a.seat) return fail(409, "same-seat", "They already hold that seat.");
     if (!maySeat(s, me, a.whom, a.seat)) return fail(403, "cannot-seat", "You cannot move this person into that seat.");
-    return imFixtureWrite(b, d, { type: "setSeat", k: a.whom, r: a.seat }, { whom: a.whom, to: a.seat });
+    return imFixtureWrite(b, d, { type: "setSeat", k: a.whom, r: a.seat }, { whom: a.whom, to: a.seat, returned: 0, continueFrom: null });
   },
   onLiveError: imLiveError,
 };
