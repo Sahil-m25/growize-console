@@ -1,0 +1,840 @@
+{
+  "_": "Wall test expectations (sandbox, 5 Oct 2026). Source: docs/ACCESS-PLAN.md s2-s5, zoho/field-register.json, M12-S10/T11. null = not asserted by the plan (row reports skipped). Scope rules are by OWNER PERSONA tag (ir_a, ir_b, kam, finance_ops, compliance, admin, other), never by id: 'self' = the persona being tested. Modes: allowlist (every visible row must match one allow predicate or be in sharedSeedKeys; mustSee predicates need >=1 row), all (must see rows of every listed owner tag), none (zero rows). inferred:true marks a rule the plan implies but does not state.",
+  "_gaps": [
+    "GAP: field-register.json lists Contacts.aadhaar_last4 readable by ir, ir_manager, kam, finance; ACCESS-PLAN s3 hides Aadhaar_Last4 from all but Finance Head and Compliance. This file follows ACCESS-PLAN (approved, D78).",
+    "GAP: ACCESS-PLAN s2 says Leads are Private and gives Finance/Compliance no Lead rule; Compliance 'reads everything' is asserted for Leads, Finance Ops Leads is not asserted.",
+    "GAP: KAM Touches/Allotments reach is by record share (s4); the row has no KAM tag, so scope is not asserted for them; module flags still are.",
+    "GAP: Investor_Updates create/edit for the KAM profile is unstated (Finance and AM profiles only): null."
+  ],
+  "sharedSeedKeys": [],
+  "sensitiveGroups": {
+    "bank": "Finance Head, Finance Ops",
+    "pan": "Finance Head, Compliance and Audit",
+    "aadhaar": "nobody (Administrator ignores FLS, so the admin control sees it)",
+    "money": "Finance Head, Finance Ops, Compliance read",
+    "farm": "everyone reads"
+  },
+  "personaKeys": [
+    "ir_a",
+    "ir_b",
+    "kam",
+    "finance_ops",
+    "compliance",
+    "admin"
+  ],
+  "traces": {
+    "identity.*": [
+      "M12-S10-T02",
+      "T11"
+    ],
+    "module.*": [
+      "T11",
+      "M12-S10-T01",
+      "IS-S01-T04"
+    ],
+    "module.Receipts.*": [
+      "T11",
+      "M12-S10-T01",
+      "TC-IM05-008",
+      "TC-IM04-013"
+    ],
+    "field.*.*": [
+      "T11",
+      "M12-S10-T01"
+    ],
+    "fieldmeta.*": [
+      "T11",
+      "M12-S10-T01"
+    ],
+    "field.Contacts.PAN_*": [
+      "T11",
+      "TC-IM02-015",
+      "TC-IM02-016",
+      "TC-IM04-010",
+      "TC-IM04-011",
+      "TC-IM02-008",
+      "TC-IM01-016"
+    ],
+    "field.Contacts.Bank_*": [
+      "T11",
+      "TC-IM02-015",
+      "TC-IM02-016",
+      "TC-IM04-010",
+      "TC-IM04-011",
+      "TC-IM04-012"
+    ],
+    "field.Contacts.Aadhaar_Number": [
+      "T11",
+      "M02-S04-T05 (identity.test.cjs hiddenFromAll)"
+    ],
+    "scope.*": [
+      "T11",
+      "M12-S10-T04",
+      "IS-S10-T05"
+    ],
+    "scope.Leads.*": [
+      "T11",
+      "M12-S10-T04",
+      "TC-E06-001",
+      "TC-E15-006",
+      "IS-S10-T05"
+    ],
+    "scope.Contacts.*": [
+      "T11",
+      "IS-S10-T05",
+      "TC-IM06-024",
+      "TC-IM02-011"
+    ],
+    "scope.Cases.*": [
+      "IS-S10-T06",
+      "TC-IM08-002"
+    ],
+    "create.*": [
+      "T11",
+      "TC-IM05-008",
+      "M12-S10-T01"
+    ],
+    "export": [
+      "T11 (export door)",
+      "CLAUDE.md rule 7"
+    ],
+    "env.*": [
+      "M12-S10-T02"
+    ]
+  },
+  "personas": {
+    "ir_a": {
+      "label": "IR A",
+      "role": "Investor Relations",
+      "profile": "IR",
+      "modules": {
+        "Leads": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Contacts": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "LLP_UnitAllocation_Module": {
+          "viewable": null,
+          "creatable": false,
+          "editable": false
+        },
+        "Receipts": {
+          "viewable": false,
+          "creatable": false,
+          "editable": false
+        },
+        "Touches": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Cases": {
+          "viewable": null,
+          "creatable": null,
+          "editable": null
+        },
+        "LLP_Creation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "Investor_Updates": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        }
+      },
+      "fields": {
+        "Contacts.Bank_Account_Number": false,
+        "Contacts.ISFC_Code": false,
+        "Contacts.Account_Holder_Full_name": false,
+        "Contacts.Bank_Name": false,
+        "Contacts.Bank_Branch": false,
+        "Contacts.Account_Type": false,
+        "Contacts.Bank_Proof": false,
+        "Contacts.Bank_Verification": false,
+        "Contacts.PAN_Number": false,
+        "Contacts.PAN_Proof": false,
+        "Contacts.Aadhaar_Last4": false,
+        "Contacts.Aadhaar_Ref": false,
+        "Contacts.KYC": false,
+        "Contacts.KYC_Completed_On": false,
+        "Contacts.FEMA_Declaration": false,
+        "Leads.PAN": false,
+        "Contacts.Aadhaar_Number": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Received": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Receivable": false,
+        "LLP_UnitAllocation_Module.Capital_Invested": false,
+        "Receipts.Amount": false,
+        "Receipts.UTR": false,
+        "LLP_Creation_Module.Units_Released": true,
+        "LLP_Creation_Module.LLP_Status": true
+      },
+      "scope": {
+        "Leads": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "owner": "self"
+            }
+          ]
+        },
+        "Contacts": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "originatingIr": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "originatingIr": "self"
+            }
+          ]
+        },
+        "LLP_UnitAllocation_Module": {
+          "mode": "none"
+        },
+        "Receipts": {
+          "mode": "none"
+        },
+        "Touches": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "owner": "self"
+            }
+          ]
+        }
+      },
+      "testCreate": {
+        "Touches": true,
+        "Receipts": false
+      },
+      "export": false
+    },
+    "ir_b": {
+      "label": "IR B",
+      "role": "Investor Relations",
+      "profile": "IR",
+      "modules": {
+        "Leads": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Contacts": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "LLP_UnitAllocation_Module": {
+          "viewable": null,
+          "creatable": false,
+          "editable": false
+        },
+        "Receipts": {
+          "viewable": false,
+          "creatable": false,
+          "editable": false
+        },
+        "Touches": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Cases": {
+          "viewable": null,
+          "creatable": null,
+          "editable": null
+        },
+        "LLP_Creation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "Investor_Updates": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        }
+      },
+      "fields": {
+        "Contacts.Bank_Account_Number": false,
+        "Contacts.ISFC_Code": false,
+        "Contacts.Account_Holder_Full_name": false,
+        "Contacts.Bank_Name": false,
+        "Contacts.Bank_Branch": false,
+        "Contacts.Account_Type": false,
+        "Contacts.Bank_Proof": false,
+        "Contacts.Bank_Verification": false,
+        "Contacts.PAN_Number": false,
+        "Contacts.PAN_Proof": false,
+        "Contacts.Aadhaar_Last4": false,
+        "Contacts.Aadhaar_Ref": false,
+        "Contacts.KYC": false,
+        "Contacts.KYC_Completed_On": false,
+        "Contacts.FEMA_Declaration": false,
+        "Leads.PAN": false,
+        "Contacts.Aadhaar_Number": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Received": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Receivable": false,
+        "LLP_UnitAllocation_Module.Capital_Invested": false,
+        "Receipts.Amount": false,
+        "Receipts.UTR": false,
+        "LLP_Creation_Module.Units_Released": true,
+        "LLP_Creation_Module.LLP_Status": true
+      },
+      "scope": {
+        "Leads": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "owner": "self"
+            }
+          ]
+        },
+        "Contacts": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "originatingIr": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "originatingIr": "self"
+            }
+          ]
+        },
+        "LLP_UnitAllocation_Module": {
+          "mode": "none"
+        },
+        "Receipts": {
+          "mode": "none"
+        },
+        "Touches": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "owner": "self"
+            }
+          ]
+        }
+      },
+      "testCreate": {
+        "Touches": true,
+        "Receipts": false
+      },
+      "export": false
+    },
+    "kam": {
+      "label": "KAM",
+      "role": "Key Account Manager",
+      "profile": "KAM",
+      "modules": {
+        "Leads": {
+          "viewable": true,
+          "creatable": null,
+          "editable": null
+        },
+        "Contacts": {
+          "viewable": true,
+          "creatable": false,
+          "editable": true
+        },
+        "LLP_UnitAllocation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": true
+        },
+        "Receipts": {
+          "viewable": false,
+          "creatable": false,
+          "editable": false
+        },
+        "Touches": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Cases": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "LLP_Creation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "Investor_Updates": {
+          "viewable": true,
+          "creatable": null,
+          "editable": null
+        }
+      },
+      "fields": {
+        "Contacts.Bank_Account_Number": false,
+        "Contacts.ISFC_Code": false,
+        "Contacts.Account_Holder_Full_name": false,
+        "Contacts.Bank_Name": false,
+        "Contacts.Bank_Branch": false,
+        "Contacts.Account_Type": false,
+        "Contacts.Bank_Proof": false,
+        "Contacts.Bank_Verification": false,
+        "Contacts.PAN_Number": false,
+        "Contacts.PAN_Proof": false,
+        "Contacts.Aadhaar_Last4": false,
+        "Contacts.Aadhaar_Ref": false,
+        "Contacts.KYC": false,
+        "Contacts.KYC_Completed_On": false,
+        "Contacts.FEMA_Declaration": false,
+        "Leads.PAN": false,
+        "Contacts.Aadhaar_Number": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Received": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Receivable": false,
+        "LLP_UnitAllocation_Module.Capital_Invested": false,
+        "Receipts.Amount": false,
+        "Receipts.UTR": false,
+        "LLP_Creation_Module.Units_Released": true,
+        "LLP_Creation_Module.LLP_Status": true
+      },
+      "scope": {
+        "Leads": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ]
+        },
+        "Contacts": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "kam": "self"
+            }
+          ],
+          "mustSee": [
+            {
+              "kam": "self"
+            }
+          ],
+          "sharedSeedKeysAllowed": true
+        },
+        "Receipts": {
+          "mode": "none"
+        },
+        "Cases": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ],
+          "inferred": true
+        }
+      },
+      "testCreate": {
+        "Touches": true,
+        "Receipts": false
+      },
+      "export": false
+    },
+    "finance_ops": {
+      "label": "Finance Ops",
+      "role": "Finance Operations",
+      "profile": "Finance Ops",
+      "modules": {
+        "Leads": {
+          "viewable": null,
+          "creatable": null,
+          "editable": null
+        },
+        "Contacts": {
+          "viewable": true,
+          "creatable": null,
+          "editable": true
+        },
+        "LLP_UnitAllocation_Module": {
+          "viewable": true,
+          "creatable": null,
+          "editable": null
+        },
+        "Receipts": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Touches": {
+          "viewable": null,
+          "creatable": null,
+          "editable": null
+        },
+        "Cases": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "LLP_Creation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": null
+        },
+        "Investor_Updates": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        }
+      },
+      "fields": {
+        "Contacts.Bank_Account_Number": true,
+        "Contacts.ISFC_Code": true,
+        "Contacts.Account_Holder_Full_name": true,
+        "Contacts.Bank_Name": true,
+        "Contacts.Bank_Branch": true,
+        "Contacts.Account_Type": true,
+        "Contacts.Bank_Proof": true,
+        "Contacts.Bank_Verification": true,
+        "Contacts.PAN_Number": false,
+        "Contacts.PAN_Proof": false,
+        "Contacts.Aadhaar_Last4": false,
+        "Contacts.Aadhaar_Ref": false,
+        "Contacts.KYC": false,
+        "Contacts.KYC_Completed_On": false,
+        "Contacts.FEMA_Declaration": false,
+        "Leads.PAN": false,
+        "Contacts.Aadhaar_Number": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Received": true,
+        "LLP_UnitAllocation_Module.Total_Amount_Receivable": true,
+        "LLP_UnitAllocation_Module.Capital_Invested": true,
+        "Receipts.Amount": true,
+        "Receipts.UTR": true,
+        "LLP_Creation_Module.Units_Released": true,
+        "LLP_Creation_Module.LLP_Status": true
+      },
+      "scope": {
+        "Contacts": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "LLP_UnitAllocation_Module": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Receipts": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Cases": {
+          "mode": "allowlist",
+          "allow": [
+            {
+              "owner": "self"
+            }
+          ],
+          "inferred": true
+        }
+      },
+      "testCreate": {
+        "Touches": null,
+        "Receipts": true
+      },
+      "export": null
+    },
+    "compliance": {
+      "label": "Compliance and Audit",
+      "role": "Compliance and Audit",
+      "profile": "Compliance and Audit",
+      "modules": {
+        "Leads": {
+          "viewable": true,
+          "creatable": null,
+          "editable": null
+        },
+        "Contacts": {
+          "viewable": true,
+          "creatable": null,
+          "editable": true
+        },
+        "LLP_UnitAllocation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "Receipts": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "Touches": {
+          "viewable": true,
+          "creatable": null,
+          "editable": null
+        },
+        "Cases": {
+          "viewable": true,
+          "creatable": null,
+          "editable": null
+        },
+        "LLP_Creation_Module": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        },
+        "Investor_Updates": {
+          "viewable": true,
+          "creatable": false,
+          "editable": false
+        }
+      },
+      "fields": {
+        "Contacts.Bank_Account_Number": false,
+        "Contacts.ISFC_Code": false,
+        "Contacts.Account_Holder_Full_name": false,
+        "Contacts.Bank_Name": false,
+        "Contacts.Bank_Branch": false,
+        "Contacts.Account_Type": false,
+        "Contacts.Bank_Proof": false,
+        "Contacts.Bank_Verification": false,
+        "Contacts.PAN_Number": true,
+        "Contacts.PAN_Proof": true,
+        "Contacts.Aadhaar_Last4": true,
+        "Contacts.Aadhaar_Ref": true,
+        "Contacts.KYC": true,
+        "Contacts.KYC_Completed_On": true,
+        "Contacts.FEMA_Declaration": true,
+        "Leads.PAN": true,
+        "Contacts.Aadhaar_Number": false,
+        "LLP_UnitAllocation_Module.Total_Amount_Received": true,
+        "LLP_UnitAllocation_Module.Total_Amount_Receivable": true,
+        "LLP_UnitAllocation_Module.Capital_Invested": true,
+        "Receipts.Amount": true,
+        "Receipts.UTR": true,
+        "LLP_Creation_Module.Units_Released": true,
+        "LLP_Creation_Module.LLP_Status": true
+      },
+      "scope": {
+        "Leads": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Contacts": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "LLP_UnitAllocation_Module": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Receipts": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Touches": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Cases": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        }
+      },
+      "testCreate": {
+        "Touches": null,
+        "Receipts": false
+      },
+      "export": null
+    },
+    "admin": {
+      "label": "Admin (control)",
+      "role": null,
+      "profile": "Administrator",
+      "modules": {
+        "Leads": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Contacts": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "LLP_UnitAllocation_Module": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Receipts": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Touches": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Cases": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "LLP_Creation_Module": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        },
+        "Investor_Updates": {
+          "viewable": true,
+          "creatable": true,
+          "editable": true
+        }
+      },
+      "fields": {
+        "Contacts.Bank_Account_Number": true,
+        "Contacts.ISFC_Code": true,
+        "Contacts.Account_Holder_Full_name": true,
+        "Contacts.Bank_Name": true,
+        "Contacts.Bank_Branch": true,
+        "Contacts.Account_Type": true,
+        "Contacts.Bank_Proof": true,
+        "Contacts.Bank_Verification": true,
+        "Contacts.PAN_Number": true,
+        "Contacts.PAN_Proof": true,
+        "Contacts.Aadhaar_Last4": true,
+        "Contacts.Aadhaar_Ref": true,
+        "Contacts.KYC": true,
+        "Contacts.KYC_Completed_On": true,
+        "Contacts.FEMA_Declaration": true,
+        "Leads.PAN": true,
+        "Contacts.Aadhaar_Number": true,
+        "LLP_UnitAllocation_Module.Total_Amount_Received": true,
+        "LLP_UnitAllocation_Module.Total_Amount_Receivable": true,
+        "LLP_UnitAllocation_Module.Capital_Invested": true,
+        "Receipts.Amount": true,
+        "Receipts.UTR": true,
+        "LLP_Creation_Module.Units_Released": true,
+        "LLP_Creation_Module.LLP_Status": true
+      },
+      "scope": {
+        "Leads": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Contacts": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "LLP_UnitAllocation_Module": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Receipts": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Touches": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        },
+        "Cases": {
+          "mode": "all",
+          "mustSeeOwners": [
+            "ir_a",
+            "ir_b",
+            "kam"
+          ]
+        }
+      },
+      "testCreate": {
+        "Touches": true,
+        "Receipts": true
+      },
+      "export": true
+    }
+  }
+}
