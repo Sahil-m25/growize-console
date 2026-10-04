@@ -70,6 +70,23 @@ describe("record edits", () => {
     expect(ds.im.FARMS.find((f) => f.k === "B")!.released).toBe(11);
     expect(ds.im.INV.some((i) => i.id === "ARL-INV-0220" && i.n === "Kiran Rao")).toBe(true);
   });
+  it("L3_NDA_SENT_BACK leaves Girish Rao's NDA round holding Finance's word that it is not signed", () => {
+    const { ds } = apply("L3_NDA_SENT_BACK");
+    const r = ds.PAPER.L3!.nda!;
+    expect(r.back).toMatchObject({ by: "harsha" });
+    expect(r.back!.why).toMatch(/nothing has come back signed/);
+    expect(r.said).toBeUndefined();
+    expect(r.ok).toBeUndefined();
+  });
+  it("IM:ALLOTMENT_NO_CUSTOMER adds an allotment on Block A with no Customer", () => {
+    const { ds } = apply("IM:ALLOTMENT_NO_CUSTOMER");
+    expect(ds.im.ALLOT!.find((a) => a.id === "AL-ORPHAN-1")).toMatchObject({ Customer: "", LLP_Lookup: "LLP-A" });
+    expect(applyFixtures(demoBook(), []).ds.im.ALLOT!.some((a) => a.id === "AL-ORPHAN-1")).toBe(false);
+  });
+  it("IM:ALLOTMENT_NO_LLP empties the LLP on Fatima Zaidi's allotment", () => {
+    const { ds } = apply("IM:ALLOTMENT_NO_LLP");
+    expect(ds.im.ALLOT!.find((a) => a.Customer === "ARL-INV-0213")!.LLP_Lookup).toBe("");
+  });
   it("leaves the book it was given alone", () => {
     const book = demoBook();
     applyFixtures(book, ["KAVYA_DEACTIVATED"]);

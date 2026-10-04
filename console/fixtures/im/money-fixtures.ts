@@ -8,6 +8,8 @@
 import type { Dataset } from "@/lib/data/types";
 import { UNIT } from "@/lib/im";
 
+const d_ = (ds: Dataset) => ds.im;
+
 export const MONEY_FIXTURES: Record<string, (ds: Dataset) => void> = {
   "IM:MONEY_DEMO": (ds) => {
     const d = ds.im;
@@ -24,5 +26,15 @@ export const MONEY_FIXTURES: Record<string, (ds: Dataset) => void> = {
     d.ACCESS[j.id] = { App_Access: "Hold", App_Welcome_At: null, App_Welcome_Channel: null };
     d.ACCESS["ARL-INV-0206"] = { ...(d.ACCESS["ARL-INV-0206"] || { App_Welcome_At: null, App_Welcome_Channel: null }),
       App_Access: "Hold", Locked_Reason: "Asked us to pause the app while he changes banks", Locked_By: "harsha", Locked_At: "01 Sep 16:20" };
+  },
+  /* M11-S02-NOTE-6 — rows already in Zoho without a link are shown "Needs a link", not hidden (TC-IM06-025/026) */
+  "IM:ALLOTMENT_NO_CUSTOMER": (ds) => {
+    d_(ds).ALLOT = (d_(ds).ALLOT || []).concat([{ id: "AL-ORPHAN-1", Customer: "", LLP_Lookup: "LLP-A", Committed_Units: 1, Issued_Units: 0,
+      Unit_Price: UNIT, Ticket_Snapshot: UNIT, Allocation_Status: "Reserved", Issued_On: null, Annual_Rental_Yield: 12 }]);
+  },
+  "IM:ALLOTMENT_NO_LLP": (ds) => {
+    const a = (d_(ds).ALLOT || []).find(x => x.Customer === "ARL-INV-0213");
+    if (!a) throw new Error("fixture: no allotment for Fatima Zaidi (ARL-INV-0213)");
+    a.LLP_Lookup = "";
   },
 };

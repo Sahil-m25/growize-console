@@ -163,6 +163,13 @@ export const FIXTURES: Record<string, FixtureFn> = {
     ds.PAPER.L2 = { nda: { sent: { by: "harsha", at: "24 Sep 10:00", via: "Zoho Sign" },
       told: { by: "rohit", at: "24 Sep 10:30", ch: "msg" }, chase: [] } } as PaperRow;
   },
+  /* Girish Rao (Kavya's lead) — the NDA went out, the IR said it was signed, Finance looked and found it was not:
+     the reducer's own prBounce state (M12-S11-NOTE-6, TC-E09-015) */
+  L3_NDA_SENT_BACK: (ds) => {
+    ds.PAPER.L3 = { ...(ds.PAPER.L3 || {}), nda: { sent: { by: "harsha", at: "20 Aug 11:20", via: "Zoho Sign" },
+      told: { by: "kavya", at: "20 Aug 11:30", ch: "email" }, chase: [],
+      back: { by: "harsha", at: "27 Aug 10:15", why: "The Zoho Sign request is still open; nothing has come back signed" } } } as PaperRow;
+  },
   L2_NO_EMAIL_CONSENT: (ds) => { lead(ds, "L2").con = { call: true, msg: true, email: false, visit: false } as Lead["con"]; },
   L5_SUPP_NOT_STARTED: (ds) => { if (ds.PAPER.L5) delete ds.PAPER.L5.supp; },
   L5_SUPP_DRAFT_V1: (ds) => {

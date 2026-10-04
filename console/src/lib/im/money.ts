@@ -74,9 +74,9 @@ export const allotOf = (s: ImCtx, id: string | null | undefined): ImAllot | null
 /** an investor's allotments, for a seat that reads the investor (a KAM: only their own book) */
 export const allotsOf = (s: ImCtx, WHO: string, inv: string): ImAllot[] =>
   I(s, WHO, inv) ? allots(s).filter(a => a.Customer === inv) : [];
-/** the allotments on an LLP whose investor this seat reads */
+/** the allotments on an LLP whose investor this seat reads; a Money seat also sees a row with no Customer ("Needs a link", M11-S02-NOTE-6) */
 export const allotsOnLlp = (s: ImCtx, WHO: string, llp: string): ImAllot[] =>
-  allots(s).filter(a => a.LLP_Lookup === llp && !!I(s, WHO, a.Customer));
+  allots(s).filter(a => a.LLP_Lookup === llp && (a.Customer ? !!I(s, WHO, a.Customer) : !notFin(s, WHO)));
 export const openAllots = (s: ImCtx, WHO: string, inv: string): ImAllot[] =>
   allotsOf(s, WHO, inv).filter(a => a.Allocation_Status !== "Cancelled");
 export const allotUnits = (a: ImAllot): number => (a.Allocation_Status === "Issued" ? a.Issued_Units : a.Committed_Units);
