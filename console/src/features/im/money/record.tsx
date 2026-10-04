@@ -223,8 +223,8 @@ export function AppAccessCard(p: P) {
             ? <button className="chip on" onClick={() => void unlock({ id: x.id, expectedModifiedTime: card.modifiedTime })}>Send welcome and unlock</button>
             : <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "applock", id: x.id })}>Lock app access</button>}
         </div>
-          <p className="sm" style={{ margin: "9px 0 0" }}>The welcome never goes by itself: the account opens on hold at the first matched money and waits for this button. Every change is on their Activity.</p></div>
-          : <p className="sm" style={{ margin: "9px 0 0" }}>{canWrite ? "The account opens on hold at the first matched receipt." : "Finance controls app access."}</p>}
+          <p className="sm" style={{ margin: "9px 0 0" }}>The welcome never goes by itself: the account is created on hold and stays locked — a match does not unlock it — until this button. Every change is on their Activity.</p></div>
+          : <p className="sm" style={{ margin: "9px 0 0" }}>{canWrite ? "The account is created on hold and stays locked until Finance presses Send welcome and unlock." : "Finance controls app access."}</p>}
         <div className="drwsec"><div className="chips">
           <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "preview", id: x.id })}>Preview app</button>
           {mayTestLink(s, me) ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "testlink", id: x.id })}>Test sign-in link</button> : null}

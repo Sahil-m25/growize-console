@@ -3,10 +3,11 @@
  *
  * Finance (and the super user) adds someone who paid before the console: name, email, mobile, farm (LLP),
  * units, amount paid and investment date. On the person's own token (D53) this writes, in order:
- *   1. one Contact — First_Name / Last_Name / Email / Mobile, a fresh ARL_ID, App_Access left EMPTY: the account
- *      opens only on MATCHED money (M08-S08, D21) — the Pending receipt below is matched by Finance (D113: any Finance seat) and
- *      money/match.ts then opens it On hold + Tentative and publishes account.opened, exactly as for any other
- *      investor (PROVISIONAL, jev decide "a" 0.85: no second account-opening path; recording never opens one).
+ *   1. one Contact — First_Name / Last_Name / Email / Mobile, a fresh ARL_ID and App_Access = Hold (D115 ruling 1:
+ *      an app account is created On hold by every path — data synced, sign-in locked — and stays Hold until a
+ *      person with the release right presses "Send welcome and unlock", server/investors/unlock.ts). When Finance
+ *      matches the Pending receipt below (D113), money/match.ts sets the Tentative mark and publishes
+ *      account.opened as for any investor, and never touches App_Access that is already set.
  *      NO email of any kind goes to the investor from here (D93);
  *   The farm's free units are checked by ../farms/oversell (M11-S07: the one oversell rule, Units_Released − held,
  *   read fresh) BEFORE anything is written; a Zoho oversell refusal of the allotment insert is named the same way.
@@ -45,7 +46,7 @@ import { ALLOTMENTS_MODULE, RECEIPTS_MODULE, type ReceiptReplayResult } from "..
 export const CONTACTS_MODULE = "Contacts";
 export const LLPS_MODULE = "LLP_Creation_Module";
 export const ADD_PAID_HOLD_DAYS = 30;
-export const ADD_PAID_APP = "App: not open yet — it opens On hold when Finance matches the receipt";
+export const ADD_PAID_APP = "App: on hold — data synced, sign-in locked, no email sent. It stays locked until Finance presses Send welcome and unlock";
 export const ADD_PAID_REPLAY_TTL_MS = 10 * 60 * 1_000;
 const MAX_REPLAYS = 500;
 const MAX_CODE_ATTEMPTS = 3;
@@ -356,7 +357,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     if (f.amountPaid > total) return refuse(me, "overpaid", "Not saved yet — " + inr(f.amountPaid) + " is more than " + pl(f.units, "unit") + " cost (" + inr(total) + ").", [f.llpId]);
     const full = f.amountPaid >= total;
 
-    // 2. the Contact, App_Access empty (opens on match, M08-S08). No email is sent from here (D93).
+    // 2. the Contact, App_Access = Hold (D115 ruling 1: created On hold, released only by unlock.ts). No email is sent from here (D93).
     const nm = splitName(f.name);
     let contactId: string | null = null, code = "";
     try {
@@ -365,7 +366,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
         code = nextArlCode(highest);
         const fields: ZohoFields = {
           ...(nm.first ? { First_Name: nm.first } : {}), Last_Name: nm.last, Email: f.email, Mobile: f.mobile,
-          ARL_ID: code, // App_Access stays empty: match.ts opens the account on the matched receipt (M08-S08)
+          ARL_ID: code, App_Access: "Hold", // D115 ruling 1: created On hold; only the release (unlock.ts) moves it to Invite
         };
         const tryCode = code;
         const r = await insertOne(cred, CONTACTS_MODULE, fields, async () => {

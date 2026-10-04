@@ -6,7 +6,7 @@
  *             investor app's sync, never by the console) and the record's timeline (who changed App_Access,
  *             when — ids only; the timeline parse drops values). What the card reads is worked out from
  *             those facts, the same lines the front-end's accessView draws:
- *               no App_Access                          → "No account yet — it opens On hold at the first matched receipt"
+ *               no App_Access                          → NO_ACCOUNT_TEXT (created On hold; locked until released)
  *               Hold, never invited                    → "On hold — data synced, sign-in locked, no email sent"
  *               Hold after an invite (locked again)    → "Locked — sign-in blocked"
  *               Invite, no welcome since the unlock    → "Welcome sending…"
@@ -22,6 +22,10 @@
  * App_Access is a same-org field under D52: the investor app reads it through its own Zoho webhook, so no
  * contract event is pushed from here (contracts/ holds no console → app access event; server/contracts/events
  * is left as is). The welcome never goes out by itself: nothing here sets Invite except the button.
+ *
+ * D115 ruling 1: this unlock is THE release — the one console path that moves App_Access to Invite. Every account
+ * is created Hold (add-paid at creation; money/match.ts only into an empty field) and a match never opens it.
+ * Each release writes one ops-log line (Plane B, `app-access` / `unlocked`, the releaser and the Contact id only).
  *
  * Idempotent: unlocking an invited account, or locking a held one, changes nothing and answers `already`.
  * Finance (Head of Finance, Finance Operations, the super user) controls this; every other seat reads the card
@@ -39,6 +43,8 @@ export const APP_ACCESS_FIELDS = Object.freeze(["ARL_ID", APP_ACCESS_FIELD, "App
 /** M08-S08-T03: the account's mark, written once by money/match at the first matched receipt (Tentative, App_Mark_At = that time). */
 export const APP_MARK_FIELDS = Object.freeze(["App_Account_Mark", "App_Mark_At"]);
 export const LOCK_REASON_MAX = 500;
+/** D115 ruling 1: what the card says before any account exists — it is created On hold and waits for the release. */
+export const NO_ACCOUNT_TEXT = "No account yet — it is created On hold, and sign-in stays locked until Finance presses Send welcome and unlock";
 const RECORD_ID = /^\d{15,22}$/;
 const RECORD_PREFIX = /^\d{6,16}$/;
 const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
@@ -119,7 +125,7 @@ export function istLabel(zoho: string): string {
 /** What the card reads, from the Contact's fields and its App_Access history (newest first). */
 export function cardState(access: AppAccess | null, welcomeAt: string | null, channel: string | null, history: readonly AppAccessChange[])
   : { readonly state: AppCardState; readonly text: string } {
-  if (!access) return { state: "none", text: "No account yet — it opens On hold at the first matched receipt" };
+  if (!access) return { state: "none", text: NO_ACCOUNT_TEXT };
   const lastChange = history[0] ? Date.parse(history[0].at) : NaN;
   const welcomed = welcomeAt !== null && !Number.isNaN(Date.parse(welcomeAt));
   if (access === "Hold") {
@@ -217,7 +223,7 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
     try { rec = await readContact(p.credential, contactId, signal); } catch (e) { return failed(e instanceof SourceFail ? e.kind : "unexpected"); }
     if (!rec) return refuse(me, "not-visible", "Not changed — this investor is not visible to you.", [contactId]);
     const now = rec[APP_ACCESS_FIELD];
-    if (now !== "Hold" && now !== "Invite") return refuse(me, "no-account", "No account yet — it opens On hold at the first matched receipt.", [contactId]);
+    if (now !== "Hold" && now !== "Invite") return refuse(me, "no-account", NO_ACCOUNT_TEXT + ".", [contactId]);
     const modified = typeof rec.Modified_Time === "string" && ZOHO_DATETIME.test(rec.Modified_Time) ? rec.Modified_Time : null;
     if (now === to) {
       // Already there (a second press, a retry): nothing to write.

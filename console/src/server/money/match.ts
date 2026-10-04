@@ -36,8 +36,12 @@
  *      system set it). If Zoho refuses the mark fields (T01 turning App_Account_Mark into a formula), the write is
  *      retried once with App_Access alone. Hold/Invite once set are never touched (server/investors/unlock.ts owns
  *      Hold → Invite, and so the welcome: nothing here sends one or sets Invite). Permanent is Zoho's (T01).
- *      M08-S08: this is the ONLY path that opens an account on money; a Finance seat's recording (record-receipt.ts)
- *      opens it by matching through here, never by writing the Contact itself (D113).
+ *      D115 ruling 1: a match NEVER opens app access. The only App_Access value this file can write is Hold, and
+ *      only into an empty field — that is the account being created On hold (an investor added by add-paid
+ *      already holds Hold, so a match leaves it as it is). Opening (Hold → Invite) is the release alone:
+ *      "Send welcome and unlock" in unlock.ts, behind the Investors "pay" right, logged (ops log `app-access` / `unlocked`).
+ *      A Finance seat's recording (record-receipt.ts) reaches this by matching through here, never by writing the
+ *      Contact itself (D113).
  *      Every publish result (delivered / queued / not sent) is logged as an ops event: type + status + ids only;
  *   5. the first matched Advance of a Reserved allotment starts the hold 30 days out (Asia/Kolkata): Hold_Until =
  *      match day + 30, written only when empty or earlier — never shortening a hold (PROVISIONAL, Jev 0.56).
@@ -127,6 +131,7 @@ export interface MatchView {
   readonly moneyConfirmed: Published | null;
   readonly firstMoney: boolean;
   readonly accountOpened: Published | null;
+  /** "opened-on-hold": an empty App_Access was created as Hold (never Invite — D115 ruling 1); "already-set": left as it was. */
   readonly appAccess: Consequence<"opened-on-hold" | "already-set">;
   /** App_Account_Mark on the first money: set Tentative here, already set, or left to Zoho (T01 formula refused the write). */
   readonly appMark: Consequence<"tentative-set" | "already-set" | "left-to-zoho">;

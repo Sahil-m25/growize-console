@@ -208,7 +208,7 @@ export const mayAccess = (s: ImCtx, WHO: string): boolean => may(s, WHO, "pay");
 export type ImAccessView = { k: "none" | "hold" | "sending" | "delivered" | "locked"; t: string };
 /** what the App access card reads */
 export function accessView(a: ImAccess | null, fmt: (at: string) => string = x => x): ImAccessView {
-  if (!a) return { k: "none", t: "No account yet — it opens On hold at the first matched receipt" };
+  if (!a) return { k: "none", t: "No account yet — it is created On hold, and sign-in stays locked until Finance presses Send welcome and unlock" };
   if (a.App_Access === "Hold") return a.Locked_Reason
     ? { k: "locked", t: "Locked — sign-in blocked" }
     : { k: "hold", t: "On hold — data synced, sign-in locked, no email sent" };

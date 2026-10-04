@@ -272,6 +272,25 @@ describe("add an investor who already paid (M09-S09)", () => {
   });
 });
 
+describe("D115 ruling 1: app access stays Hold until it is released", () => {
+  it("added On hold; a match leaves it Hold; only Send welcome and unlock, by a seat with the right, opens it", () => {
+    const s0 = book();
+    s0.data.TXN.unshift({ id: "T-0050", inv: "R1", kind: "balance", amt: 2250000, mode: "RTGS", utr: "U50", on: "02 Sep 10:00", by: "ops1", rec: "pending" });
+    const matched = act(s0, "ops1", { type: "matchReceipt", tid: "T-0050" });
+    expect(matched.data.TXN[0]).toMatchObject({ rec: "matched" });
+    expect(matched.data.ACCESS!.R1.App_Access).toBe("Hold");
+    expect(accessView(matched.data.ACCESS!.R1).k).toBe("hold");
+    const kam = act(matched, "kam1", { type: "sendWelcome", id: "R1" }, { type: "confirmYes" });
+    expect(kam.data.ACCESS!.R1.App_Access).toBe("Hold");
+    const released = act(matched, "fin", { type: "sendWelcome", id: "R1" }, { type: "confirmYes" });
+    expect(released.data.ACCESS!.R1.App_Access).toBe("Invite");
+    expect(released.data.LOG.some(e => e.what === "Sent the welcome and unlocked the app" && e.inv === "R1")).toBe(true);
+  });
+  it("an investor with no account reads that it is created On hold and waits for the release", () => {
+    expect(accessView(null).t).toMatch(/created On hold.*locked until Finance presses Send welcome and unlock/);
+  });
+});
+
 describe("the empty book stays empty", () => {
   it("adds nothing for the later decisions", () => {
     const d = emptyImData("2026-09-02T00:00");
