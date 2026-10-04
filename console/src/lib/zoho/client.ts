@@ -49,6 +49,7 @@ import {
 } from "./errors";
 import { classOf, GateQueueFullError, type CallClass, type CallShape, type Gate, type GateLease } from "./gate";
 import { createFlights } from "./coalesce";
+import { anySignal, currentDeadline, zohoAttemptTimeoutMs } from "./deadline";
 import { RECORD_ID, type HttpMethod, type LogActor, type OpsLog } from "./log";
 
 export const API_VERSION = "v8";
@@ -384,6 +385,9 @@ export interface ZohoClientOptions {
   readonly blueprintOwnedFields?: Readonly<Record<string, readonly string[]>>;
   /** M18-S01-T02: share one Zoho call among identical in-flight reads by the same person (default true). */
   readonly coalesceReads?: boolean;
+  /** M18-S09-NOTE-3: one attempt (send + read the body) is abandoned after this (default ZOHO_ATTEMPT_TIMEOUT_MS, 10 s).
+   *  An abandoned attempt is a "network" failure: an idempotent read retries within the request deadline; a write does not. */
+  readonly attemptTimeoutMs?: number;
 }
 
 /* ===== CREDENTIALS ======================================================================== */
@@ -915,6 +919,7 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
   const random = options.random ?? Math.random;
   const sleep = options.sleep ?? defaultSleep;
   const maxAttempts = options.maxAttempts ?? MAX_ATTEMPTS;
+  const attemptMs = (): number => options.attemptTimeoutMs ?? zohoAttemptTimeoutMs();
   if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > MAX_ATTEMPTS) throw new RangeError(`maxAttempts is 1–${MAX_ATTEMPTS}.`);
 
   const actorOf = (c: Credential): LogActor => (c.kind === "user" ? { kind: "user", userId: c.userId } : { kind: "service", job: c.job });
@@ -939,8 +944,11 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
     return ids.filter(visibleRecordId);
   };
 
-  const executeOnce = async (as: Credential, spec: Spec): Promise<Outcome> => {
+  const executeOnce = async (as: Credential, spec0: Spec): Promise<Outcome> => {
     assertConfiguredActor(as);
+    /* M18-S09-NOTE-3: the caller's signal and the request deadline (a call made without a signal is still bound by it) */
+    const deadline = currentDeadline();
+    const spec: Spec = { ...spec0, signal: anySignal(spec0.signal, deadline?.signal) };
     const actor = actorOf(as);
     if (as.expiresAt !== null && clock() >= as.expiresAt) {
       log.refusal({
@@ -989,17 +997,21 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
       let status: number | null = null;
       let credits: number | null = null;
       let outcome: ZohoClassified = { kind: "unexpected", status: 0, code: "INTERNAL_RESPONSE_STATE" };
+      const attemptTimer = AbortSignal.timeout(attemptMs());
+      const attemptSignal = anySignal(spec.signal, attemptTimer)!;
+      /* the attempt's own timer, not the caller or the deadline: the attempt failed like a dropped connection */
+      const timedOut = () => attemptTimer.aborted && !spec.signal?.aborted;
       try {
-        const response = await fetchImpl(url, { method: spec.method, headers, body, signal: spec.signal });
+        const response = await fetchImpl(url, { method: spec.method, headers, body, signal: attemptSignal });
         status = response.status;
         credits = parseCreditsRemaining(response.headers.get(CREDITS_HEADER));
         let parsed: unknown = null;
         let malformedRead = false;
         if (status !== 204 && status !== 304) {
-          const read = await readBoundedResponse(response, MAX_ZOHO_RESPONSE_BYTES, spec.signal);
+          const read = await readBoundedResponse(response, MAX_ZOHO_RESPONSE_BYTES, attemptSignal);
           if (!read.ok) {
             outcome = read.reason === "aborted"
-              ? { kind: "aborted", status: null }
+              ? timedOut() ? { kind: "network", status: null } : { kind: "aborted", status: null }
               : read.reason === "read-failed"
                 ? { kind: "network", status: null }
                 : { kind: "unexpected", status, code: "MALFORMED_RESPONSE" };
@@ -1025,7 +1037,7 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
           }
         }
       } catch (error) {
-        outcome = classifyThrown(error, spec.signal);
+        outcome = timedOut() ? { kind: "network", status: null } : classifyThrown(error, spec.signal);
       } finally {
         lease.release(); // held until the body is read: Zoho counts the call active until then
       }
@@ -1035,8 +1047,11 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
       if (!isFailure(completed)) return { ok: true, result: completed, creditsRemaining: lastCredits };
       const policy = retryPolicy(completed, { idempotent: spec.idempotent });
       if (!policy.retry || attempt >= Math.min(policy.maxAttempts, maxAttempts)) return { ok: false, error: completed, creditsRemaining: lastCredits };
+      const wait = backoffDelay(attempt, policy, retryAfterOf(completed), random);
+      /* never retry past the request deadline: a wait that ends after it (or leaves no time to try) answers now */
+      if (deadline && Date.now() + wait >= deadline.at) return { ok: false, error: completed, creditsRemaining: lastCredits };
       try {
-        await sleep(backoffDelay(attempt, policy, retryAfterOf(completed), random), spec.signal);
+        await sleep(wait, spec.signal);
       } catch {
         return { ok: false, error: { kind: "aborted", status: null }, creditsRemaining: lastCredits };
       }
@@ -1055,7 +1070,7 @@ function createExecutor(kind: Credential["kind"], options: ZohoClientOptions) {
     assertConfiguredActor(as);
     if (!coalesce || !readShape(spec)) return executeOnce(as, spec);
     return flights.run(flightKey(as, spec), () => executeOnce(as, spec), {
-      signal: spec.signal,
+      signal: anySignal(spec.signal, currentDeadline()?.signal),
       wasAborted: (o) => !o.ok && o.error.kind === "aborted",
       retryAlone: () => executeOnce(as, spec),
       onJoinAborted: () => ({ ok: false, error: { kind: "aborted", status: null }, creditsRemaining: null }),

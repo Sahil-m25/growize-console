@@ -216,3 +216,86 @@ test('POST /api/errors: a beacon is filed as a client-error line with ids only; 
   const saved = rt.errorLines.records().filter((r) => r.source === 'save-failed');
   assert.deepEqual([saved[2].zohoStatus, saved[2].zohoCode, saved[2].failedRequestId], [412, 'ALREADY_MODIFIED', 'save-req-20000']);
 });
+
+/* ---- M18-S09-NOTE-3: the request deadline ---------------------------------------------------------------- */
+const { currentDeadline, remainingMs } = out('lib', 'zoho', 'deadline.js');
+const { DEADLINE_STATUS, DEADLINE_CODE } = out('server', 'http', 'error-capture.js');
+
+test('deadline: a handler past REQUEST_DEADLINE_MS is answered 503 "deadline" (retry same-key) and filed without identity', async () => {
+  const sink = createMemoryErrorSink();
+  const wrap = createErrorCapture({ log: createErrorLog(sink), newId: () => 'deadline-req-0001', deadlineMs: () => 60 });
+  let seenSignal = null, sameAsAls = false, reason = null, left = null;
+  const handler = wrap(async (request) => {
+    seenSignal = request.signal;
+    sameAsAls = currentDeadline() !== null && currentDeadline().signal === request.signal;
+    left = remainingMs();
+    await new Promise((resolve) => request.signal.addEventListener('abort', resolve, { once: true }));
+    reason = request.signal.reason;
+    return Response.json({ late: true });
+  }, '/api/statements');
+  const t0 = Date.now();
+  const res = await handler(req({ cookie: session('meena') }), {});
+  assert.ok(Date.now() - t0 < 1_000);
+  assert.equal(res.status, DEADLINE_STATUS);
+  assert.equal(DEADLINE_STATUS, 503);
+  const body = await res.json();
+  assert.equal(body.code, DEADLINE_CODE);
+  assert.equal(body.retry, 'same-key');
+  assert.equal(body.requestId, 'deadline-req-0001');
+  assert.equal(res.headers.get(REQUEST_ID_HEADER), 'deadline-req-0001');
+  assert.ok(seenSignal.aborted, 'the handler saw the combined signal abort');
+  assert.equal(reason && reason.name, 'DeadlineExceeded');
+  assert.ok(sameAsAls, 'request.signal is the deadline carried in AsyncLocalStorage');
+  assert.ok(left > 0 && left <= 60);
+  const [line] = sink.records();
+  assert.equal(line.status, 503);
+  assert.equal(line.errorClass, 'deadline');
+  assert.equal(line.errorName, 'DeadlineExceeded');
+  assert.equal(line.userId, null, 'a deadline line carries no user id');
+  assert.equal(line.route, '/api/statements');
+  assertNoIdentity(line);
+});
+
+test('deadline: the caller hanging up aborts the same combined signal; a quick handler is untouched', async () => {
+  const sink = createMemoryErrorSink();
+  const wrap = createErrorCapture({ log: createErrorLog(sink), newId: () => 'deadline-req-0002', deadlineMs: () => 5_000 });
+  const ac = new AbortController();
+  let aborted = null;
+  const h = wrap(async (request) => {
+    setTimeout(() => ac.abort(), 10);
+    await new Promise((resolve) => request.signal.addEventListener('abort', resolve, { once: true }));
+    aborted = request.signal.aborted;
+    return new Response(null, { status: 204 });
+  }, '/api/leads');
+  const res = await h(new Request('http://x/api/leads', { method: 'GET', signal: ac.signal }), {});
+  assert.equal(res.status, 204);
+  assert.equal(aborted, true);
+  const fast = wrap(async () => Response.json({ ok: true }), '/api/leads');
+  const r2 = await fast(req({}, 'GET'), {});
+  assert.equal(r2.status, 200);
+  assert.equal(sink.records().length, 0);
+  assert.equal(currentDeadline(), null, 'no deadline leaks outside the request');
+});
+
+test('deadline: REQUEST_DEADLINE_MS and ZOHO_ATTEMPT_TIMEOUT_MS read with sane bounds', () => {
+  const { requestDeadlineMs, zohoAttemptTimeoutMs } = out('lib', 'zoho', 'deadline.js');
+  assert.equal(requestDeadlineMs({}), 25_000);
+  assert.equal(requestDeadlineMs({ REQUEST_DEADLINE_MS: '12000' }), 12_000);
+  assert.equal(requestDeadlineMs({ REQUEST_DEADLINE_MS: '45000' }), 25_000, 'never past AppSail 30 s');
+  assert.equal(requestDeadlineMs({ REQUEST_DEADLINE_MS: 'soon' }), 25_000);
+  assert.equal(zohoAttemptTimeoutMs({}), 10_000);
+  assert.equal(zohoAttemptTimeoutMs({ ZOHO_ATTEMPT_TIMEOUT_MS: '2500' }), 2_500);
+});
+
+test('runBounded: never more than the limit at once, stops starting work when told, returns the rest in order', async () => {
+  const { runBounded } = out('lib', 'zoho', 'deadline.js');
+  let live = 0, peak = 0;
+  const r = await runBounded([...Array(20).keys()], 4, async (x) => { live++; peak = Math.max(peak, live); await new Promise((s) => setTimeout(s, 2)); live--; return x * 2; });
+  assert.equal(peak, 4);
+  assert.deepEqual(r.done.map((d) => d.value), [...Array(20).keys()].map((x) => x * 2));
+  assert.deepEqual(r.notStarted, []);
+  let started = 0;
+  const r2 = await runBounded([...Array(10).keys()], 3, async (x) => { started++; return x; }, () => started >= 5);
+  assert.equal(r2.done.length, 5);
+  assert.deepEqual(r2.notStarted, [5, 6, 7, 8, 9]);
+});

@@ -1313,3 +1313,47 @@ test('M18-S01-T02 cache: identical scoped aggregate reads in flight cost one loa
   assert.equal((await cache.read(key, load)).state, 'error', 'the old number is gone after the failed refresh');
   assert.throws(() => createScopedCache({ defaultTtlMs: MAX_AGE_MS + 1 }), RangeError, 'no TTL past the ceiling');
 });
+
+/* ===== M18-S09-NOTE-3: per-attempt timeout and the request deadline ======================== */
+const { runWithDeadline } = load('deadline');
+/* a real hung socket keeps the loop alive; AbortSignal.timeout's timer is unref'd, so the fake holds a ref'd one */
+const hang = (signal) => new Promise((_, reject) => {
+  const keep = setInterval(() => {}, 1_000);
+  const fail = () => { clearInterval(keep); const e = new Error('aborted'); e.name = 'AbortError'; reject(e); };
+  if (signal.aborted) fail(); else signal.addEventListener('abort', fail, { once: true });
+});
+
+test('client: an attempt past ZOHO_ATTEMPT_TIMEOUT_MS is abandoned as network — a read retries, a write does not', async () => {
+  const me = await mintUser();
+  const a = rig((url, init, n) => (n === 1 ? { response: hang(init.signal) } : zohoReply(200, { data: [record(ID)] })), { attemptTimeoutMs: 30 });
+  const r = await a.client.getRecord(me, 'Leads', ID);
+  assert.equal(r.ok, true);
+  assert.equal(a.calls.length, 2);
+  assert.deepEqual(a.sink.records().map((x) => [x.attempt, x.errorClass]), [[1, 'network'], [2, null]]);
+  const w = rig((url, init) => ({ response: hang(init.signal) }), { attemptTimeoutMs: 30 });
+  const u = await w.client.update(me, 'Leads', ID, { City: 'Kochi' }, { ifUnmodifiedSince: null });
+  assert.equal(u.ok, false); assert.equal(u.error.kind, 'network', 'unknown outcome, the caller\'s same-key path');
+  assert.equal(w.calls.length, 1, 'a write that may have landed is not resent');
+});
+
+test('client: the request deadline aborts a call made without a signal, and no retry is slept past it', async () => {
+  const me = await mintUser();
+  const ac = new AbortController();
+  setTimeout(() => ac.abort(), 40);
+  const a = rig((url, init) => ({ response: hang(init.signal) }), { attemptTimeoutMs: 10_000 });
+  const t0 = Date.now();
+  const r = await runWithDeadline({ signal: ac.signal, at: Date.now() + 40 }, () => a.client.getRecord(me, 'Leads', ID));
+  assert.ok(Date.now() - t0 < 2_000);
+  assert.equal(r.error.kind, 'aborted', 'the deadline, not the attempt timer');
+  assert.equal(a.calls.length, 1);
+  let slept = 0;
+  const b = rig(() => zohoReply(503, null), { sleep: async () => { slept++; }, random: () => 0.5 });
+  const live = new AbortController();
+  const s = await runWithDeadline({ signal: live.signal, at: Date.now() + 50 }, () => b.client.getRecord(me, 'Leads', ID));
+  assert.equal(s.error.kind, 'server');
+  assert.equal(b.calls.length, 1, 'the backoff would end past the deadline, so it answers now');
+  assert.equal(slept, 0);
+  const c = rig(() => zohoReply(503, null), { sleep: async () => {}, random: () => 0.5 });
+  await runWithDeadline({ signal: live.signal, at: Date.now() + 60_000 }, () => c.client.getRecord(me, 'Leads', ID));
+  assert.equal(c.calls.length, 4, 'with time left the policy is unchanged');
+});
