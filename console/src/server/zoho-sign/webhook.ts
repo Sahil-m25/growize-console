@@ -12,6 +12,8 @@ import type { ServiceCredential, ZohoServiceClient } from "../../lib/zoho/client
 import type { OpsLog } from "../../lib/zoho/log";
 import type { ZohoSignClient } from "../../lib/zoho/sign";
 import type { FileResult } from "./file";
+import { sharedState } from "../state/runtime";
+import type { SharedState } from "../state/shared-state";
 
 export const ZOHO_SIGN_SIGNATURE_HEADER = "x-zs-webhook-signature";
 export const MAX_WEBHOOK_BYTES = 256 * 1024;
@@ -34,6 +36,8 @@ export interface ZohoSignWebhookDeps {
   readonly log: OpsLog;
   /** M12-S05-T01: events already handled (dedupe key: request id + operation + time). Marked only after success. */
   readonly seen?: { has(key: string): Promise<boolean>; add(key: string): Promise<void> };
+  /** Where the in-flight claim lives (M12-S05-H5). Default: the process's shared state (server/state/runtime). */
+  readonly state?: SharedState;
   /** M12-S05-T01: a failed or refused callback, ids and a code only (never the body). */
   readonly deadLetter?: (entry: { readonly at: number; readonly reason: string; readonly requestId: string | null; readonly retryable: boolean }) => void;
   /** M12-S06-T02: file the signed copy when the re-read says completed. */
@@ -220,22 +224,31 @@ async function handleOnce(
   const markSeen = async (): Promise<void> => { if (deps.seen && eventKey) { try { await deps.seen.add(eventKey); } catch { /* a redelivery re-checks */ } } };
 
   // M12-S05-H5: the seen mark lands only after success, so two concurrent deliveries of one event would both be processed;
-  // claim the key for the duration of the work (this process; the durable worker of M20-S08-NOTE-3 replaces it).
-  if (eventKey) {
-    if (inFlight.has(eventKey)) {
+  // claim the key for the duration of the work — in the shared state, so a delivery reaching another instance is held
+  // too (docs/architecture/shared-state.md). The TTL only frees a claim whose instance died mid-work.
+  const state = deps.state ?? sharedState();
+  const claimKey = eventKey ? `sign-inflight|${eventKey}` : null;
+  if (claimKey) {
+    let mine: boolean;
+    try { mine = await state.claim(claimKey, SIGN_INFLIGHT_TTL_S); } catch { return { ok: false, kind: "provider-failed", retryable: true }; }   // Sign redelivers
+    /* claimed: look at the seen mark once more — a delivery that finished between our first look and the claim */
+    let doneMeanwhile = false;
+    if (mine && deps.seen && eventKey) { try { doneMeanwhile = await deps.seen.has(eventKey); } catch { doneMeanwhile = false; } }
+    if (doneMeanwhile) { try { await state.release(claimKey); } catch { /* the TTL frees it */ } }
+    if (!mine || doneMeanwhile) {
       deps.log.event?.({ at: Date.now(), actor: { kind: "service", job: "provider-callback" }, action: "signWebhook", reason: "duplicate", recordIds: [] });
       return { ok: true, outcome: "duplicate", requestId, recordId: null };
     }
-    inFlight.add(eventKey);
   }
   try {
     return await processEvent(requestId, markSeen, input, deps);
   } finally {
-    if (eventKey) inFlight.delete(eventKey);
+    if (claimKey) { try { await state.release(claimKey); } catch { /* the TTL frees it */ } }
   }
 }
 
-const inFlight = new Set<string>();
+/** A delivery's in-flight claim outlives any request (AppSail answers within 30 s) but not a dead instance for long. */
+export const SIGN_INFLIGHT_TTL_S = 120;
 
 async function processEvent(
   requestId: string,

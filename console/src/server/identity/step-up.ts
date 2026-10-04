@@ -16,13 +16,17 @@
  * The counter is per person + action; the third failure locks that action for that person (STEP_UP_LOCK_AT)
  * and alerts Sahil and Pradeep (`onLock`); a success clears the count. Only Digital Infrastructure lifts
  * a lock (`unlock`). Nothing here keeps a token: the step-up grant (access_type=online, no refresh token)
- * names the person once and is dropped. PROVISIONAL: windows, counters and locks are process memory — a
- * restart forgets them (a lock is lifted, an open window closes).
+ * names the person once and is dropped. Windows, counters and locks live in a SharedState (server/state):
+ * the process's own memory by default (a restart forgets them: a lock is lifted, an open window closes), or
+ * the shared store the runtime passes (STATE_STORE), so every instance sees the same lock and window. A store
+ * that cannot answer makes these calls reject — the route fails, nothing is opened (fail closed).
  */
 
 import type { PlaneCLog } from "./plane-c";
 import { idHash, pkceChallenge, randomToken, sameToken, type Sealer } from "../oauth/crypto";
 import type { TokenGrant, ZohoAccounts } from "../oauth/zoho-accounts";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 
 /* "seat": a seat change on Teams (M17-S02, D22) */
 export const STEP_UP_ACTIONS = ["reveal", "export", "erase", "release", "seat"] as const;
@@ -61,6 +65,8 @@ export interface StepUpDeps {
   /** the third failure: tell Sahil and Pradeep (ids and the action code only) */
   readonly onLock?: (who: string, action: StepUpAction) => void;
   readonly clock?: () => number;
+  /** Where windows, failure counts and locks live. Default: this instance's memory (runtime passes sharedState()). */
+  readonly state?: SharedState;
 }
 
 export type StepUpStart =
@@ -80,30 +86,32 @@ export interface StepUp {
   start(sid: string | null | undefined, action: StepUpAction): Promise<StepUpStart>;
   finish(sid: string | null | undefined, p: { readonly code: string | null; readonly state: string | null; readonly error: string | null }, flowCookie: string | null | undefined): Promise<StepUpFinish>;
   valid(sid: string | null | undefined, action: StepUpAction): Promise<StepUpCheck>;
-  locked(who: string, action: StepUpAction): boolean;
-  failures(who: string, action: StepUpAction): number;
+  locked(who: string, action: StepUpAction): Promise<boolean>;
+  failures(who: string, action: StepUpAction): Promise<number>;
   /** Digital Infrastructure lifts a lock (and the count). */
-  unlock(who: string, action: StepUpAction): void;
+  unlock(who: string, action: StepUpAction): Promise<void>;
 }
 
 const FLOW_AAD = "gz-stepup-flow";
 
 export function createStepUp(d: StepUpDeps): StepUp {
   const clock = d.clock ?? Date.now;
-  const open = new Map<string, number>();       /* session-key|action → valid until */
-  const fails = new Map<string, number>();      /* who|action → failures since the last success */
-  const locks = new Set<string>();              /* who|action */
+  const state = d.state ?? createMemoryState({ clock });
+  /* Keys: "stepup-open|<session hash>|<action>" → valid-until (ms); "stepup-fail|<who>|<action>" → failures since the
+     last success (no expiry); "stepup-lock|<who>|<action>" → a claim, held until Digital Infrastructure unlocks. */
+  const openKey = (sid: string, action: StepUpAction) => `stepup-open|${idHash(sid)}|${action}`;
+  const failKey = (who: string, action: StepUpAction) => `stepup-fail|${who}|${action}`;
+  const lockKey = (who: string, action: StepUpAction) => `stepup-lock|${who}|${action}`;
+  const isLocked = async (who: string, action: StepUpAction) => (await state.get(lockKey(who, action))) !== null;
 
   const log = (who: string, seat: string | null, outcome: "ok" | "refused", reason: string) =>
     d.planeC.record({ at: clock(), who, action: "step-up", outcome, reason, seat });
 
-  function fail(who: string, seat: string, action: StepUpAction, why: "failed" | "cancelled"): StepUpFinish {
-    const k = `${who}|${action}`;
-    const n = (fails.get(k) ?? 0) + 1;
-    fails.set(k, n);
+  async function fail(who: string, seat: string, action: StepUpAction, why: "failed" | "cancelled"): Promise<StepUpFinish> {
+    const n = await state.incr(failKey(who, action));
     log(who, seat, "refused", `${why}-${action}`);
-    if (n >= STEP_UP_LOCK_AT && !locks.has(k)) {
-      locks.add(k);
+    /* claim(): exactly one failure — on any instance — becomes the lock, so the alert goes once */
+    if (n >= STEP_UP_LOCK_AT && await state.claim(lockKey(who, action))) {
       log(who, seat, "refused", `locked-${action}`);
       try {
         d.onLock?.(who, action);
@@ -123,7 +131,7 @@ export function createStepUp(d: StepUpDeps): StepUp {
       const s = await d.current(sid);
       if (!s.ok || typeof sid !== "string") return { ok: false, code: "signed-out" };
       const { who, seat } = s.session;
-      if (locks.has(`${who}|${action}`)) {
+      if (await isLocked(who, action)) {
         log(who, seat, "refused", `locked-${action}`);
         return { ok: false, code: "locked" };
       }
@@ -154,7 +162,7 @@ export function createStepUp(d: StepUpDeps): StepUp {
         return { ok: false, code: "failed", action: null };
       }
       const action = flow.a;
-      if (locks.has(`${who}|${action}`)) {
+      if (await isLocked(who, action)) {
         log(who, seat, "refused", `locked-${action}`);
         return { ok: false, code: "locked", action };
       }
@@ -170,8 +178,8 @@ export function createStepUp(d: StepUpDeps): StepUp {
       }
       if (named !== who) return fail(who, seat, action, "failed");   /* somebody else signed in: not a step-up */
       const until = clock() + STEP_UP_VALID_MS;
-      open.set(`${idHash(sid)}|${action}`, until);
-      fails.delete(`${who}|${action}`);
+      await state.set(openKey(sid, action), String(until), Math.ceil(STEP_UP_VALID_MS / 1_000) + 1);
+      await state.release(failKey(who, action));
       log(who, seat, "ok", action);
       return { ok: true, action, until };
     },
@@ -179,21 +187,22 @@ export function createStepUp(d: StepUpDeps): StepUp {
     async valid(sid: string | null | undefined, action: StepUpAction): Promise<StepUpCheck> {
       const s = await d.current(sid);
       if (!s.ok || typeof sid !== "string") return { ok: false, code: "signed-out" };
-      if (locks.has(`${s.session.who}|${action}`)) return { ok: false, code: "locked" };
-      const key = `${idHash(sid)}|${action}`;
-      const until = open.get(key);
-      if (until === undefined || clock() >= until) {
-        open.delete(key);
+      if (await isLocked(s.session.who, action)) return { ok: false, code: "locked" };
+      const key = openKey(sid, action);
+      const got = await state.get(key);
+      const until = got === null ? NaN : Number(got);
+      if (!Number.isFinite(until) || clock() >= until) {
+        if (got !== null) await state.release(key);
         return { ok: false, code: "step-up" };
       }
       return { ok: true, until };
     },
 
-    locked: (who: string, action: StepUpAction) => locks.has(`${who}|${action}`),
-    failures: (who: string, action: StepUpAction) => fails.get(`${who}|${action}`) ?? 0,
-    unlock(who: string, action: StepUpAction): void {
-      locks.delete(`${who}|${action}`);
-      fails.delete(`${who}|${action}`);
+    locked: (who: string, action: StepUpAction) => isLocked(who, action),
+    failures: async (who: string, action: StepUpAction) => Number(await state.get(failKey(who, action))) || 0,
+    async unlock(who: string, action: StepUpAction): Promise<void> {
+      await state.release(lockKey(who, action));
+      await state.release(failKey(who, action));
     },
   });
 }

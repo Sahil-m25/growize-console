@@ -13,6 +13,8 @@
 import type { OpsLog } from "../../lib/zoho/log";
 import type { AppendOnlyStore } from "../logs/jsonl";
 import { createStubReceiver, type JsonSchema, type ReceiveResult, type SeenEvents } from "./events";
+import { createMemoryState } from "../state/memory";
+import type { SharedState } from "../state/shared-state";
 
 export const INBOUND_TYPES = Object.freeze(["request.raised", "push.delivered"] as const);
 export const INBOUND_SIGNATURE_HEADER = "x-signature";
@@ -31,7 +33,12 @@ export interface InboundDeps {
   readonly onDelivered: (event: Record<string, unknown>) => void | Promise<void>;
   readonly newId: () => string;
   readonly clock?: () => number;
+  /** Where in-flight claims live. Default: this endpoint's own memory; the runtime passes sharedState(). */
+  readonly state?: SharedState;
 }
+
+/** An in-flight claim outlives any request (AppSail answers within 30 s) but not a dead instance for long. */
+export const INBOUND_INFLIGHT_TTL_S = 120;
 
 export type InboundResult =
   | { readonly status: 200; readonly applied: boolean; readonly ack: Record<string, unknown> | null; readonly caseId?: string | null }
@@ -42,17 +49,18 @@ class Refused extends Error { constructor(readonly code: string) { super(code); 
 export function createInboundEndpoint(deps: InboundDeps) {
   const clock = deps.clock ?? Date.now;
   // One receiver per call, so the Case id of one request never answers another running beside it.
-  // M12-S05-H5: an id is marked seen only after it is applied, so two concurrent deliveries would both apply it. The claim
-  // below is made in the same synchronous step as the check (after the await), and released when the call ends.
-  const inFlight = new Set<string>();
+  // M12-S05-H5: an id is marked seen only after it is applied, so two concurrent deliveries would both apply it. The id is
+  // claimed (set-if-absent, in the shared state when the runtime passes it, so across instances), then the seen mark is
+  // read; the claim is released when the call ends. A store that cannot answer throws: the app gets a 5xx and redelivers.
+  const state = deps.state ?? createMemoryState({ clock });
+  const keyOf = (id: string) => `inbound-inflight|${id}`;
   const receiverFor = (out: { caseId?: string | null }, claimed: string[]) => createStubReceiver({
     schemas: deps.schemas, keys: deps.keys,
     seen: {
       has: async (id) => {
-        if (inFlight.has(id)) return true;
-        if (await deps.seen.has(id)) return true;
-        if (inFlight.has(id)) return true;
-        inFlight.add(id); claimed.push(id);
+        if (!(await state.claim(keyOf(id), INBOUND_INFLIGHT_TTL_S))) return true;
+        claimed.push(id);
+        if (await deps.seen.has(id)) return true;   // released with the rest in handle()'s finally
         return false;
       },
       add: (id) => deps.seen.add(id),
@@ -79,7 +87,7 @@ export function createInboundEndpoint(deps: InboundDeps) {
       try { r = await receiverFor(out, claimed).receive(rawBody, signature); } catch (e) {
         if (e instanceof Refused) { refuse(e.code); return { status: 422, reason: e.code }; }
         throw e;
-      } finally { for (const id of claimed) inFlight.delete(id); }
+      } finally { for (const id of claimed) { try { await state.release(keyOf(id)); } catch { /* the TTL frees it */ } } }
       if (r.status !== 200) { refuse(r.reason); return r; }
       if (out.caseId !== undefined) return { ...r, caseId: out.caseId };
       if (!r.applied && deps.caseFor) {

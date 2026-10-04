@@ -50,6 +50,7 @@ const { createZohoAccounts } = load('src/server/oauth/zoho-accounts.js');
 const { createSealer, idHash } = load('src/server/oauth/crypto.js');
 const { createAuthorityEvents } = load('src/server/identity/authority.js');
 const { createPlaneCLog, createPlaneCMemorySink } = load('src/server/identity/plane-c.js');
+const { createMemoryState } = load('src/server/state/memory.js');
 
 const HARSHA = '554023000000300007', OTHER = '554023000000300005';
 const SID = 'a'.repeat(43), SID2 = 'b'.repeat(43);
@@ -65,7 +66,7 @@ function accounts(fetch) {
   });
 }
 
-function rig({ named = HARSHA, token = 'step-up.token.response.json' } = {}) {
+function rig({ named = HARSHA, token = 'step-up.token.response.json', state } = {}) {
   const now = { t: T0 };
   const sink = createPlaneCMemorySink();
   const posts = [];
@@ -75,7 +76,7 @@ function rig({ named = HARSHA, token = 'step-up.token.response.json' } = {}) {
   const s = createStepUp({
     accounts: accounts(fetch), sealer: createSealer(KEY),
     current: async (sid) => (sessions[sid] ? { ok: true, session: sessions[sid] } : { ok: false }),
-    identify: async () => named, planeC: createPlaneCLog(sink), onLock: (who, action) => locks.push([who, action]), clock: () => now.t,
+    identify: async () => named, planeC: createPlaneCLog(sink), onLock: (who, action) => locks.push([who, action]), clock: () => now.t, ...(state ? { state } : {}),
   });
   return { s, sink, posts, now, locks, sessions };
 }
@@ -119,7 +120,7 @@ test('finish: a flow from another session, a wrong state or a stale flow is refu
   assert.equal((await s.finish(SID, { code: 'c', state: 'x'.repeat(43), error: null }, st.flowCookie)).ok, false);
   now.t += 11 * 60_000;
   assert.equal((await s.finish(SID, { code: 'c', state: stateOf(st.url), error: null }, st.flowCookie)).ok, false);
-  assert.equal(s.failures(HARSHA, 'reveal'), 0);
+  assert.equal(await s.failures(HARSHA, 'reveal'), 0);
 });
 
 test('acceptance: three failed step-ups lock the action for that person and alert; a fourth is refused before Zoho is asked', async () => {
@@ -131,7 +132,7 @@ test('acceptance: three failed step-ups lock the action for that person and aler
     assert.equal(f.code, i === STEP_UP_LOCK_AT ? 'locked' : i === 2 ? 'cancelled' : 'failed');
   }
   assert.deepEqual(locks, [[HARSHA, 'reveal']]);
-  assert.equal(s.locked(HARSHA, 'reveal'), true);
+  assert.equal(await s.locked(HARSHA, 'reveal'), true);
   const fourth = await s.start(SID, 'reveal');
   assert.equal(fourth.ok, false); assert.equal(fourth.code, 'locked');
   assert.equal((await s.valid(SID, 'reveal')).code, 'locked');
@@ -139,7 +140,7 @@ test('acceptance: three failed step-ups lock the action for that person and aler
   const reasons = sink.events().map((e) => e.reason);
   assert.deepEqual(reasons.filter((r) => /^(failed|cancelled|locked)-/.test(r)), ['failed-reveal', 'cancelled-reveal', 'failed-reveal', 'locked-reveal', 'locked-reveal']);
   assert.equal((await s.start(SID, 'export')).ok, true, 'the lock is per action');
-  s.unlock(HARSHA, 'reveal');
+  await s.unlock(HARSHA, 'reveal');
   assert.equal((await s.start(SID, 'reveal')).ok, true);
 });
 
@@ -147,10 +148,10 @@ test('a success clears the count; a code Zoho refuses counts as a failure', asyn
   const bad = rig({ token: 'step-up.token.response.json' });
   const st = await bad.s.start(SID, 'release');
   await bad.s.finish(SID, { code: '', state: stateOf(st.url), error: null }, st.flowCookie);
-  assert.equal(bad.s.failures(HARSHA, 'release'), 1);
+  assert.equal(await bad.s.failures(HARSHA, 'release'), 1);
   const st2 = await bad.s.start(SID, 'release');
   assert.equal((await bad.s.finish(SID, { code: 'c', state: stateOf(st2.url), error: null }, st2.flowCookie)).ok, true);
-  assert.equal(bad.s.failures(HARSHA, 'release'), 0);
+  assert.equal(await bad.s.failures(HARSHA, 'release'), 0);
 });
 
 test('not configured: without a step-up redirect URI nothing starts; safeBack keeps redirects on this site', async () => {
@@ -215,4 +216,25 @@ test('acceptance: a seat without the release right is refused; so is a hold stil
     if (code !== 'changed') assert.equal(r.writes.length, 0, code);
     assert.equal(r.sink.events()[0].action, 'refused-action'); assert.equal(r.sink.events()[0].reason, `release-${code}`);
   }
+});
+
+test('shared state: two instances on one store see the same lock, window and count; the lock alerts once (docs/architecture/shared-state.md)', async () => {
+  const state = createMemoryState({ clock: () => T0 });
+  const a = rig({ named: OTHER, state }), b = rig({ named: OTHER, state });
+  for (let i = 1; i <= STEP_UP_LOCK_AT; i++) {
+    const on = i % 2 ? a : b;   /* failures alternate between the instances */
+    const st = await on.s.start(SID, 'reveal');
+    assert.equal(st.ok, true, `attempt ${i}`);
+    await on.s.finish(SID, { code: 'c', state: stateOf(st.url), error: null }, st.flowCookie);
+  }
+  assert.equal(a.locks.length + b.locks.length, 1, 'exactly one alert');
+  assert.equal((await b.s.start(SID, 'reveal')).code, 'locked');
+  assert.equal(await a.s.locked(HARSHA, 'reveal'), true);
+  await b.s.unlock(HARSHA, 'reveal');
+  assert.equal(await a.s.locked(HARSHA, 'reveal'), false);
+  assert.equal(await a.s.failures(HARSHA, 'reveal'), 0);
+  const ok = rig({ state }), other = rig({ state });
+  const st = await ok.s.start(SID, 'export');
+  assert.equal((await ok.s.finish(SID, { code: 'c', state: stateOf(st.url), error: null }, st.flowCookie)).ok, true);
+  assert.equal((await other.s.valid(SID, 'export')).ok, true, 'a window opened on one instance holds on another');
 });

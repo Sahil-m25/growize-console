@@ -30,6 +30,7 @@ import { alertOutbox } from "../ops/runtime";
 import { createGrantService, type GrantService } from "./grant-service";
 import { sharedGrantStore } from "./grants";
 import { createManagerChangeService, type ManagerChangeService } from "./manager-change";
+import { sharedState } from "../state/runtime";
 
 type Held = { grants: GrantService; stepUp: StepUp; seats: SeatChangeService; managers: ManagerChangeService };
 const G = globalThis as typeof globalThis & { __gzAccessRuntime?: Held };
@@ -58,6 +59,7 @@ function held(): Held {
       return c.userId;
     },
     planeC: identityLog(),
+    state: sharedState(),
     onLock: (who, action) => {
       void alertOutbox.send({
         to: process.env.STEPUP_ALERT_TO ?? process.env.ALERT_EMAIL_TO ?? null,
