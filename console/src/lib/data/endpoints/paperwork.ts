@@ -3,11 +3,15 @@
      POST /api/leads/[id]/paperwork          one beat: { round, beat, channel?, rowToken, attachmentId? | link? } → { undoToken, undoUntil }
      POST /api/leads/[id]/paperwork          { undoToken } within 10 s
      GET  /api/leads/[id]/hints?paper=       what the IR said about that paper (never a signature)
+     GET  /api/documents/queue               Finance's papers out for signature, the IR's word first, then age (M12-S11-NOTE-3)
    Live: the routes. Fixture (lead side, the book is ConsoleState; Investors side, ImBook): the same answers projected from
    the same selectors the row already used (prNext, prChases, conFor, canWork) and the reducer's `lpPaper` / `lpRestore`.
    Finance's beats are never here: the route refuses them, and the fixture offers none. */
 
 import type { Hint } from "@/server/leads/hints";
+import type { PaperworkQueue } from "@/server/documents/queue";
+import { rankForFinance } from "@/lib/selectors/finance-rank";
+import { documentsList } from "./documents";
 import type { Offer, PaperworkRow, RoundView, RoundKey } from "@/server/leads/paperwork";
 import { ROUNDS } from "@/domain";
 import type { Action } from "@/lib/state";
@@ -59,6 +63,7 @@ export const paperworkRow: ReadEndpoint<ConsoleState, string | null, PaperworkRo
         said: p.said ? { by: p.said.by as string, at: p.said.at as string } : null,
         draft: p.draft ? { version: p.draft.v, ref: p.draft.link, at: p.draft.at as string } : null,
         agreed: p.agreed ? { version: p.draft ? p.draft.v : null, ref: p.agreed.link, at: p.agreed.at as string } : null,
+        back: p.back ? { by: p.back.by as string, at: p.back.at as string, why: p.back.why } : null,
         sent: !!p.sent, verified: !!p.ok,
       };
     });
@@ -140,4 +145,32 @@ export const stepSaved = (beat: string, round: string, channel: string | undefin
     agreed: "Final draft agreed — Finance sends it for signature", redraft: "Draft " + (draftVersion + 1) + " sent",
   };
   return "Saved · " + (M[beat] || nm);
+};
+
+/* ---- Finance's queue in the order to work it (M12-S11-NOTE-3) ----------------------------------------- */
+/** The route's answer. Fixture: the Documents "out" rows of the book, each with the IR's word from the book's inbox
+ *  (the same match leadHints makes), ranked by the very function the route runs (lib/selectors/finance-rank). */
+export const paperworkQueue: ReadEndpoint<ImBook, boolean, PaperworkQueue> = {
+  path: on => (on ? "/api/documents/queue" : null),
+  pick: j => (j as { queue: PaperworkQueue }).queue,
+  fixture(b, on) {
+    if (!on) return fail(400, "invalid-request", "Nothing to read.");
+    const list = documentsList.fixture(b, "out");
+    if (!list.ok) return list;
+    if (!list.data.actions.verify) return fail(403, "seat-denied", "Finance works the paperwork queue.");
+    const hints = new Map<string, Hint[]>();
+    const items = list.data.rows.map(r => {
+      const x = r.contactId ? I(b.s, b.me, r.contactId) : null;
+      const round = ROUND_OF_PAPER[r.paper];
+      const n = round && x ? b.s.data.INBOX.find(m => m.inv === x.id && m.kind === "signed" && m.doc === round) : null;
+      const leadId = x && x.lead && r.paper === "supplementary" ? x.lead : null;
+      if (n && leadId) hints.set(leadId, [{ leadId, round: round as RoundKey, paper: r.paper, by: { id: n.ir, name: who(b.s, n.ir).n || n.ir }, at: n.at,
+        words: "They say the supplementary is signed and sent" }]);
+      return { ...r, leadId, sentAt: r.sign ? r.sign.sentAt : null };
+    });
+    const ranked = rankForFinance(items, { ok: true, hints });
+    return ok({
+      rows: ranked.items.map(({ sentAt: _s, ...row }) => row), outCount: list.data.outCount, irSideRead: ranked.irSideRead, note: ranked.note,
+    });
+  },
 };

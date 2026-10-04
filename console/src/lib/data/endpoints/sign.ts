@@ -51,6 +51,8 @@ export const signPrefill: ReadEndpoint<ImBook, PrefillArgs, Prefill> = {
       methods: x.nri ? ["email-otp" as const] : ["aadhaar" as const, "email-otp" as const],
       methodNote: x.nri ? "Aadhaar eSign is not available: this investor is an NRI. Send with email OTP." : null,
       modifiedTime: null, current, maySend: true, note: null,
+      /* the agreed draft lives on the lead page's Paperwork row (lead side); the Investors book holds none — PROVISIONAL, M12-S12-NOTE-2 */
+      agreedDraft: null,
     });
   },
 };

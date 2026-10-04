@@ -117,6 +117,11 @@
     "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
    }
   },
+  "/api/documents/queue": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (the Documents read and the IR hints); the double answers a Zoho error"
+   }
+  },
   "/api/documents/sign/block": {
    "POST": {
     "body": {

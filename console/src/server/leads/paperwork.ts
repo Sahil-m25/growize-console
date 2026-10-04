@@ -73,13 +73,20 @@ export const ROUND_FIELDS = Object.freeze({
     agreedRef: "Supp_Agreed_Ref", agreedVersion: "Supp_Agreed_Version", agreedAt: "Supp_Agreed_At", agreedBy: "Supp_Agreed_By",
   }),
 });
+/** Finance's "not signed after all" (the bounce of a paper the IR said was signed): read here, never written here
+ *  (PROPOSED names, M12-S11-T01 — Finance's own write is its beat, D61). Read-only, so not in PROPOSED_LEAD_FIELDS. */
+export const BACK_FIELDS = Object.freeze({
+  nda: Object.freeze({ at: "NDA_Back_At", by: "NDA_Back_By", why: "NDA_Back_Why" }),
+  supp: Object.freeze({ at: "Supp_Back_At", by: "Supp_Back_By", why: "Supp_Back_Why" }),
+});
 type AnyRoundFields = { readonly [k: string]: string };
 const fieldsOf = (rk: RoundKey): AnyRoundFields => ROUND_FIELDS[rk] as AnyRoundFields;
 /** Every proposed field, for the report and the field-contract test. */
 export const PROPOSED_LEAD_FIELDS: readonly string[] = Object.freeze([...Object.values(ROUND_FIELDS.nda), ...Object.values(ROUND_FIELDS.supp)]);
 
 const LEAD_READ = ["Modified_Time", "Owner", "Cover_By", "Cover_Until", "Lost_At", "Consent_Call", "Consent_WhatsApp", "Consent_Email",
-  "NDA_Sign_Req_Id", "NDA_Verified_At", ...RUNGS.map((r) => r.field), ...PROPOSED_LEAD_FIELDS];
+  "NDA_Sign_Req_Id", "NDA_Verified_At", ...RUNGS.map((r) => r.field), ...PROPOSED_LEAD_FIELDS,
+  ...Object.values(BACK_FIELDS).flatMap((f) => [f.at, f.by, f.why])];
 
 export interface FinanceSide { readonly sentAt: string | null; readonly okAt: string | null }
 export interface RoundView {
@@ -91,6 +98,8 @@ export interface RoundView {
   readonly said: { readonly by: string | null; readonly at: string } | null;
   readonly draft: { readonly version: number; readonly ref: string; readonly at: string | null } | null;
   readonly agreed: { readonly version: number | null; readonly ref: string; readonly at: string } | null;
+  /** Finance found nothing signed after the IR said it was ("Not signed after all"); null once the IR says it again. */
+  readonly back: { readonly by: string | null; readonly at: string; readonly why: string | null } | null;
   /** Finance's side, read here, never written here. */
   readonly sent: boolean;
   readonly verified: boolean;
@@ -217,6 +226,18 @@ export function beatsFor(next: PaperNext, round: PaperRound): readonly IrBeat[] 
   }
 }
 
+/** Finance's bounce on this round, while it still stands: not once the paper is verified, and not after the IR has said
+ *  "it's signed" again (a newer word than the bounce). */
+export function backOf(L: ZohoRecord, rk: RoundKey, verified: boolean): RoundView["back"] {
+  const b = BACK_FIELDS[rk];
+  const at = stamp(L[b.at]);
+  if (!at || verified) return null;
+  const said = stamp(L[fieldsOf(rk).saidAt!]);
+  if (said && Date.parse(said) >= Date.parse(at)) return null;
+  const why = str(L[b.why]);
+  return Object.freeze({ by: idOf(L[b.by]), at, why: why ? why.slice(0, 300) : null });
+}
+
 export function createPaperwork(deps: PaperworkDependencies) {
   if (!deps || typeof deps.crm?.getRecord !== "function" || typeof deps.crm?.update !== "function" || typeof deps.crm?.insert !== "function"
     || typeof deps.crm?.deleteRecord !== "function" || typeof deps.crm?.coql !== "function" || typeof deps.crm?.getRelated !== "function"
@@ -321,6 +342,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
       said: r.said ? { by: idOf(L[f.saidBy]), at: r.said.at as string } : null,
       draft: r.draft ? { version: int(L[f.draftVersion!]), ref: r.draft.link, at: stamp(L[f.draftAt!]) } : null,
       agreed: r.agreed ? { version: int(L[f.agreedVersion!]) || null, ref: r.agreed.link, at: r.agreed.at as string } : null,
+      back: backOf(L, rk, !!r.ok),
       sent: !!r.sent, verified: !!r.ok,
     });
   }

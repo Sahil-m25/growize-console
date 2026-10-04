@@ -21,6 +21,7 @@
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
+import { ROUND_FIELDS } from "../leads/paperwork";
 import type { SignApi, SignField, SignMethod, SignRecipient, SignTemplate } from "./api";
 import {
   DATETIME, isLive, isPaper, mayActOnPaper, PAPER_FIELDS, PAPER_KEYS, primaryDoerNote, RECORD_ID, reqIdOf, SEND_BELONGS_TO, SIGNED_VIA, signStateOf,
@@ -75,6 +76,11 @@ export type SendResult =
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: SendRefusal; readonly message: string; readonly requestId?: string }
   | { readonly ok: false; readonly kind: "not-saved"; readonly errorKind: string; readonly message: string; readonly recalled: boolean };
 
+/** The supplementary draft the IR and the investor agreed (Lead.Supp_Agreed_*, written from the lead page row, M12-S12): what
+ *  Finance's Send offers as the default document. `ref` is the Zoho Writer / WorkDrive link or `attachment:<id>` the IR gave. */
+export interface AgreedDraft { readonly ref: string; readonly version: number | null; readonly at: string | null }
+const AGREED_REF = /^(?:attachment:\d{15,22}|https:\/\/(?:writer|workdrive|docs)\.zoho\.(?:in|com)\/[A-Za-z0-9._~\/?#=&%-]{1,400})$/;
+const AGREED_FIELDS = [ROUND_FIELDS.supp.agreedRef, ROUND_FIELDS.supp.agreedVersion, ROUND_FIELDS.supp.agreedAt] as const;
 export interface Prefill {
   readonly paper: Paper;
   readonly recordId: string;
@@ -87,6 +93,8 @@ export interface Prefill {
   readonly current: { readonly requestId: string; readonly state: SignState | "verified"; readonly label: string } | null;
   readonly maySend: boolean;
   readonly note: string | null;
+  /** supplementary only: the agreed final draft to send, or null (none agreed, or the lead is not readable by this seat) */
+  readonly agreedDraft: AgreedDraft | null;
 }
 export type PrefillResult = { readonly ok: true; readonly value: Prefill } | { readonly ok: false; readonly kind: "refused" | "source-error"; readonly reasonCode: string; readonly message: string };
 
@@ -116,7 +124,7 @@ export function createSignSender(deps: SendDeps) {
     return { ok: false, kind: "refused", reasonCode: code, message: SEND_MESSAGE[code], ...(requestId ? { requestId } : {}) };
   };
 
-  type Party = { ok: true; rec: ZohoRecord; recipient: SignRecipient | null; nri: boolean } | { ok: false; code: "not-visible" | "source"; errorKind: string };
+  type Party = { ok: true; rec: ZohoRecord; recipient: SignRecipient | null; nri: boolean; contact?: ZohoRecord } | { ok: false; code: "not-visible" | "source"; errorKind: string };
   /** The record (slot fields + Modified_Time) and whom it is for, on the sender's token. */
   async function readParty(cred: UserCredential, f: PaperFields, recordId: string, signal?: AbortSignal): Promise<Party> {
     const own = f.module === "Leads" ? ["First_Name", "Last_Name", "Email"] : f.module === "Contacts" ? ["First_Name", "Last_Name", "Email", "Residency"] : ["Customer"];
@@ -129,14 +137,30 @@ export function createSignSender(deps: SendDeps) {
       const cid = idOf(r.value.Customer);
       if (!cid) return { ok: true, rec: r.value, recipient: null, nri: false };
       let c: Awaited<ReturnType<typeof deps.crm.getRecord>>;
-      try { c = await deps.crm.getRecord(cred, "Contacts", cid, { fields: ["id", "First_Name", "Last_Name", "Email", "Residency"], signal }); } catch { return { ok: false, code: "source", errorKind: "unexpected" }; }
+      try { c = await deps.crm.getRecord(cred, "Contacts", cid, { fields: ["id", "First_Name", "Last_Name", "Email", "Residency", "Origin_Lead"], signal }); } catch { return { ok: false, code: "source", errorKind: "unexpected" }; }
       if (!c.ok) return c.error.kind === "not-found" || c.error.kind === "forbidden" ? { ok: false, code: "not-visible", errorKind: c.error.kind } : { ok: false, code: "source", errorKind: c.error.kind };
       if (!c.value) return { ok: false, code: "not-visible", errorKind: "not-found" };
       person = c.value;
     }
     const name = [s(person, "First_Name", 100), s(person, "Last_Name", 100)].filter(Boolean).join(" ");
     const email = s(person, "Email", 200);
-    return { ok: true, rec: r.value, recipient: name && email ? { name, email } : null, nri: isNri(s(person, "Residency", 40)) };
+    return { ok: true, rec: r.value, recipient: name && email ? { name, email } : null, nri: isNri(s(person, "Residency", 40)), contact: person };
+  }
+
+  /** The agreed supplementary draft of the lead this allotment's Contact came from, on the sender's token. Not readable,
+   *  not agreed, or a ref that is not a Writer/WorkDrive link or a lead attachment → null (nothing is offered, nothing guessed). */
+  async function agreedDraftOf(cred: UserCredential, contact: ZohoRecord | undefined, signal?: AbortSignal): Promise<AgreedDraft | null> {
+    const lead = idOf(contact?.Origin_Lead);
+    if (!lead || !RECORD_ID.test(lead)) return null;
+    try {
+      const r = await deps.crm.getRecord(cred, "Leads", lead, { fields: ["id", ...AGREED_FIELDS], signal });
+      if (!r.ok || !r.value || r.value.id !== lead) return null;
+      const ref = s(r.value, ROUND_FIELDS.supp.agreedRef, 500), at = s(r.value, ROUND_FIELDS.supp.agreedAt, 40);
+      if (!ref || !AGREED_REF.test(ref) || !at || !DATETIME.test(at)) return null;
+      const v = r.value[ROUND_FIELDS.supp.agreedVersion];
+      const version = typeof v === "number" && Number.isSafeInteger(v) && v > 0 ? v : typeof v === "string" && /^\d{1,6}$/.test(v) && Number(v) > 0 ? Number(v) : null;
+      return Object.freeze({ ref, version, at });
+    } catch { return null; }
   }
 
   /** What Zoho Sign says of the request already on the record (sender's token); null = could not read. */
@@ -244,6 +268,7 @@ export function createSignSender(deps: SendDeps) {
         methodNote: party.nri ? SEND_MESSAGE["aadhaar-not-for-nri"] : null,
         modifiedTime: typeof party.rec.Modified_Time === "string" ? party.rec.Modified_Time : null,
         current, maySend: !blocked && party.recipient !== null, note: primaryDoerNote(seat),
+        agreedDraft: paper === "supplementary" && !blocked ? await agreedDraftOf(cred, party.contact, signal) : null,
       }) };
     },
 

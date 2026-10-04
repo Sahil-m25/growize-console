@@ -570,3 +570,58 @@ test('routes: every new route is named in API_ROUTES and wrapped withErrorCaptur
   assert.equal(apiRuleOf('/api/documents/sign/send').key, '/api/documents');
   assert.equal(PAPER_FIELDS.supplementary.verifiedAt, 'Supplementary_Verified_At');
 });
+
+/* ============ M12-S12-NOTE-2: Finance's Send offers the agreed supplementary draft ============ */
+const AGREED_LEAD = `${P}740996101`;
+const ok200 = (rec1) => ({ status: 200, headers: { 'content-type': 'application/json' }, body: { data: [rec1] } });
+const contactOf = (originLead) => { const c = rec('crm.contact.kiran'); c.body.data[0].Origin_Lead = originLead ? { id: originLead } : null; return c; };
+const suppRig = (lead, contact = contactOf(AGREED_LEAD)) => {
+  const r = rig((c) => readRoutes('crm.allotment.kiran-fresh', contact)(c)
+    || (c.host === 'crm' && c.method === 'GET' && c.url.includes(`/Leads/${AGREED_LEAD}`) ? lead : null));
+  return { r, sender: createSignSender({ crm: r.crm, sign: r.sign, log: r.log, clock: () => NOW }) };
+};
+
+test('M12-S12-NOTE-2: prefill of the supplementary carries the lead\'s agreed draft (ref, version, time) on the sender\'s own token', async () => {
+  const { r, sender } = suppRig(ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: 'https://workdrive.zoho.in/SUPP-L5-final', Supp_Agreed_Version: 2, Supp_Agreed_At: '2026-09-26T11:00:00+05:30' }));
+  const p = await sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  assert.equal(p.ok, true, JSON.stringify(p));
+  assert.deepEqual(p.value.agreedDraft, { ref: 'https://workdrive.zoho.in/SUPP-L5-final', version: 2, at: '2026-09-26T11:00:00+05:30' });
+  assert.equal(p.value.maySend, true);
+  const leadRead = r.calls.find((c) => c.url.includes(`/Leads/${AGREED_LEAD}`));
+  assert.match(leadRead.url, /Supp_Agreed_Ref/);
+  assert.equal(leadRead.headers.Authorization ?? leadRead.headers.authorization, `Zoho-oauthtoken synthetic-${HARSHA}`, 'the sender\'s own token, never a service token');
+  noPii(r);
+  assert.equal(JSON.stringify(r.sink.records()).includes('SUPP-L5-final'), false, 'the draft link is never logged');
+});
+
+test('M12-S12-NOTE-2: an attachment ref is offered; a bad ref, an unagreed lead, an unreadable lead or no origin lead offers nothing', async () => {
+  const att = await suppRig(ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: `attachment:${P}740999502`, Supp_Agreed_Version: '1', Supp_Agreed_At: '2026-09-26T11:00:00+05:30' })).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  assert.deepEqual(att.value.agreedDraft, { ref: `attachment:${P}740999502`, version: 1, at: '2026-09-26T11:00:00+05:30' });
+  for (const [name, lead, contact] of [
+    ['javascript ref', ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: 'javascript:alert(1)', Supp_Agreed_At: '2026-09-26T11:00:00+05:30' })],
+    ['not agreed', ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: null, Supp_Agreed_At: null })],
+    ['draft only, no agreed stamp', ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: 'https://writer.zoho.in/x' })],
+    ['lead not readable', { status: 403, headers: { 'content-type': 'application/json' }, body: { code: 'NO_PERMISSION', status: 'error' } }],
+    ['no origin lead', ok200({ id: AGREED_LEAD }), contactOf(null)],
+  ]) {
+    const p = await suppRig(lead, contact).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+    assert.equal(p.ok, true, name);
+    assert.equal(p.value.agreedDraft, null, name);
+    assert.equal(p.value.maySend, true, name + ': the send itself is still offered');
+  }
+});
+
+test('M12-S12-NOTE-2: only the supplementary paper carries an agreed draft; a paper already out offers none; a viewer is still refused', async () => {
+  const fema = rig((c) => (c.host === 'crm' && c.url.includes(`/Contacts/${KIRAN}`) ? contactOf(AGREED_LEAD) : null));
+  const f = await createSignSender({ crm: fema.crm, sign: fema.sign, log: fema.log, clock: () => NOW }).prefill(who(HARSHA, 'fin'), 'fema', KIRAN);
+  assert.equal(f.ok, true, JSON.stringify(f));
+  assert.equal(f.value.agreedDraft, null);
+  assert.equal(fema.calls.some((c) => c.url.includes('/Leads/')), false, 'FEMA reads no lead');
+  const out = rig((c) => readRoutes('crm.allotment.kiran-out', contactOf(AGREED_LEAD))(c)
+    || (c.host === 'sign' && c.method === 'GET' && c.url.endsWith(`/requests/${REQ}`) ? 'sign.get.inprogress' : null));
+  const o = await createSignSender({ crm: out.crm, sign: out.sign, log: out.log, clock: () => NOW }).prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  assert.equal(o.value.maySend, false);
+  assert.equal(o.value.agreedDraft, null);
+  const { sender } = suppRig(ok200({ id: AGREED_LEAD }));
+  assert.equal((await sender.prefill(who(KAMU, 'kam'), 'supplementary', ALLOT)).reasonCode, 'seat-denied');
+});

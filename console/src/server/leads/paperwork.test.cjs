@@ -28,7 +28,7 @@ const options = { ...project.options, incremental: false, tsBuildInfoFile: undef
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: consoleRoot };
 const sources = ['lib/zoho/errors.ts', 'lib/zoho/gate.ts', 'lib/zoho/log.ts', 'lib/zoho/client.ts', 'server/oauth/seat.ts', 'domain/plan.ts',
   'server/leads/capture.ts', 'server/leads/followup.ts', 'server/leads/email.ts', 'server/leads/journey.ts', 'server/leads/paperwork.ts',
-  'server/leads/hints.ts'].map((f) => path.join(consoleRoot, 'src', f));
+  'server/leads/hints.ts', 'server/documents/queue.ts', 'lib/selectors/finance-rank.ts'].map((f) => path.join(consoleRoot, 'src', f));
 const program = ts.createProgram(sources, options);
 const diags = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diags.length) {
@@ -45,7 +45,8 @@ Module._resolveFilename = function (request, ...rest) {
 const load = (file) => require(path.join(outDir, 'src', file));
 const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createZohoClient, userCredential } = load('lib/zoho/client.js');
-const { createPaperwork, PROPOSED_LEAD_FIELDS, PAPER_UNDO_MS } = load('server/leads/paperwork.js');
+const { createPaperwork, PROPOSED_LEAD_FIELDS, PAPER_UNDO_MS, backOf, BACK_FIELDS } = load('server/leads/paperwork.js');
+const { createPaperworkQueue } = load('server/documents/queue.js');
 const { createHintReader, hintForDocument, rankForFinance, NOT_A_SIGNATURE } = load('server/leads/hints.js');
 const { createFollowups } = load('server/leads/followup.js');
 const { createEmailSender, createLeadNdaReader, EMAIL_REASON } = load('server/leads/email.js');
@@ -449,6 +450,81 @@ test('Finance queue: the IR\'s word first, then age; a failed hint read falls ba
   assert.equal(fb.irSideRead, false);
   assert.match(fb.note, /could not be read/);
   assert.ok(bad.refusals().some((x) => x.action === 'lead-hints'));
+});
+
+/* ---- M12-S11-NOTE-3: Finance's queue route, in the order to work it ------------------------------- */
+
+const docRow = (o) => ({ key: `${o.paper}:${o.id}`, label: o.paper, scope: 'allotment', module: 'LLP_UnitAllocation_Module', recordId: o.id, party: 'Synthetic', llpId: null,
+  requestId: '90071992547409981', method: null, state: 'sent', verifiedAt: null, yourMove: null, sign: { status: 'sent', sentAt: o.sentAt, sentBy: null, expiresAt: null }, ...o });
+const pageOf = (rows, over = {}) => ({ ok: true, page: { side: 'investors', cut: 'out', rows, outCount: rows.length, files: null, actions: { send: true, verify: true }, truncated: false, ...over } });
+const queueRows = () => [
+  docRow({ id: 'old-alloc', paper: 'allocation-letter', contactId: `${P}740996209`, sentAt: '2026-08-01T10:00:00+05:30' }),
+  docRow({ id: 'kiran-supp', paper: 'supplementary', contactId: CONTACT, sentAt: '2026-09-10T10:00:00+05:30' }),
+  docRow({ id: 'mid-fema', paper: 'fema', contactId: `${P}740996208`, sentAt: '2026-08-15T10:00:00+05:30' }),
+];
+
+test('M12-S11-NOTE-3: the queue puts the IR\'s word first (supplementary of that lead only), then age; the other papers carry no hint', async () => {
+  const r = rig({ 'COQL from Leads': 'coql.hints', 'COQL from Contacts': 'coql.contacts-origin' });
+  const reads = [];
+  const q = createPaperworkQueue({ documents: { read: async (cred, seat, cut) => { reads.push([seat, cut]); return pageOf(queueRows()); } },
+    hints: createHintReader({ crm: r.crm, log: r.log, recordIdPrefix: P, clock }) });
+  const res = await q.read(credential, 'fin');
+  assert.equal(res.ok, true);
+  assert.deepEqual(reads, [['fin', 'out']], 'one Documents read, cut "out", as the viewer\'s seat');
+  assert.deepEqual(res.queue.rows.map((x) => x.recordId), ['kiran-supp', 'old-alloc', 'mid-fema']);
+  assert.equal(res.queue.rows[0].hint.paper, 'supplementary');
+  assert.equal(res.queue.rows[0].leadId, LEAD);
+  assert.deepEqual(res.queue.rows.slice(1).map((x) => x.hint), [null, null]);
+  assert.equal(res.queue.irSideRead, true);
+  assert.equal(res.queue.note, null);
+  assert.equal(res.queue.outCount, 3);
+  assert.equal('sentAt' in res.queue.rows[0], false, 'ranking scaffolding is not part of the answer');
+  assert.equal(r.calls.filter((c) => c.key === 'POST /coql').every((c) => !/PAN|Bank|Aadhaar/i.test(c.body.select_query)), true, 'no identity field is read');
+});
+
+test('M12-S11-NOTE-3: a failed IR-side read says so and the queue is in age order; no supplementary row means no extra reads', async () => {
+  const bad = rig({ 'COQL from Leads': 'server-error', 'COQL from Contacts': 'coql.contacts-origin' });
+  const q = createPaperworkQueue({ documents: { read: async () => pageOf(queueRows()) }, hints: createHintReader({ crm: bad.crm, log: bad.log, recordIdPrefix: P, clock }) });
+  const res = await q.read(credential, 'fin');
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.queue.rows.map((x) => x.recordId), ['old-alloc', 'mid-fema', 'kiran-supp']);
+  assert.equal(res.queue.irSideRead, false);
+  assert.match(res.queue.note, /could not be read/);
+  assert.ok(bad.refusals().some((x) => x.action === 'lead-hints'));
+  const none = rig({});
+  const plain = createPaperworkQueue({ documents: { read: async () => pageOf(queueRows().filter((x) => x.paper !== 'supplementary')) }, hints: createHintReader({ crm: none.crm, log: none.log, recordIdPrefix: P, clock }) });
+  const p = await plain.read(credential, 'fin');
+  assert.deepEqual(p.queue.rows.map((x) => x.recordId), ['old-alloc', 'mid-fema']);
+  assert.equal(none.calls.length, 0);
+});
+
+test('M12-S11-NOTE-3: only Finance seats get the queue; a refusal or a Zoho failure of the Documents read passes through', async () => {
+  const none = rig({});
+  const hints = createHintReader({ crm: none.crm, log: none.log, recordIdPrefix: P, clock });
+  const leadSide = await createPaperworkQueue({ documents: { read: async () => pageOf([], { side: 'lead' }) }, hints }).read(credential, 'ir');
+  assert.deepEqual([leadSide.ok, leadSide.kind, leadSide.reason], [false, 'refused', 'seat-denied']);
+  const viewer = await createPaperworkQueue({ documents: { read: async () => pageOf(queueRows(), { actions: { send: false, verify: false } }) }, hints }).read(credential, 'audit');
+  assert.equal(viewer.reason, 'seat-denied');
+  const denied = await createPaperworkQueue({ documents: { read: async () => ({ ok: false, kind: 'refused', reason: 'seat-denied' }) }, hints }).read(credential, 'kam');
+  assert.equal(denied.reason, 'seat-denied');
+  const down = await createPaperworkQueue({ documents: { read: async () => ({ ok: false, kind: 'source-error', errorKind: 'server-error', fresh: {} }) }, hints }).read(credential, 'fin');
+  assert.deepEqual([down.ok, down.kind, down.errorKind], [false, 'source-error', 'server-error']);
+  assert.equal(none.calls.length, 0, 'refused before any hint read');
+});
+
+/* ---- M12-S11-NOTE-6: Finance's "not signed after all" on the round ---------------------------------- */
+
+test('M12-S11-NOTE-6: the round carries Finance\'s bounce until the IR says it again or the paper is verified; the fields are read-only here', () => {
+  const L = { id: LEAD, NDA_Back_At: '2026-09-27T10:00:00+05:30', NDA_Back_By: { id: IR, name: 'Synthetic' }, NDA_Back_Why: 'Nothing has come back signed' };
+  assert.deepEqual(backOf(L, 'nda', false), { by: IR, at: '2026-09-27T10:00:00+05:30', why: 'Nothing has come back signed' });
+  assert.equal(backOf({ ...L, NDA_Said_At: '2026-09-26T10:00:00+05:30' }, 'nda', false).why, 'Nothing has come back signed', 'an older word does not clear it');
+  assert.equal(backOf({ ...L, NDA_Said_At: '2026-09-28T10:00:00+05:30' }, 'nda', false), null, 'the IR said it again, later');
+  assert.equal(backOf(L, 'nda', true), null, 'verified: nothing to note');
+  assert.equal(backOf({ id: LEAD }, 'nda', false), null);
+  assert.equal(backOf({ ...L, NDA_Back_At: 'yesterday' }, 'nda', false), null, 'a malformed stamp is not a bounce');
+  assert.equal(backOf(L, 'supp', false), null, 'a bounce on one round is not on the other');
+  assert.deepEqual(Object.values(BACK_FIELDS.supp), ['Supp_Back_At', 'Supp_Back_By', 'Supp_Back_Why']);
+  assert.equal(PROPOSED_LEAD_FIELDS.some((f) => /_Back_/.test(f)), false, 'the IR never writes them');
 });
 
 /* ---- M12-S13-T01: material follows the NDA --------------------------------------------------------- */
