@@ -1,4 +1,4 @@
-*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D118`.*
+*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D119`.*
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 
@@ -65,7 +65,14 @@
 - Tests: 1,070 API permission cases (no leak), an investor-app isolation test, tests for 18 untested case ids, 7 new browser cases; UAT usability pack and the UI test contract written.
 - Roster: availability is now recorded and read; cover and event staffing use it (the screen controls still need wiring).
 
-**Checks:** tsc clean · 730 + 3,197 tests pass · build ok · smoke 7/7 · 24 of 24 touched browser cases pass.
+**Round 7 (D119):**
+- **Full regression on the merged build: 378 of 379 browser cases pass, 0 fail** (one borderline case waits on the UTR masking ruling); per-seat suite 143/143; calibration 18/18.
+- Roster live: the absence drawer and presence roster write through the availability service; the Team page shows Out / Back on; marking someone back in ends their covers (D44).
+- Money: Finance's Investors list no longer counts Pending money as paid (D21); holds, Today, Numbers and the live data all read the one ledger; replay accepts Balance and Forfeit rows; demo add-paid starts no hold.
+- Match opens step-up for a refund and retries; a continuing sheet load shows honest progress; every remaining double-press guard is shared across instances.
+- Leak checker knows the console's masks; Head of Account Management in the call-budget tests.
+
+**Checks:** tsc clean · 767 + 3,221 tests pass · build ok · smoke 7/7 · full browser suite 378/379, 0 fail.
 
 **Waiting on the owner:**
 - Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
@@ -73,10 +80,8 @@
 - Set `CONSOLE_SUPER_ADMIN_IDS`.
 - The Zoho sandbox, test user and tester seat.
 - Catalyst project access.
+- Rule: is the receipt UTR masked everywhere; do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four); hide work buttons for seats without lead-work rights (TC-E07-022).
 
-**Next local work:**
-- Wire the availability controls to the roster API (cover works live only after that).
-- Point the three other money calculations at the one ledger; align the demo add-paid hold.
-- Match button opens step-up for refunds.
+**Next local work:** essentially none left without accounts or decisions — a few small notes (error-log user id from the sealed session, lapse receipts arithmetic, demo selectors) are in BLOCKED.md.
 
-**Waiting on the owner (new):** is the receipt UTR a protected reference everywhere (it shows unmasked on the investor page); do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four).
+

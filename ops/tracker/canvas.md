@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 04 Oct 2026 22:15 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 05 Oct 2026 00:27 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -32,7 +32,7 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 
 # :newspaper: Recent developments
 
-*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D118`.*
+*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D119`.*
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 
@@ -99,7 +99,14 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 - Tests: 1,070 API permission cases (no leak), an investor-app isolation test, tests for 18 untested case ids, 7 new browser cases; UAT usability pack and the UI test contract written.
 - Roster: availability is now recorded and read; cover and event staffing use it (the screen controls still need wiring).
 
-**Checks:** tsc clean · 730 + 3,197 tests pass · build ok · smoke 7/7 · 24 of 24 touched browser cases pass.
+**Round 7 (D119):**
+- **Full regression on the merged build: 378 of 379 browser cases pass, 0 fail** (one borderline case waits on the UTR masking ruling); per-seat suite 143/143; calibration 18/18.
+- Roster live: the absence drawer and presence roster write through the availability service; the Team page shows Out / Back on; marking someone back in ends their covers (D44).
+- Money: Finance's Investors list no longer counts Pending money as paid (D21); holds, Today, Numbers and the live data all read the one ledger; replay accepts Balance and Forfeit rows; demo add-paid starts no hold.
+- Match opens step-up for a refund and retries; a continuing sheet load shows honest progress; every remaining double-press guard is shared across instances.
+- Leak checker knows the console's masks; Head of Account Management in the call-budget tests.
+
+**Checks:** tsc clean · 767 + 3,221 tests pass · build ok · smoke 7/7 · full browser suite 378/379, 0 fail.
 
 **Waiting on the owner:**
 - Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
@@ -107,22 +114,18 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 - Set `CONSOLE_SUPER_ADMIN_IDS`.
 - The Zoho sandbox, test user and tester seat.
 - Catalyst project access.
+- Rule: is the receipt UTR masked everywhere; do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four); hide work buttons for seats without lead-work rights (TC-E07-022).
 
-**Next local work:**
-- Wire the availability controls to the roster API (cover works live only after that).
-- Point the three other money calculations at the one ledger; align the demo add-paid hold.
-- Match button opens step-up for refunds.
-
-**Waiting on the owner (new):** is the receipt UTR a protected reference everywhere (it shows unmasked on the investor page); do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four).
+**Next local work:** essentially none left without accounts or decisions — a few small notes (error-log user id from the sealed session, lapse receipts arithmetic, demo selectors) are in BLOCKED.md.
 
 **Latest decisions**
 
-- **D113** (4 Oct 2026): Owner rulings 4 Oct: Finance-recorded receipt is matched (auto from statement where possible, else Finance by hand; IR claims pending); IR investors view reuses the Investors page; all fact changes approved; 401 body as built; Farm ops persona kept; bu = business owner; NOTE-3 closed; comp reads Finance trail; D47/AP4 open
 - **D114** (4 Oct 2026): Round 3 on the 4 Oct rulings: receipts matched by Finance built, IR Investors page, fact changes applied (UI suite 344/349, 0 FAIL), smoke suite + flake quarantine, launch/ops docs, 3 bugs fixed
 - **D115** (4 Oct 2026): Owner rulings 4 Oct (second set): app access stays Hold until released (a match never opens it); event-sheet load is the super administrator's right (grantable); rights grid = 8 Investors seats as columns labelled with their Zoho role; provisional calls bulk-reviewed on one sheet; decisions index gap filled from the project docs
 - **D116** (4 Oct 2026): Round 4: tracker reconciled with the code; code gaps closed (/api/system, mail attachments, Consent_How picklist, Consent_Visit dropped, log success kind, reveal reason); D115 built; host-agnostic prep for Catalyst (shared-state interface + NoSQL adapter, log sink + Stratus adapter + Plane C hash chain, standalone Docker image, 30 s audit)
 - **D117** (4 Oct 2026): Round 5: unwired screens finished (Finance list, claims on Payments/Today, Finance paperwork queue, agreed draft offer), audit-trail actions (reveal reason, app-access release, test link), farm push + allotment guard, live people list, System facts; 47 local test subtasks checked, read-budget tests, 22 browser cases; phase 2b 66/66
 - **D118** (4 Oct 2026): Round 6: sessions and per-instance state on the shared store, request deadline and resumable long routes, one signed money ledger (refunds/reversals), add-paid hold removed, refund step-up; API seat matrix (1,070 cases, no leak), outbound isolation, missing TC tests, fixtures + cases, UAT usability pack, UI test contract, mapping rows, roster reader
+- **D119** (5 Oct 2026): Round 7: roster UI live with cover ending on return (D44), one ledger everywhere (Finance list no longer counts Pending), Balance/Forfeit in replay, refund step-up panel, honest sheet-load progress, all idempotency guards shared; full UI regression 378/379 PASS + per-seat 143/143, 0 FAIL, calibration 18/18
 
 ## Stages
 
@@ -147,14 +150,14 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 |Week of|Finished|Forecast|Cumulative|Burn-up|
 |---|---|---|---|---|
 |![](slack_date:2026-09-21)|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
-|![](slack_date:2026-09-28) **(this week)**|88|4|94|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 61%|
-|![](slack_date:2026-10-05)|0|10|104|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 67%|
+|![](slack_date:2026-09-28)|88|0|90|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 58%|
+|![](slack_date:2026-10-05) **(this week)**|0|14|104|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 67%|
 
 ## This week
 
-**Finished (88):** M01-S02, M01-S03, M01-S04, M01-S06, M01-S07, M01-S09, M02-S02, M02-S03, M02-S11, M03-S01, M03-S02, M03-S03, M03-S04, M04-S01, M04-S02, M04-S04, M05-S01, M05-S02, M05-S03, M05-S06, M05-S07, M06-S01, M06-S02, M06-S03, M06-S05, M07-S01, M07-S02, M07-S03, M07-S04, M07-S05, M07-S06, M07-S07, M08-S01, M08-S02, M08-S05, M09-S01, M09-S07, M09-S09, M10-S03, M10-S08, M10-S09, M10-S20, M10-S21, M10-S22, M10-S23, M11-S04, M12-S05, M12-S07, M12-S08, M12-S09, M12-S12, M12-S13, M12-S14, M13-S01, M13-S05, M14-S02, M14-S03, M15-S01, M15-S05, M16-S01, M16-S02, M16-S03, M16-S04, M16-S06, M16-S07, M16-S08, M16-S09, M17-S01, M17-S02, M17-S05, M17-S06, M18-S04, M18-S14, M18-S15, M19-S01, M19-S03, M19-S04, M19-S05, M19-S06, M19-S08, M19-S10, M19-S12, M19-S13, M20-S01, M20-S04, M20-S05, M20-S06, M20-S07
+**Finished (0):** none yet
 
-**Planned by the forecast (4):** M19-S02, M02-S05, M02-S06, M02-S08
+**Planned by the forecast (14):** M19-S02, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S12, M20-S08, M02-S07, M01-S05, M03-S05, M03-S09, M18-S06, M18-S12
 
 **Stuck: review or waiting on people (51):**
 
@@ -245,18 +248,18 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 |**M18** Hardening, security & release|S5|12|3|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 25%|Prove the one app is fast inside Zoho's limits, leaks nothing across seats or users, works on a phone and by keyboard, fails visibly, can be|
 |**M19** Quality — Jev UI suite|S1|12|9|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 75%|A Jev UI suite that runs the same plain-language cases against the merged prototype (growize-console-merged.html) and the built app, per sea|
 |**M20** Launch readiness & operations|S0|7|5|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 71%|The brief, KPIs, status rhythm and change control that keep the plan honest, the guides and support model for go-live, and the two outside p|
-# :card_index_dividers: Backlog in BLOCKED.md — 359 open, 202 ticked
+# :card_index_dividers: Backlog in BLOCKED.md — 354 open, 216 ticked
 
 |Kind|Open|What it is|
 |---|---|---|
-|FRONT-END LOOP|1|Screens to wire to their API route (now phase 2b units)|
-|PROVISIONAL|127|Choices the build made at low confidence — owner confirms or reverses|
+|FRONT-END LOOP|0|Screens to wire to their API route (now phase 2b units)|
+|PROVISIONAL|131|Choices the build made at low confidence — owner confirms or reverses|
 |FACT CHANGE PROPOSED|30|Test cases that contradict a decision — owner rules, then the case changes|
 |BLOCK|7|Do-not-activate blocks (a design or decision gap)|
 |STAGING PROOF|4|Proofs to run on the sandbox|
 |OWNER ACTION|2|Owner actions in Zoho|
 |Tasks for people|19|Sahil 11, Autopilot 7, Tester 1|
-|Other notes|169|Zoho fields/modules the code expects, secrets and config, staging steps|
+|Other notes|161|Zoho fields/modules the code expects, secrets and config, staging steps|
 
 Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line in BLOCKED.md when it is done; the loop reads the ticks.
 

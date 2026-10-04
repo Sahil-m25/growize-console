@@ -4,65 +4,65 @@ Projected from the phase forecast (14 loop hours a day); refreshed every round b
 
 | Needed by (projected) | Phase | Story | Who | Item | Hours |
 |---|---|---|---|---|---|
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M02-S01 | Sahil | M02-S01-T01 Renew Enterprise and buy the test-user seat | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M02-S04 | Sahil | M02-S04-T02 Profiles per seat | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M02-S04 | Sahil | M02-S04-T03 Field-level security wall | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M02-S04 | Sahil | M02-S04-T04 Private sharing and B-12 rules | 1.5 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M03-S06 | Sahil | M03-S06-T01 Auditor profile read-only | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M03-S07 | Sahil | M03-S07-T01 Sharing for KAM books | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M03-S08 | Sahil | M03-S08-T01 FLS on kyc_status | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M04-S03 | Sahil | M04-S03-T01 Consent fields | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M09-S02 | Sahil | M09-S02-T01 Record sharing for the KAM book | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M09-S04 | Sahil | M09-S04-T01 Ownership fields and workflow | 1.5 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M09-S08 | Sahil | M09-S08-T01 Originating IR field and sharing rule | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M01-S10 | Sahil | M01-S10-T03 Approval process on forfeit/refund | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M08-S03 | Sahil | M08-S03-T03 Receipt validation rules that never block | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M08-S04 | Sahil | M08-S04-T01 Hold record and its approvals | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M08-S07 | Sahil | M08-S07-T01 Contacts lifecycle blueprint starting at 'Said yes' | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M08-S08 | Sahil | M08-S08-T01 app_mark formula and permanent_at workflow | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M10-S01 | Sahil | M10-S01-T01 Receipts module | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M10-S02 | Sahil | M10-S02-T01 Maker-checker rule and record lock | 1.5 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M10-S05 | Sahil | M10-S05-T01 Statements module | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M10-S07 | Sahil | M10-S07-T01 Allotment lookup and Payment_Status workflow | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M11-S01 | Sahil | M11-S01-T01 Map blocks to LLPs | 1.5 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M11-S02 | Sahil | M11-S02-T01 Canonical allotment module | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M11-S03 | Sahil | M11-S03-T01 Adopt the shelf | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M11-S05 | Sahil | M11-S05-T01 Allotment blueprint | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M11-S07 | Sahil | M11-S07-T02 Install the oversell guard | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S01 | Sahil | M12-S01-T02 Sharing and profile permissions for attachments | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S02 | Sahil | M12-S02-T01 Typed-slot file-upload fields | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S03 | Sahil | M12-S03-T01 Sign status fields on the records | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S04 | Sahil | M12-S04-T01 Zoho Sign plan and OAuth | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S04 | Sahil | M12-S04-T02 Templates in Zoho Sign | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S06 | Sahil | M12-S06-T01 Gate field permission | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S10 | Sahil | M12-S10-T02 Restricted test user | 1.5 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M12-S11 | Sahil | M12-S11-T01 NDA round fields and sharing | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M14-S01 | Sahil | M14-S01-T01 Event fields on Leads | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M13-S02 | Sahil | M13-S02-T01 Cases layout and fields | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M13-S03 | Sahil | M13-S03-T01 Assignment rules and fallback owner | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M13-S04 | Sahil | M13-S04-T02 Bank proof out of the Case | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M13-S06 | Sahil | M13-S06-T01 Updates module and kind ownership | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S01 | Sahil | M18-S01-T05 Review limits dashboard | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S02 | Sahil | M18-S02-T04 Secrets, headers, cookies | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S05 | Sahil | M18-S05-T01 Schedule backups | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S05 | Sahil | M18-S05-T02 Restore drill | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S09 | Sahil | M18-S09-T03 Rollback rehearsal | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S09 | Sahil | M18-S09-T05 Cutover and smoke | 3 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M20-S03 | Sahil | M20-S03-T02 Walkthrough session | 1 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M18-S10 | Sahil | M18-S10-T02 Hypercare rota | 2 |
-| Sun, 4 Oct, 10:14 pm | 3. Test and harden | M19-S07 | Sahil | M19-S07-T02 Hourly production check and alert | 1 |
-| Sun, 4 Oct, 11:32 pm | 3. Test and harden | M02-S06 | Sahil | M02-S06-T01 Remove Convert permission | 1 |
-| Mon, 5 Oct, 12:49 am | 3. Test and harden | M02-S10 | Sahil | M02-S10-T02 Register OAuth clients | 1 |
-| Mon, 5 Oct, 01:40 am | 3. Test and harden | M20-S08 | Sahil | M20-S08-T01 Plan choice and purchase request | 1 |
-| Mon, 5 Oct, 01:40 am | 3. Test and harden | M20-S08 | Sahil | M20-S08-T02 OAuth client and secrets | 1 |
-| Mon, 5 Oct, 02:06 am | 3. Test and harden | M02-S07 | Sahil | M02-S07-T01 Unhide activities and enable sync | 1.5 |
-| Mon, 5 Oct, 02:57 am | 3. Test and harden | M03-S05 | Sahil | M03-S05-T01 Buy seats and invite users | 2 |
-| Mon, 5 Oct, 03:23 am | 3. Test and harden | M03-S09 | Sahil | M03-S09-T01 Origin fields on Contacts | 1 |
-| Mon, 5 Oct, 03:49 am | 3. Test and harden | M18-S06 | Sahil | M18-S06-T01 Legacy flag and mapping + dry run | 4 |
-| Mon, 5 Oct, 03:49 am | 3. Test and harden | M18-S06 | Sahil | M18-S06-T02 Production migration | 2 |
-| Mon, 5 Oct, 04:14 am | 3. Test and harden | M18-S12 | Sahil | M18-S12-T02 Dry run on the sandbox copy | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M02-S01 | Sahil | M02-S01-T01 Renew Enterprise and buy the test-user seat | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M02-S04 | Sahil | M02-S04-T02 Profiles per seat | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M02-S04 | Sahil | M02-S04-T03 Field-level security wall | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M02-S04 | Sahil | M02-S04-T04 Private sharing and B-12 rules | 1.5 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M03-S06 | Sahil | M03-S06-T01 Auditor profile read-only | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M03-S07 | Sahil | M03-S07-T01 Sharing for KAM books | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M03-S08 | Sahil | M03-S08-T01 FLS on kyc_status | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M04-S03 | Sahil | M04-S03-T01 Consent fields | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M09-S02 | Sahil | M09-S02-T01 Record sharing for the KAM book | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M09-S04 | Sahil | M09-S04-T01 Ownership fields and workflow | 1.5 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M09-S08 | Sahil | M09-S08-T01 Originating IR field and sharing rule | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M01-S10 | Sahil | M01-S10-T03 Approval process on forfeit/refund | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M08-S03 | Sahil | M08-S03-T03 Receipt validation rules that never block | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M08-S04 | Sahil | M08-S04-T01 Hold record and its approvals | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M08-S07 | Sahil | M08-S07-T01 Contacts lifecycle blueprint starting at 'Said yes' | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M08-S08 | Sahil | M08-S08-T01 app_mark formula and permanent_at workflow | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M10-S01 | Sahil | M10-S01-T01 Receipts module | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M10-S02 | Sahil | M10-S02-T01 Maker-checker rule and record lock | 1.5 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M10-S05 | Sahil | M10-S05-T01 Statements module | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M10-S07 | Sahil | M10-S07-T01 Allotment lookup and Payment_Status workflow | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M11-S01 | Sahil | M11-S01-T01 Map blocks to LLPs | 1.5 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M11-S02 | Sahil | M11-S02-T01 Canonical allotment module | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M11-S03 | Sahil | M11-S03-T01 Adopt the shelf | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M11-S05 | Sahil | M11-S05-T01 Allotment blueprint | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M11-S07 | Sahil | M11-S07-T02 Install the oversell guard | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S01 | Sahil | M12-S01-T02 Sharing and profile permissions for attachments | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S02 | Sahil | M12-S02-T01 Typed-slot file-upload fields | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S03 | Sahil | M12-S03-T01 Sign status fields on the records | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S04 | Sahil | M12-S04-T01 Zoho Sign plan and OAuth | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S04 | Sahil | M12-S04-T02 Templates in Zoho Sign | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S06 | Sahil | M12-S06-T01 Gate field permission | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S10 | Sahil | M12-S10-T02 Restricted test user | 1.5 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M12-S11 | Sahil | M12-S11-T01 NDA round fields and sharing | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M14-S01 | Sahil | M14-S01-T01 Event fields on Leads | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M13-S02 | Sahil | M13-S02-T01 Cases layout and fields | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M13-S03 | Sahil | M13-S03-T01 Assignment rules and fallback owner | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M13-S04 | Sahil | M13-S04-T02 Bank proof out of the Case | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M13-S06 | Sahil | M13-S06-T01 Updates module and kind ownership | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S01 | Sahil | M18-S01-T05 Review limits dashboard | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S02 | Sahil | M18-S02-T04 Secrets, headers, cookies | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S05 | Sahil | M18-S05-T01 Schedule backups | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S05 | Sahil | M18-S05-T02 Restore drill | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S09 | Sahil | M18-S09-T03 Rollback rehearsal | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S09 | Sahil | M18-S09-T05 Cutover and smoke | 3 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M20-S03 | Sahil | M20-S03-T02 Walkthrough session | 1 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M18-S10 | Sahil | M18-S10-T02 Hypercare rota | 2 |
+| Mon, 5 Oct, 12:27 am | 3. Test and harden | M19-S07 | Sahil | M19-S07-T02 Hourly production check and alert | 1 |
+| Mon, 5 Oct, 01:44 am | 3. Test and harden | M02-S06 | Sahil | M02-S06-T01 Remove Convert permission | 1 |
+| Mon, 5 Oct, 03:01 am | 3. Test and harden | M02-S10 | Sahil | M02-S10-T02 Register OAuth clients | 1 |
+| Mon, 5 Oct, 03:53 am | 3. Test and harden | M20-S08 | Sahil | M20-S08-T01 Plan choice and purchase request | 1 |
+| Mon, 5 Oct, 03:53 am | 3. Test and harden | M20-S08 | Sahil | M20-S08-T02 OAuth client and secrets | 1 |
+| Mon, 5 Oct, 04:19 am | 3. Test and harden | M02-S07 | Sahil | M02-S07-T01 Unhide activities and enable sync | 1.5 |
+| Mon, 5 Oct, 05:10 am | 3. Test and harden | M03-S05 | Sahil | M03-S05-T01 Buy seats and invite users | 2 |
+| Mon, 5 Oct, 05:36 am | 3. Test and harden | M03-S09 | Sahil | M03-S09-T01 Origin fields on Contacts | 1 |
+| Mon, 5 Oct, 06:01 am | 3. Test and harden | M18-S06 | Sahil | M18-S06-T01 Legacy flag and mapping + dry run | 4 |
+| Mon, 5 Oct, 06:01 am | 3. Test and harden | M18-S06 | Sahil | M18-S06-T02 Production migration | 2 |
+| Mon, 5 Oct, 06:27 am | 3. Test and harden | M18-S12 | Sahil | M18-S12-T02 Dry run on the sandbox copy | 2 |
 
-## Testing phase (people, after the loop: Mon, 5 Oct, 04:14 am → Sun, 11 Oct, 04:14 am)
+## Testing phase (people, after the loop: Mon, 5 Oct, 06:27 am → Sun, 11 Oct, 06:27 am)
 
 | Story | Who | Item | Hours |
 |---|---|---|---|
