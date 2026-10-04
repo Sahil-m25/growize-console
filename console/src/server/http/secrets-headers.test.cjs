@@ -35,8 +35,9 @@ const tracked = () => execFileSync('git', ['ls-files'], { cwd: repoRoot, encodin
 const MAY_HOLD_SYNTHETIC = (f) => /\.test\.|(^|\/)__fixtures__\/|(^|\/)fixtures\/|^console\/prototype\/|^pm\/|^docs\/|^autopilot\/|^zoho\/sandbox\//.test(f);
 
 test('TC-E15-011 scanner: the secret patterns match a sample of each shape (so a clean repo means something)', () => {
-  const sample = { 'zoho-token': '1000.' + 'a'.repeat(32) + '.' + 'b'.repeat(32), 'private-key': '-----BEGIN RSA PRIVATE KEY-----', 'aws-key': 'AKIA' + 'A'.repeat(16),
-    'slack-token': 'xoxb-1234567890-abcdef', 'vcs-token': 'ghp_' + 'a'.repeat(36), 'api-key': 'sk-' + 'a'.repeat(40), 'literal-secret': `client_secret: "${'a'.repeat(40)}"` };
+  /* synthetic samples only — never-live values, one per shape */
+  const sample = { 'zoho-token': '1000.' + 'a'.repeat(32) + '.' + 'b'.repeat(32), 'private-key': /* synthetic */ '-----BEGIN RSA PRIVATE KEY-----', 'aws-key': 'AKIA' + 'A'.repeat(16),
+    'slack-token': /* synthetic */ 'xoxb-1234567890-abcdef', 'vcs-token': 'ghp_' + 'a'.repeat(36), 'api-key': 'sk-' + 'a'.repeat(40), 'literal-secret': `client_secret: "${'a'.repeat(40)}"` };
   for (const [name, re] of SECRETS) assert.match(sample[name], re, name);
   assert.match('ABCPE1234F', PAN);
 });

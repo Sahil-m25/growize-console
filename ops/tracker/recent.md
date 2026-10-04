@@ -59,7 +59,13 @@
 - Tests: 47 local test steps checked (7 fully proven, 38 local half proven, 2 missing documents); read-budget tests; 22 new or converted browser cases; one real bug fixed ("End access" on a lent page did nothing).
 - **Phase 2b wiring: 66 of 66 done.**
 
-**Checks:** tsc clean · 687 + 1,891 tests pass · build ok · smoke 7/7 · 40 of 40 touched browser cases pass.
+**Round 6 (D118):**
+- Hosting-ready: sign-in sessions and all other per-copy state on the shared store; a 25 s time limit on every request; statement upload, event sheet load and KAM seat change continue across requests instead of timing out.
+- Money: one ledger function for register, Money section and replay; refunds and reversals replay correctly; adding a paid investor no longer writes its own hold; approving a refund asks for step-up.
+- Tests: 1,070 API permission cases (no leak), an investor-app isolation test, tests for 18 untested case ids, 7 new browser cases; UAT usability pack and the UI test contract written.
+- Roster: availability is now recorded and read; cover and event staffing use it (the screen controls still need wiring).
+
+**Checks:** tsc clean · 730 + 3,197 tests pass · build ok · smoke 7/7 · 24 of 24 touched browser cases pass.
 
 **Waiting on the owner:**
 - Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
@@ -69,7 +75,8 @@
 - Catalyst project access.
 
 **Next local work:**
-- Move sessions into the shared store, and the other per-copy state (needed before any multi-instance host).
-- Add a request time limit and fix the 3 actions that can exceed 30 s.
-- Money: receipt replay with refunds; discard the pending-receipt session on sign-out.
-- The two missing documents (UAT usability sheet, one-page UI test contract) and the test gaps listed in BLOCKED.md.
+- Wire the availability controls to the roster API (cover works live only after that).
+- Point the three other money calculations at the one ledger; align the demo add-paid hold.
+- Match button opens step-up for refunds.
+
+**Waiting on the owner (new):** is the receipt UTR a protected reference everywhere (it shows unmasked on the investor page); do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four).

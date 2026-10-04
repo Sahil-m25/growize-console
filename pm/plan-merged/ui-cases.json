@@ -2411,24 +2411,21 @@
   },
   {
    "id": "TC-E09-015",
-   "story": "M12-S13",
-   "seat": "rohit",
-   "title": "Before NDA: no deck/webinar templates in the composer",
+   "story": "M12-S11",
+   "seat": "kavya",
+   "title": "A paper Finance found unsigned shows 'Not signed after all' on the lead page row",
    "steps": [
-    "Press Rohit Deshpande on the sign-in screen",
+    "Press Kavya Nair on the sign-in screen",
     "Open Leads from the menu",
-    "Open Sanjay Menon",
-    "Press 'Email' in the lead's action bar (next to 'Log a contact')",
-    "Press 'Edit' on the email summary"
+    "Open Girish Rao"
    ],
    "expected": [
-    "The email template choices shown are 'Introduction', 'Paperwork reminder' and 'Balance reminder'.",
-    "The text 'Deck follow-up' does not appear anywhere on the page.",
-    "The text 'Webinar invite' does not appear anywhere on the page.",
-    "The text 'how did you tell them?' does not appear anywhere on the page while the email is open."
+    "The Paperwork section of the lead page shows the note 'Not signed after all.'",
+    "The note reads 'The Zoho Sign request is still open; nothing has come back signed' and names Harsha Bhat."
    ],
    "fixtures": [
-    "L2_NDA_SENT_BY_FINANCE"
+    "DEMO_BOOK",
+    "L3_NDA_SENT_BACK"
    ],
    "group": "M12"
   },
@@ -7903,6 +7900,127 @@
     "The line names Tasneem and a date."
    ],
    "group": "M16"
+  },
+  {
+   "id": "TC-IM06-025",
+   "story": "M11-S02",
+   "seat": "harsha",
+   "title": "An allotment without its Customer or LLP is shown as needing a link, not hidden",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Farms'",
+    "Press 'Open Block A — Doddaballapura'"
+   ],
+   "expected": [
+    "The 'Who holds units here' list has a row headed 'No customer on this allotment'.",
+    "That row carries a 'Needs a link' tag.",
+    "That row's units read '1 unit'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:ALLOTMENT_NO_CUSTOMER"
+   ],
+   "group": "M11"
+  },
+  {
+   "id": "TC-IM06-026",
+   "story": "M11-S02",
+   "seat": "harsha",
+   "title": "An investor's allotment with no LLP shows a Needs a link tag",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Fatima Zaidi'",
+    "Press 'What they hold'"
+   ],
+   "expected": [
+    "The Allotments card lists that allotment with a 'Needs a link' tag and 'no LLP on this allotment'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:ALLOTMENT_NO_LLP"
+   ],
+   "group": "M11"
+  },
+  {
+   "id": "TC-IM05-043",
+   "story": "M10-S08",
+   "seat": "harsha",
+   "title": "One allotment: the Money tab is one list with no per-farm blocks and no total line",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list",
+    "Press the 'Money' tab"
+   ],
+   "expected": [
+    "The Money section reads '₹1.50 Cr of ₹1.50 Cr' and lists one receipt, T-0041, for ₹1.50 Cr.",
+    "The Money section has no per-farm block and no line reading 'Total across'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "TC-IM05-044",
+   "story": "M10-S08",
+   "seat": "imran",
+   "title": "A KAM's investor record has no Money tab",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list"
+   ],
+   "expected": [
+    "The record's tabs are Who they are, What they hold, Care, Journey and Tickets.",
+    "The record has no 'Money' tab.",
+    "The record shows no rupee amount paid or due."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "TC-IM05-045",
+   "story": "M10-S08",
+   "seat": "rohit",
+   "title": "An IR's read-only investor record has no Money tab",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list"
+   ],
+   "expected": [
+    "The record shows the tabs Who they are and What they hold.",
+    "The record has no 'Money' tab.",
+    "The record shows no rupee amount paid or due."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "M10"
+  },
+  {
+   "id": "TC-E14-022",
+   "story": "M17-S02",
+   "seat": "jhalak",
+   "title": "A person granted Leads · See it reads leads and cannot work them",
+   "steps": [
+    "Press Jhalak Mehta on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Meera Krishnan"
+   ],
+   "expected": [
+    "The page shows Meera Krishnan's lead page.",
+    "The page does not offer the buttons Call, WhatsApp, Email or 'Log a contact'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "JHALAK_GRANTED_LEADS"
+   ],
+   "group": "M17"
   }
  ],
  "retired": [

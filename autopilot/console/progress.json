@@ -263,7 +263,8 @@
     "e31dc2d",
     "3c6435a",
     "74872c5"
-   ]
+   ],
+   "notes": 4
   },
   "M03-S05": {
    "status": "pending",
@@ -696,21 +697,21 @@
   },
   "M20-S07": {
    "status": "done",
-   "attempts": 3,
+   "attempts": 4,
    "phases": {
     "zoho": "waiting",
     "harden": "done",
-    "test": "waiting"
+    "test": "done"
    },
    "phase_attempts": {
     "zoho": 1,
     "harden": 1,
-    "test": 1
+    "test": 2
    },
    "current_phase": "zoho",
-   "at": "2026-10-04T13:56:34.716Z",
+   "at": "2026-10-04T16:44:20.550Z",
    "notes": 3,
-   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "note": "R6 (D118): M20-S07-T05 built and passing locally",
    "commits": [
     "9069a95",
     "fba719b"
@@ -758,20 +759,20 @@
   },
   "M19-S01": {
    "status": "done",
-   "attempts": 1,
+   "attempts": 2,
    "phases": {
     "fe": "done",
     "test": "waiting"
    },
    "phase_attempts": {
     "fe": 1,
-    "test": 1
+    "test": 2
    },
    "commits": [
     "3c6435a"
    ],
-   "at": "2026-10-04T13:56:34.716Z",
-   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "at": "2026-10-04T16:44:20.550Z",
+   "note": "R6 (D118): M19-S01-T02 built and passing locally",
    "notes": 1
   },
   "M01-S01": {
@@ -1443,7 +1444,7 @@
    ],
    "at": "2026-10-04T11:28:25.173Z",
    "note": "Review closed by the 4 Oct reconcile (D116): register on GET /api/payments, matched-only totals, masked reference",
-   "notes": 7
+   "notes": 8
   },
   "M10-S02": {
    "status": "waiting",
@@ -1468,7 +1469,7 @@
    ],
    "at": "2026-10-04T08:29:27.974Z",
    "note": "D113: a Finance-recorded receipt is matched by the recorder (server + demo); statement auto-matches pending money-in; IR claims pending until Finance confirms; refunds keep the D22 second hand",
-   "notes": 9
+   "notes": 10
   },
   "M10-S03": {
    "status": "done",
@@ -1986,25 +1987,25 @@
   },
   "M10-S08": {
    "status": "done",
-   "attempts": 2,
+   "attempts": 3,
    "phases": {
     "fe": "done",
     "zoho": "waiting",
     "wire": "done",
-    "test": "waiting"
+    "test": "done"
    },
    "phase_attempts": {
     "fe": 1,
     "wire": 1,
-    "test": 1
+    "test": 2
    },
    "commits": [
     "3c6435a",
     "31fa384",
     "5aae3b8"
    ],
-   "at": "2026-10-04T13:56:34.716Z",
-   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "at": "2026-10-04T16:44:20.550Z",
+   "note": "R6 (D118): M10-S08-T03 built and passing locally",
    "notes": 4
   },
   "M10-S09": {
@@ -2371,7 +2372,7 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-journey): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 6
+   "notes": 7
   },
   "M10-S20": {
    "status": "done",
@@ -2395,7 +2396,7 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 4
+   "notes": 5
   },
   "M10-S21": {
    "status": "done",
@@ -2419,7 +2420,7 @@
    ],
    "at": "2026-10-04T00:07:29.251Z",
    "note": "Phase 3 local half (4 Oct fan-out, p3-money): Jev UI + API/node cases on demo data and recorded fixtures; sandbox/tester part left",
-   "notes": 4
+   "notes": 5
   },
   "M10-S22": {
    "status": "done",
@@ -2540,7 +2541,7 @@
   "M01-S04": {
    "status": "done",
    "attempts": 1,
-   "notes": 3,
+   "notes": 4,
    "phases": {
     "zoho": "waiting",
     "test": "waiting"
@@ -2556,17 +2557,17 @@
   },
   "M18-S02": {
    "status": "waiting",
-   "attempts": 1,
-   "notes": 3,
+   "attempts": 2,
+   "notes": 5,
    "phases": {
     "zoho": "waiting",
     "test": "waiting"
    },
    "phase_attempts": {
-    "test": 1
+    "test": 2
    },
-   "at": "2026-10-04T13:56:34.716Z",
-   "note": "Phase 3 local proof (4 Oct, D117): 0 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "at": "2026-10-04T16:44:20.550Z",
+   "note": "R6 (D118): M18-S02-T01 built and passing locally",
    "commits": [
     "5a4eb31"
    ]
@@ -2643,7 +2644,7 @@
   "M08-S05": {
    "status": "done",
    "attempts": 3,
-   "notes": 5,
+   "notes": 7,
    "phases": {
     "zoho": "waiting",
     "wire": "done",
@@ -2842,19 +2843,19 @@
   },
   "M18-S08": {
    "status": "waiting",
-   "attempts": 2,
-   "notes": 4,
+   "attempts": 3,
+   "notes": 5,
    "phases": {
     "zoho": "waiting",
     "harden": "done",
-    "test": "waiting"
+    "test": "done"
    },
    "phase_attempts": {
     "harden": 1,
-    "test": 1
+    "test": 2
    },
-   "at": "2026-10-04T13:56:34.716Z",
-   "note": "Phase 3 local proof (4 Oct, D117): 1 subtask(s) proven locally, external part left — docs/reports/test-record-2026-10-04.json",
+   "at": "2026-10-04T16:44:20.550Z",
+   "note": "R6 (D118): M18-S08-T03 built and passing locally",
    "commits": [
     "41100de",
     "a1833bf"
@@ -2907,7 +2908,7 @@
    "commits": [
     "c88afd2"
    ],
-   "notes": 7
+   "notes": 8
   },
   "M19-S13": {
    "status": "done",
@@ -3034,7 +3035,7 @@
    "commits": [
     "6f3b47f"
    ],
-   "notes": 4
+   "notes": 9
   },
   "M18-S10": {
    "status": "waiting",
@@ -5671,6 +5672,31 @@
   "M18-S08-T01": {
    "status": "done",
    "at": "2026-10-04T13:56:34.716Z",
+   "phase": "test"
+  },
+  "M18-S02-T01": {
+   "status": "done",
+   "at": "2026-10-04T16:44:20.550Z",
+   "phase": "test"
+  },
+  "M20-S07-T05": {
+   "status": "done",
+   "at": "2026-10-04T16:44:20.550Z",
+   "phase": "test"
+  },
+  "M18-S08-T03": {
+   "status": "done",
+   "at": "2026-10-04T16:44:20.550Z",
+   "phase": "test"
+  },
+  "M19-S01-T02": {
+   "status": "done",
+   "at": "2026-10-04T16:44:20.550Z",
+   "phase": "test"
+  },
+  "M10-S08-T03": {
+   "status": "done",
+   "at": "2026-10-04T16:44:20.550Z",
    "phase": "test"
   }
  },
@@ -10755,6 +10781,51 @@
    "status": "done",
    "attempt": 2,
    "note": "R5 (D117): Finance queue ordered by rankForFinance via GET /api/documents/queue; Not signed after all note; 19/19 Jev cases pass",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T16:44:20.550Z",
+   "story": "M18-S02",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "R6 (D118): M18-S02-T01 built and passing locally",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T16:44:20.550Z",
+   "story": "M20-S07",
+   "phase": "test",
+   "status": "done",
+   "attempt": 2,
+   "note": "R6 (D118): M20-S07-T05 built and passing locally",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T16:44:20.550Z",
+   "story": "M18-S08",
+   "phase": "test",
+   "status": "done",
+   "attempt": 2,
+   "note": "R6 (D118): M18-S08-T03 built and passing locally",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T16:44:20.550Z",
+   "story": "M19-S01",
+   "phase": "test",
+   "status": "waiting",
+   "attempt": 2,
+   "note": "R6 (D118): M19-S01-T02 built and passing locally",
+   "by": "fan-out (D111)"
+  },
+  {
+   "at": "2026-10-04T16:44:20.550Z",
+   "story": "M10-S08",
+   "phase": "test",
+   "status": "done",
+   "attempt": 2,
+   "note": "R6 (D118): M10-S08-T03 built and passing locally",
    "by": "fan-out (D111)"
   }
  ],

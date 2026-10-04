@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 04 Oct 2026 19:27 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 04 Oct 2026 22:14 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -16,7 +16,7 @@
 |**2. Plug into Zoho**|7 of 119 (6%)|112 (94%)|0|0|0|done|10.4 min/unit measured|
 |**2b. Wire screens to the API**|66 of 66 (100%)|0 (0%)|0|0|0|done|assumed until 5 rounds|
 |**2c. Test contracts and security hardening** :twisted_rightwards_arrows: parallel worktree|7 of 7 (100%)|0 (0%)|0|0|0|done|assumed until 5 rounds|
-|**3. Test and harden** :arrow_left:|44 of 145 (30%)|87 (60%)|0|14|3.5|![](slack_date:2026-10-05)|assumed until 5 rounds|
+|**3. Test and harden** :arrow_left:|47 of 145 (32%)|84 (58%)|0|14|3.5|![](slack_date:2026-10-05)|assumed until 5 rounds|
 
 |Forecast|Date|
 |---|---|
@@ -93,7 +93,13 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 - Tests: 47 local test steps checked (7 fully proven, 38 local half proven, 2 missing documents); read-budget tests; 22 new or converted browser cases; one real bug fixed ("End access" on a lent page did nothing).
 - **Phase 2b wiring: 66 of 66 done.**
 
-**Checks:** tsc clean · 687 + 1,891 tests pass · build ok · smoke 7/7 · 40 of 40 touched browser cases pass.
+**Round 6 (D118):**
+- Hosting-ready: sign-in sessions and all other per-copy state on the shared store; a 25 s time limit on every request; statement upload, event sheet load and KAM seat change continue across requests instead of timing out.
+- Money: one ledger function for register, Money section and replay; refunds and reversals replay correctly; adding a paid investor no longer writes its own hold; approving a refund asks for step-up.
+- Tests: 1,070 API permission cases (no leak), an investor-app isolation test, tests for 18 untested case ids, 7 new browser cases; UAT usability pack and the UI test contract written.
+- Roster: availability is now recorded and read; cover and event staffing use it (the screen controls still need wiring).
+
+**Checks:** tsc clean · 730 + 3,197 tests pass · build ok · smoke 7/7 · 24 of 24 touched browser cases pass.
 
 **Waiting on the owner:**
 - Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
@@ -103,25 +109,26 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 - Catalyst project access.
 
 **Next local work:**
-- Move sessions into the shared store, and the other per-copy state (needed before any multi-instance host).
-- Add a request time limit and fix the 3 actions that can exceed 30 s.
-- Money: receipt replay with refunds; discard the pending-receipt session on sign-out.
-- The two missing documents (UAT usability sheet, one-page UI test contract) and the test gaps listed in BLOCKED.md.
+- Wire the availability controls to the roster API (cover works live only after that).
+- Point the three other money calculations at the one ledger; align the demo add-paid hold.
+- Match button opens step-up for refunds.
+
+**Waiting on the owner (new):** is the receipt UTR a protected reference everywhere (it shows unmasked on the investor page); do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four).
 
 **Latest decisions**
 
-- **D112** (4 Oct 2026): Fan-out rounds 1–2 (4 Oct): Modified_Time plumbing + 7 new routes; phase 2b 57/66; offline Investors receipts, Auditor Activity, oversell fixed; phase 3 local half 33 done / 47 waiting / 1 review; suites 1,792 server tests
 - **D113** (4 Oct 2026): Owner rulings 4 Oct: Finance-recorded receipt is matched (auto from statement where possible, else Finance by hand; IR claims pending); IR investors view reuses the Investors page; all fact changes approved; 401 body as built; Farm ops persona kept; bu = business owner; NOTE-3 closed; comp reads Finance trail; D47/AP4 open
 - **D114** (4 Oct 2026): Round 3 on the 4 Oct rulings: receipts matched by Finance built, IR Investors page, fact changes applied (UI suite 344/349, 0 FAIL), smoke suite + flake quarantine, launch/ops docs, 3 bugs fixed
 - **D115** (4 Oct 2026): Owner rulings 4 Oct (second set): app access stays Hold until released (a match never opens it); event-sheet load is the super administrator's right (grantable); rights grid = 8 Investors seats as columns labelled with their Zoho role; provisional calls bulk-reviewed on one sheet; decisions index gap filled from the project docs
 - **D116** (4 Oct 2026): Round 4: tracker reconciled with the code; code gaps closed (/api/system, mail attachments, Consent_How picklist, Consent_Visit dropped, log success kind, reveal reason); D115 built; host-agnostic prep for Catalyst (shared-state interface + NoSQL adapter, log sink + Stratus adapter + Plane C hash chain, standalone Docker image, 30 s audit)
 - **D117** (4 Oct 2026): Round 5: unwired screens finished (Finance list, claims on Payments/Today, Finance paperwork queue, agreed draft offer), audit-trail actions (reveal reason, app-access release, test link), farm push + allotment guard, live people list, System facts; 47 local test subtasks checked, read-budget tests, 22 browser cases; phase 2b 66/66
+- **D118** (4 Oct 2026): Round 6: sessions and per-instance state on the shared store, request deadline and resumable long routes, one signed money ledger (refunds/reversals), add-paid hold removed, refund step-up; API seat matrix (1,070 cases, no leak), outbound isolation, missing TC tests, fixtures + cases, UAT usability pack, UI test contract, mapping rows, roster reader
 
 ## Stages
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|8|![](slack_date:2026-10-04)|
+|S0|Zoho org build-out and access wall|18|8|![](slack_date:2026-10-05)|
 |S1|Foundations, access, test suite|23|14|![](slack_date:2026-10-05)|
 |S2|Lead side daily work and Investors pages|30|22|—|
 |S3|Journey, gates, money, paper, Zoho Sign, farms|43|21|—|
@@ -140,14 +147,14 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 |Week of|Finished|Forecast|Cumulative|Burn-up|
 |---|---|---|---|---|
 |![](slack_date:2026-09-21)|2|0|2|:white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square::white_large_square: 1%|
-|![](slack_date:2026-09-28) **(this week)**|88|10|100|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 65%|
-|![](slack_date:2026-10-05)|0|4|104|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 67%|
+|![](slack_date:2026-09-28) **(this week)**|88|4|94|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 61%|
+|![](slack_date:2026-10-05)|0|10|104|:large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 67%|
 
 ## This week
 
 **Finished (88):** M01-S02, M01-S03, M01-S04, M01-S06, M01-S07, M01-S09, M02-S02, M02-S03, M02-S11, M03-S01, M03-S02, M03-S03, M03-S04, M04-S01, M04-S02, M04-S04, M05-S01, M05-S02, M05-S03, M05-S06, M05-S07, M06-S01, M06-S02, M06-S03, M06-S05, M07-S01, M07-S02, M07-S03, M07-S04, M07-S05, M07-S06, M07-S07, M08-S01, M08-S02, M08-S05, M09-S01, M09-S07, M09-S09, M10-S03, M10-S08, M10-S09, M10-S20, M10-S21, M10-S22, M10-S23, M11-S04, M12-S05, M12-S07, M12-S08, M12-S09, M12-S12, M12-S13, M12-S14, M13-S01, M13-S05, M14-S02, M14-S03, M15-S01, M15-S05, M16-S01, M16-S02, M16-S03, M16-S04, M16-S06, M16-S07, M16-S08, M16-S09, M17-S01, M17-S02, M17-S05, M17-S06, M18-S04, M18-S14, M18-S15, M19-S01, M19-S03, M19-S04, M19-S05, M19-S06, M19-S08, M19-S10, M19-S12, M19-S13, M20-S01, M20-S04, M20-S05, M20-S06, M20-S07
 
-**Planned by the forecast (10):** M19-S02, M02-S05, M02-S06, M02-S08, M02-S09, M02-S10, M02-S12, M20-S08, M02-S07, M01-S05
+**Planned by the forecast (4):** M19-S02, M02-S05, M02-S06, M02-S08
 
 **Stuck: review or waiting on people (51):**
 
@@ -238,18 +245,18 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 |**M18** Hardening, security & release|S5|12|3|:large_green_square::white_large_square::white_large_square::white_large_square::white_large_square: 25%|Prove the one app is fast inside Zoho's limits, leaks nothing across seats or users, works on a phone and by keyboard, fails visibly, can be|
 |**M19** Quality — Jev UI suite|S1|12|9|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 75%|A Jev UI suite that runs the same plain-language cases against the merged prototype (growize-console-merged.html) and the built app, per sea|
 |**M20** Launch readiness & operations|S0|7|5|:large_green_square::large_green_square::large_green_square::white_large_square::white_large_square: 71%|The brief, KPIs, status rhythm and change control that keep the plan honest, the guides and support model for go-live, and the two outside p|
-# :card_index_dividers: Backlog in BLOCKED.md — 359 open, 181 ticked
+# :card_index_dividers: Backlog in BLOCKED.md — 359 open, 202 ticked
 
 |Kind|Open|What it is|
 |---|---|---|
 |FRONT-END LOOP|1|Screens to wire to their API route (now phase 2b units)|
-|PROVISIONAL|125|Choices the build made at low confidence — owner confirms or reverses|
-|FACT CHANGE PROPOSED|28|Test cases that contradict a decision — owner rules, then the case changes|
+|PROVISIONAL|127|Choices the build made at low confidence — owner confirms or reverses|
+|FACT CHANGE PROPOSED|30|Test cases that contradict a decision — owner rules, then the case changes|
 |BLOCK|7|Do-not-activate blocks (a design or decision gap)|
 |STAGING PROOF|4|Proofs to run on the sandbox|
 |OWNER ACTION|2|Owner actions in Zoho|
 |Tasks for people|19|Sahil 11, Autopilot 7, Tester 1|
-|Other notes|173|Zoho fields/modules the code expects, secrets and config, staging steps|
+|Other notes|169|Zoho fields/modules the code expects, secrets and config, staging steps|
 
 Decisions waiting on the owner = PROVISIONAL + FACT CHANGE PROPOSED. Tick a line in BLOCKED.md when it is done; the loop reads the ticks.
 
@@ -273,7 +280,7 @@ Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provis
 - [ ] M05-S04-T02 (M05-S04, Tester, Testing phase) Test call times (Sat–Sun) — Run TC-E05-010..011; manual check of the reminder in Zoho CRM calendar.
 - [ ] M03-S05-T02 (M03-S05, Sahil, Before its story (do early)) Digital Infrastructure profile for Sahil (non-admin) — Create profile "Digital Infrastructure" with every module of both sides and no Administrator; move Sahil's user onto …
 
-**Zoho and setup steps for the owner (60)**
+**Zoho and setup steps for the owner (66)**
 
 - [ ] M18-S04-NOTE-1 (M18-S04) HUMAN: Choose the alert email provider, set ALERT_EMAIL_TO to Sahil's address and plug a real AlertMailer in with setAlertMailer() in console/src/server/ops/runtime.ts; until …
 - [ ] M10-S01-NOTE-2 (M10-S01) HUMAN: Sahil completes Receipts (M10-S01-T01) by adding Contact and LLP lookups, Kind values Balance and Forfeit, Matched_At, Claim_Id and a unique Idempotency_Key (needed by …
@@ -335,6 +342,12 @@ Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provis
 - [ ] M18-S09-NOTE-4 (M18-S09) HUMAN: decide whether the demo fixtures file may ship inside the production image (it is read at run time; 37 KB); confirm the managed-runtime app-config.json shape from …
 - [ ] M18-S05-NOTE-2 (M18-S05) HUMAN: decide where the daily chain anchor is kept outside the Stratus bucket (without it a deleted chain tail is undetectable); optionally a keyed HMAC so bucket writers …
 - [ ] M12-S11-NOTE-10 (M12-S11) HUMAN: create NDA_Back_At/By/Why and Supp_Back_At/By/Why on Leads (read by the 'Not signed after all' note); nothing writes them yet — Finance's bounce write is a separate …
+- [ ] M10-S01-NOTE-8 (M10-S01) OWNER: the Investors-side dataset sends Finance seats the full receipt UTR, and the investor page shows it unmasked with no step-up (features/im/money/record.tsx:41, …
+- [ ] M10-S20-NOTE-5 (M10-S20) HUMAN: is marking a payout paid (POST /api/payouts/[id]/paid) 'money leaving' under D22, needing step-up? Left unwrapped (R6).
+- [ ] M01-S08-NOTE-1 (M01-S08) HUMAN: under D22, does executing a reversal need the second hand? ledger.ts counts a reversal only once Matched (R6).
+- [ ] M18-S09-NOTE-7 (M18-S09) HUMAN: on Catalyst, create a Webhook job pool and two crons (*/10 sign-recheck, every minute outbox-drain) calling /api/jobs/* with the JOB_SECRET header, and set …
+- [ ] M18-S02-NOTE-5 (M18-S02) HUMAN: there is no per-investor topic/URL for investor-app events (one signed endpoint, routing by ids.investor_contact_id); is a per-investor channel wanted? (R6).
+- [ ] M10-S21-NOTE-5 (M10-S21) HUMAN: the App_Access mapping row is added; turning on field history tracking for Contacts.App_Access in Zoho Setup is still Sahil's (R6).
 
 **Proofs on the sandbox or staging (60)** — run once the Zoho sandbox, test user and hosting exist; listed in BLOCKED.md.
 
@@ -463,7 +476,7 @@ Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provis
 |**M10-S05** Weekly bank statement upload and reconciliation|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|5/7|
 |**M10-S07** Receipts belong to the allotment (investor × farm)|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|3/4|
 |**M10-S03** Answer an IR's payment report|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/4|
-|**M10-S08** Per-farm payment view for an investor with several allotments|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Should|3/4|
+|**M10-S08** Per-farm payment view for an investor with several allotments|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:white_check_mark: Done|Built (demo data)|S3|Should|4/4|
 |**M10-S09** ARL holdings and transactions — read-only panel|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Should|4/4|
 |**M10-S20** Monthly payouts: 60-month schedule per allotment, Finance due queue|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/4|
 |**M10-S21** Unlock the investor app and send the welcome from the console|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|:white_check_mark: Done|—|:hourglass_flowing_sand: Waiting on people|Built (demo data)|S3|Must|4/4|
@@ -554,10 +567,10 @@ Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provis
 |Story|1. Front end on demo data|2. Plug into Zoho|2b. Wire screens to the API|2c. Test contracts and security hardening|3. Test and harden|Screens today|Stage|Priority|Subtasks done|
 |---|---|---|---|---|---|---|---|---|---|
 |**M18-S01** The app stays fast inside Zoho's API limits|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|4/6|
-|**M18-S02** Nothing leaks outside a seat's scope: seat x page x action x field matrix|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|2/6|
+|**M18-S02** Nothing leaks outside a seat's scope: seat x page x action x field matrix|—|:hourglass_flowing_sand: Waiting on people|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|3/6|
 |**M18-S03** Every page works on a phone and by keyboard|:white_check_mark: Done|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|2/4|
 |**M18-S05** Data and logs are backed up and restorable|—|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|1/3|
-|**M18-S08** Exploratory sessions and UAT signed off on both sides|—|:hourglass_flowing_sand: Waiting on people|—|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|4/11|
+|**M18-S08** Exploratory sessions and UAT signed off on both sides|—|:hourglass_flowing_sand: Waiting on people|—|:white_check_mark: Done|:white_check_mark: Done|Not a screen|S5|Must|5/11|
 |**M18-S09** Go-live by checklist with a runbook and a rehearsed rollback|—|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|3/6|
 |**M18-S10** Runbook and hypercare|—|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Should|1/3|
 |**M18-S06** Legacy records carried across without new Deals|—|—|—|—|To do|Not a screen|S5|Must|0/3|
@@ -573,7 +586,7 @@ Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provis
 |**M19-S07** Smoke suite and production check|—|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Should|1/2|
 |**M19-S11** Regenerate the Jev UI cases against the merged console: super user and per seat|—|—|—|—|:white_check_mark: Done|Not a screen|S2|Must|3/4|
 |**M19-S02** Jev UI runner on staging|—|:hourglass_flowing_sand: Waiting on people|—|—|To do|Not a screen|S1|Must|3/5|
-|**M19-S01** UI test contract|:white_check_mark: Done|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S1|Must|1/3|
+|**M19-S01** UI test contract|:white_check_mark: Done|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S1|Must|2/3|
 |**M19-S03** Zoho sandbox seed and reset|:white_check_mark: Done|:white_check_mark: Done|—|—|:white_check_mark: Done|Not a screen|S1|Must|3/3|
 |**M19-S04** Judge calibration gate|—|:hourglass_flowing_sand: Waiting on people|—|—|—|Not a screen|S1|Must|1/1|
 |**M19-S05** CI pipeline|—|:hourglass_flowing_sand: Waiting on people|—|—|—|Not a screen|S1|Must|1/1|
@@ -593,4 +606,4 @@ Open items only a person can do. Full text: autopilot/console/BLOCKED.md. Provis
 |**M20-S04** Support model and issue intake|—|—|—|—|:hourglass_flowing_sand: Waiting on people|Not a screen|S5|Must|1/1|
 |**M20-S05** Stage reviews, status and retrospectives|—|—|—|—|:white_check_mark: Done|Not a screen|S0|Must|6/6|
 |**M20-S06** Change control|—|—|—|—|:white_check_mark: Done|Not a screen|S0|Must|1/1|
-|**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|:hourglass_flowing_sand: Waiting on people|—|:white_check_mark: Done|:hourglass_flowing_sand: Waiting on people|Partly built|S4|Must|5/6|
+|**M20-S07** Bring the investor app codebase into the repo and wire the contract receivers|—|:hourglass_flowing_sand: Waiting on people|—|:white_check_mark: Done|:white_check_mark: Done|Partly built|S4|Must|6/6|

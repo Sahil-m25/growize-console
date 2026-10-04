@@ -220,7 +220,7 @@ test('M18-S09-NOTE-3: past the deadline the load stops between batches and the s
     seen.push(r.value.continuing && r.value.continuing.done);
     calls++;
   } while (r.value.continuing && calls < 40);
-  assert.ok(calls > 2, `took ${calls} calls`);
+  assert.ok(calls >= 2, `took ${calls} calls (it must stop at least once and continue)`);
   assert.equal(r.value.continuing, null);
   assert.deepEqual([r.value.loaded, r.value.duplicates, r.value.refused], [BIG, 0, 0]);
   assert.equal(z.leads.size, BIG, 'no number inserted twice (a repeat would have been DUPLICATE_DATA)');

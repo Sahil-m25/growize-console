@@ -869,5 +869,280 @@
   "kept as history; new payments go to the Receipts module (D54 A-24)",
   "exists",
   null
+ ],
+ [
+  "Investor app",
+  "APP.access",
+  "the investor-app switch: Hold = data synced, sign-in locked, no email; Invite = unlocked, one welcome sent by the app sync. An account is created Hold by every path (add-paid, a match, any other) and stays Hold until a person with the release right presses Send welcome and unlock; a match never opens it (D92, D93, D115 ruling 1)",
+  "Contacts",
+  "App_Access",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Hold",
+     "actual_value": "Hold"
+    },
+    {
+     "display_value": "Invite",
+     "actual_value": "Invite"
+    }
+   ],
+   "default_value": "Hold",
+   "tooltip": {
+    "name": "info_icon",
+    "value": "Hold (default) = sign-in locked, no email; Invite = unlock and one welcome. Written only by the console's Send welcome and unlock / Lock app access (D93, D115)"
+   }
+  }
+ ],
+ [
+  "Investor app",
+  "APP.access.hist",
+  "who changed App_Access and when (the App account card and Activity read it from the Contact timeline)",
+  "Contacts",
+  "Zoho field history tracking on App_Access (records old value, new value, who, when)",
+  "setup_edit",
+  "Turn on field history for App_Access in Setup (M10-S21-NOTE-1). Without it the console cannot say who released an account"
+ ],
+ [
+  "Payout",
+  "PAYOUT",
+  "one monthly payout to an investor: 60 records per Issued 5-year allotment, created by the console's schedule job (no unique key: the job reads before it inserts); Finance marks each Paid with the bank UTR and types TDS (D82, D84)",
+  "Investor_Payouts",
+  "new module",
+  "new_module",
+  "Module Investor_Payouts (CustomModule11, created 25 Sep, D82); 'Payouts' is a Zoho reserved name. Fields below. Allotment is the parent; no Contact lookup (the investor is reached through the allotment's Customer). Annual_Rental_Yield stays on the allotment"
+ ],
+ [
+  "Payout",
+  "PAYOUT.ref",
+  "readable natural key '<allotment id>-NN' (NN = instalment, two digits)",
+  "Investor_Payouts",
+  "Name",
+  "exists",
+  "Primary field of the module; written by the schedule job, not unique in Zoho"
+ ],
+ [
+  "Payout",
+  "Allotment",
+  "the allotment the payout belongs to",
+  "Investor_Payouts",
+  "Allotment -> LLP_UnitAllocation_Module",
+  "new_field",
+  {
+   "data_type": "lookup",
+   "lookup": {
+    "module": {
+     "api_name": "LLP_UnitAllocation_Module"
+    },
+    "display_label": "Allotment"
+   }
+  }
+ ],
+ [
+  "Payout",
+  "Payout_Kind",
+  "Rental yield / Exit / Refund / Other; the schedule job writes Rental yield",
+  "Investor_Payouts",
+  "Payout_Kind",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Rental yield",
+     "actual_value": "Rental yield"
+    },
+    {
+     "display_value": "Exit",
+     "actual_value": "Exit"
+    },
+    {
+     "display_value": "Refund",
+     "actual_value": "Refund"
+    },
+    {
+     "display_value": "Other",
+     "actual_value": "Other"
+    }
+   ]
+  }
+ ],
+ [
+  "Payout",
+  "Instalment_No",
+  "1 to 60 for a rental-yield schedule",
+  "Investor_Payouts",
+  "Instalment_No",
+  "new_field",
+  {
+   "data_type": "integer"
+  }
+ ],
+ [
+  "Payout",
+  "Period_Month",
+  "the month the payout is for, stored as the first day (YYYY-MM-01)",
+  "Investor_Payouts",
+  "Period_Month",
+  "new_field",
+  {
+   "data_type": "date"
+  }
+ ],
+ [
+  "Payout",
+  "Due_On",
+  "due date: the 10th of the month, the first one the month after the allotment was issued",
+  "Investor_Payouts",
+  "Due_On",
+  "new_field",
+  {
+   "data_type": "date"
+  }
+ ],
+ [
+  "Payout",
+  "Gross_Amount",
+  "monthly gross in whole rupees: Issued_Units x Unit_Price x Annual_Rental_Yield / 100 / 12, rounded",
+  "Investor_Payouts",
+  "Gross_Amount",
+  "new_field",
+  {
+   "data_type": "currency"
+  }
+ ],
+ [
+  "Payout",
+  "TDS_Amount",
+  "TDS typed by Finance when paying, 0 by default; the console never works it out (D84)",
+  "Investor_Payouts",
+  "TDS_Amount",
+  "new_field",
+  {
+   "data_type": "currency"
+  }
+ ],
+ [
+  "Payout",
+  "Net_Amount",
+  "Gross_Amount minus TDS_Amount, written by the console with the paid mark",
+  "Investor_Payouts",
+  "Net_Amount",
+  "new_field",
+  {
+   "data_type": "currency"
+  }
+ ],
+ [
+  "Payout",
+  "Payout_State",
+  "Scheduled / Paid / Held / Failed / Cancelled; a payout is paid once",
+  "Investor_Payouts",
+  "Payout_State",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "Scheduled",
+     "actual_value": "Scheduled"
+    },
+    {
+     "display_value": "Paid",
+     "actual_value": "Paid"
+    },
+    {
+     "display_value": "Held",
+     "actual_value": "Held"
+    },
+    {
+     "display_value": "Failed",
+     "actual_value": "Failed"
+    },
+    {
+     "display_value": "Cancelled",
+     "actual_value": "Cancelled"
+    }
+   ]
+  }
+ ],
+ [
+  "Payout",
+  "Paid_On",
+  "the day the money went out; not in the future (IST)",
+  "Investor_Payouts",
+  "Paid_On",
+  "new_field",
+  {
+   "data_type": "date"
+  }
+ ],
+ [
+  "Payout",
+  "Payout_Mode",
+  "how it was paid",
+  "Investor_Payouts",
+  "Payout_Mode",
+  "new_field",
+  {
+   "data_type": "picklist",
+   "pick_list_values": [
+    {
+     "display_value": "NEFT",
+     "actual_value": "NEFT"
+    },
+    {
+     "display_value": "RTGS",
+     "actual_value": "RTGS"
+    },
+    {
+     "display_value": "IMPS",
+     "actual_value": "IMPS"
+    },
+    {
+     "display_value": "UPI",
+     "actual_value": "UPI"
+    }
+   ]
+  }
+ ],
+ [
+  "Payout",
+  "Payout_UTR",
+  "the bank's UTR; required to mark Paid; one transfer pays one payout (the console checks, Zoho has no unique rule); never logged, shown masked to the last four",
+  "Investor_Payouts",
+  "Payout_UTR",
+  "new_field",
+  {
+   "data_type": "text",
+   "length": 40
+  }
+ ],
+ [
+  "Payout",
+  "Paid_By",
+  "the Finance user who marked it paid (the token user)",
+  "Investor_Payouts",
+  "Paid_By",
+  "new_field",
+  {
+   "data_type": "userlookup"
+  }
+ ],
+ [
+  "Payout",
+  "Payout_Note",
+  "why a payout is Held, Failed or Cancelled (e.g. returned by the bank)",
+  "Investor_Payouts",
+  "Payout_Note",
+  "new_field",
+  {
+   "data_type": "textarea",
+   "textarea": {
+    "type": "small"
+   }
+  }
  ]
 ]
