@@ -346,3 +346,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · Round 7 integrated: roster UI + D44 cover end, one ledger everywhere, Balance/Forfeit replay, refund step-up panel, sheet progress, shared idempotency; full UI regression 378/379 · D119
 - 2026-10-04 · zoho/access: sandbox access config as code - spec.json (12 profiles, module perms, FLS walls, finance/compliance sharing rules, persona map), plan.mjs planners + org guard, bundle GZAccess (plan/apply/verify) · D120 draft, ACCESS-PLAN §1-§5, D110, D115-2
 - 2026-10-05 · sandbox seed runnable through the browser session: fields plan (Test_Seed/Seed_Key), real api names, seed-key → id resolution, persona owners, seed.js bundle · M19-S03
+- 2026-10-05 · wall test for the sandbox: zoho/wall (expectations, check, bundle, 18 tests) + docs/uat/sandbox-wall-test.md · T11, M12-S10, M02-S05
