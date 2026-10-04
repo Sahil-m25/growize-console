@@ -314,3 +314,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-04 · tracker reconcile report: 410 open lines, 9 review units, test-phase local work; no tracker files edited · D111, docs/reports/tracker-reconcile-2026-10-04.md
 - 2026-10-04 · Rulings sheet for bulk approval (165 BLOCKED lines + 19 owner-input rows, 18 superseded) and draft index rows for the D67/D86-D103 gap · D113, D114, D115 rulings, D67, D86-D103
 - 2026-10-04 · send_mail attachments by file id + DeckMailer on GROWIZE_DECK_FILE_ID (NDA gate kept); Consent_How mapped onto the org picklist; Consent_Visit dropped from Leads reads/writes · M12-S13-NOTE-2, M14-S03-NOTE-5, M12-S11-NOTE-5
+- 2026-10-04 · Rights grid = seat columns (13: 8 Investors seats less root + 5 lead-side), each with its D80 Zoho role (server rightsGrid, fixture, Teams tile) · M17-S01-NOTE-3, owner ruling 3 (D115)

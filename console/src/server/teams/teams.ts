@@ -26,7 +26,7 @@
 
 import type { Cap, CapGrid, Person, PersonKey, SeatKey } from "../../domain";
 import { NOSIGN, SEAT } from "../../domain";
-import { CAN, emptyImData, maySeat, may as imMay, pageReadable, ROLE, TEAM, type ImCan, type ImRoleKey } from "../../lib/im";
+import { CAN, SEAT_COLUMNS, emptyImData, maySeat, may as imMay, pageReadable, ROLE, TEAM, type ImCan, type ImRoleKey } from "../../lib/im";
 import { EMPTY_PLAN } from "../../lib/data/empty";
 import { canManage, capDevOf, chainOf, clashOf, consoleAccount, manageable, reachBase, teamName, teamOfPerson, type CapDeviation, type Grants } from "../../lib/selectors/access";
 import type { Ctx } from "../../lib/selectors/ctx";
@@ -389,7 +389,14 @@ export function memberDetail(a: Extract<TeamsAccess, { ok: true }>, org: Org, gr
 /* ---- the rights grid ------------------------------------------------------------------------------ */
 
 export interface GridColumn {
-  readonly seat: ZohoSeat;
+  /** the seat this column is: an Investors seat key (head, ops, comp, audit, amlead, kam, di, admin) or a lead-side seat key (R4 ruling 3) */
+  readonly seat: string;
+  readonly label: string;
+  /** the D80 Zoho role the seat sits on: it decides whose records the seat sees; the rights below are the seat's own */
+  readonly zohoRole: ZohoRoleName;
+  /** the role mapping is the policy's guess (every lead-side seat) */
+  readonly provisional: boolean;
+  readonly zohoSeat: ZohoSeat;
   readonly roleName: ZohoRoleName;
   readonly profileName: ZohoProfileName;
   /** the role and profile as Zoho lists them today; null = not found */
@@ -423,17 +430,19 @@ export interface PinnedSeatIds {
 export function rightsGrid(roles: readonly ZohoRoleRow[] | null, profiles: readonly ZohoProfileRow[] | null, pinned: PinnedSeatIds, now: Date = new Date(0)): RightsGrid {
   const zoho = roles !== null && profiles !== null;
   const presets = seatPresets(now);
-  const columns = (Object.keys(ZOHO_SEAT_POLICIES) as ZohoRoleName[]).map((roleName): GridColumn => {
+  const columns = SEAT_COLUMNS.map((sc): GridColumn => {
+    const roleName = sc.zohoRole as ZohoRoleName;
     const p = ZOHO_SEAT_POLICIES[roleName];
     const role = roles?.find((r) => r.name === roleName) ?? null;
     const profile = profiles?.find((r) => r.name === p.profile) ?? null;
     const drift = zoho && (!role || role.id !== pinned.roleIds[roleName] || !profile || profile.id !== pinned.profileIds[p.profile]);
     const sides = ZOHO_SEAT_SIDES[p.seat];
     return Object.freeze({
-      seat: p.seat, roleName, profileName: p.profile, roleId: role?.id ?? null, profileId: profile?.id ?? null,
+      seat: sc.seat, label: sc.label, zohoRole: roleName, provisional: !!sc.provisional, zohoSeat: p.seat,
+      roleName, profileName: p.profile, roleId: role?.id ?? null, profileId: profile?.id ?? null,
       drift, administrator: p.administrator,
-      lead: sides.lead, leadLabel: SEAT[sides.lead] ?? "", im: sides.im, imLabel: sides.im ? ROLE[sides.im].t : null,
-      rights: Object.freeze(sides.im ? [...ROLE[sides.im].can] : []),
+      lead: sides.lead, leadLabel: SEAT[sides.lead] ?? "", im: sc.im, imLabel: sc.im ? ROLE[sc.im].t : null,
+      rights: Object.freeze(sc.im ? [...ROLE[sc.im].can] : []),
       /* DI is the super user's lead side (D68); its Administrator profile is not a console login of its own */
       pages: Object.freeze([...((p.seat === "digital-infrastructure" ? presets["super-user"] : presets[p.seat])?.pages ?? [])]),
     });

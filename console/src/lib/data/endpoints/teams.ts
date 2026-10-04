@@ -8,7 +8,7 @@ import { PAGECAPS, SEAT } from "@/domain";
 import type { ConsoleState } from "@/lib/state";
 import { canManage, capDevOf, clashOf, consoleAccount, hasCap, manageable, mgrOf, navFor, P, reachOf, teamName, teamOfPerson, type CapDeviation, type Grants } from "@/lib/selectors";
 import { availCover, availStatus } from "@/features/people/helpers";
-import { bookOf, isSys, may, maySeat, pageReadable, role, ROLE, teamOf, who, type ImCan, type ImRoleKey, type ImState } from "@/lib/im";
+import { bookOf, isSys, SEAT_COLUMNS, may, maySeat, pageReadable, role, ROLE, teamOf, who, type ImCan, type ImRoleKey, type ImState } from "@/lib/im";
 import type { GridColumn, InvestorsSeatRow, LeadMemberRow, MemberDetail, TeamsView } from "@/server/teams/teams";
 import { fail, ok, type ReadEndpoint } from "../api";
 import type { ImBook } from "./im";
@@ -17,8 +17,8 @@ import type { ImBook } from "./im";
 export type MemberRow = Pick<LeadMemberRow, "id" | "name" | "seatLabel" | "team" | "managerName" | "status" | "you" | "canOpen" | "investorsSide" | "loginHere" | "pages" | "leads">;
 /** The parts of an Investors seat row "Who is here" draws. */
 export type SeatRow = Pick<InvestorsSeatRow, "id" | "name" | "team" | "role" | "seatLabel" | "may" | "status" | "you" | "email" | "seatOptions" | "otherTeam" | "accounts">;
-/** One column of "What each seat holds": an Investors seat and its rights. */
-export type GridCol = Pick<GridColumn, "im" | "imLabel" | "rights">;
+/** One column of "What each seat holds": a seat, the D80 Zoho role it sits on, and the rights it holds (R4 ruling 3). */
+export type GridCol = Pick<GridColumn, "seat" | "label" | "zohoRole" | "im" | "rights">;
 export type TeamsAnswer = {
   view: Pick<TeamsView, "canChangeSeats" | "activeMembers"> & { members: MemberRow[] | null; investorsSide: SeatRow[] | null };
   grid: { columns: GridCol[] };
@@ -68,17 +68,17 @@ export function fixtureSeats(s: ImState, me: string): SeatRow[] | null {
   });
 }
 
-/** Every Investors seat and what it holds — the prototype's columns (ROLE); live: the Zoho roles that carry one. */
+/** Every seat and what it holds (SEAT_COLUMNS: the Investors seats less the super administrator, then the lead-side seats), each
+ *  with its D80 Zoho role; live: the same list, built from Zoho's roles and profiles (server/teams rightsGrid). */
 export const fixtureGrid = (): TeamsAnswer["grid"] =>
-  ({ columns: (Object.keys(ROLE) as ImRoleKey[]).map((r) => ({ im: r, imLabel: ROLE[r].t, rights: [...ROLE[r].can] })) });
+  ({ columns: SEAT_COLUMNS.map((c) => ({ seat: c.seat, label: c.label, zohoRole: c.zohoRole as GridCol["zohoRole"], im: c.im, rights: c.im ? [...ROLE[c.im].can] : [] })) });
 
 export const teamsRead: ReadEndpoint<ConsoleState, void, TeamsAnswer> = {
   path: () => "/api/teams",
   pick(j) {
     const o = j as { view: TeamsView; grid: { columns: GridColumn[] } };
-    const seen = new Set<string>();
-    /* one column per Investors seat (several Zoho roles can carry none, and none carries two) */
-    const columns = o.grid.columns.filter((c) => c.im && !seen.has(c.im) && !!seen.add(c.im)).map((c) => ({ im: c.im, imLabel: c.imLabel, rights: [...c.rights] }));
+    /* one column per seat, as the route lists them (two seats can sit on one Zoho role: Auditor and Compliance & KYC) */
+    const columns = o.grid.columns.map((c) => ({ seat: c.seat, label: c.label, zohoRole: c.zohoRole, im: c.im, rights: [...c.rights] }));
     return {
       view: {
         canChangeSeats: o.view.canChangeSeats, activeMembers: o.view.activeMembers,
