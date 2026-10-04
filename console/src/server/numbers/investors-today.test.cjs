@@ -1,11 +1,11 @@
 /* M05-S06-T01 — the headline figures on Today (Investors side), on recorded Zoho answers (__fixtures__/today-inv,
-   farms). The receipts aggregate is worked out from recorded receipt ROWS by a small COQL emulator that applies the
-   query's own Match_State filter, so "only matched money counts" is proved on what the query asks, and the same rows
-   feed money/register.ts to prove the two agree. Run from console/: node --test src/server/numbers/investors-today.test.cjs */
+   farms). The money ledger's receipt rows come from a small COQL emulator over the recorded rows (fixture-rig
+   receiptRows: it honours the query's filters and fields), so "only matched money counts" is proved on what the
+   ledger reads, and the same rows feed money/register.ts to prove the two agree. Run from console/: node --test src/server/numbers/investors-today.test.cjs */
 'use strict';
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { compile, makeRig, recorded, P, NOW } = require('../cases/fixture-rig.cjs');
+const { compile, makeRig, recorded, receiptRows, P, NOW } = require('../cases/fixture-rig.cjs');
 
 const load = compile(['server/numbers/investors-today.ts', 'server/money/register.ts', 'server/data/events.ts', 'server/identity/plane-c.ts']);
 const { createInvestorsToday, TODAY_TTL_MS } = load('server/numbers/investors-today.js');
@@ -14,20 +14,10 @@ const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const FIN = `${P}740993001`, HEAD = `${P}740993002`, KAM = `${P}740994002`;
 const ok = (data) => ({ status: 200, headers: { 'content-type': 'application/json' }, body: { data, info: { count: data.length, more_records: false } } });
 
-/** Zoho's GROUP BY Allotment, Kind over recorded rows, honouring the query's Match_State and Allotment IN filters. */
-function receiptsAggregate(q, rowsName) {
-  let rows = recorded('today-inv', rowsName).body.data;
-  const st = /Match_State = '([^']+)'/.exec(q);
-  if (st) rows = rows.filter((r) => r.Match_State === st[1]);
-  const ins = /Allotment in \(([^)]*)\)/.exec(q);
-  if (ins) { const ids = ins[1].split(',').map((s) => s.trim().replace(/'/g, '')); rows = rows.filter((r) => ids.includes(r.Allotment.id)); }
-  const g = new Map();
-  for (const r of rows) { const k = `${r.Allotment.id}|${r.Kind}`; g.set(k, (g.get(k) ?? 0) + r.Amount); }
-  return ok([...g].map(([k, v]) => ({ Allotment: { id: k.split('|')[0], name: 'x' }, Kind: k.split('|')[1], 'SUM(Amount)': v })));
-}
-const routeWith = (rowsName = 'receipts.rows') => (q) => {
-  if (/from Receipts/.test(q) && /SUM\(Amount\)/.test(q)) return receiptsAggregate(q, rowsName);
-  if (/from Receipts/.test(q)) return ['today-inv', rowsName];
+const routeWith = (rowsName = 'receipts.rows', extra = []) => (q) => {
+  const rows = [...recorded('today-inv', rowsName).body.data, ...extra];
+  if (/^select id, Allotment, Kind, Amount, Match_State, Reversal_Of/.test(q)) return receiptRows(q, rows);
+  if (/from Receipts/.test(q)) return extra.length ? ok(rows) : ['today-inv', rowsName];
   if (/group by LLP, Allocation_Status/.test(q)) return ['farms', 'agg.occupancy'];
   if (/SUM\(Units_Released\)/.test(q)) return ['today-inv', 'agg.llp-units'];
   if (/from Cases/.test(q)) return ['today-inv', 'agg.cases'];
@@ -61,7 +51,8 @@ test('TC-IM03-002: a receipt recorded but not matched moves neither banked nor o
   const v = (await createInvestorsToday(rig).read({ credential: await rig.cred(HEAD), seat: 'head' })).value;
   assert.equal(v.money.value.banked, 88_750_000);
   assert.equal(v.money.value.outstanding, 11_250_000);
-  assert.ok(rig.queries.some((q) => /from Receipts where Match_State = 'Matched'/.test(q)));
+  assert.ok(rig.queries.some((q) => /^select id, Allotment, Kind, Amount, Match_State, Reversal_Of from Receipts where \(id is not null\)/.test(q)),
+    'the ledger rows (M01-S08-NOTE-3) — every state read, only Matched counted');
 });
 
 test('agrees with money/register.ts on the same receipts once every one is matched (banked = net banked, outstanding = still due)', async () => {
@@ -128,4 +119,28 @@ test('a seat with no Investors book is refused', async () => {
   const rig = await makeRig(load, routeWith());
   const r = await createInvestorsToday(rig).read({ credential: await rig.cred(`${P}740995001`), seat: 'cp' });
   assert.equal(r.ok, false);
+});
+
+test('M01-S08-NOTE-3: on a mixed ledger (refund, reversal of matched / pending / flipped, pending reversal) Today equals the register', async () => {
+  const base = recorded('today-inv', 'receipts.rows-with-pending').body.data;
+  const XJ = `${P}740996204`, XK = `${P}740996205`;
+  const row = (n, allot, Kind, Amount, Match_State, reversalOf = null) => ({ ...base[0], id: `${P}7409954${n}`, Allotment: { id: allot, name: 'x' }, Kind, Amount, Match_State,
+    UTR: `SYNTHTODAY${n}`, Reversal_Of: reversalOf ? { id: reversalOf, name: 'x' } : null });
+  const pendingPart = base.find((r) => r.Allotment.id === XK && r.Match_State === 'Pending');
+  const extra = [
+    row(60, XK, 'Refund', pendingPart.Amount, 'Matched', pendingPart.id),   // matched reversal of a pending receipt
+    row(61, XJ, 'Part', 500_000, 'Reversed'), row(62, XJ, 'Refund', 500_000, 'Matched', `${P}740995461`),   // flipped + its reversal
+    row(63, XJ, 'Part', 400_000, 'Matched'), row(64, XJ, 'Refund', 400_000, 'Matched', `${P}740995463`),    // matched reversal of a matched one
+    row(65, XJ, 'Refund', 100_000, 'Matched'),                                                             // a refund
+    row(66, XJ, 'Advance', 300_000, 'Matched'), row(67, XJ, 'Refund', 300_000, 'Pending', `${P}740995466`), // a pending reversal
+  ];
+  const rig = await makeRig(load, routeWith('receipts.rows-with-pending', extra));
+  const cred = await rig.cred(HEAD);
+  const today = (await createInvestorsToday(rig).read({ credential: cred, seat: 'head' })).value.money.value;
+  const reg = createPaymentsRegister({ crm: rig.crm, log: createOpsLog(createMemorySink()), recordIdPrefix: P, clock: () => NOW,
+    access: { async recheck(c) { return { actor: { userId: c.userId }, seesRegister: true, seesUtr: false, canRecord: true }; } } });
+  const out = await reg.read({ credential: cred, sessionId: 'session_fixture_00000001' });
+  assert.equal(out.ok, true, JSON.stringify(out));
+  assert.deepEqual([today.banked, today.outstanding], [out.value.totals.netBanked, out.value.totals.stillDue]);
+  assert.deepEqual([today.banked, today.outstanding], [88_750_000 - 100_000 + 300_000, 11_250_000 + 100_000 - 300_000], 'only the refund and the standing advance move a figure');
 });

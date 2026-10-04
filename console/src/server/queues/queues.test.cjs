@@ -5,7 +5,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { compile, makeRig, recorded, P } = require('../cases/fixture-rig.cjs');
+const { compile, makeRig, recorded, receiptRows, P } = require('../cases/fixture-rig.cjs');
 
 const load = compile(['server/queues/queue.ts', 'server/queues/rules.ts', 'server/holds/holds.ts', 'server/data/events.ts', 'server/identity/plane-c.ts']);
 const { createInvestorQueues } = load('server/queues/queue.js');
@@ -20,16 +20,9 @@ const ok = (data) => ({ status: 200, headers: { 'content-type': 'application/jso
 const can = (r) => (c) => ROLE[r].can.includes(c);
 const SECRET_EMAIL = 'synthetic.investor@example.invalid', SECRET_PHONE = '+919800000000';
 
-function receiptsAggregate(q) {
-  let rows = recorded('today-inv', 'receipts.rows-with-pending').body.data;
-  const st = /Match_State = '([^']+)'/.exec(q); if (st) rows = rows.filter((r) => r.Match_State === st[1]);
-  const ins = /Allotment in \(([^)]*)\)/.exec(q);
-  if (ins) { const ids = ins[1].split(',').map((s) => s.trim().replace(/'/g, '')); rows = rows.filter((r) => ids.includes(r.Allotment.id)); }
-  const g = new Map(); for (const r of rows) { const k = `${r.Allotment.id}|${r.Kind}`; g.set(k, (g.get(k) ?? 0) + r.Amount); }
-  return ok([...g].map(([k, v]) => ({ Allotment: { id: k.split('|')[0] }, Kind: k.split('|')[1], 'SUM(Amount)': v })));
-}
+const receiptsLedger = (q) => receiptRows(q, recorded('today-inv', 'receipts.rows-with-pending').body.data);
 const route = (o = {}) => (q) => {
-  if (/from Receipts/.test(q)) return receiptsAggregate(q);
+  if (/from Receipts/.test(q)) return receiptsLedger(q);
   if (/Hold_Until <= /.test(q)) return o.holds ?? ['holds', 'coql.holds'];
   if (/from Touches/.test(q)) return ['queues', o.touches ?? 'coql.touches.imran'];
   if (/from Contacts where \(\(KYC not in/.test(q)) return ['queues', 'coql.kyc-contacts'];

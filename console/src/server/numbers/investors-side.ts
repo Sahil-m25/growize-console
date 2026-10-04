@@ -6,13 +6,14 @@
  * Sections (prototype vIns keys):
  *   cash   Collection — banked (matched Receipts, D21) and committed (allotment units × unit price) per farm LLP,
  *          committed-not-yet-in (Reserved balance due), the full programme (Σ LLP Total_Units × Pet_Unit_Price),
- *          per cent collected of committed and of the programme. Four COQL aggregates (≤ 4 group fields,
- *          ≤ 5 aggregates each, checked by `checkAggregate`) + the live allotment rows the balance needs (the rule
- *          of ../holds/rules, the same as Today's headline). Only the NUMBERS are cached, keyed by the seat's money
+ *          per cent collected of committed and of the programme. Two COQL aggregates (≤ 4 group fields,
+ *          ≤ 5 aggregates each, checked by `checkAggregate`) + the Receipts ledger rows (../holds/rules
+ *          readLedgerReceipts, one call per 2,000 receipts — an aggregate cannot see Reversal_Of, M01-S08-NOTE-3)
+ *          + the live allotment rows the balance needs (the rule of ../money/ledger, the same as Today's headline). Only the NUMBERS are cached, keyed by the seat's money
  *          scope (../data/scope scopedKey: `role:org|org.numbers.investors.cash` for Finance, never a KAM's key).
  *   risk   Balance ageing — every live allotment part-paid (matched net > 0 and still due > 0; the org has no
- *          Payment_Status field, allotments.ts) with days since its last matched inbound Receipt, oldest first.
- *          COQL cannot MIN/MAX dates, so the receipts are grouped by Allotment, Kind, Received_On and aged here.
+ *          Payment_Status field, allotments.ts) with days since its last matched inbound Receipt that still stands
+ *          (not cancelled by a reversal), oldest first — from the same ledger rows (Received_On read alongside).
  *          Rows: never cached.
  *   paper  Out for signature, oldest first — ../documents/list (cut "out", the Investors side), with the document,
  *          the allotment or Contact, the signing method, and sender / days out / link expiry from the Zoho Sign
@@ -22,8 +23,8 @@
  *          ("unsupported column in criteria", checked 28 Sep 2026), so a slot counts as missing while its
  *          *_Proof_Verified_At is empty (PROVISIONAL, jev "a" 0.95). No PAN, bank or Aadhaar value is selected.
  *
- * Money rule (reported): the Payments register (../money/register) counts Pending receipts in net banked; this page
- * follows Today and D21 — MATCHED receipts only — so "banked" here equals Today's headline figure.
+ * Money rule: ../money/ledger, as the Payments register, Today and the record use it — MATCHED receipts only (D21),
+ * reversals cancelling their target — so "banked" here equals Today's headline figure and the register's net banked.
  *
  * Who is offered what (`investorsSideFor`): an IR, channel partner or IR Manager has no Investors side; a KAM or
  * Head of AM gets Service only (no rupee figure); a seat whose record carries Money over an org/all money scope
@@ -33,16 +34,17 @@
  * (refused-action) and Plane B; a Zoho 403 on Receipts is refused the same way.
  */
 
-import type { AggregateRow, UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
+import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { CacheError, CacheFresh, CacheStale, ScopedCache } from "../../lib/zoho/cache";
 import { isAmSeat } from "../data/am-scope";
 import { idOf, str } from "../data/contact-row";
 import { checkProjection, MODULES } from "../data/projections";
 import { scopedKey, scopesFor } from "../data/scope";
 import { createDocumentsList, documentsSideFor, type SignStatusReader } from "../documents/list";
-import { commitmentOf, dayOf, dueOf, INBOUND_KINDS, istDay, matchedMoneyOf } from "../holds/rules";
+import { commitmentOf, dayOf, dueOf, istDay, matchedMoneyOf, readLedgerReceipts } from "../holds/rules";
+import { ledgerOf, signedOf } from "../money/ledger";
 import { sectionsFor } from "../investors/record";
-import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "../money/register";
+import { ALLOTMENTS_MODULE } from "../money/register";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { AmServiceResult, AmServiceView } from "../investors/am-service";
 
@@ -75,14 +77,12 @@ export function checkAggregate(q: string): string {
 }
 
 const LIVE = "Allocation_Status in ('Reserved', 'Issued')";
-/** Banked per farm LLP: matched receipts through the allotment's LLP (inbound minus refunds, worked out below). */
-export const BANKED_BY_LLP = checkAggregate(`select Allotment.LLP, Kind, SUM(Amount) from ${RECEIPTS_MODULE} where Match_State = 'Matched' group by Allotment.LLP, Kind limit 0, 2000`);
 /** Committed per farm LLP: units (Reserved_Units while Reserved, Issued_Units once Issued) × the allotment's price. */
 export const COMMITTED_BY_LLP = checkAggregate(`select LLP, Allocation_Status, Unit_Price, SUM(Reserved_Units), SUM(Issued_Units) from ${ALLOTMENTS_MODULE} where ${LIVE} group by LLP, Allocation_Status, Unit_Price limit 0, 2000`);
 /** The full programme: Σ Total_Units × Pet_Unit_Price over the LLPs. */
 export const PROGRAMME = checkAggregate(`select Pet_Unit_Price, SUM(Total_Units) from ${MODULES.llps} where id is not null group by Pet_Unit_Price limit 0, 2000`);
-/** Matched money per allotment and per receipt day — the balance due and the ageing (COQL cannot MAX a date). */
-export const MATCHED_BY_ALLOTMENT_DAY = checkAggregate(`select Allotment, Kind, Received_On, SUM(Amount) from ${RECEIPTS_MODULE} where Match_State = 'Matched' group by Allotment, Kind, Received_On limit 0, 2000`);
+/** Read alongside the ledger fields: the day (ageing) and the allotment's farm (banked per LLP, Cancelled allotments too). */
+export const LEDGER_EXTRA_FIELDS: readonly string[] = Object.freeze(["Received_On", "Allotment.LLP"]);
 /** Live allotment rows (no identity field; checked at load). */
 export const LIVE_ALLOTMENT_FIELDS = checkProjection(MODULES.allotments, ["id", "Customer", "LLP", "Allocation_Status", "Reserved_Units", "Issued_Units", "Unit_Price"]);
 /** Compliance status fields — status, never identity (checked at load). */
@@ -205,21 +205,6 @@ const lookupName = (v: unknown): string | null => {
 };
 const kycOf = (v: string | null): ComplianceRow["kyc"] => (v === "Completed" ? "passed" : v === "Failed" ? "failed" : v === "NA" ? "na" : "pending");
 
-/** Signed money per group key from `… Kind, SUM(Amount) … group by <key>, Kind` rows (inbound +, refund −). */
-function signedBy(rows: readonly AggregateRow[], key: string): Map<string | null, number> {
-  const out = new Map<string | null, number>();
-  for (const r of rows) {
-    const amount = r["SUM(Amount)"];
-    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) continue;
-    const kind = typeof r.Kind === "string" ? r.Kind : "";
-    const sign = INBOUND_KINDS.has(kind) ? 1 : kind === "Refund" ? -1 : 0;
-    if (!sign) continue;
-    const k = typeof r[key] === "string" && RECORD_ID.test(r[key] as string) ? (r[key] as string) : null;
-    out.set(k, (out.get(k) ?? 0) + sign * amount);
-  }
-  return out;
-}
-
 export function createInvestorsSide(deps: InvestorsSideDeps) {
   const clock = deps.clock ?? Date.now;
 
@@ -228,6 +213,12 @@ export function createInvestorsSide(deps: InvestorsSideDeps) {
     if (!r.ok) throw new ZohoFail(r.error.kind);
     if (r.value.length >= 2_000) throw new ZohoFail("truncated");
     return r.value;
+  };
+  /** The receipts as the one ledger reads them, plus the day and farm of each (no UTR, no identity). */
+  const ledgerRows = async (cred: UserCredential, signal?: AbortSignal) => {
+    const r = await readLedgerReceipts(deps.crm, cred, "id is not null", { signal, maxPages: MAX_PAGES, extra: LEDGER_EXTRA_FIELDS });
+    if (!r.ok) throw new ZohoFail(r.errorKind);
+    return r;
   };
   const liveAllotments = async (cred: UserCredential, signal?: AbortSignal): Promise<ZohoRecord[]> => {
     const out: ZohoRecord[] = [];
@@ -247,14 +238,24 @@ export function createInvestorsSide(deps: InvestorsSideDeps) {
   };
 
   const collection = async (cred: UserCredential, signal?: AbortSignal): Promise<Record<string, number>> => {
-    const [bankedRows, committedRows, programmeRows, matchedRows] = await Promise.all([
-      agg(cred, BANKED_BY_LLP, signal), agg(cred, COMMITTED_BY_LLP, signal), agg(cred, PROGRAMME, signal), agg(cred, MATCHED_BY_ALLOTMENT_DAY, signal),
+    const [committedRows, programmeRows, receipts] = await Promise.all([
+      agg(cred, COMMITTED_BY_LLP, signal), agg(cred, PROGRAMME, signal), ledgerRows(cred, signal),
     ]);
     const rows = await liveAllotments(cred, signal);
     const out: Record<string, number> = {};
     const add = (k: string, v: number) => { out[k] = (out[k] ?? 0) + v; };
+    // banked per farm: each allotment's matched standing (../money/ledger) through its LLP; a matched row with no
+    // allotment is still banked, under "none"
+    const m = matchedMoneyOf(receipts.entries);
+    const llpOf = new Map<string, string | null>();
+    for (const x of receipts.rows) { const a = idOf(x.Allotment); if (a && !llpOf.has(a)) llpOf.set(a, idOf(x["Allotment.LLP"])); }
     let banked = 0;
-    for (const [llp, v] of signedBy(bankedRows, "Allotment.LLP")) { banked += v; add(llp ? `banked:${llp}` : "banked:none", v); }
+    for (const [a, v] of m.byAllotment) { const llp = llpOf.get(a) ?? null; banked += v; add(llp ? `banked:${llp}` : "banked:none", v); }
+    for (const e of receipts.entries) {
+      if (e.allotmentId || e.reversalOf !== null || e.matchState !== "Matched") continue;
+      const v = signedOf(e);
+      if (v) { banked += v; add("banked:none", v); }
+    }
     let committed = 0;
     for (const r of committedRows) {
       const llp = typeof r.LLP === "string" && RECORD_ID.test(r.LLP) ? r.LLP : null;
@@ -265,7 +266,6 @@ export function createInvestorsSide(deps: InvestorsSideDeps) {
     }
     let programme = 0, programmeUnits = 0;
     for (const r of programmeRows) { programme += num(r["SUM(Total_Units)"]) * num(r.Pet_Unit_Price); programmeUnits += num(r["SUM(Total_Units)"]); }
-    const m = matchedMoneyOf(matchedRows);
     let outstanding = 0;
     for (const x of rows) {
       if (x.Allocation_Status !== "Reserved") continue;
@@ -292,13 +292,15 @@ export function createInvestorsSide(deps: InvestorsSideDeps) {
   };
 
   const ageing = async (cred: UserCredential, signal?: AbortSignal): Promise<{ rows: AgeingRow[]; due: number }> => {
-    const [matchedRows, rows] = await Promise.all([agg(cred, MATCHED_BY_ALLOTMENT_DAY, signal), liveAllotments(cred, signal)]);
-    const m = matchedMoneyOf(matchedRows);
+    const [receipts, rows] = await Promise.all([ledgerRows(cred, signal), liveAllotments(cred, signal)]);
+    const m = matchedMoneyOf(receipts.entries);
+    // the last matched inbound receipt that still stands (the ledger's lines: a cancelled receipt is not one)
+    const dayById = new Map(receipts.rows.map((x) => [idOf(x.id), dayOf(x.Received_On)]));
     const last = new Map<string, string>();
-    for (const r of matchedRows) {
-      const a = typeof r.Allotment === "string" ? r.Allotment : null, d = dayOf(r.Received_On);
-      if (!a || !d || !INBOUND_KINDS.has(typeof r.Kind === "string" ? r.Kind : "") || num(r["SUM(Amount)"]) <= 0) continue;
-      if (!last.has(a) || last.get(a)! < d) last.set(a, d);
+    for (const l of ledgerOf(receipts.entries).lines) {
+      const d = dayById.get(l.id) ?? null;
+      if (l.matchState !== "Matched" || l.signed <= 0 || l.reverses !== null || !d) continue;
+      if (!last.has(l.allotmentId) || last.get(l.allotmentId)! < d) last.set(l.allotmentId, d);
     }
     const now = clock();
     const out: AgeingRow[] = [];

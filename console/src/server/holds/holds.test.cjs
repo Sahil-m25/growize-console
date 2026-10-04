@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { test } = require('node:test');
-const { compile, makeRig, makeHttpRig, recorded, P } = require('../cases/fixture-rig.cjs');
+const { compile, makeRig, makeHttpRig, recorded, receiptRows, P } = require('../cases/fixture-rig.cjs');
 
 const load = compile(['server/holds/holds.ts', 'server/holds/lapse.ts', 'server/holds/extend.ts', 'server/data/events.ts', 'server/identity/plane-c.ts',
   'server/identity/authority.ts', 'server/contracts/events.ts', 'server/contracts/stub.ts', 'server/money/allotment-receipts.ts']);
@@ -25,16 +25,10 @@ const HEAD = `${P}740993002`, FIN = `${P}740993001`, ROHIT = `${P}740995001`, KA
 const XJ = `${P}740996204`, XK = `${P}740996205`, PRA = `${P}740997102`;
 const SEP02 = Date.parse('2026-09-02T10:00:00+05:30'), SEP26 = Date.parse('2026-09-26T10:00:00+05:30');
 const ok = (data) => ({ status: 200, headers: { 'content-type': 'application/json' }, body: { data, info: { count: data.length, more_records: false } } });
-function receiptsAggregate(q) {
-  let rows = recorded('today-inv', 'receipts.rows-with-pending').body.data;
-  const st = /Match_State = '([^']+)'/.exec(q); if (st) rows = rows.filter((r) => r.Match_State === st[1]);
-  const ins = /Allotment in \(([^)]*)\)/.exec(q);
-  if (ins) { const ids = ins[1].split(',').map((s) => s.trim().replace(/'/g, '')); rows = rows.filter((r) => ids.includes(r.Allotment.id)); }
-  const g = new Map(); for (const r of rows) { const k = `${r.Allotment.id}|${r.Kind}`; g.set(k, (g.get(k) ?? 0) + r.Amount); }
-  return ok([...g].map(([k, v]) => ({ Allotment: { id: k.split('|')[0] }, Kind: k.split('|')[1], 'SUM(Amount)': v })));
-}
-const readRoute = (one = 'coql.hold-prakash') => (q) => {
-  if (/from Receipts/.test(q)) return receiptsAggregate(q);
+/** The ledger's row read (holds/rules readLedgerReceipts) over the recorded receipts, Pending rows included. */
+const receiptsLedger = (q, extra = []) => receiptRows(q, [...recorded('today-inv', 'receipts.rows-with-pending').body.data, ...extra]);
+const readRoute = (one = 'coql.hold-prakash', extra = []) => (q) => {
+  if (/from Receipts/.test(q)) return receiptsLedger(q, extra);
   if (/group by LLP, Allocation_Status/.test(q)) return ['farms', 'agg.occupancy'];
   if (/Total_Amount_Receivable = 0/.test(q)) return ['farms', 'agg.occupancy-paid'];
   if (/from LLP_UnitAllocation_Module where \(Allocation_Status in/.test(q)) return ['farms', 'coql.occupants'];
@@ -75,7 +69,32 @@ test('TC-IM03-009: Holds running — ₹2,50,000 exposure; Joseph 19d (4 units �
     [['Joseph Mathew', 19, 4, 9_000_000, '2026-09-21', false], ['Prakash Bhat', 21, 1, 2_250_000, '2026-09-23', false]]);
   assert.ok(rig.queries.some((q) => /Allocation_Status = 'Reserved' and Hold_Until is not null and Hold_Until <= '2026-09-23'/.test(q)));
   // Meena's recorded-but-unmatched ₹22.5 L against Prakash does not reduce what is due (D21)
-  assert.ok(rig.queries.some((q) => /Match_State = 'Matched' and Allotment in/.test(q)));
+  assert.ok(rig.queries.some((q) => /^select id, Allotment, Kind, Amount, Match_State, Reversal_Of from Receipts where \(Allotment in/.test(q)), 'the ledger rows, not an aggregate');
+});
+
+test('M01-S08-NOTE-3: holds read money through money/ledger — a reversal cancels its target, a refund is money out, Pending never counts', async () => {
+  const base = recorded('today-inv', 'receipts.rows-with-pending').body.data;
+  const row = (n, allot, Kind, Amount, Match_State, reversalOf = null) => ({ ...base[0], id: `${P}7409954${n}`, Allotment: { id: allot, name: 'x' }, Kind, Amount, Match_State,
+    UTR: `SYNTHHOLD${n}`, Reversal_Of: reversalOf ? { id: reversalOf, name: 'x' } : null });
+  const pendingPart = base.find((r) => r.Allotment.id === XK && r.Match_State === 'Pending');
+  const extra = [
+    row(50, XK, 'Refund', pendingPart.Amount, 'Matched', pendingPart.id),   // matched reversal of Prakash's PENDING ₹22.5 L: cancels it, moves nothing matched
+    row(51, XJ, 'Part', 500_000, 'Reversed'),                              // Joseph: a receipt flipped to Reversed…
+    row(52, XJ, 'Refund', 500_000, 'Matched', `${P}740995451`),            // …and its matched reversal: counted once, nowhere
+    row(53, XJ, 'Refund', 100_000, 'Matched'),                             // a plain refund: money out
+    row(54, XJ, 'Advance', 300_000, 'Matched'),                            // …a matched advance…
+    row(55, XJ, 'Refund', 300_000, 'Pending', `${P}740995454`),            // …with a PENDING reversal: still stands (D21)
+  ];
+  const rig = await makeRig(load, readRoute('coql.hold-prakash', extra));
+  const r = await holdsOn(rig, SEP02).list({ credential: await rig.cred(FIN), seat: 'fin' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  // the old Kind aggregate read these as −₹22.5 L (Prakash) and −₹5 L −₹1 L −₹3 L (Joseph)
+  assert.deepEqual(r.holds.map((h) => [h.investor.name, h.due, h.received]),
+    [['Joseph Mathew', 9_000_000 + 100_000 - 300_000, 1_000_000 - 100_000 + 300_000], ['Prakash Bhat', 2_250_000, 250_000]]);
+  // and the arithmetic is the ledger's own (the register's): matchedMoneyOf over the same rows
+  const entries = [...base, ...extra].map(rules.ledgerEntryOf).filter(Boolean);
+  const m = rules.matchedMoneyOf(entries);
+  assert.deepEqual([m.byAllotment.get(XJ), m.byAllotment.get(XK), m.anomalies.length], [1_200_000, 250_000, 0]);
 });
 
 test('TC-IM03-009: Land reads 56 free of 208; Block C is not released — 54 units off the shelf', async () => {

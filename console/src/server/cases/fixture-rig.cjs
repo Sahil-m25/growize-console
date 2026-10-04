@@ -78,4 +78,26 @@ async function makeHttpRig(load, route) {
   return { ...rig, crm, calls, writes: () => calls.filter((c) => c.path !== '/coql') };
 }
 
-module.exports = { compile, makeRig, makeHttpRig, recorded, P, NOW };
+/**
+ * M01-S08-NOTE-3: Zoho's answer to the money ledger's row read (holds/rules readLedgerReceipts) over recorded Receipts
+ * rows — `select <fields> from Receipts where (<where>) order by id asc limit <off>, <n>`. Honours `Allotment in (…)`
+ * and a Match_State equality, projects to the selected fields (so a UTR not asked for is not returned), answers a
+ * dotted `Allotment.LLP` from `llpOf` (allotment id → LLP id), and pages with more_records like Zoho.
+ */
+function receiptRows(q, rows, llpOf = new Map()) {
+  const sel = /^select (.+?) from Receipts where/.exec(q);
+  if (!sel) throw new Error('not a receipts row read: ' + q);
+  const fields = sel[1].split(',').map((f) => f.trim());
+  if (fields.some((f) => /\(/.test(f))) throw new Error('aggregate sent to the row emulator: ' + q);
+  let out = rows.slice().sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const ins = /Allotment in \(([^)]*)\)/.exec(q);
+  if (ins) { const ids = ins[1].split(',').map((x) => x.trim().replace(/'/g, '')); out = out.filter((r) => r.Allotment && ids.includes(r.Allotment.id)); }
+  const st = /Match_State = '([^']+)'/.exec(q); if (st) out = out.filter((r) => r.Match_State === st[1]);
+  const lim = /limit (\d+), (\d+)$/.exec(q);
+  const off = lim ? +lim[1] : 0, n = lim ? +lim[2] : 2000;
+  const page = out.slice(off, off + n).map((r) => Object.fromEntries(fields.map((f) => [f,
+    f === 'Allotment.LLP' ? (r.Allotment && llpOf.has(r.Allotment.id) ? { id: llpOf.get(r.Allotment.id) } : null) : (r[f] === undefined ? null : r[f])])));
+  return { status: 200, headers: { 'content-type': 'application/json' }, body: { data: page, info: { count: page.length, more_records: off + n < out.length } } };
+}
+
+module.exports = { compile, makeRig, makeHttpRig, recorded, receiptRows, P, NOW };

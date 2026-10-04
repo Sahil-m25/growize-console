@@ -1,15 +1,16 @@
 /* M16-S08-T01 / M16-S09-T01 — the Investors side of Numbers on recorded Zoho answers (__fixtures__/today-inv for
    receipts and allotments, documents for the FEMA paper out, numbers/*side* for the programme and Compliance).
-   Aggregates are worked out from the recorded ROWS by a small COQL emulator that honours each query's own
-   Match_State / Allocation_Status filter and GROUP BY, so matched-only (D21) is proved on what the query asks.
+   Allotment aggregates are worked out from the recorded ROWS by a small COQL emulator that honours each query's own
+   Allocation_Status filter and GROUP BY; receipts are the money ledger's rows (fixture-rig receiptRows), so
+   matched-only (D21) and reversals (M01-S08-NOTE-3) are proved on what the ledger reads.
    Run from console/: node --test src/server/numbers/investors-side.test.cjs */
 'use strict';
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { compile, makeRig, recorded, P, NOW } = require('../cases/fixture-rig.cjs');
+const { compile, makeRig, recorded, receiptRows, P, NOW } = require('../cases/fixture-rig.cjs');
 
 const load = compile(['server/numbers/investors-side.ts', 'server/data/events.ts', 'server/identity/plane-c.ts', 'server/identity/authority.ts', 'server/data/scope.ts']);
-const { createInvestorsSide, investorsSideFor, checkAggregate, BANKED_BY_LLP, COMMITTED_BY_LLP, PROGRAMME, MATCHED_BY_ALLOTMENT_DAY } = load('server/numbers/investors-side.js');
+const { createInvestorsSide, investorsSideFor, checkAggregate, COMMITTED_BY_LLP, PROGRAMME } = load('server/numbers/investors-side.js');
 const { scopedKeyString, scopesFor } = load('server/data/scope.js');
 const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-c.js');
@@ -21,24 +22,8 @@ const cr = (n) => (n / 1e7).toFixed(2);
 const allotments = () => recorded('today-inv', 'allotments.all').body.data;
 const receipts = (name) => recorded('today-inv', name).body.data;
 
-/** GROUP BY over recorded receipt rows, applying the query's Match_State filter; keys as Zoho returns them. */
-function receiptsAggregate(q, rowsName) {
-  let rows = receipts(rowsName);
-  const st = /Match_State = '([^']+)'/.exec(q);
-  if (st) rows = rows.filter((r) => r.Match_State === st[1]);
-  const llpOf = new Map(allotments().map((a) => [a.id, a.LLP]));
-  const byLlp = /group by Allotment\.LLP, Kind/.test(q), byDay = /group by Allotment, Kind, Received_On/.test(q);
-  if (!byLlp && !byDay) throw new Error('unrouted receipts aggregate ' + q);
-  const g = new Map();
-  for (const r of rows) {
-    const key = byLlp ? JSON.stringify([llpOf.get(r.Allotment.id) ?? null, r.Kind]) : JSON.stringify([r.Allotment, r.Kind, r.Received_On]);
-    g.set(key, (g.get(key) ?? 0) + r.Amount);
-  }
-  return ok([...g].map(([k, v]) => {
-    const f = JSON.parse(k);
-    return byLlp ? { 'Allotment.LLP': f[0], Kind: f[1], 'SUM(Amount)': v } : { Allotment: f[0], Kind: f[2] === undefined ? f[1] : f[1], Received_On: f[2], 'SUM(Amount)': v };
-  }));
-}
+/** The money ledger's row read over recorded receipts (fixture-rig receiptRows), Allotment.LLP from the allotments. */
+const receiptsLedger = (q, rowsName, extra = []) => receiptRows(q, [...receipts(rowsName), ...extra], new Map(allotments().map((a) => [a.id, a.LLP && typeof a.LLP === 'object' ? a.LLP.id : a.LLP])));
 function committedAggregate() {
   const g = new Map();
   for (const a of allotments().filter((x) => x.Allocation_Status === 'Reserved' || x.Allocation_Status === 'Issued')) {
@@ -49,7 +34,7 @@ function committedAggregate() {
 }
 const routeWith = (opts = {}) => (q) => {
   if (/Sign_Req_Id/.test(q)) return /from Contacts/.test(q) ? ['documents', 'coql.sign-fema-out'] : ['numbers', 'coql.side-empty'];
-  if (/from Receipts/.test(q)) return opts.receiptsForbidden ? ['numbers', 'forbidden'] : receiptsAggregate(q, opts.rows ?? 'receipts.rows');
+  if (/from Receipts/.test(q)) return opts.receiptsForbidden ? ['numbers', 'forbidden'] : receiptsLedger(q, opts.rows ?? 'receipts.rows', opts.extra);
   if (/from LLP_UnitAllocation_Module/.test(q) && /group by LLP, Allocation_Status, Unit_Price/.test(q)) return committedAggregate();
   if (/from LLP_UnitAllocation_Module/.test(q) && /order by id asc limit/.test(q)) return ok(allotments().filter((x) => x.Allocation_Status === 'Reserved' || x.Allocation_Status === 'Issued'));
   if (/from LLP_Creation_Module/.test(q)) return ['numbers', 'agg.side-programme'];
@@ -71,7 +56,7 @@ async function rig(opts = {}) {
 }
 
 test('the aggregates stay inside COQL limits (≤ 4 group fields, ≤ 5 aggregates)', () => {
-  for (const q of [BANKED_BY_LLP, COMMITTED_BY_LLP, PROGRAMME, MATCHED_BY_ALLOTMENT_DAY]) assert.equal(checkAggregate(q), q);
+  for (const q of [COMMITTED_BY_LLP, PROGRAMME]) assert.equal(checkAggregate(q), q);
   assert.throws(() => checkAggregate('select a, b, c, d, e, COUNT(id) from X where id is not null group by a, b, c, d, e'));
   assert.throws(() => checkAggregate('select a, COUNT(id), SUM(b), SUM(c), SUM(d), SUM(e), SUM(f) from X where id is not null group by a'));
   assert.throws(() => checkAggregate('select a from X'));
@@ -107,7 +92,8 @@ test('TC-IM09-001: Collection — ₹8.88 Cr banked (matched only), ₹1.13 Cr c
   assert.equal(by[`${P}740998302`].outstanding, 11_250_000);
   assert.equal(c.byLlp.reduce((s, l) => s + l.banked, 0), c.banked);
   assert.equal(got.value.stale, false); assert.equal(got.value.asOf, NOW);
-  assert.ok(r.queries.every((q) => !/Received_On/.test(q) || /group by/.test(q)), 'receipts are only ever read as aggregates');
+  assert.ok(r.queries.filter((q) => /from Receipts/.test(q)).every((q) => /^select id, Allotment, Kind, Amount, Match_State, Reversal_Of, Received_On, Allotment\.LLP from Receipts/.test(q)),
+    'receipts are read as ledger rows — no UTR, no identity (M01-S08-NOTE-3)');
 });
 
 test('D21: a recorded but unmatched receipt moves no Collection figure (the register would count it; this page follows Today)', async () => {
@@ -123,7 +109,9 @@ test('TC-IM12-001 (Insights): Collection is cached as numbers under the money sc
   const cred = await r.cred(HEAD);
   await r.side.read({ credential: cred, seat: 'head' }, 'cash');
   const n = r.queries.length;
-  assert.ok(n >= 5 && n <= 6, `cold read spends ${n} COQL calls`);
+  // two aggregates (committed, programme) + one page of ledger rows + one page of live allotments (M01-S08-NOTE-3:
+  // the two receipt aggregates became one row read)
+  assert.equal(n, 4, `cold read spends ${n} COQL calls`);
   const again = await r.side.read({ credential: cred, seat: 'head' }, 'cash');
   assert.equal(again.ok, true);
   assert.equal(r.queries.length, n);
@@ -271,4 +259,26 @@ test('M16-S08 Service: a Zoho failure is a source error with its kind, never an 
   assert.deepEqual(await side.read({ credential: await r.cred(AMLEAD), seat: 'amlead' }, 'svc'), { ok: false, kind: 'source-error', errorKind: 'network', retryable: true, lastGoodAt: null });
   const boom = withService(r, async () => { throw new Error('x'); });
   assert.equal((await boom.read({ credential: await r.cred(AMLEAD), seat: 'amlead' }, 'svc')).kind, 'source-error');
+});
+
+test('M01-S08-NOTE-3: Collection and At risk read the one ledger — reversals cancel their target, refunds are out, Pending never counts', async () => {
+  const base = receipts('receipts.rows-with-pending');
+  const XJ = `${P}740996204`, XK = `${P}740996205`;
+  const row = (n, allot, Kind, Amount, Match_State, reversalOf = null, on = '2026-09-10T10:00:00+05:30') => ({ ...base[0], id: `${P}7409954${n}`,
+    Allotment: { id: allot, name: 'x' }, Kind, Amount, Match_State, Received_On: on, UTR: `SYNTHSIDE${n}`, Reversal_Of: reversalOf ? { id: reversalOf, name: 'x' } : null });
+  const pendingPart = base.find((r) => r.Allotment.id === XK && r.Match_State === 'Pending');
+  const extra = [
+    row(70, XK, 'Refund', pendingPart.Amount, 'Matched', pendingPart.id),
+    row(71, XJ, 'Part', 400_000, 'Matched', null, '2026-09-20T10:00:00+05:30'), row(72, XJ, 'Refund', 400_000, 'Matched', `${P}740995471`),   // cancelled: not "last receipt"
+    row(73, XJ, 'Refund', 100_000, 'Matched'),
+  ];
+  const a = await rig({ rows: 'receipts.rows-with-pending' });
+  const b = await rig({ rows: 'receipts.rows-with-pending', extra });
+  const x = (await a.side.read({ credential: await a.cred(HEAD), seat: 'head' }, 'cash')).value.collection;
+  const y = (await b.side.read({ credential: await b.cred(HEAD), seat: 'head' }, 'cash')).value.collection;
+  assert.deepEqual([y.banked, y.outstanding], [x.banked - 100_000, x.outstanding + 100_000], 'only the plain refund moves a figure');
+  assert.equal(y.byLlp.reduce((s, l) => s + l.banked, 0), y.banked);
+  const risk = (await b.side.read({ credential: await b.cred(HEAD), seat: 'head' }, 'risk')).value.rows;
+  const j = risk.find((r) => r.allotmentId === XJ);
+  assert.deepEqual([j.received, j.due, j.lastReceiptOn], [900_000, 9_100_000, '2026-08-24'], 'the reversed 20 Sep receipt is not the last one standing');
 });

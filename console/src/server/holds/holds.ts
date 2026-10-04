@@ -3,7 +3,9 @@
  *
  *   list   Reserved allotments whose hold ends on or before today + 21 (IST), run-out ones included, each with
  *          days left by the one IST function (./rules), units, farm (LLP), balance due (committed − matched
- *          receipts, the register's rule) and the forfeit; sorted by days left; total forfeit exposure.
+ *          receipts through ../money/ledger, the register's rule — reversals cancel their target) and the forfeit;
+ *          sorted by days left; total forfeit exposure. Money costs one Receipts row read per 100 allotments (one call
+ *          per 2,000 receipts in that chunk).
  *          Money seats reading the whole book only (Finance, Head of Finance, viewers, the super user).
  *   one    one allotment's hold for the record banner / lead alert: any seat that may open the investor, on its
  *          own token, re-admitted against the seat's Investors scope (ir-guard admitContact). Money (due, refund)
@@ -22,8 +24,8 @@ import { idOf, inClause, IN_CHUNK, num, pagedSelect, str } from "../cases/predic
 import { createFarmOccupancy } from "../farms/occupancy";
 import { sectionsFor } from "../investors/record";
 import {
-  commitmentOf, dayOf, daysLeft, dueOf, FORFEIT_PER_UNIT, HOLD_WINDOW_DAYS, holdUntilFrom, lapseMoney, matchedByAllotmentQuery,
-  matchedMoneyOf, URGENT_DAYS,
+  commitmentOf, dayOf, daysLeft, dueOf, FORFEIT_PER_UNIT, HOLD_WINDOW_DAYS, holdUntilFrom, lapseMoney,
+  matchedMoneyOf, readLedgerReceipts, URGENT_DAYS,
 } from "./rules";
 
 const ALLOT = MODULES.allotments;
@@ -88,14 +90,15 @@ export function createHolds(deps: HoldsDeps) {
   const clock = deps.clock ?? Date.now;
 
   const matched = async (cred: UserCredential, ids: readonly string[], signal?: AbortSignal) => {
-    const rows = [];
+    const entries = [];
     for (let i = 0; i < ids.length; i += IN_CHUNK) {
-      const r = await deps.crm.aggregate(cred, matchedByAllotmentQuery(inClause("Allotment", ids.slice(i, i + IN_CHUNK))), { signal });
-      if (!r.ok) return { ok: false as const, kind: "source-error" as const, errorKind: r.error.kind, retryable: retryable(r.error.kind) };
-      if (r.value.length >= 2_000) return { ok: false as const, kind: "refused" as const, reason: "source-invalid" as const };
-      rows.push(...r.value);
+      const r = await readLedgerReceipts(deps.crm, cred, inClause("Allotment", ids.slice(i, i + IN_CHUNK))!, { signal });
+      if (!r.ok) return r.errorKind === "truncated"
+        ? { ok: false as const, kind: "refused" as const, reason: "source-invalid" as const }
+        : { ok: false as const, kind: "source-error" as const, errorKind: r.errorKind, retryable: retryable(r.errorKind) };
+      entries.push(...r.entries);
     }
-    return { ok: true as const, money: matchedMoneyOf(rows) };
+    return { ok: true as const, money: matchedMoneyOf(entries) };
   };
 
   const lineOf = (x: ZohoRecord, now: number, net: number | null): HoldLine | null => {

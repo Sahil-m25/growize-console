@@ -2,15 +2,16 @@
  * M05-S06-T01 — THE HEADLINE FIGURES ON TODAY (Investors side): banked to date, balance outstanding, units held of
  * released, tickets open — each with when it was read from Zoho, and a stale/error state when the read fails (D41).
  *
- * The money rules are the Payments register's and allotment-receipts' (../money/register, ../money/allotment-receipts),
- * through ../holds/rules — only MATCHED receipts count (D21), inbound kinds minus refunds:
+ * The money rules are the Payments register's (../money/register), through ../holds/rules and so ../money/ledger —
+ * only MATCHED receipts count (D21), inbound kinds minus refunds, a matched reversal cancelling its target once:
  *   banked       = Σ matched inbound − Σ matched refunds, over every receipt the token sees
  *   outstanding  = Σ over Reserved allotments of max(0, units × Unit_Price − that allotment's matched net)
  *   units        = held (Issued_Units of Issued + Reserved_Units of Reserved, counted off the allotments as
  *                  ../farms/occupancy counts them — its COUNT_QUERY, imported) of released (Σ LLP Units_Released)
  *   tickets open = Cases not Closed (../cases/register cutsOf, its predicate casesWhere)
  *
- * COQL budget (TC-IM03-015): money 2 (one aggregate + the Reserved allotments, one page per 2,000), units 2
+ * COQL budget (TC-IM03-015): money 2 (the Receipts ledger rows + the Reserved allotments, one page per 2,000 each —
+ * rows, not an aggregate, because an aggregate cannot see Reversal_Of; M01-S08-NOTE-3), units 2
  * aggregates, tickets 1 aggregate — at most five on a cold render. Each group is an AGGREGATE in the scope-keyed cache
  * (D52/D53, A-19): money under the seat's money scope, units under the Investors scope (farms/occupancy countScopeOf),
  * tickets under the cases scope; a reload inside the TTL spends none. Nothing record-shaped is cached or logged.
@@ -25,7 +26,7 @@ import { casesWhere, cutsOf, CASES_MODULE } from "../cases/register";
 import { COUNT_QUERY, countScopeOf } from "../farms/occupancy";
 import { sectionsFor } from "../investors/record";
 import { ALLOTMENTS_MODULE } from "../money/register";
-import { commitmentOf, dueOf, matchedByAllotmentQuery, matchedMoneyOf } from "../holds/rules";
+import { commitmentOf, dueOf, matchedMoneyOf, readLedgerReceipts } from "../holds/rules";
 
 /** 30–60 s band (D45); the cache refuses anything past five minutes. */
 export const TODAY_TTL_MS = 45_000;
@@ -68,7 +69,9 @@ export function createInvestorsToday(deps: InvestorsTodayDeps) {
   };
 
   const money = async (cred: UserCredential, signal?: AbortSignal): Promise<TodayMoney> => {
-    const m = matchedMoneyOf(await agg(cred, matchedByAllotmentQuery(null), signal));
+    const rc = await readLedgerReceipts(deps.crm, cred, "id is not null", { signal, maxPages: MAX_PAGES });
+    if (!rc.ok) throw new ZohoFail(rc.errorKind);
+    const m = matchedMoneyOf(rc.entries);
     const reserved: ZohoRecord[] = [];
     for (let page = 0; ; page++) {
       if (page >= MAX_PAGES) throw new ZohoFail("truncated");
