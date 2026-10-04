@@ -259,7 +259,12 @@ export interface SendMailRequest {
   readonly subject: string;
   readonly content: string;
   readonly format: "text" | "html";
+  /** Files already in Zoho File Storage (POST /files → uploadFile()), attached by their id. Zoho caps the total at 10 MB. */
+  readonly attachmentFileIds?: readonly string[];
 }
+/** Zoho's send_mail attachment ids are opaque encrypted strings; we accept a conservative character set and bound the count. */
+export const SEND_MAIL_MAX_ATTACHMENTS = 5;
+const MAIL_FILE_ID = /^[A-Za-z0-9_-]{16,300}$/;
 export interface FromAddress { readonly email: string; readonly type: string; readonly userName: string | null; readonly isDefault: boolean }
 /** send_mail's own ceilings, below Zoho's; the product's tighter limits live with the caller. */
 export const SEND_MAIL_MAX_TO = 10;
@@ -1369,6 +1374,9 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
     },
 
     // ponytail: body and response per the v8 send_mail docs; unproven until TC-E07-024 runs on the sandbox.
+    // Attachments: "attachments": [{"id": "<encrypted file id from the Files API>"}], total <= 10 MB, per
+    // https://www.zoho.com/crm/developer/docs/api/v8/send-mail.html (read 4 Oct 2026).
+    // PROVISIONAL: the file-id attach path is as documented but unproven on the sandbox (TC-E07-024).
     async sendMail(as, module, id, mail, opts = {}) {
       checkModule(module);
       checkScopedId(id);
@@ -1381,9 +1389,14 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       if (typeof mail.subject !== "string" || !mail.subject.trim() || mail.subject.length > SEND_MAIL_MAX_SUBJECT) throw new TypeError("sendMail() needs a subject.");
       if (typeof mail.content !== "string" || !mail.content.trim() || mail.content.length > SEND_MAIL_MAX_CONTENT) throw new TypeError("sendMail() needs content.");
       if (mail.format !== "text" && mail.format !== "html") throw new TypeError('sendMail() format is "text" or "html".');
+      const ids = mail.attachmentFileIds;
+      if (ids !== undefined && (!Array.isArray(ids) || ids.length > SEND_MAIL_MAX_ATTACHMENTS || !ids.every((f) => typeof f === "string" && MAIL_FILE_ID.test(f)))) {
+        throw new TypeError(`sendMail() attaches up to ${SEND_MAIL_MAX_ATTACHMENTS} files by file id.`);
+      }
       const out = await execute(as, {
         op: "sendMail", method: "POST", path: `/${module}/${id}/actions/send_mail`, endpoint: `/${module}/{id}/actions/send_mail`,
-        body: { data: [{ from: addr(mail.from), to: mail.to.map(addr), subject: mail.subject, content: mail.content, mail_format: mail.format, consent_email: false }] },
+        body: { data: [{ from: addr(mail.from), to: mail.to.map(addr), subject: mail.subject, content: mail.content, mail_format: mail.format, consent_email: false,
+          ...(ids && ids.length ? { attachments: ids.map((id) => ({ id })) } : {}) }] },
         shape: { op: "send-mail" }, idempotent: false, perRecord: true, responseShape: "data", maxRows: 1,
         recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });

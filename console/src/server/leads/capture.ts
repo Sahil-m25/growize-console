@@ -27,12 +27,16 @@ const RECORD_ID = /^\d{15,22}$/;
 const RECORD_PREFIX = /^\d{6,16}$/;
 const SOURCE_SET: ReadonlySet<string> = new Set(SOURCES);
 
-/** The console's words for how permission was given (features/add/state.ts CONHOW). Zoho's
- *  Consent_How picklist must carry these exact labels (M04-S01-T01). */
+/** Leads.Consent_How picklist as the org holds it (live metadata read 4 Oct 2026; -None- aside). */
+export const CONSENT_HOW_PICKLIST: readonly string[] = Object.freeze(["Form", "Verbal", "Email reply", "Event sheet"]);
+/** The console's words for how permission was given (features/add/state.ts CONHOW) → a value the picklist holds
+ *  (M14-S03-NOTE-5). Form and event are exact. PROVISIONAL: in person and on a call are both Verbal; a WhatsApp
+ *  reply is a written reply, so it takes "Email reply" (the nearest). Judgement for the owner: add "WhatsApp reply" to the picklist if the distinction matters. */
 export const CONSENT_HOW: Readonly<Record<string, string>> = Object.freeze({
-  person: "In person", call: "On a call", msg: "In a WhatsApp reply", form: "On a web form", event: "On the event sheet",
+  person: "Verbal", call: "Verbal", msg: "Email reply", form: "Form", event: "Event sheet",
 });
-const CONSENT_FIELDS = Object.freeze({ msg: "Consent_WhatsApp", call: "Consent_Call", email: "Consent_Email", visit: "Consent_Visit" } as const);
+// Leads has no Consent_Visit in the org (M12-S11-NOTE-5): a visit permission is accepted from the form but not written.
+const CONSENT_FIELDS = Object.freeze({ msg: "Consent_WhatsApp", call: "Consent_Call", email: "Consent_Email" } as const);
 type ConsentChannel = keyof typeof CONSENT_FIELDS;
 
 export interface CapturePrincipal {
@@ -77,7 +81,7 @@ export interface CaptureCommand {
   /** Owner chosen by a seat that may assign; null or absent = the unassigned queue. */
   readonly ownerId?: string | null;
   readonly units?: number | null;
-  readonly consent?: Readonly<Partial<Record<ConsentChannel, boolean>>>;
+  readonly consent?: Readonly<Partial<Record<ConsentChannel | "visit", boolean>>>;
   readonly consentHow?: string | null;
 }
 
@@ -210,9 +214,9 @@ export function createLeadCapture(deps: CaptureDependencies) {
     const units = c.units ?? null;
     if (units !== null && (!Number.isSafeInteger(units) || units < 0 || units > 999_999_999)) return "invalid-units";
 
-    const consent = c.consent ?? {};
+    const consent: Readonly<Record<string, boolean | undefined>> = c.consent ?? {};
     const given = (Object.keys(CONSENT_FIELDS) as ConsentChannel[]).filter((k) => consent[k] === true);
-    if (Object.keys(consent).some((k) => !(k in CONSENT_FIELDS))) return "invalid-request";
+    if (Object.keys(consent).some((k) => !(k in CONSENT_FIELDS) && k !== "visit")) return "invalid-request";
     const how = given.length ? CONSENT_HOW[text(c.consentHow)] : undefined;
     if (given.length && !how) return "consent-how-missing";
     if (consent.email === true && !email) return "email-consent-without-email";

@@ -74,7 +74,7 @@ if (emitted.diagnostics.length) {
 const load = (file) => require(path.join(outDir, file));
 const { createMemorySink, createOpsLog } = load(path.join('lib', 'zoho', 'log.js'));
 const { createZohoClient, userCredential } = load(path.join('lib', 'zoho', 'client.js'));
-const { createLeadCapture, mobileToE164, splitName } = load(path.join('server', 'leads', 'capture.js'));
+const { createLeadCapture, mobileToE164, splitName, CONSENT_HOW, CONSENT_HOW_PICKLIST } = load(path.join('server', 'leads', 'capture.js'));
 const { createDuplicateCheck, mobileClause } = load(path.join('server', 'leads', 'duplicate.js'));
 const { createLeadsBook } = load(path.join('server', 'leads', 'book.js'));
 const { createTodayRead } = load(path.join('server', 'leads', 'today.js'));
@@ -182,12 +182,26 @@ test('an IR adds a lead: created in Zoho with their token, owned by them, cache 
     First_Name: 'Synthetic Fixture', Last_Name: 'Lead', Mobile: '+919845033021', Lead_Source: 'Website',
     Email: 'fixture.lead@example.invalid', City: 'Pune', Units_Interested: 2,
     Owner: { id: IR }, Owner_Assigned_At: AT,
-    Consent_WhatsApp: true, Consent_Call: true, Consent_How: 'In person', Consent_At: AT, Consent_By: { id: IR },
+    Consent_WhatsApp: true, Consent_Call: true, Consent_How: 'Verbal', Consent_At: AT, Consent_By: { id: IR },
   }] });
   assert.ok(!('Lead_Status' in r.calls[0].body.data[0]), 'the blueprint owns Lead_Status');
   assert.deepEqual(r.invalidated, [{ scope: { kind: 'user', userId: IR } }]);
   assert.equal(r.access.calls(), 2, 'the seat is re-read before the write');
   noPii(r.sink.records());
+});
+
+test('M14-S03-NOTE-5: every Consent_How the capture writes is on the org picklist, for every source, and Consent_Visit is never written', async () => {
+  assert.deepEqual([...CONSENT_HOW_PICKLIST], ['Form', 'Verbal', 'Email reply', 'Event sheet']); // Leads.Consent_How, live metadata 4 Oct 2026
+  assert.equal(CONSENT_HOW.event, 'Event sheet');
+  for (const [k, v] of Object.entries(CONSENT_HOW)) assert.ok(CONSENT_HOW_PICKLIST.includes(v), `${k} -> ${v}`);
+  for (const how of Object.keys(CONSENT_HOW)) {
+    const r = rig();
+    const res = await r.service.createLead(principal(IR), { ...BASE, consent: { msg: true, visit: true }, consentHow: how });
+    assert.equal(res.ok, true, how);
+    const row = r.calls[0].body.data[0];
+    assert.ok(CONSENT_HOW_PICKLIST.includes(row.Consent_How), `${how} wrote ${row.Consent_How}`);
+    assert.ok(!('Consent_Visit' in row));
+  }
 });
 
 test('Events needs the event; person sources need who introduced them', async () => {

@@ -37,7 +37,7 @@ const load = (file) => require(path.join(outDir, file));
 const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createZohoClient, userCredential } = load('lib/zoho/client.js');
 const { createFollowups } = load('server/leads/followup.js');
-const { createEmailSender, EMAIL_REASON, EMAIL_MAX_SUBJECT, EMAIL_MAX_MESSAGE } = load('server/leads/email.js');
+const { createEmailSender, createDeckMailer, EMAIL_REASON, EMAIL_MAX_SUBJECT, EMAIL_MAX_MESSAGE } = load('server/leads/email.js');
 
 const P = '9007199254';
 const IR = `${P}740995001`;
@@ -94,7 +94,7 @@ function rig(overrides = {}, opts = {}) {
   const access = { async recheck(c) { return opts.access ? opts.access(c) :
     { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, mayRecordFollowup: true, teamOwnerIds: [] }; } };
   const followups = opts.followups ?? createFollowups({ crm, access, log, recordIdPrefix: P, undoSecret: SECRET, clock: () => now });
-  const svc = createEmailSender({ crm, followups, access, log, recordIdPrefix: P, orgDomains: ['agresearchlabs.com'], nda: opts.nda ?? null, clock: () => now });
+  const svc = createEmailSender({ crm, followups, access, log, recordIdPrefix: P, orgDomains: ['agresearchlabs.com'], nda: opts.nda ?? null, deck: createDeckMailer(crm, opts.deckFileId), clock: () => now });
   return { svc, calls, sink,
     sends: () => calls.filter((c) => c.key.endsWith('/actions/send_mail')),
     writes: () => calls.filter((c) => c.key.startsWith('PUT') || c.key.startsWith('DELETE') || (c.key.startsWith('POST') && !c.key.endsWith('send_mail'))) };
@@ -235,6 +235,38 @@ test('deck and webinar are refused before the NDA is back, and sent once it is',
   const noDeck = rig({}, { nda: { async signed(c, id) { return id === LEAD; } } });
   assert.equal((await noDeck.svc.send(principal(), { ...CMD, template: 'deck' })).reasonCode, 'deck-not-ready');
   assert.equal(noDeck.sends().length, 0);
+});
+
+const DECK_FILE = 'synthetic-deck-file-id-0001';
+const SIGNED = { async signed(c, id) { return id === LEAD; } };
+
+test('M12-S13 deck follow-up attaches the configured deck file by id, only once the NDA is back; no id configured keeps deck-not-ready', async () => {
+  const open = rig({}, { nda: SIGNED, deckFileId: DECK_FILE });
+  const res = await open.svc.send(principal(), { ...CMD, template: 'deck' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(open.sends().length, 1);
+  assert.deepEqual(open.sends()[0].body.data[0].attachments, [{ id: DECK_FILE }]);
+  // other templates never carry the deck
+  const intro = rig({}, { nda: SIGNED, deckFileId: DECK_FILE });
+  await intro.svc.send(principal(), CMD);
+  assert.equal(intro.sends()[0].body.data[0].attachments, undefined);
+  // NDA gate intact even with a deck configured
+  const shut = rig({}, { deckFileId: DECK_FILE });
+  assert.equal((await shut.svc.send(principal(), { ...CMD, template: 'deck' })).reasonCode, 'nda-not-back');
+  assert.equal(shut.sends().length, 0);
+  // blank id behaves as unset
+  const blank = rig({}, { nda: SIGNED, deckFileId: '  ' });
+  assert.equal((await blank.svc.send(principal(), { ...CMD, template: 'deck' })).reasonCode, 'deck-not-ready');
+  assert.equal(blank.sends().length, 0);
+});
+
+test('the client refuses malformed or too many attachment ids before calling Zoho', async () => {
+  const r = rig();
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(createMemorySink()), fetch: async () => { throw new Error('no call'); } });
+  const base = { from: { email: FROM }, to: [{ email: LEAD_EMAIL }], subject: 'S', content: 'C', format: 'text' };
+  await assert.rejects(() => crm.sendMail(credential, 'Leads', LEAD, { ...base, attachmentFileIds: ['short'] }), TypeError);
+  await assert.rejects(() => crm.sendMail(credential, 'Leads', LEAD, { ...base, attachmentFileIds: Array(6).fill(DECK_FILE) }), TypeError);
+  assert.equal(r.calls.length, 0);
 });
 
 test('a sender whose own mailbox is not on the org domain is refused before sending (never the shared org address)', async () => {

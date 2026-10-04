@@ -107,10 +107,11 @@ export function zohoSeatOf(token: string): ZohoSeat | null {
 const SOURCES: ReadonlySet<string> = new Set(["Events", "Founder network", "Referral — investor", "Channel partner", "Website", "LinkedIn", "Walk-in or call-in", "Other"]);
 const LOST_BY_ZOHO: Readonly<Record<string, string>> = Object.freeze(Object.fromEntries(Object.entries(LOST_REASONS).map(([k, v]) => [v, k])));
 const RUNG_FIELDS = RUNGS.map((r) => r.field);
-const LEAD_DETAIL = Object.freeze(["id", ...RUNG_FIELDS, "Lost_Reason", "Next_Step", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_Visit",
+const LEAD_DETAIL = Object.freeze(["id", ...RUNG_FIELDS, "Lost_Reason", "Next_Step", "Consent_WhatsApp", "Consent_Email", "Consent_Call",
   // Modified_Time: the lead as read — a wired write (email, cover) sends it back as expectedModifiedTime (D44). Not identity (rule 7).
   "Modified_Time"]);
-const CONSENT: Readonly<Record<Channel, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call", visit: "Consent_Visit" };
+// Leads has no Consent_Visit in the org (live metadata read 4 Oct 2026, M12-S11-NOTE-5): a visit carries no consent flag here.
+const CONSENT: Readonly<Partial<Record<Channel, string>>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call" };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const pad = (n: number) => String(n).padStart(2, "0");
 /** A Zoho datetime as the console prints it, in IST: "DD Mon HH:MM". */
