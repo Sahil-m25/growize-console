@@ -202,9 +202,11 @@ export interface ZohoApi<C extends Credential> {
    *  (204). Discovery only: the transition is then made with `blueprintTransition()`. Criteria text is never logged. */
   blueprint(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<BlueprintState | null>>;
   wasDeleted(as: C, module: string, id: string, options?: CallOptions & { readonly maxPages?: number }): Promise<ZohoResult<DeletionCheck>>;
-  /** Share Records API: a record-level share for one user (D44 cover windows). Related records are never shared. */
-  share(as: C, module: string, id: string, userId: string, permission: "read" | "read_write", options?: CallOptions): Promise<ZohoResult<{ readonly shared: true }>>;
-  /** Revokes that user's share. */
+  /** Share Records API (v8 POST, additive): a record-level share for one user (D44 cover windows, D74 hand-off).
+   *  Body `shared_with: { id, type: "users" }`. Related records are never shared. */
+  share(as: C, module: string, id: string, userId: string, permission: "read_only" | "read_write", options?: CallOptions): Promise<ZohoResult<{ readonly shared: true }>>;
+  /** Revokes ONLY that user's direct share: reads the share list and PUTs it back without them (`shares` + `setShares`).
+   *  Zoho's DELETE revokes every share on the record, so it is sent only when nobody else is left. No share = no write. */
   unshare(as: C, module: string, id: string, userId: string, options?: CallOptions): Promise<ZohoResult<{ readonly revoked: true }>>;
   /** D121: GET /{module}/{id}/actions/share — the record's share list as ids and permissions (names and zuids dropped). */
   shares(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<readonly RecordShare[]>>;
@@ -1149,7 +1151,7 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
   const ownedIn = (module: string, fields: ZohoFields): string[] =>
     (owned[module] ?? []).filter((f) => Object.prototype.hasOwnProperty.call(fields, f));
 
-  return {
+  const api: ZohoApi<C> = {
     async getRecord(as, module, id, opts = {}) {
       checkModule(module);
       checkScopedId(id);
@@ -1380,27 +1382,43 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       checkModule(module);
       checkScopedId(id);
       checkScopedId(userId, "user id");
-      if (permission !== "read" && permission !== "read_write") throw new TypeError('permission is "read" or "read_write".');
+      if (permission !== "read_only" && permission !== "read_write") throw new TypeError('permission is "read_only" or "read_write".');
       const out = await execute(as, {
+        // v8 share-record: POST adds to the record's share list; re-sharing the same user replaces the permission in place.
         op: "share", method: "POST", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
-        body: { share: [{ share_related_records: false, user: { id: userId }, permission }] },
-        // Re-sharing the same user replaces the permission in place.
+        body: { share: [{ shared_with: { id: userId, type: "users" }, permission, share_related_records: false, type: "private" }], notify_shared_members: false },
         shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
-      return out.ok ? done({ shared: true } as const, out) : out;
+      if (!out.ok) return out;
+      const items = out.result.kind === "ok" ? obj(out.result.body)?.share : undefined;
+      const first = Array.isArray(items) ? obj(items[0]) : obj(items);
+      if (first && typeof first.status === "string" && first.status !== "success") {
+        return { ok: false, error: { kind: "unexpected", status: out.result.status, code: typeof first.code === "string" ? first.code.slice(0, 40) : "SHARE_REFUSED" }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly shared: true }>;
+      }
+      return done({ shared: true } as const, out);
     },
 
-    // ponytail: the per-user revoke body is from the docs, unproven until M02-S09-T01 runs on the sandbox.
+    // v8 revoke-shared-record DELETE has no body and revokes EVERY share on the record (verified 5 Oct 2026), so a
+    // per-user revoke is read-modify-write: GET the list, PUT it back without the user (DELETE only when nobody is left).
     async unshare(as, module, id, userId, opts = {}) {
       checkModule(module);
       checkScopedId(id);
       checkScopedId(userId, "user id");
-      const out = await execute(as, {
-        op: "unshare", method: "DELETE", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
-        body: { share: [{ user: { id: userId } }] },
-        shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
-      });
-      return out.ok ? done({ revoked: true } as const, out) : out;
+      const cur = await api.shares(as, module, id, opts);
+      if (!cur.ok) return cur;
+      const isUser = (s: ShareEntry) => s.kind === "users" && s.targetId === userId;
+      if (!cur.value.some(isUser)) return { ok: true, value: { revoked: true } as const, status: cur.status, creditsRemaining: cur.creditsRemaining };
+      const rank = (p: SharePermission) => (p === "full_access" ? 3 : p === "read_write" ? 2 : 1);
+      const rest = new Map<string, ShareEntry>();
+      for (const s of cur.value) {
+        if (isUser(s)) continue;
+        const k = `${s.kind}:${s.targetId}`;
+        const prev = rest.get(k);
+        if (!prev || rank(s.permission) > rank(prev.permission)) rest.set(k, { kind: s.kind, targetId: s.targetId, permission: s.permission });
+      }
+      if (rest.size > MAX_RECORD_SHARES) return { ok: false, error: { kind: "unexpected", status: 0, code: "SHARE_LIMIT" }, creditsRemaining: cur.creditsRemaining };
+      const w = await api.setShares(as, module, id, [...rest.values()], opts);
+      return w.ok ? { ok: true, value: { revoked: true } as const, status: w.status, creditsRemaining: w.creditsRemaining } : w;
     },
 
     async shares(as, module, id, opts = {}) {
@@ -1760,6 +1778,7 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       return last && last.ok ? done({ deleted: false, exhaustive: false }, last) : { ok: false, error: { kind: "unexpected", status: 0, code: "" }, creditsRemaining: null };
     },
   };
+  return api;
 }
 
 /** The client every screen's server code uses: user credentials only. */

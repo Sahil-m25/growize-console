@@ -280,13 +280,16 @@ test('a lead changed in Zoho is refused and nothing is shared; a share that fail
 });
 
 test('expiry: the sweep revokes each expired window, then clears it, on the cover-window-share job', async () => {
-  const r = rig('cover', (c) => (c.path === '/crm/v8/coql' ? 'coql.expired' : c.method === 'DELETE' ? 'unshare.success' : 'lead.updated'), true);
+  // The lead also carries the originating IR's hand-off read and a KAM's share: the revoke must leave both (v8 DELETE revokes all).
+  const r = rig('cover', (c) => (c.path === '/crm/v8/coql' ? 'coql.expired' : c.path.endsWith('/actions/share') ? (c.method === 'GET' ? 'shares.cover-ir-kam' : 'unshare.success') : 'lead.updated'), true);
   const as = serviceCredential('cover-window-share', { access_token: 'svc', api_domain: 'https://www.zohoapis.in', expires_in: 3600, token_type: 'Bearer' }, NOW);
   const plane = createPlaneCMemorySink();
   const res = await sweepExpiredCovers(r.crm, as, createPlaneCLog(plane), P, () => NOW);
   assert.deepEqual(res, { ok: true, closed: [L_EXP], failed: [] });
   assert.match(r.calls[0].query, /where \(Cover_By is not null and Cover_Until < '2026-09-27'\)/);
-  assert.deepEqual(r.calls.slice(1).map((c) => [c.method, c.path]), [['DELETE', `/crm/v8/Leads/${L_EXP}/actions/share`], ['PUT', `/crm/v8/Leads/${L_EXP}`]]);
+  assert.deepEqual(r.calls.slice(1).map((c) => [c.method, c.path]), [['GET', `/crm/v8/Leads/${L_EXP}/actions/share`], ['PUT', `/crm/v8/Leads/${L_EXP}/actions/share`], ['PUT', `/crm/v8/Leads/${L_EXP}`]]);
+  assert.ok(!r.calls.some((c) => c.method === 'DELETE'), 'never DELETE while the IR and the KAM hold shares');
+  assert.deepEqual(r.calls[2].body.share.map((x) => [x.shared_with.id, x.permission]), [[IR, 'read_only'], [`${P}740995011`, 'read_write']], 'the IR\'s and the KAM\'s shares stay; only the cover user goes');
   assert.equal(plane.events()[0].reason, 'cover-expired');
   // The existing share job (lib/zoho/cover-window-share) is what the runtime calls on open and close.
   const s = rig('cover', () => 'share.success', true);

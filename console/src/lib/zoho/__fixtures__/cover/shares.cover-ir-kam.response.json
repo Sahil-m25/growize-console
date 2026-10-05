@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "share": [
+      { "shared_with": { "id": "9007199254740995001", "type": "users", "name": "x", "zuid": "1" }, "permission": "read_only", "share_related_records": false, "type": "private" },
+      { "shared_with": { "id": "9007199254740995011", "type": "users", "name": "x", "zuid": "2" }, "permission": "read_write", "share_related_records": false, "type": "private" },
+      { "shared_with": { "id": "9007199254740995005", "type": "users", "name": "x", "zuid": "3" }, "permission": "read_write", "share_related_records": false, "type": "private" }
+    ]
+  }
+}

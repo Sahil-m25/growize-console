@@ -165,7 +165,11 @@ test('hand-off shares the Contact, its allotments and receipts read-only with th
   assert.equal(res.failed.length, 0);
   const shares = calls.filter((c) => c.url.includes('/actions/share'));
   assert.equal(shares.length, 4);
-  for (const s of shares) assert.deepEqual(s.body, { share: [{ share_related_records: false, user: { id: ROHIT }, permission: 'read' }] });
+  // v8 share-record body (verified 5 Oct 2026): shared_with {id, type:"users"}, permission read_only — never the old user/"read" shape.
+  for (const s of shares) {
+    assert.equal(s.method, 'POST');
+    assert.deepEqual(s.body, { share: [{ shared_with: { id: ROHIT, type: 'users' }, permission: 'read_only', share_related_records: false, type: 'private' }], notify_shared_members: false });
+  }
   const logged = JSON.stringify(sink.records());
   assert.ok(sink.records().every((x) => !x.actor || x.actor.job === 'handoff-share'), 'the job is named');
   assert.ok(!/svc|Bearer/.test(logged), 'no token in the log');

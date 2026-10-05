@@ -81,7 +81,7 @@ export async function shareAtHandOff(client: Client, as: ServiceCredential, h: H
   const failed: ShareOutcome[] = [];
   for (const [module, id] of todo) {
     let ok = false;
-    try { ok = (await client.share(as, module, id, h.irUserId, "read")).ok; } catch { ok = false; }
+    try { ok = (await client.share(as, module, id, h.irUserId, "read_only")).ok; } catch { ok = false; }
     (ok ? shared : failed).push(Object.freeze({ module, id, ok }));
   }
   return { ok: true, shared: Object.freeze(shared), failed: Object.freeze(failed) };
@@ -98,7 +98,7 @@ export async function shareLaterRecords(client: Client, as: ServiceCredential, i
   for (const r of records) {
     if (!RECORD_ID.test(r.id)) continue;
     let ok = false;
-    try { ok = (await client.share(as, r.module, r.id, irUserId, "read")).ok; } catch { ok = false; }
+    try { ok = (await client.share(as, r.module, r.id, irUserId, "read_only")).ok; } catch { ok = false; }
     out.push(Object.freeze({ module: r.module, id: r.id, ok }));
   }
   return Object.freeze(out);
