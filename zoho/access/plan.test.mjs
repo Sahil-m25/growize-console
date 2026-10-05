@@ -197,11 +197,17 @@ test("D123 Q2: IR views allotments but every money field on the module is hidden
   assert.equal(ir.modules.LLP_UnitAllocation_Module, "v");
   assert.equal(ir.modules.Receipts, undefined, "IRs never read receipts (D69)");
   const g = spec.fieldSecurity.groups.find((x) => x.id === "allotment_money");
-  for (const f of ["Unit_Price", "Annual_Rental_Yield", "Token_Advance_Amount", "Total_Amount_Received", "Total_Amount_Receivable", "Capital_Invested"]) {
+  for (const f of ["Token_Advance_Amount", "Total_Amount_Received", "Total_Amount_Receivable", "Capital_Invested"]) {
     assert.ok(g.fields.LLP_UnitAllocation_Module.includes(f), f);
   }
   assert.equal(g.default, "hidden");
   assert.ok(!("IR" in g.grant));
+  // Price and yield: hidden from IR only; every other profile that views allotments keeps them (no regression for KAM, AM Head, Leadership).
+  const p = spec.fieldSecurity.groups.find((x) => x.id === "allotment_price_ir");
+  assert.deepEqual([...p.fields.LLP_UnitAllocation_Module].sort(), ["Annual_Rental_Yield", "Unit_Price"]);
+  assert.equal(p.default, "hidden");
+  assert.ok(!("IR" in p.grant));
+  for (const prof of spec.profiles.filter((x) => x.name !== "IR" && x.modules.LLP_UnitAllocation_Module)) assert.ok(prof.name in p.grant, prof.name);
 });
 
 test("a spec that opens the wall is refused before any step", () => {

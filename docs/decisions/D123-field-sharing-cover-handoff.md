@@ -25,7 +25,7 @@ Secondary_Owner sharing is off, so a secondary reaches a lead only through Cover
 - `server/investors/handoff-share.ts` and the "handoff-share" service job are retired (it had no caller). Zoho grants the IR read-only access to allotments through a new IR_Access field.
 - **Receipts: IRs never read receipts (D69 ir-guard).** Nothing replaces the receipt share.
 - `ir-guard.ts` header now says access comes from Zoho field sharing (Contacts.Originating_IR; allotments.IR_Access) and the guard still re-checks every row.
-- Spec (`zoho/access/spec.json`): IR gets View on LLP_UnitAllocation_Module; the allotment money group now also hides Unit_Price and Annual_Rental_Yield (all five currency fields on the module are in it; checked against the 5 Oct sandbox schema). Contacts identity stays hidden. Note this hides those two fields from every profile not granted them (KAM, AM Head, IR Manager) as well, consistent with their "no money fields" descriptions.
+- Spec (`zoho/access/spec.json`): IR gets View on LLP_UnitAllocation_Module; money fields stay hidden (group allotment_money); Unit_Price and Annual_Rental_Yield are hidden from IR only (new group allotment_price_ir), so KAM, AM Head, Leadership and others keep seeing them.
 - Deluge: `gz_kam_on_allotment` also sets IR_Access from the customer's Originating_IR (one read, one update, only non-empty values); new `gz_sync_ir_access` (contact -> its allotments, writes only differences); `gz_kam_access_check` also compares allotment IR_Access with Originating_IR (sendmail still `from :zoho.loginuserid`). All three marked NOT YET APPLIED.
 - Jev: 0.92 / 0.96.
 
@@ -40,7 +40,7 @@ Secondary_Owner sharing is off, so a secondary reaches a lead only through Cover
 1. Leads.Secondary_Owner: field sharing OFF (done in sandbox; do in live).
 2. Leads.Cover_By: sharing read-write. Contacts.Originating_IR: sharing read-only.
 3. Create LLP_UnitAllocation_Module.IR_Access (userlookup; create it first, then PATCH sharing_properties to read-only); read-only for every profile except Administrator.
-4. Apply `zoho/access` for the IR View and the two extra hidden fields (re-run plan/apply).
+4. Apply `zoho/access` for the IR View on allotments and the IR-only hiding of Unit_Price and Annual_Rental_Yield (re-run plan/apply).
 5. Deploy `gz_sync_ir_access`; create workflow "GZ IR Access Sync" (Contacts, on edit when Originating_IR is modified, repeat on); update `gz_kam_on_allotment` and `gz_kam_access_check`.
 6. Backfill IR_Access on existing allotments.
 7. Set ZOHO_COVER_EXPIRY_REFRESH_TOKEN (replaces the cover-window-share grant); remove ZOHO_COVER_WINDOW_SHARE_REFRESH_TOKEN.
