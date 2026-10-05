@@ -24,10 +24,20 @@ export interface TokenGrant {
   readonly refresh_token?: string;
 }
 
+/** Zoho's own error word ("invalid_client", "invalid_code"), for diagnostics only: lowercase letters and _ only, never a value. */
+function zohoErrorOf(text: string): { zohoError?: string } {
+  try {
+    const e = (JSON.parse(text) as { error?: unknown }).error;
+    return typeof e === "string" && /^[a-z_]{1,40}$/.test(e) ? { zohoError: e } : {};
+  } catch {
+    return {};
+  }
+}
+
 export type AccountsResult<T> =
   | { readonly ok: true; readonly value: T }
   /** refused: Zoho said no (revoked, expired, reused code). unavailable: we could not ask. */
-  | { readonly ok: false; readonly reason: "refused" | "unavailable" };
+  | { readonly ok: false; readonly reason: "refused" | "unavailable"; readonly status?: number | null; readonly zohoError?: string };
 
 export interface ZohoAccountsOptions {
   readonly accountsOrigin: string;
@@ -177,7 +187,7 @@ export function createZohoAccounts(o: ZohoAccountsOptions): ZohoAccounts {
         return { ok: true, value: got.v };
       }
       outcome = refusedBy(status, text) ? "refused" : "unavailable";
-      return { ok: false, reason: outcome };
+      return { ok: false, reason: outcome, status, ...zohoErrorOf(text) };
     } finally {
       clearTimeout(timer);
       o.log.call({

@@ -721,7 +721,7 @@ export type CrmOrgCheck =
   /** The token answers for a different org: `orgId` is that org's id (an id, never a secret). */
   | { readonly ok: false; readonly reason: "mismatch"; readonly orgId: string }
   /** No answer, not 200, or no org id in it: fail closed. */
-  | { readonly ok: false; readonly reason: "unavailable" };
+  | { readonly ok: false; readonly reason: "unavailable"; readonly status?: number | null; readonly errorClass?: string | null };
 
 export interface CrmOrgCheckOptions {
   readonly expectedOrgId: string;
@@ -835,6 +835,7 @@ async function checkOrg(
     });
   }
   if (result.ok) G_ORG.__gzVerifiedCrmOrg = { orgId: result.orgId, at: startedAt };
+  if (!result.ok && result.reason === "unavailable") result = { ok: false, reason: "unavailable", status, errorClass };
   return result;
 }
 

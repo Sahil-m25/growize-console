@@ -184,7 +184,9 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
 
   const actorOf = (who: string): LogActor => ({ kind: "user", userId: who });
 
-  function refuse(code: RefusalCode, reason: string, who: string | null, seat: string | null): CallbackResult {
+  function refuse(code: RefusalCode, reason: string, who: string | null, seat: string | null, detail = ""): CallbackResult {
+    /* stdout, for the host's log: the refusal code and step only — never who, a token, a code or a query value */
+    console.warn(`[auth] sign-in refused: ${code} (${reason}${detail ? ` ${detail}` : ""})`);
     d.planeC.record({ at: clock(), who: who ?? "unrecognised", action: "sign-in-refused", outcome: "refused", reason, seat });
     return { ok: false, code, message: SIGNIN_REFUSALS[code] };
   }
@@ -301,7 +303,9 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
       if (typeof p.code !== "string" || p.code.length === 0 || p.code.length > 1_024) return refuse("failed", "no-code", null, null);
 
       const exchanged = await d.accounts.exchangeCode({ code: p.code, codeVerifier: flow.v });
-      if (!exchanged.ok) return refuse("failed", "code-refused", null, null);
+      if (!exchanged.ok) {
+        return refuse("failed", "code-refused", null, null, `status=${exchanged.status ?? "-"} zoho=${exchanged.zohoError ?? "-"}`);
+      }
       const grant = exchanged.value;
 
       /* ZOHO_EXPECTED_ORG_ID: prove the org before anything else is asked of the token (the sandbox is
@@ -322,7 +326,8 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
             console.warn(`[auth] sign-in refused: token org ${org.orgId} is not the expected org ${d.expectedOrgId}`);
             return refuse("wrong-org", "org-mismatch", null, null);
           }
-          return refuse("failed", "org-unverified", null, null);
+          return refuse("failed", "org-unverified", null, null,
+            org.reason === "unavailable" ? `status=${org.status ?? "-"} class=${org.errorClass ?? "-"}` : "");
         }
         orgId = org.orgId;
       }
