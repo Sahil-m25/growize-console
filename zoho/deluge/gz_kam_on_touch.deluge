@@ -1,0 +1,32 @@
+void automation.gz_kam_on_touch(String touchId)
+{
+// D122 ruling 1: a new touch on an investor's origin lead inherits that investor's KAM into KAM_Access.
+// Wired to workflow rule "GZ KAM On Touch" (Touches, on create), touchId = ${!Touches.id}.
+// Finds the Contact whose Origin_Lead is the touch's lead. Logs ids only.
+touch = zoho.crm.getRecordById("Touches",touchId.toLong());
+kamId = "";
+lead = touch.get("Lead");
+if(lead != null)
+{
+	contacts = zoho.crm.searchRecords("Contacts","(Origin_Lead:equals:" + lead.get("id") + ")",1,2);
+	if(contacts.size() > 0)
+	{
+		kam = contacts.get(0).get("KAM");
+		if(kam != null)
+		{
+			kamId = kam.get("id").toString();
+		}
+	}
+}
+if(kamId != "")
+{
+	upd = Map();
+	upd.put("KAM_Access",kamId);
+	zoho.crm.updateRecord("Touches",touchId.toLong(),upd);
+	info "touch " + touchId + " kam set";
+}
+else
+{
+	info "touch " + touchId + " no kam";
+}
+}

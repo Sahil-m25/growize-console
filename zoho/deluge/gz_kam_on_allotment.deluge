@@ -1,0 +1,29 @@
+void automation.gz_kam_on_allotment(String allotId)
+{
+// D122 ruling 1: a new allotment inherits its investor's KAM into KAM_Access (user-lookup sharing gives the KAM access).
+// Wired to workflow rule "GZ KAM On Allotment" (LLP_UnitAllocation_Module, on create), allotId = ${!LLP_UnitAllocation_Module.id}.
+// Reads the record by id (no search: the index lags on new records). Logs ids only.
+allot = zoho.crm.getRecordById("LLP_UnitAllocation_Module",allotId.toLong());
+kamId = "";
+cust = allot.get("Customer");
+if(cust != null)
+{
+	contact = zoho.crm.getRecordById("Contacts",cust.get("id").toLong());
+	kam = contact.get("KAM");
+	if(kam != null)
+	{
+		kamId = kam.get("id").toString();
+	}
+}
+if(kamId != "")
+{
+	upd = Map();
+	upd.put("KAM_Access",kamId);
+	zoho.crm.updateRecord("LLP_UnitAllocation_Module",allotId.toLong(),upd);
+	info "allotment " + allotId + " kam set";
+}
+else
+{
+	info "allotment " + allotId + " no kam";
+}
+}
