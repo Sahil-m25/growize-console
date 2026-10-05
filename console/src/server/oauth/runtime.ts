@@ -13,6 +13,10 @@
  *   ZOHO_OAUTH_SCOPES          optional, comma-separated; defaults to DEFAULT_USER_SCOPES
  *   SESSION_ENC_KEY            32 random bytes, base64 — seals each stored session record (./session-store.ts);
  *                              required when STATE_STORE=catalyst, optional under memory (M18-S09-NOTE-1)
+ *   ZOHO_CRM_ENVIRONMENT       optional: "production" (default) | "sandbox" — sandbox derives https://sandbox.zohoapis.<dc>
+ *                              from the token's api_domain and refuses live hosts (lib/zoho/client.ts crmApiOriginOf)
+ *   ZOHO_EXPECTED_ORG_ID       the org's zgid; required in sandbox mode, honoured when set in production: a sign-in
+ *                              whose token answers GET /crm/v8/org for another org is refused ("wrong-org")
  *   ZOHO_STEPUP_REDIRECT_URI   optional (M01-S10): this deployment's exact https …/api/auth/step-up/callback,
  *                              registered on the same Zoho client; without it every step-up is refused
  *
@@ -20,6 +24,7 @@
  */
 
 import { fixtureModeOn } from "../../lib/fixture-mode";
+import { expectedCrmOrgId } from "../../lib/zoho/client";
 import { createGate, type Gate } from "../../lib/zoho/gate";
 import { createOpsLog, type OpsLog } from "../../lib/zoho/log";
 import { createPlaneCLog } from "../identity/plane-c";
@@ -101,6 +106,7 @@ export function oauthParts(env: NodeJS.ProcessEnv = process.env): OAuthParts {
     gate,
     log,
     recordIdPrefix,
+    expectedOrgId: expectedCrmOrgId(env),
   });
   G.__gzUserSessions = Object.freeze({ sessions, accounts, sealer, seats, gate, log, recordIdPrefix });
   return G.__gzUserSessions;

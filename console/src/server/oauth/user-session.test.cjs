@@ -150,14 +150,14 @@ const streamReply = (status, obj) => {
 };
 const clockAt = (t) => { let now = t; const c = () => now; c.advance = (ms) => { now += ms; }; return c; };
 
-function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}, backend, clock: sharedClock, onEnd } = {}) {
+function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}, backend, clock: sharedClock, onEnd, expectedOrgId, org } = {}) {
   const clock = sharedClock ?? clockAt(1_800_000_000_000);
   const planeB = createMemorySink();
   const log = createOpsLog(planeB);
   const planeCSink = createPlaneCMemorySink();
   const store = makeStore(clock, backend);
-  const calls = { token: [], revoke: [], identity: [] };
-  const state = { user, identityStatus: 200, answers: { authorization_code: codeGrant, refresh_token: refreshGrant, ...token } };
+  const calls = { token: [], revoke: [], identity: [], org: [] };
+  const state = { org: org ?? { org: [{ id: '554023000000000001', zgid: '60090668120' }] }, user, identityStatus: 200, answers: { authorization_code: codeGrant, refresh_token: refreshGrant, ...token } };
   const fetch = async (url, init) => {
     if (url.includes('/oauth/v2/token/revoke')) { calls.revoke.push({ url, init }); return reply(revokeOk); }
     const form = new URLSearchParams(init.body);
@@ -166,7 +166,10 @@ function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}
     if (a instanceof Error) throw a;
     return reply(a);
   };
-  const identityFetch = async (url, init) => { calls.identity.push({ url, init }); return streamReply(state.identityStatus, state.user); };
+  const identityFetch = async (url, init) => {
+    if (url.endsWith('/crm/v8/org')) { calls.org.push({ url, init }); return streamReply(200, state.org); }
+    calls.identity.push({ url, init }); return streamReply(state.identityStatus, state.user);
+  };
   const accounts = createZohoAccounts({
     accountsOrigin: 'https://accounts.zoho.in', clientId: CLIENT_ID, clientSecret: CLIENT_SECRET,
     redirectUri: REDIRECT, scopes: ['ZohoCRM.users.READ', 'ZohoCRM.modules.ALL'], log, fetch, clock,
@@ -175,7 +178,7 @@ function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}
     accounts, sealer: createSealer(KEY), store,
     seats: createZohoSeatDirectory({ recordIdPrefix: seats.recordIdPrefix, roleIds: seats.roleIds, profileIds: seats.profileIds }),
     grants, planeC: createPlaneCLog(planeCSink), gate: createGate(), log, recordIdPrefix: seats.recordIdPrefix,
-    identityFetch, clock, ...(onEnd ? { onSessionEnd: onEnd } : {}),
+    identityFetch, clock, ...(onEnd ? { onSessionEnd: onEnd } : {}), ...(expectedOrgId !== undefined ? { expectedOrgId } : {}),
   });
   return { sessions, store, planeB, planeCSink, calls, clock, state };
 }
@@ -672,4 +675,55 @@ baseTest('SESSION_ENC_KEY: required (fail closed) when STATE_STORE=catalyst; 32 
   assert.throws(() => sessionStoreStartupCheck('catalyst', { SESSION_ENC_KEY: KEY, ZOHO_SESSION_KEY: KEY }), /must differ/);
   assert.doesNotThrow(() => sessionStoreStartupCheck('catalyst', { SESSION_ENC_KEY: ENC_KEY, ZOHO_SESSION_KEY: KEY }));
   assert.doesNotThrow(() => sessionStoreStartupCheck('memory', {}));
+});
+
+/* ZOHO_EXPECTED_ORG_ID (sandbox staging): the sign-in proves GET /crm/v8/org's org[0].zgid before anything else. */
+test('org check: unset expected org = no /org call, the session is as before (production default)', async () => {
+  const h = harness();
+  const { result } = await signIn(h);
+  assert.equal(result.ok, true);
+  assert.equal(h.calls.org.length, 0);
+  assert.equal(h.store.raw()[0].orgId, undefined);
+});
+
+test('org check: a token for the expected org signs in, once, and the org is kept on the session', async () => {
+  const h = harness({ expectedOrgId: '60090668120' });
+  const { result } = await signIn(h);
+  assert.equal(result.ok, true);
+  assert.equal(h.calls.org.length, 1);
+  assert.equal(h.calls.org[0].url, 'https://www.zohoapis.in/crm/v8/org');
+  assert.equal(h.store.raw()[0].orgId, '60090668120');
+  h.clock.advance(2 * 60 * 60 * 1_000);   // past the access token: a refresh does not ask /org again
+  assert.equal((await h.sessions.credential(result.sid)).ok, true);
+  assert.equal((await h.sessions.current(result.sid)).ok, true);
+  assert.equal(h.calls.org.length, 1, 'verified once per session, not per request or refresh');
+  assertNothingSecret(h);
+});
+
+test('org check: a token for another org (the live one) is refused with the wrong-org message and revoked', async () => {
+  const h = harness({ expectedOrgId: '60090668120', org: { org: [{ id: '554023000000000001', zgid: '60061770791' }] } });
+  const { result } = await signIn(h);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'wrong-org');
+  assert.equal(result.message, SIGNIN_REFUSALS['wrong-org']);
+  assert.match(result.message, /This console is connected to a different Zoho org/);
+  assert.equal(h.calls.identity.length, 0, 'CurrentUser is never asked of a wrong-org token');
+  assert.equal(h.calls.revoke.length, 1);
+  assert.equal(h.store.size(), 0);
+  assert.deepEqual(h.planeCSink.events().map((e) => [e.action, e.reason]), [['sign-in-refused', 'org-mismatch']]);
+  assertNothingSecret(h);
+});
+
+test('org check: zgid wins over id; id is used only when zgid is missing; no org id fails closed', async () => {
+  const byId = harness({ expectedOrgId: '60090668120', org: { org: [{ id: '60090668120' }] } });
+  assert.equal((await signIn(byId)).result.ok, true);
+  const zgidWins = harness({ expectedOrgId: '60090668120', org: { org: [{ id: '60090668120', zgid: '60061770791' }] } });
+  assert.equal((await signIn(zgidWins)).result.code, 'wrong-org');
+  const numeric = harness({ expectedOrgId: '60090668120', org: { org: [{ zgid: 60090668120 }] } });
+  assert.equal((await signIn(numeric)).result.ok, true);
+  const empty = harness({ expectedOrgId: '60090668120', org: { org: [] } });
+  const r = (await signIn(empty)).result;
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 'failed');
+  assert.equal(empty.store.size(), 0);
 });

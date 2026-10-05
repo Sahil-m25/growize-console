@@ -331,6 +331,13 @@ function LiveChecks() {
             <span className="sm">{c.owner}</span>
           </div>
         ))}
+        {d.crm && (
+          <p className="sm" id="crm-org" style={{ margin: "10px 0 0" }}>
+            Zoho CRM: <b>{d.crm.environment}</b>
+            {" · expected org "}{d.crm.expectedOrgId ?? "not pinned"}
+            {" · verified org "}{d.crm.verifiedOrgId ?? "none yet"}
+          </p>
+        )}
         <p className="sm" style={{ margin: "10px 0 0" }}>
           Service-token expiry, cache load errors, the Zoho licence date and the last Zoho Sign event are not read here yet.
         </p>

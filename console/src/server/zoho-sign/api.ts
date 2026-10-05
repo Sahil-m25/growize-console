@@ -23,7 +23,7 @@
 
 import { backoffDelay, classifyThrown, retryAfterOf, retryPolicy, type ZohoFailure } from "../../lib/zoho/errors";
 import { GateQueueFullError, type Gate, type GateLease } from "../../lib/zoho/gate";
-import { assertServiceCredential, isUserCredential, uploadFileName, MAX_UPLOAD_BYTES, type ServiceCredential, type UploadFile, type UserCredential, type ZohoResult } from "../../lib/zoho/client";
+import { assertServiceCredential, crmApiOriginOf, isUserCredential, uploadFileName, MAX_UPLOAD_BYTES, type ServiceCredential, type UploadFile, type UserCredential, type ZohoResult } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
 import { signOriginOf } from "../../lib/zoho/sign";
 
@@ -171,8 +171,10 @@ function checkRecipient(r: SignRecipient): void {
 
 export function createSignApi(options: SignApiOptions): SignApi {
   const origin = signOriginOf(options.origin);
-  const apiDomain = API_DOMAIN_OF_SIGN[new URL(origin).hostname];
-  if (!apiDomain) throw new TypeError("Zoho Sign origin has no matching API data centre.");
+  const signDc = API_DOMAIN_OF_SIGN[new URL(origin).hostname];
+  if (!signDc) throw new TypeError("Zoho Sign origin has no matching API data centre.");
+  /* the OAuth credential's CRM origin for that data centre (sandbox.zohoapis.* when ZOHO_CRM_ENVIRONMENT=sandbox) */
+  const apiDomain: string = crmApiOriginOf(signDc);
   const fetchImpl: SignFetch = options.fetch ?? ((url, init) => fetch(url, init) as unknown as Promise<SignFetchResponse>);
   const clock = options.clock ?? Date.now;
   const random = options.random ?? Math.random;

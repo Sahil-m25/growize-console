@@ -8,7 +8,14 @@ import type { SystemView } from "@/server/system/checks";
 import type { ConsoleState } from "@/lib/store";
 import { ok, type ReadEndpoint } from "../api";
 
-export type SystemLive = SystemView & { readonly asOf: number };
+/** Which Zoho CRM org this deployment talks to (ZOHO_CRM_ENVIRONMENT / ZOHO_EXPECTED_ORG_ID) and the org id a token
+ *  last proved in this process — ids only, never a secret. Absent in fixture mode. */
+export interface SystemCrm {
+  readonly environment: "production" | "sandbox" | "misconfigured";
+  readonly expectedOrgId: string | null;
+  readonly verifiedOrgId: string | null;
+}
+export type SystemLive = SystemView & { readonly asOf: number; readonly crm?: SystemCrm };
 
 export const systemRead: ReadEndpoint<ConsoleState, void, SystemLive> = {
   path: () => "/api/system",

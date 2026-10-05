@@ -6,7 +6,10 @@
  * service job, endpoint template, response class and timing.
  */
 
-import { apiDomainOf, serviceCredential, type ApiDomain, type FetchResponseLike, type ServiceCredential, type ServiceJob } from "../../lib/zoho/client";
+import {
+  crmApiOriginOf, expectedCrmOrgId, serviceCredential, verifyCrmOrg,
+  type ApiDomain, type FetchResponseLike, type ServiceCredential, type ServiceJob, type UserIdentityFetchLike,
+} from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 
@@ -59,8 +62,13 @@ export interface ServiceTokenProviderOptions {
   readonly clientId: string;
   readonly clientSecret: string;
   readonly refreshToken: string;
-  /** Optional hard DC binding for a single-region deployment. */
+  /** Optional hard DC binding for a single-region deployment (rewritten to the sandbox host in sandbox mode). */
   readonly expectedApiDomain?: string;
+  /** The org (zgid) a minted token must answer `GET /crm/v8/org` for, proved once per provider before first use.
+   *  Defaults to ZOHO_EXPECTED_ORG_ID; null/unset = no check (today's behaviour). */
+  readonly expectedOrgId?: string | null;
+  /** Transport for that one org check (tests). */
+  readonly orgFetch?: UserIdentityFetchLike;
   /** Provider-owned bound; a caller's deadline only stops that caller waiting. */
   readonly refreshTimeoutMs?: number;
   readonly log: OpsLog;
@@ -151,7 +159,9 @@ export function createServiceTokenProvider(options: ServiceTokenProviderOptions)
   const clientId = secret(options.clientId, "OAuth client id");
   const clientSecret = secret(options.clientSecret, "OAuth client secret");
   const refreshToken = secret(options.refreshToken, "OAuth refresh token");
-  const expectedApiDomain: ApiDomain | null = options.expectedApiDomain === undefined ? null : apiDomainOf(options.expectedApiDomain);
+  const expectedApiDomain: ApiDomain | null = options.expectedApiDomain === undefined ? null : crmApiOriginOf(options.expectedApiDomain);
+  const expectedOrgId: string | null = options.expectedOrgId === undefined ? expectedCrmOrgId() : options.expectedOrgId;
+  let orgVerified = expectedOrgId === null;
   const fetchImpl: TokenFetch = options.fetch ?? ((url, init) => fetch(url, init));
   const clock = options.clock ?? Date.now;
   const refreshTimeoutMs = options.refreshTimeoutMs ?? DEFAULT_SERVICE_TOKEN_REFRESH_TIMEOUT_MS;
@@ -185,6 +195,14 @@ export function createServiceTokenProvider(options: ServiceTokenProviderOptions)
       const credential = serviceCredential(options.job, grant, startedAt);
       if (expectedApiDomain !== null && credential.apiDomain !== expectedApiDomain) {
         throw new Error("Zoho OAuth returned the wrong data centre.");
+      }
+      if (!orgVerified && expectedOrgId !== null) {
+        const org = await verifyCrmOrg(credential, { expectedOrgId, log: options.log, clock, signal, ...(options.orgFetch ? { fetch: options.orgFetch } : {}) });
+        if (!org.ok) {
+          if (org.reason === "mismatch") console.warn(`[service-token] ${options.job}: token org ${org.orgId} is not the expected org ${expectedOrgId}`);
+          throw new Error("Zoho service credential is for a different org.");
+        }
+        orgVerified = true;
       }
       return credential;
     } catch {

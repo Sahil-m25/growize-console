@@ -20,7 +20,7 @@ import {
   type ZohoFailure,
 } from "./errors";
 import { GateQueueFullError, type Gate, type GateLease } from "./gate";
-import { assertServiceCredential, type FetchLike, type ServiceCredential, type ZohoResult } from "./client";
+import { assertServiceCredential, crmApiOriginOf, type FetchLike, type ServiceCredential, type ZohoResult } from "./client";
 import type { OpsLog } from "./log";
 
 export const SIGN_API_VERSION = "v1";
@@ -131,8 +131,10 @@ const defaultSleep = (ms: number, signal?: AbortSignal): Promise<void> =>
 
 export function createZohoSignClient(options: ZohoSignClientOptions): ZohoSignClient {
   const origin = signOriginOf(options.origin);
-  const credentialApiDomain = SIGN_API_DOMAINS.get(new URL(origin).hostname);
-  if (credentialApiDomain === undefined) throw new TypeError("Zoho Sign origin has no matching API data centre.");
+  const signDc = SIGN_API_DOMAINS.get(new URL(origin).hostname);
+  if (signDc === undefined) throw new TypeError("Zoho Sign origin has no matching API data centre.");
+  /* the OAuth credential's CRM origin for that data centre (sandbox.zohoapis.* when ZOHO_CRM_ENVIRONMENT=sandbox) */
+  const credentialApiDomain: string = crmApiOriginOf(signDc);
   const fetchImpl = options.fetch ?? (fetch as unknown as FetchLike);
   const clock = options.clock ?? Date.now;
   const random = options.random ?? Math.random;

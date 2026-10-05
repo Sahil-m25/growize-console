@@ -2,7 +2,7 @@
  * M18-S09-NOTE-1 — THE USER SESSION STORE ON SHARED STATE (docs/architecture/shared-state.md inventory 6).
  *
  * The same records the process-local `createMemorySessionStore` keeps (who, seat, the sealed refresh token,
- * createdAt, expiresAt — nothing more), written to the process's SharedState (server/state) so a session survives
+ * createdAt, expiresAt and, when ZOHO_EXPECTED_ORG_ID is set, the proved orgId — nothing more), written to the process's SharedState (server/state) so a session survives
  * an instance being recycled and is the same session on every instance. STATE_STORE picks the backend: memory
  * (default; one process, as before) or catalyst.
  *
@@ -55,7 +55,11 @@ function parse(json: string | null): StoredSession | null {
   const o = r as Record<string, unknown>;
   if (typeof o.who !== "string" || typeof o.seat !== "string" || typeof o.sealedRefresh !== "string"
     || typeof o.createdAt !== "number" || typeof o.expiresAt !== "number") return null;
-  return Object.freeze({ who: o.who, seat: o.seat, sealedRefresh: o.sealedRefresh, createdAt: o.createdAt, expiresAt: o.expiresAt });
+  return Object.freeze({
+    who: o.who, seat: o.seat, sealedRefresh: o.sealedRefresh,
+    ...(typeof o.orgId === "string" ? { orgId: o.orgId } : {}),
+    createdAt: o.createdAt, expiresAt: o.expiresAt,
+  });
 }
 
 export function createSharedSessionStore(state: SharedState, sealer: Sealer, options: { clock?: () => number } = {}): SessionStore {
@@ -80,7 +84,9 @@ export function createSharedSessionStore(state: SharedState, sealer: Sealer, opt
       const ttl = ttlOf(record);
       if (ttl === null) return;   // already over: nothing to keep
       const plain = JSON.stringify({
-        who: record.who, seat: record.seat, sealedRefresh: record.sealedRefresh, createdAt: record.createdAt, expiresAt: record.expiresAt,
+        who: record.who, seat: record.seat, sealedRefresh: record.sealedRefresh,
+        ...(record.orgId !== undefined ? { orgId: record.orgId } : {}),
+        createdAt: record.createdAt, expiresAt: record.expiresAt,
       });
       await state.set(recKey(key), sealer.seal(plain, RECORD_AAD + key), ttl);
       const n = await state.incr(countKey(record.who));

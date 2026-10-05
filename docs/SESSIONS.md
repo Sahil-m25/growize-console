@@ -361,3 +361,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · D122 nightly KAM access check as a Zoho schedule (02:00 IST), sandbox backfilled to 0 mismatches · D122
 - 2026-10-05 · D123 field sharing: cover windows no longer call the share API, roster absence writes Cover_By for the secondary, handoff-share retired, IR_Access + IR allotment view specified; Zoho side to apply · D123
 - 2026-10-05 · D123 applied in sandbox: IR_Access (multi-user via link table), backfill 19/19, nightly check 0 mismatches · D123
+- 2026-10-05 · Sandbox staging host: ZOHO_CRM_ENVIRONMENT=sandbox derives https://sandbox.zohoapis.<dc> (live hosts refused), ZOHO_EXPECTED_ORG_ID proved via GET /crm/v8/org org[0].zgid at sign-in and once per service token; System page shows env + verified org · D52, D120
