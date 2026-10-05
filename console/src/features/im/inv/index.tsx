@@ -17,6 +17,7 @@ import type { ImInvestor } from "@/lib/im";
 import { DocTag, ImPname, ImSecBar, KycTag, Pii, ProvIR, StTag } from "../common";
 import type { ImPageProps, ImSec } from "../common";
 import { TkRow } from "./TkRow";
+import { KamControl } from "./KamControl";
 import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks } from "../money/record";
 import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
@@ -586,9 +587,7 @@ function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
               : T.pool ? <><span className="tag">the shared pool</span> <span className="sm">single-unit holdings are not individually named</span></>
                 : <><span className="tag late"><span className="dot" />nobody</span>{" "}
                   <span className="sm">{"a " + T.t + " holding should have a name on it"}</span></>}
-            {may(s, me, "assign") ? <div className="chips" style={{ marginTop: 7 }}>
-              <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "kam", id: x.id,
-                seed: { KSEL: KAMS(s).indexOf(x.kam || "") < 0 ? null : x.kam || "" } })}>{x.kam && !kamGone(s, x) ? "Move the account" : "Name a manager"}</button></div> : null}</dd>
+            <KamControl s={s} me={me} dispatch={dispatch} x={x} /></dd>
           <dt>Handed over</dt><dd>{x.intro
             ? <><span className="tag go"><span className="dot" />introduced</span>{" "}
               <span className="sm mono">{x.intro}</span> <span className="sm">{"— " + who(s, x.ir).n.split(" ")[0] + " stayed on the first call"}</span></>

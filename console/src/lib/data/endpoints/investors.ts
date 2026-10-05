@@ -214,6 +214,70 @@ export const kamAssign: WriteEndpoint<ImBook, KamArgs, KamAnswer, ImDispatch> = 
   onLiveError: imLiveError,
 };
 
+/* ---- R5 — is the Contact shared with its KAM yet: GET /api/investors/[id]/kam/share, POST .../share/retry ----
+   Another agent builds the automatic record-share job and these two routes (D120); coded against their documented shape:
+   { state: "shared" | "pending" | "failed" | "none", lastTriedAt }. Fixture: the demo book shares at once — a named manager is
+   "shared", an account in the pool is "none" — so no demo case shows pending or failed; component tests drive those two. */
+export type KamShare = { state: "shared" | "pending" | "failed" | "none"; lastTriedAt: string | null };
+const SHARE_STATES: readonly string[] = ["shared", "pending", "failed", "none"];
+const shareOf = (j: unknown): KamShare => {
+  const r = (j && typeof j === "object" ? j : {}) as { state?: unknown; lastTriedAt?: unknown };
+  return { state: typeof r.state === "string" && SHARE_STATES.includes(r.state) ? (r.state as KamShare["state"]) : "none",
+    lastTriedAt: typeof r.lastTriedAt === "string" ? r.lastTriedAt : null };
+};
+
+/** args: the investor id, or null (nothing to read: no named manager) */
+export const kamShare: ReadEndpoint<ImBook, string | null, KamShare> = {
+  path: id => (id ? `/api/investors/${encodeURIComponent(id)}/kam/share` : null),
+  pick: shareOf,
+  fixture({ s, me }, id) {
+    const x = id ? I(s, me, id) : null;
+    if (!x) return fail(404, "not-found", "This investor is not part of your book.");
+    return ok({ state: x.kam ? "shared" : "none", lastTriedAt: null });
+  },
+};
+
+export const kamShareRetry: WriteEndpoint<ImBook, { id: string }, KamShare, ImDispatch> = {
+  method: "POST",
+  path: a => `/api/investors/${encodeURIComponent(a.id)}/kam/share/retry`,
+  body: () => ({}),
+  pick: shareOf,
+  fixture({ s, me }, _d, a) {
+    if (!may(s, me, "assign")) return fail(403, "seat-denied", "Naming a key account manager is the Head of Account Management's.");
+    return ok({ state: "shared", lastTriedAt: null });
+  },
+  onLiveError: imLiveError,
+};
+
+/* ---- R5 — move a whole book: POST /api/kams/[userId]/move-book (server/investors/kam-move-book) ----
+   { toKamUserId, continueFrom? } — every Contact through the same guarded PUT as kamAssign. A book that did not fit the
+   request answers continueFrom; the page asks again with it. Fixture: the reducer's assignKam for each account the old
+   manager holds in the book this seat reads (seat keys, as kamAssign's fixture). */
+export type MoveBookArgs = { from: string; to: string; continueFrom?: string | null };
+export type MoveBookAnswer = { moved: number; notMoved: number; continueFrom: string | null };
+
+export const kamMoveBook: WriteEndpoint<ImBook, MoveBookArgs, MoveBookAnswer, ImDispatch> = {
+  method: "POST",
+  path: a => `/api/kams/${encodeURIComponent(a.from)}/move-book`,
+  body: a => (a.continueFrom ? { toKamUserId: a.to, continueFrom: a.continueFrom } : { toKamUserId: a.to }),
+  pick: j => {
+    const r = j as { moved?: unknown; notMoved?: unknown; continueFrom?: unknown };
+    return { moved: typeof r.moved === "number" ? r.moved : 0, notMoved: Array.isArray(r.notMoved) ? r.notMoved.length : 0,
+      continueFrom: typeof r.continueFrom === "string" ? r.continueFrom : null };
+  },
+  fixture(b, d, a) {
+    const { s, me } = b;
+    if (!may(s, me, "assign")) return fail(403, "seat-denied", "Naming a key account manager is the Head of Account Management's.");
+    if (a.from === a.to) return fail(400, "same-kam", "The request is not valid.");
+    if (!KAMS(s).includes(a.to)) return fail(403, "assignee-not-am", "Only a key account manager can be named.");
+    if (a.continueFrom) return ok({ moved: 0, notMoved: 0, continueFrom: null });
+    const ids = bookOf(s, me, a.from).filter(cared).map(x => x.id);
+    ids.forEach(id => d({ type: "assignKam", id, k: a.to }));
+    return ok({ moved: ids.length, notMoved: 0, continueFrom: null });
+  },
+  onLiveError: imLiveError,
+};
+
 /* ---- M09-S07-W1 — the Investors search box: GET /api/investors/search?q=&farm=<LLP id> ----
    Name, ARL code, city or phone digits (and one farm), inside the seat's own book, on the person's own token.
    Hits carry no money and only the last four digits of the mobile. */

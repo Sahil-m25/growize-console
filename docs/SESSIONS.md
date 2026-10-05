@@ -351,3 +351,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · sandbox test users (4), external syncs off in sandbox, 132-record seed applied · D120
 - 2026-10-05 · owner rulings B (4 fields optional) and C (syncs off in sandbox, on in prod); A open · D120
 - 2026-10-04 · KAM share service (D121 A): kam-share.ts share/revoke via GET/PUT actions/share, queue + drawer status/retry routes, kam-assign trigger, seat-change pool-return revoke, kam-share-reconcile job; spec.json Share Service profile/role rules + Share on 3 modules for IR Manager/DI; D120 note · D121, D53, ACCESS-PLAN §4.2/R3
+- 2026-10-05 · KAM tooling: record Care card 'Manager · Change · Remove' with inline confirm and share-status line (kam/share fixtures), POST /api/kams/[userId]/move-book (server/investors/kam-move-book, resumable) and Teams 'Move book' / move-on-leave panel · owner ask 5 Oct (KAM assign/add/remove/edit), D12, D53, M18-S09-NOTE-3

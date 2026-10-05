@@ -559,6 +559,17 @@
     "needsSandbox": "needs sandbox: the route answers 400 without query parameters the suite does not model, and what it would read is Zoho records (no recorded fixture)"
    }
   },
+  "/api/kams/[userId]/move-book": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "toKamUserId"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
   "/api/leads/[id]/claim": {
    "GET": {
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
