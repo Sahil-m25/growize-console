@@ -358,3 +358,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · test 1 Compliance KYC: validation rule blocks UI, not API → option C recommended · D122
 - 2026-10-05 · D122 rulings 1+2 applied in sandbox; KAM_Access on allotment/touch create (2 functions + 2 workflows) tested; KYC parked · D122
 - 2026-10-05 · D121 share service retired: kam-share*, share/retry/reconcile routes, share-status UI and Share Service role removed; console writes Contacts.KAM only (workflows left on, tested) · D122
+- 2026-10-05 · D122 nightly KAM access check as a Zoho schedule (02:00 IST), sandbox backfilled to 0 mismatches · D122
