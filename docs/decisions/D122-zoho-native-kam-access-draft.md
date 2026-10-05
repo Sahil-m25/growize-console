@@ -57,3 +57,14 @@
 - Sandbox state to undo:
   - Finance Ops Test is still on Compliance and Audit; switch it back.
   - The Compliance read/write rule and the validation rule remain until the owner rules.
+
+## Owner ruling (5 Oct): 1 and 2 accepted, KYC parked
+- "kyc is not a priority at all … 1,2 will be enough." Recommendations 1 and 2 are ruled. KYC (item 3) is **parked**; no option chosen.
+- **Ruling 2 applied in the sandbox:** user-field sharing set as in recommendation 2; KAM and Originating_IR editable only by Administrator, Head of AM and Digital Infrastructure (read-only for the other 10 profiles).
+- **Ruling 1 completed in the sandbox:**
+  - Function `gz_kam_on_allotment(allotId)` + workflow "GZ KAM On Allotment" (LLP_UnitAllocation_Module, on create): reads the allotment by id, copies its Customer's KAM into KAM_Access.
+  - Function `gz_kam_on_touch(touchId)` + workflow "GZ KAM On Touch" (Touches, on create): finds the Contact whose Origin_Lead is the touch's lead, copies its KAM into KAM_Access.
+  - Deluge in `zoho/deluge/`. Both pass: a new allotment and a new touch for investor 0205 carried the KAM within 15 s.
+  - Two earlier test records (allotment …7093, touch …7101) were created before the code was in and still have no KAM_Access; a seed reset clears them.
+- Zoho fact learned: the v8 functions API (`POST /crm/v8/settings/functions?metadata=…`) creates a function's name, category and arguments but **does not store its code**. Code goes in through the editor. Associations (`POST /crm/v8/settings/automation/functions`, merge-field arguments) and workflow rules (`POST /crm/v8/settings/automation/workflow_rules`) do work through the API.
+- Still owed: the D121 share-service job becomes a nightly read-only check (KAM_Access vs Contacts.KAM); owner to set the Compliance sharing rule back to Read Only and deactivate the guard validation rule, since KYC is parked.

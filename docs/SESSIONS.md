@@ -356,3 +356,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · D121 KAM share service + KAM management UI + v8 share/unshare fix merged (tsc, vitest 780, node 3300, build ok) · D121
 - 2026-10-05 · sandbox wall test (IR A/B, KAM, Finance Ops, Compliance) + Zoho-native KAM access prototype (KAM_Access + workflow + Deluge) · D122 draft
 - 2026-10-05 · test 1 Compliance KYC: validation rule blocks UI, not API → option C recommended · D122
+- 2026-10-05 · D122 rulings 1+2 applied in sandbox; KAM_Access on allotment/touch create (2 functions + 2 workflows) tested; KYC parked · D122
