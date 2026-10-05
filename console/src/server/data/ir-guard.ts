@@ -8,9 +8,10 @@
  * only for the admitted Contact ids (./adapters), so nothing on the Investors side reaches an IR except
  * through `admitContact`. The lead-side top-bar search (server/leads/search) never names Contacts (D69).
  *
- * Two layers, both kept (jev "b", 1.00 — D74): Zoho's record share at hand-off
- * (../investors/handoff-share) lets the IR's own token read those records under Private sharing, and
- * this guard re-checks every row, so a stale or wrong share becomes a refusal, never another IR's investor.
+ * Two layers, both kept (D74, D123): access now comes from Zoho field sharing (Contacts.Originating_IR;
+ * LLP_UnitAllocation_Module.IR_Access) — the IR's own token reads those records under Private sharing — and
+ * this guard still re-checks every row, so a stale or wrong share becomes a refusal, never another IR's investor.
+ * IRs never read receipts (D69).
  *
  * Refusals are logged by id only: Plane B through InvestorEvents.refusal; Plane C through the optional
  * `planeCRefusal` hook — PROVISIONAL (jev "b", 0.71): Plane C has no read-refusal action yet, so the

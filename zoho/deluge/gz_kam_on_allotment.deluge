@@ -1,10 +1,13 @@
 void automation.gz_kam_on_allotment(String allotId)
 {
 // D122 ruling 1: a new allotment inherits its investor's KAM into KAM_Access (user-lookup sharing gives the KAM access).
+// D123 Q2: it ALSO inherits the investor's Originating_IR into IR_Access (read-only sharing; the IR's access to allotments). One read, one update.
+// NOT YET APPLIED in Zoho — owner applies (D123).
 // Wired to workflow rule "GZ KAM On Allotment" (LLP_UnitAllocation_Module, on create), allotId = ${!LLP_UnitAllocation_Module.id}.
 // Reads the record by id (no search: the index lags on new records). Logs ids only.
 allot = zoho.crm.getRecordById("LLP_UnitAllocation_Module",allotId.toLong());
 kamId = "";
+irId = "";
 cust = allot.get("Customer");
 if(cust != null)
 {
@@ -14,16 +17,28 @@ if(cust != null)
 	{
 		kamId = kam.get("id").toString();
 	}
+	ir = contact.get("Originating_IR");
+	if(ir != null)
+	{
+		irId = ir.get("id").toString();
+	}
 }
+upd = Map();
 if(kamId != "")
 {
-	upd = Map();
 	upd.put("KAM_Access",kamId);
+}
+if(irId != "")
+{
+	upd.put("IR_Access",irId);
+}
+if(upd.size() > 0)
+{
 	zoho.crm.updateRecord("LLP_UnitAllocation_Module",allotId.toLong(),upd);
-	info "allotment " + allotId + " kam set";
+	info "allotment " + allotId + " set kam=" + (kamId != "") + " ir=" + (irId != "");
 }
 else
 {
-	info "allotment " + allotId + " no kam";
+	info "allotment " + allotId + " no kam, no ir";
 }
 }

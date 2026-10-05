@@ -3,10 +3,13 @@ void schedule.gz_kam_access_check()
 // D122 nightly safety net (owner: nightly). Read-only: compares KAM_Access on allotments and touches with the
 // investor's Contacts.KAM and mails Digital Infrastructure the mismatches (module, record id, expected, actual user ids only).
 // Catches what the instant workflows miss: imports/API writes with workflows off, workflow failures, hand edits.
-// Fix a mismatch by re-saving the investor's KAM (fires "GZ KAM Access Sync"). Never writes.
+// D123 Q2: also compares allotment IR_Access with the investor's Contacts.Originating_IR.
+// Fix a mismatch by re-saving the investor's KAM (fires "GZ KAM Access Sync") or Originating_IR (fires "GZ IR Access Sync"). Never writes.
+// NOT YET APPLIED in Zoho — owner applies (D123).
 pages = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40};
 kamOfContact = Map();
 kamOfLead = Map();
+irOfContact = Map();
 done = false;
 for each  p in pages
 {
@@ -21,6 +24,12 @@ for each  p in pages
 				k = c.get("KAM").get("id").toString();
 			}
 			kamOfContact.put(c.get("id").toString(),k);
+			irc = "";
+			if(c.get("Originating_IR") != null)
+			{
+				irc = c.get("Originating_IR").get("id").toString();
+			}
+			irOfContact.put(c.get("id").toString(),irc);
 			if(c.get("Origin_Lead") != null)
 			{
 				kamOfLead.put(c.get("Origin_Lead").get("id").toString(),k);
@@ -64,7 +73,24 @@ for each  mod in {"LLP_UnitAllocation_Module","Touches"}
 				checked = checked + 1;
 				if(want != have)
 				{
-					bad.add(mod + " " + r.get("id") + " expected " + if(want == "","none",want) + " has " + if(have == "","none",have));
+					bad.add(mod + " " + r.get("id") + " KAM expected " + if(want == "","none",want) + " has " + if(have == "","none",have));
+				}
+				if(mod == "LLP_UnitAllocation_Module")
+				{
+					wantIr = "";
+					if(r.get("Customer") != null)
+					{
+						wantIr = ifnull(irOfContact.get(r.get("Customer").get("id").toString()),"");
+					}
+					haveIr = "";
+					if(r.get("IR_Access") != null)
+					{
+						haveIr = r.get("IR_Access").get("id").toString();
+					}
+					if(wantIr != haveIr)
+					{
+						bad.add(mod + " " + r.get("id") + " IR expected " + if(wantIr == "","none",wantIr) + " has " + if(haveIr == "","none",haveIr));
+					}
 				}
 			}
 			if(recs.size() < 200)
@@ -81,8 +107,8 @@ if(bad.size() > 0)
 	[
 		from :zoho.loginuserid
 		to :zoho.adminuserid
-		subject :"Growize KAM access check: " + bad.size() + " mismatch(es)"
-		message :"Records whose KAM Access does not match the investor's KAM (ids only). Fix: open the investor and re-save its KAM.<br><br>" + bad.toString("<br>")
+		subject :"Growize KAM/IR access check: " + bad.size() + " mismatch(es)"
+		message :"Records whose KAM Access / IR Access does not match the investor's KAM / Originating IR (ids only). Fix: open the investor and re-save the KAM or Originating IR.<br><br>" + bad.toString("<br>")
 	]
 }
 }

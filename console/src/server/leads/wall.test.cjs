@@ -25,7 +25,7 @@ const config = ts.readConfigFile(path.join(consoleRoot, 'tsconfig.json'), ts.sys
 const project = ts.parseJsonConfigFileContent(config.config, ts.sys, consoleRoot);
 const options = { ...project.options, incremental: false, tsBuildInfoFile: undefined, plugins: undefined,
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10, noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot };
-const sources = ['lib/zoho/log.ts', 'lib/zoho/client.ts', 'lib/zoho/cache.ts', 'lib/zoho/cover-window-share.ts', 'server/identity/plane-c.ts',
+const sources = ['lib/zoho/log.ts', 'lib/zoho/client.ts', 'lib/zoho/cache.ts', 'server/identity/plane-c.ts',
   'server/leads/cover.ts', 'server/leads/gates.ts', 'server/leads/search.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
@@ -36,7 +36,6 @@ if (diagnostics.length) {
 const load = (f) => require(path.join(outDir, f));
 const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createZohoClient, createZohoServiceClient, userCredential, serviceCredential } = load('lib/zoho/client.js');
-const { runCoverWindowShare } = load('lib/zoho/cover-window-share.js');
 const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-c.js');
 const { createCover, sweepExpiredCovers, activeFor, activeClause } = load('server/leads/cover.js');
 const { createGates, GATE_TEXT } = load('server/leads/gates.js');
@@ -201,26 +200,24 @@ test('Zoho failing is a source error, never an open gate', async () => {
 
 /* ================= M08-S05 — cover ================= */
 
-function coverRig(lead, put = 'lead.updated', shareOk = true) {
+function coverRig(lead, put = 'lead.updated') {
   const r = rig('cover', (c) => (c.method === 'GET' ? lead : put));
-  const shares = [];
   const planeSink = createPlaneCMemorySink();
-  const share = async (windows) => { shares.push(...windows); return windows.map((w) => ({ leadId: w.leadId, state: w.state, ok: shareOk })); };
   const roster = { now: null, async current() { return this.now || { absentOwnerIds: [], covers: [] }; } };
-  const make = (who) => createCover({ crm: r.crm, access: access(who), share, log: r.log, planeC: createPlaneCLog(planeSink), recordIdPrefix: P, roster, clock: () => NOW });
-  return { ...r, shares, plane: planeSink, roster, make };
+  const make = (who) => createCover({ crm: r.crm, access: access(who), log: r.log, planeC: createPlaneCLog(planeSink), recordIdPrefix: P, roster, clock: () => NOW });
+  return { ...r, plane: planeSink, roster, make };
 }
 
-test('TC-E08-018: the owner hands over for 3 days — the window is written, the share opens, Plane C files the grant', async () => {
+test('TC-E08-018: the owner hands over for 3 days — the window is written (Zoho field sharing does the access), Plane C files the grant', async () => {
   const c = coverRig('lead.handover');
   const res = await c.make(IR).start(principal(IR), L_COV, MT, 'd3');
   assert.equal(res.ok, true);
-  assert.deepEqual(res.value, { leadId: L_COV, coverById: SEC, coverUntil: '2026-09-30', modifiedTime: '2026-09-27T21:00:00+05:30', shared: true });
+  assert.deepEqual(res.value, { leadId: L_COV, coverById: SEC, coverUntil: '2026-09-30', modifiedTime: '2026-09-27T21:00:00+05:30' });
   const put = c.calls.find((x) => x.method === 'PUT');
   assert.equal(put.path, `/crm/v8/Leads/${L_COV}`);
   assert.deepEqual(put.body.data[0], { Cover_By: { id: SEC }, Cover_Until: '2026-09-30' });
   assert.ok(Object.entries(put.headers).some(([k, v]) => /if-unmodified-since/i.test(k) && v), 'a guarded write');
-  assert.deepEqual(c.shares, [{ leadId: L_COV, coverUserId: SEC, state: 'open' }]);
+  assert.equal(c.calls.filter((x) => /actions\/share/.test(x.path)).length, 0, 'no share API call (D123)');
   const e = c.plane.events();
   assert.equal(e.length, 1);
   assert.deepEqual({ who: e[0].who, whom: e[0].whom, action: e[0].action, outcome: e[0].outcome, reason: e[0].reason, recordIds: e[0].recordIds },
@@ -232,7 +229,6 @@ test('TC-E08-019: a dormant secondary cannot start cover on a healthy owner\'s l
   const res = await c.make(SEC).start(principal(SEC), L_COV, MT, 'd3');
   assert.equal(res.reasonCode, 'not-yours-to-cover');
   assert.equal(c.calls.filter((x) => x.method !== 'GET').length, 0, 'no write');
-  assert.equal(c.shares.length, 0, 'no record share');
   const e = c.plane.events();
   assert.equal(e[0].action, 'refused-action');
   assert.equal(e[0].reason, 'cover-start');
@@ -248,30 +244,23 @@ test('a secondary may start cover while the roster has the owner away; a manager
   assert.equal((await c.make(OTHER).start(principal(OTHER), L_COV, MT, 'w1')).reasonCode, 'not-yours-to-cover');
 });
 
-test('TC-E08-025: ending the cover clears the window, revokes the share and files the end', async () => {
+test('TC-E08-025: ending the cover clears the window and files the end', async () => {
   const c = coverRig('lead.covering');
   const res = await c.make(SEC).end(principal(SEC), L_COV, MT);
   assert.equal(res.ok, true);
   assert.deepEqual(c.calls.find((x) => x.method === 'PUT').body.data[0], { Cover_By: null, Cover_Until: null });
-  assert.deepEqual(c.shares, [{ leadId: L_COV, coverUserId: SEC, state: 'closed' }]);
   const e = c.plane.events()[0];
   assert.equal(e.outcome, 'ended');
   assert.equal(e.whom, SEC);
   const o = coverRig('lead.covering');
   assert.equal((await o.make(OTHER).end(principal(OTHER), L_COV, MT)).reasonCode, 'not-yours-to-end');
-  assert.equal(o.shares.length, 0);
   const n = coverRig('lead.handover');
   assert.equal((await n.make(IR).end(principal(IR), L_COV, MT)).reasonCode, 'no-cover');
 });
 
-test('a lead changed in Zoho is refused and nothing is shared; a share that fails leaves the window marked unshared', async () => {
+test('a lead changed in Zoho is refused; the other start refusals write nothing', async () => {
   let c = coverRig('lead.handover', 'lead.conflict');
   assert.equal((await c.make(IR).start(principal(IR), L_COV, MT, 'd3')).reasonCode, 'lead-changed');
-  assert.equal(c.shares.length, 0);
-  c = coverRig('lead.handover', 'lead.updated', false);
-  const res = await c.make(IR).start(principal(IR), L_COV, MT, 'd3');
-  assert.equal(res.value.shared, false);
-  assert.ok(c.sink.records().some((x) => x.kind === 'refusal' && x.reason === 'share-pending'));
   c = coverRig('lead.no-secondary');
   assert.equal((await c.make(IR).start(principal(IR), L_COV, MT, 'd3')).reasonCode, 'no-secondary');
   c = coverRig('lead.handover');
@@ -279,21 +268,16 @@ test('a lead changed in Zoho is refused and nothing is shared; a share that fail
   assert.equal(c.calls.filter((x) => x.method !== 'GET').length, 0);
 });
 
-test('expiry: the sweep revokes each expired window, then clears it, on the cover-window-share job', async () => {
-  // The lead also carries the originating IR's hand-off read and a KAM's share: the revoke must leave both (v8 DELETE revokes all).
-  const r = rig('cover', (c) => (c.path === '/crm/v8/coql' ? 'coql.expired' : c.path.endsWith('/actions/share') ? (c.method === 'GET' ? 'shares.cover-ir-kam' : 'unshare.success') : 'lead.updated'), true);
-  const as = serviceCredential('cover-window-share', { access_token: 'svc', api_domain: 'https://www.zohoapis.in', expires_in: 3600, token_type: 'Bearer' }, NOW);
+test('expiry: the sweep only clears each expired window (Zoho field sharing revokes), on the cover-expiry job', async () => {
+  const r = rig('cover', (c) => (c.path === '/crm/v8/coql' ? 'coql.expired' : 'lead.updated'), true);
+  const as = serviceCredential('cover-expiry', { access_token: 'svc', api_domain: 'https://www.zohoapis.in', expires_in: 3600, token_type: 'Bearer' }, NOW);
   const plane = createPlaneCMemorySink();
   const res = await sweepExpiredCovers(r.crm, as, createPlaneCLog(plane), P, () => NOW);
   assert.deepEqual(res, { ok: true, closed: [L_EXP], failed: [] });
   assert.match(r.calls[0].query, /where \(Cover_By is not null and Cover_Until < '2026-09-27'\)/);
-  assert.deepEqual(r.calls.slice(1).map((c) => [c.method, c.path]), [['GET', `/crm/v8/Leads/${L_EXP}/actions/share`], ['PUT', `/crm/v8/Leads/${L_EXP}/actions/share`], ['PUT', `/crm/v8/Leads/${L_EXP}`]]);
-  assert.ok(!r.calls.some((c) => c.method === 'DELETE'), 'never DELETE while the IR and the KAM hold shares');
-  assert.deepEqual(r.calls[2].body.share.map((x) => [x.shared_with.id, x.permission]), [[IR, 'read_only'], [`${P}740995011`, 'read_write']], 'the IR\'s and the KAM\'s shares stay; only the cover user goes');
+  assert.deepEqual(r.calls.slice(1).map((c) => [c.method, c.path]), [['PUT', `/crm/v8/Leads/${L_EXP}`]], 'no share calls');
+  assert.deepEqual(r.calls[1].body.data[0], { Cover_By: null, Cover_Until: null });
   assert.equal(plane.events()[0].reason, 'cover-expired');
-  // The existing share job (lib/zoho/cover-window-share) is what the runtime calls on open and close.
-  const s = rig('cover', () => 'share.success', true);
-  assert.deepEqual(await runCoverWindowShare(s.crm, as, [{ leadId: L_COV, coverUserId: SEC, state: 'open' }]), [{ leadId: L_COV, state: 'open', ok: true }]);
 });
 
 test('D44 predicate: a named secondary is dormant; an explicit window admits only its recipient and never falls back', () => {

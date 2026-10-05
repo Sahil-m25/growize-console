@@ -88,10 +88,10 @@ export interface RecordShare extends ShareEntry {
 export const MAX_RECORD_SHARES = 10;
 
 /** The background work D53 allows a service token for. Nothing on this list serves a screen. */
-/* "handoff-share" (M03-S09-T03, D74): at hand-off, share the Contact, its allotments and receipts read-only with the originating IR. */
+/* D123: "cover-window-share" and "handoff-share" are retired — Zoho field sharing (Cover_By, Originating_IR, IR_Access) does that access. "cover-expiry" only clears lapsed Cover_By/Cover_Until. */
 /** "kam-pool-return" (M03-S04-T02): the org-scope read of a moved KAM's book; its writes stay on the person's own token. */
-export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share" | "kam-pool-return";
-const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share", "kam-pool-return"]);
+export type ServiceJob = "audit-archive" | "cover-expiry" | "invariant-check" | "provider-callback" | "kam-pool-return";
+const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-expiry", "invariant-check", "provider-callback", "kam-pool-return"]);
 
 declare const apiDomainBrand: unique symbol;
 declare const userBrand: unique symbol;

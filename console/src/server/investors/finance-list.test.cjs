@@ -26,7 +26,7 @@ const options = {
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10,
   noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot,
 };
-const sources = ['server/investors/finance-list.ts', 'server/investors/handoff-share.ts', 'server/data/events.ts', 'server/money/register.ts'].map((f) => path.join(srcRoot, f));
+const sources = ['server/investors/finance-list.ts', 'server/data/events.ts', 'server/money/register.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -48,7 +48,6 @@ const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-
 const { createInvestorEvents } = load('server/data/events.js');
 const { createFinanceInvestorList, buildFinanceRows, FINANCE_CONTACT_FIELDS, FINANCE_TTL_MS } = load('server/investors/finance-list.js');
 const { createPaymentsRegister } = load('server/money/register.js');
-const { shareAtHandOff } = load('server/investors/handoff-share.js');
 
 const P = '9007199254';
 const FIN = `${P}740993001`, ROHIT = `${P}740995001`, KAM = `${P}740994001`, KAVYA = `${P}740995009`;
@@ -142,43 +141,7 @@ test('a Zoho failure is an error result, never an empty list passed off as the b
   assert.deepEqual([res.ok, res.kind, res.book], [false, 'source-error', 'receipts']);
 });
 
-/* ---- M03-S09-T03 record share at hand-off ---- */
-
-test('hand-off shares the Contact, its allotments and receipts read-only with the originating IR, on the service credential', async () => {
-  const calls = [];
-  const sink = createMemorySink();
-  const client = createZohoServiceClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(sink), maxAttempts: 1, clock: () => NOW,
-    fetch: async (url, init) => {
-      const body = init.body ? JSON.parse(init.body) : null;
-      calls.push({ url: String(url), method: init.method, body });
-      if (body && body.select_query) {
-        const q = body.select_query;
-        return toResponse(recorded(/from Contacts/.test(q) ? 'coql.share-contact' : /from LLP_UnitAllocation_Module/.test(q) ? 'coql.share-allotments' : 'coql.share-receipts'));
-      }
-      return toResponse(recorded('share.success'));
-    } });
-  const job = serviceCredential('handoff-share', { access_token: 'svc', api_domain: 'https://www.zohoapis.in', expires_in: 3600, token_type: 'Bearer' }, NOW);
-  const res = await shareAtHandOff(client, job, { contactId: `${P}740997101`, irUserId: ROHIT });
-  assert.equal(res.ok, true, JSON.stringify(res));
-  assert.deepEqual(res.shared.map((x) => `${x.module}/${x.id}`), [
-    `Contacts/${P}740997101`, `LLP_UnitAllocation_Module/${P}740998201`, `Receipts/${P}740999201`, `Receipts/${P}740999202`]);
-  assert.equal(res.failed.length, 0);
-  const shares = calls.filter((c) => c.url.includes('/actions/share'));
-  assert.equal(shares.length, 4);
-  // v8 share-record body (verified 5 Oct 2026): shared_with {id, type:"users"}, permission read_only — never the old user/"read" shape.
-  for (const s of shares) {
-    assert.equal(s.method, 'POST');
-    assert.deepEqual(s.body, { share: [{ shared_with: { id: ROHIT, type: 'users' }, permission: 'read_only', share_related_records: false, type: 'private' }], notify_shared_members: false });
-  }
-  const logged = JSON.stringify(sink.records());
-  assert.ok(sink.records().every((x) => !x.actor || x.actor.job === 'handoff-share'), 'the job is named');
-  assert.ok(!/svc|Bearer/.test(logged), 'no token in the log');
-
-  const wrong = await shareAtHandOff(client, job, { contactId: `${P}740997101`, irUserId: KAVYA });
-  assert.deepEqual(wrong, { ok: false, reason: 'not-the-originating-ir' }, 'never shared with anybody but the Contact\'s Originating_IR');
-  const other = serviceCredential('cover-window-share', { access_token: 'svc', api_domain: 'https://www.zohoapis.in', expires_in: 3600, token_type: 'Bearer' }, NOW);
-  await assert.rejects(shareAtHandOff(client, other, { contactId: `${P}740997101`, irUserId: ROHIT }), TypeError, 'only the handoff-share job may');
-});
+/* M03-S09-T03 record share at hand-off: retired (D123) — Zoho field sharing (Originating_IR, IR_Access) grants the IR; the ir-guard re-checks every row. */
 
 /* ---- M01-S08-NOTE-3: the Finance list reads money through money/ledger, so it agrees with the Payments register ---- */
 test('NOTE-3: on mixed ledgers (refund, reversal of matched / pending, pending) each row equals the register — matched only (D21)', async () => {
