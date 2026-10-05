@@ -2,7 +2,6 @@ void automation.gz_sync_ir_access(String contactId)
 {
 // D123 Q2: Zoho shares a record read-only with the user named in LLP_UnitAllocation_Module.IR_Access (user-lookup sharing).
 // Copies Contacts.Originating_IR onto the investor's allotments. Writes only what differs. Logs ids only.
-// NOT YET APPLIED in Zoho — owner applies (D123).
 // Wire to workflow rule "GZ IR Access Sync" (Contacts, on edit when Originating_IR is modified to any value, repeat on), contactId = Contacts.Contact Id.
 // IR_Access is a derived copy of Originating_IR (rule 1 note: like KAM_Access, never edited by hand; Originating_IR stays the one writer).
 contact = zoho.crm.getRecordById("Contacts",contactId.toLong());
@@ -13,29 +12,33 @@ if(ir != null)
 	irId = ir.get("id").toString();
 }
 changed = 0;
+stale = 0;
 allots = zoho.crm.searchRecords("LLP_UnitAllocation_Module","(Customer:equals:" + contactId + ")",1,200);
 for each  a in allots
 {
-	cur = "";
-	ca = a.get("IR_Access");
-	if(ca != null)
+	// IR_Access is a multi-user lookup stored as rows in its link table (SANDBOX: LLP_UnitA_X_Users, allotment lookup userlookup221_4).
+	// Deluge cannot update multi-user values or delete link rows, so this ADDS the current IR when missing and REPORTS any other
+	// user as stale (an admin removes it in the record; Originating_IR is admin-only and rarely changes). The nightly check reports it too.
+	found = false;
+	for each  e in ifnull(a.get("IR_Access"),List())
 	{
-		cur = ca.get("id").toString();
-	}
-	if(cur != irId)
-	{
-		upd = Map();
-		if(irId == "")
+		if(e.get("IR_Access").get("id").toString() == irId)
 		{
-			upd.put("IR_Access",null);
+			found = true;
 		}
 		else
 		{
-			upd.put("IR_Access",irId);
+			stale = stale + 1;
 		}
-		zoho.crm.updateRecord("LLP_UnitAllocation_Module",a.get("id").toLong(),upd);
+	}
+	if(irId != "" && !found)
+	{
+		lk = Map();
+		lk.put("userlookup221_4",a.get("id"));
+		lk.put("IR_Access",irId);
+		zoho.crm.createRecord("LLP_UnitA_X_Users",lk);
 		changed = changed + 1;
 	}
 }
-info "contact " + contactId + " ir changed " + changed;
+info "contact " + contactId + " ir added " + changed + " stale " + stale;
 }

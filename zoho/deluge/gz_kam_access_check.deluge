@@ -5,7 +5,6 @@ void schedule.gz_kam_access_check()
 // Catches what the instant workflows miss: imports/API writes with workflows off, workflow failures, hand edits.
 // D123 Q2: also compares allotment IR_Access with the investor's Contacts.Originating_IR.
 // Fix a mismatch by re-saving the investor's KAM (fires "GZ KAM Access Sync") or Originating_IR (fires "GZ IR Access Sync"). Never writes.
-// NOT YET APPLIED in Zoho — owner applies (D123).
 pages = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40};
 kamOfContact = Map();
 kamOfLead = Map();
@@ -83,9 +82,9 @@ for each  mod in {"LLP_UnitAllocation_Module","Touches"}
 						wantIr = ifnull(irOfContact.get(r.get("Customer").get("id").toString()),"");
 					}
 					haveIr = "";
-					if(r.get("IR_Access") != null)
+					for each  e in ifnull(r.get("IR_Access"),List())
 					{
-						haveIr = r.get("IR_Access").get("id").toString();
+						haveIr = haveIr + if(haveIr == "","",",") + e.get("IR_Access").get("id").toString();
 					}
 					if(wantIr != haveIr)
 					{

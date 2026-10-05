@@ -2,7 +2,6 @@ void automation.gz_kam_on_allotment(String allotId)
 {
 // D122 ruling 1: a new allotment inherits its investor's KAM into KAM_Access (user-lookup sharing gives the KAM access).
 // D123 Q2: it ALSO inherits the investor's Originating_IR into IR_Access (read-only sharing; the IR's access to allotments). One read, one update.
-// NOT YET APPLIED in Zoho — owner applies (D123).
 // Wired to workflow rule "GZ KAM On Allotment" (LLP_UnitAllocation_Module, on create), allotId = ${!LLP_UnitAllocation_Module.id}.
 // Reads the record by id (no search: the index lags on new records). Logs ids only.
 allot = zoho.crm.getRecordById("LLP_UnitAllocation_Module",allotId.toLong());
@@ -27,18 +26,19 @@ upd = Map();
 if(kamId != "")
 {
 	upd.put("KAM_Access",kamId);
+	zoho.crm.updateRecord("LLP_UnitAllocation_Module",allotId.toLong(),upd);
 }
 if(irId != "")
 {
-	upd.put("IR_Access",irId);
+	// IR_Access is a multi-user lookup (Zoho caps single-user lookups at 5 per module). Deluge's updateRecord silently
+	// ignores multi-user values (verified 5 Oct), so add the row in the field's link table.
+	// SANDBOX names: link module LLP_UnitA_X_Users, allotment lookup userlookup221_4. In live, read them from
+	// GET /crm/v8/settings/fields?module=LLP_UnitAllocation_Module -> IR_Access.multiuserlookup.linking_details.
+	lk = Map();
+	lk.put("userlookup221_4",allotId);
+	lk.put("IR_Access",irId);
+	resp = zoho.crm.createRecord("LLP_UnitA_X_Users",lk);
+	info resp.get("id");
 }
-if(upd.size() > 0)
-{
-	zoho.crm.updateRecord("LLP_UnitAllocation_Module",allotId.toLong(),upd);
-	info "allotment " + allotId + " set kam=" + (kamId != "") + " ir=" + (irId != "");
-}
-else
-{
-	info "allotment " + allotId + " no kam, no ir";
-}
+info "allotment " + allotId + " set kam=" + if(kamId == "","no","yes") + " ir=" + if(irId == "","no","yes");
 }
