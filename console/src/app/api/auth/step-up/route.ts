@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 async function get_(req: Request) {
   const q = new URL(req.url).searchParams;
   const back = safeBack(q.get("back"));
-  const home = (code: string) => new Response(null, { status: 303, headers: { Location: new URL(`${back}?stepup=${code}`, req.url).toString(), "Cache-Control": "no-store" } });
+  const home = (code: string) => new Response(null, { status: 303, headers: { Location: `${back}?stepup=${code}`, "Cache-Control": "no-store" } });
   const action = q.get("action");
   if (!isStepUpAction(action)) return home("failed");
   if (!zohoSignInConfigured()) return home("not-configured");

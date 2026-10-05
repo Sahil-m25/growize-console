@@ -45,13 +45,15 @@ const hostOf = (value: string | null): string | null => {
   try { return new URL(value).host.toLowerCase(); } catch { return null; }
 };
 
-/** The hosts this request may call its own: the Host header, the proxy's X-Forwarded-Host, and the URL's own. */
+/** The hosts this request may call its own: the Host header, the proxy's X-Forwarded-Host, the URL's own, and CONSOLE_PUBLIC_ORIGIN when set. */
 function ownHosts(request: Request): Set<string> {
   const out = new Set<string>();
   const add = (h: string | null | undefined) => { const v = h?.split(",")[0]?.trim().toLowerCase(); if (v) out.add(v); };
   add(request.headers.get("host"));
   add(request.headers.get("x-forwarded-host"));
   add(hostOf(request.url));
+  // Behind a proxy (Catalyst AppSail) the Host the app sees is internal: the deployment names its public origin.
+  add(hostOf(process.env.CONSOLE_PUBLIC_ORIGIN ?? null));
   return out;
 }
 

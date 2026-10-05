@@ -128,3 +128,8 @@ interval applies), and the per-job request timeout. If one-minute crons are refu
   ZOHO_OAUTH_CLIENT_ID, ZOHO_OAUTH_CLIENT_SECRET, ZOHO_SESSION_KEY. STATE_STORE=memory for the first smoke; switch to
   `catalyst` (+ SESSION_ENC_KEY, CATALYST_* settings) before more than one tester.
 - Note: the code's profile name "Compliance & Audit" is "Compliance and Audit" in Zoho; ZOHO_SEAT_IDS maps the code name to the Zoho id.
+- **CLI deploy replaces the AppSail environment variables with `app-config.json`'s `env_variables`** (verified 5 Oct: secrets added in
+  the console were removed by the next `catalyst deploy`). After any CLI deploy, re-enter the secrets in the console, or deploy from the
+  console. Also: the Catalyst API (and MCP) returns variable values in plain text to anyone with project access.
+- Behind the AppSail proxy the app sees an internal Host, so `CONSOLE_PUBLIC_ORIGIN` names the public origin for the H2 origin check;
+  sign-in and step-up redirects are relative (5 Oct fix).

@@ -20,7 +20,7 @@ async function get_(req: Request) {
   jar.delete({ name: BACK_COOKIE, path: "/api/auth/step-up" });
   const r = await stepUp().finish(jar.get(SID_COOKIE)?.value, { code: q.get("code"), state: q.get("state"), error: q.get("error") }, flow);
   const code = r.ok ? "ok" : r.code;
-  return new Response(null, { status: 303, headers: { Location: new URL(`${back}?stepup=${code}`, req.url).toString(), "Cache-Control": "no-store" } });
+  return new Response(null, { status: 303, headers: { Location: `${back}?stepup=${code}`, "Cache-Control": "no-store" } });
 }
 
 export const GET = withErrorCapture(get_, "/api/auth/step-up/callback");

@@ -188,3 +188,21 @@ describe("M18-S15-H3 rate limits", () => {
     expect(rateLimitsOn({ NODE_ENV: "test", GZ_RATE_LIMITS: "on" } as NodeJS.ProcessEnv)).toBe(true);
   });
 });
+
+describe("H2 origin behind a proxy (CONSOLE_PUBLIC_ORIGIN)", () => {
+  const prev = process.env.CONSOLE_PUBLIC_ORIGIN;
+  afterEach(() => { if (prev === undefined) delete process.env.CONSOLE_PUBLIC_ORIGIN; else process.env.CONSOLE_PUBLIC_ORIGIN = prev; });
+  const behindProxy = (origin: string) =>
+    new Request("http://localhost:9000/api/auth/zoho", { method: "POST", headers: { host: "localhost:9000", origin, "sec-fetch-site": "same-origin" } });
+  it("refuses the public origin when it is not configured (the internal Host differs)", async () => {
+    delete process.env.CONSOLE_PUBLIC_ORIGIN;
+    const { originVerdict } = await import("./request-gate");
+    expect(originVerdict(behindProxy("https://console.example.in"), "/api/auth/zoho")).toEqual({ ok: false, why: "foreign-origin" });
+  });
+  it("accepts the configured public origin and still refuses any other", async () => {
+    process.env.CONSOLE_PUBLIC_ORIGIN = "https://console.example.in";
+    const { originVerdict } = await import("./request-gate");
+    expect(originVerdict(behindProxy("https://console.example.in"), "/api/auth/zoho")).toEqual({ ok: true });
+    expect(originVerdict(behindProxy("https://evil.example.com"), "/api/auth/zoho")).toEqual({ ok: false, why: "foreign-origin" });
+  });
+});

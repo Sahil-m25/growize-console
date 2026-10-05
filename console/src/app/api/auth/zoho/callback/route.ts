@@ -32,7 +32,7 @@ async function get_(req: Request) {
   } else {
     jar.set(NOTE_COOKIE, r.code, { ...cookieBase(), maxAge: 300 });
   }
-  return new Response(null, { status: 303, headers: { Location: new URL("/", req.url).toString(), "Cache-Control": "no-store" } });
+  return new Response(null, { status: 303, headers: { Location: "/", "Cache-Control": "no-store" } });
 }
 
 export const GET = withErrorCapture(get_, "/api/auth/zoho/callback");
