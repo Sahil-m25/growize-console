@@ -119,3 +119,12 @@ interval applies), and the per-job request timeout. If one-minute crons are refu
    `LOG_SINK=stratus` for the logs (and with it the Sign dead-letters and the push ledger) and `STATE_STORE=catalyst`
    (grants then default to `shared`, docs/architecture/shared-state.md).
 3. The nightly audit export (`nightlyAuditExport`) can poll for 30 min; it cannot run inside a 30 s request. Use Job Scheduling.
+
+## Staging deployment (5 Oct 2026)
+- Project GrowizeConsole (64668000000018001, India DC, Development). AppSail `growize-console`, managed runtime node20, 512 MB,
+  started by `sh start.sh` (maps X_ZOHO_CATALYST_LISTEN_PORT → PORT). URL: https://growize-console-50046579043.development.catalystappsail.in
+- Non-secret settings are in `catalyst/app-config.staging.json` (sandbox mode, expected org 60090668120, redirects, sandbox role/profile ids).
+- Secrets are set by the owner in the Catalyst console (AppSail → growize-console → Environment variables), never in git:
+  ZOHO_OAUTH_CLIENT_ID, ZOHO_OAUTH_CLIENT_SECRET, ZOHO_SESSION_KEY. STATE_STORE=memory for the first smoke; switch to
+  `catalyst` (+ SESSION_ENC_KEY, CATALYST_* settings) before more than one tester.
+- Note: the code's profile name "Compliance & Audit" is "Compliance and Audit" in Zoho; ZOHO_SEAT_IDS maps the code name to the Zoho id.
