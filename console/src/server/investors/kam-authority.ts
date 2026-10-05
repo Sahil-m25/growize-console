@@ -1,6 +1,6 @@
 /* The Investors-side "assign" right, re-derived from the live session (M09-S04-T02): the seat token when the person may
    name or move a key account manager (Head of AM, and the seats the front-end rules give it), else null. Shared by
-   PUT /api/investors/[id]/kam and POST /api/investors/[id]/kam/share/retry (D121: Retry has kam-assign's authority). */
+   PUT /api/investors/[id]/kam. */
 import type { UserCredential } from "../../lib/zoho/client";
 
 export async function mayAssignKam(cred: UserCredential, sid: string): Promise<string | null> {

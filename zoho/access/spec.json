@@ -23,7 +23,7 @@
   "Notes"
  ],
  "general": {
-  "_": "Per-module permissions matched by name prefix Crm_Implied_<prefix>_ (live probe 5 Oct 2026: Standard has Export, Import, Mass Delete/Transfer/Update, Change Owner, Share, Merge, Delete Mail on for most modules). View All / Edit All bypass sharing and stay off everywhere. Export off for all (rule 7). Share (D121 A, owner ruling 5 Oct 2026): on only for Share Service (the background share-service user) and for IR Manager and Digital Infrastructure (manual override for cover windows and fixes), and only on Contacts, LLP_UnitAllocation_Module and Touches ('modules'); off everywhere else.",
+  "_": "Per-module permissions matched by name prefix Crm_Implied_<prefix>_ (live probe 5 Oct 2026: Standard has Export, Import, Mass Delete/Transfer/Update, Change Owner, Share, Merge, Delete Mail on for most modules). View All / Edit All bypass sharing and stay off everywhere. Export off for all (rule 7). Share (D121 A, owner ruling 5 Oct 2026; D122: KAM access is Zoho-native, no sharing user): on only for IR Manager and Digital Infrastructure (manual override for cover windows and fixes), and only on Contacts, LLP_UnitAllocation_Module and Touches ('modules'); off everywhere else.",
   "export": {
    "prefix": "Export",
    "on": []
@@ -69,7 +69,6 @@
   "share": {
    "prefix": "Share",
    "on": [
-    "Share Service",
     "IR Manager",
     "Digital Infrastructure"
    ],
@@ -331,18 +330,6 @@
    "modules": {
     "Cases": "vc"
    }
-  },
-  {
-   "name": "Share Service",
-   "seat": "share-service user (D121 A; D53 service credential kam-share, background only)",
-   "role": "Share Service",
-   "description": "D121 A: background share-service user. Views Contacts, allotments, Touches and Leads; shares Contacts, allotments and Touches with the KAM. No create/edit/delete, no money module; identity, bank and money hidden.",
-   "modules": {
-    "Leads": "v",
-    "Contacts": "v",
-    "LLP_UnitAllocation_Module": "v",
-    "Touches": "v"
-   }
   }
  ],
  "fieldSecurity": {
@@ -582,30 +569,6 @@
     "to": "Compliance and Audit",
     "permission": "read",
     "provisional": true
-   },
-   {
-    "module": "Contacts",
-    "to": "Share Service",
-    "permission": "read",
-    "roleManual": true,
-    "provisional": true,
-    "source": "D121 A: the sharer must reach every record it shares; read is the least that does (PROVISIONAL P13)"
-   },
-   {
-    "module": "LLP_UnitAllocation_Module",
-    "to": "Share Service",
-    "permission": "read",
-    "roleManual": true,
-    "provisional": true,
-    "source": "D121 A: the sharer must reach every record it shares; read is the least that does (PROVISIONAL P13)"
-   },
-   {
-    "module": "Touches",
-    "to": "Share Service",
-    "permission": "read",
-    "roleManual": true,
-    "provisional": true,
-    "source": "D121 A: the sharer must reach every record it shares; read is the least that does (PROVISIONAL P13)"
    }
   ]
  },
@@ -666,12 +629,6 @@
     "label": "Viewer",
     "role": "Exec",
     "profile": "Viewer"
-   },
-   {
-    "key": "share-service",
-    "label": "Share service (background user)",
-    "role": "Share Service",
-    "profile": "Share Service"
    }
   ]
  },
@@ -687,7 +644,6 @@
   "P9 Integration gets Cases view+create only (Zoho pairs create with view); no Contacts access - if the Case-to-Contact lookup needs it, add Contacts view; identity stays hidden either way.",
   "P10 Compliance and Audit also gets read sharing rules on Leads, Touches, Cases ('reads everything', D80).",
   "P11 Mass update on for heads only; import only for Digital Infrastructure; export and mass delete off for every created profile.",
-  "P13 D121 A: Share Service reaches every Contact/allotment/Touch through 'read' sharing rules to its own role (Share Service, under CEO, no subordinates) - the least privilege that lets it share (Zoho requires the sharer to have access). If the sandbox refuses a read_write share from a read-only sharer, raise these three rules to read_write; nothing else changes.",
   "P14 D121 A: IR Manager gets View on LLP_UnitAllocation_Module because Zoho enables Share only under View (parent permission); allotment money fields stay hidden and records are visible only where shared or owned below in the role tree."
  ]
 }

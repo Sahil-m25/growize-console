@@ -25,7 +25,7 @@ const options = {
   module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.Node10,
   noEmit: false, noEmitOnError: true, outDir, rootDir: srcRoot,
 };
-const sources = ['server/investors/kam-move-book.ts', 'server/investors/kam-share-queue.ts', 'server/state/memory.ts', 'lib/zoho/log.ts'].map((f) => path.join(srcRoot, f));
+const sources = ['server/investors/kam-move-book.ts'].map((f) => path.join(srcRoot, f));
 const program = ts.createProgram(sources, options);
 const diagnostics = [...ts.getPreEmitDiagnostics(program), ...program.emit().diagnostics];
 if (diagnostics.length) {
@@ -42,9 +42,6 @@ Module._resolveFilename = function (request, ...rest) {
 const load = (f) => require(path.join(outDir, f));
 const { createKamMoveBook, parseMoveBook } = load('server/investors/kam-move-book.js');
 const { runWithDeadline } = load('lib/zoho/deadline.js');
-const { createKamShareQueue } = load('server/investors/kam-share-queue.js');
-const { createMemoryState } = load('server/state/memory.js');
-const { createOpsLog, createMemorySink } = load('lib/zoho/log.js');
 
 const P = '554023';
 const id = (n) => `${P}0000005${String(n).padStart(5, '0')}`;
@@ -53,7 +50,7 @@ const cred = { userId: DIVYA };
 const principal = { credential: cred, sessionId: 'sid' };
 const MT = '2026-10-04T10:00:00+05:30';
 
-function rig({ book = [], mayAssign = 'amlead', assigneeSeat = 'key-account-manager', refuse = {}, stopAfter = null, pages = null, share = undefined } = {}) {
+function rig({ book = [], mayAssign = 'amlead', assigneeSeat = 'key-account-manager', refuse = {}, stopAfter = null, pages = null } = {}) {
   const calls = { coql: [], assign: [], refusals: [] };
   const crm = { async coql(_c, q) {
     calls.coql.push(q);
@@ -72,7 +69,7 @@ function rig({ book = [], mayAssign = 'amlead', assigneeSeat = 'key-account-mana
   const users = { async lookup(_c, who) { return who === TO ? { who, seat: assigneeSeat } : who === FROM ? { who, seat: 'key-account-manager' } : null; } };
   const events = { refusal(u, action, reason, ids) { calls.refusals.push({ u, action, reason, ids }); } };
   const authority = { async mayAssign() { return mayAssign; } };
-  const svc = createKamMoveBook({ crm, assignment, users, events, authority, share, concurrency: 2, stopMarginMs: 8_000 });
+  const svc = createKamMoveBook({ crm, assignment, users, events, authority, concurrency: 2, stopMarginMs: 8_000 });
   return { svc, calls, started: () => started };
 }
 const cmd = (over = {}) => ({ fromKamUserId: FROM, toKamUserId: TO, continueFrom: null, ...over });
@@ -154,41 +151,11 @@ test('Zoho failing on the book read changes nothing and says so', async () => {
   void svc;
 });
 
-/* ---- D121 A: a moved Contact gets the same kam-share run as PUT /api/investors/[id]/kam ---- */
+/* ---- D122: no share step — the move is the Contacts.KAM write alone; Zoho's own sharing follows ---- */
 
-test('each moved Contact is handed to the kam-share run (to the new KAM, from the old); the answer carries share ids per state', async () => {
-  const book = [id(1), id(2), id(3), id(4), id(5)];
-  const runs = [];
-  const states = { [id(1)]: 'shared', [id(3)]: 'pending', [id(4)]: 'failed', [id(5)]: 'boom' };
-  const share = async (t, o) => {
-    runs.push({ t, stops: typeof o.shouldStop === 'function' ? o.shouldStop() : 'none' });
-    if (states[t.contactId] === 'boom') throw new Error('x');
-    return states[t.contactId];
-  };
-  const { svc } = rig({ book, refuse: { [id(2)]: 'not-allotted' }, share });
+test('D122: the answer carries no share state, and only a moved Contact reaches the assign write', async () => {
+  const { svc } = rig({ book: [id(1), id(2)], refuse: { [id(2)]: 'not-allotted' } });
   const r = await svc.move(principal, cmd());
-  assert.deepEqual(r.value.moved, [id(1), id(3), id(4), id(5)]);
-  assert.deepEqual(runs.map((x) => x.t.contactId).sort(), [id(1), id(3), id(4), id(5)], 'a Contact not moved is never shared');
-  assert.ok(runs.every((x) => x.t.toKam === TO && x.t.fromKam === FROM && x.stops === false), 'the task and the request-deadline stop');
-  assert.deepEqual({ ...r.value.shares, pending: [...r.value.shares.pending].sort() }, { shared: [id(1)], pending: [id(3), id(5)], failed: [id(4)] }, 'a run that throws stays pending');
-  assert.ok(JSON.stringify(r.value.shares).match(/^[{}\[\]",:a-z0-9]*$/), 'ids and state names only');
-});
-
-test('with the real queue and no share-service credential every moved Contact stays "pending" for the reconcile job', async () => {
-  const state = createMemoryState();
-  const q = createKamShareQueue({ state, client: { async coql() { throw new Error('not called'); }, async shares() { throw new Error('no'); }, async setShares() { throw new Error('no'); } },
-    credential: async () => null, log: createOpsLog(createMemorySink()) });
-  const book = [id(1), id(2)];
-  const { svc } = rig({ book, share: (t, o) => q.run(t, o) });
-  const r = await svc.move(principal, cmd());
-  assert.deepEqual({ ...r.value.shares, pending: [...r.value.shares.pending].sort() }, { shared: [], pending: book, failed: [] });
-  for (const c of book) {
-    assert.equal((await q.status(c)).state, 'pending');
-    assert.deepEqual(await q.task(c), { toKam: TO, fromKam: FROM });
-  }
-});
-
-test('without a share run (not wired) the moved ids are reported pending, never shared', async () => {
-  const { svc } = rig({ book: [id(1)] });
-  assert.deepEqual((await svc.move(principal, cmd())).value.shares, { shared: [], pending: [id(1)], failed: [] });
+  assert.deepEqual(r.value.moved, [id(1)]);
+  assert.equal('shares' in r.value, false);
 });

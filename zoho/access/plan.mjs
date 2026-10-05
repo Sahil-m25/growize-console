@@ -38,10 +38,8 @@ const PROFILES_PATH = "Setup > Users and Control > Security Control > Profiles";
 // Rule 7 and ACCESS-PLAN §3 walls, checked on every plan: a spec that breaks them is refused before any step exists.
 export const WALL = {
   bankReaders: ["Finance Head", "Finance Ops", "Digital Infrastructure"], // DI: D110 logged reveals (PROVISIONAL P2)
-  identityNever: ["IR", "IR Manager", "Channel Partner", "Integration", "KAM", "Viewer", "Leadership", "AM Head", "Finance Ops", "Share Service"],
+  identityNever: ["IR", "IR Manager", "Channel Partner", "Integration", "KAM", "Viewer", "Leadership", "AM Head", "Finance Ops"],
   aadhaarFullReaders: [],
-  // D121 A: the share-service user only reads and shares. No create/edit/delete, no money module, and every money field hidden.
-  viewAndShareOnly: ["Share Service"],
   moneyModules: ["Receipts", "Investor_Payouts"],
 };
 
@@ -67,15 +65,6 @@ export function assertWall(spec) {
   }
   const g = (id) => spec.fieldSecurity.groups.find((x) => x.id === id);
   for (const id of ["bank", "identity", "aadhaar_full"]) if (!g(id) || g(id).default !== "hidden") throw new Error(`wall: group ${id} must default to hidden`);
-  for (const name of WALL.viewAndShareOnly) {
-    const p = spec.profiles.find((x) => x.name === name);
-    if (!p) continue;
-    for (const [m, perms] of Object.entries(p.modules)) {
-      if (perms !== "v") throw new Error(`wall: ${name} may only view (${m}: ${perms})`);
-      if (WALL.moneyModules.includes(m)) throw new Error(`wall: ${name} would reach money module ${m}`);
-    }
-    for (const grp of spec.fieldSecurity.groups) if ((grp.grant[name] || grp.default) !== "hidden" && grp.id !== "farm_release") throw new Error(`wall: ${name} would read ${grp.id} fields`);
-  }
 }
 
 const findPerm = (details, module, action) =>

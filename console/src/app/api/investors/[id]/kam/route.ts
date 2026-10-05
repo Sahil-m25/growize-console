@@ -3,10 +3,9 @@
    On the signed-in person's own token (D53): the "assign" right re-derived from the live session (Head of AM;
    a KAM is refused), the assignee must hold the Key Account Manager seat, then one PUT of KAM and KAM_Since
    with If-Unmodified-Since (server/investors/kam-assign). null returns the account to the pool.
-   200 → { kam: { contactId, fromKam, toKam, kamSince, modifiedTime, changed }, share: "shared"|"pending"|"failed"|"none"|null }
-   D121 A: after a write that changed the KAM, the share service shares the Contact, its allotments and its origin lead's
-   Touches with the new KAM and revokes the old KAM's (server/investors/kam-share). It is tried inside this request's
-   deadline only; what is left stays "pending" for the kam-share-reconcile job or Retry (GET/POST ./share). null = nothing changed.
+   200 → { kam: { contactId, fromKam, toKam, kamSince, modifiedTime, changed } }
+   D122: the write of Contacts.KAM is the whole job. Zoho's own sharing on that user-lookup field and its workflows grant the
+   KAM access (and keep allotments and Touches in step); the console shares nothing and never suppresses the workflows.
    403 → refused (seat-denied, not-visible, not-allotted, assignee-not-am) · 409 → changed by someone else
    400 → invalid-request · 503 → Zoho not answering. Bodies carry codes and ids, never values. */
 import { guardApi } from "@/server/access/guard";
@@ -31,13 +30,7 @@ async function put_(req: Request, { params }: { params: Promise<{ id: string }> 
   const cmd = parseKamCommand(id, body);
   const r = await service.assign({ credential: principal.credential, sessionId: principal.sessionId }, cmd, req.signal);
   if (r.ok) {
-    let share: string | null = null;
-    if (r.value.changed) {
-      const { kamShareQueue } = await import("@/server/investors/kam-share-runtime");
-      const { pastStopMargin } = await import("@/lib/zoho/deadline");
-      share = await kamShareQueue().run({ contactId: r.value.contactId, toKam: r.value.toKam, fromKam: r.value.fromKam }, { shouldStop: () => pastStopMargin() });
-    }
-    return Response.json({ kam: r.value, share }, { headers: NO_STORE });
+    return Response.json({ kam: r.value }, { headers: NO_STORE });
   }
   if (r.kind === "refused" && r.reason === "invalid-request") return Response.json({ error: "The request is not valid.", code: "invalid-request" }, { status: 400, headers: NO_STORE });
   if (r.kind === "refused" && r.reason !== "not-visible" && r.reason !== "seat-denied") {

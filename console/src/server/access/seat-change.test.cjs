@@ -73,7 +73,7 @@ async function credentialOf(who) {
 }
 
 /** put: fixture for PUT /users/{id}; contact: (id) => fixture for PUT /Contacts/{id}; book: coql fixture or null (unreadable) */
-async function rig({ who = DIVYA, seat = 'amlead', put = 'put.seat.success', contact = () => 'contact.pool.success', book = 'coql.kam-book.imran', poolGrant = true, kamShares } = {}) {
+async function rig({ who = DIVYA, seat = 'amlead', put = 'put.seat.success', contact = () => 'contact.pool.success', book = 'coql.kam-book.imran', poolGrant = true } = {}) {
   const calls = [];
   const planeB = createMemorySink();
   const log = createOpsLog(planeB);
@@ -101,7 +101,6 @@ async function rig({ who = DIVYA, seat = 'amlead', put = 'put.seat.success', con
     users, seats, crm, kamBook: kamBookOrgRead(service, async () => (poolGrant ? svcCred : null)),
     events: createAuthorityEvents(createPlaneCLog(sink), () => T0), clock: () => T0,
     sessions: { endSessionsOf: async (w, r) => { ended.push([w, r]); return 1; } },
-    kamShares,
   });
   const as = await credentialOf(who);
   return { svc, as, session: { who, seat }, calls, serviceCalls, sink, ended, planeB };
@@ -137,18 +136,6 @@ test('TC-IM02-024: Divya moves Imran (KAM) to Head of AM — Zoho role+profile w
   assert.deepEqual({ ...line, recordIds: [...line.recordIds] }, { at: T0, who: DIVYA, whom: IMRAN, action: 'seat-change', outcome: 'ok', reason: 'kam-to-amlead', seat: 'amlead', count: 4, recordIds: BOOK });
   assert.deepEqual(r.ended, [[IMRAN, 'seat-changed']], 'the moved person\'s sessions end at once');
   assert.doesNotMatch(JSON.stringify([r.sink.events(), r.planeB.records()]), /Test User|@example|never-live/);
-});
-
-test('D121 A: a KAM moved off the seat — the share service revokes their shares on every Contact returned to the pool', async () => {
-  const ran = [], queued = [];
-  const r = await rig({ kamShares: { run: async (t) => { ran.push(t); return 'shared'; }, enqueue: async (t) => { queued.push(t); return true; } } });
-  const out = await r.svc.change(r.as, r.session, { whom: IMRAN, to: 'amlead' });
-  assert.equal(out.ok, true);
-  assert.deepEqual(ran, BOOK.map((contactId) => ({ contactId, toKam: null, fromKam: IMRAN })));
-  assert.deepEqual(queued, []);
-  /* a share service that throws never fails the seat change */
-  const r2 = await rig({ kamShares: { run: async () => { throw new Error('boom'); }, enqueue: async () => true } });
-  assert.equal((await r2.svc.change(r2.as, r2.session, { whom: IMRAN, to: 'amlead' })).ok, true);
 });
 
 test('TC-IM02-025: Head of Finance (may move any seat) moving a KAM also returns the book to the pool', async () => {

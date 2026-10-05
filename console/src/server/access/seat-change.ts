@@ -43,7 +43,6 @@ import { canGrant, canManage, seatClash } from "../../lib/selectors/access";
 import { ctxOf, type GrantBook, type SeatedPerson } from "./grant-rules";
 import type { GrantStore } from "./grants";
 import { DEFAULT_STOP_MARGIN_MS, pastStopMargin, runBounded } from "../../lib/zoho/deadline";
-import type { KamShareQueue } from "../investors/kam-share-queue";
 
 export const CONTACTS = "Contacts";
 export const POOL_PAGE = 200;
@@ -125,9 +124,6 @@ export interface SeatChangeDeps {
   readonly concurrency?: number;
   /** No clear starts with less than this left on the request deadline (default 8 s). */
   readonly stopMarginMs?: number;
-  /** D121 A: the share service — each Contact returned to the pool has the moved KAM's shares revoked (tried while request
-   *  time is left, else queued for the kam-share-reconcile job's drain). */
-  readonly kamShares?: Pick<KamShareQueue, "run" | "enqueue">;
 }
 
 export type SeatAsk = { readonly whom: unknown; readonly to: unknown; readonly side?: unknown; readonly continueFrom?: unknown };
@@ -237,16 +233,6 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
     return { returned, notReturned, continueFrom: r.notStarted.length ? rows[r.notStarted[0]!]!.id : null };
   }
 
-  /** D121 A: revoke the moved KAM's shares on every Contact that went back to the pool. Never throws. */
-  async function revokeShares(kamUserId: string, contactIds: readonly string[]): Promise<void> {
-    if (!d.kamShares) return;
-    const stop = () => pastStopMargin(d.stopMarginMs ?? DEFAULT_STOP_MARGIN_MS);
-    for (const contactId of contactIds) {
-      const t = { contactId, toKam: null, fromKam: kamUserId };
-      try { if (stop()) await d.kamShares.enqueue(t); else await d.kamShares.run(t, { shouldStop: stop }); } catch { /* the reconcile job's drain retries */ }
-    }
-  }
-
   return Object.freeze({
     async change(as: UserCredential, session: ConsoleSession, ask: SeatAsk): Promise<SeatChangeResult> {
       if (ask.side === "lead") return changeLead(as, session, ask);
@@ -288,7 +274,6 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
         const rest = await d.kamBook(whom);
         if (rest === null) return no("book-unreadable");
         const out = await poolReturn(as, rest.filter((row) => idAtLeast(row.id, from)));
-        await revokeShares(whom, out.returned);
         d.events.seatChanged(by, whom, session.seat, "kam", `${to}-continued`, "ok", out.returned);
         return { ok: true, whom, from: "kam", to, returned: Object.freeze(out.returned), notReturned: Object.freeze(out.notReturned), continueFrom: out.continueFrom };
       }
@@ -303,7 +288,6 @@ export function createSeatChangeService(d: SeatChangeDeps): SeatChangeService {
       if (!put.ok) return no(putFailure(put.error.kind));
 
       const { returned, notReturned, continueFrom } = await poolReturn(as, book);
-      await revokeShares(whom, returned);
       d.events.seatChanged(by, whom, session.seat, theirIm, to, "ok", returned);
       try { await d.sessions?.endSessionsOf(whom, "seat-changed"); } catch { /* their next refresh ends it (seat mismatch) */ }
       return { ok: true, whom, from: theirIm, to, returned: Object.freeze(returned), notReturned: Object.freeze(notReturned), continueFrom };

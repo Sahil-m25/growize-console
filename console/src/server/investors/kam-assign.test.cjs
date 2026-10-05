@@ -123,6 +123,23 @@ test('TC-IM04-014 (data): Divya names Neha for Vikram Anand — one guarded PUT 
   assert.ok(!/Test User|Neha|Vikram|example\.invalid/i.test(JSON.stringify([...r.sink.records(), ...c])), 'logs hold ids, never names');
 });
 
+/* D122: the Zoho workflow on Contacts.KAM is what grants the KAM access, so the write must never suppress workflows. */
+test('D122: the KAM write leaves Zoho workflows on — no trigger key in the body, no trigger query on the URL (assign, move, pool return)', async () => {
+  const r = rig();
+  const V = '2026-09-26T10:00:00+05:30', W = '2026-09-20T10:00:00+05:30';
+  assert.equal((await r.svc.assign(p(DIVYA), parseKamCommand(VIKRAM, { kamUserId: NEHA, expectedModifiedTime: V }))).ok, true); // name
+  assert.equal((await r.svc.assign(p(DIVYA), parseKamCommand(RADHIKA, { kamUserId: NEHA, expectedModifiedTime: W }))).ok, true); // move
+  assert.equal((await r.svc.assign(p(DIVYA), parseKamCommand(RADHIKA, { kamUserId: null, expectedModifiedTime: W }))).ok, true); // pool
+  const ps = puts(r);
+  assert.equal(ps.length, 3);
+  for (const put of ps) {
+    assert.ok(!('trigger' in put.body), 'no body.trigger (trigger: [] would switch workflows off)');
+    assert.ok(!('trigger' in put.body.data[0]), 'no per-record trigger');
+    assert.ok(!/trigger/i.test(put.url), 'no trigger query parameter');
+    assert.deepEqual(Object.keys(put.body), ['data']);
+  }
+});
+
 test('a move names both managers by id: Radhika from Imran to Neha', async () => {
   const r = rig();
   const res = await r.svc.assign(p(DIVYA), parseKamCommand(RADHIKA, { kamUserId: NEHA, expectedModifiedTime: '2026-09-20T10:00:00+05:30' }));

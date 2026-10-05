@@ -90,9 +90,8 @@ export const MAX_RECORD_SHARES = 10;
 /** The background work D53 allows a service token for. Nothing on this list serves a screen. */
 /* "handoff-share" (M03-S09-T03, D74): at hand-off, share the Contact, its allotments and receipts read-only with the originating IR. */
 /** "kam-pool-return" (M03-S04-T02): the org-scope read of a moved KAM's book; its writes stay on the person's own token. */
-/** "kam-share" (D121 A): the share-service user — shares a Contact, its allotments and its origin lead's Touches with the KAM. */
-export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share" | "kam-pool-return" | "kam-share";
-const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share", "kam-pool-return", "kam-share"]);
+export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share" | "kam-pool-return";
+const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share", "kam-pool-return"]);
 
 declare const apiDomainBrand: unique symbol;
 declare const userBrand: unique symbol;

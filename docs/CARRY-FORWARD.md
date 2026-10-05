@@ -112,8 +112,7 @@ stage sheets, both mapping workbooks. `.gitignore` was corrected on 22 Sep so th
 **No file has been deleted.** Committing remains the one action that would make every later mistake
 recoverable.
 
-- **D121 (5 Oct 2026) KAM share service: built, not live.**
-  - Needs the "Share Service" role and profile applied in Zoho (zoho/access/spec.json) and a share-service user (1 seat in live; a reassigned test user in the sandbox).
-  - Set ZOHO_KAM_SHARE_REFRESH_TOKEN and ZOHO_SHARE_SERVICE_USER_ID, and schedule /api/jobs/kam-share-reconcile.
-  - Open: P13, P14, the Originating_IR share restore owner, and seating a person with no Investors seat.
+- **D121 (5 Oct 2026) KAM share service: retired by D122 (5 Oct 2026).** The console no longer shares anything; it writes Contacts.KAM only, and Zoho-native sharing (KAM_Access, workflows, nightly Deluge check) does the rest.
+  - The owner no longer needs the Share Service role or its seat (no "Share Service" profile or role is created; ZOHO_KAM_SHARE_REFRESH_TOKEN, ZOHO_SHARE_SERVICE_USER_ID and the kam-share-reconcile schedule are not needed).
+  - Still open from D121: P14 (IR Manager View on allotments for Share), the Originating_IR share restore owner, and seating a person with no Investors seat.
   - Docs still describing the old share/unshare shape: docs/ops/runbook.md, ops/runbooks/api-budget.md, ops/runbooks/heartbeat-silent.md, docs/launch/go-live-checklist.md.

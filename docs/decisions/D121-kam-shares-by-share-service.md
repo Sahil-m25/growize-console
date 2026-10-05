@@ -1,5 +1,7 @@
 # D121 — KAM record shares are made by a background share service (owner, 5 Oct 2026)
 
+> **Superseded by D122 (5 Oct 2026).** The share service, its nightly reconcile, the pending/failed queue, the share-status UI and Retry route, and the "Share Service" role/profile are retired. The console now writes only Contacts.KAM, as the acting person; Zoho's own user-lookup sharing (Contacts.KAM, KAM_Access on allotments and Touches), its workflows and a scheduled Deluge consistency check give the KAM access. The "Simple KAM management (UI)" section below is still valid. See [D122](D122-zoho-native-kam-access-draft.md).
+
 **Ruling:** option 2. A background "share service" user (D53 service credential, never a screen) shares an investor with its KAM. IR Manager and Digital Infrastructure also hold Share, for cover windows and fixes. The owner also asked for a simple way to assign, add, remove and edit KAMs.
 
 ## What the share service does (console/src/server/investors/kam-share*.ts)

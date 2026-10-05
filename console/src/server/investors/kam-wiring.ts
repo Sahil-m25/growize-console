@@ -11,7 +11,7 @@ export async function kamServices(ctx: LiveContext) {
   const { mayAssignKam } = await import("./kam-authority");
   const { rt, crm } = ctx;
   const users = createZohoUserDirectory({ seats: oauthParts().seats, gate: rt.gate, log: rt.log });
-  // One rule for every route that names a manager (and for Retry): kam-authority.mayAssignKam.
+  // One rule for every route that names a manager: kam-authority.mayAssignKam.
   const authority = { mayAssign: (cred: UserCredential, sid: string) => mayAssignKam(cred, sid) };
   return { assignment: createKamAssignment({ crm, events: rt.events, users, authority }), users, authority, crm, events: rt.events };
 }

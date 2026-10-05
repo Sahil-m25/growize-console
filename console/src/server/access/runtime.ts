@@ -31,7 +31,6 @@ import { createGrantService, type GrantService } from "./grant-service";
 import { sharedGrantStore } from "./grants";
 import { createManagerChangeService, type ManagerChangeService } from "./manager-change";
 import { sharedState } from "../state/runtime";
-import { kamShareQueue } from "../investors/kam-share-runtime";
 
 type Held = { grants: GrantService; stepUp: StepUp; seats: SeatChangeService; managers: ManagerChangeService };
 const G = globalThis as typeof globalThis & { __gzAccessRuntime?: Held };
@@ -87,7 +86,6 @@ function held(): Held {
     events: authorityEvents(),
     sessions: o.sessions,
     store: sharedGrantStore(),
-    kamShares: { run: (t, opt) => kamShareQueue().run(t, opt), enqueue: (t) => kamShareQueue().enqueue(t) },
   });
   const managers = createManagerChangeService({
     users: createZohoUserDirectory({ seats: o.seats, gate: o.gate, log: o.log }),
