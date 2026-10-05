@@ -18,7 +18,9 @@
  *
  * The API domain is whatever the token response said in `api_domain` — `.in`, `.com`, `.eu`, or a
  * data centre that does not exist yet — never a constant here. It is checked to be an https Zoho API
- * host before a token is ever sent to it. The access token is non-enumerable and redacted from JSON,
+ * host before a token is ever sent to it. With ZOHO_CRM_ENVIRONMENT=sandbox it is rewritten to the same
+ * data centre's `sandbox.zohoapis.*` host and a live host is refused (crmApiOriginOf); ZOHO_EXPECTED_ORG_ID
+ * is then proved by verifyCrmOrg() before a session or background job uses the token. The access token is non-enumerable and redacted from JSON,
  * so a credential logged by accident logs nothing useful.
  *
  * Every method returns a `ZohoResult`: `ok` with a value, or a classified `ZohoFailure`. Zoho's
@@ -415,23 +417,40 @@ export interface ZohoClientOptions {
 
 /* ===== CREDENTIALS ======================================================================== */
 
+/** Zoho data-centre API suffixes: `www.zohoapis.<dc>` is the live org, `sandbox.zohoapis.<dc>` the sandbox (Kaizen #120). */
+const ZOHO_API_DCS: readonly string[] = Object.freeze(["com", "eu", "in", "com.au", "jp", "ca", "sa", "com.cn", "uk", "ae"]);
 /** Explicit service API hosts published for Zoho data centres. Never accept a lookalike TLD. */
-const ZOHO_API_HOSTS: ReadonlySet<string> = new Set([
-  "www.zohoapis.com",
-  "www.zohoapis.eu",
-  "www.zohoapis.in",
-  "www.zohoapis.com.au",
-  "www.zohoapis.jp",
-  "www.zohoapis.ca",
-  "www.zohoapis.sa",
-  "www.zohoapis.com.cn",
-  "www.zohoapis.uk",
-  "www.zohoapis.ae",
-]);
+const ZOHO_API_HOSTS: ReadonlySet<string> = new Set(ZOHO_API_DCS.map((dc) => `www.zohoapis.${dc}`));
+/** The same data centres' sandbox API hosts — accepted only when ZOHO_CRM_ENVIRONMENT=sandbox. */
+const ZOHO_SANDBOX_API_HOSTS: ReadonlySet<string> = new Set(ZOHO_API_DCS.map((dc) => `sandbox.zohoapis.${dc}`));
 const mintedCredentials = new WeakSet<object>();
 
-/** Validates a token response's `api_domain`: https, a Zoho API host, nothing else in the URL. */
-export function apiDomainOf(raw: unknown): ApiDomain {
+type EnvLike = Readonly<Record<string, string | undefined>>;
+const processEnv = (): EnvLike => (typeof process !== "undefined" && process.env ? process.env : {});
+
+/** Which Zoho CRM org family this deployment talks to: the live org (default) or a sandbox. */
+export type CrmEnvironment = "production" | "sandbox";
+
+/** ZOHO_CRM_ENVIRONMENT: unset/"production" → production; "sandbox" → sandbox; anything else is refused (fail closed). */
+export function crmEnvironment(env: EnvLike = processEnv()): CrmEnvironment {
+  const v = (env.ZOHO_CRM_ENVIRONMENT ?? "").trim().toLowerCase();
+  if (v === "" || v === "production") return "production";
+  if (v === "sandbox") return "sandbox";
+  throw new TypeError('ZOHO_CRM_ENVIRONMENT must be "production" or "sandbox".');
+}
+
+/** ZOHO_EXPECTED_ORG_ID (the org's zgid): required in sandbox mode, optional (null) but honoured in production. */
+export function expectedCrmOrgId(env: EnvLike = processEnv()): string | null {
+  const v = (env.ZOHO_EXPECTED_ORG_ID ?? "").trim();
+  if (v === "") {
+    if (crmEnvironment(env) === "sandbox") throw new TypeError("ZOHO_EXPECTED_ORG_ID is required when ZOHO_CRM_ENVIRONMENT=sandbox.");
+    return null;
+  }
+  if (!/^\d{1,25}$/.test(v)) throw new TypeError("ZOHO_EXPECTED_ORG_ID must be the org's numeric id (zgid).");
+  return v;
+}
+
+function bareHttpsHost(raw: unknown): string {
   if (typeof raw !== "string" || raw === "") throw new TypeError("The token response carried no api_domain, and the client never guesses one.");
   let url: URL;
   try {
@@ -440,10 +459,36 @@ export function apiDomainOf(raw: unknown): ApiDomain {
     throw new TypeError(`api_domain ${JSON.stringify(raw)} is not a URL.`);
   }
   const bare = !url.username && !url.password && !url.port && !url.search && !url.hash && (url.pathname === "/" || url.pathname === "");
-  if (url.protocol !== "https:" || !bare || !ZOHO_API_HOSTS.has(url.hostname.toLowerCase())) {
+  if (url.protocol !== "https:" || !bare) {
     throw new TypeError(`Refusing api_domain ${JSON.stringify(raw)}: not an https Zoho API host. A token is never sent anywhere else.`);
   }
-  return url.origin as ApiDomain;
+  return url.hostname.toLowerCase();
+}
+
+/**
+ * Validates an API origin for this deployment's CRM environment: https, nothing else in the URL, and a
+ * `www.zohoapis.<dc>` host in production or a `sandbox.zohoapis.<dc>` host in sandbox mode — never the other.
+ */
+export function apiDomainOf(raw: unknown, env: EnvLike = processEnv()): ApiDomain {
+  const host = bareHttpsHost(raw);
+  const allowed = crmEnvironment(env) === "sandbox" ? ZOHO_SANDBOX_API_HOSTS : ZOHO_API_HOSTS;
+  if (!allowed.has(host)) {
+    throw new TypeError(`Refusing api_domain ${JSON.stringify(raw)}: not an https Zoho API host for this ${crmEnvironment(env)} deployment. A token is never sent anywhere else.`);
+  }
+  return `https://${host}` as ApiDomain;
+}
+
+/**
+ * The CRM API origin for a token response's `api_domain`. Production: the api_domain itself (validated).
+ * Sandbox: `https://sandbox.zohoapis.<same dc>` — Zoho does not promise the token response points at the
+ * sandbox (Kaizen #120), so it is derived here and the live host is never used.
+ */
+export function crmApiOriginOf(raw: unknown, env: EnvLike = processEnv()): ApiDomain {
+  if (crmEnvironment(env) === "production") return apiDomainOf(raw, env);
+  const host = bareHttpsHost(raw);
+  if (ZOHO_SANDBOX_API_HOSTS.has(host)) return apiDomainOf(`https://${host}`, env);
+  if (ZOHO_API_HOSTS.has(host)) return apiDomainOf(`https://sandbox.zohoapis.${host.slice("www.zohoapis.".length)}`, env);
+  throw new TypeError(`Refusing api_domain ${JSON.stringify(raw)}: not an https Zoho API host. A token is never sent anywhere else.`);
 }
 
 type Grant = { readonly accessToken: string; readonly apiDomain: ApiDomain; readonly expiresInMs: number | null };
@@ -486,7 +531,7 @@ function grantOf(tokenResponse: unknown, requireExpiry = false): Grant {
     throw new TypeError("A Zoho token response must carry a bounded expires_in value.");
   }
   const expiresIn = expirySeconds === null ? null : expirySeconds * 1000;
-  return { accessToken: g.access_token, apiDomain: apiDomainOf(g.api_domain), expiresInMs: expiresIn };
+  return { accessToken: g.access_token, apiDomain: crmApiOriginOf(g.api_domain), expiresInMs: expiresIn };
 }
 
 function mint(fields: { kind: "user"; userId: string } | { kind: "service"; job: ServiceJob }, grant: Grant, now: number): object {
@@ -667,6 +712,130 @@ export async function userCredential(
 export function serviceCredential(job: ServiceJob, tokenResponse: unknown, now: number = Date.now()): ServiceCredential {
   if (!SERVICE_JOBS.has(job)) throw new TypeError(`"${String(job)}" is not a background job D53 allows a service token for.`);
   return mint({ kind: "service", job }, grantOf(tokenResponse, true), now) as ServiceCredential;
+}
+
+/* ===== ORG CHECK (ZOHO_EXPECTED_ORG_ID) ================================================== */
+
+export type CrmOrgCheck =
+  | { readonly ok: true; readonly orgId: string }
+  /** The token answers for a different org: `orgId` is that org's id (an id, never a secret). */
+  | { readonly ok: false; readonly reason: "mismatch"; readonly orgId: string }
+  /** No answer, not 200, or no org id in it: fail closed. */
+  | { readonly ok: false; readonly reason: "unavailable" };
+
+export interface CrmOrgCheckOptions {
+  readonly expectedOrgId: string;
+  readonly fetch?: UserIdentityFetchLike;
+  readonly log?: OpsLog;
+  readonly clock?: () => number;
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * The org id in a `GET /crm/v8/org` body: `org[0].zgid` (Zoho's org/zgid, e.g. 60090668120 for Growize
+ * Staging), as a string; `org[0].id` only when zgid is absent. Null when neither is there.
+ */
+export function orgIdOfOrgResponse(body: unknown): string | null {
+  const root = typeof body === "object" && body !== null && !Array.isArray(body) ? body as Readonly<Record<string, unknown>> : null;
+  const list = root?.org;
+  const org = Array.isArray(list) && typeof list[0] === "object" && list[0] !== null && !Array.isArray(list[0])
+    ? list[0] as Readonly<Record<string, unknown>>
+    : null;
+  if (!org) return null;
+  const idText = (v: unknown): string | null => (typeof v === "string" && /^\d{1,25}$/.test(v)) ? v
+    : (typeof v === "number" && Number.isSafeInteger(v) && v >= 0) ? String(v) : null;
+  if (org.zgid !== undefined && org.zgid !== null) return idText(org.zgid);
+  return idText(org.id);
+}
+
+const G_ORG = globalThis as typeof globalThis & { __gzVerifiedCrmOrg?: { orgId: string; at: number } };
+
+/** The last org id a token was proved against in this process (System page). Null until one is. */
+export function lastVerifiedCrmOrg(): { readonly orgId: string; readonly at: number } | null {
+  return G_ORG.__gzVerifiedCrmOrg ?? null;
+}
+
+/**
+ * Prove a freshly minted credential belongs to the expected org: one `GET {apiDomain}/crm/v8/org` on that
+ * token, compared as a string with `expectedOrgId`. The body is never logged; Plane B gets one call line.
+ */
+export async function verifyCrmOrg(credential: Credential, options: CrmOrgCheckOptions): Promise<CrmOrgCheck> {
+  if (typeof credential !== "object" || credential === null || !mintedCredentials.has(credential)) {
+    throw new TypeError("verifyCrmOrg needs a minted credential.");
+  }
+  const actor: LogActor = credential.kind === "user" ? { kind: "user", userId: credential.userId } : { kind: "service", job: credential.job };
+  return checkOrg({ apiDomain: credential.apiDomain, accessToken: credential.accessToken }, actor, options);
+}
+
+/** The same proof on a token response straight from the code exchange, before CurrentUser is asked (sign-in). */
+export async function verifyGrantCrmOrg(tokenResponse: unknown, options: CrmOrgCheckOptions): Promise<CrmOrgCheck> {
+  const grant = grantOf(tokenResponse, true);
+  return checkOrg(grant, { kind: "user", userId: "unrecognised" }, options);
+}
+
+async function checkOrg(
+  credential: { readonly apiDomain: ApiDomain; readonly accessToken: string },
+  actor: LogActor,
+  options: CrmOrgCheckOptions,
+): Promise<CrmOrgCheck> {
+  if (typeof options?.expectedOrgId !== "string" || !/^\d{1,25}$/.test(options.expectedOrgId)) {
+    throw new TypeError("expectedOrgId must be the org's numeric id.");
+  }
+  const clock = options.clock ?? Date.now;
+  const fetchOrg: UserIdentityFetchLike = options.fetch ?? ((url, init) => fetch(url, init));
+  const deadline = new AbortController();
+  const abortFromCaller = () => deadline.abort();
+  if (options.signal?.aborted) deadline.abort();
+  else options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+  const timer = setTimeout(() => deadline.abort(), USER_IDENTITY_TIMEOUT_MS);
+  timer.unref?.();
+  const startedAt = clock();
+  let status: number | null = null;
+  let errorClass: ZohoFailureKind | null = null;
+  let result: CrmOrgCheck = { ok: false, reason: "unavailable" };
+  try {
+    const response = await fetchOrg(`${credential.apiDomain}/crm/${API_VERSION}/org`, {
+      method: "GET",
+      headers: { Accept: "application/json", Authorization: `Zoho-oauthtoken ${credential.accessToken}` },
+      redirect: "error",
+      signal: deadline.signal,
+    });
+    status = response.status;
+    const read = await readBoundedResponse(response, 65_536, deadline.signal);
+    if (status !== 200 || !read.ok) {
+      const classified = status !== 200 ? classifyResponse({ status, body: null }) : null;
+      errorClass = classified && isFailure(classified) ? classified.kind : read.ok ? "unexpected" : read.reason === "aborted" ? "aborted" : "network";
+    } else {
+      let body: unknown = null;
+      try { body = JSON.parse(read.text) as unknown; } catch { body = null; }
+      const orgId = orgIdOfOrgResponse(body);
+      if (orgId === null) errorClass = "unexpected";
+      else if (orgId !== options.expectedOrgId) { errorClass = "forbidden"; result = { ok: false, reason: "mismatch", orgId }; }
+      else result = { ok: true, orgId };
+    }
+  } catch {
+    errorClass = deadline.signal.aborted ? "aborted" : "network";
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener("abort", abortFromCaller);
+    options.log?.call({
+      at: startedAt,
+      actor,
+      op: "verifyOrg",
+      method: "GET",
+      endpoint: "/org",
+      callClass: "simple",
+      status,
+      durationMs: Math.max(0, clock() - startedAt),
+      gateWaitMs: 0,
+      attempt: 1,
+      creditsRemaining: null,
+      errorClass,
+      recordIds: [],
+    });
+  }
+  if (result.ok) G_ORG.__gzVerifiedCrmOrg = { orgId: result.orgId, at: startedAt };
+  return result;
 }
 
 function assertCredential(credential: unknown, kind: Credential["kind"]): asserts credential is Credential {

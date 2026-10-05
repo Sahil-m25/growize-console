@@ -19,7 +19,7 @@
  * outcome / reason code.
  */
 
-import { userCredential, type UserCredential, type UserIdentityFetchLike } from "../../lib/zoho/client";
+import { userCredential, verifyGrantCrmOrg, type UserCredential, type UserIdentityFetchLike } from "../../lib/zoho/client";
 import type { Gate } from "../../lib/zoho/gate";
 import type { LogActor, OpsLog } from "../../lib/zoho/log";
 import type { PlaneCLog } from "../identity/plane-c";
@@ -61,7 +61,7 @@ export const CONSOLE_SEAT: Readonly<Record<ZohoSeat, string | null>> = Object.fr
  *  (informational; admission itself is asked of the front-end policy via ../access/policy). */
 export const GRANT_ONLY_SEATS: ReadonlySet<string> = new Set(["exec", "bu", "corp", "cp"]);
 
-export type RefusalCode = "no-seat" | "no-grant" | "cancelled" | "failed";
+export type RefusalCode = "no-seat" | "no-grant" | "cancelled" | "failed" | "wrong-org";
 
 /** The named message the sign-in screen shows for each refusal. */
 export const SIGNIN_REFUSALS: Readonly<Record<RefusalCode, string>> = Object.freeze({
@@ -69,6 +69,7 @@ export const SIGNIN_REFUSALS: Readonly<Record<RefusalCode, string>> = Object.fre
   "no-grant": "No console access: this seat signs in only once Digital Infrastructure grants it a page.",
   cancelled: "Zoho sign-in was cancelled. Nobody was signed in.",
   failed: "Zoho sign-in did not complete. Try again.",
+  "wrong-org": "This console is connected to a different Zoho org. Nobody was signed in.",
 });
 
 export interface ConsoleSession {
@@ -80,6 +81,8 @@ export interface ConsoleSession {
 export interface StoredSession extends ConsoleSession {
   /** AES-256-GCM, bound to this record's key; never the plain token. */
   readonly sealedRefresh: string;
+  /** The org id (zgid) proved at sign-in when ZOHO_EXPECTED_ORG_ID is set; refreshes keep the same grant, so it is not re-asked. */
+  readonly orgId?: string;
   readonly createdAt: number;
   readonly expiresAt: number;
 }
@@ -122,6 +125,8 @@ export interface UserSessionDeps {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly identityFetch?: UserIdentityFetchLike;
+  /** ZOHO_EXPECTED_ORG_ID: when set, a sign-in whose token answers `GET /crm/v8/org` for another org is refused ("wrong-org"). */
+  readonly expectedOrgId?: string | null;
   readonly clock?: () => number;
   /** M01-S08-NOTE-6: told (Zoho user id, raw session id) just before a session whose id is known is destroyed, so
    *  work queued on it (receipt-replay `discardSession`) is aborted first. Must not throw; a throw is swallowed. */
@@ -299,6 +304,29 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
       if (!exchanged.ok) return refuse("failed", "code-refused", null, null);
       const grant = exchanged.value;
 
+      /* ZOHO_EXPECTED_ORG_ID: prove the org before anything else is asked of the token (the sandbox is
+         picked at Zoho's consent screen, so a person can hand us the live org's token). Ids only in logs. */
+      let orgId: string | undefined;
+      if (d.expectedOrgId) {
+        let org: Awaited<ReturnType<typeof verifyGrantCrmOrg>> = { ok: false, reason: "unavailable" };
+        try {
+          org = await verifyGrantCrmOrg(normalised(grant), {
+            expectedOrgId: d.expectedOrgId, log: d.log, clock, ...(d.identityFetch ? { fetch: d.identityFetch } : {}),
+          });
+        } catch {
+          /* an api_domain this deployment refuses: unavailable, fail closed */
+        }
+        if (!org.ok) {
+          await revokeQuietly(grant.refresh_token, null);
+          if (org.reason === "mismatch") {
+            console.warn(`[auth] sign-in refused: token org ${org.orgId} is not the expected org ${d.expectedOrgId}`);
+            return refuse("wrong-org", "org-mismatch", null, null);
+          }
+          return refuse("failed", "org-unverified", null, null);
+        }
+        orgId = org.orgId;
+      }
+
       const id = await identify(grant);
       if (id === null) {
         await revokeQuietly(grant.refresh_token, null);
@@ -324,6 +352,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
       await d.store.put(key, {
         who, seat,
         sealedRefresh: d.sealer.seal(grant.refresh_token!, key),
+        ...(orgId !== undefined ? { orgId } : {}),
         createdAt: now,
         expiresAt: now + SESSION_ABSOLUTE_MS,
       });

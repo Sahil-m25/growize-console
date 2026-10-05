@@ -299,3 +299,84 @@ test('expected API domain refuses a valid Zoho grant from the wrong data centre'
     expectedApiDomain: 'https://not-zoho.example.invalid',
   }), /Zoho API host/, 'the expected domain itself is allowlisted');
 });
+
+/* ZOHO_CRM_ENVIRONMENT / ZOHO_EXPECTED_ORG_ID: a background job's token proves its org once before first use. */
+const orgReply = (body, status = 200) => {
+  const bytes = new TextEncoder().encode(JSON.stringify(body));
+  let sent = false;
+  return {
+    status,
+    headers: { get: () => null },
+    body: { getReader: () => ({ read: async () => (sent ? { done: true } : (sent = true, { done: false, value: bytes })), cancel: async () => {}, releaseLock() {} }) },
+  };
+};
+const withEnv = async (vars, fn) => {
+  const before = Object.fromEntries(Object.keys(vars).map((k) => [k, process.env[k]]));
+  Object.assign(process.env, vars);
+  try { return await fn(); } finally {
+    for (const [k, v] of Object.entries(before)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+  }
+};
+
+test('service org check: unset expected org = no /org call (production default unchanged)', async () => {
+  const orgCalls = [];
+  const { provider } = providerHarness(async () => replyFrom(success), clockAt(1_000_000), {
+    orgFetch: async (url) => { orgCalls.push(url); return orgReply({ org: [{ zgid: '1' }] }); },
+  });
+  const c = await provider.credential();
+  assert.equal(c.apiDomain, 'https://www.zohoapis.in');
+  assert.equal(orgCalls.length, 0);
+});
+
+test('service org check: matching org passes once per provider; a refresh does not ask again', async () => {
+  const orgCalls = [];
+  const responses = [success, rotated];
+  let fetches = 0;
+  const clock = clockAt(1_000_000);
+  const { provider, sink } = providerHarness(async () => replyFrom(responses[fetches++]), clock, {
+    expectedOrgId: '60090668120',
+    orgFetch: async (url, init) => { orgCalls.push({ url, init }); return orgReply({ org: [{ id: '9', zgid: '60090668120' }] }); },
+  });
+  const first = await provider.credential();
+  assert.equal(orgCalls.length, 1);
+  assert.equal(orgCalls[0].url, 'https://www.zohoapis.in/crm/v8/org');
+  assert.equal(orgCalls[0].init.headers.Authorization, `Zoho-oauthtoken ${first.accessToken}`);
+  provider.invalidate(first);
+  await provider.credential();
+  assert.equal(fetches, 2);
+  assert.equal(orgCalls.length, 1, 'proved once per provider');
+  const org = sink.records().filter((r) => r.endpoint === '/org');
+  assert.equal(org.length, 1);
+  assert.equal(org[0].errorClass, null);
+  assert.ok(!JSON.stringify(sink.records()).includes(ACCESS_TOKEN));
+});
+
+test('service org check: a token for another org is refused and never cached', async () => {
+  let orgCalls = 0;
+  let fetches = 0;
+  const { provider } = providerHarness(async () => { fetches++; return replyFrom(success); }, clockAt(1_000_000), {
+    expectedOrgId: '60090668120',
+    orgFetch: async () => { orgCalls++; return orgReply({ org: [{ zgid: '60061770791' }] }); },
+  });
+  await assert.rejects(provider.credential(), /^Error: Zoho service credential is unavailable\.$/);
+  await assert.rejects(provider.credential(), /^Error: Zoho service credential is unavailable\.$/);
+  assert.equal(fetches, 2);
+  assert.equal(orgCalls, 2, 'still unproved, so asked again');
+  assert.equal(provider.refreshFailed(), true);
+});
+
+test('service org check: sandbox mode derives sandbox.zohoapis.<dc>, proves ZOHO_EXPECTED_ORG_ID from env, and requires it', async () => {
+  await withEnv({ ZOHO_CRM_ENVIRONMENT: 'sandbox', ZOHO_EXPECTED_ORG_ID: '60090668120' }, async () => {
+    const orgCalls = [];
+    const { provider } = providerHarness(async () => replyFrom(success), clockAt(1_000_000), {
+      expectedApiDomain: 'https://www.zohoapis.in',
+      orgFetch: async (url) => { orgCalls.push(url); return orgReply({ org: [{ zgid: '60090668120' }] }); },
+    });
+    const c = await provider.credential();
+    assert.equal(c.apiDomain, 'https://sandbox.zohoapis.in');
+    assert.deepEqual(orgCalls, ['https://sandbox.zohoapis.in/crm/v8/org']);
+  });
+  await withEnv({ ZOHO_CRM_ENVIRONMENT: 'sandbox', ZOHO_EXPECTED_ORG_ID: '' }, async () => {
+    assert.throws(() => providerHarness(async () => replyFrom(success)), /ZOHO_EXPECTED_ORG_ID is required/);
+  });
+});

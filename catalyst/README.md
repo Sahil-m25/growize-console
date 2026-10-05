@@ -51,7 +51,8 @@ Tracing note: `.next/standalone` already carries the production `node_modules`; 
 Zoho sign-in and API: ZOHO_OAUTH_CLIENT_ID, ZOHO_OAUTH_CLIENT_SECRET, ZOHO_OAUTH_REDIRECT_URI, ZOHO_OAUTH_SCOPES,
 ZOHO_ACCOUNTS_ORIGIN, ZOHO_STEPUP_REDIRECT_URI, ZOHO_SIGN_API_ORIGIN, ZOHO_CRM_RECORD_ID_PREFIX, ZOHO_SESSION_KEY,
 ZOHO_SEAT_IDS, ZOHO_UNASSIGNED_QUEUE_USER_ID, ZOHO_FINANCE_USER_IDS, ZOHO_STATEMENTS_MODULE, ZOHO_CONCURRENCY,
-ZOHO_TEST_INVESTOR_IDS.
+ZOHO_TEST_INVESTOR_IDS, ZOHO_CRM_ENVIRONMENT (`production` default | `sandbox`), ZOHO_EXPECTED_ORG_ID (org zgid;
+required when ZOHO_CRM_ENVIRONMENT=sandbox, honoured when set in production).
 Service-credential refresh tokens: ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN, ZOHO_COVER_WINDOW_SHARE_REFRESH_TOKEN,
 ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN, ZOHO_AUDIT_ARCHIVE_REFRESH_TOKEN.
 Signing and idempotency secrets: ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS (and the current secret, named in server/zoho-sign),
@@ -65,6 +66,22 @@ Platform: X_ZOHO_CATALYST_LISTEN_PORT (set by Catalyst), NODE_ENV.
 Dev-only (not for production): FIXTURE_MODE, GZ_LOCAL_BUILD, ZOHO_STUB_USER, NEXT_PUBLIC_RETICLE_URL/TOKEN/ROOT.
 
 Run `grep -rhoE "env\.[A-Z][A-Z0-9_]{4,}" console/src | sort -u` before each release; this list was taken 4 Oct 2026.
+
+## Staging against the sandbox
+
+The Development environment runs against the Zoho CRM sandbox **Growize Staging** (zgid 60090668120), never the live
+org (60061770791). Set `ZOHO_CRM_ENVIRONMENT=sandbox` and `ZOHO_EXPECTED_ORG_ID=60090668120`; keep
+`ZOHO_ACCOUNTS_ORIGIN=https://accounts.zoho.in` and the same OAuth client (sandbox tokens come from the same accounts
+server; the person picks the sandbox org on Zoho's consent screen). `ZOHO_CRM_RECORD_ID_PREFIX` and `ZOHO_SEAT_IDS` must
+be the sandbox org's, and every service refresh token must be minted against the sandbox.
+
+What the console then does (`console/src/lib/zoho/client.ts`): every CRM call goes to `https://sandbox.zohoapis.in`
+— derived from the token's `api_domain`, which Zoho does not promise points at the sandbox — and a `www.zohoapis.*`
+host is refused. Each sign-in calls `GET /crm/v8/org` on the new token before anything else and refuses the session
+("This console is connected to a different Zoho org") unless `org[0].zgid` equals `ZOHO_EXPECTED_ORG_ID`; each
+background job's token passes the same check once per process. The System page shows the environment and the last
+verified org id. Missing `ZOHO_EXPECTED_ORG_ID` in sandbox mode fails closed. This does not move Zoho Sign: Sign calls
+still go to `sign.zoho.in`.
 
 ## Job Scheduling — the two calls a multi-instance deployment needs (M18-S09-NOTE-2)
 

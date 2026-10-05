@@ -11,6 +11,8 @@ import { auditArchive } from "@/server/activity/runtime";
 import { investorAppOutbox } from "@/server/contracts/runtime";
 import { processLoadWindow } from "@/lib/zoho/cache";
 import { serviceTokenProviders } from "@/server/oauth/service-token";
+import { crmEnvironment, expectedCrmOrgId, lastVerifiedCrmOrg } from "@/lib/zoho/client";
+import type { SystemCrm } from "@/lib/data/endpoints/system";
 import { signLastEventAt } from "@/server/zoho-sign/webhook";
 import { gatherFacts, mayReadSystem } from "@/server/system/facts";
 import { systemChecks, systemView } from "@/server/system/checks";
@@ -39,7 +41,17 @@ async function get(): Promise<Response> {
     // Plane C hash chain for the last closed India day (r4-cat-audit, docs/architecture/log-sink.md)
     auditChain: () => auditChain().verify(new Date(now + 5.5 * 3_600_000 - DAY).toISOString().slice(0, 10)),
   }, now);
-  return Response.json({ ...systemView(systemChecks(facts, now)), asOf: now }, { headers: NO_STORE });
+  return Response.json({ ...systemView(systemChecks(facts, now)), asOf: now, crm: crmFacts() }, { headers: NO_STORE });
+}
+
+/** ZOHO_CRM_ENVIRONMENT and the org ids (expected, last proved) — no tokens, no secrets. */
+function crmFacts(): SystemCrm {
+  const verifiedOrgId = lastVerifiedCrmOrg()?.orgId ?? null;
+  try {
+    return { environment: crmEnvironment(), expectedOrgId: expectedCrmOrgId(), verifiedOrgId };
+  } catch {
+    return { environment: "misconfigured", expectedOrgId: null, verifiedOrgId };
+  }
 }
 
 export const GET = withErrorCapture(guardApi("/api/system", get), "/api/system");
