@@ -60,3 +60,4 @@ Secondary_Owner sharing is off, so a secondary reaches a lead only through Cover
 - Owner pasted gz_kam_on_allotment, gz_sync_ir_access and ran gz_backfill_ir_access (added 16, already 3). Workflow "GZ IR Access Sync" (Contacts, Originating_IR changed) created by Claude.
 - Result: 19/19 allotments carry the right IR and KAM, no duplicate links (API check); nightly check: 80 records, 0 mismatches.
 - The safety check blocked Claude from creating the field, granting IR View, and deploying code that grants access; the owner did those.
+- **IR A wall test (signed in as IR A Test, own session, 5 Oct): pass.** 11 allotments, all from IR A's 7 investors, none of IR B's; Unit_Price, Annual_Rental_Yield and all amount fields not returned (only Name, Customer, Reserved_Units); editing an allotment refused (NO_PERMISSION Edit); Receipts refused (NO_PERMISSION View).
