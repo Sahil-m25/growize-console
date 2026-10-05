@@ -4,8 +4,8 @@
  *
  *   ZOHO_CRM_RECORD_ID_PREFIX, and Zoho sign-in configured (server/oauth/runtime)
  *   ZOHO_UNASSIGNED_QUEUE_USER_ID                  the "Needs an owner" queue user (optional)
- *   ZOHO_COVER_WINDOW_SHARE_REFRESH_TOKEN          the cover-window-share service job's grant (D53); with
- *   ZOHO_ACCOUNTS_ORIGIN, ZOHO_OAUTH_CLIENT_ID/SECRET   no grant a window is still written and `shared` is false
+ *   ZOHO_COVER_EXPIRY_REFRESH_TOKEN                the cover-expiry service job's grant (D53, D123): the schedule that
+ *   ZOHO_ACCOUNTS_ORIGIN, ZOHO_OAUTH_CLIENT_ID/SECRET   clears lapsed windows. Access itself is Zoho field sharing on Cover_By.
  *
  * Access is re-derived from the live session on every recheck, the way the data layer does it
  * (server/data/live.ts): the leads scope of the seat; an IR Manager with no subtree reader reads under
@@ -16,14 +16,13 @@
 
 import { createHmac, randomBytes } from "node:crypto";
 import { createZohoClient, createZohoServiceClient, type UserCredential } from "../../lib/zoho/client";
-import { runCoverWindowShare } from "../../lib/zoho/cover-window-share";
 import { dataRuntime } from "../data/zoho-source";
 import { zohoSeatOf } from "../data/live";
 import { scopesFor } from "../data/scope";
 import { userSessions, zohoSignInConfigured } from "../oauth/runtime";
 import { createServiceTokenProvider, type ServiceTokenProvider } from "../oauth/service-token";
 import type { LeadsAccess, LeadsAccessAuthority } from "./book";
-import { createCover, sweepExpiredCovers, type CoverShare } from "./cover";
+import { createCover, sweepExpiredCovers } from "./cover";
 import { createGates } from "./gates";
 import { rosterRuntime } from "../roster/runtime";
 import { createLeadSearch } from "./search";
@@ -73,23 +72,18 @@ function build(env: NodeJS.ProcessEnv) {
   let provider: ServiceTokenProvider | null = null;
   const service = createZohoServiceClient({ gate: rt.gate, log: rt.log, recordIdPrefix, maxAttempts: 2 });
   const serviceCredential = () => {
-    if (!env.ZOHO_COVER_WINDOW_SHARE_REFRESH_TOKEN || !env.ZOHO_ACCOUNTS_ORIGIN || !env.ZOHO_OAUTH_CLIENT_ID || !env.ZOHO_OAUTH_CLIENT_SECRET) return null;
+    if (!env.ZOHO_COVER_EXPIRY_REFRESH_TOKEN || !env.ZOHO_ACCOUNTS_ORIGIN || !env.ZOHO_OAUTH_CLIENT_ID || !env.ZOHO_OAUTH_CLIENT_SECRET) return null;
     provider ??= createServiceTokenProvider({
-      job: "cover-window-share", accountsOrigin: env.ZOHO_ACCOUNTS_ORIGIN, clientId: env.ZOHO_OAUTH_CLIENT_ID,
-      clientSecret: env.ZOHO_OAUTH_CLIENT_SECRET, refreshToken: env.ZOHO_COVER_WINDOW_SHARE_REFRESH_TOKEN, log: rt.log,
+      job: "cover-expiry", accountsOrigin: env.ZOHO_ACCOUNTS_ORIGIN, clientId: env.ZOHO_OAUTH_CLIENT_ID,
+      clientSecret: env.ZOHO_OAUTH_CLIENT_SECRET, refreshToken: env.ZOHO_COVER_EXPIRY_REFRESH_TOKEN, log: rt.log,
     });
     return provider;
-  };
-  const share: CoverShare = async (windows, signal) => {
-    const p = serviceCredential();
-    if (!p) return windows.map((w) => ({ leadId: w.leadId, state: w.state, ok: false }));
-    return runCoverWindowShare(service, await p.credential(signal), windows);
   };
 
   return {
     search: createLeadSearch({ crm, access, log: rt.log, recordIdPrefix, cache: rt.cache, termKey, roster: rosterRuntime() }),
     gates: createGates({ crm, access, log: rt.log, recordIdPrefix, roster: rosterRuntime() }),
-    cover: createCover({ crm, access, share, log: rt.log, planeC: rt.planeC, recordIdPrefix, roster: rosterRuntime() }),
+    cover: createCover({ crm, access, log: rt.log, planeC: rt.planeC, recordIdPrefix, roster: rosterRuntime() }),
     /** For the schedule: close expired windows on the service token. null when the grant is not set. */
     async sweep(signal?: AbortSignal) {
       const p = serviceCredential();

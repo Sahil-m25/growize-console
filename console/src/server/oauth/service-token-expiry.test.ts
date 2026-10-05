@@ -71,10 +71,10 @@ describe("serviceTokenExpiry on the System card", () => {
   });
 
   it("a job whose refresh failed reads missing and down; two providers on one job take the later expiry, and a live one hides a failed sibling", async () => {
-    const f = await gatherFacts({ ...base, serviceTokens: [tok("cover-window-share", null, true), tok("provider-callback", NOW + 100), tok("provider-callback", NOW + 9_000_000, false), tok("provider-callback", null, true)] }, NOW);
-    expect(f.serviceTokenExpiry["cover-window-share"]).toBeNull();
+    const f = await gatherFacts({ ...base, serviceTokens: [tok("cover-expiry", null, true), tok("provider-callback", NOW + 100), tok("provider-callback", NOW + 9_000_000, false), tok("provider-callback", null, true)] }, NOW);
+    expect(f.serviceTokenExpiry["cover-expiry"]).toBeNull();
     expect(f.serviceTokenExpiry["provider-callback"]).toBe(NOW + 9_000_000);
-    const c = systemChecks(f, NOW).find((x) => x.key === "token:cover-window-share")!;
+    const c = systemChecks(f, NOW).find((x) => x.key === "token:cover-expiry")!;
     expect(c.figure).toBe("missing");
     expect(c.state).toBe("down");
   });

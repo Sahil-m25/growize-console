@@ -1,7 +1,7 @@
 /* /api/leads/[id]/cover — hand the lead to its secondary for a set window (M08-S05-T01, D44).
    POST   { expectedModifiedTime, duration: "today"|"d3"|"w1"|"w2"|"back" } → start the window
    DELETE { expectedModifiedTime }                                          → end it
-   200 → { leadId, coverById, coverUntil, modifiedTime, shared }  (shared false: written, record share pending)
+   200 → { leadId, coverById, coverUntil, modifiedTime }  (Zoho field sharing on Cover_By does the access, D123)
    4xx → { error: <the inline message>, code } — nothing changed. */
 import { cookies } from "next/headers";
 import { noteZohoFailure } from "@/server/http/error-capture";

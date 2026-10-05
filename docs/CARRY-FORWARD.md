@@ -116,3 +116,7 @@ recoverable.
   - The owner no longer needs the Share Service role or its seat (no "Share Service" profile or role is created; ZOHO_KAM_SHARE_REFRESH_TOKEN, ZOHO_SHARE_SERVICE_USER_ID and the kam-share-reconcile schedule are not needed).
   - Still open from D121: P14 (IR Manager View on allotments for Share), the Originating_IR share restore owner, and seating a person with no Investors seat.
   - Docs still describing the old share/unshare shape: docs/ops/runbook.md, ops/runbooks/api-budget.md, ops/runbooks/heartbeat-silent.md, docs/launch/go-live-checklist.md.
+
+- **D123 (5 Oct 2026) cover, absence and IR hand-off on Zoho field sharing: console done, Zoho not applied.** The owner applies the list in docs/decisions/D123-field-sharing-cover-handoff.md: Cover_By/Originating_IR sharing, Secondary_Owner off in live, the IR_Access field, the IR allotment View (zoho/access), the three Deluge functions and "GZ IR Access Sync", the IR_Access backfill, and ZOHO_COVER_EXPIRY_REFRESH_TOKEN.
+  - Open: an absence planned to start later opens no Cover_By until re-saved on or after its first day (no scheduled human token); the sweep service job was renamed "cover-expiry".
+  - Stale docs: docs/ops/runbook.md, ops/runbooks/heartbeat-silent.md, ops/runbooks/api-budget.md, catalyst/README.md still describe the cover-window share/unshare.

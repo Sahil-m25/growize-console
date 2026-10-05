@@ -21,7 +21,7 @@ const path = require('node:path');
 const consoleRoot = path.resolve(__dirname, '..', '..', '..');
 const ts = require(path.join(consoleRoot, 'node_modules', 'typescript'));
 const srcRoot = path.join(consoleRoot, 'src');
-const MODULES = ['cache', 'gate', 'errors', 'log', 'client', 'adapter', 'cover-window-share'];
+const MODULES = ['cache', 'gate', 'errors', 'log', 'client', 'adapter'];
 const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zoho-lib-'));
 process.on('exit', () => fs.rmSync(outDir, { recursive: true, force: true }));
 
@@ -1033,8 +1033,8 @@ test('client: wasDeleted() tells "deleted" apart from "not in the bin"', async (
   assert.equal(deep.calls.length, 2);
 });
 
-test('client: share sends the v8 body; a cover close revokes ONLY the covering user (GET + PUT of the rest), never DELETE while others hold a share (TC-E02-017/018)', async () => {
-  const job = serviceCredential('cover-window-share', grantFor());
+test('client: share sends the v8 body (the console no longer calls it, D123); an unshare revokes ONLY the covering user (GET + PUT of the rest), never DELETE while others hold a share (TC-E02-017/018)', async () => {
+  const job = serviceCredential('cover-expiry', grantFor());
   const COVER = '554023000000235011', IR = '554023000000235022', KAM = '554023000000235033';
   const held = { share: [
     { shared_with: { id: IR, type: 'users', name: 'x', zuid: '1' }, permission: 'read_only', share_related_records: false, type: 'private' },
@@ -1043,23 +1043,20 @@ test('client: share sends the v8 body; a cover close revokes ONLY the covering u
   ] };
   const ok = { share: [{ code: 'SUCCESS', status: 'success', details: { id: ID } }] };
   const { service: client, calls, sink } = rig((url, init) => zohoReply(200, init.method === 'GET' ? held : ok));
-  const res = await load('cover-window-share').runCoverWindowShare(client, job, [
-    { leadId: ID, coverUserId: COVER, state: 'open' },
-    { leadId: ID2, coverUserId: COVER, state: 'closed' },
-  ]);
+  const res = [await client.share(job, 'Leads', ID, COVER, 'read_write'), await client.unshare(job, 'Leads', ID2, COVER)];
   assert.deepEqual(res.map((r) => r.ok), [true, true]);
   assert.ok(calls[0].url.endsWith(`/Leads/${ID}/actions/share`) && calls[0].init.method === 'POST');
   assert.deepEqual(calls[0].body, { share: [{ shared_with: { id: COVER, type: 'users' }, permission: 'read_write', share_related_records: false, type: 'private' }], notify_shared_members: false });
   assert.deepEqual(calls.slice(1).map((c) => c.init.method), ['GET', 'PUT'], 'no DELETE: the IR and the KAM still hold shares');
   assert.ok(calls[2].url.endsWith(`/Leads/${ID2}/actions/share`));
   assert.deepEqual(calls[2].body.share.map((x) => [x.shared_with.id, x.permission]), [[IR, 'read_only'], [KAM, 'read_write']], 'the IR\'s and the KAM\'s shares stay');
-  assert.ok(sink.records().every((x) => x.actor.job === 'cover-window-share' && !('body' in x)), 'job name and ids only');
+  assert.ok(sink.records().every((x) => x.actor.job === 'cover-expiry' && !('body' in x)), 'job name and ids only');
   await assert.rejects(client.share(job, 'Leads', ID, 'not-a-user', 'read_only'), TypeError);
   await assert.rejects(client.share(job, 'Leads', ID, COVER, 'read'), TypeError, 'the old "read" permission is gone');
 });
 
 test('client: unshare sends DELETE (no body) only when the user was the last share; a user without a share is no write; a refused share is a failure', async () => {
-  const job = serviceCredential('cover-window-share', grantFor());
+  const job = serviceCredential('cover-expiry', grantFor());
   const COVER = '554023000000235011';
   const only = rig([zohoReply(200, { share: [{ shared_with: { id: COVER, type: 'users' }, permission: 'read_write' }] }), zohoReply(200, { share: [{ code: 'SUCCESS', status: 'success' }] })]);
   assert.equal((await only.service.unshare(job, 'Leads', ID, COVER)).ok, true);

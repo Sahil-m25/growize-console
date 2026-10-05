@@ -1,0 +1,41 @@
+void automation.gz_sync_ir_access(String contactId)
+{
+// D123 Q2: Zoho shares a record read-only with the user named in LLP_UnitAllocation_Module.IR_Access (user-lookup sharing).
+// Copies Contacts.Originating_IR onto the investor's allotments. Writes only what differs. Logs ids only.
+// NOT YET APPLIED in Zoho — owner applies (D123).
+// Wire to workflow rule "GZ IR Access Sync" (Contacts, on edit when Originating_IR is modified to any value, repeat on), contactId = Contacts.Contact Id.
+// IR_Access is a derived copy of Originating_IR (rule 1 note: like KAM_Access, never edited by hand; Originating_IR stays the one writer).
+contact = zoho.crm.getRecordById("Contacts",contactId.toLong());
+irId = "";
+ir = contact.get("Originating_IR");
+if(ir != null)
+{
+	irId = ir.get("id").toString();
+}
+changed = 0;
+allots = zoho.crm.searchRecords("LLP_UnitAllocation_Module","(Customer:equals:" + contactId + ")",1,200);
+for each  a in allots
+{
+	cur = "";
+	ca = a.get("IR_Access");
+	if(ca != null)
+	{
+		cur = ca.get("id").toString();
+	}
+	if(cur != irId)
+	{
+		upd = Map();
+		if(irId == "")
+		{
+			upd.put("IR_Access",null);
+		}
+		else
+		{
+			upd.put("IR_Access",irId);
+		}
+		zoho.crm.updateRecord("LLP_UnitAllocation_Module",a.get("id").toLong(),upd);
+		changed = changed + 1;
+	}
+}
+info "contact " + contactId + " ir changed " + changed;
+}

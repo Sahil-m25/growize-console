@@ -6,6 +6,9 @@
           has their explicit lead covers ended (server/leads/cover.ts `returned`) → also { covers: { cleared, pending } }
           (pending = covers Zoho did not let us end, null = they could not be read; either way they still close on their own expiry). A planned absence cancelled before it began
           ends no cover (they never left).
+          D123 Q3: a person who is out TODAY (from <= today) also has Cover_By = each open lead's secondary written (server/leads/cover.ts `absent`;
+          Secondary_Owner sharing is off, so Cover_By is the only way a secondary reaches the lead in Zoho) → also { covers: { opened, pending } }.
+          An absence that starts later opens nothing yet.
    4xx → { error, code } — nothing changed. */
 import { guardApi } from "@/server/access/guard";
 import { scopesFor } from "@/server/data/scope";
@@ -60,8 +63,15 @@ async function write(req: Request, clear: boolean) {
   }
   const r = clear ? a.clear(actor, b) : a.set(actor, b);
   if (!r.ok) return Response.json({ error: `Nothing changed — ${r.reason}.`, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
-  if (!clear || !wasOut || !leadsConfigured()) return Response.json(r.value, { headers: NO_STORE });
+  if (!leadsConfigured()) return Response.json(r.value, { headers: NO_STORE });
   const p = { credential: s.credential, sessionId: (await cookies()).get(SID_COOKIE)?.value ?? "" };
+  if (!clear) {
+    if (!r.value.from || !r.value.to || r.value.from > istToday(Date.now())) return Response.json(r.value, { headers: NO_STORE });
+    const out = await leadsRuntime().cover.absent(p, r.value.personId, r.value.to, req.signal);
+    const covers = out.ok ? { opened: out.value.opened.length, pending: out.value.failed.length } : { opened: 0, pending: null };
+    return Response.json({ ...r.value, covers }, { headers: NO_STORE });
+  }
+  if (!wasOut) return Response.json(r.value, { headers: NO_STORE });
   const back = await leadsRuntime().cover.returned(p, r.value.personId, req.signal);
   /* the person is back either way (the line is filed); a cover Zoho would not end is said, never hidden */
   const covers = back.ok ? { cleared: back.value.cleared.length, pending: back.value.failed.length } : { cleared: 0, pending: null };

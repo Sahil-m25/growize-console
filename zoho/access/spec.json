@@ -164,10 +164,11 @@
    "name": "IR",
    "seat": "Investor Relations",
    "role": "Investor Relations",
-   "description": "Investor Relations: own leads; own investors read-only by record share; identity and money hidden (rule 7).",
+   "description": "Investor Relations: own leads; own investors and their allotments read-only by Zoho field sharing (Contacts.Originating_IR, allotments IR_Access; D123); identity and money hidden (rule 7). Never Receipts (D69).",
    "modules": {
     "Leads": "vce",
     "Contacts": "v",
+    "LLP_UnitAllocation_Module": "v",
     "LLP_Creation_Module": "v",
     "Touches": "vce",
     "Investor_Updates": "v",
@@ -417,13 +418,15 @@
    },
    {
     "id": "allotment_money",
-    "source": "ACCESS-PLAN 3 row 4 (Amount_n/UTR_n/Date_n do not exist in the sandbox)",
+    "source": "ACCESS-PLAN 3 row 4 (Amount_n/UTR_n/Date_n do not exist in the sandbox); D123: Unit_Price and Annual_Rental_Yield added with the IR allotment view (every currency field on the module is listed; sandbox schema 5 Oct 2026)",
     "fields": {
      "LLP_UnitAllocation_Module": [
       "Total_Amount_Received",
       "Total_Amount_Receivable",
       "Capital_Invested",
-      "Token_Advance_Amount"
+      "Token_Advance_Amount",
+      "Unit_Price",
+      "Annual_Rental_Yield"
      ]
     },
     "default": "hidden",
@@ -644,6 +647,8 @@
   "P9 Integration gets Cases view+create only (Zoho pairs create with view); no Contacts access - if the Case-to-Contact lookup needs it, add Contacts view; identity stays hidden either way.",
   "P10 Compliance and Audit also gets read sharing rules on Leads, Touches, Cases ('reads everything', D80).",
   "P11 Mass update on for heads only; import only for Digital Infrastructure; export and mass delete off for every created profile.",
-  "P14 D121 A: IR Manager gets View on LLP_UnitAllocation_Module because Zoho enables Share only under View (parent permission); allotment money fields stay hidden and records are visible only where shared or owned below in the role tree."
+  "P14 D121 A: IR Manager gets View on LLP_UnitAllocation_Module because Zoho enables Share only under View (parent permission); allotment money fields stay hidden and records are visible only where shared or owned below in the role tree.",
+  "P15 D123 Q2: IR gets View on LLP_UnitAllocation_Module so Zoho field sharing (IR_Access, read-only) can show an IR its own investors' allotments; the old record share gave nothing because IR had no allotment permission. Money (all five currency fields plus Annual_Rental_Yield) stays hidden; Contacts identity stays hidden; IR never reads Receipts (D69).",
+  "P16 D123 Q1/Q3 (NOT expressible in this spec, owner applies in Zoho): Leads.Secondary_Owner field sharing OFF; Leads.Cover_By sharing read-write; Contacts.Originating_IR sharing read-only; new LLP_UnitAllocation_Module.IR_Access (userlookup, sharing read-only, read-only for every profile except Administrator). See docs/decisions/D123-field-sharing-cover-handoff.md."
  ]
 }

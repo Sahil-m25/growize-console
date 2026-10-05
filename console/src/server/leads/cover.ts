@@ -16,23 +16,24 @@
  * THE WINDOW. Handover {duration} is started by the owner, a manager over the owner, or a secondary who
  * already holds the lead; a dormant secondary on a healthy owner's lead changes nothing (refused, Plane C
  * refused-action). It is written to the Lead (Cover_By, Cover_Until) on the starter's own token with
- * If-Unmodified-Since (D53, A-03) — Zoho is the store (D45) — then Zoho record-level sharing adds the
- * secondary (A-14/A-17) through the cover-window-share service job (lib/zoho/cover-window-share.ts;
- * PROVISIONAL jev "b" 0.85), and Plane C files the grant (D49: who, whom, outcome). Ending — by the
- * owner, whoever carries it or a manager — clears the window, revokes the share and files the end.
- * Expiry is `sweepExpiredCovers`, run on the service token by a schedule: revoke, then clear.
+ * If-Unmodified-Since (D53, A-03) — Zoho is the store (D45) — and Plane C files the grant (D49: who, whom, outcome).
+ * D123: ZOHO DOES THE ACCESS. Leads.Cover_By has field sharing (read-write): writing it shares the lead with the
+ * named user, clearing or changing it revokes. There is no share API call here any more. Ending — by the owner,
+ * whoever carries it or a manager — clears the window and files the end.
  *
- * THE RETURN (D44: "returning a primary through roster controls clears their cover"). When a person who is out today
- * is marked back in (DELETE /api/availability — themselves, or a manager over them), `returned` ends every explicit
- * window on the leads they own: read on the marker's own token, cleared with If-Unmodified-Since, the share revoked,
- * and one Plane C `grant-change` line per lead (outcome ended, reason cover-end-returned). A lead Zoho will not clear
- * is reported, never retried silently; its window still closes at Cover_Until.
+ * OWNER ABSENT (D123 Q3). Leads.Secondary_Owner sharing is OFF, so a secondary reaches a lead only through
+ * Cover_By. `absent` writes Cover_By = the lead's secondary (Cover_Until = the day before the roster's first day
+ * back) on the absent owner's open, uncovered leads, on the acting human's own token; `returned` clears them.
+ * `activeFor`'s roster branch stays as the second layer: the console still re-checks, Zoho also enforces.
+ *
+ * Expiry is `sweepExpiredCovers`, run on the cover-expiry service token by a schedule: it only clears the fields
+ * (Zoho revokes the share when the field clears).
+ *
  * Nothing is cached; logs hold ids and codes only.
  */
 
 import type { ServiceCredential, UserCredential, ZohoClient, ZohoRecord, ZohoServiceClient } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
-import type { CoverWindow, CoverWindowResult } from "../../lib/zoho/cover-window-share";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { PlaneCLog } from "../identity/plane-c";
@@ -125,7 +126,7 @@ export type CoverRefusal = "invalid-request" | "session-changed" | "capability-m
   | "no-secondary" | "not-yours-to-cover" | "no-cover" | "not-yours-to-end";
 export type CoverResult =
   | { readonly ok: true; readonly value: { readonly leadId: string; readonly coverById: string | null; readonly coverUntil: string | null;
-      readonly modifiedTime: string | null; /** false: the window stands in Zoho but the record share did not land — the sweep retries. */ readonly shared: boolean } }
+      readonly modifiedTime: string | null } }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: CoverRefusal; readonly reason: string }
   | { readonly ok: false; readonly kind: "source-error"; readonly source: "access" | "zoho"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
 
@@ -142,19 +143,20 @@ const REASON: Readonly<Record<CoverRefusal, string>> = Object.freeze({
   "not-yours-to-end": "a cover ends when the owner, whoever is carrying it, or a manager says so",
 });
 
+export type AbsentResult =
+  | { readonly ok: true; readonly value: { readonly personId: string; /** leads whose secondary now holds Cover_By */ readonly opened: readonly string[];
+      /** leads Zoho would not write (changed or refused) — the secondary has no Zoho access to them until the owner retries */ readonly failed: readonly string[] } }
+  | Extract<CoverResult, { ok: false }>;
+
 export type ReturnResult =
   | { readonly ok: true; readonly value: { readonly personId: string; /** leads whose cover was ended */ readonly cleared: readonly string[];
       /** leads Zoho would not clear (changed, refused, or past the page) — their window closes at Cover_Until */ readonly failed: readonly string[] } }
   | Extract<CoverResult, { ok: false }>;
 
-/** Opens or closes the record share for a window. Runtime: the cover-window-share service job. */
-export type CoverShare = (windows: readonly CoverWindow[], signal?: AbortSignal) => Promise<readonly CoverWindowResult[]>;
-
 export interface CoverDependencies {
   /** coql: only `returned` reads a list (the returning owner's covered leads) */
   readonly crm: Pick<ZohoClient, "getRecord" | "update"> & Partial<Pick<ZohoClient, "coql">>;
   readonly access: LeadsAccessAuthority;
-  readonly share: CoverShare;
   readonly log: OpsLog;
   readonly planeC: PlaneCLog;
   readonly recordIdPrefix: string;
@@ -167,9 +169,9 @@ type Principal = { credential: UserCredential; sessionId: string };
 
 export function createCover(deps: CoverDependencies) {
   if (!deps || typeof deps.crm?.getRecord !== "function" || typeof deps.crm?.update !== "function" || typeof deps.access?.recheck !== "function"
-    || typeof deps.share !== "function" || typeof deps.log?.refusal !== "function" || typeof deps.planeC?.record !== "function"
+    || typeof deps.log?.refusal !== "function" || typeof deps.planeC?.record !== "function"
     || typeof deps.recordIdPrefix !== "string" || !RECORD_PREFIX.test(deps.recordIdPrefix)) {
-    throw new TypeError("Cover needs crm.getRecord/update, the access authority, the share job, the ops log, Plane C and the CRM record-id prefix.");
+    throw new TypeError("Cover needs crm.getRecord/update, the access authority, the ops log, Plane C and the CRM record-id prefix.");
   }
   const { crm, access, log, planeC } = deps;
   const clock = deps.clock ?? Date.now;
@@ -221,15 +223,6 @@ export function createCover(deps: CoverDependencies) {
       return null;
     }
   };
-  const shareOk = async (w: CoverWindow, signal?: AbortSignal): Promise<boolean> => {
-    try {
-      const r = await deps.share([w], signal);
-      return r.length === 1 && r[0]!.ok === true;
-    } catch {
-      return false;
-    }
-  };
-
   return Object.freeze({
     /** Hand the lead to its secondary for `duration`. */
     async start(p: Principal, leadId: string, expected: string, duration: CoverDuration, signal?: AbortSignal): Promise<CoverResult> {
@@ -248,12 +241,8 @@ export function createCover(deps: CoverDependencies) {
       const put = await write(p.credential, leadId, expected, { Cover_By: { id: sec }, Cover_Until: until }, signal);
       if (!put) return zoho("unexpected");
       if (!put.ok) return put.error.kind === "conflict" ? refuse(me, a, "cover-start", "lead-changed", [leadId]) : zoho(put.error.kind);
-      const previous = idOf(L.Cover_By);
-      if (previous && previous !== sec) await shareOk({ leadId, coverUserId: previous, state: "closed" }, signal);
-      const shared = await shareOk({ leadId, coverUserId: sec, state: "open" }, signal);
-      if (!shared) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-start", reason: "share-pending", recordIds: [leadId] });
       planeC.record({ at: clock(), who: me, whom: sec, action: "grant-change", outcome: "ok", reason: `cover-open-${duration}`, seat: seatCode(a), recordIds: [leadId] });
-      return { ok: true, value: { leadId, coverById: sec, coverUntil: until, modifiedTime: put.value.modifiedTime, shared } };
+      return { ok: true, value: { leadId, coverById: sec, coverUntil: until, modifiedTime: put.value.modifiedTime } };
     },
 
     /** End the running window: the owner, the person carrying it, or a manager. */
@@ -267,10 +256,50 @@ export function createCover(deps: CoverDependencies) {
       const put = await write(p.credential, leadId, expected, { Cover_By: null, Cover_Until: null }, signal);
       if (!put) return zoho("unexpected");
       if (!put.ok) return put.error.kind === "conflict" ? refuse(me, a, "cover-end", "lead-changed", [leadId]) : zoho(put.error.kind);
-      const revoked = await shareOk({ leadId, coverUserId: by, state: "closed" }, signal);
-      if (!revoked) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-end", reason: "unshare-pending", recordIds: [leadId] });
       planeC.record({ at: clock(), who: me, whom: by, action: "grant-change", outcome: "ended", reason: "cover-end", seat: seatCode(a), recordIds: [leadId] });
-      return { ok: true, value: { leadId, coverById: null, coverUntil: null, modifiedTime: put.value.modifiedTime, shared: revoked } };
+      return { ok: true, value: { leadId, coverById: null, coverUntil: null, modifiedTime: put.value.modifiedTime } };
+    },
+
+    /**
+     * D123 Q3: `personId` is out today — write Cover_By = each open lead's secondary (Cover_Until = the day before `backOn`,
+     * the first day back) on the leads they own that carry no explicit window. The person themself, or a manager over them.
+     * Leads with no secondary, a secondary who is also away, or a window already running are left as they are.
+     */
+    async absent(p: Principal, personId: string, backOn: string, signal?: AbortSignal): Promise<AbsentResult> {
+      const cred = p?.credential;
+      if (!isUserCredential(cred) || !validId(cred.userId) || typeof p.sessionId !== "string" || !SESSION_ID.test(p.sessionId) || !validId(personId)
+        || typeof backOn !== "string" || !DATE.test(backOn)) {
+        return refuse(isUserCredential(cred) ? cred.userId : "unrecognised", null, "cover-start", "invalid-request");
+      }
+      const me = cred.userId;
+      let a: LeadsAccess | null;
+      try { a = await access.recheck(cred, p.sessionId, signal); } catch {
+        return { ok: false, kind: "source-error", source: "access", errorKind: "unexpected", retryable: true };
+      }
+      if (!a || a.actor?.userId !== me) return refuse(me, a, "cover-start", "session-changed");
+      if (personId !== me && !isManagerOf(a, personId)) return refuse(me, a, "cover-start", "not-yours-to-cover", [personId]);
+      if (typeof crm.coql !== "function") return zoho("unexpected");
+      const until = addDays(backOn, -1);
+      if (until < istDate(clock())) return { ok: true, value: { personId, opened: [], failed: [] } };
+      const roster = await rosterNow(deps.roster, signal);
+      let got: Awaited<ReturnType<NonNullable<typeof crm.coql>>>;
+      try {
+        got = await crm.coql(cred, `select id, Secondary_Owner, Modified_Time from ${LEADS_MODULE} where (Owner = '${personId}' and Cover_By is null and Secondary_Owner is not null and Lost_At is null and Onboarded_At is null) order by id asc limit 0, ${RETURN_PAGE}`, { signal });
+      } catch { return zoho("unexpected"); }
+      if (!got.ok) return zoho(got.error.kind);
+      const opened: string[] = [], failed: string[] = [];
+      for (const L of got.value.records) {
+        if (!validId(L.id)) continue;
+        const sec = idOf(L.Secondary_Owner);
+        if (!sec || !validId(sec) || sec === personId || roster.absentOwnerIds.includes(sec)) continue;
+        if (typeof L.Modified_Time !== "string" || !DATETIME.test(L.Modified_Time)) { failed.push(L.id); continue; }
+        const put = await write(cred, L.id, L.Modified_Time, { Cover_By: { id: sec }, Cover_Until: until }, signal);
+        if (!put || !put.ok) { failed.push(L.id); continue; }
+        planeC.record({ at: clock(), who: me, whom: sec, action: "grant-change", outcome: "ok", reason: "cover-open-absence", seat: seatCode(a), recordIds: [L.id] });
+        opened.push(L.id);
+      }
+      if (got.value.moreRecords) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-start", reason: "more-than-a-page", recordIds: [] });
+      return { ok: true, value: { personId, opened, failed } };
     },
 
     /** D44: `personId` was out and is marked back in — end every explicit cover on the leads they own. The person themself, or a manager over them. */
@@ -299,8 +328,6 @@ export function createCover(deps: CoverDependencies) {
         if (!by || typeof L.Modified_Time !== "string" || !DATETIME.test(L.Modified_Time)) { failed.push(L.id); continue; }
         const put = await write(cred, L.id, L.Modified_Time, { Cover_By: null, Cover_Until: null }, signal);
         if (!put || !put.ok) { failed.push(L.id); continue; }
-        const revoked = await shareOk({ leadId: L.id, coverUserId: by, state: "closed" }, signal);
-        if (!revoked) log.refusal({ at: clock(), actor: { kind: "user", userId: me }, action: "cover-end", reason: "unshare-pending", recordIds: [L.id] });
         planeC.record({ at: clock(), who: me, whom: by, action: "grant-change", outcome: "ended", reason: "cover-end-returned", seat: seatCode(a), recordIds: [L.id] });
         cleared.push(L.id);
       }
@@ -314,19 +341,20 @@ export function createCover(deps: CoverDependencies) {
 
 export interface SweepResult {
   readonly ok: boolean;
-  /** Leads whose window expired, was revoked in Zoho and cleared. */
+  /** Leads whose window expired, was cleared. */
   readonly closed: readonly string[];
-  /** Leads left for the next run: revoke or clear failed. */
+  /** Leads left for the next run: the clear failed. */
   readonly failed: readonly string[];
 }
 
 /**
- * Close every window whose Cover_Until is before today (IST): revoke the share, then clear the fields with
- * If-Unmodified-Since. Runs on the cover-window-share service credential (a schedule; no screen). A lead
- * whose revoke fails keeps its fields, so the next run tries again; the fields alone already admit nobody.
+ * Close every window whose Cover_Until is before today (IST): clear Cover_By/Cover_Until with If-Unmodified-Since;
+ * Zoho field sharing revokes the access when the field clears (D123). Runs on the cover-expiry service credential
+ * (a schedule; no screen). A lead whose clear fails keeps its fields, so the next run tries again; the fields alone
+ * already admit nobody in the console.
  */
 export async function sweepExpiredCovers(
-  client: Pick<ZohoServiceClient, "coql" | "update" | "unshare">,
+  client: Pick<ZohoServiceClient, "coql" | "update">,
   as: ServiceCredential,
   planeC: PlaneCLog,
   recordIdPrefix: string,
@@ -344,8 +372,6 @@ export async function sweepExpiredCovers(
       if (valid(L.id)) failed.push(L.id);
       continue;
     }
-    const un = await client.unshare(as, LEADS_MODULE, L.id, by, { signal });
-    if (!un.ok) { failed.push(L.id); continue; }
     const put = await client.update(as, LEADS_MODULE, L.id, { Cover_By: null, Cover_Until: null }, { ifUnmodifiedSince: L.Modified_Time, signal });
     if (!put.ok) { failed.push(L.id); continue; }
     planeC.record({ at: clock(), who: by, whom: by, action: "grant-change", outcome: "ended", reason: "cover-expired", seat: null, recordIds: [L.id] });
