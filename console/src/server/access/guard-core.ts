@@ -154,6 +154,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/webhooks/zoho-sign": { kind: "open", why: "a provider callback: no person, authenticated by its HMAC signature" },
   "/api/webhooks/investor-app": { kind: "open", why: "the investor app's signed events (M13-S01): no person, authenticated by the contract HMAC" },
   "/api/jobs/sign-recheck": { kind: "open", why: "the platform scheduler's Zoho Sign re-check (M12-S05-T02): no person, authenticated by JOB_SECRET in X-Job-Secret" },
+  "/api/jobs/kam-share-reconcile": { kind: "open", why: "the platform scheduler's nightly KAM share reconcile (D121 A, ACCESS-PLAN R3): no person, authenticated by JOB_SECRET in X-Job-Secret" },
   "/api/jobs/outbox-drain": { kind: "open", why: "the platform scheduler's investor-app outbox drain (M13-S01): no person, authenticated by JOB_SECRET in X-Job-Secret" },
   "/api/sign/embed": { kind: "open", why: "the investor app's sign.embed request (M12-S08): no Zoho person, authenticated by the contract HMAC; the Contact must be the Sign recipient" },
   "/api/contracts": { kind: "session" },
@@ -168,6 +169,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
   "/api/system": { kind: "session" },   /* M15-S05 live checks: server/system/facts mayReadSystem (`sys` capability) decides inside */
   "/api/investors/[id]/kam": { kind: "page", page: "inv" },
+  "/api/investors/[id]/kam/share": { kind: "page", page: "inv" },   /* D121 A the KAM share's state (GET) and Retry (POST .../retry): the record must be visible on the person's own token; Retry also needs the "assign" right, decided inside */
   "/api/investors/am": { kind: "page", page: "inv" },   /* M09-S04/S02 the AM list (managers, pool, rows): the Investors page; server/investors/am-service refuses any seat but a KAM or the Head of AM inside */
   "/api/payments": { kind: "session" },   /* M10-S01-W1 the Payments register: the seat (Finance pay/bank, the read-only Auditor) decides inside; a KAM is refused 403 */
   "/api/receipts": { kind: "page", page: "pay" },

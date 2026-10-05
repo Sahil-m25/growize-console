@@ -71,11 +71,28 @@ export const DEFAULT_BLUEPRINT_OWNED_FIELDS: Readonly<Record<string, readonly st
   Deals: Object.freeze(["Stage"]),
 });
 
+/** D121: one entry of a record's share list. `targetId` is a user, role or group id. */
+export type SharePermission = "read_only" | "read_write" | "full_access";
+export interface ShareEntry {
+  readonly kind: "users" | "roles" | "groups";
+  readonly targetId: string;
+  readonly permission: SharePermission;
+}
+/** As read back: `inherited` = shared through another record's related-records share (not this record's own list);
+ *  `sharedBy` = the user who made it, when Zoho says (it does only for callers with full access). */
+export interface RecordShare extends ShareEntry {
+  readonly inherited: boolean;
+  readonly sharedBy: string | null;
+}
+/** Zoho's per-record share limit (Kaizen #49: "10 users"). */
+export const MAX_RECORD_SHARES = 10;
+
 /** The background work D53 allows a service token for. Nothing on this list serves a screen. */
 /* "handoff-share" (M03-S09-T03, D74): at hand-off, share the Contact, its allotments and receipts read-only with the originating IR. */
 /** "kam-pool-return" (M03-S04-T02): the org-scope read of a moved KAM's book; its writes stay on the person's own token. */
-export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share" | "kam-pool-return";
-const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share", "kam-pool-return"]);
+/** "kam-share" (D121 A): the share-service user — shares a Contact, its allotments and its origin lead's Touches with the KAM. */
+export type ServiceJob = "audit-archive" | "cover-window-share" | "invariant-check" | "provider-callback" | "handoff-share" | "kam-pool-return" | "kam-share";
+const SERVICE_JOBS: ReadonlySet<string> = new Set(["audit-archive", "cover-window-share", "invariant-check", "provider-callback", "handoff-share", "kam-pool-return", "kam-share"]);
 
 declare const apiDomainBrand: unique symbol;
 declare const userBrand: unique symbol;
@@ -189,6 +206,11 @@ export interface ZohoApi<C extends Credential> {
   share(as: C, module: string, id: string, userId: string, permission: "read" | "read_write", options?: CallOptions): Promise<ZohoResult<{ readonly shared: true }>>;
   /** Revokes that user's share. */
   unshare(as: C, module: string, id: string, userId: string, options?: CallOptions): Promise<ZohoResult<{ readonly revoked: true }>>;
+  /** D121: GET /{module}/{id}/actions/share — the record's share list as ids and permissions (names and zuids dropped). */
+  shares(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<readonly RecordShare[]>>;
+  /** D121: PUT /{module}/{id}/actions/share with the record's WHOLE direct share list (Zoho revokes whoever is left out);
+   *  an empty list is DELETE, which revokes every share on the record. Related records are never shared. */
+  setShares(as: C, module: string, id: string, list: readonly ShareEntry[], options?: CallOptions): Promise<ZohoResult<{ readonly set: true }>>;
   /** Deletes one record the person may delete (moves it to Zoho's recycle bin). Never retried: a
    *  lost reply is checked with `wasDeleted()`. Used to take back a write inside its Undo window. */
   deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
@@ -723,6 +745,30 @@ function pageQuery(options: PageOptions): [string, string][] {
 
 type Obj = Readonly<Record<string, unknown>>;
 const obj = (x: unknown): Obj | null => (typeof x === "object" && x !== null && !Array.isArray(x) ? (x as Obj) : null);
+
+/**
+ * D121: a GET share list as ids and permissions. v8 answers `shared_with: { id, type, name, zuid }`; the older shape
+ * `user: { id, name }` is read too. Names and zuids are dropped here, so nothing past this line can log them. An entry
+ * whose `shared_through` points at another record is a related-records share of that record (`inherited`).
+ */
+export function parseShares(raw: readonly unknown[], recordId: string): readonly RecordShare[] {
+  const out: RecordShare[] = [];
+  for (const e of raw.slice(0, 100).map(obj)) {
+    if (!e) continue;
+    const w = obj(e.shared_with) ?? obj(e.user);
+    const targetId = w && typeof w.id === "string" && RECORD.test(w.id) ? w.id : null;
+    const kind = w && (w.type === "roles" || w.type === "groups") ? w.type : "users";
+    const permission = e.permission === "read_write" || e.permission === "full_access" ? e.permission
+      : e.permission === "read_only" || e.permission === "read" ? "read_only" : null;
+    if (!targetId || !permission) continue;
+    const through = obj(e.shared_through);
+    const inherited = !!through && typeof through.id === "string" && through.id !== recordId;
+    const by = obj(e.shared_by);
+    const sharedBy = by && typeof by.id === "string" && RECORD.test(by.id) ? by.id : null;
+    out.push(Object.freeze({ kind, targetId, permission, inherited, sharedBy }));
+  }
+  return Object.freeze(out);
+}
 
 function recordsIn(body: unknown): ZohoRecord[] {
   const data = obj(body)?.data;
@@ -1355,6 +1401,53 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
         shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
       });
       return out.ok ? done({ revoked: true } as const, out) : out;
+    },
+
+    async shares(as, module, id, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      const out = await execute(as, {
+        op: "shares", method: "GET", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
+        shape: { op: "read" }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+      });
+      if (!out.ok) return out;
+      if (out.result.kind === "empty") return done(Object.freeze([]) as readonly RecordShare[], out);
+      const raw = obj(out.result.body)?.share;
+      if (!Array.isArray(raw)) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<readonly RecordShare[]>;
+      return done(parseShares(raw, id), out);
+    },
+
+    async setShares(as, module, id, list, opts = {}) {
+      checkModule(module);
+      checkScopedId(id);
+      if (!Array.isArray(list) || list.length > MAX_RECORD_SHARES) throw new RangeError(`setShares() takes at most ${MAX_RECORD_SHARES} entries.`);
+      for (const s of list) {
+        checkScopedId(s.targetId, "share target id");
+        if (s.kind !== "users" && s.kind !== "roles" && s.kind !== "groups") throw new TypeError('share kind is "users", "roles" or "groups".');
+        if (s.permission !== "read_only" && s.permission !== "read_write" && s.permission !== "full_access") throw new TypeError("share permission is read_only, read_write or full_access.");
+      }
+      // Nothing left to share: DELETE revokes every share on the record (v8 revoke-shared-record: no body, all users).
+      const out = list.length === 0
+        ? await execute(as, {
+          op: "unshareAll", method: "DELETE", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
+          shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+        })
+        : await execute(as, {
+          // PUT replaces the record's whole share list: "access is revoked for the users not mentioned" (v8 update-share-permissions).
+          op: "setShares", method: "PUT", path: `/${module}/${id}/actions/share`, endpoint: `/${module}/{id}/actions/share`,
+          body: {
+            share: list.map((s) => ({ shared_with: { id: s.targetId, type: s.kind }, permission: s.permission, share_related_records: false, type: "private" })),
+            notify_shared_members: false,
+          },
+          shape: { op: "write", records: 1 }, idempotent: true, perRecord: false, recordIds: [id], logReturnedIds: false, signal: opts.signal,
+        });
+      if (!out.ok) return out;
+      const items = out.result.kind === "ok" ? obj(out.result.body)?.share : undefined;
+      const first = Array.isArray(items) ? obj(items[0]) : obj(items);
+      if (first && typeof first.status === "string" && first.status !== "success") {
+        return { ok: false, error: { kind: "unexpected", status: out.result.status, code: typeof first.code === "string" ? first.code.slice(0, 40) : "SHARE_REFUSED" }, creditsRemaining: out.creditsRemaining } as ZohoResult<{ readonly set: true }>;
+      }
+      return done({ set: true } as const, out);
     },
 
     async timeline(as, module, id, opts = {}) {

@@ -449,6 +449,20 @@
     }
    }
   },
+  "/api/investors/[id]/kam/share": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record by id from Zoho (GET /Contacts/:id, the visibility check on the person's own token) \u2014 the recorded fixtures replay COQL selects only"
+   }
+  },
+  "/api/investors/[id]/kam/share/retry": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (no body; the Contact id is the path)"
+    }
+   }
+  },
   "/api/investors/[id]/money": {
    "GET": {
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
@@ -867,6 +881,15 @@
    }
   },
   "/api/jobs/outbox-drain": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (X-Job-Secret header = JOB_SECRET; no body)"
+    }
+   }
+  },
+  "/api/jobs/kam-share-reconcile": {
    "POST": {
     "body": {
      "type": "none",

@@ -19,11 +19,14 @@ export const JOB_SECRET_HEADER = "x-job-secret";
 export const JOB_CLAIM_TTL_S = 9 * 60;
 export const JOB_NAME = /^[a-z][a-z0-9-]{0,31}$/;
 
+/** D121: what a run reports — counts and record ids only (rule 7), never a value. */
+export type JobSummary = Readonly<Record<string, number | boolean | string | null | readonly string[]>>;
+
 export type JobRun =
-  | { readonly ran: true }
+  | { readonly ran: true; readonly summary?: JobSummary }
   | { readonly ran: false; readonly reason: "already-running" | "state-unavailable" };
 
-export async function claimJob(state: SharedState, name: string, run: () => Promise<void>, ttlSeconds = JOB_CLAIM_TTL_S): Promise<JobRun> {
+export async function claimJob(state: SharedState, name: string, run: () => Promise<void | JobSummary>, ttlSeconds = JOB_CLAIM_TTL_S): Promise<JobRun> {
   if (!JOB_NAME.test(name)) throw new TypeError("A job name is a short lower-case code.");
   const key = `job|${name}`;
   let mine: boolean;
@@ -32,8 +35,9 @@ export async function claimJob(state: SharedState, name: string, run: () => Prom
     throw e;
   }
   if (!mine) return { ran: false, reason: "already-running" };
-  try { await run(); } finally { await state.release(key).catch(() => { /* the TTL frees it */ }); }
-  return { ran: true };
+  let summary: void | JobSummary;
+  try { summary = await run(); } finally { await state.release(key).catch(() => { /* the TTL frees it */ }); }
+  return summary ? { ran: true, summary } : { ran: true };
 }
 
 const digest = (s: string) => createHash("sha256").update(s, "utf8").digest();
@@ -55,6 +59,6 @@ export async function jobResponse(request: Request, name: string, run: () => Pro
   try { r = await run(); } catch {
     return Response.json({ job: name, ran: false, code: "job-failed" }, { status: 500, headers });
   }
-  if (r.ran) return Response.json({ job: name, ran: true }, { headers });
+  if (r.ran) return Response.json(r.summary ? { job: name, ran: true, summary: r.summary } : { job: name, ran: true }, { headers });
   return Response.json({ job: name, ran: false, code: r.reason }, { status: r.reason === "state-unavailable" ? 503 : 200, headers });
 }
