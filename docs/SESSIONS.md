@@ -350,3 +350,4 @@ One line per session: date · what changed · which decision or test case it ser
 - 2026-10-05 · zoho/access: parent-permission pruning/ordering, planLayoutRequired (mandatory fields before FLS), sharing-rule busy retry with call budget; D120 'Applied 5 Oct 2026' · D120
 - 2026-10-05 · sandbox test users (4), external syncs off in sandbox, 132-record seed applied · D120
 - 2026-10-05 · owner rulings B (4 fields optional) and C (syncs off in sandbox, on in prod); A open · D120
+- 2026-10-05 · KAM tooling: record Care card 'Manager · Change · Remove' with inline confirm and share-status line (kam/share fixtures), POST /api/kams/[userId]/move-book (server/investors/kam-move-book, resumable) and Teams 'Move book' / move-on-leave panel · owner ask 5 Oct (KAM assign/add/remove/edit), D12, D53, M18-S09-NOTE-3

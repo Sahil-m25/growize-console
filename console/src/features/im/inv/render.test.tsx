@@ -64,8 +64,8 @@ describe("ImInv — vOne, the record", () => {
     expect(care).toContain("Log a conversation");
     expect(rec("imran", "ARL-INV-0205", "tkt").t).toContain("Hand it to Financea bank account cannot be changed from this side, and should not be");
   });
-  it("Head of AM (divya): may move the account, and reads another KAM's tickets", () => {
-    expect(rec("divya", "ARL-INV-0205", "care").t).toContain("Move the account");
+  it("Head of AM (divya): may change or remove the manager, and reads another KAM's tickets", () => {
+    expect(rec("divya", "ARL-INV-0205", "care").t).toMatch(/ChangeRemove/);
     expect(rec("divya", "ARL-INV-0205", "tkt").t).toContain("open · Imran's");
   });
   it("a record the seat cannot read falls back to the list", () => {

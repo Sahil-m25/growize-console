@@ -21,25 +21,10 @@ async function put_(req: Request, { params }: { params: Promise<{ id: string }> 
   if (raw.length > MAX_BODY) return Response.json({ error: "The request is too long.", code: "invalid-request" }, { status: 413, headers: NO_STORE });
   let body: unknown = null;
   try { body = JSON.parse(raw); } catch { body = null; }
-  const { createKamAssignment, parseKamCommand } = await import("@/server/investors/kam-assign");
-  const { createZohoUserDirectory } = await import("@/server/identity/users");
-  const { oauthParts, userSessions } = await import("@/server/oauth/runtime");
-  const { zohoSeatOf } = await import("@/server/data/live");
-  const { seatAccess } = await import("@/server/access/policy");
-  const { rt, crm, principal } = c.ctx;
-  const service = createKamAssignment({
-    crm, events: rt.events,
-    users: createZohoUserDirectory({ seats: oauthParts().seats, gate: rt.gate, log: rt.log }),
-    authority: {
-      // Re-derived from the live session: the Investors-side "assign" capability (the front end's own rule).
-      async mayAssign(cred, sid) {
-        const now = await userSessions().credential(sid);
-        if (!now.ok || now.credential.userId !== cred.userId) return null;
-        const seat = zohoSeatOf(now.session.seat);
-        return seat && seatAccess(seat, now.session.who, {}).imCan("assign") ? now.session.seat : null;
-      },
-    },
-  });
+  const { parseKamCommand } = await import("@/server/investors/kam-assign");
+  const { kamServices } = await import("@/server/investors/kam-wiring");
+  const { principal } = c.ctx;
+  const service = (await kamServices(c.ctx)).assignment;
   const cmd = parseKamCommand(id, body);
   const r = await service.assign({ credential: principal.credential, sessionId: principal.sessionId }, cmd, req.signal);
   if (r.ok) return Response.json({ kam: r.value }, { headers: NO_STORE });
