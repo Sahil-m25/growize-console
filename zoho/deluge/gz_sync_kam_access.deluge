@@ -1,0 +1,67 @@
+void automation.gz_sync_kam_access(String contactId)
+{
+// D122: Zoho shares a record with the user named in KAM_Access (user-lookup sharing, read-write).
+// Copies Contacts.KAM onto the investor's allotments and its origin lead's touches. Writes only what differs. Logs ids only.
+// Wired to workflow rule "GZ KAM Access Sync" (Contacts, on edit when KAM is modified to any value, repeat on), contactId = Contacts.Contact Id.
+contact = zoho.crm.getRecordById("Contacts",contactId.toLong());
+kamId = "";
+kam = contact.get("KAM");
+if(kam != null)
+{
+	kamId = kam.get("id").toString();
+}
+changed = 0;
+allots = zoho.crm.searchRecords("LLP_UnitAllocation_Module","(Customer:equals:" + contactId + ")",1,200);
+for each  a in allots
+{
+	cur = "";
+	ca = a.get("KAM_Access");
+	if(ca != null)
+	{
+		cur = ca.get("id").toString();
+	}
+	if(cur != kamId)
+	{
+		upd = Map();
+		if(kamId == "")
+		{
+			upd.put("KAM_Access",null);
+		}
+		else
+		{
+			upd.put("KAM_Access",kamId);
+		}
+		zoho.crm.updateRecord("LLP_UnitAllocation_Module",a.get("id").toLong(),upd);
+		changed = changed + 1;
+	}
+}
+lead = contact.get("Origin_Lead");
+if(lead != null)
+{
+	touches = zoho.crm.searchRecords("Touches","(Lead:equals:" + lead.get("id") + ")",1,200);
+	for each  t in touches
+	{
+		cur = "";
+		ct = t.get("KAM_Access");
+		if(ct != null)
+		{
+			cur = ct.get("id").toString();
+		}
+		if(cur != kamId)
+		{
+			upd = Map();
+			if(kamId == "")
+			{
+				upd.put("KAM_Access",null);
+			}
+			else
+			{
+				upd.put("KAM_Access",kamId);
+			}
+			zoho.crm.updateRecord("Touches",t.get("id").toLong(),upd);
+			changed = changed + 1;
+		}
+	}
+}
+info "contact " + contactId + " changed " + changed;
+}
