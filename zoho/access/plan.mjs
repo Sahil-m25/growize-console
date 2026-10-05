@@ -38,8 +38,11 @@ const PROFILES_PATH = "Setup > Users and Control > Security Control > Profiles";
 // Rule 7 and ACCESS-PLAN §3 walls, checked on every plan: a spec that breaks them is refused before any step exists.
 export const WALL = {
   bankReaders: ["Finance Head", "Finance Ops", "Digital Infrastructure"], // DI: D110 logged reveals (PROVISIONAL P2)
-  identityNever: ["IR", "IR Manager", "Channel Partner", "Integration", "KAM", "Viewer", "Leadership", "AM Head", "Finance Ops"],
+  identityNever: ["IR", "IR Manager", "Channel Partner", "Integration", "KAM", "Viewer", "Leadership", "AM Head", "Finance Ops", "Share Service"],
   aadhaarFullReaders: [],
+  // D121 A: the share-service user only reads and shares. No create/edit/delete, no money module, and every money field hidden.
+  viewAndShareOnly: ["Share Service"],
+  moneyModules: ["Receipts", "Investor_Payouts"],
 };
 
 export const ph = (name) => `{{profile:${name}}}`;
@@ -64,6 +67,15 @@ export function assertWall(spec) {
   }
   const g = (id) => spec.fieldSecurity.groups.find((x) => x.id === id);
   for (const id of ["bank", "identity", "aadhaar_full"]) if (!g(id) || g(id).default !== "hidden") throw new Error(`wall: group ${id} must default to hidden`);
+  for (const name of WALL.viewAndShareOnly) {
+    const p = spec.profiles.find((x) => x.name === name);
+    if (!p) continue;
+    for (const [m, perms] of Object.entries(p.modules)) {
+      if (perms !== "v") throw new Error(`wall: ${name} may only view (${m}: ${perms})`);
+      if (WALL.moneyModules.includes(m)) throw new Error(`wall: ${name} would reach money module ${m}`);
+    }
+    for (const grp of spec.fieldSecurity.groups) if ((grp.grant[name] || grp.default) !== "hidden" && grp.id !== "farm_release") throw new Error(`wall: ${name} would read ${grp.id} fields`);
+  }
 }
 
 const findPerm = (details, module, action) =>
@@ -111,14 +123,16 @@ export function planProfiles(spec, current) {
     }
     for (const [key, g] of Object.entries(spec.general)) {
       if (key === "_") continue;
-      const desired = g.on.includes(prof.name);
+      const holder = g.on.includes(prof.name);
       // Live 5 Oct probe: these are per-module permissions named Crm_Implied_<Prefix>_<Module>; match by name prefix.
       const re = g.label ? new RegExp(g.label, "i") : null;
       const hits = (details.permissions_details || []).filter((p) => g.prefix
         ? String(p.name).startsWith(`Crm_Implied_${g.prefix}_`)
         : re.test(String(p.display_label)) && !ACTIONS_SET.has(String(p.display_label)));
-      if (!hits.length) { missing.push(`${key}=${desired ? "on" : "off"}`); continue; }
-      for (const p of hits) if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired });
+      if (!hits.length) { missing.push(`${key}=${holder ? "on" : "off"}`); continue; }
+      // g.modules (D121 A Share): on only for these modules; every other module's permission of this kind stays off.
+      const inScope = (p) => !g.modules || g.modules.includes(g.prefix ? String(p.name).slice(`Crm_Implied_${g.prefix}_`.length) : modOf(p));
+      for (const p of hits) { const desired = holder && inScope(p); if (!!p.enabled !== desired) (desired ? on : off).push({ id: p.id, enabled: desired }); }
     }
     // Live 5 Oct: Zoho refuses a child permission whose parent is disabled. Final set = enabled + on - off; drop any id whose
     // parent_permissions are not all in it (iteratively); "on" toggles outside it are skipped; enabled ones that fall out get an "off".
@@ -226,6 +240,10 @@ export function planSharing(spec, currentRules, roleIds) {
   const steps = [];
   for (const r of spec.sharingRules.rules) {
     const to = roleIds[r.to];
+    if (!to && r.roleManual) {
+      steps.push({ kind: "manual", rule: ruleName(r), where: "Setup > Users and Control > Security Control > Roles", what: `create role "${r.to}" reporting to ${spec.sharingRules.fromRole}, no subordinates, then re-plan`, why: `${r.module}: sharing rule for ${r.to} needs the role (D121 A)` });
+      continue;
+    }
     if (!to) throw new Error(`role ${r.to} not found`);
     const want = { name: ruleName(r), type: "Record_Owner_Based", superiors_allowed: false,
       shared_from: { resource: { id: from }, type: "roles", subordinates: true },
@@ -236,7 +254,7 @@ export function planSharing(spec, currentRules, roleIds) {
     const rules = currentRules[r.module] || [];
     if (rules.some(same)) continue;
     const named = rules.find((x) => x.name === want.name);
-    const why = `${r.module}: ${r.to} gets ${r.permission} on every record (ACCESS-PLAN §2, D80${r.provisional ? "; PROVISIONAL P10" : ""})`;
+    const why = `${r.module}: ${r.to} gets ${r.permission} on every record (${r.source || `ACCESS-PLAN §2, D80${r.provisional ? "; PROVISIONAL P10" : ""}`})`;
     steps.push(named
       ? { kind: "api", method: "PUT", path: `${V}/settings/data_sharing/rules?module=${r.module}`, body: { sharing_rules: [Object.assign({ id: named.id }, want)] }, why: `update ${why}` }
       : { kind: "api", method: "POST", path: `${V}/settings/data_sharing/rules?module=${r.module}`, body: { sharing_rules: [want] }, why });
@@ -399,7 +417,7 @@ export async function verifyAll(call, spec) {
       }
     }
   }
-  const remaining = planSharing(spec, s.rules, s.roleIds).map((x) => x.body.sharing_rules[0].name);
+  const remaining = planSharing(spec, s.rules, s.roleIds).map((x) => x.rule || x.body.sharing_rules[0].name);
   for (const r of spec.sharingRules.rules) row("sharing", ruleName(r), r.permission, remaining.includes(ruleName(r)) ? "missing" : r.permission);
   if (s.dataSharing) for (const [type, ms] of Object.entries(spec.defaultSharing)) {
     if (type === "_") continue;

@@ -8,11 +8,11 @@ import { planAll, applySteps, verifyAll, planFieldSecurity, planProfiles, planSh
 const spec = JSON.parse(readFileSync(new URL("./spec.json", import.meta.url), "utf8"));
 const SANDBOX = "60090668120", LIVE = "60061770791";
 const ROLES = ["CEO", "Manager", "BU Owner", "Digital Infrastructure", "IR Manager", "Investor Relations", "Channel Partner", "Head of Finance",
-  "Finance Operations", "Compliance and Audit", "Head of Account Management", "Key Account Manager", "Exec"];
+  "Finance Operations", "Compliance and Audit", "Head of Account Management", "Key Account Manager", "Exec", "Share Service"]; // Share Service: D121 A, created by hand (manual step)
 const MODULES = spec.modules.concat(["Accounts", "Deals"]);
 const GENERAL = ["Export", "Mass_Update", "Mass_Delete", "Import", "Mass_Transfer", "Change_Owner", "Share", "Merge", "Delete_Mail", "View_All", "Edit_All"];
 
-function fakeZoho(zgid = SANDBOX) {
+function fakeZoho(zgid = SANDBOX, roleNames = ROLES) {
   let seq = 1000;
   const nid = () => String(++seq);
   const perms = []; // org-wide permission ids (UNVERIFIED assumption mirrored here)
@@ -34,7 +34,7 @@ function fakeZoho(zgid = SANDBOX) {
     fields[m] = (fields[m] || []).concat(list.concat(["Name", "Owner"]).filter((a) => !(fields[m] || []).some((f) => f.api_name === a))
       .map((a) => ({ id: nid(), api_name: a, profiles: profiles.map((p) => ({ id: p.id, name: p.display_label, permission_type: "read_write" })) })));
   }
-  const roles = ROLES.map((r) => ({ id: `R-${r}`, display_label: r, name: r }));
+  const roles = roleNames.map((r) => ({ id: `R-${r}`, display_label: r, name: r }));
   const rules = {};
   const dataSharing = ["Leads", "Contacts", "LLP_UnitAllocation_Module", "Receipts", "Touches", "Cases"].map((m) => ({ module: { api_name: m }, share_type: "private" }))
     .concat(["LLP_Creation_Module", "Investor_Updates", "Mail_Templates"].map((m) => ({ module: { api_name: m }, share_type: "public_read_only" })));
@@ -118,7 +118,7 @@ const fls = (z, module, api_, name) => z.fields[module].find((f) => f.api_name =
 test("plan, apply, re-plan: second plan has no api step; verify passes everywhere", async () => {
   const z = fakeZoho();
   const steps = await planAll(z.call, spec);
-  assert.equal(api(steps).filter((s) => s.creates).length, 12);
+  assert.equal(api(steps).filter((s) => s.creates).length, 13);
   const r = await applySteps(z.call, steps, spec);
   assert.equal(r.ok, true, JSON.stringify(r.log.at(-1)));
   const again = await planAll(z.call, spec);
@@ -153,10 +153,10 @@ test("rule 7 wall: bank only Finance (+DI reveal, D110); PAN never IR/Integratio
     }
     assert.equal(fls(z, "Contacts", "Aadhaar_Number", p.name), "hidden", p.name);
   }
-  for (const n of ["IR", "IR Manager", "Channel Partner", "Integration", "KAM", "Viewer", "Finance Ops"]) {
+  for (const n of ["IR", "IR Manager", "Channel Partner", "Integration", "KAM", "Viewer", "Finance Ops", "Share Service"]) {
     for (const [m, f] of [["Contacts", "PAN_Number"], ["Leads", "PAN"], ["Contacts", "PAN_Proof"], ["Contacts", "Aadhaar_Last4"]]) assert.equal(fls(z, m, f, n), "hidden", `${n} ${m}.${f}`);
   }
-  for (const n of ["IR", "KAM", "Viewer", "Leadership"]) {
+  for (const n of ["IR", "KAM", "Viewer", "Leadership", "Share Service"]) {
     assert.equal(fls(z, "Receipts", "Amount", n), "hidden");
     assert.equal(fls(z, "LLP_UnitAllocation_Module", "Total_Amount_Received", n), "hidden");
     assert.equal(fls(z, "Investor_Payouts", "Payout_UTR", n), "hidden");
@@ -171,6 +171,41 @@ test("rule 7 wall: bank only Finance (+DI reveal, D110); PAN never IR/Integratio
   const exp = (name) => z.perms.filter((x) => x.name.startsWith("Crm_Implied_Export_")).some((x) => z.enabled[idOf(z, name)].has(x.id));
   for (const p of spec.profiles) assert.equal(exp(p.name), false, `export ${p.name}`);
   assert.equal(exp("Administrator"), true, "Administrator untouched");
+});
+
+test("D121 A share service: view-only on 4 modules, Share only on Contacts/allotments/Touches; IR Manager and DI share by hand there too; nobody else shares", async () => {
+  const z = fakeZoho();
+  const r = await applySteps(z.call, await planAll(z.call, spec), spec);
+  assert.equal(r.ok, true, JSON.stringify(r.log.at(-1)));
+  const has = (name, mod, a) => z.enabled[idOf(z, name)].has(z.perms.find((x) => x.name === `Crm_Implied_${a}_${mod}`).id);
+  const SHARE = ["Contacts", "LLP_UnitAllocation_Module", "Touches"];
+  for (const m of spec.modules) {
+    assert.equal(has("Share Service", m, "View"), ["Leads", ...SHARE].includes(m), `view ${m}`);
+    for (const a of ["Create", "Edit", "Delete", "Export", "Mass_Update", "Change_Owner"]) assert.equal(has("Share Service", m, a), false, `${a} ${m}`);
+  }
+  for (const p of spec.profiles) for (const m of spec.modules) {
+    const want = ["Share Service", "IR Manager", "Digital Infrastructure"].includes(p.name) && SHARE.includes(m);
+    assert.equal(has(p.name, m, "Share"), want, `share ${p.name} ${m}`);
+  }
+  // identity, bank, Aadhaar and every money group hidden from the share service
+  for (const g of spec.fieldSecurity.groups.filter((x) => x.id !== "farm_release")) for (const [m, list] of Object.entries(g.fields)) for (const f of list) assert.equal(fls(z, m, f, "Share Service"), "hidden", `${m}.${f}`);
+  // its role reads every Contact / allotment / Touch through owner-based rules (the sharer must reach the record)
+  for (const m of SHARE) assert.ok(z.rules[m].some((x) => x.shared_to.resource.id === "R-Share Service" && x.permission_type === "read"), m);
+  assert.ok(!z.rules.Receipts.some((x) => x.shared_to.resource.id === "R-Share Service"), "no Receipts rule");
+});
+
+test("D121 A: a missing Share Service role is a manual step, not a failure; the wall refuses a share service that edits or reads money", async () => {
+  const z = fakeZoho(SANDBOX, ROLES.filter((r) => r !== "Share Service"));
+  const steps = await planAll(z.call, spec);
+  const man = steps.filter((s) => s.kind === "manual" && /create role "Share Service"/.test(s.what));
+  assert.equal(man.length, 3);
+  assert.equal(api(steps).filter((s) => s.path.includes("data_sharing/rules") && JSON.stringify(s.body).includes("R-Share Service")).length, 0);
+  const bad = (mut) => { const s = structuredClone(spec); mut(s); return s; };
+  const svc = (s) => s.profiles.find((p) => p.name === "Share Service");
+  assert.throws(() => assertWall(bad((s) => { svc(s).modules.Contacts = "ve"; })), /Share Service may only view/);
+  assert.throws(() => assertWall(bad((s) => { svc(s).modules.Receipts = "v"; })), /money module Receipts/);
+  assert.throws(() => assertWall(bad((s) => { s.fieldSecurity.groups.find((g) => g.id === "allotment_money").grant["Share Service"] = "read_only"; })), /allotment_money/);
+  assert.throws(() => assertWall(bad((s) => { s.fieldSecurity.groups.find((g) => g.id === "identity").grant["Share Service"] = "read_only"; })), /identity/);
 });
 
 test("a spec that opens the wall is refused before any step", () => {
