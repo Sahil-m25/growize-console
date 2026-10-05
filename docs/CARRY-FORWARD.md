@@ -111,3 +111,9 @@ stage sheets, both mapping workbooks. `.gitignore` was corrected on 22 Sep so th
 `*.tsbuildinfo` stop being offered, which took the git-visible tree from 882 MiB to about 15 MB.
 **No file has been deleted.** Committing remains the one action that would make every later mistake
 recoverable.
+
+- **D121 (5 Oct 2026) KAM share service: built, not live.**
+  - Needs the "Share Service" role and profile applied in Zoho (zoho/access/spec.json) and a share-service user (1 seat in live; a reassigned test user in the sandbox).
+  - Set ZOHO_KAM_SHARE_REFRESH_TOKEN and ZOHO_SHARE_SERVICE_USER_ID, and schedule /api/jobs/kam-share-reconcile.
+  - Open: P13, P14, the Originating_IR share restore owner, and seating a person with no Investors seat.
+  - Docs still describing the old share/unshare shape: docs/ops/runbook.md, ops/runbooks/api-budget.md, ops/runbooks/heartbeat-silent.md, docs/launch/go-live-checklist.md.
