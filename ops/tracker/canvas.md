@@ -1,5 +1,5 @@
 ::: {.callout}
-**Updated 05 Oct 2026 00:27 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
+**Updated 05 Oct 2026 21:54 IST** from the build itself (autopilot progress). Statuses are not edited here; comment on a row instead.
 :::
 
 # :compass: Where we are
@@ -10,29 +10,33 @@
 
 **Also running in parallel:** 2. Plug into Zoho — the backend worktree (branch autopilot/backend) builds the Zoho layer; screens are wired to it after phase 1.
 
+::: {.callout}
+:warning: The build loop has not run for 24 hours. Nothing moves until /build runs on the laptop again.
+:::
+
 |Phase|Done (proven)|Waiting on people|Review|Left for the loop|Loop hours left|Forecast finish|Pace|
 |---|---|---|---|---|---|---|---|
 |**1. Front end on demo data**|92 of 92 (100%)|0 (0%)|0|0|0|done|0 min/unit measured|
 |**2. Plug into Zoho**|7 of 119 (6%)|112 (94%)|0|0|0|done|10.4 min/unit measured|
 |**2b. Wire screens to the API**|66 of 66 (100%)|0 (0%)|0|0|0|done|assumed until 5 rounds|
 |**2c. Test contracts and security hardening** :twisted_rightwards_arrows: parallel worktree|7 of 7 (100%)|0 (0%)|0|0|0|done|assumed until 5 rounds|
-|**3. Test and harden** :arrow_left:|47 of 145 (32%)|84 (58%)|0|14|3.5|![](slack_date:2026-10-05)|assumed until 5 rounds|
+|**3. Test and harden** :arrow_left:|47 of 145 (32%)|84 (58%)|0|14|3.5|![](slack_date:2026-10-06)|assumed until 5 rounds|
 
 |Forecast|Date|
 |---|---|
-|All three phases through the loop|![](slack_date:2026-10-05)|
-|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:2026-10-05) → ![](slack_date:2026-10-11)|
+|All three phases through the loop|![](slack_date:2026-10-06)|
+|People's testing and UAT (a dated stage, not a tag: starts only when the sandbox is live, the wiring phase is through and the smoke suite is green)|![](slack_date:2026-10-06) → ![](slack_date:2026-10-12)|
 |Status|:red_circle: Behind the target|
 
 ::: {.callout}
-**What each phase needs from people.** Phase 1 needs nothing. Phase 2 cannot be proven without the Zoho **sandbox**, an **OAuth client** for the console and a licensed **test user** (Sahil, in BLOCKED.md); its code is written and unit-tested, so it sits in *Waiting on people*, not *Done*. Phase 2b wires each screen to its API route on demo data and needs nothing. Phase 3 needs the sandbox for every live proof, then the tester's reviews and UAT by the business users (M18-S08).
+**What each phase needs from people.** Phase 1 needs nothing. Phase 2's code is written and unit-tested; the Zoho **sandbox** and **test users** now exist (5 Oct), so its live proofs wait only on the console being deployed against the sandbox (an **OAuth client** and the Catalyst deploy). Until proven live it sits in *Waiting on people*, not *Done*. Phase 2b wires each screen to its API route on demo data and needs nothing. Phase 3 needs the sandbox for every live proof, then the tester's reviews and UAT by the business users (M18-S08).
 :::
 
 Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are through. Forecast = loop hours left ÷ 14 loop hours a day. Minutes per unit are assumptions until each phase has 5 measured rounds; then the measured pace takes over. Stories count once per phase they have work in.
 
 # :newspaper: Recent developments
 
-*Updated 4 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D119`.*
+*Updated 5 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D123`.*
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 
@@ -106,37 +110,46 @@ Phases 1 and 2 run at the same time in two windows; phase 3 starts when both are
 - Match opens step-up for a refund and retries; a continuing sheet load shows honest progress; every remaining double-press guard is shared across instances.
 - Leak checker knows the console's masks; Head of Account Management in the call-budget tests.
 
-**Checks:** tsc clean · 767 + 3,221 tests pass · build ok · smoke 7/7 · full browser suite 378/379, 0 fail.
+**Sandbox and access (D120–D123, 5 Oct):**
+- **Zoho sandbox "Growize Staging" is live** with the access wall applied (profiles, field security, sharing), 5 test users (IR A, IR B, KAM, Finance Ops, Compliance) and 132 seed records. The 7 Supabase/ARL sync workflows are off in the sandbox only.
+- **Wall test with real logins: pass** for IR A/B, KAM and Finance Ops; Compliance reads pass. KYC writing is **parked** (owner).
+- **KAM access is Zoho-native (D122):** naming a KAM on an investor shares it; a KAM Access field on allotments and touches is kept in step by Zoho workflows (KAM change, new allotment, new touch). The console's share service and its seat are **retired**.
+- **Nightly safety net inside Zoho:** "GZ KAM Access Check Nightly" (02:00 IST) emails any record whose KAM/IR access is wrong. Last run: 80 records, 0 mismatches.
+- **Cover windows, absence and IR hand-off on Zoho field sharing (D123):** no share-API calls; a secondary owner gets access only through Cover By (absence writes it); IR sees their own investors' allotments through IR Access, with price and amounts hidden and no receipts. **IR A login test: pass.**
+- User-field sharing tightened: audit stamps no longer share; KAM and Originating IR editable only by Admin, AM Head and Digital Infrastructure.
+- Decisions made with Jev (both option orders) plus an independent reviewer.
+
+**Catalyst:** project **GrowizeConsole** created (India DC, Development environment, Asia/Kolkata); no app deployed yet. Deploy kit ready (`catalyst/README.md`, Docker image measured).
+
+**Checks:** tsc clean · 775 + 3,250 tests pass · build ok · access-spec tests 15/15 · last full browser suite 378/379, 0 fail (D119).
 
 **Waiting on the owner:**
-- Fill in the rulings sheet: 147 calls plus 19 inputs (KPIs, support response times, on-call).
-- Decide whether the Zoho rule Matched_By ≠ Created_By should apply to refunds only.
-- Set `CONSOLE_SUPER_ADMIN_IDS`.
-- The Zoho sandbox, test user and tester seat.
-- Catalyst project access.
-- Rule: is the receipt UTR masked everywhere; do payout "mark paid" and reversals need step-up / a second hand; PAN mask form (first 3 + last 1 vs last four); hide work buttons for seats without lead-work rights (TC-E07-022).
+- **Renew Zoho CRM Enterprise before 13 Oct** (A-20): field security, sandbox and sharing depend on it.
+- For the Catalyst deploy: a Zoho **OAuth client** (Server-based, sandbox) with the Catalyst URL as redirect; the Catalyst CLI login; set `CONSOLE_SUPER_ADMIN_IDS` and the secrets.
+- Fill in the rulings sheet (147 calls + 19 inputs) and the open rulings: UTR masking, step-up / second hand on payout "mark paid" and reversals, PAN mask form, hiding work buttons (TC-E07-022), Matched_By ≠ Created_By scope.
+- Before live: approve the sandbox → live change set (fields, access spec, workflows, D122/D123), buy seats role by role (D54), tester seat and UAT users.
 
-**Next local work:** essentially none left without accounts or decisions — a few small notes (error-log user id from the sealed session, lapse receipts arithmetic, demo selectors) are in BLOCKED.md.
+**Next:** deploy the console to Catalyst against the sandbox → run phase 2's 112 live proofs and phase 3's staging cases there → tester review and UAT → move the change set to live.
 
 **Latest decisions**
 
-- **D114** (4 Oct 2026): Round 3 on the 4 Oct rulings: receipts matched by Finance built, IR Investors page, fact changes applied (UI suite 344/349, 0 FAIL), smoke suite + flake quarantine, launch/ops docs, 3 bugs fixed
-- **D115** (4 Oct 2026): Owner rulings 4 Oct (second set): app access stays Hold until released (a match never opens it); event-sheet load is the super administrator's right (grantable); rights grid = 8 Investors seats as columns labelled with their Zoho role; provisional calls bulk-reviewed on one sheet; decisions index gap filled from the project docs
-- **D116** (4 Oct 2026): Round 4: tracker reconciled with the code; code gaps closed (/api/system, mail attachments, Consent_How picklist, Consent_Visit dropped, log success kind, reveal reason); D115 built; host-agnostic prep for Catalyst (shared-state interface + NoSQL adapter, log sink + Stratus adapter + Plane C hash chain, standalone Docker image, 30 s audit)
-- **D117** (4 Oct 2026): Round 5: unwired screens finished (Finance list, claims on Payments/Today, Finance paperwork queue, agreed draft offer), audit-trail actions (reveal reason, app-access release, test link), farm push + allotment guard, live people list, System facts; 47 local test subtasks checked, read-budget tests, 22 browser cases; phase 2b 66/66
 - **D118** (4 Oct 2026): Round 6: sessions and per-instance state on the shared store, request deadline and resumable long routes, one signed money ledger (refunds/reversals), add-paid hold removed, refund step-up; API seat matrix (1,070 cases, no leak), outbound isolation, missing TC tests, fixtures + cases, UAT usability pack, UI test contract, mapping rows, roster reader
 - **D119** (5 Oct 2026): Round 7: roster UI live with cover ending on return (D44), one ledger everywhere (Finance list no longer counts Pending), Balance/Forfeit in replay, refund step-up panel, honest sheet-load progress, all idempotency guards shared; full UI regression 378/379 PASS + per-seat 143/143, 0 FAIL, calibration 18/18
+- **D120** (5 Oct 2026): Zoho sandbox "Growize Staging" set up for testing: access wall (profiles, field security, sharing) applied, 5 test users, 132 seed records, 7 Supabase/ARL sync workflows off in the sandbox only
+- **D121** (5 Oct 2026): KAM record shares made automatically by a background share service (+ Share for IR Manager and Digital Infrastructure); simple KAM assign/change/remove/move-book/seat flows; v8 share/unshare fixed (per-user revoke)
+- **D122** (5 Oct 2026): KAM access is Zoho-native: user-lookup field sharing on Contacts.KAM + KAM_Access on allotments/touches kept by workflows, nightly read-only Zoho check; tighter user-field sharing; KAM/Originating_IR editable by Admin, AM Head, Digital Infra only; KYC parked; D121 share service retired
+- **D123** (5 Oct 2026): Cover windows, owner absence and IR hand-off on Zoho field sharing: no share-API calls; Secondary_Owner sharing off (absence writes Cover_By); IR sees own investors' allotments via IR_Access (multi-user, link table), price/amounts hidden, no receipts
 
 ## Stages
 
 |Stage|What it delivers|Stories|Done|Forecast done|
 |---|---|---|---|---|
-|S0|Zoho org build-out and access wall|18|8|![](slack_date:2026-10-05)|
-|S1|Foundations, access, test suite|23|14|![](slack_date:2026-10-05)|
+|S0|Zoho org build-out and access wall|18|8|![](slack_date:2026-10-06)|
+|S1|Foundations, access, test suite|23|14|![](slack_date:2026-10-06)|
 |S2|Lead side daily work and Investors pages|30|22|—|
 |S3|Journey, gates, money, paper, Zoho Sign, farms|43|21|—|
 |S4|Updates, tickets, app push, activity, numbers, teams|24|19|—|
-|S5|Hardening, UAT, migration, release|17|6|![](slack_date:2026-10-05)|
+|S5|Hardening, UAT, migration, release|17|6|![](slack_date:2026-10-06)|
 
 # :calendar: Month by month
 
