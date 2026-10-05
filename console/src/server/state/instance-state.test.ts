@@ -235,10 +235,6 @@ describe("the job door (POST /api/jobs/*)", () => {
     const busy = await jobResponse(req(SECRET), "sign-recheck", async () => ({ ran: false, reason: "already-running" }), jobEnv);
     expect([busy.status, (await busy.json()).code]).toEqual([200, "already-running"]);
     expect((await jobResponse(req(SECRET), "sign-recheck", async () => ({ ran: false, reason: "state-unavailable" }), jobEnv)).status).toBe(503);
-    // D121: a run may report counts and record ids; claimJob passes them through and the answer carries them
-    const summary = { added: 1, addedIds: ["554023000000600002"] };
-    const withSummary = await jobResponse(req(SECRET), "kam-share-reconcile", () => claimJob(createMemoryState(), "kam-share-reconcile", async () => summary), jobEnv);
-    expect(await withSummary.json()).toEqual({ job: "kam-share-reconcile", ran: true, summary });
   });
 
   it("the Sign re-check timer is kept only on a single long-lived process (SIGN_CHECK_TIMER)", async () => {

@@ -10,10 +10,7 @@
  * back as `continueFrom` (the first Contact id not tried; the book is read in id order) and the page sends the same ask
  * again with it. A moved Contact no longer carries the old KAM, so a re-read excludes it; one that could not be moved
  * stays in the book and is not retried inside the request (it is reported, with a count per reason).
- * D121 A: after each Contact moved, the same kam-share run PUT /api/investors/[id]/kam does (`share`, the kam-share queue):
- * the share service shares the Contact, its allotments and its origin lead's Touches with the new KAM and revokes the old
- * KAM's, inside the request deadline (`shouldStop`); what is left stays "pending" for the kam-share-reconcile job.
- * `shares` reports the Contact ids per state. The Teams "move their accounts, then change the seat" flow posts here too.
+ * D122: no share step here; Zoho-native sharing (workflow on Contacts.KAM) grants the new KAM access. The Teams "move their accounts, then change the seat" flow posts here too.
  * Ids and codes only — never a name (CLAUDE.md rule 7).
  */
 
@@ -22,8 +19,6 @@ import { DEFAULT_STOP_MARGIN_MS, pastStopMargin, runBounded } from "../../lib/zo
 import type { InvestorEvents } from "../data/events";
 import type { ZohoUserDirectory } from "../identity/users";
 import { KAM_ASSIGNEE_SEATS, type KamAssignment, type KamAssignPrincipal } from "./kam-assign";
-import type { KamShareTask } from "./kam-share";
-import type { KamShareState } from "./kam-share-queue";
 
 export const BOOK_PAGE = 200;
 export const BOOK_MAX = 2_000;
@@ -48,8 +43,6 @@ export interface BookMoved {
   readonly reasons: Readonly<Record<string, number>>;
   /** the first Contact not tried inside the request deadline; ask again with it. null = done. */
   readonly continueFrom: string | null;
-  /** D121 A: where each moved Contact's KAM share stands (ids). pending = left for the reconcile job; failed includes not queued. */
-  readonly shares: { readonly shared: readonly string[]; readonly pending: readonly string[]; readonly failed: readonly string[] };
 }
 
 export type MoveBookResult =
@@ -63,8 +56,6 @@ export interface MoveBookDeps {
   readonly users: Pick<ZohoUserDirectory, "lookup">;
   readonly events: Pick<InvestorEvents, "refusal">;
   readonly authority: { mayAssign(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<string | null> };
-  /** D121 A: the kam-share queue's run (kamShareQueue().run). Absent = no share tried (every moved id reported pending). */
-  readonly share?: (t: KamShareTask, o: { shouldStop?: () => boolean; signal?: AbortSignal }) => Promise<KamShareState>;
   readonly concurrency?: number;
   readonly stopMarginMs?: number;
 }
@@ -122,19 +113,10 @@ export function createKamMoveBook(deps: MoveBookDeps) {
 
       const reasons: Record<string, number> = {};
       const stop = () => pastStopMargin(deps.stopMarginMs ?? DEFAULT_STOP_MARGIN_MS);
-      const shares = { shared: [] as string[], pending: [] as string[], failed: [] as string[] };
       const out = await runBounded(rows, deps.concurrency ?? 4, async (row): Promise<string | null> => {
         if (!row.modifiedTime) return "not-visible";
         const r = await deps.assignment.assign(p, { contactId: row.id, kamUserId: cmd.toKamUserId, expectedModifiedTime: row.modifiedTime }, signal);
         if (!r.ok) return r.kind === "refused" ? r.reason : r.kind === "conflict" ? "conflict" : "source-error";
-        if (r.value.changed) {
-          // the same run as PUT /api/investors/[id]/kam; never throws past here (a move that landed stays moved)
-          let st: KamShareState = "pending";
-          if (deps.share) {
-            try { st = await deps.share({ contactId: r.value.contactId, toKam: r.value.toKam, fromKam: r.value.fromKam }, { shouldStop: stop, signal }); } catch { st = "pending"; }
-          }
-          (st === "shared" ? shares.shared : st === "pending" ? shares.pending : shares.failed).push(r.value.contactId);
-        }
         return null;
       }, stop);
       const moved: string[] = [], notMoved: string[] = [];
@@ -142,7 +124,7 @@ export function createKamMoveBook(deps: MoveBookDeps) {
         if (x.value === null) moved.push(rows[x.index]!.id);
         else { notMoved.push(rows[x.index]!.id); reasons[x.value] = (reasons[x.value] ?? 0) + 1; }
       }
-      return { ok: true, value: Object.freeze({ moved, notMoved, reasons, continueFrom: out.notStarted.length ? rows[out.notStarted[0]!]!.id : null, shares }) };
+      return { ok: true, value: Object.freeze({ moved, notMoved, reasons, continueFrom: out.notStarted.length ? rows[out.notStarted[0]!]!.id : null }) };
     },
   });
 }

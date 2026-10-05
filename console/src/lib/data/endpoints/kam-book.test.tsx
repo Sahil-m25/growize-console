@@ -1,39 +1,13 @@
-/* R5 — the share status and "move a whole book" endpoints: path/body/pick (live) and the fixture half (demo book). */
+/* R5 — the "move a whole book" endpoint: path/body/pick (live) and the fixture half (demo book). */
 import { describe, expect, it, vi } from "vitest";
 import { imDemoData } from "@fixtures/im/demo";
 import { bookOf, initialImUi, type ImAction, type ImState } from "@/lib/im";
 import { runWrite } from "../api";
-import { kamMoveBook, kamShare, kamShareRetry } from "./investors";
+import { kamMoveBook } from "./investors";
 
 const demo = (): ImState => ({ data: imDemoData(), ui: initialImUi() });
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const fetchOf = (status: number, body: unknown) => vi.fn(async (_u: string, _i?: RequestInit) => json(status, body));
-
-describe("the share status line", () => {
-  it("path: nothing to read without a named manager; the route otherwise", () => {
-    expect(kamShare.path(null)).toBeNull();
-    expect(kamShare.path("ARL-INV-0205")).toBe("/api/investors/ARL-INV-0205/kam/share");
-  });
-  it("pick: the four states and the last try; anything else reads as none", () => {
-    expect(kamShare.pick({ state: "failed", lastTriedAt: "2026-10-05T10:00:00+05:30" })).toEqual({ state: "failed", lastTriedAt: "2026-10-05T10:00:00+05:30" });
-    expect(kamShare.pick({ state: "weird" })).toEqual({ state: "none", lastTriedAt: null });
-    expect(kamShare.pick(null)).toEqual({ state: "none", lastTriedAt: null });
-  });
-  it("fixture: a named manager is shared, the pool is none, an unseen id is 404", () => {
-    const s = demo();
-    expect(kamShare.fixture({ s, me: "divya" }, "ARL-INV-0205")).toEqual({ ok: true, data: { state: "shared", lastTriedAt: null } });
-    expect(kamShare.fixture({ s, me: "divya" }, "ARL-INV-0211")).toMatchObject({ ok: true, data: { state: "none" } });
-    expect(kamShare.fixture({ s, me: "neha" }, "ARL-INV-0208")).toMatchObject({ ok: false, status: 404 });
-  });
-  it("retry: POST .../kam/share/retry; a KAM is refused in the fixture", async () => {
-    const f = fetchOf(200, { state: "pending", lastTriedAt: null });
-    const r = await runWrite("live", kamShareRetry, { s: demo(), me: "divya" }, () => {}, { id: "ARL-INV-0205" }, { fetch: f });
-    expect(f.mock.calls[0][0]).toBe("/api/investors/ARL-INV-0205/kam/share/retry");
-    expect(f.mock.calls[0][1]!.method).toBe("POST");
-    expect(r).toEqual({ ok: true, data: { state: "pending", lastTriedAt: null } });
-    expect(await runWrite("fixture", kamShareRetry, { s: demo(), me: "imran" }, () => {}, { id: "ARL-INV-0205" })).toMatchObject({ ok: false, status: 403 });
-  });
-});
 
 describe("move a whole book", () => {
   it("live: POST /api/kams/[from]/move-book with toKamUserId, and continueFrom when resuming", async () => {
