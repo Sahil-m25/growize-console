@@ -19,10 +19,12 @@ for each  a in allots
 	// IR_Access is a multi-user lookup stored as rows in its link table (SANDBOX: LLP_UnitA_X_Users, allotment lookup userlookup221_4).
 	// Deluge cannot update multi-user values or delete link rows, so this ADDS the current IR when missing and REPORTS any other
 	// user as stale (an admin removes it in the record; Originating_IR is admin-only and rarely changes). The nightly check reports it too.
+	// List/search reads return IR_Access empty (verified 5 Oct), so read the link rows themselves.
 	found = false;
-	for each  e in ifnull(a.get("IR_Access"),List())
+	links = zoho.crm.searchRecords("LLP_UnitA_X_Users","(userlookup221_4:equals:" + a.get("id") + ")",1,200);
+	for each  e in links
 	{
-		if(e.get("IR_Access").get("id").toString() == irId)
+		if(e.get("IR_Access") != null && e.get("IR_Access").get("id").toString() == irId)
 		{
 			found = true;
 		}

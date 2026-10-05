@@ -1,0 +1,54 @@
+void standalone.gz_backfill_ir_access()
+{
+// D123 one-off backfill: for every investor with an Originating_IR, make sure each of their allotments has that IR in
+// IR_Access (adds the link row when missing; never removes). Safe to run twice. Logs counts only.
+// SANDBOX names: link module LLP_UnitA_X_Users, allotment lookup userlookup221_4 (live names differ; see gz_kam_on_allotment).
+pages = {1,2,3,4,5,6,7,8,9,10};
+added = 0;
+already = 0;
+done = false;
+for each  p in pages
+{
+	if(!done)
+	{
+		contacts = zoho.crm.getRecords("Contacts",p,200);
+		for each  c in contacts
+		{
+			if(c.get("Originating_IR") != null)
+			{
+				irId = c.get("Originating_IR").get("id").toString();
+				allots = zoho.crm.searchRecords("LLP_UnitAllocation_Module","(Customer:equals:" + c.get("id") + ")",1,200);
+				for each  a in allots
+				{
+					found = false;
+					links = zoho.crm.searchRecords("LLP_UnitA_X_Users","(userlookup221_4:equals:" + a.get("id") + ")",1,200);
+					for each  e in links
+					{
+						if(e.get("IR_Access") != null && e.get("IR_Access").get("id").toString() == irId)
+						{
+							found = true;
+						}
+					}
+					if(found)
+					{
+						already = already + 1;
+					}
+					else
+					{
+						lk = Map();
+						lk.put("userlookup221_4",a.get("id"));
+						lk.put("IR_Access",irId);
+						zoho.crm.createRecord("LLP_UnitA_X_Users",lk);
+						added = added + 1;
+					}
+				}
+			}
+		}
+		if(contacts.size() < 200)
+		{
+			done = true;
+		}
+	}
+}
+info "IR access backfill: added " + added + ", already present " + already;
+}

@@ -40,6 +40,37 @@ for each  p in pages
 		}
 	}
 }
+// IR_Access is a multi-user field: list reads return it empty, so read its link table (SANDBOX: LLP_UnitA_X_Users).
+irOfAllot = Map();
+done = false;
+for each  p in pages
+{
+	if(!done)
+	{
+		recs = zoho.crm.getRecords("LLP_UnitA_X_Users",p,200);
+		for each  l in recs
+		{
+			if(l.get("userlookup221_4") != null && l.get("IR_Access") != null)
+			{
+				k = l.get("userlookup221_4").get("id").toString();
+				u = l.get("IR_Access").get("id").toString();
+				prev = irOfAllot.get(k);
+				if(prev == null)
+				{
+					irOfAllot.put(k,u);
+				}
+				else
+				{
+					irOfAllot.put(k,prev + "," + u);
+				}
+			}
+		}
+		if(recs.size() < 200)
+		{
+			done = true;
+		}
+	}
+}
 bad = List();
 checked = 0;
 for each  mod in {"LLP_UnitAllocation_Module","Touches"}
@@ -81,11 +112,7 @@ for each  mod in {"LLP_UnitAllocation_Module","Touches"}
 					{
 						wantIr = ifnull(irOfContact.get(r.get("Customer").get("id").toString()),"");
 					}
-					haveIr = "";
-					for each  e in ifnull(r.get("IR_Access"),List())
-					{
-						haveIr = haveIr + if(haveIr == "","",",") + e.get("IR_Access").get("id").toString();
-					}
+					haveIr = ifnull(irOfAllot.get(r.get("id").toString()),"");
 					if(wantIr != haveIr)
 					{
 						bad.add(mod + " " + r.get("id") + " IR expected " + if(wantIr == "","none",wantIr) + " has " + if(haveIr == "","none",haveIr));
