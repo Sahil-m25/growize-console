@@ -49,3 +49,14 @@ Secondary_Owner sharing is off, so a secondary reaches a lead only through Cover
 - **D74** (record share at hand-off) is superseded for allotments by IR_Access and for the Contact by Originating_IR sharing; receipts are no longer shared. The guard layer of D74 stands.
 - **D44** (dormant secondary): now enforced by Zoho as well as the console, through Cover_By written at absence.
 - Stale text to reconcile later: docs/ops/runbook.md, ops/runbooks/heartbeat-silent.md and api-budget.md ("cover-window unshare"), catalyst/README.md (env var name), ops/tracker/canvas.md M03-S09-NOTE-2 and M08-S05-NOTE-2.
+
+## Applied in the sandbox (5 Oct, evening)
+- Owner: Compliance Contacts rule back to Read Only; guard validation rule off; IR_Access created; IR profile View on allotments.
+- **IR_Access is a multi-user field.** Zoho allows at most 5 single-user lookups per module and allotments already had 5. Facts verified live:
+  - Deluge `updateRecord` silently ignores multi-user values; writing goes through the field's link table (sandbox: `LLP_UnitA_X_Users`, allotment lookup `userlookup221_4`; live names differ — read `IR_Access.multiuserlookup.linking_details`).
+  - List and search reads return IR_Access empty; only a single-record read shows it. The sync, backfill and nightly check read the link table instead.
+  - Deluge cannot delete link rows: a changed Originating_IR leaves the old IR until an admin removes it; the sync and nightly check report it.
+- Claude tightened IR_Access after creation: record access Read Only (was Read Write); field read-only for every profile except Administrator (6 profiles were read-write). Unit_Price and Annual_Rental_Yield hidden from IR.
+- Owner pasted gz_kam_on_allotment, gz_sync_ir_access and ran gz_backfill_ir_access (added 16, already 3). Workflow "GZ IR Access Sync" (Contacts, Originating_IR changed) created by Claude.
+- Result: 19/19 allotments carry the right IR and KAM, no duplicate links (API check); nightly check: 80 records, 0 mismatches.
+- The safety check blocked Claude from creating the field, granting IR View, and deploying code that grants access; the owner did those.
