@@ -1,0 +1,35 @@
+map validation_rule.gz_compliance_contact_guard(string crmAPIRequest)
+{
+// D122 test 1 (sandbox prototype): the Compliance seat may record KYC but must not change investor contact details.
+// PROTOTYPE: identifies Compliance by login email (sandbox test user). Production would check the user's role.
+// Attached as a function validation rule on Contacts.Email (Standard layout, Save Only).
+// RESULT 5 Oct: blocks edits made in Zoho's own screens; does NOT block API writes (validation rules didn't run on PUT /crm/v8/Contacts).
+entityMap = crmAPIRequest.toMap().get("record");
+response = Map();
+response.put("status","success");
+compliance = {"sahilvm3@gmail.com"};
+if(compliance.contains(zoho.loginuserid))
+{
+	recId = entityMap.get("id");
+	if(recId != null)
+	{
+		old = zoho.crm.getRecordById("Contacts",recId.toLong());
+		guarded = {"First_Name","Last_Name","Email","Phone","Mobile","Secondary_Email","Mailing_Street","Mailing_City","Mailing_State","Mailing_Zip","Mailing_Country"};
+		for each  f in guarded
+		{
+			if(entityMap.containKey(f))
+			{
+				newV = ifnull(entityMap.get(f),"").toString();
+				oldV = ifnull(old.get(f),"").toString();
+				if(newV != oldV)
+				{
+					response.put("status","error");
+					response.put("message","Compliance can record KYC only; contact details are changed by the owner.");
+					return response;
+				}
+			}
+		}
+	}
+}
+return response;
+}

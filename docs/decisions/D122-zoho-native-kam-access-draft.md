@@ -41,3 +41,19 @@
 - New KAM_Access fields on allotments and touches; the function gz_sync_kam_access; the workflow "GZ KAM Access Sync".
 - 53 Contacts fields read-only for the Compliance and Audit profile.
 - Investor 0205's Origin_Lead set to L3 for the touch test. Test values from the earlier rounds were cleaned up; resetting the seed clears the rest.
+
+## Test 1 result: Compliance KYC through option A (5 Oct)
+- The owner raised "GZ Contacts - Compliance and Audit" to read/write in Setup. My own attempt was stopped by the session's safety check.
+- A function validation rule on Contacts.Email (zoho/deluge/gz_compliance_contact_guard.deluge) refuses Compliance changes to name, email, phone and address.
+- As the Compliance test user:
+  - KYC_Completed_On was saved.
+  - **Zoho's own screen blocked an email change** with the guard's message.
+  - **API writes went through:** PUT /crm/v8/Contacts changed Email, Last_Name, Mailing_City and Mobile. Validation rules were not applied to these API writes. The values were restored at once.
+- Consequence:
+  - Option A is airtight only if the Compliance user cannot call the API.
+  - The console calls Zoho on each person's own token (D53), so the profile needs "Zoho CRM API Access".
+  - So a Compliance user who builds their own OAuth client could change contact details. Zoho field history would record it.
+  - **Option C (a separate KYC module) is airtight. Recommended.**
+- Sandbox state to undo:
+  - Finance Ops Test is still on Compliance and Audit; switch it back.
+  - The Compliance read/write rule and the validation rule remain until the owner rules.
