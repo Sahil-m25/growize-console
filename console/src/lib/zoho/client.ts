@@ -49,6 +49,7 @@ import {
   type ZohoFailureKind,
   type ZohoSuccess,
 } from "./errors";
+import { assertMailAllowed, MailBlockedError, SANDBOX_MAIL_BLOCKED } from "../mail-guard";
 import { classOf, GateQueueFullError, type CallClass, type CallShape, type Gate, type GateLease } from "./gate";
 import { createFlights } from "./coalesce";
 import { anySignal, currentDeadline, zohoAttemptTimeoutMs } from "./deadline";
@@ -1688,6 +1689,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       if (ids !== undefined && (!Array.isArray(ids) || ids.length > SEND_MAIL_MAX_ATTACHMENTS || !ids.every((f) => typeof f === "string" && MAIL_FILE_ID.test(f)))) {
         throw new TypeError(`sendMail() attaches up to ${SEND_MAIL_MAX_ATTACHMENTS} files by file id.`);
       }
+      // D131: sandbox mail sink — checked before any request, all recipients or none.
+      try { assertMailAllowed(mail.to.map((a) => a.email), "crm-send-mail"); } catch (e) { if (e instanceof MailBlockedError) return refuse(as, "sendMail", SANDBOX_MAIL_BLOCKED, [id]) as never; throw e; }
       const out = await execute(as, {
         op: "sendMail", method: "POST", path: `/${module}/${id}/actions/send_mail`, endpoint: `/${module}/{id}/actions/send_mail`,
         body: { data: [{ from: addr(mail.from), to: mail.to.map(addr), subject: mail.subject, content: mail.content, mail_format: mail.format, consent_email: false,

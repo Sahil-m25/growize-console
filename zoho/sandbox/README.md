@@ -3,6 +3,10 @@
 `manifest.json` is the merged prototype's demo book: Leads (and their Touches), Contacts, LLPs, allotments, Receipts, Cases.
 It is generated — `node zoho/sandbox/make-manifest.mjs` — never hand-edited. It uses the sandbox's real api names
 (`sandbox-schema-2026-10-05.json`). Identity (PAN, Aadhaar, bank, UTR) is not in it; each receipt carries a synthetic `SEED-<id>` UTR.
+**The seed cannot mail or SMS a real person (D131).** The generator rewrites every email-type field (and any address inside text) to
+`tech+gzseed-<seedkey-slug>@agresearchlabs.com` (one test inbox, unique per record, e.g. `tech+gzseed-l1@agresearchlabs.com`), and every
+Mobile/Phone to the reserved fake range `+91 90000 0xxxx`. `mail-sink.test.mjs` fails if any address outside `@agresearchlabs.com` appears.
+After pulling this change, regenerate and **reseed** (step 4) so existing sandbox records lose their old addresses.
 Two reference keys are resolved at run time: `$persona` (a user id) and `$refs` (the parent's id, by Seed_Key).
 
 ## Running it in the sandbox (no token: the admin's browser session)

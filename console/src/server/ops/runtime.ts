@@ -6,7 +6,7 @@
  * outbox mailer holds each alert until delivery is configured (human item: provider + `ALERT_EMAIL_TO`).
  */
 
-import { createAlertEngine, createOutboxMailer, creditProjectionLine, eventsFromErrors, tapOpsSink, type AlertEngine, type AlertMailer } from "./alerts";
+import { createAlertEngine, createOutboxMailer, guardAlertMailer, creditProjectionLine, eventsFromErrors, tapOpsSink, type AlertEngine, type AlertMailer } from "./alerts";
 import type { OpsSink } from "../../lib/zoho/log";
 import { createErrorLog } from "../http/error-log";
 import { sharedErrorSink } from "../logs/factory";
@@ -27,7 +27,7 @@ export function alertEngine(): AlertEngine {
 
 /** Swap in a real mailer once delivery is configured. Resets the engine's windows. */
 export function setAlertMailer(next: AlertMailer): void {
-  mailer = next;
+  mailer = guardAlertMailer(next); // D131: sandbox mail sink
   engine = null;
 }
 

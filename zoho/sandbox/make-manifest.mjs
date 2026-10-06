@@ -46,6 +46,29 @@ const records = {
 // No Documents module in the sandbox (only the document-slot fields on Contacts/Allocations): kept here, not seeded.
 const deferred = { Documents: { reason: "no Documents module in the sandbox", records: DOCS.map((d) => tag(d.id, { Contact_Key: d.inv, Title: d.t, Class: d.cls, State: d.state, Sent_On: d.sent, Signed_On: d.on, Signature: d.sig })) } };
 
+// MAIL SINK (D131): the prototype's demo book carries real-looking addresses/mobiles. The sandbox must never be able to mail or SMS a real person,
+// so every email-type field, and any address inside free text, becomes a plus-address of ONE test inbox, unique per record.
+// Phones become an obviously fake reserved range. Deterministic: same prototype -> same manifest.
+const SINK_DOMAIN = "agresearchlabs.com";
+const EMAIL_RE = /[A-Za-z0-9._%+'-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
+const slug = (k) => String(k).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const sinkFor = (seedKey) => `tech+gzseed-${slug(seedKey)}`.slice(0, 100 - SINK_DOMAIN.length - 1) + `@${SINK_DOMAIN}`;
+let phoneN = 0;
+const fakePhone = () => `+91 90000 0${String(phoneN++).padStart(4, "0")}`;
+const sanitize = (rec) => {
+  const walk = (v, key) => {
+    if (Array.isArray(v)) return v.map((x) => walk(x, key));
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x, k)]));
+    if (typeof v !== "string") return v;
+    if (/(^|_)(mobile|phone)$/i.test(key ?? "") && v.trim()) return fakePhone();
+    if (/email/i.test(key ?? "") && v.trim()) return sinkFor(rec.Seed_Key);
+    return v.replace(EMAIL_RE, () => sinkFor(rec.Seed_Key));
+  };
+  return walk(rec, null);
+};
+for (const m of Object.keys(records)) records[m] = records[m].map(sanitize);
+for (const d of Object.values(deferred)) d.records = d.records.map(sanitize);
+
 // Dates in the prototype are "DD Mon[ HH:MM]" against a demo clock of 2 Sep 2026; reset shifts them to the run day.
 const manifest = { demoDay: "2026-09-02", tagField: "Test_Seed", records, deferred };
 writeFileSync(new URL("./manifest.json", import.meta.url), JSON.stringify(manifest, null, 1) + "\n");
