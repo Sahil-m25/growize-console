@@ -17,6 +17,8 @@ import { Pav } from "@/components/ui";
 import { isMgr, mgrOf, P, tempOn, tState } from "@/lib/selectors";
 import { titleOf } from "@/components/shell/SignIn";
 import { useConsole } from "@/lib/store";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { myDetails, myStyle } from "@/lib/data/endpoints/me";
 import { tMine } from "@/features/people/helpers";
 import { DoorRow } from "@/features/today/doors";
 import { meScreens } from "./reach";
@@ -25,7 +27,10 @@ import "./drawers";
 type MeBad = { f: "n" | "ph" | "i"; v: string; m: string };
 
 export function ProfilePage() {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
+  const live = useApiMode() === "live";
+  const saveDetails = useApiWrite(myDetails, state, dispatch);
+  const saveStyle = useApiWrite(myStyle, state, dispatch);
   const k = state.WHO;
   const p = P(state.PEOPLE, k);
   const mgr = mgrOf(state.PEOPLE, k);
@@ -59,7 +64,17 @@ export function ProfilePage() {
         return;
       }
     }
-    dispatch({ type: "setMe", f, v });
+    const next = f === "i" ? v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2) : f === "n" ? v.slice(0, 40) : v.slice(0, 24);
+    if (next === (f === "n" ? p.n : f === "i" ? p.i : p.ph || "")) return;
+    /* C4: name and mobile are PATCH /api/me (my own Zoho user, my own token); initials are PUT /api/me/style (the console's
+       own state store, J15). Live, the screen shows the change only after the route said yes; a refusal is said at the field.
+       Fixture: the endpoint half runs the same setMe the page always dispatched. */
+    const done = (r: { ok: true } | { ok: false; error: string }) => {
+      if (!r.ok) { setBad({ f, v, m: r.error }); return; }
+      if (live) { dispatch({ type: "setMe", f, v }); reloadData(); }
+    };
+    if (f === "i") void saveStyle({ kind: "initials", v }).then(done);
+    else void saveDetails({ f, v, name: p.n }).then(done);
   };
 
   const badgeClash = Object.keys(state.PEOPLE).filter(
@@ -164,8 +179,16 @@ export function ProfilePage() {
                   key={`myph-${p.ph || ""}`}
                   defaultValue={p.ph || ""}
                   placeholder="+91 …"
+                  aria-invalid={bad?.f === "ph" ? "true" : undefined}
+                  aria-errormessage={bad?.f === "ph" ? "mebad-ph" : undefined}
+                  aria-describedby={bad?.f === "ph" ? "mebad-ph" : undefined}
                   onBlur={(e) => commit("ph", e.currentTarget)}
                 />
+                {bad?.f === "ph" ? (
+                  <p className="sm" id="mebad-ph" role="alert" style={{ margin: "5px 0 0", color: "var(--late)" }}>
+                    {bad.m}
+                  </p>
+                ) : null}
               </label>
               <label className="fi">
                 <span>Initials</span>

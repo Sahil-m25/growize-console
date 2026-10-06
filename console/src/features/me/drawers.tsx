@@ -8,7 +8,10 @@
    "presence" drawer (ids team-roster*, src/components/shell/drawers/presence.tsx) — the prototype
    registers both, one per opener, off the same availabilityRoster/ownAvailabilityAction bodies. */
 
+import { useState } from "react";
 import { CAPT, PAGECAPS, SEAT, TSTATE } from "@/domain";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { myStyle } from "@/lib/data/endpoints/me";
 import type { ColourSlot, TempStateRead } from "@/domain";
 import { avail, capsFor, everyone, mgrOf, P, roleOf, tState } from "@/lib/selectors";
 import { tMine } from "@/features/people/helpers";
@@ -78,8 +81,20 @@ const badgeClash = (state: ConsoleState, k: string) => {
 };
 
 function BadgeBody(_: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
+  const live = useApiMode() === "live";
+  const saveStyle = useApiWrite(myStyle, state, dispatch);
+  const [err, setErr] = useState<string | null>(null);
   const k = state.WHO, p = P(state.PEOPLE, k), clash = badgeClash(state, k);
+  /* C4 / J15: the badge is PUT /api/me/style (the console's own state store, not Zoho). Live, the screen shows it once the
+     route said yes; a refusal is said here. Fixture: the endpoint half runs the same setMyStyle the swatch always dispatched. */
+  const pick = (c: ColourSlot, sq: boolean) => {
+    setErr(null);
+    void saveStyle({ kind: "badge", c, sq }).then((r) => {
+      if (!r.ok) { setErr(r.error); return; }
+      if (live) { dispatch({ type: "setMyStyle", c, sq }); reloadData(); }
+    });
+  };
   return (
     <>
       <p className="sm" style={{ margin: "0 0 8px" }}>
@@ -100,7 +115,7 @@ function BadgeBody(_: DrawerProps) {
                 aria-pressed={on ? "true" : "false"}
                 aria-label={`Badge colour ${c}${sq ? ", square" : ", round"}${on ? ", in use by you" : ""}`}
                 title={on ? "In use by you" : taken.length ? "Also " + taken.map((x) => P(state.PEOPLE, x).n).join(", ") : "Nobody is using this one"}
-                onClick={() => dispatch({ type: "setMyStyle", c, sq })}
+                onClick={() => pick(c, sq)}
               >
                 <span className={`pav ${sq ? "sq" : ""}`} style={{ ["--pc" as string]: `var(--c${c})` }}>
                   {p.i}
@@ -113,6 +128,7 @@ function BadgeBody(_: DrawerProps) {
       <p className="sm" style={{ margin: "8px 0 0" }}>
         {clash.length ? `Same badge as ${clash.map((x) => P(state.PEOPLE, x).n).join(", ")}.` : "Nobody else has this badge."}
       </p>
+      {err ? <p className="sm" role="alert" style={{ margin: "5px 0 0", color: "var(--late)" }}>{err}</p> : null}
     </>
   );
 }

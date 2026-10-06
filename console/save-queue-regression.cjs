@@ -200,7 +200,7 @@ async function runWriterIntegrations() {
     units:1,nx:{t:'Follow up',by:'29 Aug',d:'2026-08-29'},fc:null,by:own});
   function portHarness(actor='a') {
     const PEOPLE={a:person('Operator A','ir','manager'),b:person('Operator B','ir','manager'),manager:person('IR Manager','conv'),readonly:person('Read-only manager','ops')};
-    let state={...store.initialState(),WHO:actor,ROLE:PEOPLE[actor].seat,PEOPLE,LEADS:[lead('one','a'),lead('two','a'),lead('shared','b','a'),lead('unassigned',null)],
+    let state={...store.initialState(),FIXTURES:true,WHO:actor,ROLE:PEOPLE[actor].seat,PEOPLE,LEADS:[lead('one','a'),lead('two','a'),lead('shared','b','a'),lead('unassigned',null)],
       NOW:new Date(2026,7,28,12),TODAY:new Date(2026,7,28),LOG:[],NOTES:{},PAPER:{},PAY:{},DOCS:[],CLAIM:{},REQ:{},EXT:{},CALLS:{},SENT:{},PACK:{},ACCT:{},
       AVAIL:{},COVER:{},TEMP:[],CAPS:{},TEMPON:null,DRW:null,ui:{},SC:{today:'mine',leads:'mine',activity:'mine'},SEC:{}};
     let online=false,time=0,session=0,calls=0,acknowledgements=0;
