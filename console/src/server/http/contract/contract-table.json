@@ -1069,6 +1069,41 @@
      "schema": "route doc"
     }
    }
+  },
+  "/api/me": {
+   "PATCH": {
+    "body": {
+     "type": "json",
+     "required": [
+      "name"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/me/style": {
+   "GET": {},
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "style"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/activity/export": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "view",
+      "rows"
+     ],
+     "schema": "route doc"
+    }
+   }
   }
  }
 }
