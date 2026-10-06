@@ -10,7 +10,7 @@ import type { ConsoleState } from "@/lib/store";
 import type { PersonKey } from "@/domain";
 
 function rig() {
-  let state: ConsoleState = reducer(initialState(demoBook()), { type: "signIn", k: "rohit" as PersonKey });
+  let state: ConsoleState = { ...reducer(initialState(demoBook()), { type: "signIn", k: "rohit" as PersonKey }), FIXTURES: true }; /* the queue under test is the demo's save: live, a reducer action is never queued (console-save) */
   let session = 1, online = true;
   const writer = createConsoleWriter({
     clock: () => 0, setTimer: () => 0, clearTimer: () => {}, isOnline: () => online,

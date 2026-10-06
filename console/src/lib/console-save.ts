@@ -12,12 +12,18 @@ const WHYFAIL = "The local demo did not confirm this change.";
  *  the next write that would have gone through `commit()` (every ladder/queue write below), and
  *  never one of these — armed or not, `setMe` and the rest here still land. */
 const PROTECTED_LOCAL_SAVE = new Set([
-  "setMe", "setMyStyle", "setAvail", "setOutWhy", "setOutTo", "setOutFrom", "endCoverFor",
+  "setMe", "setMyStyle", "setAvail", "setOutTo", "setOutFrom", "endCoverFor",
   "reassignTo", "askMove", "askExt", "decideMove", "handover", "endCover", "moveNextTo",
   "grantTemp", "revokeTemp", "addPerson", "setMgr", "toggleCap", "resetCaps",
   "setNum", "setGrain", "addPeriod", "setRecov", "clearRecov", "clearNext", "keepNext",
   "setFc", "setFcEv", "prDraft", "prRedraft", "prAgreed", "prTold", "prChase", "prSaid",
 ]);
+
+/** Pure UI state. These never queue, never show as a waiting or saved change, and never reach Zoho (ir-write-map.md, C4):
+ *  startPaymentReport only opens a draft (the earlier report's answer stays in Zoho); setOutWhy is a reason the roster
+ *  deliberately never takes or files (server/roster/availability.ts, rule 7); useTemp/dropTemp switch a borrowed grant on or
+ *  off for this session (live, TEMP is empty until grantTemp is built). */
+export const LOCAL_ONLY = new Set(["startPaymentReport", "setOutWhy", "useTemp", "dropTemp"]);
 
 /** UI drafts and navigation remain local. Only durable business mutations wait for connection. */
 export const BUSINESS_WRITES = new Set([
@@ -27,10 +33,10 @@ export const BUSINESS_WRITES = new Set([
   "reopenLost", "addNote", "setCall", "toggleObj", "mat", "pack", "prDraft", "prRedraft", "prAgreed",
   "prSend", "prTold", "prChase", "prSaid", "prVerify", "prBounce", "prGate", "addLead", "loadSheet",
   "addEvent", "saveEvent", "dropEvent", "markRead", "showRef", "addPerson", "removePerson", "setMgr", "setSeat", "toggleCap", "resetCaps",
-  "setMe", "setMyStyle", "setAvail", "setOutWhy", "setOutFrom", "setOutTo", "grantTemp", "revokeTemp",
+  "setMe", "setMyStyle", "setAvail", "setOutFrom", "setOutTo", "grantTemp", "revokeTemp",
   "bump", "setNum", "setTarget", "setActual", "setPeriodDate", "setGrain", "addPeriod", "dropPeriod",
   "setBaseline", "setRecov", "clearRecov", "record", "claimPaid", "confirmClaim", "rejectClaim",
-  "reopenClaim", "startPaymentReport", "askExt", "decideExt", "lapse", "sendDoc", "recordDoc", "setReleased", "acctAuto",
+  "reopenClaim", "askExt", "decideExt", "lapse", "sendDoc", "recordDoc", "setReleased", "acctAuto",
   "acctLapsed", "xferAuto", "copyInvestor", "flagDupe", "csvImport", "log",
   "lpFinish", "lpLose", "lpRestore", "lpPaper", "emSend", "undoRung", "recordRung", "tickCommit",
 ]);
@@ -123,7 +129,11 @@ export function createConsoleWriter(options: SaveQueueOptions & {
   } });
   const apply = (action: Action): SaveResult | undefined => {
     const state = options.read();
-    if (!BUSINESS_WRITES.has(action.type)) {
+    /* A reducer action never reaches Zoho. Live, every action that has a route is sent by its page through useApiWrite and is
+       NOT dispatched, so whatever lands here live changed only this browser's copy: it is applied, never queued, so the top bar
+       has no "change waiting" or "Last local update" to suggest it was saved. In the demo (FIXTURES) the queue is the demo's
+       save and stays. */
+    if (!BUSINESS_WRITES.has(action.type) || !state.FIXTURES) {
       const next = options.reduce(state, action);
       if (next !== state) options.write(next);
       if (next.WHO !== state.WHO || (["setPerson", "setRole"].includes(action.type) && next !== state)) queue.reset();

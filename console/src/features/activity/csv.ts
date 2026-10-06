@@ -8,7 +8,11 @@
    `actCSV` (11618) also appends a LOG line — "Exported the activity log", null lead, `rows.length
    activity rows · body.length exported <view> rows · <filename>`, kind "admin" — so the export
    itself is audited. Now that the store carries the generic `log(what,lead,note,kind)` action, the
-   caller passes its `dispatch` in and this writes that same line. */
+   caller passes its `dispatch` in and this writes that same line.
+
+   C4 / J14: live, that line is a SERVER log line (POST /api/activity/export: who, when, view, row count, no values), not
+   a store action. The caller passes `onExport` (endpoints/me `useActivityExportLog()`) and it is called with the counts
+   and the view instead of dispatching; `dispatch` is the fixture-mode path and stays for callers not yet swapped. */
 
 import type { PersonKey } from "@/domain";
 import type { Ctx } from "@/lib/selectors";
@@ -35,6 +39,9 @@ export function actSummary(ctx: Ctx, rows: readonly ActRow[], view: "person" | "
     ? b.total - a.total || P(ctx.PEOPLE, a.key as PersonKey).n.localeCompare(P(ctx.PEOPLE, b.key as PersonKey).n)
     : b.key.localeCompare(a.key)));
 }
+
+/** What an export tells the log: counts and a view code, never a row. `filename` is for the demo's note only. */
+export type ActExportInfo = { view: ActView; rows: number; exported: number; filename: string };
 
 export type ActExport = { head: (string | number)[]; body: (string | number)[][] };
 
@@ -71,6 +78,7 @@ const q = (v: unknown): string => `"${String(v ?? "").replace(/"/g, '""')}"`;
 export function downloadActivityCSV(
   ctx: Ctx, rows: readonly ActRow[], view: ActView, filename: string, kinds: ActKinds,
   dispatch?: (action: Action) => unknown,
+  onExport?: (info: ActExportInfo) => unknown,
 ): boolean {
   if (!rows.length) return false;
   const data = actExportData(ctx, rows, view, kinds);
@@ -84,6 +92,7 @@ export function downloadActivityCSV(
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  if (onExport) { onExport({ view, rows: rows.length, exported: data.body.length, filename }); return true; }
   dispatch?.({
     type: "log", what: "Exported the activity log", lead: null,
     note: `${rows.length} activity rows · ${data.body.length} exported ${view} rows · ${filename}`,
