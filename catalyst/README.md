@@ -133,3 +133,11 @@ interval applies), and the per-job request timeout. If one-minute crons are refu
   console. Also: the Catalyst API (and MCP) returns variable values in plain text to anyone with project access.
 - Behind the AppSail proxy the app sees an internal Host, so `CONSOLE_PUBLIC_ORIGIN` names the public origin for the H2 origin check;
   sign-in and step-up redirects are relative (5 Oct fix).
+
+## Deploying without wiping the secrets (verified 6 Oct 2026)
+
+`catalyst deploy` sends `env_variables` from `app-config.json` and the platform REPLACES the AppSail's whole variable
+set with it — every secret entered in the console is gone. When `app-config.json` has NO `env_variables` key, the
+deploy leaves the existing variables untouched (proved on a throwaway AppSail: var kept across a code change).
+Rule: the deploy copy of `app-config.json` never carries `env_variables`. Every variable (secret or not) lives in the
+Catalyst console; `app-config.staging.json` in this folder is only the reference list of non-secret values to type in.

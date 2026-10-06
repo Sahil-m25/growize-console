@@ -43,6 +43,9 @@ import { alertingOpsSink } from "../ops/runtime";
 export const DEFAULT_USER_SCOPES: readonly string[] = Object.freeze([
   "ZohoCRM.modules.ALL",
   "ZohoCRM.settings.READ",
+  /* GET /crm/v8/org (the ZOHO_EXPECTED_ORG_ID check at sign-in) needs its own scope; settings.READ does not cover it
+     — without it Zoho answers 401 and every sandbox sign-in fails closed (found on staging, 6 Oct 2026). */
+  "ZohoCRM.org.READ",
   "ZohoCRM.coql.READ",
   "ZohoCRM.users.READ",
   /* M03-S04-T02: a seat change writes Users role/profile (PUT /users/{id}) on the changer's own token. Zoho's
