@@ -94,7 +94,10 @@ export function oauthParts(env: NodeJS.ProcessEnv = process.env): OAuthParts {
     log,
   });
   const sealer = createSealer(env.ZOHO_SESSION_KEY!);
-  const seats = createZohoSeatDirectory({ recordIdPrefix, roleIds: seatIds.roleIds, profileIds: seatIds.profileIds });
+  const seats = createZohoSeatDirectory({
+    recordIdPrefix, roleIds: seatIds.roleIds, profileIds: seatIds.profileIds,
+    sandbox: env.ZOHO_CRM_ENVIRONMENT === "sandbox",
+  });
   const gate = createGate();
   /* M18-S09-NOTE-1: sessions live in the process's SharedState (STATE_STORE), sealed with SESSION_ENC_KEY */
   const state = sharedState();

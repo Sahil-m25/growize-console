@@ -124,6 +124,20 @@ test('M03-S05: active alone never proves a full, confirmed human seat', () => {
   }
 });
 
+test('sandbox deployments accept a Sandbox Developer User seat; production and other types stay refused', () => {
+  const sandboxDirectory = createZohoSeatDirectory({ ...directoryConfig(), sandbox: true });
+  const row = recording.accepted[0];
+  const dev = structuredClone(row.body);
+  dev.users[0].type__s = 'Sandbox Developer User';
+  assert.deepEqual(sandboxDirectory.resolveCurrentUser(dev), directory.resolveCurrentUser(row.body));
+  assert.equal(directory.resolveCurrentUser(dev).ok, false, 'production still refuses it');
+  for (const t of ['Client Portal User', 'Support User', 'Team User']) {
+    const body = structuredClone(row.body);
+    body.users[0].type__s = t;
+    assert.deepEqual(sandboxDirectory.resolveCurrentUser(body), { ok: false, reason: 'unsupported-user-type' }, t);
+  }
+});
+
 test('M03-S05: role/profile ids and names must both match the pinned sanitized export', () => {
   const base = structuredClone(recording.accepted.find((row) => row.seat === 'finance-operations').body);
   const cases = [

@@ -124,6 +124,9 @@ export interface ZohoSeatDirectoryConfig {
   readonly roleIds: Readonly<Record<ZohoRoleName, string>>;
   /** Ids exported from GET /settings/profiles; keys are exact approved profile names. */
   readonly profileIds: Readonly<Record<ZohoProfileName, string>>;
+  /** Sandbox deployments only (ZOHO_CRM_ENVIRONMENT=sandbox): users added to a Zoho sandbox carry
+      type__s "Sandbox Developer User", not "Regular User". Production never sets this. */
+  readonly sandbox?: boolean;
 }
 
 type Obj = Readonly<Record<string, unknown>>;
@@ -224,7 +227,10 @@ export function createZohoSeatDirectory(config: ZohoSeatDirectoryConfig): ZohoSe
       if (!userId.startsWith(prefix)) return { ok: false, reason: "foreign-org" };
       if (ownData(current, "status") !== "active") return { ok: false, reason: "inactive" };
       if (ownData(current, "confirm") !== true) return { ok: false, reason: "unconfirmed" };
-      if (ownData(current, "type__s") !== "Regular User") return { ok: false, reason: "unsupported-user-type" };
+      const userType = ownData(current, "type__s");
+      if (userType !== "Regular User" && !(config.sandbox === true && userType === "Sandbox Developer User")) {
+        return { ok: false, reason: "unsupported-user-type" };
+      }
 
       const role = objectOf(ownData(current, "role"));
       const profile = objectOf(ownData(current, "profile"));
