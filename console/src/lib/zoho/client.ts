@@ -369,7 +369,7 @@ function emailLineOf(raw: unknown): EmailLine | null {
     subject: typeof o.subject === "string" ? o.subject.slice(0, 500) : "",
     from: partyOf(o.from),
     to: partiesOf(o.to),
-    sentTime: typeof o.sent_time === "string" ? o.sent_time.slice(0, 40) : null,
+    sentTime: typeof o.time === "string" ? o.time.slice(0, 40) : typeof o.sent_time === "string" ? o.sent_time.slice(0, 40) : null,
     sent: o.sent === true,
     hasAttachment: o.has_attachment === true,
     ownerId: typeof owner === "string" && /^\d{1,25}$/.test(owner) ? owner : null,
@@ -1866,7 +1866,8 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       if (!out.ok) return out;
       if (out.result.kind === "empty") return done({ emails: [], nextIndex: null } as EmailPage, out);
       const root = obj(out.result.body);
-      const list = root?.email_related_list;
+      /* v8 answers { Emails: [...], info }; older versions used email_related_list (kept as a fallback). */
+      const list = root?.Emails ?? root?.email_related_list;
       if (!Array.isArray(list) || list.length > MAX_EMAIL_ROWS) return { ok: false, error: { kind: "unexpected", status: out.result.status, code: "MALFORMED_RESPONSE" }, creditsRemaining: out.creditsRemaining } as ZohoResult<EmailPage>;
       const next = obj(root?.info)?.next_index;
       return done(Object.freeze({

@@ -47,6 +47,8 @@ export const DEFAULT_USER_SCOPES: readonly string[] = Object.freeze([
      — without it Zoho answers 401 and every sandbox sign-in fails closed (found on staging, 6 Oct 2026). */
   "ZohoCRM.org.READ",
   "ZohoCRM.coql.READ",
+  /* GET /{module}/{id}/Emails (the record's email list) needs modules.emails.READ on v8. */
+  "ZohoCRM.modules.emails.READ",
   "ZohoCRM.users.READ",
   /* M03-S04-T02: a seat change writes Users role/profile (PUT /users/{id}) on the changer's own token. Zoho's
      "Manage Users" profile permission still decides who may; the console's maySeat narrows it further. */
