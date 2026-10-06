@@ -89,7 +89,7 @@ export type CaptureRefusal =
   | "invalid-request" | "session-changed" | "capability-missing" | "invalid-name" | "invalid-mobile"
   | "invalid-email" | "invalid-source" | "event-missing" | "introducer-missing" | "owner-not-assignable"
   | "unassigned-queue-missing" | "invalid-units" | "consent-how-missing" | "email-consent-without-email"
-  | "duplicate-mobile";
+  | "duplicate-mobile" | "introducer-field-missing";
 
 export type CaptureResult =
   | { readonly ok: true; readonly value: { readonly leadId: string; readonly ownerId: string | null } }
@@ -112,6 +112,7 @@ const REASON: Readonly<Record<CaptureRefusal, string>> = Object.freeze({
   "consent-how-missing": "how contact permission was given",
   "email-consent-without-email": "an email for email permission",
   "duplicate-mobile": "the book already has this number",
+  "introducer-field-missing": "Zoho has no Introduced_By field on Leads yet, so nothing was saved; leave the introducer out, or ask Digital Infrastructure to add the field",
 });
 
 /** Zoho's duplicate check on Mobile is the hard stop (M04-S02): a second capture of the same number,
@@ -121,6 +122,16 @@ export function isDuplicateMobile(error: unknown): boolean {
   if (!e) return false;
   if (e.kind === "invalid-data") return e.code === "DUPLICATE_DATA" && (e.field === "Mobile" || e.field == null);
   if (e.kind === "partial" && e.records?.length === 1) return !e.records[0].ok && e.records[0].code === "DUPLICATE_DATA" && e.records[0].field === "Mobile";
+  return false;
+}
+
+/** Zoho refused the row because Leads has no Introduced_By field (J11 is not built in the org yet): the one
+ *  field blamed is Introduced_By and the code is not the duplicate check. Only asked when an introducer was sent. */
+export function isIntroducerFieldMissing(error: unknown): boolean {
+  const e = error as { kind?: string; code?: string; field?: string | null; records?: readonly { ok: boolean; code: string; field: string | null }[] } | null;
+  if (!e) return false;
+  if (e.kind === "invalid-data") return e.field === "Introduced_By" && e.code !== "DUPLICATE_DATA";
+  if (e.kind === "partial" && e.records?.length === 1) return !e.records[0].ok && e.records[0].field === "Introduced_By" && e.records[0].code !== "DUPLICATE_DATA";
   return false;
 }
 
@@ -201,8 +212,11 @@ export function createLeadCapture(deps: CaptureDependencies) {
     const need = SRCNEEDS[source];
     const eventId = need === "event" ? c.eventId : null;
     if (need === "event" && !validId(eventId)) return "event-missing";
-    const introducer = seat === "channel-partner" ? a.actor.userId : need === "person" ? c.introducedById : null;
-    if (need === "person" && !validId(introducer)) return "introducer-missing";
+    // An introducer is optional ("Not said", or somebody outside ARL, sends none): Introduced_By is written only when one
+    // is given, so a lead can still be captured while that field may not exist in Zoho yet. One that is named must be valid.
+    const named = seat === "channel-partner" ? a.actor.userId : need === "person" ? c.introducedById : null;
+    const introducer = named === null || named === undefined || named === "" ? null : named;
+    if (introducer !== null && !validId(introducer)) return "introducer-missing";
 
     let ownerId: string | null;
     if (keepsOwn) ownerId = a.actor.userId;
@@ -273,6 +287,7 @@ export function createLeadCapture(deps: CaptureDependencies) {
       // A create is never retried here: a lost reply may have landed (the client does not resend either).
       if (!res.ok) {
         if (isDuplicateMobile(res.error)) return refuse(cred.userId, "duplicate-mobile");
+        if ("Introduced_By" in built.fields && isIntroducerFieldMissing(res.error)) return refuse(cred.userId, "introducer-field-missing");
         return { ok: false, kind: "source-error", source: "zoho", errorKind: res.error.kind, retryable: false };
       }
       const out = res.value.length === 1 ? res.value[0] : null;

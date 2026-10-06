@@ -15,10 +15,10 @@
    successful save leaves this same, empty form with a note above it, not a different screen.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { KINDS, SOURCES, SRCNEEDS, UNIT, UNITS } from "@/domain";
-import type { EventId, LeadId, Source } from "@/domain";
+import type { EventId, LeadId, PersonKey, Source } from "@/domain";
 import { money } from "@/lib/format";
 import {
   active, assignees, canReach, channelPartners, isIR, isMgr, may, mgrOf,
@@ -28,11 +28,12 @@ import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { Chip, Field } from "@/components/ui";
-import { useApiRead } from "@/lib/data/api";
+import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { eventDates, eventPicker } from "@/lib/data/endpoints/events";
+import { addArgsOf, leadAdd, useDuplicateHint } from "@/lib/data/endpoints/intake";
 import { AddBulk } from "./AddBulk";
 import {
-  addDraft, addGaps, addIntroducers, addUnits, addWho, CONHOW, conOK, customOK, dupeOf, emOK, phOK,
+  ADD0, addDraft, addGaps, addIntroducers, addUnits, addWho, CONHOW, conOK, customOK, dupeOf, emOK, phOK,
 } from "./state";
 import type { AddCon } from "./state";
 
@@ -67,9 +68,18 @@ const CONCH: readonly (readonly [keyof AddCon, string])[] = [
 ];
 
 export function AddPage({ bare = false }: { bare?: boolean } = {}) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const router = useRouter();
   const d = addDraft(state.ui, state);
+  const live = useApiMode() === "live";
+  /* C3: the number is asked of the route as it is typed (POST /api/leads/duplicate), and Add is POST /api/leads with one
+     Idempotency-Key per press (the same key, the same form: a retry after a dropped reply never adds twice) */
+  const hint = useDuplicateHint(state, d.ADDPH);
+  const add = useApiWrite(leadAdd, state, dispatch);
+  const press = useRef<{ sig: string; key: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [addErr, setAddErr] = useState<string | null>(null);
+  const [lostNote, setLostNote] = useState<string | null>(null);
   /* M14-S03-W1: the events a lead can be captured from are GET /api/events (the ones that have run) */
   const events = useApiRead(eventPicker, state, d.ADDSRC === "Events");
   const set = (patch: Partial<UiState>) => dispatch({ type: "setUi", patch });
@@ -101,6 +111,23 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
     .join(", ") + (conOK(d) && d.ADDHOW ? " · " + CONHOW[d.ADDHOW]!.toLowerCase() : "");
 
   const flagDupe = (id: LeadId) => dispatch({ type: "flagDupe", id });
+  const doAdd = async () => {
+    const args = addArgsOf(d, units, own);
+    if (!live) { void add(args); return; }
+    /* one key per distinct form: pressing again after a dropped reply replays the first press; a corrected form is a new press */
+    const sig = JSON.stringify(args);
+    if (!press.current || press.current.sig !== sig) press.current = { sig, key: newIdempotencyKey() };
+    setSaving(true);
+    setAddErr(null);
+    const r = await add(args, { idempotencyKey: press.current.key });
+    setSaving(false);
+    if (!r.ok) { setAddErr(r.error); return; }
+    press.current = null;
+    /* the form is cleared exactly as the reducer clears it; the note has no live home yet (capture writes the lead only) */
+    setLostNote(d.ADDNOTE.trim() || null);
+    dispatch({ type: "setUi", patch: { ...ADD0, ADDSEEN: {}, ADDDONE: { id: r.data.leadId as LeadId, n: d.ADDN.trim(), own: r.data.ownerId as PersonKey | null } } });
+    reloadData();
+  };
   /* go('lead', id) — closes the drawer, remembers where it was opened from, opens the lead page */
   const openLead = (id: LeadId) => {
     const onLead = typeof window !== "undefined" && window.location.pathname.startsWith("/leads/");
@@ -138,8 +165,13 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
         {done && (
           <div className="note" style={{ margin: "0 0 12px" }}>
             <b>{done.n}</b> was added{done.own ? <> — {P(state.PEOPLE, done.own).n} carries it</> : " and joined the unassigned queue"}.
+            {live && lostNote ? (
+              <p className="sm" style={{ margin: "8px 0 0" }}>
+                Your note was not saved with the lead — add it from the lead page: <i>{lostNote}</i>
+              </p>
+            ) : null}
             <div className="chips" style={{ marginTop: 9 }}>
-              <Chip on onClick={() => set({ ADDDONE: null })}>Add another name</Chip>
+              <Chip on onClick={() => { set({ ADDDONE: null }); setLostNote(null); }}>Add another name</Chip>
               {toLeads && openable(state).some((x) => x.id === done.id)
                 ? <Chip onClick={() => openLead(done.id)}>Open {done.n.split(" ")[0]}</Chip>
                 : null}
@@ -176,6 +208,29 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                 Use ten Indian mobile digits, or + and the country code for an international number.
               </p>
             )
+            : live
+              ? (
+                hint.state === "ok" && hint.answer.status !== "none"
+                  ? (
+                    <div className="note bad" style={{ margin: "8px 0 0" }}>
+                      <b>{hint.answer.firstName || "A lead"}</b>{" "}
+                      {hint.answer.status === "own" ? "is already in your book with this number" : "already has this number, in a book you can see"}
+                      . Duplicates are refused, never merged.
+                      {toLeads
+                        ? (
+                          <div className="chips" style={{ marginTop: 7 }}>
+                            <Chip onClick={() => hint.answer.status !== "none" && openLead(hint.answer.leadId as LeadId)}>
+                              Open {(hint.answer.firstName || "the lead")}
+                            </Chip>
+                          </div>
+                        )
+                        : null}
+                    </div>
+                  )
+                  : hint.state === "ok" ? <p className="sm g2-ok" style={{ margin: "8px 0 0" }}>No existing record with this number in your book.</p>
+                    : hint.state === "error" ? <p className="sm" style={{ margin: "8px 0 0" }}>Could not check this number just now. Saving checks it again, and Zoho refuses a duplicate.</p>
+                      : <p className="sm" style={{ margin: "8px 0 0" }}>Checking the number…</p>
+              )
             : dupe
               ? (
                 <div className="note bad" style={{ margin: "8px 0 0" }}>
@@ -359,10 +414,13 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                 </p>
               )}
           <button type="button" className="act" style={{ width: "100%", textAlign: "center", padding: "13px" }}
-            disabled={!(cap && ok)} onClick={() => dispatch({ type: "addLead" })}>
-            Add {d.ADDN.trim() ? d.ADDN.trim().split(/\s+/)[0] : "lead"}
-            {own ? " · " + P(state.PEOPLE, own).n.split(" ")[0] + " carries it" : ""}
+            disabled={!(cap && ok) || saving} onClick={() => void doAdd()}>
+            {saving
+              ? "Adding…"
+              : <>Add {d.ADDN.trim() ? d.ADDN.trim().split(/\s+/)[0] : "lead"}
+                {own ? " · " + P(state.PEOPLE, own).n.split(" ")[0] + " carries it" : ""}</>}
           </button>
+          {addErr ? <p className="ux-date-error" role="alert" style={{ margin: "9px 0 0" }}>{addErr}</p> : null}
         </div></div>
       </div>
     </>

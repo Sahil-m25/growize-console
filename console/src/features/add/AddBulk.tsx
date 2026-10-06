@@ -11,20 +11,30 @@
    until it names the event every row will be tagged to.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { Fragment } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EventId } from "@/domain";
 import { canReach, may, P } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { Chip } from "@/components/ui";
+import { newIdempotencyKey, useApiMode, useApiWrite } from "@/lib/data/api";
+import { IMPORT_CHUNK, importRowsOf, leadImport, ROW_WHY } from "@/lib/data/endpoints/intake";
 import { capWhy } from "./cap";
 import { CSVFIELDS, csvGood, csvRead, dealTo, evIRs, splitLine, splitNames } from "./csv";
 import { addDraft, addWho } from "./state";
 
 export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const router = useRouter();
+  /* C3: a file loads through POST /api/leads/import, 100 rows a call, one Idempotency-Key per file press (a retry replays the
+     rows that landed). Every row has its own verdict; the ones Zoho or the rules refused are listed under the result. */
+  const live = useApiMode() === "live";
+  const load = useApiWrite(leadImport, state, dispatch);
+  const press = useRef<{ sig: string; key: string } | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [importErr, setImportErr] = useState<string | null>(null);
+  const [report, setReport] = useState<{ file: string; added: number; refused: { line: number; n: string; why: string }[] } | null>(null);
 
   const cap = may(state, "add", "capture");
   const d = addDraft(state.ui, state);
@@ -43,7 +53,9 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
 
   const csvEv = state.ui.CSVEV ?? null;
   const cev = csvEv ? state.EVENTS.find(e => e.id === csvEv) ?? null : null;
-  const dealt = !!cev && evIRs(state, cev).length > 0;
+  /* live there is no roster to deal round yet (a manager's list of who may be given a lead is not read): every row goes to the
+     one owner the form names, and the route refuses the ones that owner cannot take */
+  const dealt = !live && !!cev && evIRs(state, cev).length > 0;
   const csvOwn = (i: number): string | null => (dealt && cev ? dealTo(state, cev, i) : own);
 
   const why = !cap
@@ -63,7 +75,39 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
     reader.readAsText(file);
   };
 
-  const doImport = () => dispatch({ type: "csvImport" });
+  const doImport = async () => {
+    if (!csv || !csvEv) return;
+    const rows = importRowsOf(csv);
+    if (!live) { void load({ eventId: csvEv, ownerId: own, rows }); return; }
+    const sig = JSON.stringify([csvEv, own, rows]);
+    if (!press.current || press.current.sig !== sig) press.current = { sig, key: newIdempotencyKey() };
+    const goodRows = csvGood(csv);
+    let added = 0;
+    const refused: { line: number; n: string; why: string }[] = [];
+    setImportErr(null);
+    for (let at = 0; at < rows.length; at += IMPORT_CHUNK) {
+      setBusy(`Loading rows ${at + 1}–${Math.min(at + IMPORT_CHUNK, rows.length)} of ${rows.length}…`);
+      const r = await load({ eventId: csvEv, ownerId: own, rows: rows.slice(at, at + IMPORT_CHUNK) }, { idempotencyKey: `${press.current.key}-c${at / IMPORT_CHUNK}` });
+      if (!r.ok) {
+        setBusy(null);
+        setImportErr(`${r.error} ${added} lead${added === 1 ? "" : "s"} loaded so far; press again to finish the rest — rows already loaded are not added twice.`);
+        if (added) reloadData();
+        return;
+      }
+      added += r.data.added;
+      for (const v of r.data.rows) {
+        if (v.status === "refused") {
+          const g = goodRows[at + v.row];
+          refused.push({ line: g ? g.i : at + v.row + 2, n: g?.n ?? "", why: ROW_WHY[v.reason] ?? v.message });
+        }
+      }
+    }
+    setBusy(null);
+    press.current = null;
+    setReport({ file: csv.file, added, refused });
+    dispatch({ type: "setUi", patch: { CSV: null, CSVEV: null, CSVDONE: added ? { n: added, ev: csvEv, file: csv.file } : null } });
+    reloadData();
+  };
 
   const sheet = !may(state, "events", "load")
     ? <p className="sm" style={{ margin: 0 }}>{capWhy(state, "events", "load")}</p>
@@ -111,6 +155,20 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                 </Chip>
               )}
             </div>
+          </div>
+        )}
+
+        {live && report && report.refused.length > 0 && (
+          <div className="note bad" style={{ margin: "0 0 12px" }}>
+            <b>{report.refused.length} row{report.refused.length === 1 ? "" : "s"}</b> of {report.file} {report.refused.length === 1 ? "was" : "were"} not added
+            ({report.added} {report.added === 1 ? "was" : "were"}).
+            <div className="tw"><table>
+              <thead><tr><th>Row</th><th>Name</th><th>Why</th></tr></thead>
+              <tbody>
+                {report.refused.map(x => <tr key={x.line}><td className="mono">{x.line}</td><td>{x.n || "—"}</td><td className="sm">{x.why}</td></tr>)}
+              </tbody>
+            </table></div>
+            <div className="chips" style={{ marginTop: 9 }}><Chip onClick={() => setReport(null)}>Dismiss</Chip></div>
           </div>
         )}
 
@@ -214,11 +272,12 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                   {why && <p className="sm" style={{ margin: "11px 0 0" }}>{why}</p>}
                   <button
                     type="button" className="act" style={{ width: "100%", textAlign: "center", padding: 12, marginTop: 11 }}
-                    disabled={!(cap && good.length && csvEv)} title={why || undefined}
-                    onClick={doImport}
+                    disabled={!(cap && good.length && csvEv) || !!busy} title={why || undefined}
+                    onClick={() => void doImport()}
                   >
-                    Add {good.length} lead{good.length === 1 ? "" : "s"}{csvEv && cev ? " · " + cev.n : ""}
+                    {busy ?? <>Add {good.length} lead{good.length === 1 ? "" : "s"}{csvEv && cev ? " · " + cev.n : ""}</>}
                   </button>
+                  {importErr ? <p className="ux-date-error" role="alert" style={{ margin: "9px 0 0" }}>{importErr}</p> : null}
                   <p className="sm" style={{ margin: "9px 0 0" }}>
                     {dealt
                       ? <>Assigned to the event&#8217;s IRs: {splitNames(state, good.length, csvOwn)}.</>

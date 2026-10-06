@@ -556,6 +556,28 @@
     }
    }
   },
+  "/api/leads": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "name",
+      "mobile",
+      "source"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/assign": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [],
+     "schema": "route doc (empty: the owner is always the signed-in person)"
+    }
+   }
+  },
   "/api/leads/[id]/claim": {
    "GET": {
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
@@ -631,6 +653,29 @@
       "rowToken"
      ],
      "schema": "route doc (or { undoToken })"
+    }
+   }
+  },
+  "/api/leads/duplicate": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "mobile"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/import": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "eventId",
+      "rows"
+     ],
+     "schema": "route doc"
     }
    }
   },
@@ -883,6 +928,17 @@
      "type": "none",
      "required": [],
      "schema": "route doc (X-Job-Secret header = JOB_SECRET; no body)"
+    }
+   }
+  },
+  "/api/leads/updates/read": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "kinds"
+     ],
+     "schema": "route doc"
     }
    }
   }

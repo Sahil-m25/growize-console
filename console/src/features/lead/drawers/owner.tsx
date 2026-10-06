@@ -20,6 +20,7 @@ import {
   assignees,
   canAskMove,
   canAssign,
+  isIR,
   covOf,
   custodian,
   GATES,
@@ -35,6 +36,7 @@ import { useState } from "react";
 import { useConsole } from "@/lib/store";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { leadGate } from "@/lib/data/endpoints/lead";
+import { useAssignToMe } from "@/lib/data/endpoints/ownership";
 import { coverEnd, coverStart } from "@/lib/data/endpoints/cover";
 import type { CoverDuration } from "@/server/leads/cover";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
@@ -399,20 +401,30 @@ function ReassignBody({ lead }: DrawerProps) {
 
 function OwnerFoot({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
+  /* C3: live, "Assign" is POST /api/leads/[id]/assign, which is self only (an IR takes the lead for themselves); giving a lead to
+     somebody else is a manager's act and is not wired yet. The fixture keeps the reducer's full rule. */
+  const live = useApiMode() === "live";
+  const { assign, error, pending } = useAssignToMe();
   const l = lead!;
   if (l.own || custodian(l) === "Closed" || !canAssign(state)) return null;
   const ASTO = uiAsto(state.ui);
   const ready = !!ASTO && assignees(state).includes(ASTO);
+  const selfOnly = live && (ASTO !== state.WHO || !isIR(state.ROLE));
+  const why = !ready ? "Choose a current owner first"
+    : selfOnly ? "Live, an IR takes an unowned lead for themselves; giving it to somebody else is not available yet" : undefined;
   return (
-    <button
-      type="button"
-      className="act"
-      disabled={!ready}
-      title={ready ? undefined : "Choose a current owner first"}
-      onClick={ready ? () => dispatch({ type: "assign", id: l.id, to: ASTO }) : undefined}
-    >
-      Assign owner
-    </button>
+    <>
+      {error ? <p className="ux-date-error" role="alert" style={{ margin: "0 0 9px" }}>{error}</p> : null}
+      <button
+        type="button"
+        className="act"
+        disabled={!ready || selfOnly || pending}
+        title={why}
+        onClick={ready && !selfOnly ? () => (live ? void assign(l.id) : dispatch({ type: "assign", id: l.id, to: ASTO })) : undefined}
+      >
+        Assign owner
+      </button>
+    </>
   );
 }
 

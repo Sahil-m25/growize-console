@@ -17,11 +17,13 @@ import { feedRows, feedScope, gNew, unread, updates } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
+import { useMarkRead } from "@/lib/data/endpoints/ownership";
 import { Feed } from "./Feed";
 
 function Body(_: DrawerProps) {
   const { state, dispatch } = useConsole();
   const router = useRouter();
+  const markRead = useMarkRead();
   const g = updates(state);
   /* D59 g3: a row opens ITS group on the page (and reads it), rather than every row landing on the
      same page top — ir-merged.js:9582. */
@@ -30,7 +32,7 @@ function Body(_: DrawerProps) {
     dispatch({ type: "go", v: "updates" });
     if ((state.ui.NOPEN ?? null) !== k) {
       dispatch({ type: "setUi", patch: { NOPEN: k } });
-      dispatch({ type: "markRead", k });
+      markRead(k);
     }
     router.push(pathOf("updates"));
   };

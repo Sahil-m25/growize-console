@@ -40,12 +40,15 @@ import { FUCHANNELS, fuLatest } from "@/features/today/work";
 /* p:add.quick is registered by the shell (components/shell/drawers); the lead drawers load on demand
    in useGoLead. The list itself registers nothing, which keeps this route's chunk small. */
 
+import { useAssignToMe } from "@/lib/data/endpoints/ownership";
 import { LeadsIcon } from "./icons";
 import { useGoLead } from "./nav";
 import { uiLlost, uiSort } from "./ui";
 
 export function LeadsPage() {
   const { state, dispatch } = useConsole();
+  /* C3: "Assign to me" is POST /api/leads/[id]/assign (self only); fixture: the reducer */
+  const { assign: assignToMe, error: assignErr, pending: assigning } = useAssignToMe();
   const goLead = useGoLead("leads");
   const ui = state.ui;
   const LQ = ui.LQ ?? "";
@@ -319,6 +322,7 @@ export function LeadsPage() {
         <span className="tag due">{unowned.length}</span>
       </div>
       <div className="cb">
+        {assignErr ? <p className="ux-date-error" role="alert" style={{ margin: "0 0 9px" }}>{assignErr}</p> : null}
         {unowned.map((l) => (
           <div className="ur" key={l.id}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -334,7 +338,7 @@ export function LeadsPage() {
                 Assign owner
               </button>
             ) : isIR(state.ROLE) ? (
-              <button type="button" className="act" onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}>
+              <button type="button" className="act" disabled={assigning} onClick={() => void assignToMe(l.id)}>
                 Assign to me
               </button>
             ) : null}
