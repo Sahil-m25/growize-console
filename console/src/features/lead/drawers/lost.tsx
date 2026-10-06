@@ -5,6 +5,9 @@
    the only thing that tells anybody what to change. The close is kept when it is re-opened — it
    stays in the history and in Why we lose, so a lead that was closed and re-opened does not read as
    a new one.
+
+   C1: Close it is POST /api/leads/[id]/lost and Re-open it is DELETE /api/leads/[id]/lost (an update, not a
+   delete): lib/data/endpoints/followup, with the lead's Modified_Time as the stale-edit guard.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { LADDER, LOSTWHY } from "@/domain";
@@ -13,6 +16,10 @@ import { canLose, canReopen, lost, P, reopenHandoff } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import type { ConsoleState } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
+import { useState } from "react";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { lostClose, NO_MT } from "@/lib/data/endpoints/followup";
+import { useReopenLost } from "../followupWrites";
 
 /* the lost-close draft, keyed per lead — ir-console-redesigned.html DRAFTS/dKey/sayLost 3248-3276.
    `LOSTW`/`LOSTN` (leads/ui.ts, not owned by this agent) are one shared pair for every lead, so a
@@ -107,45 +114,67 @@ function Body({ lead }: DrawerProps) {
 }
 
 function Foot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
   const { why: LOSTW, note: LOSTN } = draftOf(state, l.id);
+  const close = useApiWrite(lostClose, state, dispatch);
+  const reopen = useReopenLost();
+  const live = useApiMode() === "live";
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const bad = refusal ? (
+    <p className="note bad" style={{ margin: "8px 0 0", width: "100%" }} role="alert">
+      {refusal}
+    </p>
+  ) : null;
   if (lost(l)) {
     if (canReopen(state, l))
       return (
-        <button
-          type="button"
-          className="act"
-          onClick={() => dispatch({ type: "reopenLost", id: l.id })}
-        >
-          Re-open it
-        </button>
+        <>
+          <button
+            type="button"
+            className="act"
+            onClick={() => {
+              setRefusal(null);
+              void reopen(l).then((r) => { if (!r.ok) setRefusal(r.error); });
+            }}
+          >
+            Re-open it
+          </button>
+          {bad}
+        </>
       );
     const handoff = reopenHandoff(state, l);
     return handoff ? <p className="sm" style={{ margin: 0 }}>{handoff}</p> : null;
   }
   return (
-    <button
-      type="button"
-      className="act"
-      disabled={!LOSTW}
-      title={LOSTW ? undefined : "Pick a reason first"}
-      onClick={
-        LOSTW
-          ? () => {
-              /* closeLost() refuses silently once money is in (canLose), same as every other
-                 close-the-window write in this console. The old code cleared the draft on every
-                 click regardless — a refused close still lost the reason and note the person had
-                 just typed. Only clear it once the close actually happened. */
-              if (!canLose(state, l)) return;
-              dispatch({ type: "closeLost", id: l.id, why: LOSTW, note: LOSTN });
-              dispatch({ type: "setUi", patch: { LOSTDRAFT: clearDraft(state, l.id) } });
-            }
-          : undefined
-      }
-    >
-      Close it as lost
-    </button>
+    <>
+      <button
+        type="button"
+        className="act"
+        disabled={!LOSTW}
+        title={LOSTW ? undefined : "Pick a reason first"}
+        onClick={
+          LOSTW
+            ? () => {
+                /* closeLost() refuses silently once money is in (canLose), same as every other
+                   close-the-window write in this console. The draft is cleared only once the
+                   close actually happened: a refused close keeps the reason and note just typed. */
+                if (!canLose(state, l)) return;
+                setRefusal(null);
+                if (live && !l.mt) { setRefusal(NO_MT().error); return; }
+                void close({ id: l.id, mt: l.mt, why: LOSTW, note: LOSTN }).then((r) => {
+                  if (!r.ok) { setRefusal(r.error); return; }
+                  dispatch({ type: "setUi", patch: { LOSTDRAFT: clearDraft(state, l.id) } });
+                  if (live) reloadData();
+                });
+              }
+            : undefined
+        }
+      >
+        Close it as lost
+      </button>
+      {bad}
+    </>
   );
 }
 

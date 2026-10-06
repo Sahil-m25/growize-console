@@ -885,6 +885,77 @@
      "schema": "route doc (X-Job-Secret header = JOB_SECRET; no body)"
     }
    }
+  },
+  "/api/leads/[id]/followup": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "contact",
+      "complete",
+      "keep"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/touches": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "channel"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/next": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "next"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/next/move": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "days"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/lost": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "reason"
+     ],
+     "schema": "route doc"
+    }
+   },
+   "DELETE": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
   }
  }
 }

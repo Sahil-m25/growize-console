@@ -429,3 +429,124 @@ test('skip is only for Engagement when it is next, and marks the skip', async ()
   r = journeyRig('journey.at2');
   assert.equal((await r.j.skip(principal(), LEAD, LOADED)).reasonCode, 'not-skippable');
 });
+
+// ---------------- C1: set the next step, close as lost, pull-in, complete without an activity id ----------------
+
+const NEXT = Object.freeze({ leadId: LEAD, expectedModifiedTime: LOADED,
+  next: { text: 'Call back after the deck', at: '2026-09-29T11:00:00+05:30', channel: 'call' }, scheduled: { module: 'Tasks', id: TASK } });
+const noDelete = (r) => assert.ok(!r.calls.some((c) => c.key.startsWith('DELETE')), 'a human token holds no Delete: nothing is deleted');
+
+test('C1 setNext: the lead is written first (guarded), the open Task is deferred, then the D58 activity; nothing is deleted', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig(ROUTES());
+  const res = await r.svc.setNext(principal(), NEXT);
+  assert.equal(res.ok, true);
+  assert.equal(res.value.nextId, CALL);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Calls']);
+  const [lead, task, call] = r.writes();
+  assert.equal(lead.headers['If-Unmodified-Since'], LOADED);
+  assert.deepEqual(lead.body.data[0], { Next_Step: 'Call back after the deck', Next_Step_At: '2026-09-29T11:00:00+05:30', Next_Step_Channel: 'Call' });
+  assert.deepEqual(task.body.data[0], { Status: 'Deferred' });
+  assert.equal(call.body.data[0].Call_Start_Time, '2026-09-29T11:00:00+05:30');
+  noDelete(r);
+  // no open activity known (the book carries no id): only the Lead and the new activity are written
+  const r2 = rig(ROUTES());
+  assert.equal((await r2.svc.setNext(principal(), { ...NEXT, scheduled: null })).ok, true);
+  assert.deepEqual(r2.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Calls']);
+});
+
+test('C1 setNext: refused with nothing written when the step is past, has no consent, the lead is lost, changed or not yours', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const cases = [
+    [{ next: { ...NEXT.next, at: '2026-09-27T20:00:00+05:30' } }, null, 'next-step-in-past'],
+    [{ next: { ...NEXT.next, text: '  ' } }, null, 'invalid-request'],
+    [{ next: { ...NEXT.next, channel: 'email' } }, null, 'no-consent'],
+    [{ expectedModifiedTime: '2026-09-27T08:00:00+05:30' }, null, 'lead-changed'],
+    [{}, 'lead.guard-lost', 'lead-lost'],
+    [{}, 'lead.guard-other-owner', 'not-in-book'],
+  ];
+  for (const [patch, get, code] of cases) {
+    const r = rig(get ? { ...ROUTES(), [`GET /Leads/${LEAD}`]: get } : ROUTES());
+    const res = await r.svc.setNext(principal(), { ...NEXT, ...patch });
+    assert.equal(res.reasonCode, code, code);
+    assert.equal(r.writes().length, 0, code);
+  }
+  const r = rig({ ...ROUTES(), [`PUT /Leads/${LEAD}`]: 'conflict' });
+  assert.equal((await r.svc.setNext(principal(), NEXT)).reasonCode, 'lead-changed');
+  assert.equal(r.writes().length, 1);
+});
+
+test('C1 setNext: when the activity cannot be written the Lead and the Task are written back as they were, never deleted', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig({ ...ROUTES(), 'POST /Calls': 'server-error' });
+  const res = await r.svc.setNext(principal(), NEXT);
+  assert.equal(res.ok, false);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Calls', `PUT /Tasks/${TASK}`, `PUT /Leads/${LEAD}`]);
+  assert.deepEqual(r.writes()[3].body.data[0], { Status: 'Not Started' });
+  assert.equal(r.writes()[4].body.data[0].Next_Step, 'Send the deck');
+  noDelete(r);
+});
+
+const CLOSE = Object.freeze({ leadId: LEAD, expectedModifiedTime: LOADED, reason: 'Timing — not now', note: 'Said call in January' });
+
+test('C1 close: Lost_At and Lost_Reason, Next_Step cleared, the note to Notes on the Lead; refused once money is in', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig({ ...ROUTES(), 'POST /Notes': 'touch.created' });
+  const res = await r.svc.close(principal(), CLOSE);
+  assert.equal(res.ok, true);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Notes']);
+  assert.equal(r.writes()[0].headers['If-Unmodified-Since'], LOADED);
+  assert.deepEqual(r.writes()[0].body.data[0], { Next_Step: null, Next_Step_At: null, Next_Step_Channel: null,
+    Lost_At: '2026-09-27T21:00:00+05:30', Lost_Reason: 'Timing - not now' });
+  assert.deepEqual(r.writes()[1].body.data[0], { Note_Title: 'Closed as lost — Timing — not now', Note_Content: 'Said call in January',
+    Parent_Id: { module: { api_name: 'Leads' }, id: LEAD } });
+  noDelete(r);
+  // no note, no Notes row
+  const bare = rig(ROUTES());
+  assert.equal((await bare.svc.close(principal(), { ...CLOSE, note: '' })).value.noteId, null);
+  assert.deepEqual(bare.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`]);
+  const refusals = [
+    [{}, 'lead.guard-paid', 'money-in'], [{}, 'lead.guard-lost', 'lead-lost'], [{}, 'lead.guard-other-owner', 'not-in-book'],
+    [{ reason: 'Rude' }, null, 'loss-not-offered'], [{ reason: 'toString' }, null, 'loss-not-offered'],
+    [{ expectedModifiedTime: '2026-09-27T08:00:00+05:30' }, null, 'lead-changed'],
+  ];
+  for (const [patch, get, code] of refusals) {
+    const x = rig(get ? { ...ROUTES(), [`GET /Leads/${LEAD}`]: get } : ROUTES());
+    assert.equal((await x.svc.close(principal(), { ...CLOSE, ...patch })).reasonCode, code, code);
+    assert.equal(x.writes().length, 0, code);
+  }
+});
+
+test('C1 close: if the note cannot be written the lead is put back (an update), never deleted', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig({ ...ROUTES(), 'POST /Notes': 'server-error' });
+  assert.equal((await r.svc.close(principal(), CLOSE)).ok, false);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Notes', `PUT /Leads/${LEAD}`]);
+  assert.equal(r.writes()[2].body.data[0].Lost_At, null);
+  assert.equal(r.writes()[2].body.data[0].Next_Step, 'Send the deck');
+  noDelete(r);
+});
+
+test('C1 pull-in: a negative shift moves the step earlier, to no day that has gone; zero is not a move', async () => {
+  now = Date.parse('2026-09-25T09:00:00Z'); // 25 Sep IST; the lead's step is 27 Sep 18:00
+  let r = rig(ROUTES());
+  const res = await r.svc.reschedule(principal(), LEAD, LOADED, null, -1);
+  assert.equal(res.ok, true);
+  assert.equal(res.value.nextStepAt, '2026-09-26T18:00:00+05:30');
+  assert.deepEqual(r.writes().map((c) => [c.key, c.body.data[0]]), [[`PUT /Leads/${LEAD}`, { Next_Step_At: '2026-09-26T18:00:00+05:30' }]]);
+  r = rig(ROUTES());
+  assert.equal((await r.svc.reschedule(principal(), LEAD, LOADED, null, -3)).reasonCode, 'next-step-in-past');
+  assert.equal(r.writes().length, 0);
+  for (const days of [0, -367, 367, 1.5]) assert.equal((await rig(ROUTES()).svc.reschedule(principal(), LEAD, LOADED, null, days)).reasonCode, 'invalid-request', String(days));
+});
+
+test('C1 save: completing the scheduled step with no activity id known clears the lead\'s step and closes no activity', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig(ROUTES());
+  const res = await r.svc.save(principal(), { ...CMD, scheduled: null });
+  assert.equal(res.ok, true);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', 'POST /Calls']);
+  const lone = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-no-next' });
+  const done = await lone.svc.save(principal(), { ...CMD, scheduled: null, next: null, complete: true });
+  assert.equal(done.reasonCode, 'next-step-needed', 'an active lead still needs a dated next step');
+});

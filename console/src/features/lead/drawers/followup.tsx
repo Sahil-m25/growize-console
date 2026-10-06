@@ -30,6 +30,8 @@ import { useConsole } from "@/lib/store";
 import type { ConsoleState, DrawerKind, FollowupDraft } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { FollowupContext } from "../followupContext";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { followupSave, NO_MT } from "@/lib/data/endpoints/followup";
 
 /* FUCHANNELS/FUOUTCOMES — ir-console-redesigned.html:5990-5996. Followup-drawer-only presentation
    data; not a domain constant (nothing outside this drawer reads it), so it lives here rather than
@@ -275,10 +277,13 @@ function Body({ lead }: DrawerProps) {
 }
 
 function Foot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
   const d = uiFU(state.ui) ?? freshFollowup(l, state.NOW);
   const [refusal, setRefusal] = useState<string | null>(null);
+  /* C1: Save follow-up is POST /api/leads/[id]/followup (lib/data/endpoints/followup) */
+  const save = useApiWrite(followupSave, state, dispatch);
+  const live = useApiMode() === "live";
   if (!canWork(state, l)) return <span className="sm">{whyLocked(state, l)}</span>;
   const ok = canPlan(state, l) && !!d.outcome && fuChannelAllowed(l, d.channel);
   return (
@@ -293,7 +298,14 @@ function Foot({ lead }: DrawerProps) {
                 const why = followupWhy(state, l, d);
                 setRefusal(why);
                 if (why) return;
-                dispatch({ type: "saveFollowup", id: l.id });
+                if (live && !l.mt) { setRefusal(NO_MT().error); return; }
+                void save({ id: l.id, mt: l.mt, d, today: iso(nowT(state.NOW)) }).then((r) => {
+                  if (!r.ok) { setRefusal(r.error); return; }
+                  if (!live) return; /* the reducer has already saved it and closed the drawer */
+                  dispatch({ type: "setUi", patch: { FU: null } });
+                  dispatch({ type: "closeDrawer" });
+                  reloadData();
+                });
               }
             : undefined
         }

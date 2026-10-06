@@ -22,24 +22,24 @@ import type { SeatedZohoUser } from "../oauth/seat";
 import { LEADS_MODULE } from "./capture";
 
 export const UNDO_WINDOW_MS = 10_000;
-const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
-const RECORD_ID = /^\d{15,22}$/;
-const RECORD_PREFIX = /^\d{6,16}$/;
-const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
+export const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
+export const RECORD_ID = /^\d{15,22}$/;
+export const RECORD_PREFIX = /^\d{6,16}$/;
+export const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 
 export type ContactChannel = "msg" | "email" | "call" | "visit" | "reply" | "other";
 export type NextChannel = "msg" | "email" | "call" | "visit" | "other";
-const TOUCH_CHANNEL: Readonly<Record<string, string>> = { msg: "WhatsApp", email: "Email", call: "Call", visit: "Farm visit" };
-const NEXT_CHANNEL: Readonly<Record<string, string | null>> = { msg: "WhatsApp", email: "Email", call: "Call", visit: "Farm visit", other: null };
+export const TOUCH_CHANNEL: Readonly<Record<string, string>> = { msg: "WhatsApp", email: "Email", call: "Call", visit: "Farm visit" };
+export const NEXT_CHANNEL: Readonly<Record<string, string | null>> = { msg: "WhatsApp", email: "Email", call: "Call", visit: "Farm visit", other: null };
 /** Consent flags the org really has on Leads (live metadata, 4 Oct 2026). There is no Consent_Visit, so a farm visit has
  *  no consent gate: PROVISIONAL (M12-S11-NOTE-5) — a visit is the team meeting the investor in person, not a message
  *  sent to them, and the follow-up rules gate messaging channels only. */
-const CONSENT: Readonly<Record<string, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call" };
+export const CONSENT: Readonly<Record<string, string>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call" };
 // HUMAN: if the plan needs visit consent recorded, create the checkbox Leads.Consent_Visit (proposed; not in the org), then restore it here.
 const ACTIVITY_MODULES: ReadonlySet<string> = new Set(["Tasks", "Calls", "Events"]);
 /** The Lead fields a follow-up may change, and so the ones Undo restores. */
-const STAMPS = ["Next_Step", "Next_Step_At", "Next_Step_Channel", "Last_Reply_At", "First_Touch_At", "Lost_At", "Lost_Reason"] as const;
-const GUARD_FIELDS = [...STAMPS, "Modified_Time", "Created_Time", "Lost_At", "Onboarded_At", "Owner", "Secondary_Owner",
+export const STAMPS = ["Next_Step", "Next_Step_At", "Next_Step_Channel", "Last_Reply_At", "First_Touch_At", "Lost_At", "Lost_Reason"] as const;
+export const GUARD_FIELDS = [...STAMPS, "Modified_Time", "Created_Time", "Lost_At", "Onboarded_At", "Owner", "Secondary_Owner",
   "Cover_By", "Cover_Until", "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Reserved_At", "Fully_Paid_At"];
 /** The eight reasons (prototype LOSTWHY) and the value Zoho's Lost_Reason picklist holds for each. */
 export const LOST_REASONS: Readonly<Record<string, string>> = Object.freeze({
@@ -107,7 +107,7 @@ export type FollowupResult<T> =
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: FollowupRefusal; readonly reason: string }
   | { readonly ok: false; readonly kind: "source-error"; readonly source: "access" | "zoho"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
 
-const REASON: Readonly<Record<FollowupRefusal, string>> = Object.freeze({
+export const REASON: Readonly<Record<FollowupRefusal, string>> = Object.freeze({
   "invalid-request": "the follow-up is incomplete",
   "session-changed": "the sign-in session changed",
   "capability-missing": "this seat cannot record follow-ups",
@@ -153,12 +153,12 @@ interface UndoClaims {
   readonly restore?: readonly { readonly module: string; readonly id: string; readonly fields: Readonly<Record<string, string>> }[];
 }
 
-const zohoTime = (ms: number): string => `${new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 19)}+05:30`;
-const idOf = (v: unknown): string | null => {
+export const zohoTime = (ms: number): string => `${new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 19)}+05:30`;
+export const idOf = (v: unknown): string | null => {
   const id = v && typeof v === "object" ? (v as { id?: unknown }).id : undefined;
   return typeof id === "string" && RECORD_ID.test(id) ? id : null;
 };
-const text = (v: unknown, max: number): string | null => (typeof v === "string" && v.trim() && v.length <= max ? v.trim() : null);
+export const text = (v: unknown, max: number): string | null => (typeof v === "string" && v.trim() && v.length <= max ? v.trim() : null);
 
 export function createFollowups(deps: FollowupDependencies) {
   if (!deps || typeof deps.crm?.getRecord !== "function" || typeof deps.crm?.update !== "function" || typeof deps.crm?.insert !== "function"
@@ -237,7 +237,7 @@ export function createFollowups(deps: FollowupDependencies) {
         || (c.scheduled !== null && (!c.scheduled || !ACTIVITY_MODULES.has(c.scheduled.module) || !validId(c.scheduled.id)))
         || (c.next !== null && (!c.next || !text(c.next.text, 200) || typeof c.next.at !== "string" || !DATETIME.test(c.next.at)
           || !(c.next.channel in NEXT_CHANNEL)))
-        || (c.keep && c.next !== null) || (c.complete && !c.scheduled)
+        || (c.keep && c.next !== null)
         || (c.lost !== undefined && c.lost !== null && (typeof c.lost !== "object" || c.next !== null || c.keep))) {
         return refuse(me, "invalid-request", validId(c?.leadId) ? [c.leadId] : []);
       }
@@ -388,6 +388,133 @@ export function createFollowups(deps: FollowupDependencies) {
       return { ok: true, value: { modifiedTime: put.value.modifiedTime } };
     },
 
+    /** Set or replace the next step with no contact (D57/D58). The Lead's Next_Step* are written first, guarded; the open
+     *  Task it replaces is deferred (an update, never a delete: rule 1 of the review); the D58 activity is inserted last,
+     *  so a failure there is taken back by writing the Lead and the Task as they were. Calls and Meetings already
+     *  scheduled are left as they are: only a Task has a Deferred status. */
+    async setNext(principal: { credential: UserCredential; sessionId: string }, c: {
+      readonly leadId: string; readonly expectedModifiedTime: string;
+      readonly next: { readonly text: string; readonly at: string; readonly channel: NextChannel };
+      readonly scheduled?: { readonly module: "Tasks" | "Calls" | "Events"; readonly id: string } | null;
+    }, signal?: AbortSignal): Promise<FollowupResult<{ readonly nextId: string; readonly modifiedTime: string | null }>> {
+      if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
+      const cred = principal.credential, me = cred.userId;
+      const sched = c?.scheduled ?? null;
+      if (!c || !validId(c.leadId) || typeof c.expectedModifiedTime !== "string" || !DATETIME.test(c.expectedModifiedTime)
+        || !c.next || !text(c.next.text, 200) || typeof c.next.at !== "string" || !DATETIME.test(c.next.at) || !(c.next.channel in NEXT_CHANNEL)
+        || (sched !== null && (typeof sched !== "object" || !ACTIVITY_MODULES.has(sched.module) || !validId(sched.id)))) {
+        return refuse(me, "invalid-request", validId(c?.leadId) ? [c.leadId] : []);
+      }
+      if (Date.parse(c.next.at) <= clock()) return refuse(me, "next-step-in-past", [c.leadId]);
+      const a = await recheck(principal, signal);
+      if (!("actor" in a)) return a;
+      let got: Awaited<ReturnType<typeof crm.getRecord>>;
+      try { got = await crm.getRecord(cred, LEADS_MODULE, c.leadId, { fields: GUARD_FIELDS, signal }); } catch { return zoho("unexpected"); }
+      if (!got.ok) return got.error.kind === "not-found" || got.error.kind === "forbidden" ? refuse(me, "not-visible", [c.leadId]) : zoho(got.error.kind);
+      if (!got.value || got.value.id !== c.leadId) return refuse(me, "not-visible", [c.leadId]);
+      const L = got.value as ZohoRecord;
+      if (L.Modified_Time !== c.expectedModifiedTime) return refuse(me, "lead-changed", [c.leadId]);
+      if (L.Lost_At) return refuse(me, "lead-lost", [c.leadId]);
+      const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
+      const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
+        || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
+        || (owner !== null && a.teamOwnerIds.includes(owner));
+      if (!inBook) return refuse(me, "not-in-book", [c.leadId]);
+      if (c.next.channel !== "other" && !!CONSENT[c.next.channel] && L[CONSENT[c.next.channel]] !== true) return refuse(me, "no-consent", [c.leadId]);
+      if (sched) {
+        let s: Awaited<ReturnType<typeof crm.getRecord>>;
+        try { s = await crm.getRecord(cred, sched.module, sched.id, { fields: ["What_Id"], signal }); } catch { return zoho("unexpected"); }
+        if (!s.ok || !s.value || idOf(s.value.What_Id) !== c.leadId) return refuse(me, "scheduled-changed", [c.leadId, sched.id]);
+      }
+      const snapshot = Object.fromEntries(STAMPS.map((k) => [k, typeof L[k] === "string" ? L[k] as string : null])) as Snapshot;
+      const b = await recheck(principal, signal);
+      if (!("actor" in b)) return b;
+      let put: Awaited<ReturnType<typeof crm.update>>;
+      try {
+        put = await crm.update(cred, LEADS_MODULE, c.leadId, { Next_Step: c.next.text.trim(), Next_Step_At: c.next.at,
+          Next_Step_Channel: NEXT_CHANNEL[c.next.channel] }, { ifUnmodifiedSince: c.expectedModifiedTime, signal });
+      } catch { return zoho("unexpected"); }
+      if (!put.ok) return put.error.kind === "conflict" ? refuse(me, "lead-changed", [c.leadId]) : zoho(put.error.kind);
+      const leadModified = put.value.modifiedTime && DATETIME.test(put.value.modifiedTime) ? put.value.modifiedTime : null;
+      const fail = async (reopened: string | null): Promise<FollowupResult<never>> => {
+        const left = await takeBack(cred, c.leadId, leadModified, snapshot, [], reopened, signal);
+        if (left.length) return refuse(me, "followup-partial", [c.leadId, ...left]);
+        return zoho("unexpected");
+      };
+      let deferred: string | null = null;
+      if (sched?.module === "Tasks") {
+        try {
+          const r = await crm.update(cred, "Tasks", sched.id, { Status: "Deferred" }, { ifUnmodifiedSince: null, signal });
+          if (!r.ok) return fail(null);
+          deferred = sched.id;
+        } catch { return fail(null); }
+      }
+      const act = activityFor(c.next, c.leadId);
+      let id: string | null = null;
+      try {
+        const r = await crm.insert(cred, act.module, [act.row], { signal });
+        const o = r.ok && r.value.length === 1 ? r.value[0] : null;
+        id = o && o.ok && validId(o.id) ? o.id : null;
+      } catch { id = null; }
+      if (!id) return fail(deferred);
+      return { ok: true, value: { nextId: id, modifiedTime: leadModified } };
+    },
+
+    /** Close as lost with a reason and no contact (D57). The Lead is written first, guarded; the note, when there is one,
+     *  goes to Notes last, so a failure there needs only the Lead put back (an update, never a delete). */
+    async close(principal: { credential: UserCredential; sessionId: string }, c: {
+      readonly leadId: string; readonly expectedModifiedTime: string; readonly reason: string; readonly note?: string | null;
+    }, signal?: AbortSignal): Promise<FollowupResult<{ readonly noteId: string | null; readonly modifiedTime: string | null }>> {
+      if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
+      const cred = principal.credential, me = cred.userId;
+      const note = c?.note === undefined || c.note === null || c.note.trim() === "" ? null : text(c.note, 1_800);
+      if (!c || !validId(c.leadId) || typeof c.expectedModifiedTime !== "string" || !DATETIME.test(c.expectedModifiedTime)
+        || typeof c.reason !== "string" || (c.note !== undefined && c.note !== null && c.note.trim() !== "" && !note)) {
+        return refuse(me, "invalid-request", validId(c?.leadId) ? [c.leadId] : []);
+      }
+      if (!Object.prototype.hasOwnProperty.call(LOST_REASONS, c.reason)) return refuse(me, "loss-not-offered", [c.leadId]);
+      const a = await recheck(principal, signal);
+      if (!("actor" in a)) return a;
+      let got: Awaited<ReturnType<typeof crm.getRecord>>;
+      try { got = await crm.getRecord(cred, LEADS_MODULE, c.leadId, { fields: GUARD_FIELDS, signal }); } catch { return zoho("unexpected"); }
+      if (!got.ok) return got.error.kind === "not-found" || got.error.kind === "forbidden" ? refuse(me, "not-visible", [c.leadId]) : zoho(got.error.kind);
+      if (!got.value || got.value.id !== c.leadId) return refuse(me, "not-visible", [c.leadId]);
+      const L = got.value as ZohoRecord;
+      if (L.Modified_Time !== c.expectedModifiedTime) return refuse(me, "lead-changed", [c.leadId]);
+      if (L.Lost_At) return refuse(me, "lead-lost", [c.leadId]);
+      const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
+      const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
+        || (idOf(L.Cover_By) === me && typeof L.Cover_Until === "string" && L.Cover_Until >= today)
+        || (owner !== null && a.teamOwnerIds.includes(owner));
+      if (!inBook) return refuse(me, "not-in-book", [c.leadId]);
+      if (L.Reserved_At || L.Fully_Paid_At) return refuse(me, "money-in", [c.leadId]);
+      const snapshot = Object.fromEntries(STAMPS.map((k) => [k, typeof L[k] === "string" ? L[k] as string : null])) as Snapshot;
+      const b = await recheck(principal, signal);
+      if (!("actor" in b)) return b;
+      let put: Awaited<ReturnType<typeof crm.update>>;
+      try {
+        put = await crm.update(cred, LEADS_MODULE, c.leadId, { Next_Step: null, Next_Step_At: null, Next_Step_Channel: null,
+          Lost_At: zohoTime(clock()), Lost_Reason: LOST_REASONS[c.reason] }, { ifUnmodifiedSince: c.expectedModifiedTime, signal });
+      } catch { return zoho("unexpected"); }
+      if (!put.ok) return put.error.kind === "conflict" ? refuse(me, "lead-changed", [c.leadId]) : zoho(put.error.kind);
+      const leadModified = put.value.modifiedTime && DATETIME.test(put.value.modifiedTime) ? put.value.modifiedTime : null;
+      let noteId: string | null = null;
+      if (note) {
+        try {
+          const r = await crm.insert(cred, "Notes", [{ Note_Title: `Closed as lost — ${c.reason}`, Note_Content: note,
+            Parent_Id: { module: { api_name: LEADS_MODULE }, id: c.leadId } }], { signal });
+          const o = r.ok && r.value.length === 1 ? r.value[0] : null;
+          noteId = o && o.ok && validId(o.id) ? o.id : null;
+        } catch { noteId = null; }
+        if (!noteId) {
+          const left = await takeBack(cred, c.leadId, leadModified, snapshot, [], null, signal);
+          if (left.length) return refuse(me, "followup-partial", [c.leadId, ...left]);
+          return zoho("unexpected");
+        }
+      }
+      return { ok: true, value: { noteId, modifiedTime: leadModified } };
+    },
+
     /** Move the dated next step by whole days, keeping its time, on the Lead and on the Zoho record
      *  D58 made for it (a Call's start moves with its reminder; a Meeting's start and end; a Task's
      *  due date). Undo puts both back for ten seconds. */
@@ -397,7 +524,7 @@ export function createFollowups(deps: FollowupDependencies) {
       if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
       const cred = principal.credential, me = cred.userId;
       if (!validId(leadId) || typeof expectedModifiedTime !== "string" || !DATETIME.test(expectedModifiedTime)
-        || !Number.isSafeInteger(days) || days < 1 || days > 366
+        || !Number.isSafeInteger(days) || days === 0 || days < -366 || days > 366
         || (activity !== null && (!activity || !ACTIVITY_MODULES.has(activity.module) || !validId(activity.id)))) {
         return refuse(me, "invalid-request", validId(leadId) ? [leadId] : []);
       }
@@ -418,6 +545,8 @@ export function createFollowups(deps: FollowupDependencies) {
       if (typeof L.Next_Step_At !== "string" || !DATETIME.test(L.Next_Step_At)) return refuse(me, "nothing-to-reschedule", [leadId]);
       const shift = (t: string) => zohoTime(Date.parse(t) + days * 86_400_000);
       const moved = shift(L.Next_Step_At);
+      // A pull-in moves the step earlier, never to a day that has already gone.
+      if (moved.slice(0, 10) < today) return refuse(me, "next-step-in-past", [leadId]);
 
       // The activity, as it is now, and the fields that move.
       let restore: { module: string; id: string; fields: Record<string, string> }[] = [];

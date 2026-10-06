@@ -6,6 +6,10 @@
    record is to let somebody log one, save, and come back on Thursday and log the next. One attempt
    per save; the drawer stays open for the next one.
 
+   C1: Save contact is POST /api/leads/[id]/touches (lib/data/endpoints/followup); Remove is not wired
+   (Touches.Voided_At does not exist), so the Remove buttons are offered only on the fixture book. A call or
+   visit saved here counts toward "First touch" only through the follow-up form, which says whether it was reached.
+
    Two refusals here were `alert()`s: the per-channel consent one (`conWhy`) and the future-dated
    one. Both render as the `.note.bad` this drawer already has room for, and neither writes.
    ────────────────────────────────────────────────────────────────────────────────────────── */
@@ -19,6 +23,8 @@ import { useConsole } from "@/lib/store";
 import type { ConsoleState } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiTD } from "@/features/leads/ui";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { istAt, NO_MT, touchRecord } from "@/lib/data/endpoints/followup";
 
 type Row = { k: string; at: Stamp; n: number; t: string; last: boolean };
 
@@ -39,6 +45,7 @@ function Body({ lead }: DrawerProps) {
   const l = lead!;
   const TD = uiTD(state.ui);
   const [refusal, setRefusal] = useState<string | null>(null);
+  const live = useApiMode() === "live";
 
   const rows: Row[] = [];
   TOUCHCHANNELS.forEach((k) =>
@@ -127,8 +134,9 @@ function Body({ lead }: DrawerProps) {
         <summary className="lbl">Previous contact entries · {rows.length}</summary>
         {rows.length ? (
           <p className="sm" style={{ margin: "-2px 0 8px" }}>
-            An entry can be taken back for {EDIT_H} hours. After that a correction is a new record,
-            not an edit.
+            {live
+              ? "Entries are kept as recorded; a correction is a new record, not an edit."
+              : `An entry can be taken back for ${EDIT_H} hours. After that a correction is a new record, not an edit.`}
           </p>
         ) : null}
         {rows.length ? (
@@ -139,7 +147,7 @@ function Body({ lead }: DrawerProps) {
                 {x.n > 1 ? <span className="sm"> attempt {x.n}</span> : null}
                 <div className="sm mono">{x.at}</div>
               </div>
-              {canWork(state, l) ? (
+              {canWork(state, l) && !live ? (
                 fresh(x.at, state.NOW) ? (
                   <button
                     type="button"
@@ -182,10 +190,12 @@ function saveWhy(state: ConsoleState, l: Lead, TD: { k: string; d: string; tm: s
 }
 
 function Foot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
   const TD = uiTD(state.ui);
   const [refusal, setRefusal] = useState<string | null>(null);
+  const save = useApiWrite(touchRecord, state, dispatch);
+  const live = useApiMode() === "live";
   if (!canWork(state, l))
     return (
       <span className="sm">{whyLocked(state, l)} Recording belongs to whoever holds it.</span>
@@ -205,7 +215,15 @@ function Foot({ lead }: DrawerProps) {
                 const why = saveWhy(state, l, TD);
                 setRefusal(why);
                 if (why) return;
-                dispatch({ type: "saveTouch", id: l.id });
+                if (live && !l.mt) { setRefusal(NO_MT().error); return; }
+                void save({ id: l.id, mt: l.mt, k: TD.k, at: istAt(TD.d, TD.tm, "09:00"), action: { type: "saveTouch", id: l.id } }).then((r) => {
+                  if (!r.ok) { setRefusal(r.error); return; }
+                  if (!live) return; /* the reducer has already reseeded the draft */
+                  /* stay on the channel you were logging, for the next one */
+                  dispatch({ type: "seedTouch", id: l.id });
+                  dispatch({ type: "setTD", k: "k", v: TD.k });
+                  reloadData();
+                });
               }
             : undefined
         }

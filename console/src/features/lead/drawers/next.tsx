@@ -5,6 +5,9 @@
    carries only a date turns that into a whole day of guessing, and the call-back is the cheapest
    lead there is to lose. So the step carries a date AND a time, both picked from a real calendar
    and clock.
+
+   C1: Save the step is PUT /api/leads/[id]/next (lib/data/endpoints/followup). Remove next step is not wired
+   (it waits on an owner ruling), so it is offered only on the fixture book.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { CHAN, NEXTS } from "@/domain";
@@ -14,6 +17,9 @@ import { chanOf, conFor, hasNext, P } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiNXD } from "@/features/leads/ui";
+import { useState } from "react";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { NO_MT, nextSave } from "@/lib/data/endpoints/followup";
 
 const QUICK: readonly (readonly [string, number])[] = [
   ["Today", 0],
@@ -137,21 +143,30 @@ function Body({ lead }: DrawerProps) {
 }
 
 function Foot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
   const NXD = uiNXD(state.ui);
+  const save = useApiWrite(nextSave, state, dispatch);
+  const live = useApiMode() === "live";
+  const [refusal, setRefusal] = useState<string | null>(null);
   const ok = !!NXD.t && /^\d{4}-\d{2}-\d{2}$/.test(NXD.d || "");
+  const press = () => {
+    setRefusal(null);
+    if (live && !l.mt) { setRefusal(NO_MT().error); return; }
+    void save({ id: l.id, mt: l.mt, text: NXD.t, d: NXD.d, tm: NXD.tm, ch: draftChannel(state, l, NXD.ch) }).then((r) => {
+      if (!r.ok) { setRefusal(r.error); return; }
+      if (!live) return; /* the reducer has already saved the step and closed the drawer */
+      dispatch({ type: "setUi", patch: { NXASK: null } });
+      dispatch({ type: "closeDrawer" });
+      reloadData();
+    });
+  };
   return (
     <>
-      <button
-        type="button"
-        className="act"
-        disabled={!ok}
-        onClick={ok ? () => dispatch({ type: "saveNext", id: l.id }) : undefined}
-      >
+      <button type="button" className="act" disabled={!ok} onClick={ok ? press : undefined}>
         {hasNext(l) ? "Save the change" : "Save the step"}
       </button>
-      {hasNext(l) ? (
+      {hasNext(l) && !live ? (
         <button
           type="button"
           className="chip"
@@ -162,6 +177,11 @@ function Foot({ lead }: DrawerProps) {
         >
           Remove next step
         </button>
+      ) : null}
+      {refusal ? (
+        <div className="note bad" style={{ marginTop: "8px", width: "100%" }} role="alert">
+          {refusal}
+        </div>
       ) : null}
     </>
   );
