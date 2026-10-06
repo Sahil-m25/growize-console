@@ -26,6 +26,7 @@ import { GateQueueFullError, type Gate, type GateLease } from "../../lib/zoho/ga
 import { assertServiceCredential, crmApiOriginOf, isUserCredential, uploadFileName, MAX_UPLOAD_BYTES, type ServiceCredential, type UploadFile, type UserCredential, type ZohoResult } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
 import { signOriginOf } from "../../lib/zoho/sign";
+import { assertMailAllowed, MailBlockedError, SANDBOX_MAIL_BLOCKED } from "../../lib/mail-guard";
 
 export const SIGN_ID = /^\d{10,25}$/;
 export const EMBED_URL_TTL_MS = 2 * 60_000;
@@ -260,6 +261,14 @@ export function createSignApi(options: SignApiOptions): SignApi {
   const fail = <T>(failure: ZohoFailure): ZohoResult<T> => ({ ok: false, error: failure, creditsRemaining: null });
   const done = <T>(value: T, status: number): ZohoResult<T> => ({ ok: true, value, status, creditsRemaining: null });
   const malformed = <T>(status: number, code = "MALFORMED_SIGN_RESPONSE"): ZohoResult<T> => fail<T>({ kind: "unexpected", status, code });
+  /** D131: Sign runs on the live sign.zoho.in even in staging, so a sandbox send is checked here, before the draft is even created. */
+  const mailBlocked = <T>(as: SignCredential, op: string, recipient: SignRecipient): ZohoResult<T> | null => {
+    try { assertMailAllowed([recipient.email], "sign-" + op); return null; } catch (e) {
+      if (!(e instanceof MailBlockedError)) throw e;
+      options.log.refusal({ at: clock(), actor: actorOf(as), action: op, reason: SANDBOX_MAIL_BLOCKED, recordIds: [] });
+      return fail<T>({ kind: "refused", status: null, reason: SANDBOX_MAIL_BLOCKED });
+    }
+  };
   const checkId = (id: string, what = "request"): void => { if (typeof id !== "string" || !SIGN_ID.test(id)) throw new TypeError(`Invalid Zoho Sign ${what} id.`); };
 
   const api: SignApi = {
@@ -281,6 +290,7 @@ export function createSignApi(options: SignApiOptions): SignApi {
       userOnly(as);
       checkId(t.templateId, "template");
       checkRecipient(t.recipient);
+      { const b = mailBlocked<{ readonly requestId: string }>(as, "signCreateFromTemplate", t.recipient); if (b) return b; }
       const tpl = await json(as, "signTemplateRead", "GET", `/templates/${t.templateId}`, "/templates/{id}", [], null, o.signal);
       if (!tpl.ok) return fail(tpl.failure);
       const signers = (Array.isArray(obj(tpl.body.templates)?.actions) ? (obj(tpl.body.templates)!.actions as unknown[]) : []).map(obj)
@@ -303,6 +313,7 @@ export function createSignApi(options: SignApiOptions): SignApi {
     async createFromPdf(as, p, o = {}) {
       userOnly(as);
       checkRecipient(p.recipient);
+      { const b = mailBlocked<{ readonly requestId: string }>(as, "signCreateFromPdf", p.recipient); if (b) return b; }
       if (p.method === "aadhaar") return fail({ kind: "invalid-data", status: 0, code: "AADHAAR_NEEDS_TEMPLATE", field: null, records: null });
       const f = p.field;
       if (!f || ![f.page, f.x, f.y, f.width, f.height].every((n) => Number.isFinite(n) && n >= 0 && n <= 20_000) || !Number.isInteger(f.page) || f.width < 1 || f.height < 1) {

@@ -21,6 +21,7 @@
  */
 
 import type { OpsRecord, OpsSink } from "../../lib/zoho/log";
+import { assertMailAllowed } from "../../lib/mail-guard";
 import { kolkataNow } from "../../lib/data/clock";
 import type { ErrorRecord } from "../http/error-log";
 
@@ -170,6 +171,11 @@ export interface AlertMailer {
 export interface OutboxMailer extends AlertMailer {
   sent(): readonly AlertMessage[];
   clear(): void;
+}
+
+/** D131: wraps a real mailer so that, in sandbox, an alert can only go to GZ_SANDBOX_MAIL_ALLOW recipients. A null recipient is the outbox: nothing to check. */
+export function guardAlertMailer(inner: AlertMailer): AlertMailer {
+  return { async send(message) { if (message.to !== null) assertMailAllowed(message.to.split(/[,;]/).map((x) => x.trim()).filter(Boolean), "alert"); return inner.send(message); } };
 }
 
 /** Keeps messages in memory. The default until mail delivery is configured; sends nothing. */

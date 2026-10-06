@@ -52,7 +52,7 @@ Zoho sign-in and API: ZOHO_OAUTH_CLIENT_ID, ZOHO_OAUTH_CLIENT_SECRET, ZOHO_OAUTH
 ZOHO_ACCOUNTS_ORIGIN, ZOHO_STEPUP_REDIRECT_URI, ZOHO_SIGN_API_ORIGIN, ZOHO_CRM_RECORD_ID_PREFIX, ZOHO_SESSION_KEY,
 ZOHO_SEAT_IDS, ZOHO_UNASSIGNED_QUEUE_USER_ID, ZOHO_FINANCE_USER_IDS, ZOHO_STATEMENTS_MODULE, ZOHO_CONCURRENCY,
 ZOHO_TEST_INVESTOR_IDS, ZOHO_CRM_ENVIRONMENT (`production` default | `sandbox`), ZOHO_EXPECTED_ORG_ID (org zgid;
-required when ZOHO_CRM_ENVIRONMENT=sandbox, honoured when set in production).
+required when ZOHO_CRM_ENVIRONMENT=sandbox, honoured when set in production), GZ_SANDBOX_MAIL_ALLOW (below).
 Service-credential refresh tokens: ZOHO_KAM_POOL_RETURN_REFRESH_TOKEN, ZOHO_COVER_WINDOW_SHARE_REFRESH_TOKEN,
 ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN, ZOHO_AUDIT_ARCHIVE_REFRESH_TOKEN.
 Signing and idempotency secrets: ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS (and the current secret, named in server/zoho-sign),
@@ -75,6 +75,13 @@ org (60061770791). Set `ZOHO_CRM_ENVIRONMENT=sandbox` and `ZOHO_EXPECTED_ORG_ID=
 `ZOHO_ACCOUNTS_ORIGIN=https://accounts.zoho.in` and the same OAuth client (sandbox tokens come from the same accounts
 server; the person picks the sandbox org on Zoho's consent screen). `ZOHO_CRM_RECORD_ID_PREFIX` and `ZOHO_SEAT_IDS` must
 be the sandbox org's, and every service refresh token must be minted against the sandbox.
+
+**Sandbox mail sink (D131).** With `ZOHO_CRM_ENVIRONMENT` anything but production, every outbound mail path (CRM `send_mail`, Zoho Sign
+recipients, the alert mailer) refuses unless **every** recipient matches `GZ_SANDBOX_MAIL_ALLOW`: a comma-separated list of domains
+(`agresearchlabs.com`) and/or exact addresses (`qa@example.com`). Unset or empty means `agresearchlabs.com`; setting it replaces the default.
+A refused send makes no request and returns the code `sandbox-mail-blocked`; the log line holds a hash of each recipient, never an address.
+Production is unchanged. Zoho Sign runs on the live `sign.zoho.in` even in staging, which is why the guard sits in the console, not in Zoho.
+The guard covers only mail the console sends; see `docs/decisions/D131-sandbox-mail-sink.md` for what it cannot cover (Zoho workflows in the sandbox).
 
 What the console then does (`console/src/lib/zoho/client.ts`): every CRM call goes to `https://sandbox.zohoapis.in`
 — derived from the token's `api_domain`, which Zoho does not promise points at the sandbox — and a `www.zohoapis.*`

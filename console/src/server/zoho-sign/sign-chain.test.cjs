@@ -625,3 +625,53 @@ test('M12-S12-NOTE-2: only the supplementary paper carries an agreed draft; a pa
   const { sender } = suppRig(ok200({ id: AGREED_LEAD }));
   assert.equal((await sender.prefill(who(KAMU, 'kam'), 'supplementary', ALLOT)).reasonCode, 'seat-denied');
 });
+
+/* ================================ D131 sandbox mail sink ================================ */
+
+async function withEnv(vars, fn) {
+  const prev = {};
+  for (const k of Object.keys(vars)) { prev[k] = process.env[k]; if (vars[k] === undefined) delete process.env[k]; else process.env[k] = vars[k]; }
+  const warn = console.warn; const lines = []; console.warn = (l) => lines.push(String(l));
+  try { return await fn(lines); } finally { console.warn = warn; for (const k of Object.keys(prev)) { if (prev[k] === undefined) delete process.env[k]; else process.env[k] = prev[k]; } }
+}
+const GUARD_PDF = { file: { fileName: 'x.pdf', contentType: 'application/pdf', bytes: new Uint8Array([37, 80, 68, 70, 45, 49]) }, requestName: 'x', method: 'email-otp', field: { page: 1, x: 1, y: 1, width: 10, height: 10 } };
+const mailBody = (to) => ({ from: { email: 'harsha@agresearchlabs.com' }, to, subject: 's', content: 'c', format: 'text' });
+
+test('D131: in sandbox, Zoho Sign refuses a real recipient before any request; an allowed one goes through; production is untouched', async () => {
+  const cred = creds.get(HARSHA);
+  // rigs are built first so the credential/data-centre binding is unchanged; the guard reads the environment at call time
+  const r = rig(() => null);
+  const ok = rig((c) => (c.method === 'GET' && c.url.endsWith(`/templates/${TPL}`) ? 'sign.template' : c.method === 'POST' ? 'sign.createdocument' : null));
+  const prod = rig((c) => (c.method === 'GET' && c.url.endsWith(`/templates/${TPL}`) ? 'sign.template' : c.method === 'POST' ? 'sign.createdocument' : null));
+  await withEnv({ ZOHO_CRM_ENVIRONMENT: 'sandbox', GZ_SANDBOX_MAIL_ALLOW: undefined }, async () => {
+    for (const res of [
+      await r.sign.createFromTemplate(cred, { templateId: TPL, requestName: 'x', recipient: { name: 'A', email: 'real.person@gmail.com' }, method: 'email-otp' }),
+      await r.sign.createFromPdf(cred, { ...GUARD_PDF, recipient: { name: 'A', email: 'real.person@gmail.com' } }),
+    ]) {
+      assert.equal(res.ok, false);
+      assert.deepEqual([res.error.kind, res.error.reason], ['refused', 'sandbox-mail-blocked']);
+    }
+    assert.equal(r.calls.length, 0, 'nothing reached Zoho Sign — not even a draft');
+    assert.ok(!r.logText().includes('real.person'), 'Plane B holds no address');
+    const sent = await ok.sign.createFromTemplate(cred, { templateId: TPL, requestName: 'x', recipient: { name: 'A', email: 'tech+gzseed-l1@agresearchlabs.com' }, method: 'email-otp' });
+    assert.equal(sent.ok, true, JSON.stringify(sent));
+  });
+  await withEnv({ ZOHO_CRM_ENVIRONMENT: undefined }, async () => {
+    const sent = await prod.sign.createFromTemplate(cred, { templateId: TPL, requestName: 'x', recipient: { name: 'A', email: 'real.person@gmail.com' }, method: 'email-otp' });
+    assert.equal(sent.ok, true, 'production sends to any valid address, as before');
+  });
+});
+
+test('D131: in sandbox, CRM send_mail is all-or-nothing and makes no request when any recipient is outside the allow list', async () => {
+  const cred = creds.get(HARSHA);
+  await withEnv({ ZOHO_CRM_ENVIRONMENT: 'sandbox', GZ_SANDBOX_MAIL_ALLOW: undefined }, async (lines) => {
+    const r = rig(() => null);
+    const res = await r.crm.sendMail(cred, 'Leads', AGREED_LEAD, mailBody([{ email: 'a@agresearchlabs.com' }, { email: 'real.person@gmail.com' }]));
+    assert.equal(res.ok, false);
+    assert.deepEqual([res.error.kind, res.error.reason], ['refused', 'sandbox-mail-blocked']);
+    assert.equal(r.calls.length, 0);
+    assert.equal(lines.length, 1);
+    assert.ok(!/real\.person|gmail|agresearchlabs/.test(lines[0]), 'the log line carries hashes only');
+    assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.reason === 'sandbox-mail-blocked'));
+  });
+});
