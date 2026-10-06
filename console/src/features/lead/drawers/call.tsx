@@ -100,7 +100,11 @@ function CallBody({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
   const l = lead!;
   const c = state.CALLS[l.id] || { obj: [] };
-  const can = canWork(state, l);
+  /* setCall / toggleObj have no Zoho field yet (Touches.Outcome / Objections are MISSING, ir-write-map.md J3): live shows
+     them disabled, "Not available yet", so nothing pretends to save */
+  const live = useApiMode() === "live";
+  const can = canWork(state, l) && !live;
+  const notYet = live ? "Not available yet" : undefined;
   return (
     <>
       {c.at ? (
@@ -118,6 +122,7 @@ function CallBody({ lead }: DrawerProps) {
             className={`chip ${c.o === o ? "on" : ""}`}
             aria-pressed={c.o === o}
             disabled={!can}
+            title={notYet}
             onClick={can ? () => dispatch({ type: "setCall", id: l.id, o }) : undefined}
           >
             {o}
@@ -133,12 +138,14 @@ function CallBody({ lead }: DrawerProps) {
             className={`chip ${c.obj.includes(o) ? "on" : ""}`}
             aria-pressed={c.obj.includes(o)}
             disabled={!can}
+            title={notYet}
             onClick={can ? () => dispatch({ type: "toggleObj", id: l.id, o }) : undefined}
           >
             {o}
           </button>
         ))}
       </div>
+      {live ? <p className="sm" style={{ margin: "0 0 6px" }}><b>Not available yet.</b> Record the call with Log a contact on the lead page.</p> : null}
       <p className="sm" style={{ margin: 0 }}>
         This records the call outcome and objections. Closing an investor requires a separate lost
         reason.

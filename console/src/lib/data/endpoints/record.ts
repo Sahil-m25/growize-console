@@ -7,12 +7,12 @@
    Live: the routes, on the person's own token, guarded by `l.mt` where they update the Lead. Fixture: the reducer action
    each replaces, peeked first. The shared pages (LeadPage's note box) call `useLeadNote()`. */
 
-import type { Channel, Lead } from "@/domain";
+import type { Channel, Lead, Note } from "@/domain";
 import { ST } from "@/domain";
 import { iso } from "@/lib/format";
 import { openable } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { fail, newIdempotencyKey, useApiMode, useApiWrite, type ApiResult, type WriteEndpoint } from "../api";
+import { fail, newIdempotencyKey, ok, useApiMode, useApiRead, useApiWrite, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { consoleFixtureWrite, NOT_YOURS, type ConsoleBook, type ConsoleDispatch } from "./lead";
 
 const base = (id: string) => `/api/leads/${encodeURIComponent(id)}`;
@@ -110,6 +110,41 @@ export const leadForecastSet: WriteEndpoint<ConsoleBook, ForecastArgs, ForecastS
       next => { const f = leadOf(next, a.id)?.fc; return { leadId: a.id, modifiedTime: null, forecast: f ? f.c : null, paidBy: f && f.by ? f.by : null }; });
   },
 };
+
+/* ---- the notes, read back ------------------------------------------------------------------------- */
+/** GET /api/leads/[id]/notes (server/leads/notes list): newest first. Fixture: the demo book's NOTES, as the page held them. */
+export const leadNotesRead: ReadEndpoint<ConsoleBook, string | null, Note[]> = {
+  path: id => (id ? `${base(id)}/notes` : null),
+  pick: j => {
+    const rows = (j && typeof j === "object" ? (j as { notes?: unknown }).notes : null);
+    if (!Array.isArray(rows)) return [];
+    return rows.map((n: { text?: unknown; at?: unknown; by?: unknown }) => {
+      const at = typeof n.at === "string" ? n.at : "";
+      return { t: typeof n.text === "string" ? n.text : "", who: (typeof n.by === "string" ? n.by : "") as Note["who"], at: stampOfZoho(at), d: at.slice(0, 10) as Note["d"] };
+    }).filter(n => n.t);
+  },
+  fixture(state, id) {
+    if (!id || !openable(state).some(l => l.id === id)) return NOT_YOURS();
+    return ok(state.NOTES[id] || []);
+  },
+};
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** A Zoho datetime printed as the console's stamp, in IST ("DD Mon HH:MM", as server/data/live stampOf). */
+function stampOfZoho(z: string): string {
+  const ms = Date.parse(z);
+  if (!Number.isFinite(ms)) return "";
+  const d = new Date(ms + 5.5 * 3_600_000), p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getUTCDate())} ${MON[d.getUTCMonth()]} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+
+/** The notes a page shows for one lead: fixture, the book's own; live, the route's (empty while loading or refused). */
+export function useLeadNotes(id: string | null): { notes: Note[]; error: string | null } {
+  const { state } = useConsole();
+  const live = useApiMode() === "live";
+  const r = useApiRead(leadNotesRead, state, id);
+  if (!live) return { notes: id ? state.NOTES[id] || [] : [], error: null };
+  return { notes: r.state === "ok" ? r.data : [], error: r.state === "error" ? r.err.error : null };
+}
 
 /** A note on a lead, for any page (LeadPage's note box, the notes drawer). One Idempotency-Key per press; a retry of
  *  the same press passes `key` back. Live: a success clears the draft and re-reads the book. */

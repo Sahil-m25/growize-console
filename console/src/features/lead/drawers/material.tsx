@@ -16,6 +16,11 @@ import { canWork, fresh, whyLocked } from "@/lib/selectors";
 import { useNda } from "../nda";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
+import { useApiMode } from "@/lib/data/api";
+
+/* mat / pack have no Zoho fields yet (the *_Sent_At and Produce_Pack_* Lead fields are MISSING, ir-write-map.md J5/J6):
+   live shows the ticks read-only with "Not available yet", so nothing pretends to save. */
+const NOT_YET = "Not available yet — recording material in Zoho is still to be built.";
 
 const NDAFIRST =
   "The NDA is not back signed yet.\n\nNothing goes out to somebody who has not signed one — that is what the first round is for. Open Paperwork on this lead to see whose move it is.";
@@ -25,7 +30,8 @@ function MaterialBody({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
   const l = lead!;
   const sent = state.SENT[l.id] || {};
-  const can = canWork(state, l);
+  const live = useApiMode() === "live";
+  const can = canWork(state, l) && !live;
   const nda = useNda(l);
   const [refusal, setRefusal] = useState<string | null>(null);
 
@@ -96,7 +102,7 @@ function MaterialBody({ lead }: DrawerProps) {
       <p className="sm" style={{ margin: "11px 0 0" }}>
         {can
           ? "Record material only after sending it. Corrections are available for " + EDIT_H + " hours."
-          : "Read only — " + whyLocked(state, l)}
+          : live ? NOT_YET : "Read only — " + whyLocked(state, l)}
       </p>
       {refusal ? (
         <div className="note bad" style={{ marginTop: "10px", whiteSpace: "pre-line" }} role="alert">
@@ -110,7 +116,8 @@ function MaterialBody({ lead }: DrawerProps) {
 function PackBody({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
   const l = lead!;
-  const can = canWork(state, l);
+  const live = useApiMode() === "live";
+  const can = canWork(state, l) && !live;
   const n = state.PACK[l.id] || 0;
   const [refusal, setRefusal] = useState<string | null>(null);
 
@@ -179,7 +186,7 @@ function PackBody({ lead }: DrawerProps) {
         })}
       </div>
       <p className="sm" style={{ margin: "11px 0 0" }}>
-        For field-event investors, record weeks 1–4 in order after each send. The latest send can be corrected for {EDIT_H} hours.
+        {live ? NOT_YET : <>For field-event investors, record weeks 1–4 in order after each send. The latest send can be corrected for {EDIT_H} hours.</>}
       </p>
       {refusal ? (
         <div className="note bad" style={{ marginTop: "10px" }} role="alert">

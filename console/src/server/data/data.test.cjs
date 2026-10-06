@@ -77,6 +77,7 @@ before(async () => {
 
 /** Routes a COQL query to a recorded answer. */
 function route(q, over = {}) {
+  if (over.raw) { const x = over.raw(q); if (x) return x; }
   if (/COUNT\(id\)/.test(q)) return recorded('data', over.count || (/from Contacts/.test(q) ? 'agg.count-4' : 'agg.count-9'));
   if (/from Leads where id in/.test(q)) return recorded('data', 'coql.leads-detail');
   if (/from Leads/.test(q)) return recorded('data', over.leads ? over.leads(q) : /Owner in|id is not null/.test(q) ? 'coql.leads-team' : q.includes(`Owner = '${IR}'`) ? 'coql.leads-personal' : 'coql.none');
@@ -95,6 +96,7 @@ function route(q, over = {}) {
   if (/from Cases/.test(q)) return recorded('data', 'coql.cases');
   if (/from ARL_Holdings/.test(q)) return recorded('data', 'coql.holdings');
   if (/from ARL_Transactions/.test(q)) return recorded('data', 'coql.arl-transactions');
+  if (/from Touches where Lead in/.test(q)) return recorded('data', over.touches || 'coql.touches');
   throw new Error('unrouted query: ' + q);
 }
 
@@ -204,7 +206,7 @@ test('a signed-in IR\'s Leads come from COQL with the IR\'s own credential throu
   assert.match(r.queries[0], new RegExp(`^select .* from Leads where \\(Owner = '${IR}'`));
   assert.match(r.queries[1], /from Leads where \(id in|from Leads where id in/);
   // M07-S05 / M08-S05 stale-edit guard: the detail read selects Modified_Time explicitly and the lead carries it as mt
-  assert.match(r.queries[1], /, Modified_Time from Leads where/);
+  assert.match(r.queries[1], /, Modified_Time(, \w+)* from Leads where/);
   assert.equal(a.mt, '2026-09-25T10:00:00+05:30');
   assert.equal(b.mt, '2026-09-26T10:01:00+05:30');
   // the IR's own-lead investors (D69)
@@ -220,6 +222,61 @@ test('a signed-in IR\'s Leads come from COQL with the IR\'s own credential throu
     assert.deepEqual(l.actor, { kind: 'user', userId: IR });
     assert.deepEqual(Object.keys(l).sort(), ['actor', 'at', 'attempt', 'callClass', 'creditsRemaining', 'durationMs', 'endpoint', 'errorClass', 'gateWaitMs', 'kind', 'method', 'op', 'recordIds', 'status']);
   }
+});
+
+test('the book reads back what the wired IR writes put on the Lead and in Touches (forecast, permission, next step, details, last contact)', async () => {
+  const r = rig();
+  const res = await r.layer.load(principal(IR, 'ir'));
+  assert.deepEqual(res.problems, []);
+  const [a, b] = res.ds.LEADS;
+  const detail = r.queries.find((q) => /from Leads where id in/.test(q));
+  for (const f of ['Next_Step_Channel', 'Forecast', 'Forecast_Paid_By', 'Consent_How', 'Consent_At', 'Consent_By', 'Preferred_Communication', 'Email', 'City', 'Engagement_Skipped', 'Rung_Undone_At']) {
+    assert.ok(detail.includes(f), `the detail read selects ${f}`);
+  }
+  assert.ok(!r.queries.some((q) => /from Receipts/.test(q)), 'never a Receipt for the IR (D69)');
+  assert.ok(!r.queries.some((q) => /\bUnit_Price\b.* from LLP_UnitAllocation_Module/.test(q)), 'never an allotment price for the IR (D69)');
+  // C2 forecast / C2 permission / C2 details / C1 next step
+  assert.deepEqual(a.fc, { c: 'probable', by: '30 Nov', ev: '', at: '', who: IR });
+  assert.equal(a.conHow, 'person', 'Verbal reads back as the console\'s in-person word');
+  assert.equal(a.conAt, '20 Sep 11:00');
+  assert.equal(a.conBy, IR);
+  assert.equal(a.contactPreference, 'WhatsApp');
+  assert.equal(a.em, 'lead.a@example.test');
+  assert.equal(a.city, 'Pune');
+  assert.equal(a.nx.ch, 'call');
+  assert.equal(a.nx.tm, '11:00');
+  assert.equal(a.undoAt, '22 Sep 13:00');
+  assert.equal(a.skipped, undefined);
+  // C1 touches: newest-first read, oldest-first on the lead; a voided touch and a reply are not touches
+  assert.deepEqual(a.touch, { msg: ['21 Sep 10:00'], email: [], call: ['26 Sep 15:30'], visit: [] });
+  assert.deepEqual(b.touch, { msg: [], email: [], call: [], visit: [] });
+  assert.equal(b.reply, '12 Sep 08:00');
+  assert.equal(b.fc, null);
+  const t = r.queries.find((q) => /from Touches/.test(q));
+  assert.match(t, /^select Lead, Channel, Occurred_At, Is_Reply, Voided_At from Touches where Lead in \('\d+', '\d+'\) order by Occurred_At desc limit 0, 200$/);
+});
+
+test('a field the org does not have yet (Engagement_Skipped, Rung_Undone_At, Touches.Voided_At) is dropped from the read, not a failure', async () => {
+  const bad = { status: 400, headers: { 'content-type': 'application/json' }, body: { code: 'INVALID_QUERY', status: 'error', message: 'invalid column', details: {} } };
+  const raw = (q) => ((/from Leads where id in/.test(q) && /Rung_Undone_At/.test(q)) || (/from Touches/.test(q) && /Voided_At/.test(q)) ? bad : null);
+  const r = rig({ over: { raw } });
+  const res = await r.layer.load(principal(IR, 'ir'));
+  assert.deepEqual(res.problems, []);
+  const details = r.queries.filter((q) => /from Leads where id in/.test(q)), touches = r.queries.filter((q) => /from Touches/.test(q));
+  assert.equal(details.length, 2);
+  assert.ok(!/Engagement_Skipped|Rung_Undone_At/.test(details[1]), 'the second read leaves the optional fields out');
+  assert.equal(touches.length, 2);
+  assert.ok(!/Voided_At/.test(touches[1]));
+  assert.equal(res.ds.LEADS[0].fc.c, 'probable', 'the rest still reads back');
+});
+
+test('a Touches read that fails leaves the touches empty and says so, the book still loads', async () => {
+  const raw = (q) => (/from Touches/.test(q) ? recorded('data', 'server-error') : null);
+  const r = rig({ over: { raw } });
+  const res = await r.layer.load(principal(IR, 'ir'));
+  assert.ok(res.problems.some((p) => /^touches:/.test(p)), JSON.stringify(res.problems));
+  assert.equal(res.ds.LEADS.length, 2);
+  assert.deepEqual(res.ds.LEADS[0].touch.call, []);
 });
 
 test('an IR Manager reads personal and team leads (team under Zoho\'s role hierarchy, PROVISIONAL)', async () => {

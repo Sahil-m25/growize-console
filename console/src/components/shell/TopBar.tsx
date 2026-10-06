@@ -19,7 +19,11 @@
        person switcher inside the account drawer instead.
    ============================================================================================== */
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useApiMode } from "@/lib/data/api";
+import { useJourneyWrites } from "@/lib/data/endpoints/journey";
+import { UNDOWHY } from "@/features/lead/lp";
 import type { NavKey, PersonKey } from "@/domain";
 import { LADDER, PAGECAPS, ST, TOUCHDONE, EDIT_H } from "@/domain";
 import {
@@ -250,6 +254,12 @@ export function TopBar({ side = "ir", view }: { side?: "ir" | "im" | "mix"; view
    back whichever of the three one-click writes TJUST names, for as long as it is still fresh; goes
    silent the moment it is not — no "Undo" button that quietly does nothing. */
 function UndoNotice({ state, dispatch }: { state: ConsoleState; dispatch: (a: Action) => unknown }) {
+  /* Live (ir-write-map.md): only the rung's take-back is wired (C2 journey untick), and it needs one of the five reasons, asked
+     here; dropAssign and dropTouch have no route yet (Touches.Voided_At is MISSING), so live offers no Undo for those. */
+  const live = useApiMode() === "live";
+  const jw = useJourneyWrites();
+  const [why, setWhy] = useState("");
+  const [err, setErr] = useState<string | null>(null);
   const t = state.TJUST;
   if (!t) return null;
   const tj = state.LEADS.find((l) => l.id === t.id);
@@ -260,7 +270,7 @@ function UndoNotice({ state, dispatch }: { state: ConsoleState; dispatch: (a: Ac
   let verb = "";
   if (t.w === "own") {
     verb = "the pick-up";
-    if (tj.own === t.to && (canAssign(state) || (isIR(state.ROLE) && t.to === state.WHO))) {
+    if (!live && tj.own === t.to && (canAssign(state) || (isIR(state.ROLE) && t.to === state.WHO))) {
       what = `${tj.n} on ${P(state.PEOPLE, t.to).n}'s book`;
       call = () => dispatch({ type: "dropAssign", id: t.id });
     }
@@ -269,16 +279,33 @@ function UndoNotice({ state, dispatch }: { state: ConsoleState; dispatch: (a: Ac
     const blocked = !!state.PAY[t.id] && tj.done <= ST.PAID;
     if (canWork(state, tj) && tj.done === t.r && undoStage(state, tj).ok && !blocked) {
       what = `${LADDER[t.r - 1]!.t} against ${tj.n}`;
-      call = () => dispatch({ type: "untick", id: t.id });
+      call = live
+        ? () => { if (why) void jw.untick(tj, why, "", "untick").then((r) => { setErr(r.ok ? null : r.error); if (r.ok) setWhy(""); }); }
+        : () => dispatch({ type: "untick", id: t.id });
     }
   } else {
     verb = "the touch";
-    if (canWork(state, tj) && tList(tj, t.k).includes(t.at)) {
+    if (!live && canWork(state, tj) && tList(tj, t.k).includes(t.at)) {
       what = `${TOUCHDONE[t.k as keyof typeof TOUCHDONE] ?? t.k} against ${tj.n}`;
       call = () => dispatch({ type: "dropTouch", id: t.id, k: t.k, at: t.at });
     }
   }
   if (!call) return null;
+
+  if (live && t.w === "rung")
+    return (
+      <>
+        <select className="selw" aria-label="Reason for taking the rung back" value={why} onChange={(e) => setWhy(e.target.value)}>
+          <option value="">Why take it back?</option>
+          {UNDOWHY.map((w) => <option key={w} value={w}>{w}</option>)}
+        </select>
+        <button type="button" className="btn" disabled={!why} onClick={call} aria-label={`Undo — ${what}`}
+          title={why ? `${what} — taken back with your name and this reason` : "Pick a reason first"}>
+          {`Undo ${verb}`}
+        </button>
+        {err ? <span className="tag late" role="alert">{err}</span> : null}
+      </>
+    );
 
   return (
     <button

@@ -105,6 +105,7 @@ function route(q, over = {}) {
   if (/from Cases/.test(q)) return recorded('data', 'coql.cases');
   if (/from ARL_Holdings/.test(q)) return recorded('data', 'coql.holdings');
   if (/from ARL_Transactions/.test(q)) return recorded('data', 'coql.arl-transactions');
+  if (/from Touches where Lead in/.test(q)) return recorded('data', 'coql.touches');
   throw new Error('unrouted query: ' + q);
 }
 
@@ -131,13 +132,14 @@ const principal = (id, seat) => ({ credential: creds.get(id), session: { who: id
  * The calls one page read may make on a cold cache, by seat. Measured on the recorded fixtures at M18-S01-T04 and held
  * exactly: a new read added to a page, or one read turned into one-per-row (N+1), fails here until the budget is
  * raised on purpose. Every call counted is a COQL POST (query or aggregate); the gate's per-call cost is separate.
- *   ir   : personal leads (1) + lead detail (1) + own-lead investors (1) + farms (1) + allotments (1)
- *   conv : personal (1) + team (1) + lead detail (1) + farms (1)           — an IR Manager has no investor book
+ *   ir   : personal leads (1) + lead detail (1) + touches (1) + own-lead investors (1) + farms (1) + allotments (1)
+ *   conv : personal (1) + team (1) + lead detail (1) + touches (1) + farms (1)   — an IR Manager has no investor book
+ *   (touches: raised on purpose, 6 Oct — the last contact read back from Touches, one COQL per 100 leads beside the detail read)
  *   fin  : contacts, farms, allotments, receipts, cases, holdings, ARL transactions — one each
  *   kam  : AM book (contacts, allotments) + farms + allotments projection + cases
  *   amlead: the Head of AM, same five: AM book (issued allotments, contacts by id) + farms + allotments projection + cases (measured 4 Oct, M18-S01-NOTE-4)
  */
-const BUDGET = { ir: 5, conv: 4, fin: 7, kam: 5, amlead: 5 };
+const BUDGET = { ir: 6, conv: 5, fin: 7, kam: 5, amlead: 5 };
 const WHO = { ir: IR, conv: MANAGER, fin: FIN, kam: KAM, amlead: DIVYA };
 const kind = (q) => (q.match(/ from (\w+)/) || [])[1];
 
@@ -228,7 +230,8 @@ test('a book of 450 leads is read in pages of 200 and detail chunks of 100: call
   const pages = lead.filter((q) => !/id in/.test(q)).length, details = lead.filter((q) => /id in/.test(q)).length;
   assert.equal(pages, 3, '450 leads at 200 a page');
   assert.equal(details, 5, '450 ids at 100 a query');
-  assert.ok(r.queries.length <= BUDGET.ir + 7, `a 450-lead book took ${r.queries.length} calls`);
+  assert.equal(r.queries.filter((q) => kind(q) === 'Touches').length, 5, 'touches follow the same 100-id chunks');
+  assert.ok(r.queries.length <= BUDGET.ir + 11, `a 450-lead book took ${r.queries.length} calls`);
   assert.ok(r.queries.length < N / 20, 'never one call per lead');
 });
 

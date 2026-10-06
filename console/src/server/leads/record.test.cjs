@@ -123,6 +123,32 @@ test('addNote: empty, too long, or not in my book — refused, nothing written',
   assert.equal(r.writes().length, 0);
 });
 
+test('notes.list: the lead\'s notes read back on the person\'s token, newest first, blank ones dropped — the page\'s "Latest note"', async () => {
+  const NOTES = json(200, { data: [
+    { id: `${P}740997902`, Note_Title: 'Note', Note_Content: 'Older note', Created_Time: '2026-09-25T10:00:00+05:30', Owner: { id: IR, name: 'x' } },
+    { id: `${P}740997903`, Note_Title: 'Note', Note_Content: '   ', Created_Time: '2026-09-26T10:00:00+05:30', Owner: { id: IR, name: 'x' } },
+    { id: NOTE, Note_Title: 'Note', Note_Content: 'Newest note', Created_Time: '2026-09-27T10:00:00+05:30', Owner: { id: OTHER, name: 'y' } },
+  ], info: { more_records: false } });
+  const r = rig({ lead: (asked) => (asked.includes('Note_Content') ? NOTES : leadWith()) });
+  const notes = createLeadNotes(r.deps);
+  const res = await notes.list(principal(), LEAD);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.value.notes.map((n) => [n.text, n.by, n.at]), [['Newest note', OTHER, '2026-09-27T10:00:00+05:30'], ['Older note', IR, '2026-09-25T10:00:00+05:30']]);
+  const get = r.calls.find((c) => /\/Leads\/\d+\/Notes$/.test(c.path));
+  assert.ok(get, 'one related read of the lead\'s Notes');
+  assert.equal(r.writes().length, 0);
+  assert.ok(!JSON.stringify(r.sink.records()).includes('Newest note'), 'a note\'s text never reaches the log');
+});
+
+test('notes.list: a lead the token cannot see is not-visible; a changed session is refused before any read', async () => {
+  const r = rig({ lead: () => json(404, { code: 'INVALID_URL_PATTERN', status: 'error', message: 'no', details: {} }) });
+  assert.equal((await createLeadNotes(r.deps).list(principal(), LEAD)).reasonCode, 'not-visible');
+  const s = rig({ access: () => null });
+  assert.equal((await createLeadNotes(s.deps).list(principal(), LEAD)).reasonCode, 'session-changed');
+  assert.equal(s.calls.length, 0);
+  assert.equal((await createLeadNotes(s.deps).list(principal(), 'not-an-id')).reasonCode, 'invalid-request');
+});
+
 // ---------------- permission ----------------
 
 test('permission: the three Consent_* flags, How from the picklist, when given, and who recorded it — never Consent_Visit', async () => {

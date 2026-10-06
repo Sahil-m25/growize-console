@@ -8,13 +8,16 @@
 import { EXTDAYS, FORFEIT } from "@/domain";
 import { DAY } from "@/lib/format";
 import { canAskExt, canDecideExt, inReservation, isFin, may, P } from "@/lib/selectors";
-import { useApiRead } from "@/lib/data/api";
+import { useApiMode, useApiRead } from "@/lib/data/api";
 import { holdDay, leadGate } from "@/lib/data/endpoints/lead";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 
 function Body({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
+  /* askExt (J8 PROVISIONAL, no route), decideExt and lapse (the release route is not wired into this drawer) are the reducer's
+     only: live shows the hold and says asking is not available yet, so nothing pretends to save. */
+  const apiLive = useApiMode() === "live";
   const l = lead!;
   const x = state.EXT[l.id];
   /* M08-S04-W1: the hold's day is the gate route's `holdUntil` (GET /api/leads/[id]/gate) */
@@ -73,7 +76,7 @@ function Body({ lead }: DrawerProps) {
               .
             </span>
           </div>
-          {x.state === "waiting" && canDecideExt(state.ROLE) ? (
+          {x.state === "waiting" && canDecideExt(state.ROLE) && !apiLive ? (
             <div className="chips" style={{ marginTop: "10px" }}>
               <button
                 type="button"
@@ -96,6 +99,8 @@ function Body({ lead }: DrawerProps) {
             </p>
           ) : null}
         </>
+      ) : canAskExt(state, l) && apiLive ? (
+        <p className="sm" style={{ margin: 0 }}>Not available yet: asking for an extension is still to be built.</p>
       ) : canAskExt(state, l) ? (
         <>
           <p className="lbl">Ask the BU Owner for an extension</p>
@@ -129,7 +134,7 @@ function Body({ lead }: DrawerProps) {
           The owner or Finance can ask the BU Owner for an extension.
         </p>
       )}
-      {isFin(state.ROLE) && may(state, "pay", "record") && left !== null && left < 0 ? (
+      {isFin(state.ROLE) && may(state, "pay", "record") && left !== null && left < 0 && !apiLive ? (
         <div className="drwsec">
           <button
             type="button"

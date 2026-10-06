@@ -63,6 +63,11 @@ import type { ConsoleState } from "@/lib/store";
 import { useGoLead, useGoView } from "@/features/leads/nav";
 import { uiHorizon, uiTchan } from "@/features/leads/ui";
 import { fuPreference } from "@/features/lead/followupContext";
+import { useMoveNextTo } from "@/features/lead/followupWrites";
+import { useApiMode } from "@/lib/data/api";
+import { useJourneyWrites } from "@/lib/data/endpoints/journey";
+import { useLeadNotes } from "@/lib/data/endpoints/record";
+import { useAssignToMe } from "@/lib/data/endpoints/ownership";
 import { DaySide } from "./DaySide";
 import { Gap } from "./Gap";
 import { Horizon } from "./Horizon";
@@ -101,6 +106,20 @@ export function TodayPage() {
 type WorkNoticeData = { message: string; undo?: { id: string; nx: NonNullable<Lead["nx"]> } };
 type Dispatch = ReturnType<typeof useConsole>["dispatch"];
 
+/* The wired writes Today offers (ir-write-map.md C1–C3). Fixture: the reducer, as before. Live: the route, then
+   reloadData() (inside each hook); a refusal is said in Today's notice line, in the route's words. */
+type TodayWrites = { live: boolean; assign: (l: Lead) => void; tick: (l: Lead) => void };
+function useTodayWrites(): TodayWrites {
+  const { state, dispatch } = useConsole();
+  const live = useApiMode() === "live";
+  const { assign } = useAssignToMe();
+  const jw = useJourneyWrites();
+  const said = (r: { ok: true } | { ok: false; error: string }) => {
+    if (live && !r.ok) dispatch({ type: "setUi", patch: { TODAYNOTICE: { message: r.error, who: state.WHO } } });
+  };
+  return { live, assign: (l) => void assign(l.id).then(said), tick: (l) => void jw.tick(l).then(said) };
+}
+
 /* g1LeadFlow(id,what,channel) — ir-merged.js:4215 (D59). Contact happens on the lead page's own
    flow (D57), so a Today button hands over to it rather than opening a second recording form.
    The lead page reads `ui.LPFLOW` ({id, what, channel}) the way the prototype's `lpOpen()` sets
@@ -127,6 +146,8 @@ function useGoPaper() {
 function WorkToday() {
   const { state, dispatch } = useConsole();
   const goView = useGoView();
+  const moveNextTo = useMoveNextTo();
+  const liveMode = useApiMode() === "live";
   /* WORKSELECT / TODAYGROUP / WORKRESCHEDULE / WORKNOTICE are the prototype's page globals; they
      live in `ui` so they survive the landing redirect ("/" draws Today, then becomes /today) */
   const ui = state.ui as Record<string, unknown>;
@@ -197,13 +218,18 @@ function WorkToday() {
   }, [state.ui.WORKADVANCE]);
 
   /* rescheduleWork(id,days) — ir-merged.js:4187. Keeps the hour, moves the day, offers Undo. */
+  /* C1 moveNextTo (features/lead/followupWrites): live POSTs /api/leads/[id]/next/move and re-reads; the Undo stays a fixture
+     nicety (live has none: the step was moved in Zoho; moving it back is another move) */
   const rescheduleWork = (l: Lead, days: number) => {
     if (!canPlan(state, l) || !hasNext(l)) return;
     const was = l.nx!;
     const by = dISOtoDisp(dISO(dAdd(state.NOW, days)), state.NOW);
-    dispatch({ type: "moveNextTo", id: l.id, days });
+    const said = `${l.n} rescheduled to ${by}${nxTime(l) ? " · " + nxTime(l) : ""}`;
     setReschedule(null);
-    setNotice({ message: `${l.n} rescheduled to ${by}${nxTime(l) ? " · " + nxTime(l) : ""}`, undo: { id: l.id, nx: was } });
+    void moveNextTo(l, days).then((r) => {
+      if (!liveMode) setNotice({ message: said, undo: { id: l.id, nx: was } });
+      else setNotice({ message: r.ok ? said : r.error });
+    });
   };
 
   const workNotice = notice ? (
@@ -489,6 +515,7 @@ type WorkAct = { node: React.ReactNode; kind: "special" | "followup" | "open" };
 function workAction(
   state: ConsoleState,
   dispatch: Dispatch,
+  writes: TodayWrites,
   goLead: (id: string, drawer?: DrawerKind) => void,
   goPaper: (id: string) => void,
   l: Lead,
@@ -498,7 +525,7 @@ function workAction(
   const sp = (node: React.ReactNode): WorkAct => ({ node, kind: "special" });
   if (!l.own && rec?.kind === "assign")
     return sp(
-      <button type="button" className="act" onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}>
+      <button type="button" className="act" onClick={() => writes.assign(l)}>
         Assign to me
       </button>,
     );
@@ -549,7 +576,7 @@ function workAction(
     );
   if (u.kind === "stage" && canWork(state, l) && stepOwner(state, l.done, l) && gateMet(state, l))
     return sp(
-      <button type="button" className="act" onClick={() => dispatch({ type: "tick", id: l.id })}>
+      <button type="button" className="act" onClick={() => writes.tick(l)}>
         Confirm {LADDER[l.done]?.t || "stage"}
       </button>,
     );
@@ -623,6 +650,7 @@ function WorkRow({ l, team, selected, onSelect }: { l: Lead; team: boolean; sele
   const goLead = useGoLead("today");
   const goPaper = useGoPaper();
   const flow = useLeadFlow();
+  const writes = useTodayWrites();
   const u = nextUp(state, l);
   const g = workGroup(state, l);
   const partner = partnerLabel(state, l);
@@ -631,7 +659,7 @@ function WorkRow({ l, team, selected, onSelect }: { l: Lead; team: boolean; sele
   const action = (() => {
     const ch = primaryWorkChannel(state, l, u);
     if (ch && hasContact(l, ch)) return <G1Contact l={l} cls="act" only={ch} />;
-    const w = workAction(state, dispatch, goLead, goPaper, l, u);
+    const w = workAction(state, dispatch, writes, goLead, goPaper, l, u);
     if (w.kind === "followup")
       return (
         <button type="button" className="act" onClick={() => flow(l.id, "log")}>
@@ -697,6 +725,9 @@ function InvestorPanel({
   const goLead = useGoLead("today");
   const goPaper = useGoPaper();
   const flow = useLeadFlow();
+  const writes = useTodayWrites();
+  /* the newest note: live, GET /api/leads/[id]/notes; fixture, the book's own */
+  const { notes } = useLeadNotes(l ? l.id : null);
   if (!l) return null;
   const u = nextUp(state, l);
   const blocked = gateWait(state, l);
@@ -704,14 +735,14 @@ function InvestorPanel({
   const act = active(l) && !lost(l) && l.done < ST.ONBOARDED;
   const due = nxDue(l, state.NOW);
   const last = fuLatest(state, l);
-  const note = (state.NOTES || {})[l.id]?.[0] ?? null;
+  const note = notes[0] ?? null;
   const heard =
     ((state.INTERACTIONS || {})[l.id] || [])
       .filter((x) => x.obj && x.obj.length)
       .sort((a, b) => (whenT(b.at, state.NOW)?.getTime() || 0) - (whenT(a.at, state.NOW)?.getTime() || 0))[0] || null;
   const pref = l.contactPreference;
   const hasPref = typeof pref === "string" ? !!pref.trim() : !!(pref && typeof pref === "object");
-  const w = workAction(state, dispatch, goLead, goPaper, l, u);
+  const w = workAction(state, dispatch, writes, goLead, goPaper, l, u);
   const special = w.kind === "special" ? w.node : null;
   const sub = [LADDER[Math.max(0, l.done - 1)]!.t, l.unitsKnown === false ? "" : money(l.units * UNIT)].filter(Boolean).join(" · ");
   const planned = act && hasNext(l);
@@ -851,6 +882,7 @@ function FinanceToday() {
   const goLead = useGoLead("today");
   const goView = useGoView();
   const HORIZON = uiHorizon(state.ui);
+  const financeLive = useApiMode() === "live";
   const w = financeTodayWork(state);
   const count = w.claims.length + w.paper.length + w.holds.length;
   const back = () => dispatch({ type: "setUi", patch: { HORIZON: "today", CALDAY: null } });
@@ -920,7 +952,8 @@ function FinanceToday() {
               const c = claimOf(state, l.id)!;
               const b = claimBlock(state, l);
               const match = claimReceiptMatch(state, l.id);
-              const permitted = !!b?.answerable;
+              /* confirmClaim / rejectClaim are the reducer's only (the claim redesign is not built): live offers Review only */
+              const permitted = !!b?.answerable && !financeLive;
               return (
                 <li className="ux-finance-row" key={l.id} data-finance-investor={l.id}>
                   <div>

@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740996301",
+        "Lead": { "id": "9007199254740996201", "name": "Synthetic Lead A" },
+        "Channel": "Call",
+        "Occurred_At": "2026-09-26T15:30:00+05:30",
+        "Is_Reply": false,
+        "Voided_At": null
+      },
+      {
+        "id": "9007199254740996302",
+        "Lead": { "id": "9007199254740996201", "name": "Synthetic Lead A" },
+        "Channel": "WhatsApp",
+        "Occurred_At": "2026-09-21T10:00:00+05:30",
+        "Is_Reply": false,
+        "Voided_At": null
+      },
+      {
+        "id": "9007199254740996303",
+        "Lead": { "id": "9007199254740996201", "name": "Synthetic Lead A" },
+        "Channel": "Email",
+        "Occurred_At": "2026-09-25T09:00:00+05:30",
+        "Is_Reply": false,
+        "Voided_At": "2026-09-25T09:30:00+05:30"
+      },
+      {
+        "id": "9007199254740996304",
+        "Lead": { "id": "9007199254740996202", "name": "Lead B" },
+        "Occurred_At": "2026-09-12T08:00:00+05:30",
+        "Is_Reply": true,
+        "Voided_At": null
+      }
+    ],
+    "info": {
+      "count": 4,
+      "more_records": false
+    }
+  }
+}

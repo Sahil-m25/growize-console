@@ -42,6 +42,10 @@ import type { CoverDuration } from "@/server/leads/cover";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiAsto, uiMvto } from "@/features/leads/ui";
 
+/* Owner-side writes with no route yet (ir-write-map.md): askMove (Move_Request_* MISSING, J7), reassignTo and setSecondary
+   (a manager's, not in the IR map). Live shows them disabled with this reason, so nothing pretends to save. */
+const NOT_YET = "Not available yet";
+
 function OwnerBody({ lead }: DrawerProps) {
   const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
@@ -200,10 +204,10 @@ function OwnerBody({ lead }: DrawerProps) {
                 type="button"
                 key={r}
                 className="chip"
-                disabled={!ASTO}
-                title={ASTO ? undefined : "Pick the person first"}
+                disabled={!ASTO || live}
+                title={live ? NOT_YET : ASTO ? undefined : "Pick the person first"}
                 onClick={
-                  ASTO ? () => dispatch({ type: "reassignTo", id: l.id, to: ASTO, why: r }) : undefined
+                  ASTO && !live ? () => dispatch({ type: "reassignTo", id: l.id, to: ASTO, why: r }) : undefined
                 }
               >
                 {r}
@@ -283,7 +287,9 @@ function OwnerBody({ lead }: DrawerProps) {
               className="selw"
               aria-label="Secondary owner"
               value={l.sec ?? ""}
-              onChange={(e) => e.target.value && dispatch({ type: "setSecondary", id: l.id, to: e.target.value as PersonKey })}
+              disabled={live}
+              title={live ? NOT_YET : undefined}
+              onChange={(e) => e.target.value && !live && dispatch({ type: "setSecondary", id: l.id, to: e.target.value as PersonKey })}
             >
               <option value="">Choose a person…</option>
               {others.map((k) => (
@@ -294,7 +300,7 @@ function OwnerBody({ lead }: DrawerProps) {
             </select>
           </label>
           <p className="sm" style={{ margin: "7px 0 0" }}>
-            Saves immediately. This person covers when the owner cannot.
+            {live ? NOT_YET : "Saves immediately. This person covers when the owner cannot."}
           </p>
           </div>
         </details>
@@ -331,6 +337,7 @@ function OwnerBody({ lead }: DrawerProps) {
 
 function ReassignBody({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
+  const live = useApiMode() === "live";
   const l = lead!;
   const MVTO = uiMvto(state.ui);
   const load = (k: PersonKey) => state.LEADS.filter((x) => x.own === k && active(x)).length;
@@ -378,9 +385,10 @@ function ReassignBody({ lead }: DrawerProps) {
             type="button"
             key={r}
             className="chip"
-            disabled={!MVTO}
+            disabled={!MVTO || live}
+            title={live ? NOT_YET : undefined}
             onClick={() => {
-              if (!MVTO) return;
+              if (!MVTO || live) return;
               dispatch({ type: "askMove", id: l.id, to: MVTO, why: r });
               dispatch({ type: "closeDrawer" });
             }}

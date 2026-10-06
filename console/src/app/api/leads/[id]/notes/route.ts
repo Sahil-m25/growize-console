@@ -19,4 +19,15 @@ async function post_(req: Request, { params }: { params: Promise<{ id: string }>
   return answer(await recordRuntime().notes.add(p.principal, id, b.text, req.headers.get("Idempotency-Key"), req.signal), STATUS);
 }
 
+/* GET — the lead's notes, newest first (the lead page's "Latest note" and the notes list), on the person's own token.
+   200 → { leadId, notes: [{ id, text, at, by, title }] }   4xx → { error, code }. Nothing is cached (D45). */
+async function get_(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!recordConfigured()) return notReady();
+  const p = await principalOf();
+  if (!p.ok) return p.response;
+  const { id } = await params;
+  return answer(await recordRuntime().notes.list(p.principal, id, _req.signal), { unavailable: 503 });
+}
+
 export const POST = withErrorCapture(guardApi("/api/leads", post_), "/api/leads/[id]/notes");
+export const GET = withErrorCapture(guardApi("/api/leads", get_), "/api/leads/[id]/notes");

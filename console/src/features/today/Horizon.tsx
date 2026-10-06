@@ -14,7 +14,10 @@
    (`vTodayWork`'s `weekly()`), never here. See `./TodayPage.tsx`'s `weekly` for that.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { useState } from "react";
 import type { Lead } from "@/domain";
+import { useApiMode } from "@/lib/data/api";
+import { usePullIn } from "@/features/lead/followupWrites";
 import { DAY, dAdd, dISO, dLabel, MON } from "@/lib/format";
 import { canPlan, dueOn, isIR, outOn, P, type DueRow } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
@@ -22,8 +25,11 @@ import { useGoLead } from "@/features/leads/nav";
 import { uiCalday, uiHorizon } from "@/features/leads/ui";
 
 export function Horizon({ book, team }: { book: Lead[]; team: boolean }) {
-  const { state, dispatch } = useConsole();
+  const { state } = useConsole();
   const goLead = useGoLead("today");
+  const pullIn = usePullIn();
+  const live = useApiMode() === "live";
+  const [err, setErr] = useState<string | null>(null);
   const HORIZON = uiHorizon(state.ui);
   const CALDAY = uiCalday(state.ui);
 
@@ -74,7 +80,8 @@ export function Horizon({ book, team }: { book: Lead[]; team: boolean }) {
             }
             onClick={(e) => {
               e.stopPropagation();
-              dispatch({ type: "pullIn", id: x.l.id });
+              /* C1 pullIn (features/lead/followupWrites): fixture the reducer; live POST /api/leads/[id]/next/move, then re-read */
+              void pullIn(x.l).then((r) => setErr(live && !r.ok ? r.error : null));
             }}
           >
             Pull it earlier
@@ -101,6 +108,7 @@ export function Horizon({ book, team }: { book: Lead[]; team: boolean }) {
         </div>
       ) : null}
 
+      {err ? <p className="note bad" role="alert">{err}</p> : null}
       <section className="ux-section rd-followup-calendar" aria-label="Follow-up appointments">
         {HORIZON === "week" ? (
           <Week all={all} book={book} team={team} item={item} />

@@ -249,6 +249,9 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                           Flagged to <b>{P(state.PEOPLE, flag.to).n}</b> <span className="mono">{flag.at}</span>. Carry on with the next name.
                         </div>
                       )
+                      /* flagDupe has no route yet (requests.flagDuplicate, J9 PROVISIONAL): live says so instead of a press */
+                      : mgr && live
+                        ? <div className="sm" style={{ marginTop: 6 }}>Not available yet: flagging a duplicate here is still to be built. Tell {P(state.PEOPLE, mgr).n.split(" ")[0]} directly.</div>
                       : mgr
                         ? (
                           <div className="chips" style={{ marginTop: 7 }}>

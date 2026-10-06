@@ -13,6 +13,7 @@
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { actExportData, downloadActivityCSV } from "./csv";
+import { useActivityExportLog } from "@/lib/data/endpoints/me";
 import { activityUi, exportName, scopeLabel, useLeadActivity } from "./logic";
 
 const NONE = { rows: [], kinds: {}, solo: true, person: null, total: 0 } as const;
@@ -41,15 +42,17 @@ function Body(_props: DrawerProps) {
 }
 
 function Foot(_props: DrawerProps) {
-  const { state, dispatch, f, v, a } = useRead();
+  const { state, f, v, a } = useRead();
+  /* C4 (J14): the export's log line — fixture the reducer's "log", live POST /api/activity/export (counts only) */
+  const logExport = useActivityExportLog();
   return (
     <>
       <button type="button" className="act ghost" disabled={!v.rows.length}
-        onClick={() => downloadActivityCSV(state, v.rows, f.ACTVIEW, exportName(f, v, false, f.ACTVIEW), v.kinds, dispatch)}>
+        onClick={() => downloadActivityCSV(state, v.rows, f.ACTVIEW, exportName(f, v, false, f.ACTVIEW), v.kinds, undefined, logExport)}>
         Export this view
       </button>
       <button type="button" className="act" disabled={!a.rows.length}
-        onClick={() => downloadActivityCSV(state, a.rows, f.ACTVIEW, exportName(f, a, true, f.ACTVIEW), a.kinds, dispatch)}>
+        onClick={() => downloadActivityCSV(state, a.rows, f.ACTVIEW, exportName(f, a, true, f.ACTVIEW), a.kinds, undefined, logExport)}>
         Export whole month
       </button>
     </>

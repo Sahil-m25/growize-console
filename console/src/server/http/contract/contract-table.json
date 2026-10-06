@@ -653,6 +653,9 @@
    }
   },
   "/api/leads/[id]/notes": {
+   "GET": {
+    "needsSandbox": "needs sandbox: the module or secret it needs is not configured in the suite (503 not-configured)"
+   },
    "POST": {
     "body": {
      "type": "json",

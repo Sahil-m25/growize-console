@@ -43,6 +43,10 @@ import "@/features/lead/drawers";   /* register the lead drawers before anything
 import { buildFollowupDraft } from "@/features/leads/followupDrawer";   /* also registers "p:followup" (the first-contact tick opens it) */
 import { LeadEmails } from "@/features/im/paper2/Emails";   /* M12-S09 */
 import { useNda } from "./nda";   /* M12-S13 */
+import { useFinishLead, useLoseLead, useReopenLost } from "./followupWrites";
+import { useJourneyWrites } from "@/lib/data/endpoints/journey";
+import { useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
+import { useAssignToMe } from "@/lib/data/endpoints/ownership";
 import { currentRound, ndaSigned, paperworkRow, paperworkStep, paperworkUndo, stepSaved, type IrBeat, type PwChannel } from "@/lib/data/endpoints/paperwork";
 
 type Ctx = ReturnType<typeof useConsole>;
@@ -65,6 +69,10 @@ function freshDraft(state: Ctx["state"], l: Lead): LpDraft {
 
 function useLp(l: Lead) {
   const { state, dispatch } = useConsole();
+  /* lpFinish / lpLose (C1, features/lead/followupWrites): fixture runs the reducer's composite; live POSTs the follow-up
+     route, then re-reads the book; a refusal lands in the flow's own error line */
+  const finishW = useFinishLead();
+  const loseW = useLoseLead();
   const f = flowOf(state, l.id);
   const setFlow = (next: LpFlow | null) => dispatch({ type: "setUi", patch: { LP: next } });
   const allowed = (k: string) => conFor(l, k as Channel);
@@ -111,7 +119,7 @@ function useLp(l: Lead) {
       let x = d;
       if (lpNeedsStep(x)) x = pick(x, "Call back");
       if (!x.keep && !x.nd) x = { ...x, nd: iso(nowT(state.NOW)) };
-      dispatch({ type: "lpFinish", id: l.id, d: x });
+      void finishW(l, x);
     },
     /* lpDate(id,days,dateISO) */
     date: (days: number | null, dateISO?: string) => {
@@ -119,7 +127,7 @@ function useLp(l: Lead) {
       let d = f.d;
       if (!d.t) d = pick(d, "Call back");
       d = { ...d, nd: dateISO || iso(plusD(nowT(state.NOW), days || 0)) };
-      if (zKind(d.t) === "task") { d = { ...d, ntm: "" }; setFlow({ ...f, d }); dispatch({ type: "lpFinish", id: l.id, d }); return; }
+      if (zKind(d.t) === "task") { d = { ...d, ntm: "" }; setFlow({ ...f, d }); void finishW(l, d); return; }
       setFlow({ ...f, day: true, d });
     },
     /* lpTime(id,tm) */
@@ -131,9 +139,9 @@ function useLp(l: Lead) {
         setFlow({ ...f, d: { ...f.d, error: "The next step needs a time that is still ahead." } });
         return;
       }
-      dispatch({ type: "lpFinish", id: l.id, d: d.t ? d : pick(d, "Call back") });
+      void finishW(l, d.t ? d : pick(d, "Call back"));
     },
-    lose: (why: string) => { if (f) dispatch({ type: "lpLose", id: l.id, d: f.d, why }); },
+    lose: (why: string) => { if (f) void loseW(l, f.d, why); },
   };
 }
 
@@ -154,6 +162,11 @@ function LpLogger({ l }: { l: Lead }) {
   const f = lp.f!;
   const d = f.d;
   const now = nowT(state.NOW);
+  /* live saves carry no Undo (a human token holds no Delete; undo-by-delete is out of scope), so the hint does not offer one */
+  const liveMode = useApiMode() === "live";
+  const { notes } = useLeadNotes(l.id);
+  const undoSay = liveMode ? "" : " You can undo for 10 seconds.";
+  const undoTail = liveMode ? "." : "; you can undo for 10 seconds.";
   const bits: ReactNode[] = [];
   if (d.channel) bits.push(d.channel === "reply" ? "They contacted us" : FUCHANNELS[d.channel]);
   if (d.outcome) bits.push(d.outcome);
@@ -180,7 +193,7 @@ function LpLogger({ l }: { l: Lead }) {
   else if (DEAD.includes(d.outcome) && canLose(state, l) && f.lose !== "keep")
     q = <Ask label="Why are they out?"><div className="chips">{LOSTWHY.map((w) => <Chip key={w} onClick={() => lp.lose(w)}>{w}</Chip>)}
       <Chip cls="lp-quiet" onClick={() => lp.set("lose", true)}>Keep it open instead</Chip></div>
-      <p className="lp-hint">Picking a reason saves this contact and closes the lead. You can undo for 10 seconds.</p></Ask>;
+      <p className="lp-hint">Picking a reason saves this contact and closes the lead.{undoSay}</p></Ask>;
   else if ((HESITANT.includes(d.outcome) || DEAD.includes(d.outcome)) && !f.obj)
     q = <Ask label="What held them back?"><div className="chips">{OBJS.map((o) => <Chip key={o} onClick={() => lp.set("obj", o)}>{o}</Chip>)}
       <Chip cls="lp-quiet" onClick={() => lp.set("obj", "")}>Skip</Chip></div></Ask>;
@@ -193,9 +206,9 @@ function LpLogger({ l }: { l: Lead }) {
       : <>Which day? <span className="lp-qsub">{d.t} · <button type="button" className="lp-link" onClick={() => lp.set("untask", true)}>change</button></span></>}>
       <div className="chips">{LP_WHEN.map(([t, n]) => <Chip key={t} onClick={() => lp.date(n)}>{t}</Chip>)}
         <label className="chip lp-date">Pick a date<input type="date" min={iso(now)} onChange={(e) => { if (e.target.value) lp.date(null, e.target.value); }} aria-label="Pick a date" /></label></div>
-      <p className="lp-hint">{tk ? "Saved as a task with this due date. Picking a date saves; you can undo for 10 seconds." : "Next you pick the time."}</p></Ask>;
+      <p className="lp-hint">{tk ? "Saved as a task with this due date. Picking a date saves" + undoTail : "Next you pick the time."}</p></Ask>;
   } else {
-    const today = d.nd === iso(now), nowHM = hhmm(now), pref = lpPrefSlot(l, (state.NOTES[l.id] || [])[0]?.t);
+    const today = d.nd === iso(now), nowHM = hhmm(now), pref = lpPrefSlot(l, notes[0]?.t);
     const slots = LP_SLOTS.filter(([, tm]) => !today || tm > nowHM);
     const k = zKind(d.t);
     q = <Ask label={<>What time? <span className="lp-qsub">{d.t} · {dISOtoDisp(d.nd || "", state.NOW)} · <button type="button" className="lp-link" onClick={() => lp.set("unday", true)}>change day</button></span></>}>
@@ -205,7 +218,7 @@ function LpLogger({ l }: { l: Lead }) {
       })}
         <label className="chip lp-date">Pick a time<input type="time" min={today ? nowHM : undefined} onChange={(e) => { if (e.target.value) lp.time(e.target.value); }} aria-label="Pick a time" /></label>
         <Chip cls="lp-quiet" onClick={() => lp.time("")}>Any time that day</Chip></div>
-      <p className="lp-hint">Saved in Zoho as {k === "call" ? "a scheduled call with a reminder 15 minutes before" : "a meeting, which also appears in Zoho Calendar"}. Picking a time saves; you can undo for 10 seconds.</p></Ask>;
+      <p className="lp-hint">Saved in Zoho as {k === "call" ? "a scheduled call with a reminder 15 minutes before" : "a meeting, which also appears in Zoho Calendar"}. Picking a time saves{undoTail}</p></Ask>;
   }
   return (
     <div className="lp-flow" id="lp-flow">
@@ -420,6 +433,16 @@ export function LeadPage({ id }: { id: string }) {
   const gate = useApiRead(leadGate, state, l0 ? l0.id : null);
   /* M10-S03: Finance's answer to a report (found / did not find it, with the reason) is GET /api/leads/[id]/claim */
   const claimRead = useApiRead(leadClaimRead, state, l0 ? l0.id : null);
+  /* the wired writes (ir-write-map.md C1–C3): fixture runs the reducer as before; live is the route, then reloadData() */
+  const live = useApiMode() === "live";
+  const reopenW = useReopenLost();
+  const { assign: assignMe } = useAssignToMe();
+  const jw = useJourneyWrites();
+  const addNoteW = useLeadNote();
+  const { notes } = useLeadNotes(l0 ? l0.id : null);
+  const [actErr, setActErr] = useState<string | null>(null);
+  /* a live refusal is said on the page, in the route's words; fixture keeps the reducer's own (silent) answer */
+  const said = (r: { ok: true } | { ok: false; error: string }) => { if (live) setActErr(r.ok ? null : r.error); };
   /* g1LeadFlow(id,what,channel) — ir-merged.js:4215: a Today contact button lands here and the
      page opens its own logging flow on that channel (lpOpen), once. */
   const hand = state.ui.LPFLOW as { id: string; what: "log" | "email"; channel?: string | null } | null | undefined;
@@ -474,14 +497,15 @@ export function LeadPage({ id }: { id: string }) {
   const al = (key: string, cls: string, msg: ReactNode, btn?: ReactNode) => A.push(<div key={key} className={`lp-alert ${cls}`}><span>{msg}</span>{btn || null}</div>);
   const r = state.REQ[l.id], cm = claimOf(state, l.id);
   if (lost(l)) al("lost", "", <><b>Closed as lost</b> — {l.lost!.why}{l.lost!.note ? ". " + l.lost!.note : ""} · {P(state.PEOPLE, l.lost!.by).n} {l.lost!.at}</>,
-    canReopen(state, l) ? <button type="button" className="chip" onClick={() => dispatch({ type: "reopenLost", id: l.id })}>Re-open</button> : null);
+    canReopen(state, l) ? <button type="button" className="chip" onClick={() => void reopenW(l).then(said)}>Re-open</button> : null);
   if (!l.own) al("own", "bad", <b>No owner yet.</b>, canAssign(state) ? <button type="button" className="act" onClick={() => open("owner")}>Assign owner</button>
-    : isIR(state.ROLE) ? <button type="button" className="act" onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}>Assign to me</button> : null);
+    : isIR(state.ROLE) ? <button type="button" className="act" onClick={() => void assignMe(l.id).then(said)}>Assign to me</button> : null);
   if (watching(state, l)) al("watch", "", <><b>{whyLocked(state, l)}</b> You can see everything; changes are not yours to make.</>);
   const cv = covOf(state, l);
   if (cv) al("cov", "due", <><b>{P(state.PEOPLE, cv.by).n} is covering</b> for {P(state.PEOPLE, l.own).n} until {cv.to}.</>);
   if (r && r.state === "waiting") al("req", "due", <><b>{P(state.PEOPLE, r.by).n} asked to move this to {P(state.PEOPLE, r.to).n}</b> — {r.why}</>,
-    canDecideMove(state, l) ? <><button type="button" className="chip on" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: true })}>Approve</button><button type="button" className="chip" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: false })}>Decline</button></> : null);
+    /* decideMove is not wired yet (askMove's Move_Request_* fields are MISSING in Zoho): live shows the request, offers no answer */
+    canDecideMove(state, l) && !live ? <><button type="button" className="chip on" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: true })}>Approve</button><button type="button" className="chip" onClick={() => dispatch({ type: "decideMove", id: l.id, ok: false })}>Decline</button></> : null);
   /* M08-S02-W1: is a report waiting / not found — the gate route's `payment` (fixture: the same claim the book holds) */
   const payGate = gate.state === "ok" ? gate.data.payment : null;
   const cr = claimRead.state === "ok" ? claimRead.data : null;
@@ -489,7 +513,10 @@ export function LeadPage({ id }: { id: string }) {
   /* the gate's `notFound` is true for both answers (Receipts has no answer fields): the claim read tells them apart */
   const notFound = cr ? cr.answer === "not-found" : payGate ? payGate.notFound : cm?.state === "notfound";
   if (seeMoney(state, l) && reported) al("cw", "due", <><b>Payment reported</b> — waiting for Finance to find it in the bank.</>, <button type="button" className="chip" onClick={() => open("claim")}>Status</button>);
-  else if (seeMoney(state, l) && notFound) al("cn", "bad", <><b>Finance did not find it.</b> {cr ? cr.reason : cm?.why}</>, <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
+  /* reopenClaim / claimPaid are not wired for the IR (the claim redesign keeps the IR off Receipts, D69; its Lead fields are MISSING):
+     live offers no "Ask again" and no "Investor says they paid" */
+  else if (seeMoney(state, l) && notFound) al("cn", "bad", <><b>Finance did not find it.</b> {cr ? cr.reason : cm?.why}</>,
+    live ? undefined : <button type="button" className="chip" onClick={() => dispatch({ type: "reopenClaim", id: l.id })}>Ask again</button>);
   /* M08-S04-W1: the reservation clock's day is the gate route's `holdUntil` */
   if (gate.state === "ok" && gate.data.holdUntil) {
     const hold = holdDay(gate.data.holdUntil);
@@ -502,6 +529,9 @@ export function LeadPage({ id }: { id: string }) {
   /* who a shut gate waits on, as the route answered it (fixture: the same selectors the page used) */
   const gr = gate.state === "ok" ? gate.data : null;
   const gw = gr && gr.who && gr.gate ? { ...GATES[gr.gate], who: gr.who, d: gr.says ?? GATES[gr.gate].chase } : null;
+  /* a gate that is shut with nobody to wait on (who: null — e.g. the money facts were not read for this seat, D69): say the
+     gate's own words in place of "Mark done", which the route would refuse */
+  const gateShut = gr && !gr.met && !gr.who ? (gr.says || (gr.gate ? GATES[gr.gate].chase : "") || "This step cannot be marked done from here yet.") : null;
   /* the Next milestone button — tick(id), ir-merged.js 2614 */
   const tick = () => {
     if (l.done < ST.TOUCH) {
@@ -509,10 +539,10 @@ export function LeadPage({ id }: { id: string }) {
       dispatch({ type: "openDrawer", k: "p:followup" as DrawerKind, id: l.id, seed: state.ui.FU ? {} : { FU: buildFollowupDraft(state, l, first || "reply") } });
       return;
     }
-    if (gw || gate.state !== "ok") return;
+    if (gw || gateShut || gate.state !== "ok") return;
     if (needOf(l)) { open("p:lead.rung" as DrawerKind, { RUNGSAID: false }); return; }
     if (RUNGASK[LADDER[l.done].t]) { open("p:lead.commit" as DrawerKind); return; }
-    dispatch({ type: "tick", id: l.id });
+    void jw.tick(l).then(said);
   };
   const untick = () => {
     if (l.done <= 1) return;
@@ -522,13 +552,15 @@ export function LeadPage({ id }: { id: string }) {
   /* rows that exist only while they apply */
   const owned = !!here && stepOwner(state, l.done, l), rows: ReactNode[] = [];
   if (gate.state === "error") rows.push(<p key="gerr" className="lp-err" role="alert">{gate.err.error}</p>);
-  if (act && here && owned && gate.state === "ok" && !gw && work)
+  if (act && here && owned && gate.state === "ok" && !gw && gateShut && work)
+    rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b><span className="sm">{gateShut}</span></div>);
+  else if (act && here && owned && gate.state === "ok" && !gw && work)
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b>
       <button type="button" className="btn" onClick={tick}>{here.t === "First touch made" ? "Mark first contact made" : "Mark done"}</button>
-      {here.skip ? <button type="button" className="lp-link" onClick={() => dispatch({ type: "skipStage", id: l.id })}>Not needed</button> : null}</div>);
+      {here.skip ? <button type="button" className="lp-link" onClick={() => void jw.skip(l).then(said)}>Not needed</button> : null}</div>);
   else if (act && here && owned && gw && gw.who === "fin")
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b><span className="tag due">Waiting on Finance</span></div>);
-  if (act && gw && canClaim(state, l) && !cm && !reported && !notFound)
+  if (act && gw && canClaim(state, l) && !cm && !reported && !notFound && !live)
     rows.push(<div key="pay" className="lp-stage"><span className="sm">Payment</span><b>Has the investor paid?</b>
       <button type="button" className="btn" onClick={() => open("claim", { CKIND: l.done >= ST.RESERVED ? "full" : "advance", CREF: "", CNOTE: "" })}>Investor says they paid</button></div>);
   rows.push(<LpPaperRow key="paper" l={l} />);
@@ -542,7 +574,7 @@ export function LeadPage({ id }: { id: string }) {
   const hasPref = typeof pref === "string" ? !!pref.trim() : !!(pref && typeof pref === "object");
   const showOwner = !!l.own && (l.own !== state.WHO || !!cv);
   const num = waNum(l.ph);
-  const note0 = (state.NOTES[l.id] || [])[0];
+  const note0 = notes[0];
   const buttons = work && act && !flow ? (
     <div className="lp-actions">
       {num && conFor(l, "call") ? <a className="btn" href={`tel:+${num}`} onClick={() => lpl.open("log", "call")}><Icon name="call" />Call</a> : null}
@@ -570,6 +602,8 @@ export function LeadPage({ id }: { id: string }) {
   const ndOn = state.ui.NDRAFTID === l.id ? String(state.ui.NDRAFT ?? "") : "";
   /* commit()'s two sentences for a write that did not land (ir-merged.js 2373, 2413) */
   const addNote = () => {
+    /* live: POST /api/leads/[id]/notes (C2 useLeadNote) — a success clears the draft and re-reads; a refusal is said here */
+    if (live) { void addNoteW(l.id, ndOn).then(said); return; }
     const r = dispatch({ type: "addNote", id: l.id });
     const label = "Added a note";
     if (r && r.status === "failed") say(label + " was not recorded. The local demo did not confirm this change. Nothing on the record changed.");
@@ -592,6 +626,7 @@ export function LeadPage({ id }: { id: string }) {
       )}
       {steps && !flow ? <LpStepper l={l} /> : null}
       {A}
+      {actErr ? <p className="lp-err" role="alert">{actErr}</p> : null}
       <LpNoticeBar />
       {card}
       {flow ? null : rows}

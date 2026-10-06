@@ -8,7 +8,10 @@
    tab row while `ui.FILEON` is set, so each tab IS the drawer that already did that job. Imported
    last by ./index.ts so it wraps the registrations the other modules made. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useApiMode } from "@/lib/data/api";
+import { useJourneyWrites } from "@/lib/data/endpoints/journey";
+import { useLeadNotes } from "@/lib/data/endpoints/record";
 import { LADDER, PCH, PCHN, ROUNDS } from "@/domain";
 import type { PersonKey } from "@/domain";
 import { Pname } from "@/components/ui/Pname";
@@ -48,17 +51,34 @@ function RungBody({ lead }: DrawerProps) {
     </>
   );
 }
+/* The ladder's three drawer presses (C2 useJourneyWrites): fixture runs the reducer's recordRung / tickCommit / undoRung as
+   before; live POSTs /api/leads/[id]/journey, closes the drawer and re-reads on success, and says a refusal in the foot. */
+function useLadderPress() {
+  const { dispatch } = useConsole();
+  const live = useApiMode() === "live";
+  const [err, setErr] = useState<string | null>(null);
+  const done = (r: { ok: true } | { ok: false; error: string }) => {
+    if (!live) return;
+    if (r.ok) { setErr(null); dispatch({ type: "closeDrawer" }); } else setErr(r.error);
+  };
+  return { done, err: err ? <p className="lp-err" role="alert" style={{ margin: "8px 0 0", flexBasis: "100%" }}>{err}</p> : null };
+}
 function RungFoot({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
+  const jw = useJourneyWrites();
+  const press = useLadderPress();
   const l = lead!, st = LADDER[l.done], n = needOf(l);
   if (!st || !n) return null;
   const held = !!l.nx, said = !!state.ui.RUNGSAID;
   const why = !held ? n.heldNo + " — set it first" : !said ? "Say the scorecard is done first" : "";
   return (
-    <button type="button" className="act" disabled={!(held && said)} title={why || undefined}
-      onClick={held && said ? () => { dispatch({ type: "setUi", patch: { RUNGSAID: false } }); dispatch({ type: "recordRung", id: l.id }); } : undefined}>
-      {st.t} — {n.foot}
-    </button>
+    <>
+      <button type="button" className="act" disabled={!(held && said)} title={why || undefined}
+        onClick={held && said ? () => { dispatch({ type: "setUi", patch: { RUNGSAID: false } }); void jw.tick(l, "recordRung").then(press.done); } : undefined}>
+        {st.t} — {n.foot}
+      </button>
+      {press.err}
+    </>
   );
 }
 registerDrawer("p:lead.rung" as DrawerKind, {
@@ -83,10 +103,13 @@ function CommitBody({ lead }: DrawerProps) {
 }
 function CommitFoot({ lead }: DrawerProps) {
   const { dispatch } = useConsole();
+  const jw = useJourneyWrites();
+  const press = useLadderPress();
   return (
     <>
-      <button type="button" className="act" onClick={() => dispatch({ type: "tickCommit", id: lead!.id })}>{LADDER[lead!.done]?.t || ""}</button>
+      <button type="button" className="act" onClick={() => void jw.tick(lead!, "tickCommit").then(press.done)}>{LADDER[lead!.done]?.t || ""}</button>
       <button type="button" className="chip" onClick={() => dispatch({ type: "closeDrawer" })}>Leave it as it is</button>
+      {press.err}
     </>
   );
 }
@@ -114,13 +137,18 @@ function UndoBody({ lead }: DrawerProps) {
 }
 function UndoFoot({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
+  const jw = useJourneyWrites();
+  const press = useLadderPress();
   const l = lead!, why = String(state.ui.UNDOWHY || "");
   const ok = (UNDOWHY as readonly string[]).includes(why);
   return (
-    <button type="button" className="act" disabled={!ok} title={ok ? undefined : "Pick a reason first"}
-      onClick={ok ? () => { dispatch({ type: "undoRung", id: l.id, why, note: String(state.ui.UNDON || "") }); dispatch({ type: "setUi", patch: { UNDOWHY: "", UNDON: "" } }); } : undefined}>
-      Un-tick “{LADDER[l.done - 1]?.t || ""}”
-    </button>
+    <>
+      <button type="button" className="act" disabled={!ok} title={ok ? undefined : "Pick a reason first"}
+        onClick={ok ? () => { void jw.untick(l, why, String(state.ui.UNDON || ""), "undoRung").then(press.done); dispatch({ type: "setUi", patch: { UNDOWHY: "", UNDON: "" } }); } : undefined}>
+        Un-tick “{LADDER[l.done - 1]?.t || ""}”
+      </button>
+      {press.err}
+    </>
   );
 }
 registerDrawer("p:lead.undo" as DrawerKind, {
@@ -213,8 +241,9 @@ function wrap(k: DrawerKind, extra?: (l: NonNullable<DrawerProps["lead"]>) => Re
 }
 
 function HistoryNotes({ l }: { l: NonNullable<DrawerProps["lead"]> }) {
-  const { state } = useConsole();
-  const n = (state.NOTES[l.id] || []).filter((x) => !(x as { interaction?: string }).interaction);
+  /* live: GET /api/leads/[id]/notes; fixture: the book's own NOTES */
+  const { notes } = useLeadNotes(l.id);
+  const n = notes.filter((x) => !(x as { interaction?: string }).interaction);
   if (!n.length) return null;
   return (
     <>

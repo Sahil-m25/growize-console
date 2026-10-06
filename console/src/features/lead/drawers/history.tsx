@@ -16,7 +16,7 @@ import { Ag, Pname } from "@/components/ui";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiNdraft } from "@/features/leads/ui";
-import { useLeadNote } from "@/lib/data/endpoints/record";
+import { useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
 import { FUCHANNELS } from "@/features/today/work";
 
 /* ir-console-redesigned.html 12173-12197's "Conversation history" block, ahead of the audit list —
@@ -134,7 +134,8 @@ function NotesBody({ lead }: DrawerProps) {
   const save = useSaveNote();
   const l = lead!;
   const err = typeof state.ui.NOTEERR === "string" ? state.ui.NOTEERR : null;
-  const notes = state.NOTES[l.id] || [];
+  /* live: the lead's notes read back from Zoho (GET /api/leads/[id]/notes); fixture: the book's own */
+  const { notes } = useLeadNotes(l.id);
   const may = canNote(state, l);
   return (
     <>

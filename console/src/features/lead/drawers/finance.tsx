@@ -290,6 +290,9 @@ function ClaimFoot({ lead }: DrawerProps) {
   const report = useApiWrite(leadClaim, state, dispatch);
   const live = useApiMode() === "live";
   if (!lead || !canReadFinance(state, lead, "pay")) return null;
+  /* claimPaid / reopenClaim / startPaymentReport / confirmClaim / rejectClaim: the claim redesign (ir-write-map.md, owner
+     ruling 6 Oct — the IR never touches Receipts, D69) is not built and its Lead fields are MISSING, so live offers no press */
+  if (live) return <span className="sm" title="Payment reports are still to be built">Not available yet</span>;
   const l = lead!, c = state.CLAIM[l.id];
   if (!c) {
     const can = canClaim(state, l);

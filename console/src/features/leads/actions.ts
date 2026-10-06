@@ -17,49 +17,56 @@ import { useCallback } from "react";
 import { EDIT_H, LADDER, ST } from "@/domain";
 import type { Channel, Lead } from "@/domain";
 import { money } from "@/lib/format";
-import { canWork, conFor, conWhy, payOf, tickStage, undoStage } from "@/lib/selectors";
+import { payOf, tickStage, undoStage } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import { useApiMode } from "@/lib/data/api";
+import { useJourneyWrites } from "@/lib/data/endpoints/journey";
+import { useLogTouchWrite } from "@/features/lead/followupWrites";
+import { UNDOWHY } from "@/features/lead/lp";
 
 /** the refusal, in the prototype's own words, or `null` when it went through */
 export type Refusal = string | null;
 
 /* logTouch(id,k) — 03-app.js:150. A lead who consented to email only cannot be recorded as
-   WhatsApped, and the console says which channels they did agree to. */
-export function useLogTouch(): (l: Lead, k: string) => Refusal {
-  const { state, dispatch } = useConsole();
-  return useCallback(
-    (l: Lead, k: string) => {
-      if (!canWork(state, l)) return null;
-      if (!conFor(l, k as Channel)) return conWhy(l, k as Channel);
-      dispatch({ type: "logTouch", id: l.id, k });
-      return null;
-    },
-    [state, dispatch],
-  );
+   WhatsApped, and the console says which channels they did agree to. Wired (C1, ir-write-map.md): the
+   consent refusals are the same; fixture runs the reducer's logTouch, live POSTs /api/leads/[id]/touches
+   and re-reads the book. Resolves to the refusal (the route's words, live) or null. */
+export function useLogTouch(): (l: Lead, k: string) => Promise<Refusal> {
+  const write = useLogTouchWrite();
+  return useCallback((l: Lead, k: string) => write(l, k), [write]);
 }
 
 /* tick(id) — 03-app.js:1253. `tickStage` answers `{ok, why}`; a `why` of null is the prototype's
    silent refusal, there being nothing to say to somebody who was never offered the control.
-   The dispatch happens either way, because a refused tick still re-asks the dated next step. */
-export function useTick(): (l: Lead) => Refusal {
-  const { state, dispatch } = useConsole();
+   Fixture: the dispatch happens either way, because a refused tick still re-asks the dated next step.
+   Live (C2 journey): a tick the selector already refuses is not sent; otherwise the route answers. */
+export function useTick(): (l: Lead) => Promise<Refusal> {
+  const { state } = useConsole();
+  const live = useApiMode() === "live";
+  const { tick } = useJourneyWrites();
   return useCallback(
-    (l: Lead) => {
+    async (l: Lead) => {
       const v = tickStage(state, l);
-      dispatch({ type: "tick", id: l.id });
+      if (live && !v.ok) return v.why;
+      const r = await tick(l);
+      if (live) return r.ok ? null : r.error;
       return v.ok ? null : v.why;
     },
-    [state, dispatch],
+    [state, live, tick],
   );
 }
 
 /* untick(id) — 03-app.js:1432. Two refusals and one confirmation, in that order. The confirmation is
    asked in the page (M01-S07-T04, no native dialog): the first call returns the question as text, the
-   screen shows it, and calls again with `confirmed` true. */
-export function useUntick(): (l: Lead, confirmed?: boolean) => Refusal {
-  const { state, dispatch } = useConsole();
+   screen shows it, and calls again with `confirmed` true and one of the five reasons (UNDOWHY). Live,
+   the reason is required (POST /api/leads/[id]/journey {op:"untick", reason}); fixture runs the
+   reducer's untick as before. */
+export function useUntick(): (l: Lead, confirmed?: boolean, reason?: string) => Promise<Refusal> {
+  const { state } = useConsole();
+  const live = useApiMode() === "live";
+  const { untick } = useJourneyWrites();
   return useCallback(
-    (l: Lead, confirmed = false) => {
+    async (l: Lead, confirmed = false, reason = "") => {
       if (!l || l.done <= 1) return null;
       const u = undoStage(state, l);
       if (!u.ok)
@@ -76,10 +83,11 @@ export function useUntick(): (l: Lead, confirmed?: boolean) => Refusal {
         );
       if (!confirmed)
         return 'Un-tick "' + LADDER[l.done - 1].t + '"? This is logged with your name and needs a reason.';
-      dispatch({ type: "untick", id: l.id });
-      return null;
+      if (live && !(UNDOWHY as readonly string[]).includes(reason)) return "Pick the reason for the correction first.";
+      const r = await untick(l, reason, "", "untick");
+      return live && !r.ok ? r.error : null;
     },
-    [state, dispatch],
+    [state, live, untick],
   );
 }
 

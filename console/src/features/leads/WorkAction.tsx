@@ -23,7 +23,11 @@
        close. See crossOwnerRequests.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { useState } from "react";
 import { LADDER } from "@/domain";
+import { useApiMode } from "@/lib/data/api";
+import { useJourneyWrites } from "@/lib/data/endpoints/journey";
+import { useAssignToMe } from "@/lib/data/endpoints/ownership";
 import type { Lead } from "@/domain";
 import { canAssign, canPlan, canWork, chanOf, gateMet, isFin, noNext, stepOwner } from "@/lib/selectors";
 import type { NextUp } from "@/lib/selectors";
@@ -35,16 +39,23 @@ import { buildFollowupDraft } from "./followupDrawer";
 export function WorkAction({ l, u }: { l: Lead; u: NextUp }) {
   const { state, dispatch } = useConsole();
   const goLead = useGoLead("leads");
+  /* the wired presses (ir-write-map.md C2 tick, C3 assign): fixture the reducer; live the route, then reloadData();
+     a live refusal is said beside the button, in the route's words */
+  const live = useApiMode() === "live";
+  const { assign } = useAssignToMe();
+  const jw = useJourneyWrites();
+  const [err, setErr] = useState<string | null>(null);
+  const said = (r: { ok: true } | { ok: false; error: string }) => { if (live) setErr(r.ok ? null : r.error); };
+  const refusal = err ? <span className="tag late" role="alert">{err}</span> : null;
 
   if (!l.own && u.rec?.kind === "assign")
     return (
-      <button
-        type="button"
-        className="act"
-        onClick={() => dispatch({ type: "assign", id: l.id, to: state.WHO })}
-      >
-        Assign to me
-      </button>
+      <>
+        <button type="button" className="act" onClick={() => void assign(l.id).then(said)}>
+          Assign to me
+        </button>
+        {refusal}
+      </>
     );
   if (!l.own && canAssign(state))
     return (
@@ -85,9 +96,12 @@ export function WorkAction({ l, u }: { l: Lead; u: NextUp }) {
     );
   if (u.kind === "stage" && canWork(state, l) && stepOwner(state, l.done, l) && gateMet(state, l))
     return (
-      <button type="button" className="act" onClick={() => dispatch({ type: "tick", id: l.id })}>
-        Confirm {LADDER[l.done]?.t || "stage"}
-      </button>
+      <>
+        <button type="button" className="act" onClick={() => void jw.tick(l).then(said)}>
+          Confirm {LADDER[l.done]?.t || "stage"}
+        </button>
+        {refusal}
+      </>
     );
   if (canWork(state, l))
     return (

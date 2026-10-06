@@ -104,7 +104,8 @@ function Body({ lead }: DrawerProps) {
               forecast.
             </p>
           ) : null}
-          <details className="drwsec">
+          {/* setFcEv is not wired (J4 PROVISIONAL: a Note titled "Forecast evidence"): live hides it so nothing pretends to save */}
+          {live ? null : <details className="drwsec">
             <summary className="lbl">Evidence · {fc && fc.ev ? "recorded" : "optional"}</summary>
             {plan ? (
               <textarea
@@ -127,7 +128,7 @@ function Body({ lead }: DrawerProps) {
                 Evidence saves when you leave the field.
               </p>
             ) : null}
-          </details>
+          </details>}
         </>
       ) : (
         <p className="sm" style={{ margin: 0 }}>

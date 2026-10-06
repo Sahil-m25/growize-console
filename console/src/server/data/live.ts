@@ -16,7 +16,7 @@
  * never values); it never falls back to older rows.
  */
 
-import type { Channel, Lead, LostWhy, Source } from "../../domain/types";
+import type { Channel, FcCat, Lead, LostWhy, Source, Touch } from "../../domain/types";
 import type { Dataset } from "../../lib/data/types";
 import { emptyDataset } from "../../lib/data/empty";
 import type { ImAllot, ImInvestor, ImTxn, ImTxnKind } from "../../lib/im/types";
@@ -27,8 +27,9 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { createKamBookService, type KamBookEntry } from "../investors/book";
 import { createLeadsBook, type LeadRow, type LeadsAccess } from "../leads/book";
 import type { RosterReader } from "../leads/cover";
-import { LOST_REASONS } from "../leads/followup";
-import { RUNGS } from "../leads/journey";
+import { LOST_REASONS, TOUCH_CHANNEL } from "../leads/followup";
+import { FORECAST_OF } from "../leads/forecast";
+import { OPTIONAL_JOURNEY_FIELDS, RUNGS } from "../leads/journey";
 import type { ZohoProfileName, ZohoRoleName, ZohoSeat } from "../oauth/seat";
 import { CONSOLE_SEAT, type ConsoleSession } from "../oauth/user-session";
 import { createInvestorsAdapters, type AllotmentRow, type ContactRow, type ReadResult, type ReceiptRow } from "./adapters";
@@ -121,11 +122,28 @@ export function zohoSeatOf(token: string): ZohoSeat | null {
 const SOURCES: ReadonlySet<string> = new Set(["Events", "Founder network", "Referral — investor", "Channel partner", "Website", "LinkedIn", "Walk-in or call-in", "Other"]);
 const LOST_BY_ZOHO: Readonly<Record<string, string>> = Object.freeze(Object.fromEntries(Object.entries(LOST_REASONS).map(([k, v]) => [v, k])));
 const RUNG_FIELDS = RUNGS.map((r) => r.field);
-const LEAD_DETAIL = Object.freeze(["id", ...RUNG_FIELDS, "Lost_Reason", "Next_Step", "Consent_WhatsApp", "Consent_Email", "Consent_Call",
+/* What the wired IR writes put on the Lead (server/leads/{followup,touches,details,forecast,journey}), read back so a reload
+   shows it: the next step's text and channel (Next_Step_At comes with the book row), the loss, the forecast, permission and
+   its provenance, the contact preference, email and city. Never Receipts and never an allotment's Unit_Price (D69). */
+const LEAD_DETAIL = Object.freeze(["id", ...RUNG_FIELDS, "Lost_Reason", "Next_Step", "Next_Step_Channel",
+  "Consent_WhatsApp", "Consent_Email", "Consent_Call", "Consent_How", "Consent_At", "Consent_By",
+  "Forecast", "Forecast_Paid_By", "Preferred_Communication", "Email", "City",
   // Modified_Time: the lead as read — a wired write (email, cover) sends it back as expectedModifiedTime (D44). Not identity (rule 7).
   "Modified_Time"]);
+/* Engagement_Skipped and Rung_Undone_At are sandbox-only so far (ir-write-map.md MISSING; journey.ts OPTIONAL_JOURNEY_FIELDS):
+   asked for, and when the org rejects the read (invalid-data) the read is made again without them. */
+const LEAD_OPTIONAL = OPTIONAL_JOURNEY_FIELDS;
 // Leads has no Consent_Visit in the org (live metadata read 4 Oct 2026, M12-S11-NOTE-5): a visit carries no consent flag here.
 const CONSENT: Readonly<Partial<Record<Channel, string>>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call" };
+/** Zoho's channel words → the console's (the inverse of followup.ts TOUCH_CHANNEL; NEXT_CHANNEL uses the same words). */
+const CHANNEL_OF: Readonly<Record<string, Channel>> = Object.freeze(Object.fromEntries(Object.entries(TOUCH_CHANNEL).map(([k, v]) => [v, k as Channel])));
+/** Leads.Consent_How picklist → the console's word (capture.ts CONSENT_HOW inverted; Verbal stands for in person or a call). */
+const HOW_OF: Readonly<Record<string, string>> = Object.freeze({ Form: "form", Verbal: "person", "Email reply": "msg", "Event sheet": "event" });
+const FC_OF: Readonly<Record<string, FcCat>> = Object.freeze(Object.fromEntries(Object.entries(FORECAST_OF).map(([k, v]) => [v, k as FcCat])));
+/* Touches (Lead, Channel, Occurred_At, Is_Reply): the human touches of the book's leads, newest first, one read per 100 leads.
+   Voided_At (J12) is not in production yet: asked for, and dropped from the read when the org rejects it. */
+const TOUCH_FIELDS = Object.freeze(["Lead", "Channel", "Occurred_At", "Is_Reply"]);
+const TOUCH_OPTIONAL = Object.freeze(["Voided_At"]);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const pad = (n: number) => String(n).padStart(2, "0");
 /** A Zoho datetime as the console prints it, in IST: "DD Mon HH:MM". */
@@ -141,12 +159,33 @@ const istIso = (zoho: string | null | undefined): string | null => {
   return Number.isFinite(ms) ? new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 16) : null;
 };
 const istNow = (ms: number) => new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 16);
+const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
+const lookupId = (v: unknown): string | null => {
+  const id = v && typeof v === "object" ? (v as { id?: unknown }).id : undefined;
+  return typeof id === "string" && id ? id : null;
+};
+/** A Zoho date ("YYYY-MM-DD") as the console prints a day: "DD Mon". */
+const dayOf = (d: unknown): string => (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? stampOf(d + "T00:00:00+05:30").slice(0, 6) : "");
+
+/** The book's touches per lead, as the console's Touch (oldest first). A reply is Last_Reply_At's; a voided touch is skipped. */
+export function touchesOf(rows: readonly ZohoRecord[]): Map<string, Touch> {
+  const out = new Map<string, Touch>();
+  const ms = (r: ZohoRecord) => Date.parse(String(r.Occurred_At)) || 0;
+  for (const r of [...rows].sort((a, b) => ms(a) - ms(b))) {
+    const lead = lookupId(r.Lead), ch = typeof r.Channel === "string" ? CHANNEL_OF[r.Channel] : undefined, at = stampOf(str(r.Occurred_At));
+    if (!lead || !ch || !at || r.Is_Reply === true || str(r.Voided_At)) continue;
+    const t = out.get(lead) ?? { msg: [], email: [], call: [], visit: [] };
+    t[ch].push(at);
+    out.set(lead, t);
+  }
+  return out;
+}
 
 /** One LeadRow (plus its stamps) as the console's Lead. Only what Zoho holds; the rest empty, never invented. */
-export function leadOf(row: LeadRow, detail: ZohoRecord | undefined): Lead {
+export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Touch): Lead {
   const at: string[] = [stampOf(row.createdAt)];
   let done = 1;
-  let skipped = false;
+  let skipped = detail?.Engagement_Skipped === true;
   for (const r of RUNGS) {
     const v = detail?.[r.field];
     if (typeof v === "string" && v) { done = r.n; at.push(stampOf(v)); continue; }
@@ -158,18 +197,32 @@ export function leadOf(row: LeadRow, detail: ZohoRecord | undefined): Lead {
   const nextText = typeof detail?.Next_Step === "string" ? detail.Next_Step : null;
   const nextIso = istIso(row.nextStepAt);
   const lostWhy = typeof detail?.Lost_Reason === "string" ? (LOST_BY_ZOHO[detail.Lost_Reason] ?? detail.Lost_Reason) : "";
+  /* the step's hour: a step saved with no hour is written at 23:59 IST (followupWrites istAt), which reads back as none */
+  const nextTm = nextIso && nextIso.slice(11, 16) !== "23:59" ? nextIso.slice(11, 16) : undefined;
+  const nextCh = str(detail?.Next_Step_Channel);
+  const fcCat = typeof detail?.Forecast === "string" ? FC_OF[detail.Forecast] : undefined;
+  const how = str(detail?.Consent_How), conBy = lookupId(detail?.Consent_By), conAt = str(detail?.Consent_At);
+  const pref = str(detail?.Preferred_Communication), undone = str(detail?.Rung_Undone_At);
   return {
     id: row.id,
     n: [row.firstName, row.lastName].filter(Boolean).join(" "),
-    ph: row.mobile ?? "", em: "", city: "",
+    ph: row.mobile ?? "", em: str(detail?.Email) ?? "", city: str(detail?.City) ?? "",
     own: row.ownerId, sec: row.secondaryOwnerId,
     src: (row.source && SOURCES.has(row.source) ? row.source : "Other") as Source,
     ev: null, done, at,
-    touch: { msg: [], email: [], call: [], visit: [] },
+    touch: touch ?? { msg: [], email: [], call: [], visit: [] },
     units: row.unitsInterested ?? 0, unitsKnown: row.unitsInterested !== null,
-    nx: nextText && nextIso ? { t: nextText, by: stampOf(row.nextStepAt).slice(0, 6), d: nextIso.slice(0, 10), who: row.ownerId ?? "", at: "" } : null,
-    fc: null,
+    nx: nextText && nextIso ? {
+      t: nextText, by: stampOf(row.nextStepAt).slice(0, 6), d: nextIso.slice(0, 10), who: row.ownerId ?? "", at: "",
+      ...(nextTm ? { tm: nextTm } : {}), ch: (nextCh && CHANNEL_OF[nextCh]) || "other",
+    } : null,
+    fc: fcCat ? { c: fcCat, by: dayOf(detail?.Forecast_Paid_By), ev: "", at: "", who: row.ownerId ?? "" } : null,
     consent: false, con,
+    ...(how ? { conHow: HOW_OF[how] ?? null } : {}),
+    ...(conAt ? { conAt: stampOf(conAt) } : {}),
+    ...(conBy ? { conBy } : {}),
+    ...(pref ? { contactPreference: pref } : {}),
+    ...(undone ? { undoAt: stampOf(undone) } : {}),
     reply: row.lastReplyAt ? stampOf(row.lastReplyAt) : null,
     lost: row.lostAt ? { why: lostWhy as LostWhy, note: "", at: stampOf(row.lostAt), by: row.ownerId ?? "", stage: done } : null,
     mt: typeof detail?.Modified_Time === "string" && detail.Modified_Time ? detail.Modified_Time : null,
@@ -299,13 +352,27 @@ export function createLiveDataLayer(deps: LiveDeps) {
     }
     const ids = [...rows.keys()];
     const detail = new Map<string, ZohoRecord>();
+    const touchRows: ZohoRecord[] = [];
+    let leadOptional: readonly string[] = LEAD_OPTIONAL, touchOptional: readonly string[] = TOUCH_OPTIONAL, touchesOk = true;
+    /* one COQL read; when the org rejects it for naming a field it does not have yet (invalid-data), once more without the optional ones */
+    const read = async (fields: () => readonly string[], drop: () => void, from: string, where: string, order: string) => {
+      let r = await deps.crm.coql(p.credential, `select ${fields().join(", ")} from ${from} where ${where} order by ${order} limit 0, 200`, { signal });
+      if (!r.ok && r.error.kind === "invalid-data") { drop(); r = await deps.crm.coql(p.credential, `select ${fields().join(", ")} from ${from} where ${where} order by ${order} limit 0, 200`, { signal }); }
+      return r;
+    };
     for (let i = 0; i < ids.length; i += 100) {
-      const chunk = ids.slice(i, i + 100);
-      const r = await deps.crm.coql(p.credential, `select ${LEAD_DETAIL.join(", ")} from Leads where id in (${chunk.map((x) => `'${x}'`).join(", ")}) order by id asc limit 0, 200`, { signal });
+      const chunk = ids.slice(i, i + 100), list = chunk.map((x) => `'${x}'`).join(", ");
+      const r = await read(() => [...LEAD_DETAIL, ...leadOptional], () => { leadOptional = []; }, "Leads", `id in (${list})`, "id asc");
       if (!r.ok) { problems.push(`leads-detail:${r.error.kind}`); break; }
       for (const rec of r.value.records) if (chunk.includes(rec.id)) detail.set(rec.id, rec);
+      /* the last contact (D45: read from Touches on the person's own token, never kept); 200 newest per 100 leads */
+      if (!touchesOk) continue;
+      const t = await read(() => [...TOUCH_FIELDS, ...touchOptional], () => { touchOptional = []; }, "Touches", `Lead in (${list})`, "Occurred_At desc");
+      if (!t.ok) { problems.push(`touches:${t.error.kind}`); touchesOk = false; continue; }
+      touchRows.push(...t.value.records);
     }
-    return [...rows.values()].map((row) => leadOf(row, detail.get(row.id)));
+    const touches = touchesOf(touchRows);
+    return [...rows.values()].map((row) => leadOf(row, detail.get(row.id), touches.get(row.id)));
   }
 
   /** The AM book (KAM: own accounts; Head of AM: every allotted account and the pool) on the person's own token. */

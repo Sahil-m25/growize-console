@@ -35,7 +35,7 @@ import { useGoLead, useGoView } from "@/features/leads/nav";
 const gapTeam = (state: ConsoleState) => scopeOf(state, "today") === "team";
 
 function ClosersBody(_props: DrawerProps) {
-  const { state } = useConsole();
+  const { state, dispatch } = useConsole();
   const goLead = useGoLead("today");
   const logTouch = useLogTouch();
   const team = gapTeam(state);
@@ -77,7 +77,8 @@ function ClosersBody(_props: DrawerProps) {
                     className="act"
                     onClick={(e) => {
                       e.stopPropagation();
-                      logTouch(l, touchRec.k);
+                      /* a refusal (consent, or the route's own words live) is said in the page's live region */
+                      void logTouch(l, touchRec.k).then((why) => { if (why) dispatch({ type: "setUi", patch: { NOTICE: why } }); });
                     }}
                   >
                     {u.act}

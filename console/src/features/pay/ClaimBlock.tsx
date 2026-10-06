@@ -19,11 +19,14 @@ import { IMP } from "@/domain";
 import type { Lead } from "@/domain";
 import { claimBlock, isFin, may, P, refTxt } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
+import { useApiMode } from "@/lib/data/api";
 import { ProvL, RefButton } from "./common";
 
 export function ClaimBlock({ l, actions = true }: { l: Lead; actions?: boolean }) {
   const { state, dispatch } = useConsole();
-  const b = claimBlock(state, l, actions);
+  /* confirmClaim / rejectClaim / reopenClaim are the reducer's only (the claim redesign is not built): live reads, never acts */
+  const live = useApiMode() === "live";
+  const b = claimBlock(state, l, actions && !live);
   if (!b) return null;
   const c = b.c;
   /* whether the match-refusal line reads at all is a raw Finance-role question, independent of
