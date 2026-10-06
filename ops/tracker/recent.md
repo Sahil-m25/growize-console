@@ -1,4 +1,18 @@
-*Updated 5 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D123`.*
+*Updated 6 Oct 2026. Kept by the coordinator. Full record: `docs/decisions/D111`–`D123`.*
+
+**Catalyst staging is live and signing in (6 Oct):**
+- AppSail `growize-console` (India DC, Development) runs against the CRM sandbox Growize Staging only.
+- Zoho sign-in verified end to end: an IR user lands on Today with the sandbox's leads.
+- Four fixes on the way:
+  - `CONSOLE_PUBLIC_ORIGIN` for the origin check behind AppSail;
+  - the `ZohoCRM.org.READ` scope for the sandbox-org check;
+  - sandbox users (type "Sandbox Developer User") allowed on sandbox deployments only;
+  - staging-only refusal reasons (`GZ_SIGNIN_DEBUG=1`).
+- **Deploy rule:** the deploy config carries no `env_variables`, so a deploy keeps the secrets entered in the Catalyst console. A deploy that carries them replaces every variable.
+- To do:
+  - switch `GZ_SIGNIN_DEBUG` off;
+  - delete the test app `gz-envtest`;
+  - move the client secret to a fresh OAuth client before anything goes live.
 
 **How the build runs now (D111):** parallel agents, each in its own git worktree. Sonnet builds; Opus takes money, access, security, the Jev layer and integration. One coordinator merges the work, runs the checks and is the only one who updates this tracker. The autopilot loop is no longer used, because it kept stopping.
 
