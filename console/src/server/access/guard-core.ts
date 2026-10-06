@@ -169,6 +169,9 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */
   "/api/system": { kind: "session" },   /* M15-S05 live checks: server/system/facts mayReadSystem (`sys` capability) decides inside */
   "/api/investors/[id]/kam": { kind: "page", page: "inv" },
+  "/api/investors/[id]/contact": { kind: "page", page: "inv" },   /* D132 logContact: the Investors "care" right (a KAM on their own account) re-derived inside (server/investors/care) */
+  "/api/investors/[id]/details": { kind: "page", page: "inv" },   /* D132 saveDetails: the "details" right (a KAM on their own account) re-derived inside */
+  "/api/investors/[id]/kyc": { kind: "page", page: "inv" },       /* D132 passKyc/failKyc: the "kyc" right (Compliance, super user) re-derived inside */
   "/api/investors/[id]/kam/share": { kind: "page", page: "inv" },   /* D121 A the KAM share's state (GET) and Retry (POST .../retry): the record must be visible on the person's own token; Retry also needs the "assign" right, decided inside */
   "/api/kams": { kind: "page", page: "inv" },   /* R5 move a whole KAM book (POST /api/kams/[userId]/move-book): the Investors page; kam-assign's live "assign" right is re-derived inside, per Contact */
   "/api/investors/am": { kind: "page", page: "inv" },   /* M09-S04/S02 the AM list (managers, pool, rows): the Investors page; server/investors/am-service refuses any seat but a KAM or the Head of AM inside */

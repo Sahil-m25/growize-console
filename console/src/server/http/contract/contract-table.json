@@ -449,6 +449,43 @@
     }
    }
   },
+  "/api/investors/[id]/contact": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "channel",
+      "mood"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/[id]/details": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "changes"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/investors/[id]/kyc": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "result"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
   "/api/investors/[id]/money": {
    "GET": {
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
