@@ -22,7 +22,7 @@ import type { Paper } from "@/server/documents/list";
 import {
   CHANS, FSTATE, I, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
   aged, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
-  mayDetails, money, notFin, plusDays, readBook, roundOf, safeNote, tierOf, who,
+  mayDetails, mayCareOn, mayDetailsOn, money, notFin, plusDays, readBook, roundOf, safeNote, tierOf, who,
   fileKind, llpOf, UPLOAD_ACCEPT, uploadCheck, uploadKey,
 } from "@/lib/im";
 import type { ImDrafts, ImDrawerKey, ImInvestor, ImScope } from "@/lib/im";
@@ -37,6 +37,7 @@ import { useReload, useSaveQueue, type ConsoleState } from "@/lib/store";
 import { NOT_SAVED_WAITING, offlineGate, PREPARE_RENEW_MS, receiptQueueKey, receiptSave, type HeldPrepare } from "@/lib/receipt-queue";
 import type { Prepared } from "@/server/money/record-receipt";
 import { amManagers, investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
+import { careContact, careDetails, careKyc, liveDetailChanges } from "@/lib/data/endpoints/care";
 import { investorAllot } from "@/lib/data/endpoints/allotments";
 
 type Ctx = ImPageProps & { id: string | null };
@@ -126,8 +127,42 @@ function kamFoot(c: Ctx): ReactNode {
 
 /* ---- talk — imx.js 2639–2672 ---- */
 const NEXTS: [string, string][] = [["", "On the cadence"], ["14", "In a fortnight"], ["30", "In a month"], ["90", "In three months"]];
-function talkBody(c: Ctx): ReactNode {
-  const { s, me, id } = c; const x = I(s, me, id); if (!x) return null;
+/* D132: the investor a care drawer works on — the demo book's (fixture) or the live record (GET /api/investors/[id]/record),
+   with the version a write is guarded by. Live, the demo book holds no investors, so I() would find none. */
+function useCareInvestor(c: Ctx): { x: ImInvestor | null; version: string | null; loading: boolean; err: string | null } {
+  const live = useApiMode() === "live";
+  const rec = useApiRead(investorRecord, { s: c.s, me: c.me }, live ? c.id : null);
+  if (!live) return { x: I(c.s, c.me, c.id), version: null, loading: false, err: null };
+  if (rec.state === "ok") return { x: rec.data.record.investor, version: rec.data.record.version, loading: false, err: null };
+  return { x: null, version: null, loading: rec.state === "loading", err: rec.state === "error" ? rec.err.error : null };
+}
+function CareName(c: Ctx) { const { x } = useCareInvestor(c); return <>{x ? x.n : ""}</>; }
+function CareWait({ loading, err }: { loading: boolean; err: string | null }) {
+  return err ? <div className="note bad" role="alert">{err}</div> : loading ? <p className="sm" style={{ margin: 0 }}>Reading the record…</p> : null;
+}
+/** A write's in-flight and refusal state, and the press key a retry after an unreachable console reuses. */
+function usePress() {
+  const [pending, setPending] = useState(false), [err, setErr] = useState<string | null>(null);
+  const key = useRef<string | null>(null);
+  const run = async <T,>(f: (k: string) => Promise<{ ok: true; data: T } | { ok: false; status: number; error: string }>): Promise<boolean> => {
+    setPending(true); setErr(null);
+    key.current ??= newIdempotencyKey();
+    const r = await f(key.current);
+    setPending(false);
+    if (r.ok) { key.current = null; return true; }
+    if (r.status !== 0) key.current = null;   /* only an unreached console retries the same press */
+    setErr(r.error); return false;
+  };
+  return { pending, err, run };
+}
+const PressErr = ({ err }: { err: string | null }) => err ? <div className="note bad" role="alert" style={{ marginTop: 8, width: "100%" }}>{err}</div> : null;
+const NOT_YET_NEXT = "Not available yet — Zoho has no next-contact field, so live the next one is always on the cadence.";
+
+function TalkBody(c: Ctx) {
+  const { s, me } = c;
+  const live = useApiMode() === "live";
+  const { x, loading, err } = useCareInvestor(c);
+  if (!x) return <CareWait loading={loading} err={err} />;
   const { CT } = draft(c);
   const first = !x.intro && x.kam === me;
   const T = tierOf(x) || TIERS[TIERS.length - 1];
@@ -155,17 +190,31 @@ function talkBody(c: Ctx): ReactNode {
           {" "}{T.every} days out on its own. Override it only if they asked you to{x.nextOn
             ? <>, and note that &quot;on the cadence&quot; clears the {x.nextOn} standing now</> : null}.</p>
         <div className="chips">{NEXTS.map(([v, t]) =>
-          <button key={v} className={`chip ${String(CT.next) === v ? "on" : ""}`} onClick={() => set(c, { CT: { ...CT, next: v } })}>{t}</button>)}</div>
+          <button key={v} className={`chip ${String(CT.next) === v ? "on" : ""}`} disabled={live && v !== ""} title={live && v !== "" ? NOT_YET_NEXT : undefined}
+            onClick={() => set(c, { CT: { ...CT, next: v } })}>{t}</button>)}</div>
+        {live ? <p className="sm" style={{ margin: "7px 0 0" }}>{NOT_YET_NEXT}</p> : null}
       </div>
     </>
   );
 }
-function talkFoot(c: Ctx): ReactNode {
+/* D132: "Record it" is POST /api/investors/[id]/contact (lib/data/endpoints/care): one Touch on the investor's origin lead, on
+   the person's own token; fixture mode still runs the reducer's logContact. */
+function TalkFoot(c: Ctx) {
   const { s, me, id, dispatch } = c; const { CT } = draft(c);
-  return mayCare(s, me, I(s, me, id)) && id ? (
-    <button className="act" onClick={() => dispatch({ type: "logContact", id, ch: CT.ch, mood: CT.mood, note: CT.note, nextDays: CT.next })}>
-      Record it</button>
-  ) : null;
+  const live = useApiMode() === "live";
+  const { x, version } = useCareInvestor(c);
+  const write = useApiWrite(careContact, { s, me }, dispatch);
+  const press = usePress();
+  if (!id || !(live ? mayCareOn(s, me, x) : mayCare(s, me, I(s, me, id)))) return null;
+  const go = () => press.run(k => write({ id, version, ch: CT.ch, mood: CT.mood, note: CT.note, nextDays: live ? "" : String(CT.next ?? "") }, { idempotencyKey: k }))
+    .then(saved => { if (saved && live) { set(c, { CT: { ch: "call", mood: "good", note: "", next: "" } }); dispatch({ type: "closeDrawer" }); } });
+  return (
+    <>
+      <button className="act" disabled={press.pending || (live && !version)} aria-busy={press.pending} onClick={() => { void go(); }}>
+        {press.pending ? "Saving…" : "Record it"}</button>
+      <PressErr err={press.err} />
+    </>
+  );
 }
 
 /* ---- claim — imx.js 2674–2710 ----
@@ -543,14 +592,24 @@ function VerifyBody(c: Ctx) {
 }
 
 /* ---- kyc — imx.js 2807–2834 ---- */
-function kycBody(c: Ctx): ReactNode {
-  const { s, me, dispatch, id } = c; const x = I(s, me, id); if (!x) return null;
+function KycBody(c: Ctx) {
+  const { s, me, dispatch } = c;
+  const live = useApiMode() === "live";
+  const { x, loading, err } = useCareInvestor(c);
+  if (!x) return <CareWait loading={loading} err={err} />;
   if (notFin(s, me)) return <p className="sm" style={{ margin: 0 }}>Identity is Finance&apos;s. There is nothing on
     this drawer you can see.</p>;
   const bank = x.bank || { ifsc: "", name: "", drop: "" };
   return (
     <>
-      <dl className="kv" style={{ marginTop: 0 }}>
+      {live ? (
+        <dl className="kv" style={{ marginTop: 0 }}>
+          <dt>Identity</dt><dd><span className="sm">Pass checks that a PAN — and, for a resident, an Aadhaar reference — is on
+            file in Zoho. The values are never read for it, and never shown here.</span></dd>
+          <dt>Residency</dt><dd>{x.nri ? "Non-resident — FEMA applies" : "Resident"}</dd>
+          <dt>Now</dt><dd><KycTag x={x} />{x.kycOn ? <> <span className="sm mono">{x.kycOn}</span></> : null}</dd>
+        </dl>
+      ) : <dl className="kv" style={{ marginTop: 0 }}>
         <dt>PAN</dt><dd><Pii s={s} me={me} dispatch={dispatch} x={x} f="pan" /></dd>
         <dt>Aadhaar</dt><dd>{x.aadh ? <><span className="mono">•••• •••• {x.aadh}</span>
           <div className="sm mono">{x.aref}</div></>
@@ -560,7 +619,7 @@ function kycBody(c: Ctx): ReactNode {
           ? (bank.ifsc || "—") + " · " + (bank.name || "—") + " · " : ""}name match {bank.drop || "—"}</div></dd>
         <dt>Residency</dt><dd>{x.nri ? "Non-resident — FEMA applies" : "Resident"}</dd>
         <dt>Now</dt><dd><KycTag x={x} />{x.kycWhy ? <> <span className="sm">{x.kycWhy}</span></> : null}</dd>
-      </dl>
+      </dl>}
       <div className={`note ${x.nri ? "warn" : ""}`} style={{ marginTop: 12 }}>{x.nri
         ? `An NRI holding cannot be allotted without a signed FEMA declaration, however much money has
          arrived. Passing KYC does not clear that — it is a separate document and a separate check.`
@@ -569,14 +628,25 @@ function kycBody(c: Ctx): ReactNode {
     </>
   );
 }
-function kycFoot(c: Ctx): ReactNode {
+/* D132: Pass it / Fail it are POST /api/investors/[id]/kyc (lib/data/endpoints/care): Contacts.KYC and KYC_Completed_On on
+   Compliance's own token; fixture mode still runs the reducer's passKyc / failKyc. */
+function KycFoot(c: Ctx) {
   const { s, me, id, dispatch } = c;
-  return may(s, me, "kyc") && id ? (
+  const live = useApiMode() === "live";
+  const { version } = useCareInvestor(c);
+  const write = useApiWrite(careKyc, { s, me }, dispatch);
+  const press = usePress();
+  if (!may(s, me, "kyc") || !id) return null;
+  const go = (result: "passed" | "failed") => press.run(() => write({ id, version, result, ...(result === "failed" ? { why: "Documents do not match" } : {}) }))
+    .then(saved => { if (saved && live) dispatch({ type: "closeDrawer" }); });
+  const off = press.pending || (live && !version);
+  return (
     <>
-      <button className="act" onClick={() => dispatch({ type: "passKyc", id })}>Pass it</button>{" "}
-      <button className="act ghost" onClick={() => dispatch({ type: "failKyc", id, why: "Documents do not match" })}>Fail it</button>
+      <button className="act" disabled={off} aria-busy={press.pending} onClick={() => { void go("passed"); }}>{press.pending ? "Saving…" : "Pass it"}</button>{" "}
+      <button className="act ghost" disabled={off} onClick={() => { void go("failed"); }}>Fail it</button>
+      <PressErr err={press.err} />
     </>
-  ) : null;
+  );
 }
 
 /* ---- tkt — imx.js 2836–2861 ---- */
@@ -695,32 +765,53 @@ function fieldBody(c: Ctx): ReactNode {
     </>
   );
 }
-function fieldFoot(c: Ctx): ReactNode {
+function fieldFoot(c: Ctx): ReactNode { return <FieldFoot {...c} />; }
+/* D132: no Zoho module holds a field note (farm progress) in the sandbox schema, so live the button is disabled with the
+   "Not available yet" pattern rather than changing only this browser's copy. Fixture mode runs the reducer's logField. */
+function FieldFoot(c: Ctx) {
   const { s, me, dispatch } = c; const { FD } = draft(c);
+  const live = useApiMode() === "live";
   if (!may(s, me, "field")) return null;
+  if (live) return (
+    <><button className="act" disabled title={NOT_YET_FIELD}>Record it</button>
+      <p className="sm" style={{ margin: "6px 0 0", width: "100%" }}>{NOT_YET_FIELD}</p></>
+  );
   const ok = !!FD.head.trim();
   return (
     <button className="act" disabled={!ok} title={ok ? undefined : "Say what happened"}
       onClick={ok ? () => dispatch({ type: "logField", blk: FD.blk, st: FD.st, head: FD.head, d: FD.d }) : undefined}>Record it</button>
   );
 }
+const NOT_YET_FIELD = "Not available yet — recording farm progress in Zoho is still to be decided (no module holds it).";
 
 /* ---- details — imx.js 2914–2931 ---- */
 const DETFIELDS: [keyof ImDrafts["DET"], string][] = [["n", "Name"], ["ph", "Phone"], ["em", "Email"], ["city", "City"],
   ["addr", "Address"], ["nominee", "Nominee"]];
-function detailsBody(c: Ctx): ReactNode {
-  const { s, me, id } = c; const x = I(s, me, id); if (!x) return null;
+/** D132: live, the name (a change also opens a bank re-match ticket nobody has routed yet) and the address (six Mailing_*
+ *  fields) are not saved — offered read-only with "Not available yet". */
+const NOT_YET_DETAIL: Partial<Record<keyof ImDrafts["DET"], string>> = {
+  n: "Not available yet — a name change also has to open a bank name re-match for Finance, which is still to be decided.",
+  addr: "Not available yet — the address is six fields in Zoho; change it there or ask Digital Infrastructure.",
+};
+function DetailsBody(c: Ctx) {
+  const live = useApiMode() === "live";
+  const { x, loading, err } = useCareInvestor(c);
+  if (!x) return <CareWait loading={loading} err={err} />;
   const { DET } = draft(c);
   return (
     <>
       <p className="sm" style={{ margin: "0 0 13px" }}>What the investor asked to change about themselves.
         Not their PAN, not their Aadhaar, not the account money leaves — those are identity and they
         are Finance&apos;s, on this same record, behind the same wall as always.</p>
-      {DETFIELDS.map(([k, t]) => (
-        <label key={k} className="fi" style={{ marginBottom: 11 }}><span>{t}</span>
-          <input className="inp" value={DET[k] != null ? DET[k] : x[k] || ""}
-            onChange={e => set(c, { DET: { ...DET, [k]: e.target.value } })} /></label>
-      ))}
+      {DETFIELDS.map(([k, t]) => {
+        const notYet = live ? NOT_YET_DETAIL[k] : undefined;
+        return (
+          <label key={k} className="fi" style={{ marginBottom: 11 }}><span>{t}</span>
+            <input className="inp" value={DET[k] != null ? DET[k] : x[k] || ""} disabled={!!notYet} title={notYet}
+              onChange={e => set(c, { DET: { ...DET, [k]: e.target.value } })} />
+            {notYet ? <span className="sm">{notYet}</span> : null}</label>
+        );
+      })}
       <div className="note" style={{ marginTop: 2 }}><b>A name change is not free.</b> If the name on the
         record stops matching the name on the bank account, the next payout fails and Finance has to
         re-run the match — so a name edit opens a compliance ticket by itself rather than quietly
@@ -728,16 +819,32 @@ function detailsBody(c: Ctx): ReactNode {
     </>
   );
 }
-function detailsFoot(c: Ctx): ReactNode {
-  const { s, me, id, dispatch } = c;
-  return mayDetails(s, me, I(s, me, id)) && id
-    ? <button className="act" onClick={() => dispatch({ type: "saveDetails", id })}>Save the changes</button> : null;
+/* D132: "Save the changes" is PUT /api/investors/[id]/details (lib/data/endpoints/care) on the person's own token, guarded by
+   the record's version; fixture mode still runs the reducer's saveDetails. */
+function DetailsFoot(c: Ctx) {
+  const { s, me, id, dispatch } = c; const { DET } = draft(c);
+  const live = useApiMode() === "live";
+  const { x, version } = useCareInvestor(c);
+  const write = useApiWrite(careDetails, { s, me }, dispatch);
+  const press = usePress();
+  if (!id || !(live ? mayDetailsOn(s, me, x) : mayDetails(s, me, I(s, me, id)))) return null;
+  const changes = live && x ? liveDetailChanges(DET, x as unknown as Record<string, unknown>) : {};
+  const none = live && !Object.keys(changes).length;
+  const go = () => press.run(() => write({ id, version, changes }))
+    .then(saved => { if (saved && live) { set(c, { DET: {} }); dispatch({ type: "closeDrawer" }); } });
+  return (
+    <>
+      <button className="act" disabled={press.pending || none || (live && !version)} title={none ? "Nothing has been changed" : undefined}
+        aria-busy={press.pending} onClick={() => { void go(); }}>{press.pending ? "Saving…" : "Save the changes"}</button>
+      <PressErr err={press.err} />
+    </>
+  );
 }
 
 /* ---- the registry — imx.js 2592 `const DRAWERS = {…}` ---- */
 export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
   kam: { w: 430, t: "Who looks after this account", sub: nameOf, body: c => <KamBody {...c} />, foot: kamFoot },
-  talk: { w: 450, t: "Log a conversation", sub: nameOf, body: talkBody, foot: talkFoot },
+  talk: { w: 450, t: "Log a conversation", sub: c => <CareName {...c} />, body: c => <TalkBody {...c} />, foot: c => <TalkFoot {...c} /> },
   claim: {
     w: 450, t: "An IR says the money has arrived",
     sub: c => <ClaimSub {...c} />,
@@ -750,11 +857,11 @@ export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
     sub: ({ s, me, id }) => { const d = s.data.DOCS.find(y => y.id === id); return d ? (I(s, me, d.inv) || { n: "" }).n || d.inv : ""; },
     body: c => <VerifyBody {...c} />, foot: () => null,
   },
-  kyc: { w: 430, t: "KYC", sub: nameOf, body: kycBody, foot: kycFoot },
+  kyc: { w: 430, t: "KYC", sub: c => <CareName {...c} />, body: c => <KycBody {...c} />, foot: c => <KycFoot {...c} /> },
   tkt: { w: 440, t: "Open a ticket", sub: () => "raised on behalf of an investor", body: tktBody, foot: tktFoot },
   upd: { w: 440, t: "Publish an update", sub: () => "it appears in the investor's app", body: updBody, foot: updFoot },
   field: { w: 450, t: "Record farm progress", sub: () => "what the investors will be told", body: fieldBody, foot: fieldFoot },
-  details: { w: 450, t: "Change their details", sub: nameOf, body: detailsBody, foot: detailsFoot },
+  details: { w: 450, t: "Change their details", sub: c => <CareName {...c} />, body: c => <DetailsBody {...c} />, foot: c => <DetailsFoot {...c} /> },
   ...MONEY_DRAWER_DEFS,                /* later decisions: Mark paid, LLP, Add investor, app access (../money) */
 };
 
@@ -766,19 +873,30 @@ function SuperNote({ s, me, k }: { s: ImPageProps["s"]; me: string; k: ImDrawerK
   ) : null;
 }
 
+/* D132: live, the record a care drawer works on is GET /api/investors/[id]/record, not the demo book drawerReadable looks in;
+   the seat's right opens the drawer, and the route re-derives it (and a KAM's own-account rule) on the press. */
+const LIVE_RECORD_DRAWERS: Partial<Record<ImDrawerKey, (s: ImPageProps["s"], me: string) => boolean>> = {
+  talk: (s, me) => may(s, me, "care"), details: (s, me) => may(s, me, "details"), kyc: (s, me) => !notFin(s, me),
+};
+function readableIn(live: boolean, s: ImPageProps["s"], me: string, k: ImDrawerKey, id: string | null | undefined): boolean {
+  const f = live ? LIVE_RECORD_DRAWERS[k] : undefined;
+  return f ? !!id && !!s.data.P[me] && may(s, me, "view") && f(s, me) : drawerReadable(s, me, k, id);
+}
+
 /** the open drawer's title, or null when no readable drawer is open (for the console's focus handling) */
-export function imDrawerTitle(s: ImPageProps["s"], me: string): string | null {
+export function imDrawerTitle(s: ImPageProps["s"], me: string, live = false): string | null {
   const D = s.ui.DRW;
-  if (!D || !DRAWERS[D.k] || !drawerReadable(s, me, D.k, D.id)) return null;
+  if (!D || !DRAWERS[D.k] || !readableIn(live, s, me, D.k, D.id)) return null;
   return DRAWERS[D.k].t;
 }
 
 /* vDrawer() — imx.js 2918–2933 */
 export function ImDrawer({ s, me, dispatch, docked }: ImPageProps & { docked: boolean }) {
   const D = s.ui.DRW;
+  const live = useApiMode() === "live";
   if (!D) return null;
   const d = DRAWERS[D.k];
-  if (!d || !drawerReadable(s, me, D.k, D.id)) return null;
+  if (!d || !readableIn(live, s, me, D.k, D.id)) return null;
   const c: Ctx = { s, me, dispatch, id: D.id };
   const t = d.t;
   const sub = d.sub(c), ft = d.foot(c);

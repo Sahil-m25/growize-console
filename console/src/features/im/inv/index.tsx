@@ -9,7 +9,7 @@ import { StepUp } from "../stepup";
 import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
-  mayDetails, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
+  mayDetails, mayCareOn, mayDetailsOn, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
   tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtDay, fmtStamp, mid, nowDay, when, DAY,
 } from "@/lib/im";
 import { EXTDAYS } from "@/domain";
@@ -27,6 +27,7 @@ import { InvUploads } from "../paper2/Upload";
 import { useApiMode, useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { appCard } from "@/lib/data/endpoints/app";
 import { amBook, financeInvestors, investorRecord, investorSearch, irInvestorList } from "@/lib/data/endpoints/investors";
+import { caseList } from "@/lib/data/endpoints/cases";
 import { useGoLead } from "@/features/leads/nav";
 import type { NavKey } from "@/domain";
 import type { IrInvestorRow } from "@/server/investors/ir-list";
@@ -369,17 +370,34 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
           <div className="card fill"><div className="ch"><h3>Tickets</h3><div className="sp" />
             {may(s, me, "tkt") ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "tkt", id: null,
               seed: { TK: { inv: x.id, cat: "Query", t: "", d: "", pri: "normal" } } })}>＋ Open one</button> : null}</div>
-            <div className="cb">{tkOf(s, me, x.id).length ? tkOf(s, me, x.id).map(t => <TkRow key={t.id} s={s} me={me} dispatch={dispatch} t={t} />)
-              : <div className="empty">Nothing has been raised on this investor.</div>}</div></div>
+            <RecordTickets {...p} x={x} /></div>
         ) : null}
       </div>
     </>
   );
 }
 
+/* D132: the record's tickets. Fixture: the demo book's (tkOf). Live: the seat's register (GET /api/cases, the Tickets page's own
+   read) for this investor — the same rows and versions the Tickets page works on, re-read after any live write. */
+function RecordTickets(p: ImPageProps & { x: ImInvestor }) {
+  const { s, me, dispatch, x } = p;
+  const live = useApiMode() === "live";
+  const reg = useApiRead(caseList, { s, me }, undefined);
+  if (!live) return <div className="cb">{tkOf(s, me, x.id).length ? tkOf(s, me, x.id).map(t => <TkRow key={t.id} s={s} me={me} dispatch={dispatch} t={t} />)
+    : <div className="empty">Nothing has been raised on this investor.</div>}</div>;
+  if (reg.state === "idle" || reg.state === "loading") return <div className="cb"><div className="empty">Reading the tickets…</div></div>;
+  if (reg.state === "error") return <div className="cb">{reg.err.status === 403 ? <div className="empty">Tickets are not part of this seat.</div>
+    : <div className="note bad" role="alert">{reg.err.error}</div>}</div>;
+  const rows = reg.data.rows.filter(t => t.inv === x.id);
+  return <div className="cb">{rows.length ? rows.map(t => <TkRow key={t.id} s={s} me={me} dispatch={dispatch} t={t} investorName={x.n} watched={!!t.watched} />)
+    : <div className="empty">Nothing has been raised on this investor.</div>}</div>;
+}
+
 /* vOne → "who" — imx.js 1568–1617 */
 function SecWho(p: ImPageProps & { x: ImInvestor }) {
   const { s, me, dispatch, x } = p;
+  /* D132: live, the record is not in the demo book; the details right is read off the live record (the route re-checks it) */
+  const live = useApiMode() === "live";
   const nf = notFin(s, me);
   const bank = x.bank || { ifsc: "", name: "", drop: "", acct: "" };
   return (
@@ -412,7 +430,7 @@ function SecWho(p: ImPageProps & { x: ImInvestor }) {
             : "name match " + (bank.drop || "—")}</div>}</dd>
         <dt>On the book</dt><dd className="mono">{x.since}</dd>
       </dl>
-        {mayDetails(s, me, x) ? <div className="drwsec">
+        {(live ? mayDetailsOn(s, me, x) : mayDetails(s, me, x)) ? <div className="drwsec">
           <button className="act" onClick={() => dispatch({ type: "openDrawer", k: "details", id: x.id, seed: { DET: {} } })}>Change their details</button>
           <p className="sm" style={{ margin: "9px 0 0" }}>Name, phone, email, address, nominee — the things that are theirs to change and that they tell whoever they talk to. Identity and the bank account are not on this list and are not yours.</p></div> : null}</div>
       {nf ? <div className="note" style={{ marginTop: 12 }}><b>Identity and bank details are Finance&apos;s.</b>{" "}
@@ -573,6 +591,7 @@ function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne>; rec: Inves
 
 /* vOne → "care" — imx.js 1683–1739 */
 function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
+  const live = useApiMode() === "live";   /* D132: the care right off the live record (the route re-checks it) */
   const l = lastC(s, me, x.id), T = tierOf(x)!, cs = cOf(s, me, x.id), o = overdue(s, me, x);
   const moodTag = (m: string) => `tag ${m === "concern" ? "late" : m === "ok" ? "due" : "go"}`;
   const talk = { ch: "call" as const, mood: "good" as const, note: "", next: "" };
@@ -605,7 +624,7 @@ function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
             : <span className="tag late">never</span>}</dd>
           <dt>Brought in by</dt><dd><ImPname s={s} k={x.ir} /> <span className="sm">{"· " + x.src + (x.lead ? " · lead " + x.lead : "") + " "}<ProvIR t="on the lead side" /></span></dd>
         </dl>
-        {mayCare(s, me, x) ? <div className="drwsec">
+        {(live ? mayCareOn(s, me, x) : mayCare(s, me, x)) ? <div className="drwsec">
           <button className="act" onClick={() => dispatch({ type: "openDrawer", k: "talk", id: x.id, seed: { CT: talk } })}>Log a conversation</button>
           <p className="sm" style={{ margin: "9px 0 0" }}>Recorded by hand, one line each, the way a touch is recorded on a lead — because a count of real conversations is the only measure of a relationship anybody trusts.</p></div>
           : may(s, me, "care") && who(s, me).r === "kam" ? <div className="drwsec"><p className="sm" style={{ margin: 0 }}>{x.kam

@@ -134,6 +134,13 @@ export const mayCare = (s: ImCtx, WHO: string, x: ImInvestor | null | undefined)
   !!x && !!I(s, WHO, x.id) && may(s, WHO, "care") && cared(x) && (who(s, WHO).r !== "kam" || x.kam === WHO);
 export const mayDetails = (s: ImCtx, WHO: string, x: ImInvestor | null | undefined): boolean =>
   !!x && !!I(s, WHO, x.id) && may(s, WHO, "details") && (who(s, WHO).r !== "kam" || x.kam === WHO);
+/** D132: the same rights as mayCare / mayDetails for a record read live (GET /api/investors/[id]/record), which is not in the
+ *  demo book `I()` looks in. The route re-derives the right and the KAM's own-account rule from the live session; this only
+ *  decides whether the button is offered. */
+export const mayCareOn = (s: ImCtx, WHO: string, x: ImInvestor | null | undefined): boolean =>
+  !!x && may(s, WHO, "care") && cared(x) && (who(s, WHO).r !== "kam" || x.kam === WHO);
+export const mayDetailsOn = (s: ImCtx, WHO: string, x: ImInvestor | null | undefined): boolean =>
+  !!x && may(s, WHO, "details") && (who(s, WHO).r !== "kam" || x.kam === WHO);
 export const kamGone = (s: ImCtx, x: ImInvestor): boolean => !!x.kam && !KAMS(s).includes(x.kam);
 export const poolBook = (s: ImCtx, WHO: string): ImInvestor[] =>
   readBook(s, WHO).filter(x => cared(x) && (!x.kam || kamGone(s, x)));

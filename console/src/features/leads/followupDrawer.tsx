@@ -30,7 +30,10 @@ import { NEXTS, OBJS, TOUCHCHANNELS } from "@/domain";
 import type { Channel, Lead } from "@/domain";
 import { dISOtoDisp, dOf, hhmm, iso, nowT, plusD } from "@/lib/format";
 import { canPlan, canWork, channelForAction, conFor, conWhy, hasNext, whyLocked } from "@/lib/selectors";
+import { useState } from "react";
 import { useConsole } from "@/lib/store";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { followupSave, NO_MT } from "@/lib/data/endpoints/followup";
 import type { ConsoleState, FollowupDraft, UiState } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { FUCHANNELS, FUOUTCOMES, fuHeard, fuLatest, latestNote } from "@/features/today/work";
@@ -327,35 +330,52 @@ function Body({ lead }: DrawerProps) {
    WorkAction/LeadPage simply leave the signal unread, same as the prototype's own `setWorkNotice`/
    `selectNextInvestorAfterFollowup`, which only ever mattered on the Today queue. */
 function Foot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
   const l = lead!;
   const FU = readFU(state.ui) ?? buildFollowupDraft(state, l);
+  /* D132: Save follow-up / Save and next investor are POST /api/leads/[id]/followup — the same route and endpoint as the lead
+     page's follow-up drawer (C1, lib/data/endpoints/followup). Fixture mode still runs the reducer's saveFollowup. Live: the
+     route on the person's own token, then the book is read again (reloadData) so the page shows what Zoho now holds. */
+  const book = readFU(state.ui) ? state : { ...state, ui: { ...state.ui, FU } };
+  const write = useApiWrite(followupSave, book, dispatch);
+  const live = useApiMode() === "live";
+  const [pending, setPending] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
   if (!canWork(state, l) || !canPlan(state, l))
     return <span className="sm">{whyLocked(state, l)} Recording belongs to whoever holds it.</span>;
   const permitted = fuChannelAllowed(l, FU.channel);
   const dt = FU.d ? new Date(FU.d + "T" + (FU.tm || "00:00") + ":00") : null;
   const dateOk = !!dt && !isNaN(dt.getTime()) && iso(dt) === FU.d && dt <= nowT(state.NOW);
   const nextOk = !!FU.keep || !!(FU.t && FU.t.trim() && dOf(FU.nd || ""));
-  const ok = permitted && !!FU.outcome && dateOk && nextOk;
-  const save = (advance: boolean) => {
-    dispatch({ type: "saveFollowup", id: l.id });
+  const ok = permitted && !!FU.outcome && dateOk && nextOk && !pending;
+  const save = async (advance: boolean) => {
+    setRefusal(null);
+    if (live && !l.mt) { setRefusal(NO_MT().error); return; }
+    if (!readFU(state.ui)) dispatch({ type: "setUi", patch: { FU } });   /* the reducer's saveFollowup reads ui.FU (fixture half) */
+    setPending(true);
+    const r = await write({ id: l.id, mt: l.mt, d: FU, today: iso(nowT(state.NOW)) });
+    setPending(false);
+    if (!r.ok) { setRefusal(r.error); return; }
     clearFollowupDraft(state, l.id);
-    dispatch({
-      type: "setUi",
-      patch: { WORKNOTICE: "Follow-up saved for " + l.n + ".", WORKADVANCE: advance ? l.id : null },
-    });
+    dispatch({ type: "setUi", patch: { WORKNOTICE: "Follow-up saved for " + l.n + ".", WORKADVANCE: advance ? l.id : null } });
+    if (live) {
+      dispatch({ type: "setUi", patch: { FU: null } });
+      dispatch({ type: "closeDrawer" });
+      reloadData();
+    }
   };
   return (
     <div className="ux-followup-actions">
-      <button type="button" className="act ghost" id="fusave" disabled={!ok} onClick={ok ? () => save(false) : undefined}>
-        Save follow-up
+      <button type="button" className="act ghost" id="fusave" disabled={!ok} aria-busy={pending} onClick={ok ? () => void save(false) : undefined}>
+        {pending ? "Saving…" : "Save follow-up"}
       </button>
-      <button type="button" className="act" id="fusavenext" disabled={!ok} onClick={ok ? () => save(true) : undefined}>
+      <button type="button" className="act" id="fusavenext" disabled={!ok} aria-busy={pending} onClick={ok ? () => void save(true) : undefined}>
         Save and next investor
       </button>
       <button
         type="button"
         className="chip"
+        disabled={pending}
         onClick={() => {
           dispatch({ type: "discardFollowup", id: l.id });
           clearFollowupDraft(state, l.id);
@@ -363,6 +383,11 @@ function Foot({ lead }: DrawerProps) {
       >
         Discard draft
       </button>
+      {refusal ? (
+        <div className="note bad" style={{ marginTop: "8px", width: "100%" }} role="alert">
+          {refusal}
+        </div>
+      ) : null}
     </div>
   );
 }
