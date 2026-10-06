@@ -149,6 +149,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/cases/deliveries": { kind: "page", page: "tkt" },   /* M13-S05-W1 the list form of a ticket's deliveries: one read for the register's open rows, scope decided inside */
   "/api/cases/[id]/messages": { kind: "page", page: "tkt" },   /* M13-S05-W1 the ticket thread: the Notes on a Case, same reach as the register */
   "/api/updates": { kind: "page", page: "invupd" },
+  "/api/test/session": { kind: "open", why: "D124 staging test sign-in (sandbox only, 404 unless its gate is on): no session, authenticated by GZ_TEST_SIGNIN_SECRET in X-Test-Signin-Secret" },
   "/api/session": { kind: "open", why: "the sign-in door itself: GET answers who is signed in, DELETE signs out" },
   "/api/errors": { kind: "open", why: "the client error beacon: carries no data and reports from the sign-in screen too" },
   "/api/webhooks/zoho-sign": { kind: "open", why: "a provider callback: no person, authenticated by its HMAC signature" },

@@ -150,7 +150,7 @@ const streamReply = (status, obj) => {
 };
 const clockAt = (t) => { let now = t; const c = () => now; c.advance = (ms) => { now += ms; }; return c; };
 
-function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}, backend, clock: sharedClock, onEnd, expectedOrgId, org } = {}) {
+function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}, backend, clock: sharedClock, onEnd, expectedOrgId, org, testEnrol } = {}) {
   const clock = sharedClock ?? clockAt(1_800_000_000_000);
   const planeB = createMemorySink();
   const log = createOpsLog(planeB);
@@ -178,7 +178,7 @@ function harness({ user = accepted('ir-manager'), grants = NO_GRANTS, token = {}
     accounts, sealer: createSealer(KEY), store,
     seats: createZohoSeatDirectory({ recordIdPrefix: seats.recordIdPrefix, roleIds: seats.roleIds, profileIds: seats.profileIds }),
     grants, planeC: createPlaneCLog(planeCSink), gate: createGate(), log, recordIdPrefix: seats.recordIdPrefix,
-    identityFetch, clock, ...(onEnd ? { onSessionEnd: onEnd } : {}), ...(expectedOrgId !== undefined ? { expectedOrgId } : {}),
+    identityFetch, clock, ...(onEnd ? { onSessionEnd: onEnd } : {}), ...(expectedOrgId !== undefined ? { expectedOrgId } : {}), ...(testEnrol ? { testEnrol } : {}),
   });
   return { sessions, store, planeB, planeCSink, calls, clock, state };
 }
@@ -740,4 +740,79 @@ test('GZ_SIGNIN_DEBUG=1 names the refusal step (staging diagnostics); unset, the
   }
   const { result } = await signIn(h, { flowCookie: null });
   assert.equal('why' in result, false);
+});
+
+/* ---------------------------------------- D124 staging test sign-in ---------------------------------------- */
+
+/** A TestEnrolHook double: allowlists `ids`, remembers what was saved (the raw token is only ever held here, in the test). */
+function enrolDouble(ids) {
+  const saved = new Map();
+  return { saved, wants: (who) => ids.includes(who), save: async (who, seat, token) => { saved.set(who, { seat, token }); } };
+}
+const IRM = '554023000000300004';   /* the ir-manager fixture user's id */
+
+test('D124 enrolment: an allowlisted person\'s normal sign-in keeps their token (keepGrant), audits test-signin-enrolled, and sign-out does not revoke it', async () => {
+  const enrol = enrolDouble([IRM]);
+  const h = harness({ testEnrol: enrol });
+  const { result } = await signIn(h);
+  assert.equal(result.ok, true);
+  assert.deepEqual(enrol.saved.get(IRM), { seat: 'conv', token: REFRESH });
+  assert.equal(h.store.raw()[0].keepGrant, true, 'the stored session (any store kind) carries keepGrant');
+  assert.deepEqual(h.planeCSink.events().map((e) => [e.action, e.who, e.seat]), [['test-signin-enrolled', IRM, 'conv'], ['sign-in', IRM, 'conv']]);
+  await h.sessions.signOut(result.sid);
+  assert.equal(h.calls.revoke.length, 0, 'the enrolled token is never revoked by a sign-out');
+  /* expiry does not revoke it either */
+  const h2 = harness({ testEnrol: enrolDouble([IRM]) });
+  const r2 = (await signIn(h2)).result;
+  h2.clock.advance(SESSION_ABSOLUTE_MS + 1);
+  assert.deepEqual(await h2.sessions.current(r2.sid), { ok: false, why: 'expired' });
+  assert.equal(h2.calls.revoke.length, 0);
+  assertNothingSecret(h);
+});
+
+test('D124 enrolment: a person not on the allowlist is not enrolled, and their sign-out still revokes as before', async () => {
+  const enrol = enrolDouble(['554023000000999999']);
+  const h = harness({ testEnrol: enrol });
+  const { result } = await signIn(h);
+  assert.equal(enrol.saved.size, 0);
+  assert.equal(h.store.raw()[0].keepGrant, undefined);
+  await h.sessions.signOut(result.sid);
+  assert.equal(h.calls.revoke.length, 1);
+});
+
+test('D124 mint: signInWithRefreshToken refreshes once and runs the callback pipeline — org proof, CurrentUser, admission — into a normal session', async () => {
+  let grantReads = 0;
+  const h = harness({ expectedOrgId: '60090668120', grants: { grantsOf: () => { grantReads++; return {}; } } });
+  const r = await h.sessions.signInWithRefreshToken(REFRESH);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.session, { who: IRM, seat: 'conv' });
+  assert.equal(h.calls.token.length, 1); assert.equal(h.calls.token[0].form.get('grant_type'), 'refresh_token');
+  assert.equal(h.calls.org.length, 1, 'the ZOHO_EXPECTED_ORG_ID proof ran');
+  assert.equal(h.calls.identity.length, 1, 'CurrentUser resolved the seat');
+  assert.ok(grantReads >= 1, 'the D60 admission (readGrants) was asked');
+  assert.equal(h.store.raw()[0].keepGrant, true);
+  assert.deepEqual(h.planeCSink.events().map((e) => [e.action, e.outcome, e.who, e.seat]), [['test-signin-used', 'ok', IRM, 'conv']]);
+  /* the minted session is an ordinary one: current() and credential() answer for it */
+  assert.equal((await h.sessions.current(r.sid)).ok, true);
+  assert.equal((await h.sessions.credential(r.sid)).credential.accessToken, ACCESS2);
+  await h.sessions.signOut(r.sid);
+  assert.equal(h.calls.revoke.length, 0, 'signing a test session out never revokes the enrolled token');
+  assertNothingSecret(h);
+});
+
+test('D124 mint: the same refusals as the OAuth door — wrong org, no grant, a refused refresh — and the enrolled token is never revoked', async () => {
+  const wrong = harness({ expectedOrgId: '60090668120', org: { org: [{ id: '1', zgid: '60061770791' }] } });
+  const w = await wrong.sessions.signInWithRefreshToken(REFRESH);
+  assert.equal(w.ok, false); assert.equal(w.code, 'wrong-org');
+  const viewer = harness({ user: accepted('viewer') });
+  const v = await viewer.sessions.signInWithRefreshToken(REFRESH);
+  assert.equal(v.code, 'no-grant');
+  /* the OAuth door refuses the same person the same way */
+  assert.equal((await signIn(harness({ user: accepted('viewer') }))).result.code, 'no-grant');
+  for (const x of [wrong, viewer]) { assert.equal(x.calls.revoke.length, 0); assert.equal(x.store.size(), 0); }
+  const refused = harness({ token: { refresh_token: invalidCode } });
+  const f = await refused.sessions.signInWithRefreshToken(REFRESH);
+  assert.equal(f.ok, false); assert.equal(f.code, 'failed');
+  assert.equal(refused.calls.revoke.length, 0);
+  assert.equal((await harness().sessions.signInWithRefreshToken('')).code, 'failed');
 });

@@ -26,7 +26,9 @@ export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session
   | "test-link-issued"
   /* D49 / M08-S05-NOTE-4: out of office / back on. who = the person who recorded it, whom = the person it is about (omitted when
      the same); from and to are IST days (YYYY-MM-DD), `to` the first day back. outcome ok = set, ended = cleared (back early / cancelled). */
-  | "availability";
+  | "availability"
+  /* D124 staging test sign-in (sandbox only): a test user's token enrolled by their own normal sign-in / a session minted from it */
+  | "test-signin-enrolled" | "test-signin-used";
 export type PlaneCOutcome = "ok" | "refused" | "ended";
 
 export interface PlaneCEvent {
@@ -87,7 +89,7 @@ export interface PlaneCLog {
 
 const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change",
   "refused-page", "refused-action", "grant-change", "access-granted", "access-ended", "manager-change",
-  "app-access-released", "test-link-issued", "availability"]);
+  "app-access-released", "test-link-issued", "availability", "test-signin-enrolled", "test-signin-used"]);
 const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;

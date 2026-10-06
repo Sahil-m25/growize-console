@@ -27,6 +27,7 @@ import { createHash } from "node:crypto";
 import { createMemoryState } from "../state/memory";
 import { sharedState } from "../state/runtime";
 import type { SharedState } from "../state/shared-state";
+import { TEST_SESSION_ROUTE, testSigninEnabled } from "../oauth/test-signin-gate";
 
 export type RouteHandler<C> = (request: Request, context: C) => Response | Promise<Response>;
 
@@ -63,6 +64,10 @@ export type OriginVerdict = { readonly ok: true } | { readonly ok: false; readon
 export function originVerdict(request: Request, route: string): OriginVerdict {
   if (!MUTATING.has(request.method.toUpperCase())) return { ok: true };
   if (ORIGIN_EXEMPT.some((e) => route.startsWith(e.prefix))) return { ok: true };
+  /* D124: the staging test sign-in is called by the test runner's server-side request context and authenticated by
+     X-Test-Signin-Secret (a header no cross-site page can set without a CORS preflight this app never grants). Exactly
+     this route, and only while its gate is on; off, the route itself answers 404. */
+  if (route === TEST_SESSION_ROUTE && testSigninEnabled()) return { ok: true };
   const site = request.headers.get("sec-fetch-site")?.trim().toLowerCase();
   if (site === "cross-site") return { ok: false, why: "cross-site" };
   if (site === "same-site") return { ok: false, why: "same-site" };
@@ -92,6 +97,7 @@ export interface RateRule {
 
 /** THE ONE CONFIG. N per minute per (IP + session); per IP alone, IP_SHARE × N. */
 export const RATE_LIMITS: ReadonlyArray<RateRule> = Object.freeze([
+  { name: "test-signin", matches: (r: string) => r === "/api/test/session" || r.startsWith("/api/test/session/"), perMinute: 10 },
   { name: "auth", matches: (r: string) => r === "/api/auth" || r.startsWith("/api/auth/"), perMinute: 20 },
   { name: "search", matches: (r: string) => /^\/api\/[^/]+\/search$/.test(r), perMinute: 60 },
   { name: "upload", matches: (r: string) => r === "/api/documents/upload", perMinute: 20 },

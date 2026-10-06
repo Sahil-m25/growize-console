@@ -2,7 +2,7 @@
  * M18-S09-NOTE-1 — THE USER SESSION STORE ON SHARED STATE (docs/architecture/shared-state.md inventory 6).
  *
  * The same records the process-local `createMemorySessionStore` keeps (who, seat, the sealed refresh token,
- * createdAt, expiresAt and, when ZOHO_EXPECTED_ORG_ID is set, the proved orgId — nothing more), written to the process's SharedState (server/state) so a session survives
+ * createdAt, expiresAt and, when ZOHO_EXPECTED_ORG_ID is set, the proved orgId; keepGrant on a D124 test sign-in session — nothing more), written to the process's SharedState (server/state) so a session survives
  * an instance being recycled and is the same session on every instance. STATE_STORE picks the backend: memory
  * (default; one process, as before) or catalyst.
  *
@@ -58,6 +58,7 @@ function parse(json: string | null): StoredSession | null {
   return Object.freeze({
     who: o.who, seat: o.seat, sealedRefresh: o.sealedRefresh,
     ...(typeof o.orgId === "string" ? { orgId: o.orgId } : {}),
+    ...(o.keepGrant === true ? { keepGrant: true as const } : {}),
     createdAt: o.createdAt, expiresAt: o.expiresAt,
   });
 }
@@ -86,6 +87,7 @@ export function createSharedSessionStore(state: SharedState, sealer: Sealer, opt
       const plain = JSON.stringify({
         who: record.who, seat: record.seat, sealedRefresh: record.sealedRefresh,
         ...(record.orgId !== undefined ? { orgId: record.orgId } : {}),
+        ...(record.keepGrant === true ? { keepGrant: true } : {}),
         createdAt: record.createdAt, expiresAt: record.expiresAt,
       });
       await state.set(recKey(key), sealer.seal(plain, RECORD_AAD + key), ttl);

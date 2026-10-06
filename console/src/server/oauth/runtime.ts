@@ -17,6 +17,8 @@
  *                              from the token's api_domain and refuses live hosts (lib/zoho/client.ts crmApiOriginOf)
  *   ZOHO_EXPECTED_ORG_ID       the org's zgid; required in sandbox mode, honoured when set in production: a sign-in
  *                              whose token answers GET /crm/v8/org for another org is refused ("wrong-org")
+ *   GZ_TEST_SIGNIN_SECRET, GZ_TEST_SIGNIN_USERS, GZ_TEST_REFRESH_<id>   D124 staging test sign-in (./test-signin.ts);
+ *                              inert unless ZOHO_CRM_ENVIRONMENT=sandbox with ZOHO_EXPECTED_ORG_ID set
  *   ZOHO_STEPUP_REDIRECT_URI   optional (M01-S10): this deployment's exact https …/api/auth/step-up/callback,
  *                              registered on the same Zoho client; without it every step-up is refused
  *
@@ -36,6 +38,7 @@ import { createSharedSessionStore, sessionSealerFromEnv } from "./session-store"
 import { notifySessionEnd } from "./session-end";
 import { sharedState } from "../state/runtime";
 import { createZohoAccounts, type ZohoAccounts } from "./zoho-accounts";
+import { createTestEnrolment, testSigninEnabled, type TestEnrolment } from "./test-signin";
 import { sharedGrantReader } from "../access/grants";
 import { alertingOpsSink } from "../ops/runtime";
 
@@ -76,6 +79,8 @@ export interface OAuthParts {
   readonly gate: Gate;
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
+  /** D124: the staging test sign-in's enrolment; null whenever the gate is off (always in production). */
+  readonly testEnrolment?: TestEnrolment | null;
 }
 const G = globalThis as typeof globalThis & { __gzUserSessions?: OAuthParts };
 
@@ -103,6 +108,7 @@ export function oauthParts(env: NodeJS.ProcessEnv = process.env): OAuthParts {
   const gate = createGate();
   /* M18-S09-NOTE-1: sessions live in the process's SharedState (STATE_STORE), sealed with SESSION_ENC_KEY */
   const state = sharedState();
+  const testEnrolment = testSigninEnabled(env) ? createTestEnrolment({ state, sealer, env }) : null;
   const sessions = createUserSessions({
     accounts,
     sealer,
@@ -115,8 +121,9 @@ export function oauthParts(env: NodeJS.ProcessEnv = process.env): OAuthParts {
     log,
     recordIdPrefix,
     expectedOrgId: expectedCrmOrgId(env),
+    testEnrol: testEnrolment,
   });
-  G.__gzUserSessions = Object.freeze({ sessions, accounts, sealer, seats, gate, log, recordIdPrefix });
+  G.__gzUserSessions = Object.freeze({ sessions, accounts, sealer, seats, gate, log, recordIdPrefix, testEnrolment });
   return G.__gzUserSessions;
 }
 

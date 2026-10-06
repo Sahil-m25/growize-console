@@ -60,6 +60,7 @@ RECEIPT_IDEMPOTENCY_SECRET, RECEIPT_CONTEXT_SIGNING_SECRET, FOLLOWUP_UNDO_SECRET
 CONTRACT_SIGNING_KEY_PREVIOUS.
 Policy and mail: ORG_EMAIL_DOMAINS, SIGN_EMBED_HOSTS, INVESTOR_APP_URL, ALERT_EMAIL_TO, STEPUP_ALERT_TO,
 GZ_RATE_LIMITS, GZ_SIGNIN_LIST, GZ_RELEASE_APPROVAL, GZ_EXTEND_APPROVAL.
+Staging test sign-in (D124, sandbox only): GZ_TEST_SIGNIN_SECRET, GZ_TEST_SIGNIN_USERS, GZ_TEST_REFRESH_<ZOHO_USER_ID>.
 Stores (see warning): LOG_STORE, LOG_DIR, LOG_SINK, GRANT_STORE, GRANT_DIR, AUDIT_ARCHIVE_DIR, CONTRACTS_DIR, STATE_STORE.
 Jobs: JOB_SECRET, SIGN_CHECK_TIMER.
 Platform: X_ZOHO_CATALYST_LISTEN_PORT (set by Catalyst), NODE_ENV.
@@ -141,3 +142,67 @@ set with it — every secret entered in the console is gone. When `app-config.js
 deploy leaves the existing variables untouched (proved on a throwaway AppSail: var kept across a code change).
 Rule: the deploy copy of `app-config.json` never carries `env_variables`. Every variable (secret or not) lives in the
 Catalyst console; `app-config.staging.json` in this folder is only the reference list of non-secret values to type in.
+
+## Test sign-in for staging (Jev) — D124
+
+Lets the automated UI tester (Jev + Playwright) get a real console session for each sandbox test user without a
+password. Code: `console/src/server/oauth/test-signin.ts`; routes `POST /api/test/session` and
+`GET /api/test/session/status`. **It is off unless all four hold:** `ZOHO_CRM_ENVIRONMENT=sandbox`,
+`ZOHO_EXPECTED_ORG_ID` set, `GZ_TEST_SIGNIN_SECRET` at least 32 characters, `GZ_TEST_SIGNIN_USERS` non-empty. Off, both
+routes answer 404 (as if absent). Production is never `sandbox`, so it cannot be turned on there.
+
+Environment variables (names only; set them in the Catalyst console, never in git or `app-config.json`):
+
+| Variable | Value |
+|---|---|
+| `GZ_TEST_SIGNIN_SECRET` | 48 random characters (e.g. `openssl rand -base64 36`). Secret. |
+| `GZ_TEST_SIGNIN_USERS` | comma-separated Zoho user ids of the sandbox test users (Setup > Users in the sandbox, or `GET /crm/v8/users`) |
+| `GZ_TEST_REFRESH_<ZOHO_USER_ID>` | optional, one per user: a refresh token minted on this deployment's OAuth client for that user. Only needed while `STATE_STORE=memory` (see below). Secret. |
+| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `CATALYST_*` | recommended: makes enrolment and sessions survive instance recycles |
+
+**Enrolment (once per test user, by a person).** With the variables set and the app redeployed/restarted: open the
+console in a private window, *Continue with Zoho*, sign in as the test user and pick the **Growize Staging** sandbox on
+the consent screen. A user on `GZ_TEST_SIGNIN_USERS` is enrolled by that sign-in: their refresh token is kept sealed
+(ZOHO_SESSION_KEY, AES-256-GCM) in the shared state store, and Plane C records `test-signin-enrolled`. Signing out or the
+12 hours running out does **not** revoke an enrolled token. Repeat for each user, then check:
+
+```sh
+curl -s https://<app-host>/api/test/session/status -H "X-Test-Signin-Secret: $GZ_TEST_SIGNIN_SECRET"
+# {"ok":true,"users":[{"zohoUserId":"…","enrolled":true,"source":"store","seat":"ir","seatName":"investor-relations"}, …]}
+```
+
+**Persistence.** With `STATE_STORE=memory` (staging today) the enrolment lives in the instance's memory and is lost on
+every AppSail instance recycle or redeploy — status then shows `enrolled:false` and the users must sign in again. With
+`STATE_STORE=catalyst` it is in Catalyst NoSQL and survives. Under memory you can instead paste a refresh token into
+`GZ_TEST_REFRESH_<id>` (read-only fallback). The app never shows a token, so mint it yourself on the same OAuth client:
+add a second redirect URI (e.g. `https://localhost/`) to the client in the Zoho API console, open
+`https://accounts.zoho.in/oauth/v2/auth?response_type=code&access_type=offline&prompt=consent&client_id=<ZOHO_OAUTH_CLIENT_ID>&scope=<the scopes in oauth/runtime.ts DEFAULT_USER_SCOPES, comma-separated>&redirect_uri=https://localhost/`
+signed in as the test user (pick the sandbox), copy `code` from the address bar, and exchange it within two minutes:
+`curl -s -X POST https://accounts.zoho.in/oauth/v2/token -d grant_type=authorization_code -d client_id=… -d client_secret=… -d redirect_uri=https://localhost/ -d code=…` → `refresh_token`.
+
+**Use (curl / Playwright).** The secret goes in a header, never a URL:
+
+```sh
+curl -s -c jar.txt -X POST https://<app-host>/api/test/session \
+  -H "X-Test-Signin-Secret: $GZ_TEST_SIGNIN_SECRET" -H "Content-Type: application/json" \
+  -d '{"zohoUserId":"<id>"}'
+# 200 {"ok":true,"who":"<id>","seat":"ir","seatName":"investor-relations"}  + Set-Cookie: gz_zsid=… (the normal session)
+```
+
+```js
+const ctx = await request.newContext({ baseURL: 'https://<app-host>' });
+const r = await ctx.post('/api/test/session', { headers: { 'X-Test-Signin-Secret': process.env.GZ_TEST_SIGNIN_SECRET }, data: { zohoUserId: id } });
+await ctx.storageState({ path: `sess/${id}.json` });   // then browser.newContext({ storageState: `sess/${id}.json` })
+```
+
+The session is minted by the same pipeline as the OAuth callback (org zgid check, CurrentUser, seat, D60 admission), so
+it is refused for the same reasons: `{ok:false, why:"wrong-org"|"no-seat"|"no-grant"|"failed"}`. Other answers: 404 =
+off or wrong/missing secret; 400 bad body; 403 `not-allowlisted`; 409 `not-enrolled` / `token-user-mismatch`; 429 =
+the route limit (10/min) or `zoho-token-budget` (8 mints per user per 10 minutes — Zoho allows about 10 access tokens
+per refresh token per 10 minutes; reuse the storage state instead of minting per test). Plane C records
+`test-signin-used` with the user id and seat.
+
+**Turn it off:** unset `GZ_TEST_SIGNIN_SECRET` (and the `GZ_TEST_REFRESH_*` variables) and redeploy; the routes are
+404 again. Enrolled tokens stay valid at Zoho until revoked: revoke them per user in Zoho (accounts.zoho.in > Sessions >
+Connected Apps) when the test users are retired.
+

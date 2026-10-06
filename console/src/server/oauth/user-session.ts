@@ -87,6 +87,9 @@ export interface StoredSession extends ConsoleSession {
   readonly sealedRefresh: string;
   /** The org id (zgid) proved at sign-in when ZOHO_EXPECTED_ORG_ID is set; refreshes keep the same grant, so it is not re-asked. */
   readonly orgId?: string;
+  /** D124 staging test sign-in: this session's refresh token is (or is shared with) an enrolled test user's token, so
+   *  ending the session never revokes it at Zoho — revoking would un-enrol the test user. Absent on every other session. */
+  readonly keepGrant?: true;
   readonly createdAt: number;
   readonly expiresAt: number;
 }
@@ -118,6 +121,14 @@ export type GrantDirectory = GrantReader;
 /** Until grants are stored (M03-S02), nobody holds a page: granted-only seats are refused, fail closed. */
 export { NO_GRANTS };
 
+/** D124: the staging test sign-in's enrolment (./test-signin.ts). Present only while the gate is on. */
+export interface TestEnrolHook {
+  /** True when this Zoho user id is on GZ_TEST_SIGNIN_USERS. */
+  wants(who: string): boolean;
+  /** Persist the person's refresh token (sealed at rest) with the seat they signed in on. Never logs the token. */
+  save(who: string, seat: string, refreshToken: string): Promise<void>;
+}
+
 export interface UserSessionDeps {
   readonly accounts: ZohoAccounts;
   readonly sealer: Sealer;
@@ -135,6 +146,8 @@ export interface UserSessionDeps {
   /** M01-S08-NOTE-6: told (Zoho user id, raw session id) just before a session whose id is known is destroyed, so
    *  work queued on it (receipt-replay `discardSession`) is aborted first. Must not throw; a throw is swallowed. */
   readonly onSessionEnd?: (who: string, sid: string) => void;
+  /** D124: staging test sign-in enrolment; absent (the default, and always in production) = nobody is enrolled. */
+  readonly testEnrol?: TestEnrolHook | null;
 }
 
 export interface CallbackParams {
@@ -168,6 +181,9 @@ export interface UserSessions {
   /** M03-S04: end every session of this Zoho user now (access ended, seat moved) — 'revoked', Plane C
    *  `session-revoked` with `reason` ("access-ended" / "seat-changed"). Returns how many ended. */
   endSessionsOf(who: string, reason: string): Promise<number>;
+  /** D124 staging test sign-in: an enrolled refresh token → an access token → the SAME post-token pipeline the OAuth
+   *  callback runs (org check, CurrentUser, seat, admission) → a normal session. The token is never revoked here. */
+  signInWithRefreshToken(refreshToken: string): Promise<CallbackResult>;
 }
 
 /** The Zoho seat behind a console seat token (CONSOLE_SEAT inverted; Administrator seats have none). */
@@ -233,7 +249,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     }
     live.delete(key);
     await d.store.delete(key);
-    if (revoke) await revokeQuietly(d.sealer.open(rec.sealedRefresh, key) ?? undefined, rec.who);
+    if (revoke && !rec.keepGrant) await revokeQuietly(d.sealer.open(rec.sealedRefresh, key) ?? undefined, rec.who);
     const action = why === "chose" ? "sign-out" : why === "expired" ? "session-expired" : "session-revoked";
     d.planeC.record({ at: clock(), who: rec.who, action, outcome: "ended", reason, seat: rec.seat });
   }
@@ -282,6 +298,86 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     return { ok: true, credential: id.credential, session: { who: rec.who, seat: rec.seat } };
   }
 
+  /**
+   * Everything after a token is in hand — the one pipeline both doors share (D124): the ZOHO_EXPECTED_ORG_ID proof,
+   * CurrentUser (credential + seat), the D60 admission, then the stored session. `oauth` = the callback (a refused
+   * grant is revoked); `test` = the staging test sign-in (the enrolled token is never revoked, the session keeps it).
+   */
+  async function establish(grant: TokenGrant, mode: "oauth" | "test"): Promise<CallbackResult> {
+    const dropGrant = (who: string | null) => (mode === "oauth" ? revokeQuietly(grant.refresh_token, who) : Promise.resolve());
+
+    /* ZOHO_EXPECTED_ORG_ID: prove the org before anything else is asked of the token (the sandbox is
+       picked at Zoho's consent screen, so a person can hand us the live org's token). Ids only in logs. */
+    let orgId: string | undefined;
+    if (d.expectedOrgId) {
+      let org: Awaited<ReturnType<typeof verifyGrantCrmOrg>> = { ok: false, reason: "unavailable" };
+      try {
+        org = await verifyGrantCrmOrg(normalised(grant), {
+          expectedOrgId: d.expectedOrgId, log: d.log, clock, ...(d.identityFetch ? { fetch: d.identityFetch } : {}),
+        });
+      } catch {
+        /* an api_domain this deployment refuses: unavailable, fail closed */
+      }
+      if (!org.ok) {
+        await dropGrant(null);
+        if (org.reason === "mismatch") {
+          console.warn(`[auth] sign-in refused: token org ${org.orgId} is not the expected org ${d.expectedOrgId}`);
+          return refuse("wrong-org", "org-mismatch", null, null);
+        }
+        return refuse("failed", "org-unverified", null, null,
+          org.reason === "unavailable" ? `status=${org.status ?? "-"} class=${org.errorClass ?? "-"}` : "");
+      }
+      orgId = org.orgId;
+    }
+
+    const id = await identify(grant);
+    if (id === null) {
+      await dropGrant(null);
+      return refuse("failed", "unverified", null, null);
+    }
+    const who = id.credential.userId;
+    if (!id.resolution.ok) {
+      await dropGrant(who);
+      return refuse("no-seat", id.resolution.reason, who, null);
+    }
+    const seat = CONSOLE_SEAT[id.resolution.value.seat];
+    const admission = await admit(id.resolution.value.seat, who);
+    if (seat === null || !admission.ok) {
+      await dropGrant(who);
+      return admission.ok
+        ? refuse("no-seat", "administrator-profile", who, null)
+        : refuse(admission.code, admission.reason, who, admission.code === "no-grant" ? seat : null);
+    }
+
+    const sid = randomToken();
+    const key = idHash(sid);
+    const now = clock();
+    /* D124: an allowlisted person signing in normally while the staging gate is on is enrolled (their token kept). */
+    let keepGrant = mode === "test";
+    if (mode === "oauth" && d.testEnrol?.wants(who)) {
+      try {
+        await d.testEnrol.save(who, seat, grant.refresh_token!);
+        keepGrant = true;
+        d.planeC.record({ at: clock(), who, action: "test-signin-enrolled", outcome: "ok", reason: "test-signin", seat });
+      } catch {
+        console.warn("[auth] test sign-in enrolment could not be saved (the sign-in itself goes on)");
+      }
+    }
+    await d.store.put(key, {
+      who, seat,
+      sealedRefresh: d.sealer.seal(grant.refresh_token!, key),
+      ...(orgId !== undefined ? { orgId } : {}),
+      ...(keepGrant ? { keepGrant: true as const } : {}),
+      createdAt: now,
+      expiresAt: now + SESSION_ABSOLUTE_MS,
+    });
+    live.set(key, id.credential);
+    d.planeC.record(mode === "test"
+      ? { at: now, who, action: "test-signin-used", outcome: "ok", reason: "test-signin", seat }
+      : { at: now, who, action: "sign-in", outcome: "ok", reason: "zoho", seat });
+    return { ok: true, sid, session: { who, seat } };
+  }
+
   return Object.freeze({
     start() {
       const state = randomToken();
@@ -312,64 +408,14 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
       if (!exchanged.ok) {
         return refuse("failed", "code-refused", null, null, `status=${exchanged.status ?? "-"} zoho=${exchanged.zohoError ?? "-"}`);
       }
-      const grant = exchanged.value;
+      return establish(exchanged.value, "oauth");
+    },
 
-      /* ZOHO_EXPECTED_ORG_ID: prove the org before anything else is asked of the token (the sandbox is
-         picked at Zoho's consent screen, so a person can hand us the live org's token). Ids only in logs. */
-      let orgId: string | undefined;
-      if (d.expectedOrgId) {
-        let org: Awaited<ReturnType<typeof verifyGrantCrmOrg>> = { ok: false, reason: "unavailable" };
-        try {
-          org = await verifyGrantCrmOrg(normalised(grant), {
-            expectedOrgId: d.expectedOrgId, log: d.log, clock, ...(d.identityFetch ? { fetch: d.identityFetch } : {}),
-          });
-        } catch {
-          /* an api_domain this deployment refuses: unavailable, fail closed */
-        }
-        if (!org.ok) {
-          await revokeQuietly(grant.refresh_token, null);
-          if (org.reason === "mismatch") {
-            console.warn(`[auth] sign-in refused: token org ${org.orgId} is not the expected org ${d.expectedOrgId}`);
-            return refuse("wrong-org", "org-mismatch", null, null);
-          }
-          return refuse("failed", "org-unverified", null, null,
-            org.reason === "unavailable" ? `status=${org.status ?? "-"} class=${org.errorClass ?? "-"}` : "");
-        }
-        orgId = org.orgId;
-      }
-
-      const id = await identify(grant);
-      if (id === null) {
-        await revokeQuietly(grant.refresh_token, null);
-        return refuse("failed", "unverified", null, null);
-      }
-      const who = id.credential.userId;
-      if (!id.resolution.ok) {
-        await revokeQuietly(grant.refresh_token, who);
-        return refuse("no-seat", id.resolution.reason, who, null);
-      }
-      const seat = CONSOLE_SEAT[id.resolution.value.seat];
-      const admission = await admit(id.resolution.value.seat, who);
-      if (seat === null || !admission.ok) {
-        await revokeQuietly(grant.refresh_token, who);
-        return admission.ok
-          ? refuse("no-seat", "administrator-profile", who, null)
-          : refuse(admission.code, admission.reason, who, admission.code === "no-grant" ? seat : null);
-      }
-
-      const sid = randomToken();
-      const key = idHash(sid);
-      const now = clock();
-      await d.store.put(key, {
-        who, seat,
-        sealedRefresh: d.sealer.seal(grant.refresh_token!, key),
-        ...(orgId !== undefined ? { orgId } : {}),
-        createdAt: now,
-        expiresAt: now + SESSION_ABSOLUTE_MS,
-      });
-      live.set(key, id.credential);
-      d.planeC.record({ at: now, who, action: "sign-in", outcome: "ok", reason: "zoho", seat });
-      return { ok: true, sid, session: { who, seat } };
+    async signInWithRefreshToken(refreshToken: string): Promise<CallbackResult> {
+      if (typeof refreshToken !== "string" || refreshToken.length === 0 || refreshToken.length > 1_024) return refuse("failed", "no-refresh-token", null, null);
+      const r = await d.accounts.refresh(refreshToken, actorOf("unrecognised"));
+      if (!r.ok) return refuse("failed", "refresh-refused", null, null, `status=${r.status ?? "-"} zoho=${r.zohoError ?? "-"}`);
+      return establish({ ...normalised(r.value), refresh_token: refreshToken }, "test");
     },
 
     async current(sid: string | null | undefined): Promise<CurrentResult> {
