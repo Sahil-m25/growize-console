@@ -26,6 +26,7 @@
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
+import { coqlAll, coqlWhere } from "../../lib/zoho/coql";
 import { idOf, str } from "../data/contact-row";
 import { freshnessOf, type ServedFreshness } from "../data/freshness";
 import { scopesFor } from "../data/scope";
@@ -137,7 +138,7 @@ export function createDocumentsList(deps: DocumentsListDeps) {
     for (let page = 0; page < MAX_PAGES; page++) {
       let r: Awaited<ReturnType<typeof deps.crm.coql>>;
       try {
-        r = await deps.crm.coql(cred, `select ${fields.join(", ")} from ${spec.module} where (${where.join(" and ")}) order by id asc limit ${page * 200}, 200`, { signal });
+        r = await deps.crm.coql(cred, `select ${fields.join(", ")} from ${spec.module} where ${coqlWhere(coqlAll(where))} order by id asc limit ${page * 200}, 200`, { signal });
       } catch { return { ok: false, errorKind: "unexpected" }; }
       if (!r.ok) return { ok: false, errorKind: r.error.kind };
       rows.push(...r.value.records);

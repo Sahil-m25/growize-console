@@ -36,6 +36,7 @@ import { checkAmProjection, checkProjection, MODULES } from "../data/projections
 import { scopedKey, scopesFor, type BookScope } from "../data/scope";
 import { idOf, num, pagedSelect, RECORD_ID, str } from "../cases/predicate";
 import { sectionsFor } from "../investors/record";
+import { coqlAll } from "../../lib/zoho/coql";
 import { createFarmShelf, type FarmRow, type FarmsDeps, type FarmsPrincipal, type ShelfFailure, type ShelfRefusal } from "./shelf";
 
 const ALLOT = MODULES.allotments;
@@ -48,7 +49,7 @@ export const OCCUPANT_FIELDS = checkAmProjection(MODULES.amAllotments, [
 /** The same, for a Money seat: plus Received / Receivable to tell a paid reservation. */
 export const OCCUPANT_MONEY_FIELDS = checkProjection(MODULES.allotments, [...OCCUPANT_FIELDS, "Total_Amount_Received", "Total_Amount_Receivable"]);
 export const COUNT_QUERY = `select LLP, Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from ${ALLOT} where ${LIVE} group by LLP, Allocation_Status`;
-export const PAID_QUERY = `select LLP, SUM(Reserved_Units) from ${ALLOT} where Allocation_Status = 'Reserved' and Total_Amount_Receivable = 0 and Total_Amount_Received > 0 group by LLP`;
+export const PAID_QUERY = `select LLP, SUM(Reserved_Units) from ${ALLOT} where ${coqlAll(["Allocation_Status = 'Reserved'", "Total_Amount_Receivable = 0", "Total_Amount_Received > 0"])} group by LLP`;
 
 export interface LlpShelf {
   readonly id: string;
@@ -102,8 +103,8 @@ export function countScopeOf(seat: string, userId: string): BookScope {
 /** The occupants' WHERE for a scope, through the Customer lookup; null for a scope without names. */
 export function occupantsWhere(scope: BookScope): string | null {
   switch (scope.kind) {
-    case "own-lead": return `${LIVE} and Customer.Originating_IR = '${scope.userId}' and Customer.Origin_Lead is not null`;
-    case "own-book": return `${LIVE} and Customer.KAM = '${scope.userId}'`;
+    case "own-lead": return coqlAll([LIVE, `Customer.Originating_IR = '${scope.userId}'`, "Customer.Origin_Lead is not null"]);
+    case "own-book": return coqlAll([LIVE, `Customer.KAM = '${scope.userId}'`]);
     case "subtree": case "org": case "all": return LIVE;
     default: return null;
   }
@@ -221,8 +222,7 @@ function occupantOf(x: ZohoRecord, money: boolean): Occupant | null {
  * aggregate on the person's own token (D53); `exceptAllotmentId` leaves out the allotment being edited, so an
  * update is measured against everything else on the LLP. Counts only — no row, no name. */
 export const heldQuery = (llpId: string, exceptAllotmentId: string | null = null): string =>
-  `select Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from ${ALLOT} where LLP = '${llpId}' and ${LIVE}` +
-  (exceptAllotmentId ? ` and id != '${exceptAllotmentId}'` : "") + " group by Allocation_Status";
+  `select Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from ${ALLOT} where ${coqlAll([`LLP = '${llpId}'`, LIVE, ...(exceptAllotmentId ? [`id != '${exceptAllotmentId}'`] : [])])} group by Allocation_Status`;
 
 export type HeldCount =
   | { readonly ok: true; readonly allotted: number; readonly reserved: number; readonly held: number }

@@ -91,9 +91,9 @@ function rig(o = {}) {
       if (p === '/coql') {
         const q = body.select_query;
         if (/from Contacts where ARL_ID like/.test(q)) return toResponse(recorded(o.highest ?? 'contacts.highest-code'));
-        if (/SUM\(Reserved_Units\)/.test(q) && /from LLP_UnitAllocation_Module where LLP = /.test(q)) return toResponse(recorded('agg.held-on-llp'));
+        if (/SUM\(Reserved_Units\)/.test(q) && /from LLP_UnitAllocation_Module where \(+LLP = /.test(q)) return toResponse(recorded('agg.held-on-llp'));
         if (/from LLP_Creation_Module where/.test(q)) return toResponse(recorded('guard.llp'));
-        if (/from LLP_UnitAllocation_Module where LLP = /.test(q)) throw new Error('the free units are the oversell guard\'s (farms/oversell), never counted inline');
+        if (/from LLP_UnitAllocation_Module where \(+LLP = /.test(q)) throw new Error('the free units are the oversell guard\'s (farms/oversell), never counted inline');
         if (/select id from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(state.allotInserted ? 'receipts.one-pending' : 'receipts.none'));
         if (/from Receipts where Allotment = /.test(q)) return toResponse(recorded(state.receiptInserted ? 'receipts.one-pending' : 'receipts.none'));
         throw new Error(`unexpected query ${q}`);

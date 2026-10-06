@@ -45,7 +45,7 @@ test('an update is measured without the allotment being edited (id != it in the 
   const rig = await makeHttpRig(load, routeWith());
   await createOversellGuard(rig).check(await rig.cred(MEENA), { llpId: B, units: 1, exceptAllotmentId: EDITED });
   const q = rig.calls.map((c) => c.query).find((x) => x && /group by Allocation_Status/.test(x));
-  assert.match(q, new RegExp(`LLP = '${B}' and Allocation_Status in \\('Reserved', 'Issued'\\) and id != '${EDITED}' group by Allocation_Status`));
+  assert.match(q, new RegExp(`where \\(\\(LLP = '${B}' and Allocation_Status in \\('Reserved', 'Issued'\\)\\) and id != '${EDITED}'\\) group by Allocation_Status`));
 });
 
 test('an LLP that is not released has no free units; a partial fit names what is free', async () => {

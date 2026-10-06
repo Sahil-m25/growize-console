@@ -13,6 +13,7 @@ import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
+import { coqlAll, coqlAny } from "../../lib/zoho/coql";
 import type { LeadsAccessAuthority } from "./book";
 import { LEADS_MODULE } from "./capture";
 
@@ -95,11 +96,11 @@ export function createUpdates(deps: UpdatesDependencies) {
         const owners = [...new Set([me, ...a.teamOwnerIds, ...(a.unassignedQueueUserId ? [a.unassignedQueueUserId] : [])])].filter(validId).slice(0, 100);
         scope = `Owner in (${owners.map((id) => `'${id}'`).join(", ")})`;
       } else {
-        scope = `Owner = '${me}' or (Cover_By = '${me}' and Cover_Until >= '${today}')`; // D44: a dormant secondary sees nothing
+        scope = coqlAny([`Owner = '${me}'`, coqlAll([`Cover_By = '${me}'`, `Cover_Until >= '${today}'`])]); // D44: a dormant secondary sees nothing
       }
       let res: Awaited<ReturnType<typeof crm.coql>>;
       try {
-        res = await crm.coql(cred, `select id from ${LEADS_MODULE} where ((${scope}) and Modified_Time >= '${since}' and Modified_By != '${me}') order by Modified_Time desc limit 0, ${MAX_LEADS}`, { signal });
+        res = await crm.coql(cred, `select id from ${LEADS_MODULE} where ${coqlAll([scope, `Modified_Time >= '${since}'`, `Modified_By != '${me}'`])} order by Modified_Time desc limit 0, ${MAX_LEADS}`, { signal });
       } catch { return zoho("unexpected"); }
       if (!res.ok) return zoho(res.error.kind);
       if (res.value.invalidRecordIds || res.value.records.some((r) => !validId(r.id))) return refuse(me, "source-invalid");

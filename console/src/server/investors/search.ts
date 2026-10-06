@@ -23,6 +23,7 @@
 
 import { createHmac, randomBytes } from "node:crypto";
 import type { ScopedCache } from "../../lib/zoho/cache";
+import { coqlAll, coqlAny, coqlWhere } from "../../lib/zoho/coql";
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
@@ -103,7 +104,7 @@ export function matchWhere(q: InvestorQuery): string {
   switch (q.kind) {
     case "code": return `ARL_ID = '${q.code}'`;
     case "phone": return `Mobile like '%${q.digits.slice(-4)}'`;
-    case "words": return q.tokens.map((t) => `(First_Name like '%${t}%' or Last_Name like '%${t}%' or Mailing_City like '%${t}%' or ARL_ID like '%${t}%')`).join(" and ");
+    case "words": return coqlAll(q.tokens.map((t) => coqlAny([`First_Name like '%${t}%'`, `Last_Name like '%${t}%'`, `Mailing_City like '%${t}%'`, `ARL_ID like '%${t}%'`])));
   }
 }
 
@@ -170,9 +171,9 @@ export function createInvestorSearch(deps: InvestorSearchDeps) {
         onFarm = [...new Set(a.rows.filter((x) => x.status !== "Cancelled" && x.investor.id).map((x) => x.investor.id))];
       }
 
-      const base = q ? `(${scopeWhere}) and (${matchWhere(q)})` : `(${scopeWhere})`;
-      const wheres = onFarm === null ? [base]
-        : Array.from({ length: Math.ceil(onFarm.length / IN_CHUNK) }, (_, i) => `${base} and (id in (${onFarm!.slice(i * IN_CHUNK, (i + 1) * IN_CHUNK).map((x) => `'${x}'`).join(", ")}))`);
+      const base = [`(${scopeWhere})`, ...(q ? [coqlWhere(matchWhere(q))] : [])];
+      const wheres = onFarm === null ? [coqlAll(base)]
+        : Array.from({ length: Math.ceil(onFarm.length / IN_CHUNK) }, (_, i) => coqlAll([...base, `id in (${onFarm!.slice(i * IN_CHUNK, (i + 1) * IN_CHUNK).map((x) => `'${x}'`).join(", ")})`]));
       const rows: ContactRow[] = [];
       let truncated = false;
       for (const w of wheres) {

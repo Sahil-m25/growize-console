@@ -13,6 +13,7 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { CacheError, CacheFresh, CacheStale, ScopedCache, Scope } from "../../lib/zoho/cache";
 import { cacheKey } from "../../lib/zoho/cache";
 import type { OpsLog } from "../../lib/zoho/log";
+import { coqlAll, coqlWhere } from "../../lib/zoho/coql";
 import type { SeatedZohoUser } from "../oauth/seat";
 import { UNIT } from "../../domain/plan";
 
@@ -63,7 +64,7 @@ export function createNumbersSections(deps: SectionsDependencies) {
 
   const count = async (cred: UserCredential, where: string, groupBy?: string, sum?: string): Promise<{ key: string | null; n: number; s: number }[]> => {
     const cols = [groupBy, "COUNT(id)", sum ? `SUM(${sum})` : null].filter(Boolean).join(", ");
-    const q = `select ${cols} from Leads where (${where})${groupBy ? ` group by ${groupBy}` : ""}`;
+    const q = `select ${cols} from Leads where ${coqlWhere(where)}${groupBy ? ` group by ${groupBy}` : ""}`;
     const r = await crm.aggregate(cred, q);
     if (!r.ok) throw Object.assign(new Error("zoho"), { kind: r.error.kind });
     return r.value.map((row) => ({
@@ -79,22 +80,22 @@ export function createNumbersSections(deps: SectionsDependencies) {
     const now = zohoTime(clock());
     if (section === "funnel") {
       out["rung:1"] = (await count(cred, scope))[0]?.n ?? 0;
-      for (const [i, f] of RUNG_FIELDS.entries()) out[`rung:${i + 2}`] = (await count(cred, `(${scope}) and ${f} is not null`))[0]?.n ?? 0;
+      for (const [i, f] of RUNG_FIELDS.entries()) out[`rung:${i + 2}`] = (await count(cred, coqlAll([scope, `${f} is not null`])))[0]?.n ?? 0;
     } else if (section === "checks") {
-      const open = `(${scope}) and Lost_At is null and Onboarded_At is null`;
-      out.overdue = (await count(cred, `${open} and Next_Step_At < '${now}'`))[0]?.n ?? 0;
-      out.noNextStep = (await count(cred, `${open} and Next_Step_At is null`))[0]?.n ?? 0;
-      out.lostHeld = (await count(cred, `(${scope}) and Lost_At is not null`))[0]?.n ?? 0;
+      const open = [scope, "Lost_At is null", "Onboarded_At is null"];
+      out.overdue = (await count(cred, coqlAll([...open, `Next_Step_At < '${now}'`])))[0]?.n ?? 0;
+      out.noNextStep = (await count(cred, coqlAll([...open, "Next_Step_At is null"])))[0]?.n ?? 0;
+      out.lostHeld = (await count(cred, coqlAll([scope, "Lost_At is not null"])))[0]?.n ?? 0;
       out.unassigned = a.unassignedQueueUserId && (a.orgWide || (a.ownerIds ?? []).includes(a.unassignedQueueUserId))
         ? (await count(cred, `Owner = '${a.unassignedQueueUserId}'`))[0]?.n ?? 0 : 0;
     } else if (section === "owners") {
-      for (const g of await count(cred, `(${scope}) and Lost_At is null`, "Owner")) if (g.key && validId(g.key)) out[g.key] = g.n;
+      for (const g of await count(cred, coqlAll([scope, "Lost_At is null"]), "Owner")) if (g.key && validId(g.key)) out[g.key] = g.n;
     } else if (section === "sources") {
       for (const g of await count(cred, scope, "Lead_Source")) out[g.key ?? "none"] = g.n;
     } else if (section === "lost") {
-      for (const g of await count(cred, `(${scope}) and Lost_At is not null`, "Lost_Reason")) out[g.key ?? "none"] = g.n;
+      for (const g of await count(cred, coqlAll([scope, "Lost_At is not null"]), "Lost_Reason")) out[g.key ?? "none"] = g.n;
     } else {
-      for (const g of await count(cred, `(${scope}) and Lost_At is null and Forecast is not null`, "Forecast", "Units_Interested")) {
+      for (const g of await count(cred, coqlAll([scope, "Lost_At is null", "Forecast is not null"]), "Forecast", "Units_Interested")) {
         out[`leads:${g.key ?? "none"}`] = g.n;
         out[`units:${g.key ?? "none"}`] = g.s;
       }

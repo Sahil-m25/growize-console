@@ -16,6 +16,7 @@
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { ScopedCache } from "../../lib/zoho/cache";
+import { coqlAll } from "../../lib/zoho/coql";
 import type { InvestorEvents } from "../data/events";
 import { admitContact } from "../data/ir-guard";
 import { checkAmProjection, checkProjection, MODULES } from "../data/projections";
@@ -136,7 +137,7 @@ export function createHolds(deps: HoldsDeps) {
       const now = clock();
       const through = holdUntilFrom(now, HOLD_WINDOW_DAYS);
       const r = await pagedSelect(deps.crm, p.credential, HOLD_MONEY_FIELDS, ALLOT,
-        `Allocation_Status = 'Reserved' and Hold_Until is not null and Hold_Until <= '${through}'`, "Hold_Until asc", signal, deps.maxPages);
+        coqlAll(["Allocation_Status = 'Reserved'", "Hold_Until is not null", `Hold_Until <= '${through}'`]), "Hold_Until asc", signal, deps.maxPages);
       if (!r.ok) return r.kind === "refused" ? { ok: false, kind: "refused", reason: r.reason } : r;
       const ids = r.rows.map((x) => idOf(x.id)).filter((x): x is string => !!x);
       const m = ids.length ? await matched(p.credential, ids, signal) : { ok: true as const, money: matchedMoneyOf([]) };

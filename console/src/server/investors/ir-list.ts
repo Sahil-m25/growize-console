@@ -16,6 +16,7 @@
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
+import { coqlWhere } from "../../lib/zoho/coql";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import { createInvestorsAdapters, DEFAULT_MAX_PAGES, IN_CHUNK, PAGE, type AllotmentRow } from "../data/adapters";
 import { idOf, parseContact, str, type ContactRow } from "../data/contact-row";
@@ -94,7 +95,7 @@ export function createIrInvestorList(deps: IrListDeps) {
     const rows: ZohoRecord[] = [];
     for (let page = 0; page < maxPages; page++) {
       let r: Awaited<ReturnType<typeof deps.crm.coql>>;
-      try { r = await deps.crm.coql(cred, `select ${select} from ${from} where (${where}) order by id asc limit ${page * PAGE}, ${PAGE}`, { signal }); } catch { return { ok: false, errorKind: "unexpected" }; }
+      try { r = await deps.crm.coql(cred, `select ${select} from ${from} where ${coqlWhere(where)} order by id asc limit ${page * PAGE}, ${PAGE}`, { signal }); } catch { return { ok: false, errorKind: "unexpected" }; }
       if (!r.ok) return { ok: false, errorKind: r.error.kind };
       rows.push(...r.value.records);
       if (!r.value.moreRecords) return { ok: true, rows, truncated: false };

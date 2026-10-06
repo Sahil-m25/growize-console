@@ -36,6 +36,7 @@ import type { ServiceCredential, UserCredential, ZohoClient, ZohoRecord, ZohoSer
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
+import { coqlAll, coqlAny } from "../../lib/zoho/coql";
 import type { PlaneCLog } from "../identity/plane-c";
 import type { LeadsAccess, LeadsAccessAuthority } from "./book";
 import { LEADS_MODULE } from "./capture";
@@ -94,14 +95,14 @@ export function activeFor(L: ZohoRecord, me: string, today: string, roster: Rost
 
 /** The personal-book COQL clause for "working as someone else" — the twin of `activeFor`. */
 export function activeClause(me: string, today: string, roster: RosterNow = NO_ROSTER): string {
-  const parts = [`(Cover_By = '${me}' and Cover_Until >= '${today}')`];
+  const parts = [coqlAll([`Cover_By = '${me}'`, `Cover_Until >= '${today}'`])];
   if (roster.absentOwnerIds.includes(me)) return parts[0]!; // away themselves: no roster admission
   const covered = [...new Set(roster.covers.filter((c) => c.coverById === me && c.ownerId !== me).map((c) => c.ownerId))].filter((x) => RECORD_ID.test(x)).slice(0, 100);
   const absent = [...new Set(roster.absentOwnerIds)].filter((x) => RECORD_ID.test(x) && x !== me).slice(0, 100);
   const inList = (ids: string[]) => ids.map((x) => `'${x}'`).join(", ");
-  if (covered.length) parts.push(`(Cover_By is null and Owner in (${inList(covered)}))`);
-  if (absent.length) parts.push(`(Cover_By is null and Secondary_Owner = '${me}' and Owner in (${inList(absent)}))`);
-  return parts.join(" or ");
+  if (covered.length) parts.push(coqlAll(["Cover_By is null", `Owner in (${inList(covered)})`]));
+  if (absent.length) parts.push(coqlAll(["Cover_By is null", `Secondary_Owner = '${me}'`, `Owner in (${inList(absent)})`]));
+  return coqlAny(parts);
 }
 
 /** Reads the roster, or none on any failure (fail closed: nobody gains access because Plane C was down). */
@@ -284,7 +285,7 @@ export function createCover(deps: CoverDependencies) {
       const roster = await rosterNow(deps.roster, signal);
       let got: Awaited<ReturnType<NonNullable<typeof crm.coql>>>;
       try {
-        got = await crm.coql(cred, `select id, Secondary_Owner, Modified_Time from ${LEADS_MODULE} where (Owner = '${personId}' and Cover_By is null and Secondary_Owner is not null and Lost_At is null and Onboarded_At is null) order by id asc limit 0, ${RETURN_PAGE}`, { signal });
+        got = await crm.coql(cred, `select id, Secondary_Owner, Modified_Time from ${LEADS_MODULE} where ${coqlAll([`Owner = '${personId}'`, "Cover_By is null", "Secondary_Owner is not null", "Lost_At is null", "Onboarded_At is null"])} order by id asc limit 0, ${RETURN_PAGE}`, { signal });
       } catch { return zoho("unexpected"); }
       if (!got.ok) return zoho(got.error.kind);
       const opened: string[] = [], failed: string[] = [];

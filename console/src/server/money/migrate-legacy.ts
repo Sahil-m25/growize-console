@@ -22,6 +22,7 @@
 
 import type { UserCredential, ZohoClient, ZohoFields, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
+import { coqlAny } from "../../lib/zoho/coql";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 
@@ -115,8 +116,6 @@ const lookupId = (v: unknown): string | null => {
 };
 const int = (v: unknown): number | null => (typeof v === "number" && Number.isSafeInteger(v) ? v : null);
 const blank = (v: unknown): boolean => v === null || v === undefined || v === "";
-/** COQL wants every pair of conditions bracketed. */
-const nest = (conds: readonly string[], op: "or" | "and"): string => conds.reduce((acc, c) => (acc ? `(${acc} ${op} ${c})` : c), "");
 
 export function createLegacyPaymentMigration(deps: MigrationDependencies) {
   if (!deps || typeof deps.crm?.coql !== "function" || typeof deps.crm?.insert !== "function"
@@ -183,7 +182,7 @@ export function createLegacyPaymentMigration(deps: MigrationDependencies) {
       try {
         // 1 · Read the source rows that carry any legacy value.
         const cols = legacyColumns(slots);
-        const anyFilled = nest(slots.map((s) => `${s.amount} is not null`), "or");
+        const anyFilled = coqlAny(slots.map((s) => `${s.amount} is not null`));
         const sourceModule = options.source === "allotments" ? ALLOTMENTS_MODULE : CONTACTS_MODULE;
         const extra = options.source === "allotments" ? `${ALLOT_FIELDS.replace(/^id, /, "")}, ` : "";
         const sourceRows = await all(credential, `select id, ${extra}${cols.join(", ")} from ${sourceModule} where ${anyFilled} order by id asc`);

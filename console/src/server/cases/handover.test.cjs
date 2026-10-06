@@ -149,7 +149,7 @@ test('TC-IM08-007/015: Imran\'s register reads Owner = me or Handed_By = me; the
   const rig2 = await makeRig(load, (q) => (/COUNT/.test(q) ? ['cases', 'agg.cuts.kam'] : ['cases', 'coql.cases.kam-handed']));
   const r = await createCasesRegister(rig2).list({ credential: await rig2.cred(KAM), seat: 'kam' });
   assert.equal(r.ok, true);
-  assert.match(rig2.queries[0], new RegExp(`where \\(\\(Owner = '${KAM}' or Handed_By = '${KAM}'\\)\\)`));
+  assert.match(rig2.queries[0], new RegExp(`where \\(Owner = '${KAM}' or Handed_By = '${KAM}'\\)`));
   const bank = r.rows.find((x) => x.cat === 'Bank');
   assert.equal(bank.own, FIN);
   assert.deepEqual({ ...bank.handed }, { by: KAM, at: '2026-09-28T11:30' });

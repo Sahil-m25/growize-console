@@ -140,7 +140,7 @@ test('TC-E08-020 (server): roster cover — the secondary works the away owner\'
   assert.equal(activeFor(lead({ Secondary_Owner: null }), SEC, '2026-10-06', now), null, 'dormant label gone');
   assert.equal(activeFor(lead({ Owner: { id: MGR } }), SEC, '2026-10-06', now), null, 'only the away owner\'s leads');
   assert.equal(activeFor(lead({ Cover_By: { id: OTHER }, Cover_Until: '2026-10-08' }), SEC, '2026-10-06', now), null, 'explicit cover to someone else: no fallback');
-  assert.match(activeClause(SEC, '2026-10-06', now), new RegExp(`Secondary_Owner = '${SEC}' and Owner in \\('${OWNER}'\\)`));
+  assert.match(activeClause(SEC, '2026-10-06', now), new RegExp(`Secondary_Owner = '${SEC}'\\) and Owner in \\('${OWNER}'\\)`));
   // the secondary is away too: not "actively available to cover"
   r.availability.set(me(SEC), { from: '2026-10-05', to: '2026-10-07' });
   const both = await rosterNow(r.roster);
@@ -187,7 +187,7 @@ test('M14-S02: event staff must be in on the event dates and carry a book — ch
   const v = await checkStaff({ roster: r.roster, crm }, { userId: MGR }, [OWNER, SEC, NEW, OTHER], '2026-10-08', '2026-10-09');
   assert.deepEqual(v.refused, [{ userId: OWNER, why: 'out', backOn: '2026-10-09' }, { userId: OTHER, why: 'no-book', backOn: null }]);
   assert.ok(asked.every((q) => /group by/.test(q) && !/select \*/.test(q)), 'counts only');
-  assert.match(asked[0], /Lost_At is null and Onboarded_At is null/, 'an open book');
+  assert.match(asked[0], /Lost_At is null\) and Onboarded_At is null\)/, 'an open book');
   const ok = await checkStaff({ roster: r.roster, crm }, { userId: MGR }, [SEC, NEW], '2026-10-08', '2026-10-09');
   assert.deepEqual(ok.refused, []);
   const down = await checkStaff({ roster: r.roster, crm: { async aggregate() { return { ok: false, error: { kind: 'server' } }; } } }, { userId: MGR }, [SEC], '2026-10-08', '2026-10-09');
@@ -288,7 +288,7 @@ test('D123: an absence that starts today writes Cover_By = each lead\'s secondar
   const c2 = createCover({ crm, access, log: { refusal() {} }, planeC: r.planeC, recordIdPrefix: P, roster: r.roster, clock: r.clock });
   const out = await c2.absent(p, OWNER, '2026-10-12');
   assert.deepEqual(out, { ok: true, value: { personId: OWNER, opened: [LEAD, L2], failed: [L4] } });
-  assert.match(calls.coql[0], new RegExp(`Owner = '${OWNER}' and Cover_By is null and Secondary_Owner is not null and Lost_At is null and Onboarded_At is null`));
+  assert.match(calls.coql[0], new RegExp(`where \\(\\(\\(\\(Owner = '${OWNER}' and Cover_By is null\\) and Secondary_Owner is not null\\) and Lost_At is null\\) and Onboarded_At is null\\)`));
   assert.deepEqual(calls.update.slice(0, 2).map((u) => [u.id, u.f, u.ifUnmodifiedSince]), [
     [LEAD, { Cover_By: { id: SEC }, Cover_Until: '2026-10-11' }, '2026-10-05T09:00:00+05:30'], [L2, { Cover_By: { id: NEW }, Cover_Until: '2026-10-11' }, '2026-10-05T09:01:00+05:30']]);
   assert.deepEqual(r.lines().filter((e) => e.reason === 'cover-open-absence').map((e) => [e.who, e.whom, e.recordIds]), [[OWNER, SEC, [LEAD]], [OWNER, NEW, [L2]]]);

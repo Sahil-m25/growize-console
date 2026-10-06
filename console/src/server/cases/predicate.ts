@@ -13,6 +13,7 @@
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
+import { coqlAny, coqlWhere } from "../../lib/zoho/coql";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { BookScope } from "../data/scope";
 
@@ -29,7 +30,7 @@ export function inClause(field: string, ids: readonly string[]): string | null {
   if (!good.length) return null;
   const parts: string[] = [];
   for (let i = 0; i < good.length; i += IN_CHUNK) parts.push(`${field} in (${q(good.slice(i, i + IN_CHUNK))})`);
-  return parts.length === 1 ? parts[0]! : `(${parts.join(" or ")})`;
+  return coqlAny(parts);
 }
 
 export interface OwnerWhereOptions {
@@ -80,7 +81,7 @@ export async function pagedSelect(
   for (let page = 0; page < maxPages; page++) {
     let res: Awaited<ReturnType<typeof crm.coql>>;
     try {
-      res = await crm.coql(cred, `select ${fields.join(", ")} from ${module} where (${where}) order by ${order} limit ${page * PAGE}, ${PAGE}`, { signal });
+      res = await crm.coql(cred, `select ${fields.join(", ")} from ${module} where ${coqlWhere(where)} order by ${order} limit ${page * PAGE}, ${PAGE}`, { signal });
     } catch {
       return { ok: false, kind: "source-error", errorKind: "unexpected", retryable: true };
     }

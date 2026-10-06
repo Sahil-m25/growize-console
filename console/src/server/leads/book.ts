@@ -16,6 +16,7 @@ import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/clie
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
+import { coqlAny, coqlWhere } from "../../lib/zoho/coql";
 import type { SeatedZohoUser } from "../oauth/seat";
 import { LEADS_MODULE } from "./capture";
 import { activeClause, activeFor, rosterNow, type RosterReader } from "./cover";
@@ -165,7 +166,7 @@ export function createLeadsBook(deps: BookDependencies) {
         // D44: a named secondary is dormant — only a live window or a live roster absence admits (./cover).
         const parts = [`Owner = '${me}'`, activeClause(me, today, roster)];
         if (a.seesUnassignedInPersonal && queue) parts.push(`Owner = '${queue}'`);
-        where = parts.join(" or ");
+        where = coqlAny(parts);
       } else {
         if (!a.teamOrgWide && a.teamOwnerIds === null) return refuse(me, "no-team-scope");
         if (a.teamOrgWide) where = "id is not null";
@@ -180,7 +181,7 @@ export function createLeadsBook(deps: BookDependencies) {
 
       let res: Awaited<ReturnType<typeof crm.coql>>;
       try {
-        res = await crm.coql(cred, `select ${FIELDS.join(", ")} from ${LEADS_MODULE} where (${where}) order by id asc limit ${offset}, ${PAGE_SIZE}`, { signal });
+        res = await crm.coql(cred, `select ${FIELDS.join(", ")} from ${LEADS_MODULE} where ${coqlWhere(where)} order by id asc limit ${offset}, ${PAGE_SIZE}`, { signal });
       } catch {
         return { ok: false, kind: "source-error", source: "zoho", errorKind: "unexpected", retryable: true };
       }

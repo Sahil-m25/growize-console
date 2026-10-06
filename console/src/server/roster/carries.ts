@@ -6,6 +6,7 @@
  */
 
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
+import { coqlAll } from "../../lib/zoho/coql";
 
 const USER_ID = /^\d{15,25}$/;
 const IN_MAX = 50;
@@ -16,7 +17,7 @@ export async function bookCarriers(crm: Pick<ZohoClient, "aggregate">, cred: Use
   const clean = [...new Set(ids.filter((id) => USER_ID.test(id)))];
   const carriers = new Set<string>();
   const queries = (list: string) => [
-    ["Owner", `select Owner, COUNT(id) from Leads where Owner in (${list}) and Lost_At is null and Onboarded_At is null group by Owner limit 0, 2000`],
+    ["Owner", `select Owner, COUNT(id) from Leads where ${coqlAll([`Owner in (${list})`, "Lost_At is null", "Onboarded_At is null"])} group by Owner limit 0, 2000`],
     ["KAM", `select KAM, COUNT(id) from Contacts where KAM in (${list}) group by KAM limit 0, 2000`],
   ] as const;
   for (let i = 0; i < clean.length; i += IN_MAX) {

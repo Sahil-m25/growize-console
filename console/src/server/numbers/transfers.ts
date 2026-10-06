@@ -12,6 +12,7 @@ import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/clie
 import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
+import { coqlAll } from "../../lib/zoho/coql";
 import type { SeatedZohoUser } from "../oauth/seat";
 
 export const MONTHS = 6;
@@ -85,8 +86,8 @@ export function createTransfers(deps: TransfersDependencies) {
       const sinceMs = Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth() - (MONTHS - 1), 1) - IST;
       const since = monthOf(sinceMs);
       const scope = a.orgWide ? "id is not null" : `Owner in (${owners.map((id) => `'${id}'`).join(", ")})`;
-      const legacy = deps.legacyField ? " and (Legacy_Record is null or Legacy_Record = false)" : "";
-      const leads = await all(cred, `select id, Created_Time, Said_Yes_At from Leads where ((${scope}) and Said_Yes_At >= '${since}-01T00:00:00+05:30'${legacy}) order by id asc`);
+      const legacy = deps.legacyField ? ["(Legacy_Record is null or Legacy_Record = false)"] : [];
+      const leads = await all(cred, `select id, Created_Time, Said_Yes_At from Leads where ${coqlAll([scope, `Said_Yes_At >= '${since}-01T00:00:00+05:30'`, ...legacy])} order by id asc`);
       if (typeof leads === "string") return fail(leads);
       const yes = new Map<string, { month: string; days: number }>();
       for (const l of leads) {

@@ -49,7 +49,7 @@ test('who is on which LLP: every live allotment the seat may open, with name and
   assert.ok(!/Total_Amount|50000/.test(JSON.stringify(r)));
   await read(rig, FIN, 'fin');
   assert.equal(rig.queries.filter((q) => /group by LLP, Allocation_Status/.test(q)).length, 1);   // counts cached (org)
-  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q)).length, 2); // rows re-read
+  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).length, 2); // rows re-read
 });
 
 test('a paid reservation is split out for a Money seat', async () => {
@@ -74,7 +74,7 @@ test('a KAM: no money field, KAM = me through the lookup, own counts key (not Fi
   assert.equal(r.countsComplete, false);
   assert.ok(r.llps.every((x) => x.paid === null && x.recordedDiffers === false));
   assert.deepEqual(r.occupants.map((o) => o.code), ['ARL-INV-0216']);
-  const occ = rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q)).pop();
+  const occ = rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).pop();
   assert.match(occ, new RegExp(`Customer.KAM = '${NEHA}'`));
   assert.ok(!/Total_Amount/.test(occ));
   assert.equal(rig.queries.filter((q) => /Total_Amount_Receivable = 0/.test(q)).length, 1); // Finance's only
@@ -86,7 +86,7 @@ test("an IR sees only their own-lead investors on the land; a row from another I
   const rig = await makeRig(load, routeWith({ occupants: () => ['farms', 'coql.occupants-ir'] }));
   const r = await read(rig, ROHIT, 'ir');
   assert.deepEqual(r.occupants.map((o) => o.code), ['ARL-INV-0208']);
-  assert.match(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q)).pop(), new RegExp(`Customer.Originating_IR = '${ROHIT}' and Customer.Origin_Lead is not null`));
+  assert.match(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).pop(), new RegExp(`Customer.Originating_IR = '${ROHIT}'\\) and Customer.Origin_Lead is not null`));
   const leak = await makeRig(load, routeWith());
   const bad = await read(leak, ROHIT, 'ir');
   assert.deepEqual(bad, { ok: false, kind: 'refused', reason: 'scope-drift' });
@@ -98,7 +98,7 @@ test('a seat with no Investors book sees the numbers and no names; the Auditor r
   const r = await read(rig, CONV, 'conv');
   assert.equal(r.namesShown, false);
   assert.deepEqual(r.occupants, []);
-  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q)).length, 0);
+  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).length, 0);
   const au = await read(rig, AUD, 'audit');
   assert.equal(au.tiles.free, 56);
 });

@@ -19,6 +19,7 @@
 
 import type { CacheError, CacheFresh, CacheStale, ScopedCache } from "../../lib/zoho/cache";
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
+import { coqlWhere } from "../../lib/zoho/coql";
 import type { ImTicket } from "../../lib/im/types";
 import type { InvestorEvents } from "../data/events";
 import { checkProjection } from "../data/projections";
@@ -141,7 +142,7 @@ export function createCasesRegister(deps: CasesDeps) {
       }
       const cuts = await deps.cache.readSettled<CaseCuts>(scopedKey<CaseCuts>(scope, "cases.cuts"), async () => {
         const a = await deps.crm.aggregate(p.credential,
-          `select Status, Priority, COUNT(id) from ${CASES_MODULE} where (${where}) group by Status, Priority limit 0, 2000`, { signal });
+          `select Status, Priority, COUNT(id) from ${CASES_MODULE} where ${coqlWhere(where)} group by Status, Priority limit 0, 2000`, { signal });
         if (!a.ok) throw Object.assign(new Error("zoho"), { kind: a.error.kind });
         return cutsOf(a.value);
       });

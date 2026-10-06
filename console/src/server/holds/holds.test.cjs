@@ -67,7 +67,7 @@ test('TC-IM03-009: Holds running — ₹2,50,000 exposure; Joseph 19d (4 units �
   assert.equal(r.through, '2026-09-23');
   assert.deepEqual(r.holds.map((h) => [h.investor.name, h.daysLeft, h.units, h.due, h.holdEnds, h.urgent]),
     [['Joseph Mathew', 19, 4, 9_000_000, '2026-09-21', false], ['Prakash Bhat', 21, 1, 2_250_000, '2026-09-23', false]]);
-  assert.ok(rig.queries.some((q) => /Allocation_Status = 'Reserved' and Hold_Until is not null and Hold_Until <= '2026-09-23'/.test(q)));
+  assert.ok(rig.queries.some((q) => /where \(\(Allocation_Status = 'Reserved' and Hold_Until is not null\) and Hold_Until <= '2026-09-23'\)/.test(q)));
   // Meena's recorded-but-unmatched ₹22.5 L against Prakash does not reduce what is due (D21)
   assert.ok(rig.queries.some((q) => /^select id, Allotment, Kind, Amount, Match_State, Reversal_Of from Receipts where \(Allotment in/.test(q)), 'the ledger rows, not an aggregate');
 });

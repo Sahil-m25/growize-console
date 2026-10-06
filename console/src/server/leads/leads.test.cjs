@@ -430,7 +430,7 @@ test('an IR\'s book is owner, an ACTIVE secondary (roster absence), live cover a
   assert.equal(res.value.rows[4].lostAt, '2026-09-25T10:00:00+05:30');
   assert.equal(res.value.rows[0].unitsInterested, 2);
   assert.equal(res.value.nextOffset, null);
-  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Onboarded_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where (Owner = '${IR}' or (Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or (Cover_By is null and Secondary_Owner = '${IR}' and Owner in ('${OTHER_IR}')) or Owner = '${QUEUE}') order by id asc limit 0, 200`);
+  assert.equal(r.calls[0], `select id, First_Name, Last_Name, Mobile, Owner, Secondary_Owner, Cover_By, Cover_Until, Lead_Source, Lead_Status, Created_Time, Lost_At, Onboarded_At, Units_Interested, Next_Step_At, Last_Reply_At from Leads where ((Owner = '${IR}' or ((Cover_By = '${IR}' and Cover_Until >= '2026-09-27') or ((Cover_By is null and Secondary_Owner = '${IR}') and Owner in ('${OTHER_IR}')))) or Owner = '${QUEUE}') order by id asc limit 0, 200`);
   assert.equal(r.access.calls(), 2);
 });
 
@@ -439,7 +439,7 @@ test('D44: a named secondary alone is dormant — never asked for, and refused i
   const res = await r.book.list(principal(IR), 'personal');
   assert.equal(res.reasonCode, 'scope-drift');
   assert.ok(!r.calls[0].includes(`Secondary_Owner = '${IR}' or`), 'no unconditional secondary clause');
-  assert.match(r.calls[0], new RegExp(`where \\(Owner = '${IR}' or \\(Cover_By = '${IR}' and Cover_Until >= '2026-09-27'\\) or Owner = '${QUEUE}'\\)`));
+  assert.match(r.calls[0], new RegExp(`where \\(\\(Owner = '${IR}' or \\(Cover_By = '${IR}' and Cover_Until >= '2026-09-27'\\)\\) or Owner = '${QUEUE}'\\)`));
   const drift = r.sink.records().filter((x) => x.kind === 'refusal');
   assert.deepEqual(drift[0].recordIds.map((x) => x.slice(-2)), ['02']);
 });
@@ -835,7 +835,7 @@ test('Updates groups other people\'s changes on my book in the last 7 days, neve
   assert.equal(g.added.leadCount, 1);
   assert.ok(!JSON.stringify(res).includes('FXPAN'), 'no old or new value leaves');
   assert.ok(!JSON.stringify(r.sink.records()).includes('FXPAN'));
-  assert.match(r.calls[0], /Modified_Time >= '2026-09-20T21:00:00\+05:30' and Modified_By != '9007199254740995001'/);
+  assert.match(r.calls[0], /\(\(.*Modified_Time >= '2026-09-20T21:00:00\+05:30'\) and Modified_By != '9007199254740995001'\)/);
   assert.equal(r.calls.filter((c) => c.includes('__timeline')).length, 2);
 });
 

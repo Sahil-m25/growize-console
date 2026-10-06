@@ -21,7 +21,7 @@ test("Finance types 'Mysuru': exactly the two Mysuru investors, last four digits
     [['Fixture Prakash', 'ARL-INV-0208', 'Mysuru', '5519'], ['Fixture Harish', 'ARL-INV-0216', 'Mysuru', '3017']]);
   assert.equal(r.value.book, 'org');
   const q = rig.queries[0];
-  assert.match(q, /from Contacts where \(\(id is not null\) and \(\(First_Name like '%Mysuru%' or Last_Name like '%Mysuru%' or Mailing_City like '%Mysuru%' or ARL_ID like '%Mysuru%'\)\)\)/);
+  assert.match(q, /from Contacts where \(\(id is not null\) and \(\(\(First_Name like '%Mysuru%' or Last_Name like '%Mysuru%'\) or Mailing_City like '%Mysuru%'\) or ARL_ID like '%Mysuru%'\)\)/);
   assert.ok(!/Total_|PAN|Aadhaar|Bank/i.test(q));
   // Never the full number, never the query in the log.
   assert.ok(!JSON.stringify(r).includes('55519') && !JSON.stringify(r).includes('+91'));

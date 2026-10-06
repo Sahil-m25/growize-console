@@ -1033,6 +1033,22 @@ test('client: wasDeleted() tells "deleted" apart from "not in the bin"', async (
   assert.equal(deep.calls.length, 2);
 });
 
+test("client: listEmails reads Zoho v8's Emails key and time, and still accepts email_related_list and sent_time", async () => {
+  const me = await mintUser();
+  const row = { message_id: 'm-001_abc', subject: 'Re: Allotment', from: { email: 'ir@example.com', user_name: 'Asha IR' }, to: [{ email: 'inv@example.com', user_name: 'Inv Estor' }], time: '2026-10-01T10:15:00+05:30', sent: true, has_attachment: false, owner: { id: '554023000000235011' } };
+  const v8 = rig([zohoReply(200, { Emails: [row], info: { next_index: 'idx_2', more_records: true } })]);
+  const r = await v8.client.listEmails(me, 'Leads', ID);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.value, { emails: [{ messageId: 'm-001_abc', subject: 'Re: Allotment', from: { email: 'ir@example.com', name: 'Asha IR' }, to: [{ email: 'inv@example.com', name: 'Inv Estor' }], sentTime: '2026-10-01T10:15:00+05:30', sent: true, hasAttachment: false, ownerId: '554023000000235011' }], nextIndex: 'idx_2' });
+  assert.ok(v8.calls[0].url.includes(`/Leads/${ID}/Emails`));
+  const old = rig([zohoReply(200, { email_related_list: [{ message_id: 'm-002', subject: 'old', sent_time: '2026-09-01T09:00:00+05:30' }], info: {} })]);
+  const o = await old.client.listEmails(me, 'Leads', ID);
+  assert.equal(o.value.emails[0].sentTime, '2026-09-01T09:00:00+05:30');
+  assert.equal(o.value.nextIndex, null);
+  const bad = rig([zohoReply(200, { something: [] })]);
+  assert.equal((await bad.client.listEmails(me, 'Leads', ID)).ok, false);
+});
+
 test('client: share sends the v8 body (the console no longer calls it, D123); an unshare revokes ONLY the covering user (GET + PUT of the rest), never DELETE while others hold a share (TC-E02-017/018)', async () => {
   const job = serviceCredential('cover-expiry', grantFor());
   const COVER = '554023000000235011', IR = '554023000000235022', KAM = '554023000000235033';
