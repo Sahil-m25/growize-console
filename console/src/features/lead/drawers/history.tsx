@@ -16,6 +16,7 @@ import { Ag, Pname } from "@/components/ui";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiNdraft } from "@/features/leads/ui";
+import { useLeadNote } from "@/lib/data/endpoints/record";
 import { FUCHANNELS } from "@/features/today/work";
 
 /* ir-console-redesigned.html 12173-12197's "Conversation history" block, ahead of the audit list —
@@ -116,9 +117,23 @@ function HistoryBody({ lead }: DrawerProps) {
   );
 }
 
+/* addNote is POST /api/leads/[id]/notes (cluster C2, lib/data/endpoints/record): a Zoho Note on the Lead, one
+   Idempotency-Key per press. A refusal stays on the drawer (ui.NOTEERR); the draft is kept until the note lands. */
+function useSaveNote() {
+  const { state, dispatch } = useConsole();
+  const add = useLeadNote();
+  return (id: string) => {
+    const t = uiNdraft(state.ui).trim();
+    if (!t) return;
+    void add(id, t).then(r => dispatch({ type: "setUi", patch: { NOTEERR: r.ok ? null : r.error } }));
+  };
+}
+
 function NotesBody({ lead }: DrawerProps) {
   const { state, dispatch } = useConsole();
+  const save = useSaveNote();
   const l = lead!;
+  const err = typeof state.ui.NOTEERR === "string" ? state.ui.NOTEERR : null;
   const notes = state.NOTES[l.id] || [];
   const may = canNote(state, l);
   return (
@@ -136,13 +151,14 @@ function NotesBody({ lead }: DrawerProps) {
             onChange={(e) => dispatch({ type: "setUi", patch: { NDRAFT: e.target.value } })}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
-                dispatch({ type: "addNote", id: l.id });
+                save(l.id);
             }}
           />
           <p className="sm" style={{ margin: "6px 0 0" }}>
             Draft saved for {l.n} while you navigate. Ctrl/Cmd + Enter saves. Correct a saved note by
             adding another.
           </p>
+          {err ? <p className="sm lp-err" role="alert" style={{ margin: "6px 0 0" }}>{err}</p> : null}
         </>
       ) : null}
       <div className="drwsec">
@@ -169,14 +185,15 @@ function NotesBody({ lead }: DrawerProps) {
 }
 
 function NotesFoot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state } = useConsole();
+  const save = useSaveNote();
   const l = lead!;
   if (!canNote(state, l)) return null;
   const typed = uiNdraft(state.ui).trim().length > 0;
   return (
     <button
       type="button" className="act" disabled={!typed} title={typed ? undefined : "Nothing typed yet"}
-      onClick={typed ? () => dispatch({ type: "addNote", id: l.id }) : undefined}
+      onClick={typed ? () => save(l.id) : undefined}
     >
       Save note for {l.n.split(" ")[0]}
     </button>

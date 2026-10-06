@@ -38,7 +38,7 @@ const { createMemorySink, createOpsLog } = load('lib/zoho/log.js');
 const { createZohoClient, createZohoServiceClient, userCredential, serviceCredential } = load('lib/zoho/client.js');
 const { createPlaneCLog, createPlaneCMemorySink } = load('server/identity/plane-c.js');
 const { createCover, sweepExpiredCovers, activeFor, activeClause } = load('server/leads/cover.js');
-const { createGates, GATE_TEXT } = load('server/leads/gates.js');
+const { createGates, GATE_TEXT, GATE_UNKNOWN_TEXT } = load('server/leads/gates.js');
 const { createLeadSearch, searchRequestOf } = load('server/leads/search.js');
 
 const P = '9007199254';
@@ -65,10 +65,10 @@ before(async () => {
 const principal = (id) => ({ credential: credentials.get(id), sessionId: SESSION });
 
 /** LeadsAccess as the session layer derives it. */
-const access = (id) => ({ async recheck(cred) {
-  const seat = id === MANAGER ? 'ir-manager' : id === SUPER ? 'digital-infrastructure' : 'investor-relations';
+const access = (id, finance = false) => ({ async recheck(cred) {
+  const seat = finance ? 'finance-operations' : id === MANAGER ? 'ir-manager' : id === SUPER ? 'digital-infrastructure' : 'investor-relations';
   return { actor: { userId: cred.userId, roleId: '', profileId: '', seat }, mayViewLeads: true,
-    teamOwnerIds: id === MANAGER ? [IR] : null, teamOrgWide: id === SUPER, unassignedQueueUserId: null, seesUnassignedInPersonal: id !== MANAGER && id !== SUPER };
+    teamOwnerIds: id === MANAGER ? [IR] : null, teamOrgWide: id === SUPER || finance, unassignedQueueUserId: null, seesUnassignedInPersonal: id !== MANAGER && id !== SUPER && !finance };
 } });
 
 /** A client on a recorded router: route(call) → fixture [area, name]. Every call is kept. */
@@ -102,30 +102,48 @@ function gatesRoute(lead, receipts = 'receipts.balance-reported') {
   };
 }
 const gates = (r, who) => createGates({ crm: r.crm, access: access(who), log: r.log, recordIdPrefix: P, clock: () => NOW });
+/** A Finance seat (D69: the only seat that reads Receipts and allotment prices), on the super user's synthetic token. */
+const financeGates = (r) => createGates({ crm: r.crm, access: access(SUPER, true), log: r.log, recordIdPrefix: P, clock: () => NOW });
+const receiptsRead = (calls) => calls.some((c) => c.query && c.query.includes('from Receipts'));
 
-test('TC-E08-007/024: a reported balance waits on Finance — no Mark done, read-only, nothing written', async () => {
+test('D69: on the IR seat a reported balance reads as unknown — no Receipts, no Unit_Price, nobody blamed, nothing written', async () => {
   const r = rig('gates', gatesRoute('lead.balance-reported'));
   const res = await gates(r, IR).read(principal(IR), L_BAL);
   assert.equal(res.ok, true);
   const v = res.value;
   assert.equal(v.done, 6, 'Reserved — 10% in · step 6 of 9');
   assert.equal(v.gate, 'balance');
+  assert.equal(v.met, false, 'a money confirmation the IR cannot read is not met');
+  assert.equal(v.moneyKnown, false);
+  assert.equal(v.who, null, 'neither Finance nor the IR is blamed for what nobody here can see');
+  assert.equal(v.says, GATE_UNKNOWN_TEXT);
+  assert.equal(v.payment, null);
+  assert.equal(v.holdUntil, '2026-10-02', 'the hold is the allotment\'s, not money');
+  assert.equal(v.doer, 'finance');
+  assert.equal(v.mayConfirm, false);
+  assert.ok(noWrites(r.calls), 'no IR path writes a gate field');
+  assert.equal(receiptsRead(r.calls), false, 'the IR never reads Receipts');
+  const al = r.calls.find((c) => c.query && c.query.includes('from LLP_UnitAllocation_Module')).query;
+  assert.ok(!al.includes('Unit_Price'), 'the IR never reads an allotment\'s Unit_Price');
+  assert.match(r.calls.find((c) => c.query && c.query.includes('from Contacts')).query, new RegExp(`where Origin_Lead = '${L_BAL}'`));
+});
+
+test('TC-E08-007/024: on a Finance seat a reported balance waits on Finance, read live from Receipts', async () => {
+  const r = rig('gates', gatesRoute('lead.balance-reported'));
+  const v = (await financeGates(r).read(principal(SUPER), L_BAL)).value;
+  assert.equal(v.moneyKnown, true);
   assert.equal(v.met, false);
   assert.equal(v.who, 'fin', 'waiting on Finance is honest: the IR has reported it');
   assert.equal(v.says, GATE_TEXT.balance.wait);
   assert.deepEqual(v.payment, { status: 'Partial', reported: true, notFound: false, matchedRupees: 100000, dueRupees: 900000 });
-  assert.equal(v.holdUntil, '2026-10-02');
-  assert.equal(v.doer, 'finance');
-  assert.equal(v.mayConfirm, false);
-  assert.ok(noWrites(r.calls), 'no IR path writes a gate field');
+  assert.ok(noWrites(r.calls));
   const receipts = r.calls.find((c) => c.query && c.query.includes('from Receipts')).query;
   assert.ok(receipts.includes(`'${A1}'`) && !receipts.includes(A9), 'a Cancelled allotment carries no money');
-  assert.match(r.calls.find((c) => c.query && c.query.includes('from Contacts')).query, new RegExp(`where Origin_Lead = '${L_BAL}'`));
 });
 
-test('TC-E08-010: once Finance matches the balance the gate has cleared, read live', async () => {
+test('TC-E08-010: once Finance matches the balance the gate has cleared, read live (Finance seat)', async () => {
   const r = rig('gates', gatesRoute('lead.balance-reported', 'receipts.balance-matched'));
-  const v = (await gates(r, IR).read(principal(IR), L_BAL)).value;
+  const v = (await financeGates(r).read(principal(SUPER), L_BAL)).value;
   assert.equal(v.met, true);
   assert.equal(v.who, null);
   assert.equal(v.says, null);
@@ -133,15 +151,21 @@ test('TC-E08-010: once Finance matches the balance the gate has cleared, read li
   assert.equal(v.payment.dueRupees, 0);
 });
 
-test('TC-E08-009: said yes with no payment and no report — it is the IR\'s move, not Finance\'s', async () => {
-  const r = rig('gates', gatesRoute('lead.said-yes', 'empty'));
-  const v = (await gates(r, IR).read(principal(IR), L_YES)).value;
+test('TC-E08-009: said yes with no payment and no report — the IR\'s move on a Finance seat; unknown on the IR\'s', async () => {
+  let r = rig('gates', gatesRoute('lead.said-yes', 'empty'));
+  let v = (await financeGates(r).read(principal(SUPER), L_YES)).value;
   assert.equal(v.done, 5);
   assert.equal(v.gate, 'advance');
   assert.equal(v.met, false);
   assert.equal(v.who, 'ir');
   assert.equal(v.says, GATE_TEXT.advance.chase);
   assert.equal(v.payment.status, 'Yet to initiate');
+  r = rig('gates', gatesRoute('lead.said-yes', 'empty'));
+  v = (await gates(r, IR).read(principal(IR), L_YES)).value;
+  assert.equal(v.met, false);
+  assert.equal(v.who, null);
+  assert.equal(v.says, GATE_UNKNOWN_TEXT);
+  assert.equal(receiptsRead(r.calls), false);
 });
 
 test('before "said yes" nothing of Finance\'s is read', async () => {
@@ -149,25 +173,28 @@ test('before "said yes" nothing of Finance\'s is read', async () => {
   const v = (await gates(r, IR).read(principal(IR), L_COV)).value;
   assert.equal(v.gate, null);
   assert.equal(v.payment, null);
+  assert.equal(v.says, null);
   assert.equal(r.calls.length, 1);
 });
 
-test('TC-E08-024: the IR Manager reads a team lead\'s payment; no seat is offered confirm or reject', async () => {
+test('TC-E08-024: the IR Manager reads no money either (D69); no seat is offered confirm or reject', async () => {
   const r = rig('gates', gatesRoute('lead.balance-reported'));
   const v = (await gates(r, MANAGER).read(principal(MANAGER), L_BAL)).value;
-  assert.equal(v.payment.reported, true);
+  assert.equal(v.payment, null);
   assert.equal(v.mayConfirm, false);
   assert.equal(v.superUser, false);
+  assert.equal(receiptsRead(r.calls), false);
   assert.ok(noWrites(r.calls));
 });
 
-test('the super user sees the gate state, Finance named as the doer, with the super-user mark', async () => {
+test('the super user sees the gate state, Finance named as the doer, with the super-user mark — and no money', async () => {
   const r = rig('gates', gatesRoute('lead.balance-reported'));
   const v = (await gates(r, SUPER).read(principal(SUPER), L_BAL)).value;
-  assert.equal(v.who, 'fin');
+  assert.equal(v.who, null);
   assert.equal(v.doer, 'finance');
   assert.equal(v.superUser, true);
   assert.equal(v.mayConfirm, false);
+  assert.equal(receiptsRead(r.calls), false);
 });
 
 test('another IR\'s lead, or a lead naming me only as a dormant secondary, is refused before Finance is read', async () => {
@@ -180,15 +207,10 @@ test('another IR\'s lead, or a lead naming me only as a dormant secondary, is re
   }
 });
 
-test('the journey\'s GateReader opens Fully paid only on Finance\'s match', async () => {
-  let r = rig('gates', gatesRoute('lead.balance-reported'));
-  assert.equal(await gates(r, IR).reader().met(credentials.get(IR), L_BAL, 'balance'), false);
-  assert.equal(await gates(r, IR).reader().met(credentials.get(IR), L_BAL, 'advance'), true);
-  r = rig('gates', gatesRoute('lead.balance-reported', 'receipts.balance-matched'));
-  assert.equal(await gates(r, IR).reader().met(credentials.get(IR), L_BAL, 'balance'), true);
-  assert.equal(await gates(r, IR).reader().met(credentials.get(IR), L_BAL, 'alloc'), false, 'the supplementary agreement is not verified');
-  r = rig('gates', () => 'source.server-error');
-  assert.equal(await gates(r, IR).reader().met(credentials.get(IR), L_BAL, 'balance'), false, 'an unreadable fact keeps the rung shut');
+test('D69: the journey\'s GateReader (the IR\'s token) opens no money rung and reads nothing', async () => {
+  const r = rig('gates', gatesRoute('lead.balance-reported', 'receipts.balance-matched'));
+  for (const g of ['advance', 'balance', 'alloc']) assert.equal(await gates(r, IR).reader().met(credentials.get(IR), L_BAL, g), false, g);
+  assert.equal(r.calls.length, 0);
 });
 
 test('Zoho failing is a source error, never an open gate', async () => {
