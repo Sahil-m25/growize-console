@@ -30,6 +30,7 @@ import type { UiState } from "@/lib/store";
 import { pathOf } from "@/components/shell";
 import { Chip } from "@/components/ui";
 import { useGoLead } from "@/features/leads/nav";
+import { useMarkRead } from "@/lib/data/endpoints/ownership";
 import "./drawer";
 
 /* groups that are true right now, not history — "Needs attention" rather than "View updates" */
@@ -39,6 +40,8 @@ export function UpdatesPage() {
   const { state, dispatch } = useConsole();
   const router = useRouter();
   const goLead = useGoLead("updates");
+  /* C3: reading a group is POST /api/leads/updates/read (the person's own bookmark); fixture: the reducer's markRead */
+  const markRead = useMarkRead();
   const set = (patch: Partial<UiState>) => dispatch({ type: "setUi", patch });
 
   const g = updates(state), n = updateCount(state), u = unread(state);
@@ -66,7 +69,7 @@ export function UpdatesPage() {
           {n ? "last 7 days on " + feedScope(state) + (u ? " · " + u + " new" : "") : "nothing new"}
         </span>
         <div className="sp" />
-        {!!u && <Chip onClick={() => dispatch({ type: "markRead" })}>Mark all as read</Chip>}
+        {!!u && <Chip onClick={() => markRead()}>Mark all as read</Chip>}
         {!!fn && (
           <button type="button" className="chip" id="door-updates-feed" aria-haspopup="dialog"
             aria-expanded={feedOpen ? "true" : "false"}
@@ -99,10 +102,10 @@ export function UpdatesPage() {
                 /* openGroup(k) — ir-merged.js:6187. Closing reads nothing; opening is reading it. A
                    state group held open only by its unread rows is read in place, not toggled. */
                 const toggle = () => {
-                  if (expanded && NOPEN !== x.k) { dispatch({ type: "markRead", k: x.k }); return; }
+                  if (expanded && NOPEN !== x.k) { markRead(x.k); return; }
                   if (NOPEN === x.k) { set({ NOPEN: null }); return; }
                   set({ NOPEN: x.k });
-                  dispatch({ type: "markRead", k: x.k });
+                  markRead(x.k);
                 };
                 return (
                   <div className={`upg ${expanded ? "open" : ""}`} id={`upg-${x.k}`} key={x.k}>

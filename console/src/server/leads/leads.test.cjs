@@ -204,7 +204,7 @@ test('M14-S03-NOTE-5: every Consent_How the capture writes is on the org picklis
   }
 });
 
-test('Events needs the event; person sources need who introduced them', async () => {
+test('Events needs the event; a person source may name who introduced them', async () => {
   let r = rig();
   let res = await r.service.createLead(principal(IR), { ...BASE, source: 'Events' });
   assert.equal(res.reasonCode, 'event-missing');
@@ -219,7 +219,12 @@ test('Events needs the event; person sources need who introduced them', async ()
 
   r = rig();
   res = await r.service.createLead(principal(IR), { ...BASE, source: 'Referral — investor' });
-  assert.equal(res.reasonCode, 'introducer-missing');
+  assert.equal(res.ok, true, 'an introducer is optional: "Not said" sends none');
+  assert.ok(!('Introduced_By' in r.calls[0].body.data[0]), 'Introduced_By is sent only when an introducer is given');
+  r = rig();
+  res = await r.service.createLead(principal(IR), { ...BASE, source: 'Referral — investor', introducedById: 'ext' });
+  assert.equal(res.reasonCode, 'introducer-missing', 'one that is named must be a Zoho user');
+  assert.equal(r.calls.length, 0);
   r = rig();
   res = await r.service.createLead(principal(IR), { ...BASE, source: 'Referral — investor', introducedById: OTHER_IR });
   assert.deepEqual(r.calls[0].body.data[0].Introduced_By, { id: OTHER_IR });

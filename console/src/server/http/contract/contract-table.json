@@ -124,7 +124,7 @@
   },
   "/api/documents/farm/[id]": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/documents/investor/[id]": {
@@ -231,7 +231,7 @@
     "body": {
      "type": "bytes",
      "required": [],
-     "schema": "route doc: bytes \u2264 20 MB; query scope,id,slot,name,expected; Content-Type = the file's",
+     "schema": "route doc: bytes ≤ 20 MB; query scope,id,slot,name,expected; Content-Type = the file's",
      "maxBytes": 20971520,
      "accept": [
       "application/pdf",
@@ -243,12 +243,12 @@
   },
   "/api/emails/[kind]/[id]": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/emails/[kind]/[id]/[messageId]": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/events": {
@@ -324,7 +324,7 @@
   },
   "/api/farms/[id]/allotments": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/farms/[id]/release": {
@@ -456,7 +456,7 @@
   },
   "/api/investors/[id]/preview": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/investors/[id]/record": {
@@ -481,7 +481,7 @@
   },
   "/api/investors/[id]/unlock": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    },
    "POST": {
     "body": {
@@ -632,7 +632,7 @@
   },
   "/api/leads/[id]/gate": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/leads/[id]/hints": {
@@ -848,7 +848,7 @@
     "body": {
      "type": "json",
      "required": [],
-     "schema": "contracts/sign.embed.json \u2014 HMAC over the exact body (X-Signature)",
+     "schema": "contracts/sign.embed.json — HMAC over the exact body (X-Signature)",
      "hmac": true
     }
    }
@@ -861,19 +861,19 @@
      "required": [
       "file"
      ],
-     "schema": "route doc: multipart field file, CSV \u2264 2 MB",
+     "schema": "route doc: multipart field file, CSV ≤ 2 MB",
      "maxBytes": 2097152
     }
    }
   },
   "/api/teams": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads the Zoho user directory (GET /users) \u2014 not in the recorded fixtures"
+    "needsSandbox": "needs sandbox: reads the Zoho user directory (GET /users) — not in the recorded fixtures"
    }
   },
   "/api/teams/[id]": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads the Zoho user directory (GET /users) \u2014 not in the recorded fixtures"
+    "needsSandbox": "needs sandbox: reads the Zoho user directory (GET /users) — not in the recorded fixtures"
    }
   },
   "/api/updates": {
@@ -922,7 +922,7 @@
   },
   "/api/cases/[id]/messages": {
    "GET": {
-    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
+    "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) — the recorded fixtures replay COQL selects only"
    }
   },
   "/api/jobs/sign-recheck": {
@@ -1009,6 +1009,62 @@
      "type": "json",
      "required": [
       "expectedModifiedTime"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "name",
+      "mobile",
+      "source"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/[id]/assign": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [],
+     "schema": "route doc (empty: the owner is always the signed-in person)"
+    }
+   }
+  },
+  "/api/leads/duplicate": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "mobile"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/import": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "eventId",
+      "rows"
+     ],
+     "schema": "route doc"
+    }
+   }
+  },
+  "/api/leads/updates/read": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "kinds"
      ],
      "schema": "route doc"
     }
