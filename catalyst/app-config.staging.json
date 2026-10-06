@@ -12,7 +12,8 @@
     "ZOHO_STEPUP_REDIRECT_URI": "https://growize-console-50046579043.development.catalystappsail.in/api/auth/step-up/callback",
     "ZOHO_CRM_RECORD_ID_PREFIX": "1454168000",
     "ZOHO_SEAT_IDS": "{\"roleIds\":{\"CEO\":\"1454168000000031151\",\"BU Owner\":\"1454168000002591938\",\"Digital Infrastructure\":\"1454168000002591944\",\"IR Manager\":\"1454168000002591950\",\"Investor Relations\":\"1454168000002591956\",\"Channel Partner\":\"1454168000002591962\",\"Head of Finance\":\"1454168000002591968\",\"Finance Operations\":\"1454168000002591974\",\"Compliance and Audit\":\"1454168000002591980\",\"Head of Account Management\":\"1454168000002591986\",\"Key Account Manager\":\"1454168000002591992\",\"Exec\":\"1454168000002591998\"},\"profileIds\":{\"Administrator\":\"1454168000000031157\",\"Leadership\":\"1454168000003018006\",\"IR Manager\":\"1454168000003018140\",\"IR\":\"1454168000003018191\",\"Channel Partner\":\"1454168000003018548\",\"Finance Head\":\"1454168000003018293\",\"Finance Ops\":\"1454168000003018344\",\"Compliance & Audit\":\"1454168000003018395\",\"AM Head\":\"1454168000003018446\",\"KAM\":\"1454168000003018497\",\"Viewer\":\"1454168000003018242\"}}",
-    "CONSOLE_PUBLIC_ORIGIN": "https://growize-console-50046579043.development.catalystappsail.in"
+    "CONSOLE_PUBLIC_ORIGIN": "https://growize-console-50046579043.development.catalystappsail.in",
+    "GZ_SIGNIN_DEBUG": "1"
   },
   "memory": 512,
   "scripts": {}

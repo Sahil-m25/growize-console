@@ -16,7 +16,7 @@ import { currentLane, fixtureModeOn } from "@/lib/fixture-mode";
 import { sharedGrantReader } from "@/server/access/grants";
 import { sessionAccessOf } from "@/server/access/session-access";
 import { userSessions, zohoSignInConfigured } from "@/server/oauth/runtime";
-import { NOTE_COOKIE, SID_COOKIE, SIGNIN_REFUSALS, type RefusalCode } from "@/server/oauth/user-session";
+import { cleanWhy, NOTE_COOKIE, SID_COOKIE, SIGNIN_REFUSALS, signinDebugOn, WHY_COOKIE, type RefusalCode } from "@/server/oauth/user-session";
 import { withErrorCapture } from "@/server/ops/runtime";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +30,10 @@ async function get_() {
   }
   const note = jar.get(NOTE_COOKIE)?.value;
   if (note) jar.delete(NOTE_COOKIE);
+  const why = jar.get(WHY_COOKIE)?.value;
+  if (why) jar.delete(WHY_COOKIE);
   const refusal = note && Object.prototype.hasOwnProperty.call(SIGNIN_REFUSALS, note)
-    ? { code: note, message: SIGNIN_REFUSALS[note as RefusalCode] } : undefined;
+    ? { code: note, message: SIGNIN_REFUSALS[note as RefusalCode], ...(why && signinDebugOn() ? { why: cleanWhy(why) } : {}) } : undefined;
   const r = await userSessions().current(jar.get(SID_COOKIE)?.value);
   if (r.ok) return Response.json({ session: r.session, access: await sessionAccessOf(r.session, sharedGrantReader()) }, { headers: NO_STORE });
   jar.delete(SID_COOKIE);

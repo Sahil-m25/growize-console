@@ -6,7 +6,7 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE } from "@/lib/data/session";
 import { cookieBase, userSessions, zohoSignInConfigured } from "@/server/oauth/runtime";
-import { FLOW_COOKIE, NOTE_COOKIE, SESSION_ABSOLUTE_MS, SID_COOKIE } from "@/server/oauth/user-session";
+import { cleanWhy, FLOW_COOKIE, NOTE_COOKIE, SESSION_ABSOLUTE_MS, SID_COOKIE, signinDebugOn, WHY_COOKIE } from "@/server/oauth/user-session";
 import { withErrorCapture } from "@/server/ops/runtime";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +31,7 @@ async function get_(req: Request) {
     jar.set(SID_COOKIE, r.sid, { ...cookieBase(), maxAge: SESSION_ABSOLUTE_MS / 1000 });
   } else {
     jar.set(NOTE_COOKIE, r.code, { ...cookieBase(), maxAge: 300 });
+    if (signinDebugOn() && r.why) jar.set(WHY_COOKIE, cleanWhy(r.why), { ...cookieBase(), maxAge: 300 });
   }
   return new Response(null, { status: 303, headers: { Location: "/", "Cache-Control": "no-store" } });
 }

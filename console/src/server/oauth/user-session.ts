@@ -40,6 +40,10 @@ export const ACCESS_REFRESH_SKEW_MS = 60 * 1_000;
 export const SID_COOKIE = "gz_zsid";
 export const FLOW_COOKIE = "gz_oauth";
 export const NOTE_COOKIE = "gz_signin_note";
+/** Staging diagnostics only (GZ_SIGNIN_DEBUG=1): the refusal step, handed back once by GET /api/session as refusal.why. */
+export const WHY_COOKIE = "gz_signin_why";
+export const signinDebugOn = (env: NodeJS.ProcessEnv = process.env): boolean => env.GZ_SIGNIN_DEBUG === "1";
+export const cleanWhy = (v: string): string => v.replace(/[^A-Za-z0-9=_\- ]/g, "").slice(0, 120);
 
 /** The console seat token a Zoho seat signs in as (the vocabulary of `Session.seat` and the stub). Administrator seats never sign in. */
 export const CONSOLE_SEAT: Readonly<Record<ZohoSeat, string | null>> = Object.freeze({
@@ -143,7 +147,8 @@ export interface CallbackParams {
 
 export type CallbackResult =
   | { readonly ok: true; readonly sid: string; readonly session: ConsoleSession }
-  | { readonly ok: false; readonly code: RefusalCode; readonly message: string };
+  /** why: the step and Zoho's status/error word (e.g. "code-refused status=200 zoho=invalid_client"); never who, a token or a code. */
+  | { readonly ok: false; readonly code: RefusalCode; readonly message: string; readonly why?: string };
 
 export type CurrentResult =
   | { readonly ok: true; readonly session: ConsoleSession; readonly expiresAt: number }
@@ -188,7 +193,8 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     /* stdout, for the host's log: the refusal code and step only — never who, a token, a code or a query value */
     console.warn(`[auth] sign-in refused: ${code} (${reason}${detail ? ` ${detail}` : ""})`);
     d.planeC.record({ at: clock(), who: who ?? "unrecognised", action: "sign-in-refused", outcome: "refused", reason, seat });
-    return { ok: false, code, message: SIGNIN_REFUSALS[code] };
+    const base = { ok: false as const, code, message: SIGNIN_REFUSALS[code] };
+    return signinDebugOn() ? { ...base, why: `${reason}${detail ? ` ${detail}` : ""}` } : base;
   }
 
   async function revokeQuietly(refreshToken: string | undefined, who: string | null): Promise<void> {

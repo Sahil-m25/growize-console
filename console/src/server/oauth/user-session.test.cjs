@@ -727,3 +727,17 @@ test('org check: zgid wins over id; id is used only when zgid is missing; no org
   assert.equal(r.code, 'failed');
   assert.equal(empty.store.size(), 0);
 });
+
+test('GZ_SIGNIN_DEBUG=1 names the refusal step (staging diagnostics); unset, the result is unchanged', async () => {
+  const h = harness();
+  const prev = process.env.GZ_SIGNIN_DEBUG;
+  process.env.GZ_SIGNIN_DEBUG = '1';
+  try {
+    const { result } = await signIn(h, { flowCookie: null });
+    assert.deepEqual(result, { ok: false, code: 'failed', message: SIGNIN_REFUSALS.failed, why: 'no-flow' });
+  } finally {
+    if (prev === undefined) delete process.env.GZ_SIGNIN_DEBUG; else process.env.GZ_SIGNIN_DEBUG = prev;
+  }
+  const { result } = await signIn(h, { flowCookie: null });
+  assert.equal('why' in result, false);
+});
