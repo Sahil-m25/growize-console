@@ -594,6 +594,17 @@
     }
    }
   },
+  "/api/leads/[id]/details": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc (only the changed keys: name, mobile, email, city, units, contactPreference, introducedBy)"
+    }
+   }
+  },
   "/api/leads/[id]/email": {
    "POST": {
     "body": {
@@ -608,6 +619,17 @@
     }
    }
   },
+  "/api/leads/[id]/forecast": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc (category and/or paidBy)"
+    }
+   }
+  },
   "/api/leads/[id]/gate": {
    "GET": {
     "needsSandbox": "needs sandbox: reads one record or a related list by id from Zoho (GET /<Module>/:id...) \u2014 the recorded fixtures replay COQL selects only"
@@ -616,6 +638,29 @@
   "/api/leads/[id]/hints": {
    "GET": {
     "needsSandbox": "needs sandbox: reads Zoho through COQL that the recorded fixtures do not cover (an aggregate, or no recorded select for this module); the double answers a Zoho error"
+   }
+  },
+  "/api/leads/[id]/journey": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "op",
+      "expectedModifiedTime"
+     ],
+     "schema": "route doc (op tick|skip|untick; scorecard, reason)"
+    }
+   }
+  },
+  "/api/leads/[id]/notes": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "text"
+     ],
+     "schema": "route doc"
+    }
    }
   },
   "/api/leads/[id]/paperwork": {
@@ -631,6 +676,18 @@
       "rowToken"
      ],
      "schema": "route doc (or { undoToken })"
+    }
+   }
+  },
+  "/api/leads/[id]/permission": {
+   "PUT": {
+    "body": {
+     "type": "json",
+     "required": [
+      "expectedModifiedTime",
+      "con"
+     ],
+     "schema": "route doc"
     }
    }
   },

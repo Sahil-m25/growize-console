@@ -23,6 +23,12 @@
  * as the doer, never offers a confirm or reject control (`mayConfirm: false` for every seat, the IR Manager
  * and the super user included), and marks the super user's view (Digital Infrastructure) for its note.
  * Nothing is cached (rows are records, D52); logs carry ids and codes only.
+ *
+ * D69 (owner ruling 6 Oct 2026): the IR side never reads Receipts and never reads an allotment's Unit_Price. Only a
+ * Finance seat (MONEY_SEATS) reads the money facts here; every other seat — and the journey's GateReader, which runs on
+ * the IR's token — gets `moneyKnown: false`: the three gates count as not met, nobody is blamed (`who: null`), and the
+ * drawer says the confirmation cannot be read here yet (GATE_UNKNOWN_TEXT). PROVISIONAL until Finance's
+ * Advance_Confirmed_At / Balance_Confirmed_At Lead fields exist (ir-write-map.md "Claim redesign" step 5).
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
@@ -48,6 +54,10 @@ const INBOUND: ReadonlySet<string> = new Set(["Advance", "Part", "Balance", "Ful
 /** Reported by the IR, not yet found by Finance: the only state in which "waiting on Finance" is honest. */
 const REPORTED: ReadonlySet<string> = new Set(["Pending", "Claimed"]);
 const MATCH_STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not found", "Reversed", "Claimed"]);
+/** The seats that may read Receipts and allotment prices (D69): Finance's two. */
+export const MONEY_SEATS: ReadonlySet<string> = new Set(["head-of-finance", "finance-operations"]);
+/** What a shut money gate says to a seat that cannot read Finance's confirmation (D69). */
+export const GATE_UNKNOWN_TEXT = "Finance confirms this in the Investor Management portal; the console cannot read that confirmation here yet.";
 
 /** The prototype's words (ladder.ts GATES), so the drawer and the refusal say the same thing. */
 export const GATE_TEXT: Readonly<Record<GateKey, { readonly t: string; readonly chase: string; readonly wait: string }>> = Object.freeze({
@@ -85,6 +95,8 @@ export interface GateFacts {
   readonly holdUntil: string | null;
   readonly ndaVerified: boolean;
   readonly supplementaryVerified: boolean;
+  /** false: this seat may not read the money (D69) — amounts are 0 and no money gate is met. */
+  readonly moneyKnown: boolean;
 }
 
 export interface GateState {
@@ -106,6 +118,8 @@ export interface GateState {
     readonly dueRupees: number;
   } | null;
   readonly holdUntil: string | null;
+  /** false: the money facts were not read for this seat (D69); `payment` is null and a money gate reads not met. */
+  readonly moneyKnown: boolean;
   readonly docs: { readonly nda: boolean; readonly supplementary: boolean };
   /** Finance clears every gate, in the Investor Management portal. */
   readonly doer: "finance";
@@ -140,6 +154,7 @@ const int = (v: unknown): number | null => (typeof v === "number" && Number.isSa
 
 /** The prototype's `met`, over live facts. */
 export function gateMet(gate: GateKey, f: GateFacts): boolean {
+  if (!f.moneyKnown) return false;
   const full = f.amountRupees > 0 && f.matchedRupees >= f.amountRupees;
   if (gate === "advance") return f.matchedRupees > 0;
   if (gate === "balance") return full;
@@ -147,7 +162,7 @@ export function gateMet(gate: GateKey, f: GateFacts): boolean {
 }
 /** The prototype's `gateWho`: "fin" only when the IR has handed something over and is stuck. */
 export function gateWho(gate: GateKey | null, f: GateFacts): "fin" | "ir" | null {
-  if (!gate || gateMet(gate, f)) return null;
+  if (!gate || !f.moneyKnown || gateMet(gate, f)) return null;
   if (f.reported) return "fin";
   if (gate === "alloc" && f.amountRupees > 0 && f.matchedRupees >= f.amountRupees) return "fin";
   return "ir";
@@ -177,16 +192,17 @@ export function createGates(deps: GateDependencies) {
   };
 
   /** Finance's facts for a lead the caller has already been admitted to. */
-  async function facts(cred: UserCredential, L: ZohoRecord, signal?: AbortSignal): Promise<GateFacts> {
+  async function facts(cred: UserCredential, L: ZohoRecord, money: boolean, signal?: AbortSignal): Promise<GateFacts> {
     const leadId = L.id;
     const ndaVerified = typeof L.NDA_Verified_At === "string" && DATETIME.test(L.NDA_Verified_At);
     const none: GateFacts = { contactId: null, allotmentIds: [], amountRupees: 0, matchedRupees: 0, reported: false, notFound: false,
-      holdUntil: null, ndaVerified, supplementaryVerified: false };
+      holdUntil: null, ndaVerified, supplementaryVerified: false, moneyKnown: money };
     const c = await coql(cred, `select id, Origin_Lead from Contacts where Origin_Lead = '${leadId}' limit 0, 2`, signal);
     if (c.records.length === 0) return none;
     const contact = c.records[0]!;
     if (c.records.length > 1 || !validId(contact.id) || idOf(contact.Origin_Lead) !== leadId) throw new Unreadable([leadId]);
-    const al = await coql(cred, `select id, Customer, Allocation_Status, Reserved_Units, Issued_Units, Unit_Price, Hold_Until, Supplementary_Verified_At from ${ALLOTMENTS_MODULE} where Customer = '${contact.id}' limit 0, ${IN_LIMIT}`, signal);
+    // D69: Unit_Price is read only on a Finance seat.
+    const al = await coql(cred, `select id, Customer, Allocation_Status, Reserved_Units, Issued_Units, ${money ? "Unit_Price, " : ""}Hold_Until, Supplementary_Verified_At from ${ALLOTMENTS_MODULE} where Customer = '${contact.id}' limit 0, ${IN_LIMIT}`, signal);
     if (al.moreRecords) throw new Unreadable([contact.id]);
     let amount = 0, hold: string | null = null, supp = true;
     const live: string[] = [];
@@ -194,7 +210,7 @@ export function createGates(deps: GateDependencies) {
       const status = a.Allocation_Status;
       if (!validId(a.id) || idOf(a.Customer) !== contact.id || (status !== "Reserved" && status !== "Issued" && status !== "Cancelled")) throw new Unreadable([contact.id, a.id]);
       if (status === "Cancelled") continue;
-      const units = status === "Issued" ? int(a.Issued_Units) : int(a.Reserved_Units), price = int(a.Unit_Price);
+      const units = status === "Issued" ? int(a.Issued_Units) : int(a.Reserved_Units), price = money ? int(a.Unit_Price) : 0;
       if (units === null || price === null || units < 0 || price < 0 || !Number.isSafeInteger(amount + units * price)) throw new Unreadable([a.id]);
       amount += units * price;
       live.push(a.id);
@@ -202,6 +218,8 @@ export function createGates(deps: GateDependencies) {
       if (!(typeof a.Supplementary_Verified_At === "string" && DATETIME.test(a.Supplementary_Verified_At))) supp = false;
     }
     if (live.length === 0) return { ...none, contactId: contact.id };
+    // D69: Receipts are never read on an IR-side token.
+    if (!money) return { ...none, contactId: contact.id, allotmentIds: live, holdUntil: hold, supplementaryVerified: supp };
     const rc = await coql(cred, `select id, Allotment, Kind, Amount, Match_State from ${RECEIPTS_MODULE} where Allotment in (${live.map((x) => `'${x}'`).join(", ")}) limit 0, ${RECEIPT_PAGE}`, signal);
     if (rc.moreRecords) throw new Unreadable(live);
     let inbound = 0, refunded = 0, reported = false, notFound = false;
@@ -215,7 +233,7 @@ export function createGates(deps: GateDependencies) {
       else if (inb && r.Match_State === "Not found") notFound = true;
     }
     return { contactId: contact.id, allotmentIds: live, amountRupees: amount, matchedRupees: Math.max(0, inbound - refunded),
-      reported, notFound, holdUntil: hold, ndaVerified, supplementaryVerified: supp };
+      reported, notFound, holdUntil: hold, ndaVerified, supplementaryVerified: supp, moneyKnown: true };
   }
 
   const failure = (me: string, e: unknown, leadId: string): GateResult => {
@@ -258,11 +276,12 @@ export function createGates(deps: GateDependencies) {
       const done = doneOf(L);
       if (done === null) return refuse(me, "source-invalid", [leadId]);
       const gate = !L.Lost_At && done < 9 ? GATE_OF[done + 1] ?? null : null;
+      const money = MONEY_SEATS.has(a.actor.seat);
       let f: GateFacts;
       try {
         // Before "said yes" there is no investor, so there is nothing of Finance's to read.
-        f = done >= 5 ? await facts(cred, L, signal) : { contactId: null, allotmentIds: [], amountRupees: 0, matchedRupees: 0, reported: false,
-          notFound: false, holdUntil: null, ndaVerified: typeof L.NDA_Verified_At === "string", supplementaryVerified: false };
+        f = done >= 5 ? await facts(cred, L, money, signal) : { contactId: null, allotmentIds: [], amountRupees: 0, matchedRupees: 0, reported: false,
+          notFound: false, holdUntil: null, ndaVerified: typeof L.NDA_Verified_At === "string", supplementaryVerified: false, moneyKnown: money };
       } catch (e) {
         return failure(me, e, leadId);
       }
@@ -272,10 +291,11 @@ export function createGates(deps: GateDependencies) {
         : f.matchedRupees <= 0 ? "Yet to initiate" as const : f.matchedRupees < f.amountRupees ? "Partial" as const : "Full" as const;
       return { ok: true, value: Object.freeze({
         leadId, done, gate, met, who,
-        says: gate && who ? (who === "fin" ? GATE_TEXT[gate].wait : GATE_TEXT[gate].chase) : null,
-        payment: f.contactId === null ? null : Object.freeze({ status, reported: f.reported, notFound: f.notFound,
+        says: gate && who ? (who === "fin" ? GATE_TEXT[gate].wait : GATE_TEXT[gate].chase) : gate && !met && !f.moneyKnown ? GATE_UNKNOWN_TEXT : null,
+        payment: f.contactId === null || !f.moneyKnown ? null : Object.freeze({ status, reported: f.reported, notFound: f.notFound,
           matchedRupees: f.matchedRupees, dueRupees: Math.max(0, f.amountRupees - f.matchedRupees) }),
         holdUntil: f.holdUntil,
+        moneyKnown: f.moneyKnown,
         docs: Object.freeze({ nda: f.ndaVerified, supplementary: f.allotmentIds.length > 0 && f.supplementaryVerified }),
         doer: "finance" as const,
         mayConfirm: false as const,
@@ -283,14 +303,14 @@ export function createGates(deps: GateDependencies) {
       }) };
     },
 
-    /** journey.ts's GateReader: the caller (the journey) has already admitted the person to the lead. */
+    /** journey.ts's GateReader: the caller (the journey) has already admitted the person to the lead. The journey runs on
+     *  the IR's token, which never reads the money (D69): every gate rests on it (alloc needs the balance), so no money
+     *  gate opens from here until Finance's confirmation is a Lead field. Nothing is read; a shut rung says so. */
     reader(): GateReader {
       return {
-        async met(credential, leadId, gate, signal) {
+        async met(credential, leadId) {
           if (!isUserCredential(credential) || !validId(leadId)) return false;
-          const got = await crm.getRecord(credential, LEADS_MODULE, leadId, { fields: LEAD_FIELDS, signal });
-          if (!got.ok || !got.value || got.value.id !== leadId) return false;
-          try { return gateMet(gate, await facts(credential, got.value, signal)); } catch { return false; }
+          return false;
         },
       };
     },

@@ -7,14 +7,23 @@
    the flag. Evidence is now asked for, shown where it exists, and never required.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { useState } from "react";
 import { FCAT, ST } from "@/domain";
 import { canPlan, fcInFY, fcOf, payOf, whyLocked } from "@/lib/selectors";
 import { iso, when } from "@/lib/format";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { leadForecastSet, type ForecastArgs } from "@/lib/data/endpoints/record";
 
 function Body({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
+  /* setFc / setFcDate are PUT /api/leads/[id]/forecast (cluster C2, lib/data/endpoints/record): Leads.Forecast and
+     Leads.Forecast_Paid_By on the person's own token. Evidence (setFcEv) stays as it was: its home is PROVISIONAL (J4). */
+  const put = useApiWrite(leadForecastSet, state, dispatch);
+  const live = useApiMode() === "live";
+  const [err, setErr] = useState<string | null>(null);
+  const save = (a: ForecastArgs) => void put(a).then(r => { setErr(r.ok ? null : r.error); if (r.ok && live) reloadData(); });
   const l = lead!;
   const cat = fcOf(l);
   const fc = l.fc || null;
@@ -30,6 +39,7 @@ function Body({ lead }: DrawerProps) {
 
   return (
     <>
+      {err ? <p className="sm lp-err" role="alert">{err}</p> : null}
       <p className="lbl">Forecast category</p>
       <div className="chips" style={{ marginBottom: "12px" }}>
         {(Object.entries(FCAT) as [string, { t: string; d: string; c: string }][]).map(([k, v]) => (
@@ -39,7 +49,7 @@ function Body({ lead }: DrawerProps) {
             className={`chip ${cat === k ? "on" : ""}`}
             title={set ? v.d : plan ? "Nothing is forecast before it qualifies" : whyLocked(state, l)}
             disabled={!set}
-            onClick={set ? () => dispatch({ type: "setFc", id: l.id, c: k }) : undefined}
+            onClick={set ? () => save({ id: l.id, expectedModifiedTime: l.mt ?? null, via: "setFc", c: k }) : undefined}
           >
             {v.t}
           </button>
@@ -79,7 +89,7 @@ function Body({ lead }: DrawerProps) {
                   value={fc && fc.by ? iso(when(fc.by, state.NOW) || state.NOW) : ""}
                   onChange={(e) => {
                     if (!e.target.value) return;
-                    dispatch({ type: "setFcDate", id: l.id, v: e.target.value });
+                    save({ id: l.id, expectedModifiedTime: l.mt ?? null, via: "setFcDate", v: e.target.value });
                   }}
                 />
               </label>

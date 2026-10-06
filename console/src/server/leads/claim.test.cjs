@@ -208,7 +208,9 @@ test('after Finance could not find it, the IR may ask again: a new claim key', a
 
 test('the lead\'s state: lost, fully paid, not yet said yes, supplementary not verified, no allotment — refused, nothing written', async () => {
   const cases = [[{ lead: 'lead.lost' }, 'lost'], [{ lead: 'lead.paid' }, 'already-paid'], [{ lead: 'lead.early' }, 'not-converted'],
-    [{ allotments: 'allotments.unverified' }, 'supplementary-not-verified'], [{ receipts: 'receipts.full-matched' }, 'already-paid'],
+    [{ allotments: 'allotments.unverified' }, 'supplementary-not-verified'],
+    // D69 (6 Oct 2026): the gate no longer reads Receipts on the IR's token, so "matched in full" is not known here;
+    // Fully_Paid_At ('lead.paid' above) is what still refuses. The claim redesign (C4) replaces the rest.
     [{ allotments: 'allotments.cancelled' }, 'supplementary-not-verified']];
   for (const [o, code] of cases) {
     const r = rig(o);

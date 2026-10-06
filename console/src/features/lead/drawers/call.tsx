@@ -15,6 +15,8 @@ import type { ConsoleState } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { CONHOW } from "@/features/add/state";
 import { emailOK, phoneKey, phoneOK } from "@/features/add/csv";
+import { useApiMode, useApiWrite } from "@/lib/data/api";
+import { leadDetailsSave, leadPermissionSave } from "@/lib/data/endpoints/record";
 
 /* DTAB — ir-console-redesigned.html:9518-9607's `openDetails(id,tab)`/`DETAILTAB`. The prototype's
    own two tabs ("Profile"/"Contact permission") and its `openDetails(id,'consent')` entry point are
@@ -374,9 +376,16 @@ function DetailsBody({ lead }: DrawerProps) {
   );
 }
 
+/* The details drawer's two saves are PUT /api/leads/[id]/permission and PUT /api/leads/[id]/details (cluster C2,
+   lib/data/endpoints/record), on the person's own token and guarded by `l.mt`. Permission writes Consent_* (no visit:
+   the org has no Consent_Visit); details write only what changed, the preference as Preferred_Communication. */
 function DetailsFoot({ lead }: DrawerProps) {
-  const { state, dispatch } = useConsole();
+  const { state, dispatch, reloadData } = useConsole();
+  const putPermission = useApiWrite(leadPermissionSave, state, dispatch);
+  const putDetails = useApiWrite(leadDetailsSave, state, dispatch);
+  const live = useApiMode() === "live";
   const l = lead!;
+  const err = typeof state.ui.DETAILERR === "string" ? state.ui.DETAILERR : null;
   const tab = state.ui.DTAB ?? "profile";
   const profile = readProfileDraft(state, l);
   const permission = readPermissionDraft(state, l);
@@ -384,11 +393,18 @@ function DetailsFoot({ lead }: DrawerProps) {
   const label = tab === "permission" ? "Save contact permission" : "Save details";
   const save = () => {
     if (why) return;
+    const done = (r: { ok: boolean; error?: string }) => {
+      dispatch({ type: "setUi", patch: { DETAILERR: r.ok ? null : r.error ?? null } });
+      if (r.ok && live) reloadData();
+    };
     if (tab === "permission") {
       const { con, how, date, time } = permission;
-      dispatch({ type: "saveContactPermission", id: l.id, con, how, date, time });
+      void putPermission({ id: l.id, expectedModifiedTime: l.mt ?? null, con, how, date, time }).then(done);
     }
-    else dispatch({ type: "saveProfileDetails", id: l.id, patch: profile });
+    else {
+      const { n, ph, em, city, units, introducedBy, contactPreference } = profile;
+      void putDetails({ id: l.id, expectedModifiedTime: l.mt ?? null, patch: { n, ph, em, city, units, introducedBy, contactPreference }, was: l }).then(done);
+    }
   };
   return (
     <>
@@ -396,6 +412,7 @@ function DetailsFoot({ lead }: DrawerProps) {
         {label}
       </button>
       {why ? <span className="sm">{why}</span> : null}
+      {!why && err ? <span className="sm lp-err" role="alert">{err}</span> : null}
     </>
   );
 }

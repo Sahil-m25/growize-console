@@ -10,6 +10,11 @@
  *    without one the rung stays shut.
  *  - Taking back: one rung, within 8 hours of its stamp, with one of the five reasons, never while a
  *    payment stands against the lead, and only one back (Rung_Undone_At).
+ *
+ * Engagement_Skipped and Rung_Undone_At are in the sandbox? column of ir-write-map.md (not in production on 6 Oct 2026).
+ * A field the org lacks is either left out of Zoho's answer or rejected on the read (then the lead is read again
+ * without the two): a tick still works, and a skip / untick that needs the absent field answers `field-missing`
+ * naming it, rather than a generic Zoho error. A write Zoho rejects for one of them answers the same.
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
@@ -47,11 +52,15 @@ export interface GateReader {
 
 export type JourneyRefusal = "invalid-request" | "session-changed" | "capability-missing" | "not-visible" | "not-in-book"
   | "lead-changed" | "lead-closed" | "first-touch-by-followup" | "scorecard-needed" | "next-step-needed" | "units-needed"
-  | "gate-shut" | "not-skippable" | "nothing-to-undo" | "undo-window-closed" | "already-undone" | "payment-stands" | "reason-needed";
+  | "gate-shut" | "not-skippable" | "nothing-to-undo" | "undo-window-closed" | "already-undone" | "payment-stands" | "reason-needed"
+  | "field-missing";
 export type JourneyResult =
   | { readonly ok: true; readonly value: { readonly rung: number; readonly modifiedTime: string | null } }
-  | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: JourneyRefusal; readonly reason: string }
+  | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: JourneyRefusal; readonly reason: string; readonly field?: string }
   | { readonly ok: false; readonly kind: "source-error"; readonly source: "access" | "zoho"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
+
+/** The two Lead fields only the sandbox may hold yet (ir-write-map.md MISSING): their absence is named, not hidden. */
+export const OPTIONAL_JOURNEY_FIELDS: readonly string[] = Object.freeze(["Engagement_Skipped", "Rung_Undone_At"]);
 
 const REASON: Readonly<Record<JourneyRefusal, string>> = Object.freeze({
   "invalid-request": "the request is invalid",
@@ -72,6 +81,7 @@ const REASON: Readonly<Record<JourneyRefusal, string>> = Object.freeze({
   "already-undone": "one rung back is one — a second correction is a new record",
   "payment-stands": "a payment is recorded against this lead; it has to be reversed first",
   "reason-needed": "choose why this rung is being taken back",
+  "field-missing": "Zoho has no field for this yet — the owner creates it (ir-write-map.md, MISSING in Zoho); nothing was changed",
 });
 
 export interface JourneyDependencies {
@@ -83,8 +93,15 @@ export interface JourneyDependencies {
   readonly clock?: () => number;
 }
 
-const FIELDS = ["Modified_Time", "Lost_At", "Owner", "Secondary_Owner", "Cover_By", "Cover_Until", "Next_Step_At", "Units_Interested",
-  "Engagement_Skipped", "Rung_Undone_At", ...RUNGS.map((r) => r.field)];
+const BASE_FIELDS = ["Modified_Time", "Lost_At", "Owner", "Secondary_Owner", "Cover_By", "Cover_Until", "Next_Step_At", "Units_Interested",
+  ...RUNGS.map((r) => r.field)];
+const FIELDS = [...BASE_FIELDS, ...OPTIONAL_JOURNEY_FIELDS];
+/** The optional field Zoho named in a rejection, if it named one of ours. */
+const missingOf = (e: { kind: string; field?: string | null; records?: readonly { ok: boolean; field: string | null }[] | null }): string | null => {
+  if (e.kind !== "invalid-data" && e.kind !== "partial") return null;
+  const named = e.field ?? e.records?.find((r) => !r.ok)?.field ?? null;
+  return named && OPTIONAL_JOURNEY_FIELDS.includes(named) ? named : null;
+};
 const zohoTime = (ms: number): string => `${new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 19)}+05:30`;
 const idOf = (v: unknown): string | null => {
   const id = v && typeof v === "object" ? (v as { id?: unknown }).id : undefined;
@@ -112,15 +129,17 @@ export function createJourney(deps: JourneyDependencies) {
   const { crm, access, log, gates } = deps;
   const clock = deps.clock ?? Date.now;
   const validId = (v: unknown): v is string => typeof v === "string" && RECORD_ID.test(v) && v.startsWith(deps.recordIdPrefix);
-  const refuse = (userId: string, code: JourneyRefusal, ids: readonly string[] = []): JourneyResult => {
+  const refuse = (userId: string, code: JourneyRefusal, ids: readonly string[] = [], field?: string): JourneyResult => {
     log.refusal({ at: clock(), actor: { kind: "user", userId }, action: "lead-journey", reason: code, recordIds: ids.filter(validId) });
-    return { ok: false, kind: "refused", reasonCode: code, reason: REASON[code] };
+    return field
+      ? { ok: false, kind: "refused", reasonCode: code, reason: `${REASON[code]} (Leads.${field})`, field }
+      : { ok: false, kind: "refused", reasonCode: code, reason: REASON[code] };
   };
   const zoho = (k: ZohoFailureKind | "unexpected"): JourneyResult => ({ ok: false, kind: "source-error", source: "zoho", errorKind: k, retryable: false });
 
   /** Shared: principal, seat, lead read, book check. */
   const open = async (principal: { credential: UserCredential; sessionId: string }, leadId: string, expected: string, signal?: AbortSignal)
-    : Promise<{ me: string; L: ZohoRecord; done: number } | JourneyResult> => {
+    : Promise<{ me: string; L: ZohoRecord; done: number; missing: readonly string[] } | JourneyResult> => {
     const cred = principal?.credential;
     if (!isUserCredential(cred) || !validId(cred.userId) || typeof principal.sessionId !== "string" || !SESSION_ID.test(principal.sessionId)
       || !validId(leadId) || typeof expected !== "string" || !DATETIME.test(expected)) {
@@ -134,10 +153,15 @@ export function createJourney(deps: JourneyDependencies) {
     if (!a || a.actor?.userId !== me) return refuse(me, "session-changed");
     if (!a.mayRecordFollowup) return refuse(me, "capability-missing");
     let got: Awaited<ReturnType<typeof crm.getRecord>>;
-    try { got = await crm.getRecord(cred, LEADS_MODULE, leadId, { fields: FIELDS, signal }); } catch { return zoho("unexpected"); }
+    try {
+      got = await crm.getRecord(cred, LEADS_MODULE, leadId, { fields: FIELDS, signal });
+      if (!got.ok && missingOf(got.error) !== null) got = await crm.getRecord(cred, LEADS_MODULE, leadId, { fields: BASE_FIELDS, signal });
+    } catch { return zoho("unexpected"); }
     if (!got.ok) return got.error.kind === "not-found" || got.error.kind === "forbidden" ? refuse(me, "not-visible", [leadId]) : zoho(got.error.kind);
     if (!got.value || got.value.id !== leadId) return refuse(me, "not-visible", [leadId]);
     const L = got.value as ZohoRecord;
+    // Zoho answers a field that exists with its value or null, and leaves out one the org does not have.
+    const missing = OPTIONAL_JOURNEY_FIELDS.filter((f) => !Object.prototype.hasOwnProperty.call(L, f));
     if (L.Modified_Time !== expected) return refuse(me, "lead-changed", [leadId]);
     const owner = idOf(L.Owner), today = zohoTime(clock()).slice(0, 10);
     const inBook = owner === me /* D44: a named secondary is dormant; only a live cover admits (server/leads/cover.ts) */
@@ -147,12 +171,16 @@ export function createJourney(deps: JourneyDependencies) {
     const done = doneOf(L);
     if (done === null) return zoho("unexpected");
     if (L.Lost_At || done >= 9) return refuse(me, "lead-closed", [leadId]);
-    return { me, L, done };
+    return { me, L, done, missing };
   };
   const write = async (principal: { credential: UserCredential }, me: string, leadId: string, expected: string, fields: Record<string, string | boolean | null>, rung: number, signal?: AbortSignal): Promise<JourneyResult> => {
     let put: Awaited<ReturnType<typeof crm.update>>;
     try { put = await crm.update(principal.credential, LEADS_MODULE, leadId, fields, { ifUnmodifiedSince: expected, signal }); } catch { return zoho("unexpected"); }
-    if (!put.ok) return put.error.kind === "conflict" ? refuse(me, "lead-changed", [leadId]) : zoho(put.error.kind);
+    if (!put.ok) {
+      if (put.error.kind === "conflict") return refuse(me, "lead-changed", [leadId]);
+      const missing = missingOf(put.error);
+      return missing ? refuse(me, "field-missing", [leadId], missing) : zoho(put.error.kind);
+    }
     return { ok: true, value: { rung, modifiedTime: put.value.modifiedTime } };
   };
 
@@ -182,6 +210,7 @@ export function createJourney(deps: JourneyDependencies) {
       const o = await open(principal, leadId, expected, signal);
       if (!("L" in o)) return o;
       if (o.done !== 3) return refuse(o.me, "not-skippable", [leadId]);
+      if (o.missing.includes("Engagement_Skipped")) return refuse(o.me, "field-missing", [leadId], "Engagement_Skipped");
       return write(principal, o.me, leadId, expected, { Engaged_At: zohoTime(clock()), Engagement_Skipped: true }, 4, signal);
     },
 
@@ -191,6 +220,7 @@ export function createJourney(deps: JourneyDependencies) {
       if (!("L" in o)) return o;
       const { me, L, done } = o;
       if (!UNDO_REASONS.includes(reason)) return refuse(me, "reason-needed", [leadId]);
+      if (o.missing.includes("Rung_Undone_At")) return refuse(me, "field-missing", [leadId], "Rung_Undone_At");
       if (done <= 1) return refuse(me, "nothing-to-undo", [leadId]);
       const rung = RUNGS.find((r) => r.n === done)!;
       const at = Date.parse(L[rung.field] as string), now = clock();
@@ -199,7 +229,7 @@ export function createJourney(deps: JourneyDependencies) {
       if (Number.isFinite(undone) && now - undone <= EDIT_HOURS * 3_600_000) return refuse(me, "already-undone", [leadId]);
       if (L.Reserved_At && done <= 7) return refuse(me, "payment-stands", [leadId]);
       const fields: Record<string, string | boolean | null> = { [rung.field]: null, Rung_Undone_At: zohoTime(now) };
-      if (rung.n === 4) fields.Engagement_Skipped = false;
+      if (rung.n === 4 && !o.missing.includes("Engagement_Skipped")) fields.Engagement_Skipped = false;
       return write(principal, me, leadId, expected, fields, done - 1, signal);
     },
   });
