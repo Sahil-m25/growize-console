@@ -213,7 +213,7 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
   };
   /** A per-item failure: its status is present and not "success". Returns its code, or null when the entry succeeded. */
   const entryFailure = (e: Entry): string | null => {
-    if (!e || e.status === undefined || e.status === "success") return null;
+    if (!e || e.status === undefined || String(e.status).toLowerCase() === "success") return null;
     return typeof e.error_code === "string" ? e.error_code : typeof e.code === "string" ? e.code : typeof e.status === "string" ? e.status : "ITEM_FAILED";
   };
 

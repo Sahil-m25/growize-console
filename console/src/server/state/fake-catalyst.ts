@@ -79,11 +79,11 @@ export function createFakeCatalyst(options: { insertOverwrites?: boolean; seed?:
       if (!item || typeof item !== "object") return err(400, "INVALID_INPUT");
       if (!item[pk]?.S) return err(400, "INVALID_KEY");
       const k = item[pk]!.S as string, cur = items.get(k);
-      if (!cur) { items.set(k, item); return ok({ size: 1, create: [{ status: "success", item }] }); }
+      if (!cur) { items.set(k, item); return ok({ size: 1, create: [{ status: "Success", item }] }); }
       if (!condition || options.insertOverwrites === false) return refuse("create", "DUPLICATE_ITEM");
       if (!holds(cur, condition)) return refuse("create", "CONDITION_FAILED");
       items.set(k, item);
-      return ok({ size: 1, create: [{ status: "success", item }] });
+      return ok({ size: 1, create: [{ status: "Success", item }] });
     }
     if (init.method === "PUT" && path === "/item") {
       const { keys, update_attributes, condition } = b[0] as { keys?: Record<string, Attr>; update_attributes?: { operation_type: string; attribute_path: string[]; update_value: Attr }[]; condition?: Cond };
@@ -95,20 +95,20 @@ export function createFakeCatalyst(options: { insertOverwrites?: boolean; seed?:
       const next = { ...cur };
       for (const a of update_attributes) { if (a.operation_type !== "PUT") throw new Error("fake: only PUT"); next[a.attribute_path[0]!] = a.update_value; }
       items.set(k, next);
-      return ok({ size: 1, update: [{ status: "success", item: next }] });
+      return ok({ size: 1, update: [{ status: "Success", item: next }] });
     }
     if (init.method === "POST" && path === "/item/fetch") {
       if (!b || !Array.isArray(b.keys) || b.keys.length < 1) return err(400, "INVALID_INPUT");
       const key = b.keys[0]?.[pk]?.S as string | undefined;
       if (!key) return err(400, "INVALID_KEY");
       const cur = items.get(key);
-      return ok({ size: cur ? 1 : 0, get: cur ? [{ status: "success", item: cur }] : [] });
+      return ok({ size: cur ? 1 : 0, get: cur ? [{ status: "Success", item: cur }] : [] });
     }
     if (init.method === "DELETE" && path === "/item") {
       const keys = (b[0] as { keys?: Record<string, Attr> }).keys;
       if (!keys || Array.isArray(keys) || !keys[pk]?.S) return err(400, "INVALID_KEY");
       items.delete(keys[pk]!.S as string);
-      return ok({ size: 1, delete: [{ status: "success" }] });
+      return ok({ size: 1, delete: [{ status: "Success" }] });
     }
     return err(400, "UNKNOWN_ENDPOINT");
   };
