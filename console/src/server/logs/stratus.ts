@@ -75,14 +75,17 @@ const intIn = (raw: string | undefined, lo: number, hi: number, dflt: number, na
 export function stratusConfig(env: NodeJS.ProcessEnv): StratusConfig {
   const missing: string[] = [];
   const bad: string[] = [];
+  // GZ_* names are canonical (Catalyst AppSail reserves the CATALYST_ prefix); the legacy CATALYST_* names are a fallback.
+  const LEGACY: Record<string, string> = { GZ_STATE_PROJECT_ID: "CATALYST_PROJECT_ID", GZ_STRATUS_API_DOMAIN: "CATALYST_API_DOMAIN" };
   const need = (name: string, re: RegExp, dflt?: string): string => {
-    const v = (env[name] ?? "").trim() || dflt || "";
+    const lg = LEGACY[name];
+    const v = (env[name] ?? "").trim() || (lg ? (env[lg] ?? "").trim() : "") || dflt || "";
     if (!v) missing.push(name); else if (!re.test(v)) bad.push(name);
     return v;
   };
   const bucketUrl = need("STRATUS_BUCKET_URL", BUCKET_URL).replace(/\/$/, "");
-  const projectId = need("CATALYST_PROJECT_ID", /^\d{6,25}$/);
-  const apiDomain = need("CATALYST_API_DOMAIN", API_DOMAIN, "https://api.catalyst.zoho.in");
+  const projectId = need("GZ_STATE_PROJECT_ID", /^\d{6,25}$/);
+  const apiDomain = need("GZ_STRATUS_API_DOMAIN", API_DOMAIN, "https://api.catalyst.zoho.in");
   const accountsOrigin = need("STRATUS_ACCOUNTS_ORIGIN", ACCOUNTS, "https://accounts.zoho.in");
   const clientId = need("STRATUS_CLIENT_ID", SECRET);
   const clientSecret = need("STRATUS_CLIENT_SECRET", SECRET);

@@ -54,16 +54,18 @@ Legend: **S** = secret (GitHub Environment *secret*, host secret store; never in
 | `NEXT_PUBLIC_RETICLE_TOKEN` / `_URL` / `_ROOT` | V | **—** | **—** (dev-only Reticle bridge) | app/reticle-dev.tsx |
 | `GZ_RATE_LIMITS` | V | **—** | **—** (`on` only forces the limits on under `NODE_ENV=test`; every other mode enforces them) | server/http/request-gate.ts |
 | `STATE_STORE` | V | unset (`memory`) until hosting is chosen | `catalyst` if AP4 lands on Catalyst AppSail (more than one instance); unset only on a single-instance host | server/state/runtime.ts — anything but unset/`memory`/`catalyst` refuses to start |
-| `CATALYST_API_ORIGIN` | V | with `STATE_STORE=catalyst`: `https://api.catalyst.zoho.in` (India DC host UNVERIFIED) | same | server/state/catalyst.ts |
-| `CATALYST_PROJECT_ID` | V | with `STATE_STORE=catalyst`: the numeric project id | same | server/state/catalyst.ts |
-| `CATALYST_STATE_TABLE` | V | with `STATE_STORE=catalyst`: the NoSQL table (partition key `k` unless `CATALYST_STATE_PK` says otherwise, TTL attribute `ttl`) | same | server/state/catalyst.ts |
-| `CATALYST_STATE_PK` | V | with `STATE_STORE=catalyst`: the table's partition-key attribute name (default `k`; `/^[A-Za-z0-9_]{1,64}$/`) | same | server/state/catalyst.ts |
-| `CATALYST_REFRESH_TOKEN` | **S** | with `STATE_STORE=catalyst`: a refresh token with the ZohoCatalyst.nosql item scopes | same | server/state/catalyst.ts (uses `ZOHO_ACCOUNTS_ORIGIN`, `ZOHO_OAUTH_CLIENT_ID`/`SECRET`) |
+| `GZ_STATE_API_ORIGIN` | V | with `STATE_STORE=catalyst`: `https://api.catalyst.zoho.in` (India DC host UNVERIFIED) | same | server/state/catalyst.ts |
+| `GZ_STATE_PROJECT_ID` | V | with `STATE_STORE=catalyst`: the numeric project id | same | server/state/catalyst.ts |
+| `GZ_STATE_TABLE` | V | with `STATE_STORE=catalyst`: the NoSQL table (partition key `k` unless `GZ_STATE_PK` says otherwise, TTL attribute `ttl`) | same | server/state/catalyst.ts |
+| `GZ_STATE_PK` | V | with `STATE_STORE=catalyst`: the table's partition-key attribute name (default `k`; `/^[A-Za-z0-9_]{1,64}$/`) | same | server/state/catalyst.ts |
+| `GZ_STATE_REFRESH_TOKEN` | **S** | with `STATE_STORE=catalyst`: a refresh token with the ZohoCatalyst.nosql item scopes | same | server/state/catalyst.ts (uses `ZOHO_ACCOUNTS_ORIGIN`, `ZOHO_OAUTH_CLIENT_ID`/`SECRET`) |
 | `GRANT_STORE` | V | unset | unset with `STATE_STORE=catalyst` (→ `shared`); `jsonl` only on a single host with a persistent disk | access/grants.ts — `memory` \| `jsonl` \| `shared`; unset follows `STATE_STORE` (`catalyst` → `shared`, else `memory`); `shared` without `STATE_STORE=catalyst` refuses to start |
 | `GRANT_DIR` | V | with `GRANT_STORE=jsonl` only | same | access/grants.ts |
 | `JOB_SECRET` | **S** | ≥ 32 random chars, its own | ≥ 32 random chars, its own | jobs/claim.ts — the `X-Job-Secret` header the platform scheduler sends to `POST /api/jobs/sign-recheck` and `/api/jobs/outbox-drain` (constant-time compare); unset → those answer 503 `not-configured` |
 | `SIGN_CHECK_TIMER` | V | unset | unset (`off` under `STATE_STORE=catalyst`; the scheduler calls the job instead) | zoho-sign/runtime.ts — `on` \| `off`; unset = `on` on a single-process store, `off` when `STATE_STORE=catalyst` |
-| `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` | V | optional (`CATALYST-ORG` header; `Development` sends `Environment: Development`) | optional | server/state/catalyst.ts |
+| `GZ_STATE_ORG_ID`, `GZ_STATE_ENVIRONMENT` | V | optional (`CATALYST-ORG` header; `Development` sends `Environment: Development`) | optional | server/state/catalyst.ts |
+
+> **Naming:** Catalyst AppSail reserves the `CATALYST_` prefix: it rejects any environment variable whose name starts with it ("environment_variables must not contain reserved keywords", verified live 7 Oct 2026). Hence the `GZ_` names; the code still reads the old `CATALYST_*` names as a fallback (local runs only, the `GZ_` name wins), but never set them on AppSail. `GZ_STATE_PROJECT_ID` is also the Stratus project id; the Stratus API host is `GZ_STRATUS_API_DOMAIN`.
 
 ### CI / test tooling (GitHub Environment `staging` only)
 

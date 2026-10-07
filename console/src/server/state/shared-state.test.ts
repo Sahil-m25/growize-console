@@ -170,7 +170,7 @@ describe("catalyst adapter — wire behaviour", () => {
     expect(Array.isArray(bodies[4]!.b) && bodies[4]!.b[0].keys.K.S).toBeTruthy();
   });
 
-  it("the partition-key attribute name is configurable (CATALYST_STATE_PK)", async () => {
+  it("the partition-key attribute name is configurable (GZ_STATE_PK; legacy CATALYST_STATE_PK still read)", async () => {
     const fake = createFakeCatalyst({ pk: "K" });
     const wrong = createCatalystState({ ...FAKE_CONFIG, pkName: "k" }, { fetch: fake.fetch, ...fast });
     await expect(wrong.claim("a", 60)).rejects.toMatchObject({ code: "bad-response" });   // INVALID_KEY, as the owner's first spike saw
@@ -181,7 +181,7 @@ describe("catalyst adapter — wire behaviour", () => {
     expect(await right.get("b")).toBe("1");
     expect(catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "K" }).pkName).toBe("K");
     expect(catalystConfigFromEnv(FULL_ENV).pkName).toBe("K");   // live table: capital K
-    expect(() => catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "a-b" })).toThrow(/CATALYST_STATE_PK/);
+    expect(() => catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "a-b" })).toThrow(/GZ_STATE_PK/);
   });
 
   it("a 5xx, a timeout-like failure or a 429 rejects with SharedStateError('unavailable'), never 'absent'", async () => {
@@ -232,9 +232,9 @@ describe("STATE_STORE selection — fails closed, never falls back to memory", (
 
   it("catalyst with anything missing or malformed throws, naming every variable and no value", () => {
     expect(() => createStateFromEnv({ STATE_STORE: "catalyst" } as unknown as NodeJS.ProcessEnv)).toThrow(
-      /CATALYST_API_ORIGIN is not set.*CATALYST_PROJECT_ID is not set.*CATALYST_STATE_TABLE is not set.*CATALYST_REFRESH_TOKEN is not set/);
-    for (const [k, bad] of [["CATALYST_API_ORIGIN", "http://api.catalyst.zoho.in"], ["CATALYST_API_ORIGIN", "https://evil.example"], ["CATALYST_PROJECT_ID", "abc"],
-      ["CATALYST_STATE_TABLE", "a/b"], ["ZOHO_ACCOUNTS_ORIGIN", "https://accounts.evil.example"], ["CATALYST_ORG_ID", "x1"], ["ZOHO_OAUTH_CLIENT_SECRET", "short"]] as const) {
+      /GZ_STATE_API_ORIGIN is not set.*GZ_STATE_PROJECT_ID is not set.*GZ_STATE_TABLE is not set.*GZ_STATE_REFRESH_TOKEN is not set/);
+    for (const [k, bad] of [["GZ_STATE_API_ORIGIN", "http://api.catalyst.zoho.in"], ["GZ_STATE_API_ORIGIN", "https://evil.example"], ["GZ_STATE_PROJECT_ID", "abc"],
+      ["GZ_STATE_TABLE", "a/b"], ["ZOHO_ACCOUNTS_ORIGIN", "https://accounts.evil.example"], ["GZ_STATE_ORG_ID", "x1"], ["ZOHO_OAUTH_CLIENT_SECRET", "short"]] as const) {
       let msg = "";
       try { createStateFromEnv({ ...FULL, [k]: bad }); } catch (e) { msg = (e as Error).message; }
       expect(msg, k).toContain(k);
@@ -248,10 +248,62 @@ describe("STATE_STORE selection — fails closed, never falls back to memory", (
     const fake = createFakeCatalyst();
     await probeState(createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, ...fast }));
     const down = createFakeCatalyst();
-    down.failNext(500, 500, 500);
-    await expect(probeState(createCatalystState(FAKE_CONFIG, { fetch: down.fetch, ...fast }))).rejects.toThrow(/did not answer at startup/);
+    down.failNext(...Array(200).fill(500));
+    await expect(probeState(createCatalystState(FAKE_CONFIG, { fetch: down.fetch, ...fast }), { sleep: async () => undefined })).rejects.toThrow(/did not answer at startup/);
     const liar: SharedState = { ...createMemoryState(), kind: "liar", claim: async () => true };
     await expect(probeState(liar)).rejects.toThrow(/not set-if-absent/);
+  });
+});
+
+describe("GZ_STATE_* env names (Catalyst reserves the CATALYST_ prefix)", () => {
+  const GZ = {
+    STATE_STORE: "catalyst", GZ_STATE_API_ORIGIN: "https://api.catalyst.zoho.in", GZ_STATE_PROJECT_ID: "4000000006007",
+    GZ_STATE_TABLE: "gz_state", GZ_STATE_REFRESH_TOKEN: "1000.fake.refresh", GZ_STATE_PK: "Kx", GZ_STATE_ORG_ID: "123", GZ_STATE_ENVIRONMENT: "Development",
+    ZOHO_ACCOUNTS_ORIGIN: "https://accounts.zoho.in", ZOHO_OAUTH_CLIENT_ID: "1000.FAKECLIENT", ZOHO_OAUTH_CLIENT_SECRET: "fake-secret-xx",
+  } as unknown as NodeJS.ProcessEnv;
+
+  it("GZ_ names work alone", () => {
+    const c = catalystConfigFromEnv(GZ);
+    expect(c).toMatchObject({ apiOrigin: "https://api.catalyst.zoho.in", projectId: "4000000006007", table: "gz_state", pkName: "Kx", orgId: "123", environment: "Development" });
+  });
+  it("GZ_ wins over CATALYST_ when both are set", () => {
+    const c = catalystConfigFromEnv({ ...GZ, CATALYST_STATE_TABLE: "old_table", CATALYST_PROJECT_ID: "999", CATALYST_REFRESH_TOKEN: "1000.old.token" } as unknown as NodeJS.ProcessEnv);
+    expect(c.table).toBe("gz_state");
+    expect(c.projectId).toBe("4000000006007");
+    expect(c.refreshToken).toBe("1000.fake.refresh");
+  });
+  it("legacy CATALYST_ names alone still work, and errors name the GZ_ variable", () => {
+    expect(catalystConfigFromEnv(FULL_ENV).table).toBe("gz_state");
+    expect(() => catalystConfigFromEnv({ STATE_STORE: "catalyst" } as unknown as NodeJS.ProcessEnv)).toThrow(/GZ_STATE_REFRESH_TOKEN is not set/);
+  });
+});
+
+describe("startup probe retries transient unavailability", () => {
+  const delays: number[] = [];
+  const sleep = async (ms: number) => { delays.push(ms); };
+  it("recovers when the store comes back on the 4th attempt (backoff 0.5/1/2 s)", async () => {
+    delays.length = 0;
+    const fake = createFakeCatalyst();
+    fake.failNext(...Array(3).fill(500));   // three failed attempts, the 4th succeeds
+    const st = createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, ...fast, maxAttempts: 1 } as never);
+    await probeState(st, { sleep });
+    expect(delays).toEqual([500, 1_000, 2_000]);
+  });
+  it("refuses after 4 attempts of continuous unavailability", async () => {
+    delays.length = 0;
+    const fake = createFakeCatalyst();
+    fake.failNext(...Array(200).fill(503));
+    const st = createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, ...fast, maxAttempts: 1 } as never);
+    await expect(probeState(st, { sleep })).rejects.toThrow(/after 4 attempts/);
+    expect(delays).toEqual([500, 1_000, 2_000]);
+  });
+  it("does not retry a non-transient failure", async () => {
+    delays.length = 0;
+    const liar: SharedState = { ...createMemoryState(), kind: "liar", claim: async () => true };
+    await expect(probeState(liar, { sleep })).rejects.toThrow(/not set-if-absent/);
+    const bad: SharedState = { ...createMemoryState(), kind: "bad", claim: async () => { throw new SharedStateError("bad-response"); } };
+    await expect(probeState(bad, { sleep })).rejects.toThrow(/did not answer/);
+    expect(delays).toEqual([]);
   });
 });
 

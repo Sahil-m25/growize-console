@@ -180,7 +180,9 @@ Environment variables (names only; set them in the Catalyst console, never in gi
 | `GZ_TEST_SIGNIN_SECRET` | 48 random characters (e.g. `openssl rand -base64 36`). Secret. |
 | `GZ_TEST_SIGNIN_USERS` | comma-separated Zoho user ids of the sandbox test users (Setup > Users in the sandbox, or `GET /crm/v8/users`) |
 | `GZ_TEST_REFRESH_<ZOHO_USER_ID>` | optional, one per user: a refresh token minted on this deployment's OAuth client for that user. Only needed while `STATE_STORE=memory` (see below). Secret. |
-| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `CATALYST_*` | recommended: makes enrolment and sessions survive instance recycles. `CATALYST_*` = `CATALYST_API_ORIGIN`, `CATALYST_PROJECT_ID`, `CATALYST_STATE_TABLE`, `CATALYST_STATE_PK` (partition-key attribute name; live table: `K`, also the default), `CATALYST_REFRESH_TOKEN`, optional `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` |
+| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `GZ_STATE_*` | recommended: makes enrolment and sessions survive instance recycles. `GZ_STATE_*` = `GZ_STATE_API_ORIGIN`, `GZ_STATE_PROJECT_ID`, `GZ_STATE_TABLE`, `GZ_STATE_PK` (partition-key attribute name; live table: `K`, also the default), `GZ_STATE_REFRESH_TOKEN`, optional `GZ_STATE_ORG_ID`, `GZ_STATE_ENVIRONMENT` |
+
+> Catalyst AppSail reserves the `CATALYST_` prefix: it rejects any environment variable whose name starts with it ("environment_variables must not contain reserved keywords", verified live 7 Oct 2026). Hence the `GZ_` names; the code still reads the old `CATALYST_*` names as a fallback (local runs only, the `GZ_` name wins), but never set them on AppSail.
 
 **Enrolment (once per test user, by a person).** With the variables set and the app redeployed/restarted: open the
 console in a private window, *Continue with Zoho*, sign in as the test user and pick the **Growize Staging** sandbox on

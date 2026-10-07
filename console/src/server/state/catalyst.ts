@@ -19,7 +19,7 @@
  *   ignored and the items are inserted." Update offers `add` (atomic add) and `if_not_exists` functions.
  *
  * VERIFIED LIVE (spike run 2, 7 Oct 2026, India DC, table gz_state; catalyst-spike/spike-result.json):
- *   - the partition key is "K" (capital): CATALYST_STATE_PK=K; the default here is "K" too ("k" answers 400 INVALID_KEY).
+ *   - the partition key is "K" (capital): GZ_STATE_PK=K; the default here is "K" too ("k" answers 400 INVALID_KEY).
  *   - top-level status "success"; per-item status "Success" (capital); an insert echoes no item: data.create=[{status:"Success"}].
  *   - a plain insert onto an existing key OVERWRITES. A conditional insert (exp less_than now) on a LIVE item answers
  *     HTTP 200 data.create=[{status:"CriteriaMismatch"}] (size 0); onto an EXPIRED item it overwrites: claim() is ONE call.
@@ -37,7 +37,7 @@
  * statuses on HTTP 200; an unknown per-item status or code is "bad-response", not "condition false"), and latency from
  * inside AppSail.
  *
- * The table: partition key CATALYST_STATE_PK (default `K`, String). Attributes: `v` (S, the value), `exp` (N, epoch ms; NO_EXPIRY when none),
+ * The table: partition key GZ_STATE_PK (default `K`, String). Attributes: `v` (S, the value), `exp` (N, epoch ms; NO_EXPIRY when none),
  * `ver` (N, bumped on every write — the compare-and-set token), `ttl` (N, epoch seconds — the table's TTL attribute).
  * The partition key value is sha256(key): no IP, Zoho user id or event key leaves the process in the clear (rule 7 belt and braces).
  *
@@ -56,7 +56,7 @@ export interface CatalystConfig {
   readonly apiOrigin: string;
   readonly projectId: string;
   readonly table: string;
-  /** The partition-key attribute name of the table (env CATALYST_STATE_PK, default "K"). */
+  /** The partition-key attribute name of the table (env GZ_STATE_PK, default "K"). */
   readonly pkName: string;
   readonly orgId: string | null;
   readonly environment: "Development" | null;
@@ -90,37 +90,60 @@ export interface CatalystDeps {
 /** Hosts of the Catalyst API per data centre. api.catalyst.zoho.in is verified (auth succeeded). */
 const API_HOST = /^api\.catalyst\.(zoho\.(com|in|eu|com\.au|jp|sa)|zohocloud\.ca)$/;
 
+/**
+ * Catalyst AppSail rejects environment variable names starting with CATALYST_ (reserved prefix; verified live 7 Oct 2026),
+ * so the canonical names are GZ_STATE_*. The legacy CATALYST_* names are still read as a fallback (local runs, old tests);
+ * the GZ_ name wins when both are set. Error messages name the GZ_ variable.
+ */
+export const STATE_ENV_ALIASES = Object.freeze({
+  GZ_STATE_API_ORIGIN: "CATALYST_API_ORIGIN",
+  GZ_STATE_PROJECT_ID: "CATALYST_PROJECT_ID",
+  GZ_STATE_TABLE: "CATALYST_STATE_TABLE",
+  GZ_STATE_PK: "CATALYST_STATE_PK",
+  GZ_STATE_REFRESH_TOKEN: "CATALYST_REFRESH_TOKEN",
+  GZ_STATE_ORG_ID: "CATALYST_ORG_ID",
+  GZ_STATE_ENVIRONMENT: "CATALYST_ENVIRONMENT",
+} as const);
+
+/** The value of a GZ_ variable, else of its legacy CATALYST_ name, trimmed ("" when neither is set). */
+export function gzEnv(env: NodeJS.ProcessEnv, name: string, legacy?: string): string {
+  const a = (env[name] ?? "").trim();
+  if (a) return a;
+  return legacy ? (env[legacy] ?? "").trim() : "";
+}
+
 export const CATALYST_ENV = Object.freeze([
-  "CATALYST_API_ORIGIN", "CATALYST_PROJECT_ID", "CATALYST_STATE_TABLE", "CATALYST_STATE_PK", "CATALYST_REFRESH_TOKEN",
+  "GZ_STATE_API_ORIGIN", "GZ_STATE_PROJECT_ID", "GZ_STATE_TABLE", "GZ_STATE_PK", "GZ_STATE_REFRESH_TOKEN",
   "ZOHO_ACCOUNTS_ORIGIN", "ZOHO_OAUTH_CLIENT_ID", "ZOHO_OAUTH_CLIENT_SECRET",
 ] as const);
 
 /** Every problem at once, by variable name only (never a value). Throws when anything is wrong. */
 export function catalystConfigFromEnv(env: NodeJS.ProcessEnv): CatalystConfig {
   const bad: string[] = [];
-  const v = (name: string): string => (env[name] ?? "").trim();
+  const legacyOf = (name: string): string | undefined => (STATE_ENV_ALIASES as Record<string, string>)[name];
+  const v = (name: string): string => gzEnv(env, name, legacyOf(name));
   const need = (name: string, ok: (s: string) => boolean, what: string): string => {
     const s = v(name);
     if (!s) bad.push(`${name} is not set`); else if (!ok(s)) bad.push(`${name} ${what}`);
     return s;
   };
   const safeSecret = (s: string) => s.length >= 8 && s.length <= 4_096 && !/[\r\n\0]/.test(s);
-  const apiOrigin = need("CATALYST_API_ORIGIN", (s) => {
+  const apiOrigin = need("GZ_STATE_API_ORIGIN", (s) => {
     try { const u = new URL(s); return u.protocol === "https:" && u.origin === s.replace(/\/$/, "") && API_HOST.test(u.hostname); } catch { return false; }
   }, "must be an exact https Catalyst API origin (e.g. https://api.catalyst.zoho.in)").replace(/\/$/, "");
-  const projectId = need("CATALYST_PROJECT_ID", (s) => /^\d{1,20}$/.test(s), "must be the numeric project id");
-  const table = need("CATALYST_STATE_TABLE", (s) => /^[A-Za-z0-9_]{1,64}$/.test(s), "must be the table id or name (letters, digits, _)");
-  const pkName = v("CATALYST_STATE_PK") || "K";
-  if (!/^[A-Za-z0-9_]{1,64}$/.test(pkName)) bad.push("CATALYST_STATE_PK must be letters, digits, _ (1-64) when set");
-  const refreshToken = need("CATALYST_REFRESH_TOKEN", safeSecret, "is not a usable refresh token");
+  const projectId = need("GZ_STATE_PROJECT_ID", (s) => /^\d{1,20}$/.test(s), "must be the numeric project id");
+  const table = need("GZ_STATE_TABLE", (s) => /^[A-Za-z0-9_]{1,64}$/.test(s), "must be the table id or name (letters, digits, _)");
+  const pkName = v("GZ_STATE_PK") || "K";
+  if (!/^[A-Za-z0-9_]{1,64}$/.test(pkName)) bad.push("GZ_STATE_PK must be letters, digits, _ (1-64) when set");
+  const refreshToken = need("GZ_STATE_REFRESH_TOKEN", safeSecret, "is not a usable refresh token");
   const clientId = need("ZOHO_OAUTH_CLIENT_ID", safeSecret, "is not a usable client id");
   const clientSecret = need("ZOHO_OAUTH_CLIENT_SECRET", safeSecret, "is not a usable client secret");
   let accountsOrigin = need("ZOHO_ACCOUNTS_ORIGIN", () => true, "");
   if (accountsOrigin) { try { accountsOrigin = accountsOriginOf(accountsOrigin); } catch { bad.push("ZOHO_ACCOUNTS_ORIGIN must be an exact https Zoho accounts origin"); } }
-  const orgId = v("CATALYST_ORG_ID") || null;
-  if (orgId !== null && !/^\d{1,20}$/.test(orgId)) bad.push("CATALYST_ORG_ID must be numeric when set");
-  const envName = v("CATALYST_ENVIRONMENT");
-  if (envName && envName !== "Development" && envName !== "Production") bad.push("CATALYST_ENVIRONMENT must be Development or Production when set");
+  const orgId = v("GZ_STATE_ORG_ID") || null;
+  if (orgId !== null && !/^\d{1,20}$/.test(orgId)) bad.push("GZ_STATE_ORG_ID must be numeric when set");
+  const envName = v("GZ_STATE_ENVIRONMENT");
+  if (envName && envName !== "Development" && envName !== "Production") bad.push("GZ_STATE_ENVIRONMENT must be Development or Production when set");
   if (bad.length) throw new Error(`STATE_STORE=catalyst is misconfigured: ${bad.join("; ")}.`);
   return Object.freeze({
     apiOrigin, projectId, table, pkName, orgId, environment: envName === "Development" ? "Development" : null,

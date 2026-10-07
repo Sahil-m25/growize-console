@@ -2,7 +2,7 @@
  * Which SharedState this process uses — chosen once from STATE_STORE (docs/architecture/shared-state.md):
  *
  *   unset | "memory"   the in-process adapter (one instance only; what the console always did)
- *   "catalyst"         Zoho Catalyst NoSQL (./catalyst.ts) — every CATALYST_* variable must be right
+ *   "catalyst"         Zoho Catalyst NoSQL (./catalyst.ts) — every GZ_STATE_* variable (legacy CATALYST_* names still read as a fallback) must be right
  *
  * Fails closed: an unknown value or a misconfigured catalyst store throws, here and at server start
  * (src/instrumentation.ts runs `startupCheck`, which also makes one live claim/release round trip). It never
@@ -12,7 +12,7 @@
 import { randomUUID } from "node:crypto";
 import { catalystConfigFromEnv, createCatalystState, type CatalystDeps } from "./catalyst";
 import { createMemoryState } from "./memory";
-import type { SharedState } from "./shared-state";
+import { SharedStateError, type SharedState } from "./shared-state";
 
 export type StateStoreKind = "memory" | "catalyst";
 
@@ -44,18 +44,38 @@ export function sharedState(): SharedState {
   return (G.__gzSharedState ??= createStateFromEnv());
 }
 
-/** Prove the store answers: claim a throwaway key, see a second claim refused, release it. Throws on failure. */
-export async function probeState(state: SharedState): Promise<void> {
-  const key = `startup-probe|${randomUUID()}`;
-  let first: boolean, second: boolean;
-  try {
-    first = await state.claim(key, 60);
-    second = await state.claim(key, 60);
-    await state.release(key);
-  } catch (e) {
-    throw new Error(`STATE_STORE=${state.kind}: the shared state store did not answer at startup (${e instanceof Error ? e.message : "unknown"}).`);
+export interface ProbeOptions {
+  /** Total tries when the store answers "unavailable" (429/5xx/network). Default 4. */
+  readonly attempts?: number;
+  /** Wait before retry n (ms). Default 500, 1000, 2000, 4000. */
+  readonly backoffMs?: readonly number[];
+  readonly sleep?: (ms: number) => Promise<void>;
+}
+
+/**
+ * Prove the store answers: claim a throwaway key, see a second claim refused, release it. Throws on failure.
+ * A transient SharedStateError("unavailable") is retried (up to 4 attempts, ~0.5/1/2 s between them) so a brief
+ * Catalyst blip at deploy time does not refuse the start; anything else (bad config, non-atomic claim) fails at once.
+ */
+export async function probeState(state: SharedState, opts: ProbeOptions = {}): Promise<void> {
+  const attempts = Math.max(1, opts.attempts ?? 4);
+  const backoff = opts.backoffMs ?? [500, 1_000, 2_000, 4_000];
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  for (let attempt = 1; ; attempt++) {
+    const key = `startup-probe|${randomUUID()}`;
+    let first: boolean, second: boolean;
+    try {
+      first = await state.claim(key, 60);
+      second = await state.claim(key, 60);
+      await state.release(key);
+    } catch (e) {
+      const transient = e instanceof SharedStateError && e.code === "unavailable";
+      if (transient && attempt < attempts) { await sleep(backoff[attempt - 1] ?? backoff[backoff.length - 1] ?? 500); continue; }
+      throw new Error(`STATE_STORE=${state.kind}: the shared state store did not answer at startup${attempts > 1 && transient ? ` after ${attempt} attempts` : ""} (${e instanceof Error ? e.message : "unknown"}).`);
+    }
+    if (!first || second) throw new Error(`STATE_STORE=${state.kind}: claim() is not set-if-absent on this store (first ${first}, second ${second}); refusing to start.`);
+    return;
   }
-  if (!first || second) throw new Error(`STATE_STORE=${state.kind}: claim() is not set-if-absent on this store (first ${first}, second ${second}); refusing to start.`);
 }
 
 /** Server start (src/instrumentation.ts): build the store from env and, unless memory, probe it. */

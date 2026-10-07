@@ -23,8 +23,8 @@ is durable and documents versioning, but no object lock, retention or WORM — s
 | `LOG_SINK=stratus` | Stratus. `LOG_STORE` must be unset |
 | anything else | start-up throws |
 
-`LOG_SINK=stratus` needs `STRATUS_BUCKET_URL` (`https://<bucket>[-development].zohostratus.in`), `CATALYST_PROJECT_ID`,
-`STRATUS_CLIENT_ID`, `STRATUS_CLIENT_SECRET`, `STRATUS_REFRESH_TOKEN`; optional `CATALYST_API_DOMAIN` (default and
+`LOG_SINK=stratus` needs `STRATUS_BUCKET_URL` (`https://<bucket>[-development].zohostratus.in`), `GZ_STATE_PROJECT_ID`,
+`STRATUS_CLIENT_ID`, `STRATUS_CLIENT_SECRET`, `STRATUS_REFRESH_TOKEN`; optional `GZ_STRATUS_API_DOMAIN` (default and
 only allowed value `https://api.catalyst.zoho.in`), `STRATUS_ACCOUNTS_ORIGIN` (`https://accounts.zoho.in`),
 `LOG_INSTANCE_ID`, `LOG_FLUSH_LINES` (10–5000, default 500), `LOG_FLUSH_SECONDS` (5–300, default 30). A missing or
 malformed variable stops start-up with an error that names the variables and never a value. Non-India buckets are refused.

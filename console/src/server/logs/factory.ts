@@ -4,7 +4,7 @@
  *
  *   LOG_SINK    unset or "file" (default): the behaviour below, chosen by LOG_STORE
  *               "stratus": batched segment objects in a Catalyst Stratus bucket (./stratus.ts, docs/architecture/log-sink.md);
- *               needs STRATUS_* / CATALYST_* settings and fails closed at start-up if any is missing
+ *               needs STRATUS_* / GZ_STATE_PROJECT_ID / GZ_STRATUS_API_DOMAIN settings and fails closed at start-up if any is missing
  *   LOG_STORE   "memory" (default) | "jsonl" — with LOG_SINK unset or "file"
  *   LOG_DIR     absolute directory for the daily files; required when LOG_STORE=jsonl
  *

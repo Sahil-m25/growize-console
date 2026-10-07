@@ -33,7 +33,7 @@ const U1 = '9007199254740993002', U2 = '9007199254740995001', REC = '90071992547
 const FAKE_PAN = 'ABCDE1234F', FAKE_MOBILE = '9876500000', FAKE_MAIL = 'someone@example.test';
 
 const STRATUS_ENV = Object.freeze({
-  LOG_SINK: 'stratus', STRATUS_BUCKET_URL: 'https://gz-logs.zohostratus.in', CATALYST_PROJECT_ID: '10108000003823392',
+  LOG_SINK: 'stratus', STRATUS_BUCKET_URL: 'https://gz-logs.zohostratus.in', GZ_STATE_PROJECT_ID: '10108000003823392',
   STRATUS_CLIENT_ID: '1000.SYNTHETICCLIENT', STRATUS_CLIENT_SECRET: 'synthetic-secret-0001', STRATUS_REFRESH_TOKEN: '1000.synthetic.refresh',
 });
 
@@ -99,10 +99,11 @@ test('LOG_SINK selects the adapter; file stays the default; misconfiguration fai
   assert.equal(logStoreKind({ LOG_SINK: 'stratus', FIXTURE_MODE: 'local', NODE_ENV: 'test' }), 'memory', 'fixture mode never writes anywhere');
   assert.throws(() => logStoreKind({ LOG_SINK: 's3' }), /LOG_SINK must be "file" or "stratus"/);
   assert.throws(() => logStoreKind({ LOG_SINK: 'stratus', LOG_STORE: 'jsonl' }), /unset LOG_STORE/);
-  assert.throws(() => createLogSinks({ LOG_SINK: 'stratus' }), /missing: STRATUS_BUCKET_URL, CATALYST_PROJECT_ID, STRATUS_CLIENT_ID, STRATUS_CLIENT_SECRET, STRATUS_REFRESH_TOKEN/);
+  assert.equal(stratusConfig({ ...STRATUS_ENV, GZ_STATE_PROJECT_ID: undefined, CATALYST_PROJECT_ID: '10108000003823392' }).projectId, '10108000003823392', 'legacy fallback');
+  assert.throws(() => createLogSinks({ LOG_SINK: 'stratus' }), /missing: STRATUS_BUCKET_URL, GZ_STATE_PROJECT_ID, STRATUS_CLIENT_ID, STRATUS_CLIENT_SECRET, STRATUS_REFRESH_TOKEN/);
   let msg = '';
-  try { stratusConfig({ ...STRATUS_ENV, STRATUS_BUCKET_URL: 'https://gz-logs.zohostratus.com', CATALYST_API_DOMAIN: 'https://api.catalyst.zoho.com', LOG_FLUSH_SECONDS: '1' }); } catch (e) { msg = e.message; }
-  assert.match(msg, /malformed: STRATUS_BUCKET_URL, CATALYST_API_DOMAIN, LOG_FLUSH_SECONDS/, 'India buckets only');
+  try { stratusConfig({ ...STRATUS_ENV, STRATUS_BUCKET_URL: 'https://gz-logs.zohostratus.com', GZ_STRATUS_API_DOMAIN: 'https://api.catalyst.zoho.com', LOG_FLUSH_SECONDS: '1' }); } catch (e) { msg = e.message; }
+  assert.match(msg, /malformed: STRATUS_BUCKET_URL, GZ_STRATUS_API_DOMAIN, LOG_FLUSH_SECONDS/, 'India buckets only');
   assert.ok(!msg.includes('synthetic'), 'no secret in the message');
   const c = stratusConfig({ ...STRATUS_ENV, STRATUS_BUCKET_URL: 'https://gz-logs-development.zohostratus.in/' });
   assert.deepEqual([c.bucketName, c.development, c.apiDomain, c.flushLines, c.flushMs], ['gz-logs', true, 'https://api.catalyst.zoho.in', 500, 30000]);
