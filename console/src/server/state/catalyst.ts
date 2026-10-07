@@ -18,20 +18,32 @@
  *   Conditions: "items are inserted only if the evaluation is true. If there is no existing data, the conditions are
  *   ignored and the items are inserted." Update offers `add` (atomic add) and `if_not_exists` functions.
  *
- * STILL UNVERIFIED (docs/architecture/shared-state.md "What the Catalyst spike must verify"): the exact error code /
- * per-item status text of a failed condition (CONDITION_FAILED_CODES is a fallback; per-item non-success is what is
- * relied on), whether a plain insert onto an existing key fails or overwrites (claim() works either way), and the real
- * partition-key attribute name of the table (the owner's first spike got INVALID_KEY "Mandatory Key K is missing":
- * configurable via CATALYST_STATE_PK, default "k").
+ * VERIFIED LIVE (spike run 2, 7 Oct 2026, India DC, table gz_state; catalyst-spike/spike-result.json):
+ *   - the partition key is "K" (capital): CATALYST_STATE_PK=K; the default here is "K" too ("k" answers 400 INVALID_KEY).
+ *   - top-level status "success"; per-item status "Success" (capital); an insert echoes no item: data.create=[{status:"Success"}].
+ *   - a plain insert onto an existing key OVERWRITES. A conditional insert (exp less_than now) on a LIVE item answers
+ *     HTTP 200 data.create=[{status:"CriteriaMismatch"}] (size 0); onto an EXPIRED item it overwrites: claim() is ONE call.
+ *   - fetch of a missing key: HTTP 200 data:{size:0}, no `get` key at all. An entry may carry no status.
+ *   - update with a stale ver: HTTP 200 data.update=[{status:"ConditionMismatch"}]. Update of a MISSING key (conditional
+ *     or not) is ConditionMismatch and creates nothing, so set/incr/take on an absent key INSERT (conditional insert).
+ *   - delete: [{status:"Success"}]; delete of a missing key: [{status:"ConditionMismatch"}] (treated as done).
+ *   - 50 concurrent conditional inserts on one key: exactly one winner. 20 concurrent ver-CAS increments: final 20.
+ *   - under burst: HTTP 429 TOO_MANY_REQUESTS (rejected before processing: retried with backoff, then "unavailable") and
+ *     HTTP 500 INTERNAL_SERVER_ERROR (the write may or may not have landed: "unavailable", never assumed won).
+ *   - the Environment header is optional. Latency from the owner's PC: p50 ~65 ms, p95 ~110-130 ms.
+ *   - update_function `add` works but does not return the new value, so incr stays read + conditional update.
  *
- * The table: partition key CATALYST_STATE_PK (default `k`, String). Attributes: `v` (S, the value), `exp` (N, epoch ms; NO_EXPIRY when none),
+ * STILL UNVERIFIED: the HTTP-4xx error_code text of a failed condition (never seen live: failures come as per-item
+ * statuses on HTTP 200; an unknown per-item status or code is "bad-response", not "condition false"), and latency from
+ * inside AppSail.
+ *
+ * The table: partition key CATALYST_STATE_PK (default `K`, String). Attributes: `v` (S, the value), `exp` (N, epoch ms; NO_EXPIRY when none),
  * `ver` (N, bumped on every write — the compare-and-set token), `ttl` (N, epoch seconds — the table's TTL attribute).
  * The partition key value is sha256(key): no IP, Zoho user id or event key leaves the process in the clear (rule 7 belt and braces).
  *
- * Semantics: claim() is one conditional insert (atomic in Catalyst — UNVERIFIED but documented), with a
- * conditional update to take over an expired claim. set/incr/take are read → conditional update on `ver`,
- * retried with jitter: no lost update, but under contention they may reject with SharedStateError("contended")
- * — the "best effort" the interface documents. Each operation costs 1–2 HTTP calls (claim 1, others 2; a read is /item/fetch).
+ * Semantics: claim() is ONE conditional insert (atomic; it also takes over an expired claim). set/incr/take are
+ * read → (insert when absent | conditional update on `ver`), retried with jitter: no lost update, but under
+ * contention they may reject with SharedStateError("contended"). Each operation costs 1–2 HTTP calls (claim 1, others 2).
  */
 
 import { createHash } from "node:crypto";
@@ -44,7 +56,7 @@ export interface CatalystConfig {
   readonly apiOrigin: string;
   readonly projectId: string;
   readonly table: string;
-  /** The partition-key attribute name of the table (env CATALYST_STATE_PK, default "k"). */
+  /** The partition-key attribute name of the table (env CATALYST_STATE_PK, default "K"). */
   readonly pkName: string;
   readonly orgId: string | null;
   readonly environment: "Development" | null;
@@ -69,6 +81,8 @@ export interface CatalystDeps {
   /** Read → conditional write rounds before "contended". */
   readonly maxAttempts?: number;
   readonly sleep?: (ms: number) => Promise<void>;
+  /** Retries of an HTTP 429 (rejected before processing, so always safe to repeat) before "unavailable". */
+  readonly rateLimitRetries?: number;
 }
 
 /* ------------------------------------------------ config ------------------------------------------------ */
@@ -96,7 +110,7 @@ export function catalystConfigFromEnv(env: NodeJS.ProcessEnv): CatalystConfig {
   }, "must be an exact https Catalyst API origin (e.g. https://api.catalyst.zoho.in)").replace(/\/$/, "");
   const projectId = need("CATALYST_PROJECT_ID", (s) => /^\d{1,20}$/.test(s), "must be the numeric project id");
   const table = need("CATALYST_STATE_TABLE", (s) => /^[A-Za-z0-9_]{1,64}$/.test(s), "must be the table id or name (letters, digits, _)");
-  const pkName = v("CATALYST_STATE_PK") || "k";
+  const pkName = v("CATALYST_STATE_PK") || "K";
   if (!/^[A-Za-z0-9_]{1,64}$/.test(pkName)) bad.push("CATALYST_STATE_PK must be letters, digits, _ (1-64) when set");
   const refreshToken = need("CATALYST_REFRESH_TOKEN", safeSecret, "is not a usable refresh token");
   const clientId = need("ZOHO_OAUTH_CLIENT_ID", safeSecret, "is not a usable client id");
@@ -134,9 +148,11 @@ export const SHAPES = Object.freeze({
   equals: (attribute: string, n: number): Condition => ({ attribute: [attribute], operator: "equals", value: { N: String(n) } }),
 });
 
-/** Error codes taken to mean "the condition was false" when an HTTP 4xx carries one. The exact code is still UNVERIFIED. */
-export const CONDITION_FAILED_CODES: readonly string[] = Object.freeze(["CONDITION_FAILED", "CONDITIONAL_CHECK_FAILED", "CONDITION_CHECK_FAILED", "DUPLICATE_VALUE", "DUPLICATE_ITEM"]);
-const isConditionFailed = (code: string) => CONDITION_FAILED_CODES.includes(code) || /CONDITION/i.test(code);
+/** Per-item statuses / error codes that mean "the condition was false". CriteriaMismatch (conditional insert) and
+ *  ConditionMismatch (update, delete; also update/delete of a missing key) are VERIFIED live (7 Oct 2026); the rest are
+ *  defensive fallbacks for an HTTP 4xx error_code, never seen live. */
+export const CONDITION_FAILED_CODES: readonly string[] = Object.freeze(["CriteriaMismatch", "ConditionMismatch", "CONDITION_FAILED", "CONDITIONAL_CHECK_FAILED", "CONDITION_CHECK_FAILED", "DUPLICATE_VALUE", "DUPLICATE_ITEM"]);
+const isConditionFailed = (code: string) => CONDITION_FAILED_CODES.some((c) => c.toLowerCase() === code.toLowerCase());
 
 /** The TTL attribute for an item that never expires: 2100-01-01 (the TTL scheduler would delete it then). */
 const FAR_TTL_S = 4_102_444_800;
@@ -154,6 +170,7 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
   const clock = deps.clock ?? Date.now;
   const timeoutMs = deps.timeoutMs ?? 3_000;
   const maxAttempts = deps.maxAttempts ?? 8;
+  const rateLimitRetries = deps.rateLimitRetries ?? 4;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const base = `${cfg.apiOrigin}/baas/v1/project/${cfg.projectId}/nosqltable/${cfg.table}`;
   const hashOf = (key: string) => createHash("sha256").update(checkKey(key)).digest("base64url");
@@ -182,6 +199,7 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
 
   /* ---- one HTTP call: 5xx, network and timeouts throw; 4xx come back as a code ---- */
   const call = async (method: "POST" | "PUT" | "DELETE", path: string, body: unknown): Promise<Reply> => {
+    let limited = 0;
     for (let round = 0; round < 2; round++) {
       const headers: Record<string, string> = { Authorization: `Zoho-oauthtoken ${await accessToken(round > 0)}`, "Content-Type": "application/json" };
       if (cfg.orgId) headers["CATALYST-ORG"] = cfg.orgId;
@@ -192,7 +210,11 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
       }
       const j = (await res.json().catch(() => null)) as { status?: unknown; data?: { error_code?: unknown; code?: unknown } } | null;
       if (res.status === 401 && round === 0) { token = null; continue; }   // a revoked or expired token: refresh once
-      if (res.status >= 500 || res.status === 401 || res.status === 429) throw new SharedStateError("unavailable", `shared state: Catalyst answered ${res.status}`);
+      if (res.status === 429) {   // VERIFIED live under burst: TOO_MANY_REQUESTS, rejected before processing → back off and repeat
+        if (limited >= rateLimitRetries) throw new SharedStateError("unavailable", "shared state: Catalyst is rate limiting (429)");
+        await sleep(Math.floor(100 * 2 ** limited + Math.random() * 100)); limited++; round--; continue;
+      }
+      if (res.status >= 500 || res.status === 401) throw new SharedStateError("unavailable", `shared state: Catalyst answered ${res.status}`);
       if (res.status >= 200 && res.status < 300 && j?.status === "success") return { ok: true, data: j.data };
       const code = typeof j?.data?.error_code === "string" ? j.data.error_code : typeof j?.data?.code === "string" ? j.data.code : `HTTP_${res.status}`;
       return { ok: false, status: res.status, code };
@@ -237,14 +259,24 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
   /** Insert when no unexpired item holds k. "ok" | "held" (the condition was false). */
   const insertIfFree = async (k: string, v: string, exp: number, ver: number): Promise<"ok" | "held"> => {
     const r = await call("POST", "/item", SHAPES.insert(itemFor(k, v, exp, ver), SHAPES.lessThan("exp", clock() + 1)));
-    if (r.ok) return entryFailure(entryOf(r.data, "create")) === null ? "ok" : "held";   // per-item non-success on a conditional write = condition false
+    if (r.ok) {   // VERIFIED: a false condition is HTTP 200 + create=[{status:"CriteriaMismatch"}]; any other non-success is not trusted
+      const f = entryFailure(entryOf(r.data, "create"));
+      if (f === null) return "ok";
+      if (isConditionFailed(f)) return "held";
+      throw new SharedStateError("bad-response", `shared state: insert refused (${f})`);
+    }
     if (isConditionFailed(r.code)) return "held";
     throw new SharedStateError("bad-response", `shared state: insert refused (${r.code})`);
   };
   /** Update when `cond` holds. "ok" | "lost" (condition false or the item is gone). */
   const updateIf = async (k: string, v: string, exp: number, ver: number, cond: Condition): Promise<"ok" | "lost"> => {
     const r = await call("PUT", "/item", SHAPES.update(cfg.pkName, k, fields(v, exp, ver), cond));
-    if (r.ok) return entryFailure(entryOf(r.data, "update")) === null ? "ok" : "lost";   // per-item non-success = condition false (or item gone)
+    if (r.ok) {   // VERIFIED: stale ver AND a missing key both answer update=[{status:"ConditionMismatch"}] (nothing is created)
+      const f = entryFailure(entryOf(r.data, "update"));
+      if (f === null) return "ok";
+      if (isConditionFailed(f)) return "lost";
+      throw new SharedStateError("bad-response", `shared state: update refused (${f})`);
+    }
     if (isConditionFailed(r.code) || r.status === 404) return "lost";
     throw new SharedStateError("bad-response", `shared state: update refused (${r.code})`);
   };
@@ -271,21 +303,16 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
     async claim(key: string, ttlSeconds?: number) {
       const k = hashOf(key), ttl = checkTtl(ttlSeconds);
       const now = clock(), exp = expiryOf(now, ttl);
-      if ((await insertIfFree(k, "1", exp, 1)) === "ok") return true;
-      /* Held — or held by an expired claim, if a conditional insert never overwrites (UNVERIFIED): take an
-         expired one over with a conditional update. The item vanishing in between: insert once more. */
-      const taken = await updateIf(k, "1", exp, Math.floor(now), SHAPES.lessThan("exp", now + 1));   // exp <= now; ver = now: only needs to change
-      if (taken === "ok") return true;
-      const cur = await read(k);
-      if (cur === null) return (await insertIfFree(k, "1", exp, 1)) === "ok";
-      return false;
+      /* One conditional insert (exp < now): VERIFIED live to insert when absent, to overwrite an EXPIRED claim, and to answer
+         CriteriaMismatch for a live one. A 429 is retried inside call(); a 5xx throws "unavailable": never assume won. */
+      return (await insertIfFree(k, "1", exp, 1)) === "ok";
     },
     async release(key: string) {
       const r = await call("DELETE", "/item", SHAPES.remove(cfg.pkName, hashOf(key)));
       if (!r.ok && r.status !== 404) throw new SharedStateError("bad-response", `shared state: delete refused (${r.code})`);
-      if (r.ok) {   // an unconditional delete of a missing key may answer a per-item "not found": that is fine; anything else is not
+      if (r.ok) {   // VERIFIED: delete of a missing key answers ConditionMismatch: release is idempotent; anything else is not
         const f = entryFailure(entryOf(r.data, "delete"));
-        if (f !== null && !/NOT_?FOUND|NO_?SUCH|NOT_?EXIST/i.test(f)) throw new SharedStateError("bad-response", `shared state: delete refused (${f})`);
+        if (f !== null && !isConditionFailed(f) && !/NOT_?FOUND|NO_?SUCH|NOT_?EXIST/i.test(f)) throw new SharedStateError("bad-response", `shared state: delete refused (${f})`);
       }
     },
     async get(key: string) {

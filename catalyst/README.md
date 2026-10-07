@@ -33,7 +33,12 @@ Fixture/demo image for testing only: add `--build-arg GZ_LOCAL_BUILD=1` and run 
 `build_path`, `stack`. UNVERIFIED: the doc fetched gave no full example, so the `stack` value ("node22") and that
 `build_path` is the folder uploaded must be checked against `catalyst init` output before the first deploy.
 
-Stage the standalone output, then deploy:
+**Package built and smoke-tested (7 Oct 2026, `deploy-staging-next/`):** standalone output as `console/`, `.next/static`, `contracts/`,
+`pm/merge-audit/ui-sahil/fixtures-merged.json`, `start.sh` (`cd console; PORT=$X_ZOHO_CATALYST_LISTEN_PORT; exec node server.js`) and an
+`app-config.json` with NO `env_variables` (`"command":"sh start.sh","build_path":".","stack":"node20","memory":512`). Smoke in the VM
+with `STATE_STORE` unset: `/` 200, `POST /api/test/session` 404. Variables to enter: `deploy-staging-next/ENV-STAGING.md`.
+
+Stage the standalone output by hand, then deploy:
 
     cd console && npm ci && npx next build
     rm -rf ../build/appsail && mkdir -p ../build/appsail/console ../build/appsail/pm/merge-audit/ui-sahil
@@ -67,6 +72,16 @@ Platform: X_ZOHO_CATALYST_LISTEN_PORT (set by Catalyst), NODE_ENV.
 Dev-only (not for production): FIXTURE_MODE, GZ_LOCAL_BUILD, ZOHO_STUB_USER, NEXT_PUBLIC_RETICLE_URL/TOKEN/ROOT.
 
 Run `grep -rhoE "env\.[A-Z][A-Z0-9_]{4,}" console/src | sort -u` before each release; this list was taken 4 Oct 2026.
+
+## State store: Catalyst NoSQL table `gz_state` (live facts, 7 Oct 2026)
+
+Table `gz_state` (India DC, Development): partition key `K` (String, capital) and a TTL attribute `ttl` (epoch seconds); other
+attributes `v`, `exp`, `ver` are written by the adapter. Facts the adapter relies on, all VERIFIED live by spike run 2 and reproduced by
+`console/src/server/state/fake-catalyst.ts`: per-item statuses are capitalised (`Success`, `CriteriaMismatch`, `ConditionMismatch`);
+a false condition is HTTP 200, never an error; a plain insert overwrites; a conditional insert on an expired item overwrites (claim is
+one call); update of a missing key creates nothing; a missing fetch is `data:{size:0}`; bursts bring 429 (retried with backoff, then
+"unavailable") and occasional 500 (always "unavailable"). Still unmeasured: latency from inside AppSail, the TTL scheduler. Details:
+`docs/architecture/shared-state.md`.
 
 ## Staging against the sandbox
 
@@ -165,7 +180,7 @@ Environment variables (names only; set them in the Catalyst console, never in gi
 | `GZ_TEST_SIGNIN_SECRET` | 48 random characters (e.g. `openssl rand -base64 36`). Secret. |
 | `GZ_TEST_SIGNIN_USERS` | comma-separated Zoho user ids of the sandbox test users (Setup > Users in the sandbox, or `GET /crm/v8/users`) |
 | `GZ_TEST_REFRESH_<ZOHO_USER_ID>` | optional, one per user: a refresh token minted on this deployment's OAuth client for that user. Only needed while `STATE_STORE=memory` (see below). Secret. |
-| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `CATALYST_*` | recommended: makes enrolment and sessions survive instance recycles. `CATALYST_*` = `CATALYST_API_ORIGIN`, `CATALYST_PROJECT_ID`, `CATALYST_STATE_TABLE`, `CATALYST_STATE_PK` (partition-key attribute name, default `k`), `CATALYST_REFRESH_TOKEN`, optional `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` |
+| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `CATALYST_*` | recommended: makes enrolment and sessions survive instance recycles. `CATALYST_*` = `CATALYST_API_ORIGIN`, `CATALYST_PROJECT_ID`, `CATALYST_STATE_TABLE`, `CATALYST_STATE_PK` (partition-key attribute name; live table: `K`, also the default), `CATALYST_REFRESH_TOKEN`, optional `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` |
 
 **Enrolment (once per test user, by a person).** With the variables set and the app redeployed/restarted: open the
 console in a private window, *Continue with Zoho*, sign in as the test user and pick the **Growize Staging** sandbox on

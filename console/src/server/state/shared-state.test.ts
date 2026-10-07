@@ -1,5 +1,5 @@
 /* SharedState contract (docs/architecture/shared-state.md): the same suite against the memory adapter and the catalyst
- * adapter over an in-memory fake of the Catalyst NoSQL REST semantics (both readings of conditional insert), the
+ * adapter over an in-memory fake that reproduces the LIVE Catalyst NoSQL behaviour (spike run 2, 7 Oct 2026), the
  * simulated race for claim(), the catalyst adapter's failure handling, STATE_STORE selection (fail closed) and the
  * wiring of the rate limiter, step-up and webhooks onto sharedState(). */
 
@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createRateLimiter, createRequestGate } from "../http/request-gate";
-import { createCatalystState, catalystConfigFromEnv } from "./catalyst";
+import { CONDITION_FAILED_CODES, createCatalystState, catalystConfigFromEnv } from "./catalyst";
 import { createFakeCatalyst, FAKE_CONFIG } from "./fake-catalyst";
 import { createMemoryState } from "./memory";
 import { createStateFromEnv, probeState, stateStoreKind } from "./runtime";
@@ -19,15 +19,15 @@ const fast = { sleep: async () => undefined };
 
 const ADAPTERS: ReadonlyArray<{ name: string; make: () => Rig }> = [
   { name: "memory", make: () => { const now = { t: T0 }; const state = createMemoryState({ clock: () => now.t }); return { state, twin: state, now }; } },
-  ...([[true, "item"], [false, "item"], [true, "http"], [false, "http"]] as const).map(([insertOverwrites, failureStyle]) => ({
-    name: `catalyst (fake REST, insert ${insertOverwrites ? "overwrites when the condition holds" : "never overwrites"}, refusal as ${failureStyle === "item" ? "per-item status on HTTP 200" : "HTTP 400"})`,
+  {
+    name: "catalyst (fake reproducing the live spike)",
     make: (): Rig => {
       const now = { t: T0 };
-      const fake = createFakeCatalyst({ insertOverwrites, failureStyle });
+      const fake = createFakeCatalyst();
       const mk = () => createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => now.t, ...fast });
       return { state: mk(), twin: mk(), now };   // two instances, one backend
     },
-  })),
+  },
 ];
 
 describe.each(ADAPTERS)("SharedState contract — $name", ({ make }) => {
@@ -160,19 +160,19 @@ describe("catalyst adapter — wire behaviour", () => {
     await state.release("shape");
     const bodies = fake.seen.map((s) => ({ m: `${s.method} ${s.path}`, b: JSON.parse(s.body) }));
     expect(bodies.map((x) => x.m)).toEqual(["POST /item/fetch", "POST /item", "POST /item/fetch", "PUT /item", "DELETE /item"]);
-    expect(bodies[0]!.b).toMatchObject({ keys: [{ k: { S: expect.any(String) } }], consistent_read: true });
-    expect(Array.isArray(bodies[1]!.b) && bodies[1]!.b[0].item.k.S).toBeTruthy();
+    expect(bodies[0]!.b).toMatchObject({ keys: [{ K: { S: expect.any(String) } }], consistent_read: true });
+    expect(Array.isArray(bodies[1]!.b) && bodies[1]!.b[0].item.K.S).toBeTruthy();
     expect(Array.isArray(bodies[3]!.b)).toBe(true);
     expect(Array.isArray(bodies[3]!.b[0].keys)).toBe(false);
-    expect(bodies[3]!.b[0].keys.k.S).toBeTruthy();
+    expect(bodies[3]!.b[0].keys.K.S).toBeTruthy();
     expect(bodies[3]!.b[0].condition).toMatchObject({ attribute: ["ver"], operator: "equals" });
     expect(bodies[3]!.b[0].update_attributes[0]).toMatchObject({ operation_type: "PUT", attribute_path: [expect.any(String)] });
-    expect(Array.isArray(bodies[4]!.b) && bodies[4]!.b[0].keys.k.S).toBeTruthy();
+    expect(Array.isArray(bodies[4]!.b) && bodies[4]!.b[0].keys.K.S).toBeTruthy();
   });
 
   it("the partition-key attribute name is configurable (CATALYST_STATE_PK)", async () => {
     const fake = createFakeCatalyst({ pk: "K" });
-    const wrong = createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, ...fast });
+    const wrong = createCatalystState({ ...FAKE_CONFIG, pkName: "k" }, { fetch: fake.fetch, ...fast });
     await expect(wrong.claim("a", 60)).rejects.toMatchObject({ code: "bad-response" });   // INVALID_KEY, as the owner's first spike saw
     const right = createCatalystState({ ...FAKE_CONFIG, pkName: "K" }, { fetch: fake.fetch, ...fast });
     expect(await right.claim("a", 60)).toBe(true);
@@ -180,7 +180,7 @@ describe("catalyst adapter — wire behaviour", () => {
     await right.set("b", "1");
     expect(await right.get("b")).toBe("1");
     expect(catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "K" }).pkName).toBe("K");
-    expect(catalystConfigFromEnv(FULL_ENV).pkName).toBe("k");
+    expect(catalystConfigFromEnv(FULL_ENV).pkName).toBe("K");   // live table: capital K
     expect(() => catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "a-b" })).toThrow(/CATALYST_STATE_PK/);
   });
 
@@ -289,5 +289,160 @@ describe("callers on the interface", () => {
     expect(src("access/runtime.ts")).toMatch(/createStepUp\(\{[\s\S]*?state: sharedState\(\),/);
     expect(src("contracts/runtime.ts")).toMatch(/createInboundEndpoint\(\{[\s\S]*?state: sharedState\(\)/);
     expect(src("zoho-sign/webhook.ts")).toMatch(/deps\.state \?\? sharedState\(\)/);
+  });
+});
+
+describe("catalyst adapter — LIVE spike facts (7 Oct 2026, India DC)", () => {
+  const T = T0;
+  const mk = (o: Parameters<typeof createFakeCatalyst>[0] = {}, d: { maxAttempts?: number; rateLimitRetries?: number } = {}) => {
+    const fake = createFakeCatalyst(o);
+    const now = { t: T };
+    return { fake, now, state: createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => now.t, ...fast, ...d }) };
+  };
+  const call = async (fake: ReturnType<typeof createFakeCatalyst>, method: string, p: string, body: unknown) => {
+    const tok = await fake.fetch("https://accounts.zoho.in/oauth/v2/token", { method: "POST", headers: {} });
+    const t = ((await tok.json()) as { access_token: string }).access_token;
+    const res = await fake.fetch(`https://api.catalyst.zoho.in/baas/v1/project/1/nosqltable/gz_state${p}`, { method, headers: { Authorization: `Zoho-oauthtoken ${t}` }, body: JSON.stringify(body) });
+    return { status: res.status, body: (await res.json()) as Record<string, any> };
+  };
+  const item = (k: string, exp: number) => ({ K: { S: k }, v: { S: "1" }, exp: { N: String(exp) }, ver: { N: "1" }, ttl: { N: "1" } });
+  const lt = { attribute: ["exp"], operator: "less_than", value: { N: String(T + 1) } };
+
+  it("the fake answers exactly the recorded shapes (capital statuses, no echo, size:0, ConditionMismatch)", async () => {
+    const { fake } = mk({ maxHops: 0 });
+    expect((await call(fake, "POST", "/item", [{ item: item("a", T + 9_999) }])).body).toEqual({ status: "success", data: { size: 62, create: [{ status: "Success" }] } });
+    expect((await call(fake, "POST", "/item", [{ item: { ...item("a", T + 9_999), v: { S: "2" } } }])).body.data.create).toEqual([{ status: "Success" }]);   // plain insert overwrites
+    expect(fake.items.get("a")!.v).toEqual({ S: "2" });
+    const lost = await call(fake, "POST", "/item", [{ item: item("a", T + 1), condition: lt }]);
+    expect(lost.status).toBe(200);
+    expect(lost.body.data).toEqual({ size: 0, create: [{ status: "CriteriaMismatch" }] });
+    const hit = await call(fake, "POST", "/fetch".replace("/fetch", "/item/fetch"), { keys: [{ K: { S: "a" } }], consistent_read: true });
+    expect(hit.body.data.get).toEqual([{ item: fake.items.get("a") }]);
+    const miss = await call(fake, "POST", "/item/fetch", { keys: [{ K: { S: "nope" } }], consistent_read: true });
+    expect(miss.status).toBe(200);
+    expect(miss.body.data).toEqual({ size: 0 });
+    expect("get" in miss.body.data).toBe(false);
+    const stale = { keys: { K: { S: "a" } }, update_attributes: [{ operation_type: "PUT", attribute_path: ["v"], update_value: { S: "z" } }], condition: { attribute: ["ver"], operator: "equals", value: { N: "9" } } };
+    expect((await call(fake, "PUT", "/item", [stale])).body.data).toEqual({ size: 0, update: [{ status: "ConditionMismatch" }] });
+    const ghost = { ...stale, keys: { K: { S: "ghost" } }, condition: undefined };
+    expect((await call(fake, "PUT", "/item", [ghost])).body.data.update).toEqual([{ status: "ConditionMismatch" }]);
+    expect(fake.items.has("ghost")).toBe(false);   // update never creates
+    expect((await call(fake, "DELETE", "/item", [{ keys: { K: { S: "a" } } }])).body.data.delete).toEqual([{ status: "Success" }]);
+    expect((await call(fake, "DELETE", "/item", [{ keys: { K: { S: "a" } } }])).body.data.delete).toEqual([{ status: "ConditionMismatch" }]);
+  });
+
+  it("CriteriaMismatch and ConditionMismatch are in CONDITION_FAILED_CODES", () => {
+    expect(CONDITION_FAILED_CODES).toEqual(expect.arrayContaining(["CriteriaMismatch", "ConditionMismatch"]));
+  });
+
+  it("claim: one conditional insert; a live claim is refused, an EXPIRED one is taken over in that same single call", async () => {
+    const { fake, now, state } = mk();
+    expect(await state.claim("c", 1)).toBe(true);
+    expect(await state.claim("c", 1)).toBe(false);
+    expect(fake.seen.map((s) => `${s.method} ${s.path}`)).toEqual(["POST /item", "POST /item"]);
+    now.t += 1_000;
+    fake.seen.length = 0;
+    expect(await state.claim("c", 60)).toBe(true);
+    expect(fake.seen).toHaveLength(1);
+  });
+
+  it("get of a missing key (no data.get at all) is absent, not an error", async () => {
+    const { state } = mk();
+    expect(await state.get("never")).toBeNull();
+  });
+
+  it("set/incr/take on a MISSING key insert it (update would answer ConditionMismatch and create nothing)", async () => {
+    const { fake, state } = mk();
+    await state.set("s", "x");
+    expect(await state.get("s")).toBe("x");
+    expect(await state.incr("i", 60)).toBe(1);
+    expect(await state.take("t", 3, 3)).toBe(0);
+    expect(fake.items.size).toBe(3);
+    expect(fake.seen.filter((s) => s.method === "PUT")).toHaveLength(0);
+    expect(await state.incr("i", 60)).toBe(2);
+    expect(fake.seen.filter((s) => s.method === "PUT")).toHaveLength(1);
+  });
+
+  it("an item deleted between read and update (update → ConditionMismatch) is retried as an insert, not lost", async () => {
+    const { fake, state } = mk({ maxHops: 0 });
+    await state.set("r", "1");
+    const real = fake.fetch;
+    let first = true;
+    const racing = createCatalystState(FAKE_CONFIG, {
+      clock: () => T, ...fast,
+      fetch: async (url, init) => {
+        const res = await real(url, init);
+        if (first && url.endsWith("/item/fetch")) { first = false; fake.items.clear(); }   // vanishes after our read
+        return res;
+      },
+    });
+    expect(await racing.incr("r", 60)).toBe(1);   // the retry re-reads (absent now) and inserts: the item is recreated, nothing throws
+    expect(fake.items.size).toBe(1);
+  });
+
+  it("expiry is enforced on read from our own exp (the TTL scheduler runs only daily)", async () => {
+    const { now, state } = mk();
+    await state.set("e", "v", 2);
+    now.t += 2_000;
+    expect(await state.get("e")).toBeNull();
+    await state.set("e", "w", 5);   // an expired item is updated in place (ver CAS)
+    expect(await state.get("e")).toBe("w");
+  });
+
+  it("50 concurrent conditional inserts on one key: exactly one claim wins", async () => {
+    const { state } = mk({ seed: 3, maxHops: 4 });
+    const got = await Promise.all(Array.from({ length: 50 }, () => state.claim("burst", 60)));
+    expect(got.filter(Boolean)).toHaveLength(1);
+  });
+
+  it("20 concurrent ver-CAS increments end at exactly 20", async () => {
+    const { state } = mk({ seed: 5, maxHops: 4 }, { maxAttempts: 200 });
+    await state.incr("cas", 60);
+    await Promise.all(Array.from({ length: 19 }, () => state.incr("cas", 60)));
+    expect(await state.incr("cas", 60)).toBe(21);
+    const m = mk({ seed: 5, maxHops: 4 }, { maxAttempts: 200 });
+    const all = await Promise.all(Array.from({ length: 20 }, () => m.state.incr("cas", 60)));
+    expect([...all].sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+    expect(await m.state.get("cas")).toBe("20");
+  });
+
+  it("429: backed off and retried (data untouched), then SharedStateError('unavailable') when it persists", async () => {
+    const { fake, state } = mk();
+    await state.get("warm");
+    fake.failNext(429, 429);
+    expect(await state.claim("l1", 60)).toBe(true);
+    expect(fake.seen.filter((s) => s.path === "/item")).toHaveLength(3);   // 2 rejected + 1 applied
+    const sleeps: number[] = [];
+    const slow = createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => T, sleep: async (ms) => { sleeps.push(ms); }, rateLimitRetries: 3 });
+    await slow.get("warm2");
+    fake.failNext(429, 429, 429, 429);
+    await expect(slow.claim("l2", 60)).rejects.toMatchObject({ code: "unavailable" });
+    expect(sleeps).toHaveLength(3);
+    expect(sleeps[2]!).toBeGreaterThan(sleeps[0]!);   // exponential
+    expect(fake.items.size).toBe(1);                   // l2 was never written
+  });
+
+  it("a 500 on a claim is 'unavailable': fail closed, never assume won, never retried blindly", async () => {
+    const { fake, state } = mk();
+    await state.get("warm");
+    const before = fake.seen.length;
+    fake.failNext(500);
+    await expect(state.claim("c500", 60)).rejects.toMatchObject({ code: "unavailable" });
+    expect(fake.seen.length - before).toBe(1);
+  });
+
+  it("under a flaky Catalyst (seeded 429s and 500s) no claim is ever won twice", async () => {
+    const { state } = mk({ seed: 11, flaky: { p429: 0.12, p500: 0.04 } });
+    const got = await Promise.allSettled(Array.from({ length: 50 }, () => state.claim("flaky", 60)));
+    expect(got.filter((g) => g.status === "fulfilled" && g.value === true).length).toBeLessThanOrEqual(1);
+    for (const g of got) if (g.status === "rejected") expect(g.reason).toMatchObject({ code: "unavailable" });
+  });
+
+  it("release of a missing key (ConditionMismatch) is not an error", async () => {
+    const { state } = mk();
+    await state.release("never-held");
+    await state.claim("h", 60);
+    await state.release("h");
+    await state.release("h");
   });
 });
