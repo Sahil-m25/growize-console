@@ -46,8 +46,15 @@ export interface SharedState {
 
 export type SharedStateFailure = "unavailable" | "contended" | "bad-response" | "bad-key";
 
+/** Optional structured detail for diagnostics (never a token or a value): where it failed, the HTTP status, the backend's own code. */
+export interface SharedStateErrorDetail {
+  readonly stage?: "token" | "network" | "http" | "item";
+  readonly httpStatus?: number;
+  readonly catalystCode?: string;
+}
+
 export class SharedStateError extends Error {
-  constructor(readonly code: SharedStateFailure, message?: string) {
+  constructor(readonly code: SharedStateFailure, message?: string, readonly detail: SharedStateErrorDetail = {}) {
     super(message ?? `shared state: ${code}`);
     this.name = "SharedStateError";
   }

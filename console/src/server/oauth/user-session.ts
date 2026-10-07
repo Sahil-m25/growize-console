@@ -26,6 +26,7 @@ import type { PlaneCLog } from "../identity/plane-c";
 import { idHash, pkceChallenge, randomToken, sameToken, type Sealer } from "./crypto";
 import { admitZohoSeat, NO_GRANTS, readGrants, ZOHO_SEAT_SIDES, type GrantReader } from "../access/policy";
 import type { ZohoSeat, ZohoSeatDirectory } from "./seat";
+import { recordEnrolFailure } from "./enrol-failures";
 import type { TokenGrant, ZohoAccounts } from "./zoho-accounts";
 
 /** SIGNOUTMSG's three reasons (src/domain/signin.ts). */
@@ -359,8 +360,8 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
         await d.testEnrol.save(who, seat, grant.refresh_token!);
         keepGrant = true;
         d.planeC.record({ at: clock(), who, action: "test-signin-enrolled", outcome: "ok", reason: "test-signin", seat });
-      } catch {
-        console.warn("[auth] test sign-in enrolment could not be saved (the sign-in itself goes on)");
+      } catch (e) {
+        recordEnrolFailure(who, e);   // console.error + the ring behind GET /api/test/state-health (D125)
       }
     }
     await d.store.put(key, {

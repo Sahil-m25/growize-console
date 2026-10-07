@@ -3,6 +3,7 @@
 
 export const TEST_SESSION_ROUTE = "/api/test/session";
 export const TEST_SESSION_STATUS_ROUTE = "/api/test/session/status";
+export const TEST_STATE_HEALTH_ROUTE = "/api/test/state-health";
 export const TEST_SECRET_MIN = 32;
 const USER_ID = /^\d{15,25}$/;
 

@@ -20,6 +20,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import type { Sealer } from "./crypto";
 import type { SharedState } from "../state/shared-state";
 import { CONSOLE_SEAT, SESSION_ABSOLUTE_MS, SID_COOKIE, type TestEnrolHook, type UserSessions } from "./user-session";
+import { describeError } from "../state/error-info";
 import { TEST_SECRET_MIN, testSigninEnabled, testSigninUsers } from "./test-signin-gate";
 
 /* the gate lives in ./test-signin-gate.ts (no imports, so the request gate can ask it without loading the sign-in) */
@@ -41,7 +42,8 @@ export function testSecretMatches(given: unknown, env: NodeJS.ProcessEnv = proce
   return timingSafeEqual(h(given.trim()), h(want));
 }
 
-export interface EnrolledToken { readonly token: string | null; readonly seat: string | null; readonly source: "store" | "env" | null }
+/** `loadError`: set (secret-free) when the shared-state read threw or the stored record could not be opened; absent otherwise. */
+export interface EnrolledToken { readonly token: string | null; readonly seat: string | null; readonly source: "store" | "env" | null; readonly loadError?: string }
 export interface TestEnrolment extends TestEnrolHook { load(who: string): Promise<EnrolledToken> }
 
 export function createTestEnrolment(o: { state: SharedState; sealer: Sealer; env?: NodeJS.ProcessEnv }): TestEnrolment {
@@ -56,18 +58,28 @@ export function createTestEnrolment(o: { state: SharedState; sealer: Sealer; env
     async load(who: string): Promise<EnrolledToken> {
       if (!allow.has(who)) return { token: null, seat: null, source: null };
       let raw: string | null = null;
-      try { raw = await o.state.get(enrolKey(who)); } catch { raw = null; }
+      let loadError: string | undefined;
+      try { raw = await o.state.get(enrolKey(who)); } catch (e) { raw = null; loadError = loadErrorOf(e); }
       if (raw !== null) {
         try {
           const v = JSON.parse(raw) as { t?: unknown; s?: unknown };
           const token = typeof v.t === "string" ? o.sealer.open(v.t, ENROL_AAD + who) : null;
           if (token) return { token, seat: typeof v.s === "string" ? v.s : null, source: "store" };
-        } catch { /* unreadable: fall through to the env fallback */ }
+          loadError = "stored-record-unopenable";
+        } catch { loadError = "stored-record-unreadable"; /* fall through to the env fallback */ }
       }
       const fromEnv = (env[refreshEnvName(who)] ?? "").trim();
-      return fromEnv ? { token: fromEnv, seat: null, source: "env" } : { token: null, seat: null, source: null };
+      return fromEnv ? { token: fromEnv, seat: null, source: "env", ...(loadError ? { loadError } : {}) }
+        : { token: null, seat: null, source: null, ...(loadError ? { loadError } : {}) };
     },
   });
+}
+
+/** state.get failure → a short secret-free class, e.g. "unavailable (http 500, INTERNAL_SERVER_ERROR)". */
+function loadErrorOf(e: unknown): string {
+  const i = describeError(e);
+  const bits = [i.stage, i.httpStatus !== undefined ? `http ${i.httpStatus}` : null, i.catalystCode].filter((x): x is string => !!x);
+  return `${i.code}${bits.length ? ` (${bits.join(", ")})` : ""}`;
 }
 
 /** The Zoho seat name behind a console seat token ("conv" → "ir-manager"). */
@@ -104,7 +116,7 @@ export async function testSessionStatus(req: Request, d: TestSigninDeps): Promis
   const users = [];
   for (const id of testSigninUsers(d.env)) {
     const e = await enrolment.load(id);
-    users.push({ zohoUserId: id, enrolled: e.token !== null, source: e.source, seat: e.seat, seatName: seatNameOf(e.seat) });
+    users.push({ zohoUserId: id, enrolled: e.token !== null, source: e.source, seat: e.seat, seatName: seatNameOf(e.seat), ...(e.loadError ? { loadError: e.loadError } : {}) });
   }
   return Response.json({ ok: true, users }, { headers: NO_STORE });
 }

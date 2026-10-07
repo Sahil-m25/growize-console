@@ -209,9 +209,9 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
         let res: Awaited<ReturnType<CatalystFetch>>;
         try {
           res = await doFetch(`${cfg.accountsOrigin}/oauth/v2/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body, signal: AbortSignal.timeout(timeoutMs) });
-        } catch { throw new SharedStateError("unavailable", "shared state: the Zoho accounts server did not answer"); }
-        const j = (await res.json().catch(() => null)) as { access_token?: unknown; expires_in?: unknown } | null;
-        if (res.status !== 200 || typeof j?.access_token !== "string" || !j.access_token) throw new SharedStateError("unavailable", "shared state: the Catalyst token was refused");
+        } catch { throw new SharedStateError("unavailable", "shared state: the Zoho accounts server did not answer", { stage: "token" }); }
+        const j = (await res.json().catch(() => null)) as { access_token?: unknown; expires_in?: unknown; error?: unknown } | null;
+        if (res.status !== 200 || typeof j?.access_token !== "string" || !j.access_token) throw new SharedStateError("unavailable", "shared state: the Catalyst token was refused", { stage: "token", httpStatus: res.status, ...(typeof j?.error === "string" ? { catalystCode: j.error.slice(0, 64) } : {}) });
         const life = typeof j.expires_in === "number" && j.expires_in > 0 ? j.expires_in * 1_000 : 3_600_000;
         token = { value: j.access_token, until: clock() + Math.max(60_000, life - 5 * 60_000) };
         return token.value;
@@ -229,15 +229,15 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
       if (cfg.environment) headers.Environment = cfg.environment;
       let res: Awaited<ReturnType<CatalystFetch>>;
       try { res = await doFetch(`${base}${path}`, { method, headers, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) }); } catch {
-        throw new SharedStateError("unavailable", "shared state: Catalyst did not answer in time");
+        throw new SharedStateError("unavailable", "shared state: Catalyst did not answer in time", { stage: "network" });
       }
       const j = (await res.json().catch(() => null)) as { status?: unknown; data?: { error_code?: unknown; code?: unknown } } | null;
       if (res.status === 401 && round === 0) { token = null; continue; }   // a revoked or expired token: refresh once
       if (res.status === 429) {   // VERIFIED live under burst: TOO_MANY_REQUESTS, rejected before processing → back off and repeat
-        if (limited >= rateLimitRetries) throw new SharedStateError("unavailable", "shared state: Catalyst is rate limiting (429)");
+        if (limited >= rateLimitRetries) throw new SharedStateError("unavailable", "shared state: Catalyst is rate limiting (429)", { stage: "http", httpStatus: 429, catalystCode: "TOO_MANY_REQUESTS" });
         await sleep(Math.floor(100 * 2 ** limited + Math.random() * 100)); limited++; round--; continue;
       }
-      if (res.status >= 500 || res.status === 401) throw new SharedStateError("unavailable", `shared state: Catalyst answered ${res.status}`);
+      if (res.status >= 500 || res.status === 401) throw new SharedStateError("unavailable", `shared state: Catalyst answered ${res.status}`, { stage: "http", httpStatus: res.status });
       if (res.status >= 200 && res.status < 300 && j?.status === "success") return { ok: true, data: j.data };
       const code = typeof j?.data?.error_code === "string" ? j.data.error_code : typeof j?.data?.code === "string" ? j.data.code : `HTTP_${res.status}`;
       return { ok: false, status: res.status, code };
@@ -264,7 +264,7 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
 
   const read = async (k: string): Promise<Stored | null> => {
     const r = await call("POST", "/item/fetch", SHAPES.fetch(cfg.pkName, k));
-    if (!r.ok) throw new SharedStateError("bad-response", `shared state: fetch refused (${r.code})`);
+    if (!r.ok) throw new SharedStateError("bad-response", `shared state: fetch refused (${r.code})`, { stage: "http", httpStatus: r.status, catalystCode: r.code });
     const e = entryOf(r.data, "get");
     const item = e && typeof e.item === "object" && e.item !== null ? (e.item as Item) : null;
     if (!item || Object.keys(item).length === 0) return null;   // absent: no item (or a non-success entry for a missing key)
@@ -286,10 +286,10 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
       const f = entryFailure(entryOf(r.data, "create"));
       if (f === null) return "ok";
       if (isConditionFailed(f)) return "held";
-      throw new SharedStateError("bad-response", `shared state: insert refused (${f})`);
+      throw new SharedStateError("bad-response", `shared state: insert refused (${f})`, { stage: "item", httpStatus: 200, catalystCode: f });
     }
     if (isConditionFailed(r.code)) return "held";
-    throw new SharedStateError("bad-response", `shared state: insert refused (${r.code})`);
+    throw new SharedStateError("bad-response", `shared state: insert refused (${r.code})`, { stage: "http", httpStatus: r.status, catalystCode: r.code });
   };
   /** Update when `cond` holds. "ok" | "lost" (condition false or the item is gone). */
   const updateIf = async (k: string, v: string, exp: number, ver: number, cond: Condition): Promise<"ok" | "lost"> => {
@@ -298,10 +298,10 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
       const f = entryFailure(entryOf(r.data, "update"));
       if (f === null) return "ok";
       if (isConditionFailed(f)) return "lost";
-      throw new SharedStateError("bad-response", `shared state: update refused (${f})`);
+      throw new SharedStateError("bad-response", `shared state: update refused (${f})`, { stage: "item", httpStatus: 200, catalystCode: f });
     }
     if (isConditionFailed(r.code) || r.status === 404) return "lost";
-    throw new SharedStateError("bad-response", `shared state: update refused (${r.code})`);
+    throw new SharedStateError("bad-response", `shared state: update refused (${r.code})`, { stage: "http", httpStatus: r.status, catalystCode: r.code });
   };
 
   /** Read → compute → conditional write, retried. `next` sees the live value (null when absent or expired). */
@@ -332,10 +332,10 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
     },
     async release(key: string) {
       const r = await call("DELETE", "/item", SHAPES.remove(cfg.pkName, hashOf(key)));
-      if (!r.ok && r.status !== 404) throw new SharedStateError("bad-response", `shared state: delete refused (${r.code})`);
+      if (!r.ok && r.status !== 404) throw new SharedStateError("bad-response", `shared state: delete refused (${r.code})`, { stage: "http", httpStatus: r.status, catalystCode: r.code });
       if (r.ok) {   // VERIFIED: delete of a missing key answers ConditionMismatch: release is idempotent; anything else is not
         const f = entryFailure(entryOf(r.data, "delete"));
-        if (f !== null && !isConditionFailed(f) && !/NOT_?FOUND|NO_?SUCH|NOT_?EXIST/i.test(f)) throw new SharedStateError("bad-response", `shared state: delete refused (${f})`);
+        if (f !== null && !isConditionFailed(f) && !/NOT_?FOUND|NO_?SUCH|NOT_?EXIST/i.test(f)) throw new SharedStateError("bad-response", `shared state: delete refused (${f})`, { stage: "item", httpStatus: 200, catalystCode: f });
       }
     },
     async get(key: string) {
@@ -362,4 +362,18 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
       });
     },
   });
+}
+
+/** Diagnostics: mint one access token exactly as the adapter does, and report only ok / the HTTP status / Zoho's error word. */
+export async function probeCatalystToken(cfg: CatalystConfig, deps: Pick<CatalystDeps, "fetch" | "timeoutMs"> = {}):
+  Promise<{ readonly ok: true } | { readonly ok: false; readonly stage: "network" | "http"; readonly httpStatus?: number; readonly error?: string }> {
+  const doFetch: CatalystFetch = deps.fetch ?? ((url, init) => fetch(url, init));
+  const body = new URLSearchParams({ grant_type: "refresh_token", refresh_token: cfg.refreshToken, client_id: cfg.clientId, client_secret: cfg.clientSecret }).toString();
+  let res: Awaited<ReturnType<CatalystFetch>>;
+  try {
+    res = await doFetch(`${cfg.accountsOrigin}/oauth/v2/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body, signal: AbortSignal.timeout(deps.timeoutMs ?? 5_000) });
+  } catch { return { ok: false, stage: "network" }; }
+  const j = (await res.json().catch(() => null)) as { access_token?: unknown; error?: unknown } | null;
+  if (res.status === 200 && typeof j?.access_token === "string" && j.access_token) return { ok: true };
+  return { ok: false, stage: "http", httpStatus: res.status, ...(typeof j?.error === "string" ? { error: j.error.slice(0, 64) } : {}) };
 }
