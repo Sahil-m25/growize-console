@@ -165,7 +165,7 @@ Environment variables (names only; set them in the Catalyst console, never in gi
 | `GZ_TEST_SIGNIN_SECRET` | 48 random characters (e.g. `openssl rand -base64 36`). Secret. |
 | `GZ_TEST_SIGNIN_USERS` | comma-separated Zoho user ids of the sandbox test users (Setup > Users in the sandbox, or `GET /crm/v8/users`) |
 | `GZ_TEST_REFRESH_<ZOHO_USER_ID>` | optional, one per user: a refresh token minted on this deployment's OAuth client for that user. Only needed while `STATE_STORE=memory` (see below). Secret. |
-| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `CATALYST_*` | recommended: makes enrolment and sessions survive instance recycles |
+| `STATE_STORE=catalyst` + `SESSION_ENC_KEY` + `CATALYST_*` | recommended: makes enrolment and sessions survive instance recycles. `CATALYST_*` = `CATALYST_API_ORIGIN`, `CATALYST_PROJECT_ID`, `CATALYST_STATE_TABLE`, `CATALYST_STATE_PK` (partition-key attribute name, default `k`), `CATALYST_REFRESH_TOKEN`, optional `CATALYST_ORG_ID`, `CATALYST_ENVIRONMENT` |
 
 **Enrolment (once per test user, by a person).** With the variables set and the app redeployed/restarted: open the
 console in a private window, *Continue with Zoho*, sign in as the test user and pick the **Growize Staging** sandbox on

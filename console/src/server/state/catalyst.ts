@@ -2,37 +2,36 @@
  * The `catalyst` SharedState adapter: Zoho Catalyst NoSQL over its REST API, with `fetch` (no SDK, no new
  * dependency). Selected only by STATE_STORE=catalyst (./runtime.ts); misconfiguration is a startup error.
  *
- * Endpoints, as documented (read 4 Oct 2026):
- *   insert  POST   {api}/baas/v1/project/{project}/nosqltable/{table}/item          scope ZohoCatalyst.nosql.item.INSERT
- *           https://docs.catalyst.zoho.com/en/api/code-reference/cloud-scale/nosql/insert-item/
- *   update  PUT    {api}/baas/v1/project/{project}/nosqltable/{table}/item          scope ZohoCatalyst.nosql.item.UPDATE
- *           https://docs.catalyst.zoho.com/en/api/code-reference/cloud-scale/nosql/update-item/
- *   query   POST   {api}/baas/v1/project/{project}/nosqltable/{table}/item/query    scope ZohoCatalyst.nosql.POST
- *           https://docs.catalyst.zoho.com/en/api/code-reference/cloud-scale/nosql/query-table/
- *   delete  DELETE {api}/baas/v1/project/{project}/nosqltable/{table}/item          scope (documented as) ZohoCatalyst.nosql.item.INSERT
- *           https://docs.catalyst.zoho.com/en/api/code-reference/cloud-scale/nosql/delete-item/
- *   Headers: Authorization: Zoho-oauthtoken …; optional CATALYST-ORG and Environment: Development.
- *   Fetch-item is a GET with a JSON body (fetch-item page), which WHATWG fetch refuses, so reads use query.
- *   Conditions (insert and update): https://docs.catalyst.zoho.com/en/sdk/javascript/v1/cloudscale/nosql/insert-items/
- *   — "items are inserted only if the evaluation is true. If there is no existing data, the conditions are ignored
- *   and the items are inserted." Update offers `add` (atomic add) and `if_not_exists` functions (update-item page).
+ * Wire shapes: VERIFIED against the official SDK zcatalyst-sdk-node 3.4.0 (lib/no-sql/table.js, types.d.ts), 6 Oct 2026.
+ *   base {api}/baas/v1/project/{project}; headers Authorization: Zoho-oauthtoken …, Content-Type: application/json,
+ *   optional CATALYST-ORG and Environment: Development. Scopes that work: ZohoCatalyst.nosql.READ, ZohoCatalyst.nosql.rows.ALL.
+ *   insert  POST   /nosqltable/{table}/item        body ARRAY [{ item, condition?, return? }]
+ *   update  PUT    /nosqltable/{table}/item        body ARRAY [{ keys: {pk:{S}} (one object), update_attributes[], condition?, return? }]
+ *   delete  DELETE /nosqltable/{table}/item        body ARRAY [{ keys: {pk:{S}}, condition? }]
+ *   fetch   POST   /nosqltable/{table}/item/fetch  body { keys: [{pk:{S}}], consistent_read: true }
+ *   Response { status:"success", data:{ get|create|update|delete: [{ status, item, old_item }], … } }. Each entry has its
+ *   OWN status: a false condition may come back inside the array with a non-success status on HTTP 200, or as an HTTP 4xx
+ *   error_code. Both are handled; any per-item non-success on a conditional write is taken as "condition false".
  *   TTL: a TTL attribute set at table creation; a scheduler deletes expired items once every 24 hours
  *   (https://docs.catalyst.zoho.com/en/cloud-scale/help/nosql/llms-full.md). So expiry is ALSO enforced here, on
  *   read, from our own `exp` attribute; the TTL attribute only keeps the table small.
+ *   Conditions: "items are inserted only if the evaluation is true. If there is no existing data, the conditions are
+ *   ignored and the items are inserted." Update offers `add` (atomic add) and `if_not_exists` functions.
  *
- * UNVERIFIED (each is a line in docs/architecture/shared-state.md "What the Catalyst spike must verify"): the
- * exact JSON shapes in SHAPES below (the docs' REST samples are internally inconsistent, so they follow the SDK
- * samples), the error code a failed condition returns (CONDITION_FAILED_CODES), whether a plain insert onto an
- * existing key fails or overwrites (claim() works either way), and the India DC API host.
+ * STILL UNVERIFIED (docs/architecture/shared-state.md "What the Catalyst spike must verify"): the exact error code /
+ * per-item status text of a failed condition (CONDITION_FAILED_CODES is a fallback; per-item non-success is what is
+ * relied on), whether a plain insert onto an existing key fails or overwrites (claim() works either way), and the real
+ * partition-key attribute name of the table (the owner's first spike got INVALID_KEY "Mandatory Key K is missing":
+ * configurable via CATALYST_STATE_PK, default "k").
  *
- * The table: partition key `k` (String). Attributes: `v` (S, the value), `exp` (N, epoch ms; NO_EXPIRY when none),
+ * The table: partition key CATALYST_STATE_PK (default `k`, String). Attributes: `v` (S, the value), `exp` (N, epoch ms; NO_EXPIRY when none),
  * `ver` (N, bumped on every write — the compare-and-set token), `ttl` (N, epoch seconds — the table's TTL attribute).
- * `k` is sha256(key): no IP, Zoho user id or event key leaves the process in the clear (rule 7 belt and braces).
+ * The partition key value is sha256(key): no IP, Zoho user id or event key leaves the process in the clear (rule 7 belt and braces).
  *
  * Semantics: claim() is one conditional insert (atomic in Catalyst — UNVERIFIED but documented), with a
  * conditional update to take over an expired claim. set/incr/take are read → conditional update on `ver`,
  * retried with jitter: no lost update, but under contention they may reject with SharedStateError("contended")
- * — the "best effort" the interface documents. Each operation costs 1–2 HTTP calls (claim 1, others 2).
+ * — the "best effort" the interface documents. Each operation costs 1–2 HTTP calls (claim 1, others 2; a read is /item/fetch).
  */
 
 import { createHash } from "node:crypto";
@@ -45,6 +44,8 @@ export interface CatalystConfig {
   readonly apiOrigin: string;
   readonly projectId: string;
   readonly table: string;
+  /** The partition-key attribute name of the table (env CATALYST_STATE_PK, default "k"). */
+  readonly pkName: string;
   readonly orgId: string | null;
   readonly environment: "Development" | null;
   readonly accountsOrigin: string;
@@ -72,11 +73,11 @@ export interface CatalystDeps {
 
 /* ------------------------------------------------ config ------------------------------------------------ */
 
-/** Hosts of the Catalyst API per data centre. UNVERIFIED for .in (India DC) — the docs' samples use .com. */
+/** Hosts of the Catalyst API per data centre. api.catalyst.zoho.in is verified (auth succeeded). */
 const API_HOST = /^api\.catalyst\.(zoho\.(com|in|eu|com\.au|jp|sa)|zohocloud\.ca)$/;
 
 export const CATALYST_ENV = Object.freeze([
-  "CATALYST_API_ORIGIN", "CATALYST_PROJECT_ID", "CATALYST_STATE_TABLE", "CATALYST_REFRESH_TOKEN",
+  "CATALYST_API_ORIGIN", "CATALYST_PROJECT_ID", "CATALYST_STATE_TABLE", "CATALYST_STATE_PK", "CATALYST_REFRESH_TOKEN",
   "ZOHO_ACCOUNTS_ORIGIN", "ZOHO_OAUTH_CLIENT_ID", "ZOHO_OAUTH_CLIENT_SECRET",
 ] as const);
 
@@ -95,6 +96,8 @@ export function catalystConfigFromEnv(env: NodeJS.ProcessEnv): CatalystConfig {
   }, "must be an exact https Catalyst API origin (e.g. https://api.catalyst.zoho.in)").replace(/\/$/, "");
   const projectId = need("CATALYST_PROJECT_ID", (s) => /^\d{1,20}$/.test(s), "must be the numeric project id");
   const table = need("CATALYST_STATE_TABLE", (s) => /^[A-Za-z0-9_]{1,64}$/.test(s), "must be the table id or name (letters, digits, _)");
+  const pkName = v("CATALYST_STATE_PK") || "k";
+  if (!/^[A-Za-z0-9_]{1,64}$/.test(pkName)) bad.push("CATALYST_STATE_PK must be letters, digits, _ (1-64) when set");
   const refreshToken = need("CATALYST_REFRESH_TOKEN", safeSecret, "is not a usable refresh token");
   const clientId = need("ZOHO_OAUTH_CLIENT_ID", safeSecret, "is not a usable client id");
   const clientSecret = need("ZOHO_OAUTH_CLIENT_SECRET", safeSecret, "is not a usable client secret");
@@ -106,32 +109,32 @@ export function catalystConfigFromEnv(env: NodeJS.ProcessEnv): CatalystConfig {
   if (envName && envName !== "Development" && envName !== "Production") bad.push("CATALYST_ENVIRONMENT must be Development or Production when set");
   if (bad.length) throw new Error(`STATE_STORE=catalyst is misconfigured: ${bad.join("; ")}.`);
   return Object.freeze({
-    apiOrigin, projectId, table, orgId, environment: envName === "Development" ? "Development" : null,
+    apiOrigin, projectId, table, pkName, orgId, environment: envName === "Development" ? "Development" : null,
     accountsOrigin, clientId, clientSecret, refreshToken,
   });
 }
 
-/* ------------------------------------------- wire shapes (UNVERIFIED) ------------------------------------------- */
+/* ------------------------------------------- wire shapes (VERIFIED, SDK 3.4.0) ------------------------------------------- */
 
 type Attr = { S: string } | { N: string };
 type Item = Record<string, Attr>;
 type Condition = { attribute: string[]; operator: string; value: Attr };
 
-/** Every request body in one place, so the spike corrects one object. Follows the SDK samples. */
+/** Every request body in one place. Insert/update/delete bodies are ARRAYS; fetch is an object. */
 export const SHAPES = Object.freeze({
-  insert: (item: Item, condition?: Condition) => ({ item, ...(condition ? { condition } : {}) }),
-  update: (k: string, put: Item, condition?: Condition) => ({
-    keys: [{ k: { S: k } }],
+  insert: (item: Item, condition?: Condition) => [{ item, ...(condition ? { condition } : {}) }],
+  update: (pk: string, k: string, put: Item, condition?: Condition) => [{
+    keys: { [pk]: { S: k } },
     update_attributes: Object.entries(put).map(([name, value]) => ({ operation_type: "PUT", attribute_path: [name], update_value: value })),
     ...(condition ? { condition } : {}),
-  }),
-  query: (k: string) => ({ key_condition: { attribute: "k", operator: "equals", value: { S: k } }, consistent_read: true, limit: 1 }),
-  remove: (k: string) => ({ keys: [{ k: { S: k } }] }),
+  }],
+  fetch: (pk: string, k: string) => ({ keys: [{ [pk]: { S: k } }], consistent_read: true }),
+  remove: (pk: string, k: string) => [{ keys: { [pk]: { S: k } } }],
   lessThan: (attribute: string, n: number): Condition => ({ attribute: [attribute], operator: "less_than", value: { N: String(n) } }),
   equals: (attribute: string, n: number): Condition => ({ attribute: [attribute], operator: "equals", value: { N: String(n) } }),
 });
 
-/** Error codes taken to mean "the condition was false". UNVERIFIED: the spike records the real one. */
+/** Error codes taken to mean "the condition was false" when an HTTP 4xx carries one. The exact code is still UNVERIFIED. */
 export const CONDITION_FAILED_CODES: readonly string[] = Object.freeze(["CONDITION_FAILED", "CONDITIONAL_CHECK_FAILED", "CONDITION_CHECK_FAILED", "DUPLICATE_VALUE", "DUPLICATE_ITEM"]);
 const isConditionFailed = (code: string) => CONDITION_FAILED_CODES.includes(code) || /CONDITION/i.test(code);
 
@@ -141,7 +144,10 @@ const FAR_TTL_S = 4_102_444_800;
 /* ------------------------------------------------ adapter ------------------------------------------------ */
 
 type Stored = { v: string; exp: number; ver: number };
+/** ok: HTTP 2xx + status success. `entry` is the first per-item entry of the named section (null when absent). */
 type Reply = { ok: true; data: unknown } | { ok: false; status: number; code: string };
+type Section = "get" | "create" | "update" | "delete";
+type Entry = { status?: unknown; item?: unknown; error_code?: unknown; code?: unknown } | null;
 
 export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}): SharedState {
   const doFetch: CatalystFetch = deps.fetch ?? ((url, init) => fetch(url, init));
@@ -199,20 +205,25 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
     const x = a as { S?: unknown; N?: unknown };
     return typeof x.S === "string" ? x.S : typeof x.N === "string" ? x.N : typeof x.N === "number" ? String(x.N) : null;
   };
-  /** The query answer's items, tolerant of the shapes the docs show (one item, a list, wrapped or bare). */
-  const itemsOf = (data: unknown): Item[] => {
-    const d = data as { fetched_data?: unknown; items?: unknown } | null;
-    const raw = d?.fetched_data ?? d?.items ?? [];
-    const list = Array.isArray(raw) ? raw : [raw];
-    return list.map((x) => (x && typeof x === "object" && "item" in x ? (x as { item: unknown }).item : x))
-      .filter((x): x is Item => !!x && typeof x === "object");
+  /** The first per-item entry of data[section]. */
+  const entryOf = (data: unknown, section: Section): Entry => {
+    const list = (data as Record<string, unknown> | null)?.[section];
+    const e = Array.isArray(list) ? list[0] : null;
+    return e && typeof e === "object" ? (e as Entry) : null;
+  };
+  /** A per-item failure: its status is present and not "success". Returns its code, or null when the entry succeeded. */
+  const entryFailure = (e: Entry): string | null => {
+    if (!e || e.status === undefined || e.status === "success") return null;
+    return typeof e.error_code === "string" ? e.error_code : typeof e.code === "string" ? e.code : typeof e.status === "string" ? e.status : "ITEM_FAILED";
   };
 
   const read = async (k: string): Promise<Stored | null> => {
-    const r = await call("POST", "/item/query", SHAPES.query(k));
-    if (!r.ok) throw new SharedStateError("bad-response", `shared state: query refused (${r.code})`);
-    const item = itemsOf(r.data).find((i) => attr(i.k) === k);
-    if (!item) return null;
+    const r = await call("POST", "/item/fetch", SHAPES.fetch(cfg.pkName, k));
+    if (!r.ok) throw new SharedStateError("bad-response", `shared state: fetch refused (${r.code})`);
+    const e = entryOf(r.data, "get");
+    const item = e && typeof e.item === "object" && e.item !== null ? (e.item as Item) : null;
+    if (!item || Object.keys(item).length === 0) return null;   // absent: no item (or a non-success entry for a missing key)
+    if (entryFailure(e) !== null) return null;
     const v = attr(item.v), exp = Number(attr(item.exp)), ver = Number(attr(item.ver));
     if (v === null || !Number.isFinite(exp) || !Number.isFinite(ver)) throw new SharedStateError("bad-response", "shared state: an item without v/exp/ver");
     return { v, exp, ver };
@@ -221,19 +232,19 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
   const fields = (v: string, exp: number, ver: number): Item => ({
     v: { S: v }, exp: { N: String(exp) }, ver: { N: String(ver) }, ttl: { N: String(exp === NO_EXPIRY ? FAR_TTL_S : Math.ceil(exp / 1_000)) },
   });
-  const itemFor = (k: string, v: string, exp: number, ver: number): Item => ({ k: { S: k }, ...fields(v, exp, ver) });
+  const itemFor = (k: string, v: string, exp: number, ver: number): Item => ({ [cfg.pkName]: { S: k }, ...fields(v, exp, ver) });
 
   /** Insert when no unexpired item holds k. "ok" | "held" (the condition was false). */
   const insertIfFree = async (k: string, v: string, exp: number, ver: number): Promise<"ok" | "held"> => {
     const r = await call("POST", "/item", SHAPES.insert(itemFor(k, v, exp, ver), SHAPES.lessThan("exp", clock() + 1)));
-    if (r.ok) return "ok";
+    if (r.ok) return entryFailure(entryOf(r.data, "create")) === null ? "ok" : "held";   // per-item non-success on a conditional write = condition false
     if (isConditionFailed(r.code)) return "held";
     throw new SharedStateError("bad-response", `shared state: insert refused (${r.code})`);
   };
   /** Update when `cond` holds. "ok" | "lost" (condition false or the item is gone). */
   const updateIf = async (k: string, v: string, exp: number, ver: number, cond: Condition): Promise<"ok" | "lost"> => {
-    const r = await call("PUT", "/item", SHAPES.update(k, fields(v, exp, ver), cond));
-    if (r.ok) return "ok";
+    const r = await call("PUT", "/item", SHAPES.update(cfg.pkName, k, fields(v, exp, ver), cond));
+    if (r.ok) return entryFailure(entryOf(r.data, "update")) === null ? "ok" : "lost";   // per-item non-success = condition false (or item gone)
     if (isConditionFailed(r.code) || r.status === 404) return "lost";
     throw new SharedStateError("bad-response", `shared state: update refused (${r.code})`);
   };
@@ -270,8 +281,12 @@ export function createCatalystState(cfg: CatalystConfig, deps: CatalystDeps = {}
       return false;
     },
     async release(key: string) {
-      const r = await call("DELETE", "/item", SHAPES.remove(hashOf(key)));
+      const r = await call("DELETE", "/item", SHAPES.remove(cfg.pkName, hashOf(key)));
       if (!r.ok && r.status !== 404) throw new SharedStateError("bad-response", `shared state: delete refused (${r.code})`);
+      if (r.ok) {   // an unconditional delete of a missing key may answer a per-item "not found": that is fine; anything else is not
+        const f = entryFailure(entryOf(r.data, "delete"));
+        if (f !== null && !/NOT_?FOUND|NO_?SUCH|NOT_?EXIST/i.test(f)) throw new SharedStateError("bad-response", `shared state: delete refused (${f})`);
+      }
     },
     async get(key: string) {
       const cur = await read(hashOf(key));

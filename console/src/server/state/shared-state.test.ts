@@ -19,11 +19,11 @@ const fast = { sleep: async () => undefined };
 
 const ADAPTERS: ReadonlyArray<{ name: string; make: () => Rig }> = [
   { name: "memory", make: () => { const now = { t: T0 }; const state = createMemoryState({ clock: () => now.t }); return { state, twin: state, now }; } },
-  ...[true, false].map((insertOverwrites) => ({
-    name: `catalyst (fake REST, insert ${insertOverwrites ? "overwrites when the condition holds" : "never overwrites"})`,
+  ...([[true, "item"], [false, "item"], [true, "http"], [false, "http"]] as const).map(([insertOverwrites, failureStyle]) => ({
+    name: `catalyst (fake REST, insert ${insertOverwrites ? "overwrites when the condition holds" : "never overwrites"}, refusal as ${failureStyle === "item" ? "per-item status on HTTP 200" : "HTTP 400"})`,
     make: (): Rig => {
       const now = { t: T0 };
-      const fake = createFakeCatalyst({ insertOverwrites });
+      const fake = createFakeCatalyst({ insertOverwrites, failureStyle });
       const mk = () => createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, clock: () => now.t, ...fast });
       return { state: mk(), twin: mk(), now };   // two instances, one backend
     },
@@ -124,6 +124,12 @@ describe.each(ADAPTERS)("SharedState contract — $name", ({ make }) => {
   });
 });
 
+const FULL_ENV = {
+  STATE_STORE: "catalyst", CATALYST_API_ORIGIN: "https://api.catalyst.zoho.in", CATALYST_PROJECT_ID: "4000000006007",
+  CATALYST_STATE_TABLE: "gz_state", CATALYST_REFRESH_TOKEN: "1000.fake.refresh", ZOHO_ACCOUNTS_ORIGIN: "https://accounts.zoho.in",
+  ZOHO_OAUTH_CLIENT_ID: "1000.FAKECLIENT", ZOHO_OAUTH_CLIENT_SECRET: "fake-secret-xx",
+} as unknown as NodeJS.ProcessEnv;
+
 describe("catalyst adapter — wire behaviour", () => {
   const rig = (o: { maxAttempts?: number } = {}) => {
     const fake = createFakeCatalyst();
@@ -139,12 +145,43 @@ describe("catalyst adapter — wire behaviour", () => {
     expect([...fake.items.keys()].every((k) => /^[A-Za-z0-9_-]{43}$/.test(k))).toBe(true);
   });
 
-  it("claim is one HTTP call when free; reads use query (fetch-item is a GET with a body)", async () => {
+  it("claim is one HTTP call when free; reads use POST /item/fetch", async () => {
     const { fake, state } = rig();
     await state.claim("one", 60);
     expect(fake.seen.map((s) => `${s.method} ${s.path}`)).toEqual(["POST /item"]);
     await state.get("one");
-    expect(fake.seen.at(-1)).toMatchObject({ method: "POST", path: "/item/query" });
+    expect(fake.seen.at(-1)).toMatchObject({ method: "POST", path: "/item/fetch" });
+  });
+
+  it("sends the verified SDK shapes: array write bodies, keys as one object, fetch with keys[] + consistent_read", async () => {
+    const { fake, state } = rig();
+    await state.set("shape", "x", 60);   // fetch (absent) → insert
+    await state.set("shape", "y", 60);   // fetch → conditional update on ver
+    await state.release("shape");
+    const bodies = fake.seen.map((s) => ({ m: `${s.method} ${s.path}`, b: JSON.parse(s.body) }));
+    expect(bodies.map((x) => x.m)).toEqual(["POST /item/fetch", "POST /item", "POST /item/fetch", "PUT /item", "DELETE /item"]);
+    expect(bodies[0]!.b).toMatchObject({ keys: [{ k: { S: expect.any(String) } }], consistent_read: true });
+    expect(Array.isArray(bodies[1]!.b) && bodies[1]!.b[0].item.k.S).toBeTruthy();
+    expect(Array.isArray(bodies[3]!.b)).toBe(true);
+    expect(Array.isArray(bodies[3]!.b[0].keys)).toBe(false);
+    expect(bodies[3]!.b[0].keys.k.S).toBeTruthy();
+    expect(bodies[3]!.b[0].condition).toMatchObject({ attribute: ["ver"], operator: "equals" });
+    expect(bodies[3]!.b[0].update_attributes[0]).toMatchObject({ operation_type: "PUT", attribute_path: [expect.any(String)] });
+    expect(Array.isArray(bodies[4]!.b) && bodies[4]!.b[0].keys.k.S).toBeTruthy();
+  });
+
+  it("the partition-key attribute name is configurable (CATALYST_STATE_PK)", async () => {
+    const fake = createFakeCatalyst({ pk: "K" });
+    const wrong = createCatalystState(FAKE_CONFIG, { fetch: fake.fetch, ...fast });
+    await expect(wrong.claim("a", 60)).rejects.toMatchObject({ code: "bad-response" });   // INVALID_KEY, as the owner's first spike saw
+    const right = createCatalystState({ ...FAKE_CONFIG, pkName: "K" }, { fetch: fake.fetch, ...fast });
+    expect(await right.claim("a", 60)).toBe(true);
+    expect(await right.claim("a", 60)).toBe(false);
+    await right.set("b", "1");
+    expect(await right.get("b")).toBe("1");
+    expect(catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "K" }).pkName).toBe("K");
+    expect(catalystConfigFromEnv(FULL_ENV).pkName).toBe("k");
+    expect(() => catalystConfigFromEnv({ ...FULL_ENV, CATALYST_STATE_PK: "a-b" })).toThrow(/CATALYST_STATE_PK/);
   });
 
   it("a 5xx, a timeout-like failure or a 429 rejects with SharedStateError('unavailable'), never 'absent'", async () => {
