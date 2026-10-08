@@ -31,7 +31,7 @@ describe("receiptsConfigProblems", () => {
 describe("receiptsConfigured", () => {
   it("is false while a secret is missing, and logs the names once — never a value", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
-    const secret = "s3cr3t-value-that-must-never-be-logged-xxxxxxxxxx";
+    const secret = /* synthetic, never-live */ "s3cr3t-value-that-must-never-be-logged-xxxxxxxxxx";
     expect(receiptsConfigured(env({ RECEIPT_IDEMPOTENCY_SECRET: secret }))).toBe(false);
     expect(receiptsConfigured(env({ RECEIPT_IDEMPOTENCY_SECRET: secret }))).toBe(false);
     expect(err).toHaveBeenCalledTimes(1);
