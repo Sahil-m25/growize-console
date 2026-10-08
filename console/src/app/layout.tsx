@@ -33,7 +33,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     if (h.get("x-gz-path") === "/" && h.get("rsc") !== "1" && h.get("next-router-prefetch") == null) resetFixtures(await currentLane());
   }
   /* the records are in the first paint: the same payload GET /api/data serves */
-  const initial = await loadPayload();
+  /* a book Zoho refused (LiveReadError, e.g. a seat whose profile cannot read a module) must not take the whole page
+     down: the first paint goes out without records and the client's own GET /api/data shows the 503 and its `fresh`
+     block, as it does for any later failed read. Anything else still throws. */
+  const initial = await loadPayload().catch((e: unknown) => {
+    if (e instanceof Error && e.name === "LiveReadError") return undefined;
+    throw e;
+  });
   return (
     /* the redesigned markup's own attributes, line 2: en-IN, and light unless Dark was saved —
        see useThemeSync, which never removes this attribute, only overwrites it */
