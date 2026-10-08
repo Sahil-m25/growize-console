@@ -141,3 +141,10 @@ test('the pure view: no accounts → 100% inside cadence, zero load', () => {
   const v = amServiceView({ book: [], last: new Map(), touchesBy: new Map(), tickets: [], kams: [] }, { kind: 'head', me: DIVYA, now: NOW });
   assert.deepEqual([v.tiles.insideCadencePct, v.load.perMonth, v.managers.length, v.pool.accounts], [100, 0, 0, 0]);
 });
+
+test('W2-KAM-3: "last heard" is the account KAM\'s own conversation - a touch another person logged on the origin lead does not count', async () => {
+  // the recorded touches on L[0] are Imran's; the account now belongs to Latha, and the pool account has no manager at all
+  const { rig, s } = await service({ book: [entry(C(1), 'Anil', 'Rao', 4, LATHA, L[0]), entry(C(2), 'Bina', 'Shah', 2, null, L[1], { scope: 'pool' })] });
+  const v = (await s.read(await principal(rig, DIVYA, 'amlead'))).view;
+  assert.deepEqual(v.accounts.map((a) => [a.lastHeardAt, a.lastMood]), [[null, null], [null, null]]);
+});

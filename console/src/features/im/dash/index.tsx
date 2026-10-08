@@ -7,7 +7,7 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import {
   careQueue, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad,
-  money, pageReadable, poolBook, tierOf, TIERS, who, FORFEIT, primaryName, fmtDay,
+  money, pageReadable, poolBook, tierOf, TIERS, who, FORFEIT, primaryName, fmtAt, fmtDay,
 } from "@/lib/im";
 import type { ImInvestor } from "@/lib/im";
 import { useApiRead, type Read } from "@/lib/data/api";
@@ -86,7 +86,7 @@ function LastHeard({ d }: { d: AmToday }) {
       {d.accounts.map(a => (
         <div className="led" key={a.id}><span className={`tag ${a.tier === "A" ? "br" : ""}`}>Tier {a.tier}</span>
           <span style={{ minWidth: 0 }}><b>{a.name}</b>
-            <div className="sm">{a.lastHeardAt ? "last heard " + a.lastHeardAt + (a.lastMood ? " · " + a.lastMood : "") : "never spoken to"}</div></span>
+            <div className="sm">{a.lastHeardAt ? "last heard " + fmtAt(a.lastHeardAt) + (a.lastMood ? " · " + a.lastMood : "") : "never spoken to"}</div></span>
           <span className={`tag ${a.overdue !== null && a.overdue > 0 ? "late" : "go"}`}>{a.overdue === null ? "no date"
             : a.overdue > 0 ? a.overdue + " day" + (a.overdue === 1 ? "" : "s") + " past" : "in " + (-a.overdue) + " day" + (a.overdue === -1 ? "" : "s")}</span></div>
       ))}
@@ -236,7 +236,7 @@ export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | 
     <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} role="button" tabIndex={0}
       onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
       <div className="who2"><b>{x.investor.name ?? id}</b><span>{x.text}{x.kind === "claim" && from ? <>{" · "}<ProvIR t={"from " + from} /></> : null}
-        {" · "}<span className="mono">{id}</span>
+        {" · "}<span className="mono">{("code" in x.investor && x.investor.code) || id}</span>
       </span></div>{b}</div>
   );
 }

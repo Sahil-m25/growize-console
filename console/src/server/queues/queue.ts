@@ -239,6 +239,9 @@ export function createInvestorQueues(deps: QueueDeps) {
     // The last conversation per account and this person's conversations: Touches hang off the account's origin Lead.
     const leads = [...new Set(book.map((e) => e.originLeadId).filter((x): x is string => !!x))];
     const last = new Map<string, { at: string; mood: string | null }>();
+    // "Last heard" is the KAM's own logged conversations: a touch counts only when its owner is the account's KAM (a lead-side IR touch is not one).
+    const kamOfLead = new Map<string, string | null>();
+    for (const e of book) if (e.originLeadId && !kamOfLead.has(e.originLeadId)) kamOfLead.set(e.originLeadId, e.kamUserId);
     let logged: number | null = 0;
     const t = leads.length ? await byIds(p.credential, TOUCHES_MODULE, TOUCH_FIELDS, "Lead", leads, null, signal) : { ok: true as const, rows: [], truncated: false };
     if (!t.ok) { problems.push(`touches:${t.kind === "refused" ? t.reason : t.errorKind}`); logged = null; }
@@ -248,13 +251,14 @@ export function createInvestorQueues(deps: QueueDeps) {
         const lead = idOf(r.Lead), at = str(r, "Occurred_At", 40);
         if (!lead || !at || !Number.isFinite(Date.parse(at))) continue;
         if (idOf(r.Owner) === me) logged!++;
+        if (!kamOfLead.get(lead) || idOf(r.Owner) !== kamOfLead.get(lead)) continue;
         const prev = last.get(lead);
         if (!prev || Date.parse(at) > Date.parse(prev.at)) last.set(lead, { at, mood: str(r, "Mood", 20) });
       }
     }
 
     const accounts: CareAccount[] = book.map((e) => ({
-      id: e.id, name: [e.firstName, e.lastName].filter(Boolean).join(" "), units: e.issuedUnits, kamUserId: e.kamUserId,
+      id: e.id, code: e.investorCode, name: [e.firstName, e.lastName].filter(Boolean).join(" "), units: e.issuedUnits, kamUserId: e.kamUserId,
       introducedAt: e.introductionAt, since: e.kamSince ?? e.saidYesAt, lastHeardAt: e.originLeadId ? last.get(e.originLeadId)?.at ?? null : null,
     }));
     const rows = Object.freeze(careRows(accounts, now, { kamOnly: kind === "kam" ? me : null, mayAssign: p.can("assign") }));

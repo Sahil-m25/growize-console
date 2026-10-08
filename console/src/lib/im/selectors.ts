@@ -8,7 +8,7 @@ import {
   APPLOCK, CAN, DAY, FORFEIT, KINDS, NAV, PRIMARY, ROLE, ROUNDS, SECRETS, TEAM, TIERS, UNIT,
   type ImNavItem, type ImTier,
 } from "./constants";
-import { aged, gap, mid, nowDay, when } from "./dates";
+import { aged, gap, isoWall, mid, nowDay, when } from "./dates";
 import { invMatch } from "./search";
 import type {
   ImApp, ImCan, ImContact, ImCtx, ImDoc, ImDrawerKey, ImInbox, ImInvestor, ImLogEntry, ImQ, ImRole,
@@ -468,7 +468,7 @@ export function journey(s: ImCtx, WHO: string, x: ImInvestor, money: (v: number)
     .concat(txOf(s, WHO, x.id).map(t => ({ at: t.on, side: "fin" as const,
       t: t.kind === "advance" ? "Advance received" : t.kind === "refund" ? "Refund issued" : t.kind === "forfeit" ? "Forfeit retained" : "Payment received",
       m: money(t.amt) + " · " + t.mode + " " + t.utr, who: t.by })))
-    .concat([{ at: x.since + " 00:00", side: "fin", t: "Account opened", who: null,
+    .concat([{ at: isoWall(x.since) != null ? x.since : x.since + " 00:00", side: "fin", t: "Account opened", who: null,
       m: "Brought in by " + who(s, x.ir).n + (x.src ? " from " + x.src : "") + (x.lead ? " · lead " + x.lead : "") }]);
   return ev.filter(e => e.at).sort((a, b) => (when(s.data.NOW, b.at) || 0) - (when(s.data.NOW, a.at) || 0));
 }

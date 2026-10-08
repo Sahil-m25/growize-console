@@ -6,7 +6,7 @@
    every date comes from data.NOW.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 import { MON, UNIT } from "./constants";
-import { inr, nowDay, nowFull } from "./dates";
+import { fmtDay, fmtStamp, inr, isoWall, nowDay, nowFull } from "./dates";
 import { I, isSuper, may, notFin, pageReadable, txOf, who } from "./selectors";
 import { PAPER_FIRST, matchGate, type Gate } from "./rules";
 import type {
@@ -30,10 +30,10 @@ export function fmtDate(iso: string | null | undefined): string {
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(iso); if (!m) return iso;
   return (m[3] ? m[3] + " " : "") + MON[+m[2] - 1] + " " + m[1];
 }
-/** "YYYY-MM-DDTHH:MM" → "02 Sep 00:10" */
-export function fmtAt(iso: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso); if (!m) return iso;
-  return m[3] + " " + MON[+m[2] - 1] + " " + m[4] + ":" + m[5];
+/** a live ISO / Zoho datetime → "02 Sep 00:10" (IST; a bare date → "02 Sep"); anything else is returned as it is. Never raw ISO. */
+export function fmtAt(iso: string | null | undefined): string {
+  const ms = isoWall(iso); if (ms == null) return iso ?? "";
+  return /[T ]\d{2}:\d{2}/.test(iso!) ? fmtStamp(ms) : fmtDay(ms);
 }
 const isoAt = (ms: number): string => {
   const d = new Date(ms);

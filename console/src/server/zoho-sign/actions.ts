@@ -17,6 +17,7 @@ import type { ServiceCredential, UserCredential, ZohoClient, ZohoRecord, ZohoSer
 import { isUserCredential } from "../../lib/zoho/client";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { SignApi } from "./api";
+import { signFailure } from "./api";
 import type { SignedFiler } from "./file";
 import {
   addNote, cleanReason, isLive, isPaper, mayActOnPaper, PAPER_FIELDS, PAPER_KEYS, primaryDoerNote, RECORD_ID, reqIdOf, signStateOf, STATE_LABEL, verifiedOf, type Paper, type SignState,
@@ -49,7 +50,10 @@ export function createSignActions(deps: SignActionsDeps) {
     deps.log.refusal({ at: clock(), actor: { kind: "user", userId }, action, reason: code, recordIds: ids.filter((x) => RECORD_ID.test(x)) });
     return { ok: false, kind: "refused", reasonCode: code, message: ACT_MESSAGE[code], ...(state ? { state } : {}) };
   };
-  const notSaved = (errorKind: string): ActResult => ({ ok: false, kind: "not-saved", errorKind, message: "Not done yet — Zoho is not answering. Try again." });
+  const notSaved = (kind: string): ActResult => {
+    const f = signFailure(kind, "Not done yet — Zoho is not answering. Try again.");
+    return { ok: false, kind: "not-saved", errorKind: f.reasonCode, message: f.message };
+  };
 
   async function act(kind: "remind" | "recall", principal: { readonly credential: unknown; readonly seat: string }, paper: unknown, recordId: unknown, reasonIn: unknown, signal?: AbortSignal): Promise<ActResult> {
     const action = `sign-${kind}`;

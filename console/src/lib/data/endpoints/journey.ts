@@ -11,6 +11,7 @@ import { useConsole } from "@/lib/store";
 import { fail, useApiMode, useApiWrite, type ApiResult, type WriteEndpoint } from "../api";
 import { consoleFixtureWrite, NOT_YOURS, type ConsoleBook, type ConsoleDispatch } from "./lead";
 import { openable } from "@/lib/selectors";
+import { nowT, stamp } from "@/lib/format";
 
 export type JourneyDone = { rung: number; modifiedTime: string | null };
 export type TickVia = "tick" | "tickCommit" | "recordRung";
@@ -73,9 +74,14 @@ export function useJourneyWrites() {
   const skipW = useApiWrite(journeySkip, state, dispatch);
   const untickW = useApiWrite(journeyUntick, state, dispatch);
   const after = (r: ApiResult<JourneyDone>) => { if (r.ok && live) reloadData(); return r; };
+  /* W2-REG-1: the fixture reducer's tick sets TJUST (the top bar's take-back); a live tick answers the new rung, so set the same offer */
+  const offer = (l: Lead) => (r: ApiResult<JourneyDone>) => {
+    if (r.ok && live && r.data.rung > l.done) dispatch({ type: "offerUndoRung", id: l.id, r: r.data.rung, at: stamp(nowT(state.NOW)) });
+    return r;
+  };
   return {
     /** Mark the next rung done. `via` picks the fixture's reducer action; "recordRung" states the scorecard. */
-    tick: (l: Lead, via: TickVia = "tick") => tickW({ id: l.id, expectedModifiedTime: l.mt ?? null, via }).then(after),
+    tick: (l: Lead, via: TickVia = "tick") => tickW({ id: l.id, expectedModifiedTime: l.mt ?? null, via }).then(offer(l)).then(after),
     /** Skip Engagement. */
     skip: (l: Lead) => skipW({ id: l.id, expectedModifiedTime: l.mt ?? null }).then(after),
     /** Take the last rung back with one of the five reasons (live requires it); `note` is the fixture log's only. */

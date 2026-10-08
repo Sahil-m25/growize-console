@@ -4,13 +4,13 @@
    record. The record is built as one page with sections rather than a wall: who they are, what
    they hold, what they have paid, what paper exists, and the journey that got them here. */
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { StepUp } from "../stepup";
 import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, mayCareOn, mayDetailsOn, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtDay, fmtStamp, mid, nowDay, when, DAY,
+  tkOf, txOf, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtAt, fmtDay, fmtStamp, mid, nowDay, when, DAY,
 } from "@/lib/im";
 import { EXTDAYS } from "@/domain";
 import type { ImInvestor } from "@/lib/im";
@@ -26,7 +26,7 @@ import { BlockIt } from "../paper2/BlockIt";
 import { InvUploads } from "../paper2/Upload";
 import { useApiMode, useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { appCard } from "@/lib/data/endpoints/app";
-import { amBook, financeInvestors, investorRecord, investorSearch, irInvestorList } from "@/lib/data/endpoints/investors";
+import { amBook, amManagers, financeInvestors, investorRecord, investorSearch, irInvestorList, type AmManagers } from "@/lib/data/endpoints/investors";
 import { caseList } from "@/lib/data/endpoints/cases";
 import { useGoLead } from "@/features/leads/nav";
 import type { NavKey } from "@/domain";
@@ -62,6 +62,22 @@ export function ImInv(p: ImPageProps) {
   return <VInv {...p} />;
 }
 
+/* W2-KAM-3: live, "Last heard" and "next owed" are the route's (GET /api/investors/am/managers: the KAM's own logged
+   conversations, the same answer Today's card gives), printed with fmtAt, never raw. The demo book keeps its own contacts.
+   `undefined`: the demo book answers; `null`: the route has not answered yet; a Map: its rows by Contact id. */
+type AmRow = AmManagers["accounts"][number];
+function useAmRows(p: ImPageProps, on: boolean): Map<string, AmRow> | null | undefined {
+  const live = useApiMode() === "live";
+  const r = useApiRead(amManagers, { s: p.s, me: p.me }, on && live);
+  if (!on || !live) return undefined;
+  return r.state === "ok" ? new Map(r.data.accounts.map(a => [a.id, a])) : null;
+}
+/** the heard line shared by the list and the Care tab: "08 Oct 22:05 · Warm" / "never" / "…" while the route answers */
+function heardText(a: AmRow | undefined, rows: Map<string, AmRow> | null): ReactNode {
+  if (rows === null) return <span className="sm">…</span>;
+  return a?.lastHeardAt ? fmtAt(a.lastHeardAt) + (a.lastMood ? " · " + a.lastMood : "") : <span className="tag late">never</span>;
+}
+
 /* vInv — imx.js 1474–1529 */
 /** a value that follows `v` after it has stood still for `ms` (the search box's 200 ms debounce, M09-S07-W1) */
 function useDebounced<T>(v: T, ms: number): T {
@@ -85,6 +101,7 @@ function VInv({ s, me, dispatch }: ImPageProps) {
      M09-S01-W1: Finance's rows, counts and units are GET /api/investors/finance */
   const amR = useApiRead(amBook, { s, me }, am);
   const fin = useApiRead(financeInvestors, { s, me }, !am);
+  const heard = useAmRows({ s, me, dispatch } as ImPageProps, am);
   const dq = useDebounced(s.ui.IQ, 200);
   const sr = useApiRead(investorSearch, { s, me }, { q: dq, farm: null });
   const frows = fin.state === "ok" ? fin.data.rows : [];
@@ -136,15 +153,15 @@ function VInv({ s, me, dispatch }: ImPageProps) {
             : <><th>Land</th><th>State</th><th>KYC</th><th className="n">Paid</th><th className="n">Due</th><th>IR</th></>}
         </tr></thead>
         <tbody>{(am ? rows.length : finShown.length) || stubs.length ? (am ? rows.map(x => {
-          const l = lastC(s, me, x.id), o = overdue(s, me, x), T = tierOf(x)!;
+          const l = lastC(s, me, x.id), T = tierOf(x)!, hr = heard?.get(x.id), o = heard === undefined ? overdue(s, me, x) : hr?.overdue ?? null;
           return (
             <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
               <td><b>{x.n}</b><div className="sm">{x.city + (x.nri ? " · NRI" : "")}</div></td>
-              <td className="mono sm">{x.id}</td>
+              <td className="mono sm">{x.code ?? x.id}</td>
               <td className="n">{x.units}</td>
               <td><span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span></td>
               <td className="sm">{x.kam ? <ImPname s={s} k={x.kam} first /> : <span className="tag late">nobody</span>}</td>
-              <td className="sm">{l ? CHANS[l.ch] + " · " + ago(s.data.NOW, l.at) : <span className="tag late">never</span>}</td>
+              <td className="sm">{heard !== undefined ? heardText(hr, heard) : l ? CHANS[l.ch] + " · " + ago(s.data.NOW, l.at) : <span className="tag late">never</span>}</td>
               <td>{o == null ? <span className="sm">—</span>
                 : o > 0 ? <span className="tag late"><span className="dot" />{o}d overdue</span>
                   : <span className={`tag ${o > -14 ? "due" : ""}`}>in {-o}d</span>}</td>
@@ -229,7 +246,7 @@ function IrWho({ x }: { x: ImInvestor }) {
       <span className="sm">from your lead</span></div><div className="cb">
       <dl className="kv" style={{ marginTop: 0 }}>
         <dt>Name</dt><dd><b>{x.n}</b></dd>
-        <dt>ARL ID</dt><dd className="mono">{x.id}</dd>
+        <dt>ARL ID</dt><dd className="mono">{x.code ?? x.id}</dd>
         <dt>Mobile</dt><dd className="mono">{x.ph || "—"}</dd>
         <dt>Email</dt><dd className="mono" style={{ fontSize: "12.5px" }}>{x.em || "—"}</dd>
         <dt>Residency</dt><dd>{x.nri ? "Non-resident" : "Resident"}</dd>
@@ -283,13 +300,16 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   /* M08-S04-W1: the hold clock is GET /api/holds/[allotmentId] on the record's Reserved allotment (lib/data/endpoints/holds) */
   /* an IR's record has no hold clock: its banner carries what a lapse forfeits (money) */
   const ho = useApiRead(holdOne, { s, me }, p.irSeat ? null : rec.holdings.find(h => h.status === "Reserved")?.id ?? null);
+  const heard = useAmRows(p, isAM(s, me) && rec.sections.includes("care"));
   if (!x) return null;
-  const am = isAM(s, me), o = overdue(s, me, x), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
+  const am = isAM(s, me), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
+  const hr = heard?.get(x.id), o = heard === undefined ? overdue(s, me, x) : hr?.overdue ?? null;
+  const isQuiet = o != null && o > 0;
   const showMoney = rec.sections.includes("money");
   const SECT: Record<RecordSection, () => ImSec> = {
     who: () => ({ k: "who", t: "Who they are" }),
     hold: () => ({ k: "hold", t: "What they hold" }),
-    care: () => ({ k: "care", t: "Care", n: quiet(s, me, x) ? 1 : 0, warn: true }),
+    care: () => ({ k: "care", t: "Care", n: isQuiet ? 1 : 0, warn: true }),
     money: () => ({ k: "money", t: "Money", n: due ? 1 : 0 }),
     paper: () => ({ k: "paper", t: "Paper", n: roundsFor(s, me, x.id).filter(r => r.state !== "done").length, warn: true }),
     jrn: () => ({ k: "jrn", t: "Journey" }),
@@ -305,13 +325,13 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
     <>
       <div className="ph">
         <button className="btn" onClick={() => dispatch({ type: "go", v: "inv", id: null })} aria-label="Back to the list">←</button>
-        <h1>{x.n}</h1><span className="mono sm">{x.id}</span>
+        <h1>{x.n}</h1><span className="mono sm">{x.code ?? x.id}</span>
         <StTag x={x} st={rec.state} />{showMoney ? <KycTag x={x} /> : null}{x.nri ? <span className="tag">NRI</span> : null}
         {!p.irSeat && cared(x) ? <span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span> : null}
         <div className="sp" />
         <span className="sm">{x.units + " unit" + plural(x.units) + (showMoney ? " · " + money(x.units * UNIT) : "")}</span></div>
 
-      {am && quiet(s, me, x) ? <div className="note bad" style={{ marginBottom: 8 }}><b>{"Gone quiet — " + o + " day" + (o === 1 ? "" : "s") + " past the " + T.t + " cadence."}</b>
+      {am && isQuiet ? <div className="note bad" style={{ marginBottom: 8 }}><b>{"Gone quiet — " + o + " day" + (o === 1 ? "" : "s") + " past the " + T.t + " cadence."}</b>
         {" " + (x.kam ? "" : "And nobody is named on it. ") + "An account nobody has spoken to since "
           + (lc ? day6(lc.at) : "it was allotted") + " is the one that is surprised by everything."}</div> : null}
 
@@ -325,7 +345,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
             so the record keeps exactly the prototype's sections */}
         {S === "who" ? <InvEmails s={s} me={me} id={x.id} /> : null}
         {S === "hold" ? (p.irSeat ? <IrHold s={s} x={x} /> : <SecHold {...p} ho={ho} rec={rec} />) : null}
-        {S === "care" ? <SecCare {...p} /> : null}
+        {S === "care" ? <SecCare {...p} heard={heard} hr={hr} o={o} /> : null}
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
             <span className="sm">{money(got) + " of " + money(x.units * UNIT) + (due ? " · " + money(due) + " due" : "")}</span></div><div className="cb">
@@ -361,7 +381,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
             <div className="cb"><div className="jrn">{journey(s, me, x, money).map((e, i) => (
               <div key={i} className={`jev ${e.side === "ir" ? "ir" : ""}`}>
                 <b>{e.t}</b>
-                <div className="m"><span className="mono">{e.at}</span>{(e.who ? " · " + (e.side === "ir" ? e.who : who(s, e.who).n) : "") + (e.m ? " · " + e.m : "")}</div>
+                <div className="m"><span className="mono">{fmtAt(e.at)}</span>{(e.who ? " · " + (e.side === "ir" ? e.who : who(s, e.who).n) : "") + (e.m ? " · " + e.m : "")}</div>
               </div>
             ))}</div>
               <p className="sm" style={{ margin: "12px 0 0" }}>Two systems, one story, merged when it is read rather than copied when it is written. Blue is the lead side — captured, told, chased, said. Green is the Investors side — sent, verified, banked. Neither side holds the other&apos;s entries.</p>
@@ -591,9 +611,9 @@ function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne>; rec: Inves
 }
 
 /* vOne → "care" — imx.js 1683–1739 */
-function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
+function SecCare({ s, me, dispatch, x, heard, hr, o }: ImPageProps & { x: ImInvestor; heard: Map<string, AmRow> | null | undefined; hr: AmRow | undefined; o: number | null }) {
   const live = useApiMode() === "live";   /* D132: the care right off the live record (the route re-checks it) */
-  const l = lastC(s, me, x.id), T = tierOf(x)!, cs = cOf(s, me, x.id), o = overdue(s, me, x);
+  const l = lastC(s, me, x.id), T = tierOf(x)!, cs = cOf(s, me, x.id);
   const moodTag = (m: string) => `tag ${m === "concern" ? "late" : m === "ok" ? "due" : "go"}`;
   const talk = { ch: "call" as const, mood: "good" as const, note: "", next: "" };
   return (
@@ -610,7 +630,7 @@ function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
             <KamControl s={s} me={me} dispatch={dispatch} x={x} /></dd>
           <dt>Handed over</dt><dd>{x.intro
             ? <><span className="tag go"><span className="dot" />introduced</span>{" "}
-              <span className="sm mono">{x.intro}</span> <span className="sm">{"— " + who(s, x.ir).n.split(" ")[0] + " stayed on the first call"}</span></>
+              <span className="sm mono">{fmtAt(x.intro)}</span> <span className="sm">{"— " + who(s, x.ir).n.split(" ")[0] + " stayed on the first call"}</span></>
             : x.kam ? <><span className="tag late"><span className="dot" />never introduced</span>{" "}
               <span className="sm">they were handed to a stranger</span></>
               : <span className="sm">nothing to hand over yet</span>}</dd>
@@ -620,7 +640,7 @@ function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
             {o == null ? <span className="sm">starts at the first conversation</span>
               : o > 0 ? <span className="tag late"><span className="dot" />{o + " day" + (o === 1 ? "" : "s") + " overdue"}</span>
                 : <span className={`tag ${o > -14 ? "due" : "go"}`}><span className="dot" />{"next in " + (-o) + " day" + (o === -1 ? "" : "s")}</span>}</dd>
-          <dt>Last heard</dt><dd>{l ? <>{CHANS[l.ch] + " · "}<ImPname s={s} k={l.by} first />{" · "}
+          <dt>Last heard</dt><dd>{heard !== undefined ? heardText(hr, heard) : l ? <>{CHANS[l.ch] + " · "}<ImPname s={s} k={l.by} first />{" · "}
             <span className="mono">{day6(l.at)}</span>{" · "}<span className={moodTag(l.mood)}>{MOODS[l.mood]}</span></>
             : <span className="tag late">never</span>}</dd>
           <dt>Brought in by</dt><dd><ImPname s={s} k={x.ir} /> <span className="sm">{"· " + x.src + (x.lead ? " · lead " + x.lead : "") + " "}<ProvIR t="on the lead side" /></span></dd>
@@ -638,7 +658,7 @@ function SecCare({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
           <div className="led" style={{ alignItems: "flex-start" }} key={i}>
             <span className={moodTag(c.mood)}>{MOODS[c.mood]}</span>
             <span style={{ minWidth: 0 }}><b>{CHANS[c.ch]}</b>
-              <div className="sm"><ImPname s={s} k={c.by} first />{" · "}<span className="mono">{c.at}</span></div>
+              <div className="sm"><ImPname s={s} k={c.by} first />{" · "}<span className="mono">{fmtAt(c.at)}</span></div>
               {c.note ? <div className="sm" style={{ marginTop: 4, color: "var(--ink-2)" }}>{c.note}</div> : null}</span>
           </div>
         )) : <div className="empty">Nobody has spoken to them since they were allotted.</div>}

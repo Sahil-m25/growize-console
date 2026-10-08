@@ -344,6 +344,9 @@ export interface Lead {
   con?: Partial<Record<Channel, boolean>>;
   /** When the investor last came back to us. `null` means they never have. */
   reply?: Stamp | null;
+  /** The newest touch as the follow-up saved it, with the outcome it was saved under ("Interested", "Not now"). Live only: the
+   *  fixture keeps its outcomes in INTERACTIONS. Without it the lead page can only say "Reply received" / "Connected". */
+  lastTouch?: { channel: Channel | "reply"; outcome: string; at: Stamp };
   /** Non-resident: Aadhaar e-sign will fail, so the paperwork needs a wet signature or a DSC. */
   nri?: boolean;
   /** Who captured it. */

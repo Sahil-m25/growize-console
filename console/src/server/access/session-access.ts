@@ -9,8 +9,9 @@
  * Digital Infrastructure has granted them. The screen puts exactly that on its book, so a page it
  * shows and a page the guard admits are decided by the same rule over the same record.
  *
- * Names are blank: the session holds a Zoho user id and a seat token, never a name (PROVISIONAL —
- * the name arrives with the Teams read, M17-S01).
+ * Names: the session holds a Zoho user id and a seat token; the display name is the one Zoho's CurrentUser
+ * answer gave at sign-in (kept on the stored session, B-15). A session opened before that, or one Zoho named
+ * no one on, stays blank until the Teams read (M17-S01) supplies it.
  */
 
 import type { CapGrid, ColourSlot, Person } from "../../domain";
@@ -35,7 +36,7 @@ export interface BadgeReader {
 
 /** The session's one-person book, or null when its seat token maps to no console seat. With `badges`, the person's saved
  *  colour, shape and initials ride on it (B-15/B-26: saved by PUT /api/me/style and never read back); a failed read is no badge. */
-export async function sessionAccessOf(session: ConsoleSession, grants: GrantReader, badges?: BadgeReader): Promise<SessionAccess | null> {
+export async function sessionAccessOf(session: ConsoleSession, grants: GrantReader, badges?: BadgeReader, name?: string | null): Promise<SessionAccess | null> {
   const zseat = Object.prototype.hasOwnProperty.call(ZOHO_SEAT_OF_TOKEN, session.seat) ? ZOHO_SEAT_OF_TOKEN[session.seat]! : null;
   if (!zseat) return null;
   const sides = ZOHO_SEAT_SIDES[zseat];
@@ -45,9 +46,12 @@ export async function sessionAccessOf(session: ConsoleSession, grants: GrantRead
   if (badges) { try { st = await badges.get(session.who); } catch { st = {}; } }
   const c = typeof st.c === "number" && Number.isInteger(st.c) && st.c >= 1 && st.c <= 8 ? st.c : null;
   const i = typeof st.i === "string" && /^[A-Z0-9]{1,2}$/.test(st.i) ? st.i : null;
-  const lead: Person = { ...b.PEOPLE[session.who]!, ...(c ? { c: c as ColourSlot } : {}), ...(i ? { i } : {}),
+  /* B-15: the display name Zoho gave at sign-in (blank when Zoho named no one). Initials: the saved badge wins, else the name's. */
+  const n = name?.trim() ?? "", ni = n.split(" ").filter(Boolean).slice(0, 2).map((w) => Array.from(w)[0]!.toUpperCase()).join("");
+  const ii = i ?? (ni || null);
+  const lead: Person = { ...b.PEOPLE[session.who]!, ...(n ? { n } : {}), ...(c ? { c: c as ColourSlot } : {}), ...(ii ? { i: ii } : {}),
     ...(typeof st.sq === "boolean" ? { sq: st.sq } : {}) };
   const imP = b.im.P[session.who];
-  const im: ImPerson | null = imP ? { ...imP, ...(c ? { c } : {}), ...(i ? { i } : {}) } : null;
+  const im: ImPerson | null = imP ? { ...imP, ...(n ? { n } : {}), ...(c ? { c } : {}), ...(ii ? { i: ii } : {}) } : null;
   return Object.freeze({ lead, im, grants: b.GRANT[session.who] ?? {} });
 }

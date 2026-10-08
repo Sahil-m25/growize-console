@@ -145,7 +145,7 @@ const HOW_OF: Readonly<Record<string, string>> = Object.freeze({ Form: "form", V
 const FC_OF: Readonly<Record<string, FcCat>> = Object.freeze(Object.fromEntries(Object.entries(FORECAST_OF).map(([k, v]) => [v, k as FcCat])));
 /* Touches (Lead, Channel, Occurred_At, Is_Reply): the human touches of the book's leads, newest first, one read per 100 leads.
    Voided_At (J12) is not in production yet: asked for, and dropped from the read when the org rejects it. */
-const TOUCH_FIELDS = Object.freeze(["Lead", "Channel", "Occurred_At", "Is_Reply"]);
+const TOUCH_FIELDS = Object.freeze(["Lead", "Channel", "Occurred_At", "Is_Reply", "Note"]);
 const TOUCH_OPTIONAL = Object.freeze(["Voided_At"]);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -184,8 +184,24 @@ export function touchesOf(rows: readonly ZohoRecord[]): Map<string, Touch> {
   return out;
 }
 
+/** The newest touch per lead with the outcome it was saved under. followup.ts writes Note as "<outcome>" or "<outcome> — <words>"
+ *  and sets Is_Reply for an inbound touch (which carries no Channel); a voided touch is skipped. */
+export function lastTouchOf(rows: readonly ZohoRecord[]): Map<string, NonNullable<Lead["lastTouch"]>> {
+  const out = new Map<string, NonNullable<Lead["lastTouch"]>>();
+  const at = new Map<string, number>();
+  for (const r of rows) {
+    const lead = lookupId(r.Lead), when = Date.parse(String(r.Occurred_At));
+    const channel: Channel | "reply" | undefined = r.Is_Reply === true ? "reply" : typeof r.Channel === "string" ? CHANNEL_OF[r.Channel] : undefined;
+    const outcome = typeof r.Note === "string" ? r.Note.split(" — ")[0]!.trim().slice(0, 80) : "";
+    const stamp = stampOf(str(r.Occurred_At));
+    if (!lead || !channel || !outcome || !stamp || !Number.isFinite(when) || str(r.Voided_At)) continue;
+    if (when >= (at.get(lead) ?? -Infinity)) { at.set(lead, when); out.set(lead, { channel, outcome, at: stamp }); }
+  }
+  return out;
+}
+
 /** One LeadRow (plus its stamps) as the console's Lead. Only what Zoho holds; the rest empty, never invented. */
-export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Touch): Lead {
+export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Touch, lastTouch?: Lead["lastTouch"]): Lead {
   const at: string[] = [stampOf(row.createdAt)];
   let done = 1;
   let skipped = detail?.Engagement_Skipped === true;
@@ -229,6 +245,7 @@ export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Tou
     ...(pref ? { contactPreference: pref } : {}),
     ...(undone ? { undoAt: stampOf(undone) } : {}),
     reply: row.lastReplyAt ? stampOf(row.lastReplyAt) : null,
+    ...(lastTouch ? { lastTouch } : {}),
     lost: row.lostAt ? { why: lostWhy as LostWhy, note: "", at: stampOf(row.lostAt), by: row.ownerId ?? "", stage: done } : null,
     mt: typeof detail?.Modified_Time === "string" && detail.Modified_Time ? detail.Modified_Time : null,
     ...(skipped ? { skipped: true } : {}),
@@ -244,7 +261,7 @@ export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], block
   for (const a of live) { const b = blockOf(a.LLP_Lookup) || a.LLP_Lookup; blocks[b] = (blocks[b] ?? 0) + a.Committed_Units; }
   const paid = live.length > 0 && live.every((a) => (a.receivable ?? 1) === 0 && (a.received ?? 0) > 0);
   return {
-    id: c.id, n: [c.firstName, c.lastName].filter(Boolean).join(" "), ph: c.mobile ?? "", em: c.email ?? "", city: c.city ?? "", addr: c.address,
+    id: c.id, ...(c.code ? { code: c.code } : {}), n: [c.firstName, c.lastName].filter(Boolean).join(" "), ph: c.mobile ?? "", em: c.email ?? "", city: c.city ?? "", addr: c.address,
     nri: !!c.residency && /non|nri/i.test(c.residency),
     pan: null, aadh: null, aref: null, kyc: "pending", kycOn: null,
     bank: { acct: "", ifsc: "", name: "", drop: "" },
@@ -376,8 +393,8 @@ export function createLiveDataLayer(deps: LiveDeps) {
       if (!t.ok) { problems.push(`touches:${t.error.kind}`); touchesOk = false; continue; }
       touchRows.push(...t.value.records);
     }
-    const touches = touchesOf(touchRows);
-    return [...rows.values()].map((row) => leadOf(row, detail.get(row.id), touches.get(row.id)));
+    const touches = touchesOf(touchRows), lastTouches = lastTouchOf(touchRows);
+    return [...rows.values()].map((row) => leadOf(row, detail.get(row.id), touches.get(row.id), lastTouches.get(row.id)));
   }
 
   /** The AM book (KAM: own accounts; Head of AM: every allotted account and the pool) on the person's own token. */

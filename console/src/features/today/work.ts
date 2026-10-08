@@ -246,6 +246,12 @@ export function fuLatest(ctx: Ctx, l: Lead): FuEvent | null {
     ),
   );
   if (l.reply) a.push({ channel: "reply", outcome: "Reply received", at: l.reply, who: l.own || undefined });
+  /* live: the touch as it was saved, with its outcome, stands in for the generic line the stamps above would give for the same moment */
+  if (l.lastTouch) {
+    const lt = l.lastTouch;
+    for (let i = a.length - 1; i >= 0; i--) if (a[i]!.at === lt.at && !a[i]!.obj) a.splice(i, 1);
+    a.push({ channel: lt.channel, outcome: lt.outcome, at: lt.at, who: l.own || undefined });
+  }
   a.sort((x, y) => (whenT(y.at, ctx.NOW)?.getTime() || 0) - (whenT(x.at, ctx.NOW)?.getTime() || 0));
   return a[0] || null;
 }

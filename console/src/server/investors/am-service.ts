@@ -214,6 +214,8 @@ export function createAmService(deps: AmServiceDeps) {
 
       const leads = [...new Set(book.map((e) => e.originLeadId).filter((x): x is string => !!x))];
       const last = new Map<string, Touch>();
+      const kamOfLead = new Map<string, string | null>();
+      for (const e of book) if (e.originLeadId && !kamOfLead.has(e.originLeadId)) kamOfLead.set(e.originLeadId, e.kamUserId);
       let touchesBy: Map<string, number> | null = new Map();
       const t = leads.length ? await byIds(p.credential, leads, signal) : { ok: true as const, rows: [] as ZohoRecord[], truncated: false };
       if (!t.ok) { problems.push(`touches:${t.kind === "refused" ? t.reason : t.errorKind}`); touchesBy = null; }
@@ -223,6 +225,8 @@ export function createAmService(deps: AmServiceDeps) {
           const lead = idOf(r.Lead), at = str(r, "Occurred_At", 40), owner = idOf(r.Owner);
           if (!lead || !at || !Number.isFinite(Date.parse(at))) continue;
           if (owner) touchesBy!.set(owner, (touchesBy!.get(owner) ?? 0) + 1);
+          // "Last heard" is the KAM's own logged conversations: a lead-side IR touch on the origin lead is not one.
+          if (!kamOfLead.get(lead) || owner !== kamOfLead.get(lead)) continue;
           const prev = last.get(lead);
           if (!prev || Date.parse(at) > Date.parse(prev.at)) last.set(lead, { at, mood: str(r, "Mood", 20) });
         }

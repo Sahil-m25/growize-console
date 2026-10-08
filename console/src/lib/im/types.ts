@@ -44,6 +44,8 @@ export type ImInvestor = {
   bank: ImBank;
   units: number; blocks: Record<string, number>; st: ImSt;
   ir: string; src: string; since: string; nominee: string;
+  /** the ARL code (ARL-INV-0207) the investor and Finance quote; live only — the demo book's id is already that code */
+  code?: string | null;
   kam?: string | null; kamOn?: string | null; intro?: string | null;
   hold?: string; lead?: string; fema?: "outstanding"; nextOn?: string | null;
 };

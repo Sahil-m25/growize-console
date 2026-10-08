@@ -40,6 +40,8 @@ const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 export interface CareAccount {
   readonly id: string;
+  /** the ARL code (ARL-INV-0207) the investor and Finance quote */
+  readonly code?: string | null;
   readonly name: string;
   readonly units: number;
   readonly kamUserId: string | null;
@@ -53,7 +55,7 @@ export type CareKind = "nokam" | "intro" | "due";
 export interface CareRow {
   readonly key: string;
   readonly kind: CareKind;
-  readonly investor: { readonly id: string; readonly name: string };
+  readonly investor: { readonly id: string; readonly name: string; readonly code?: string | null };
   readonly tier: Tier["k"];
   readonly text: string;
   readonly urg: Urgency;
@@ -89,7 +91,7 @@ export function careRows(accounts: readonly CareAccount[], now: number, o: { rea
   for (const a of accounts) {
     if (o.kamOnly !== null && a.kamUserId !== o.kamOnly) continue;
     const tier = tierFor(a.units);
-    const base = { investor: Object.freeze({ id: a.id, name: a.name }), tier: tier.k };
+    const base = { investor: Object.freeze({ id: a.id, name: a.name, ...(a.code ? { code: a.code } : {}) }), tier: tier.k };
     if (needsKam(holding(a.units, a.kamUserId))) {
       out.push(Object.freeze({ ...base, key: `nokam:${a.id}`, kind: "nokam", text: `${tier.t} and nobody is looking after them`, urg: "now",
         days: null, action: o.mayAssign ? "Assign manager" : null }));

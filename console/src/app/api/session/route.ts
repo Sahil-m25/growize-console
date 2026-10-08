@@ -35,8 +35,12 @@ async function get_() {
   if (why) jar.delete(WHY_COOKIE);
   const refusal = note && Object.prototype.hasOwnProperty.call(SIGNIN_REFUSALS, note)
     ? { code: note, message: SIGNIN_REFUSALS[note as RefusalCode], ...(why && signinDebugOn() ? { why: cleanWhy(why) } : {}) } : undefined;
-  const r = await userSessions().current(jar.get(SID_COOKIE)?.value);
-  if (r.ok) return Response.json({ session: r.session, access: await sessionAccessOf(r.session, sharedGrantReader(), styleStore()) }, { headers: NO_STORE });
+  const sid = jar.get(SID_COOKIE)?.value;
+  let r = await userSessions().current(sid);
+  /* B-15: the display name lives in memory only; a process that has not met this session yet (restart, another instance) asks
+     for the credential, whose refresh re-reads Zoho's CurrentUser answer and brings the name with it */
+  if (r.ok && !r.name) { await userSessions().credential(sid); r = await userSessions().current(sid); }
+  if (r.ok) return Response.json({ session: r.session, access: await sessionAccessOf(r.session, sharedGrantReader(), styleStore(), r.name) }, { headers: NO_STORE });
   jar.delete(SID_COOKIE);
   jar.delete(SESSION_COOKIE);
   return Response.json({ session: null, ...(r.why ? { signedOut: r.why } : {}), ...(refusal ? { refusal } : {}) }, { headers: NO_STORE });

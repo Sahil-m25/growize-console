@@ -26,6 +26,7 @@ import { createIdempotency } from "../state/idempotent";
 import { createMemoryState } from "../state/memory";
 import type { SharedState } from "../state/shared-state";
 import type { SignApi, SignField, SignMethod, SignRecipient, SignTemplate } from "./api";
+import { SIGN_NOT_CONFIGURED, signFailure } from "./api";
 import {
   DATETIME, isLive, isPaper, mayActOnPaper, PAPER_FIELDS, PAPER_KEYS, primaryDoerNote, RECORD_ID, reqIdOf, SEND_BELONGS_TO, SIGNED_VIA, signStateOf,
   STATE_LABEL, verifiedOf, type Paper, type PaperFields, type SignState,
@@ -247,10 +248,10 @@ export function createSignSender(deps: SendDeps) {
         refuse(cred.userId, "seat-denied");
         return { ok: false, kind: "refused", reasonCode: "seat-denied", message: SEND_BELONGS_TO };
       }
-      if (!deps.sign.listTemplates) return { ok: false, kind: "source-error", reasonCode: "not-configured", message: "Zoho Sign is not answering. Try again." };
+      if (!deps.sign.listTemplates) return { ok: false, kind: "source-error", reasonCode: "not-configured", message: SIGN_NOT_CONFIGURED };
       let r: Awaited<ReturnType<SignApi["listTemplates"]>>;
       try { r = await deps.sign.listTemplates(cred, { signal }); } catch { return { ok: false, kind: "source-error", reasonCode: "unexpected", message: "Zoho Sign is not answering. Try again." }; }
-      if (!r.ok) return { ok: false, kind: "source-error", reasonCode: r.error.kind, message: "Zoho Sign is not answering. Try again." };
+      if (!r.ok) return { ok: false, kind: "source-error", ...signFailure(r.error.kind, "Zoho Sign is not answering. Try again.") };
       return { ok: true, value: r.value };
     },
 

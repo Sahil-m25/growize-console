@@ -342,6 +342,8 @@ export type Action =
   /* ---- TODO(pages-a): leads, one lead, today ---- */
   | { type: "logTouch"; id: LeadId; k: string }
   | { type: "tick"; id: LeadId }
+  /* live: a rung ticked through the route offers the same take-back the fixture reducer's tick does (W2-REG-1) */
+  | { type: "offerUndoRung"; id: LeadId; r: number; at: string }
   | { type: "untick"; id: LeadId }
   | { type: "skipStage"; id: LeadId }
   | { type: "undoStage"; id: LeadId }
@@ -936,6 +938,9 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
 
     case "setTheme":
       return { ...state, ui: { ...state.ui, THEME: a.theme } };
+
+    case "offerUndoRung":
+      return { ...state, TJUST: { w: "rung", id: a.id, r: a.r, at: a.at } };
 
     case "setUi":
       return { ...state, ui: { ...state.ui, ...a.patch } };

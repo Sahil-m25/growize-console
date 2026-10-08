@@ -156,6 +156,19 @@ test('S04 template picker: the templates come from Zoho Sign on the sender\'s ow
   noPii(r);
 });
 
+test('B-19: Sign refusing the person\'s own token answers code not-configured with words that say so; a server fault stays "not answering" with its own code', async () => {
+  const r = rig(() => null);
+  const down = (kind) => createSignSender({ crm: r.crm, sign: { listTemplates: async () => ({ ok: false, error: { kind, status: kind === 'forbidden' ? 403 : 500, code: '' } }) }, log: r.log, clock: () => NOW });
+  const refused = await down('forbidden').templates(who(HARSHA, 'fin'));
+  assert.deepEqual([refused.ok, refused.kind, refused.reasonCode], [false, 'source-error', 'not-configured']);
+  assert.doesNotMatch(refused.message, /not answering/i);
+  assert.match(refused.message, /not connected/i);
+  const faulted = await down('server').templates(who(HARSHA, 'fin'));
+  assert.deepEqual([faulted.reasonCode, /not answering/i.test(faulted.message)], ['server', true]);
+  const unwired = await createSignSender({ crm: r.crm, sign: {}, log: r.log, clock: () => NOW }).templates(who(HARSHA, 'fin'));
+  assert.deepEqual([unwired.reasonCode, /not answering/i.test(unwired.message)], ['not-configured', false]);
+});
+
 test('S04 AC2/AC4: the send panel prefills name and email from the Contact; for an NRI only email OTP is offered, with the reason', async () => {
   const r = rig((c) => (c.host === 'crm' && c.url.includes(`/Contacts/${JOSEPH}`) ? 'crm.contact.joseph-nri' : null)
     || (c.host === 'sign' && c.method === 'GET' && c.url.endsWith(`/requests/${REQ2}`) ? 'sign.get.joseph-inprogress' : null));

@@ -165,7 +165,7 @@ export type CallbackResult =
   | { readonly ok: false; readonly code: RefusalCode; readonly message: string; readonly why?: string };
 
 export type CurrentResult =
-  | { readonly ok: true; readonly session: ConsoleSession; readonly expiresAt: number }
+  | { readonly ok: true; readonly session: ConsoleSession; readonly expiresAt: number; readonly name?: string }
   /** why: null when there simply is no session; a reason when this read ended one. */
   | { readonly ok: false; readonly why: SignOutWhy | null };
 
@@ -187,6 +187,16 @@ export interface UserSessions {
   signInWithRefreshToken(refreshToken: string): Promise<CallbackResult>;
 }
 
+/** A person's display name out of Zoho's CurrentUser answer (`users[0].full_name`, else first + last); null when it names no one. */
+export function nameOfCurrentUser(body: unknown): string | null {
+  const u = body && typeof body === "object" ? (body as { users?: unknown }).users : null;
+  const o = Array.isArray(u) && u[0] && typeof u[0] === "object" ? (u[0] as Record<string, unknown>) : null;
+  if (!o) return null;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  const n = (str(o.full_name) || [str(o.first_name), str(o.last_name)].filter(Boolean).join(" ")).replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  return n || null;
+}
+
 /** The Zoho seat behind a console seat token (CONSOLE_SEAT inverted; Administrator seats have none). */
 const ZOHO_SEAT_OF: ReadonlyMap<string, ZohoSeat> = new Map(
   (Object.entries(CONSOLE_SEAT) as [ZohoSeat, string | null][]).filter(([, t]) => t !== null).map(([z, t]) => [t!, z]),
@@ -201,6 +211,9 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
   const clock = d.clock ?? Date.now;
   /** Access credentials live in memory only, never at rest; keyed like the store. */
   const live = new Map<string, UserCredential>();
+  /** The person's display name from Zoho's CurrentUser answer (B-15). Memory only, like the credentials: a name is never kept at rest. */
+  const names = new Map<string, string>();
+  const remember = (key: string, id: { name: string | null }) => { if (id.name) names.set(key, id.name); else names.delete(key); };
   /** One refresh at a time per session. */
   const refreshing = new Map<string, Promise<CredentialResult>>();
 
@@ -224,7 +237,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
   }
 
   /** Mint the person's credential; the same CurrentUser answer names their seat. */
-  async function identify(grant: TokenGrant): Promise<{ credential: UserCredential; resolution: ReturnType<ZohoSeatDirectory["resolveCurrentUser"]> } | null> {
+  async function identify(grant: TokenGrant): Promise<{ credential: UserCredential; resolution: ReturnType<ZohoSeatDirectory["resolveCurrentUser"]>; name: string | null } | null> {
     let body: unknown = null;
     try {
       const credential = await userCredential(normalised(grant), {
@@ -232,7 +245,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
         ...(d.identityFetch ? { fetch: d.identityFetch } : {}),
         onCurrentUser: (b) => { body = b; },
       });
-      return { credential, resolution: d.seats.resolveCurrentUser(body) };
+      return { credential, resolution: d.seats.resolveCurrentUser(body), name: nameOfCurrentUser(body) };
     } catch {
       return null;
     }
@@ -296,6 +309,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
       return { ok: false, why: "revoked" };
     }
     live.set(key, id.credential);
+    remember(key, id);
     return { ok: true, credential: id.credential, session: { who: rec.who, seat: rec.seat } };
   }
 
@@ -373,6 +387,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
       expiresAt: now + SESSION_ABSOLUTE_MS,
     });
     live.set(key, id.credential);
+    remember(key, id);
     d.planeC.record(mode === "test"
       ? { at: now, who, action: "test-signin-used", outcome: "ok", reason: "test-signin", seat }
       : { at: now, who, action: "sign-in", outcome: "ok", reason: "zoho", seat });
@@ -422,7 +437,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     async current(sid: string | null | undefined): Promise<CurrentResult> {
       const got = await load(sid);
       if (!("key" in got)) return got;
-      return { ok: true, session: { who: got.rec.who, seat: got.rec.seat }, expiresAt: got.rec.expiresAt };
+      return { ok: true, session: { who: got.rec.who, seat: got.rec.seat }, expiresAt: got.rec.expiresAt, ...(names.has(got.key) ? { name: names.get(got.key)! } : {}) };
     },
 
     async credential(sid: string | null | undefined): Promise<CredentialResult> {

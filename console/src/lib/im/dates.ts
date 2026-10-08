@@ -32,9 +32,23 @@ export function fmtStamp(ms: number): string {
   return fmtDay(ms) + " " + pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes());
 }
 
-/** Parse "04 Jan" or "04 Jan 10:30" to the nearest such date around NOW (±200 days). */
+const IST_MS = 5.5 * 3_600_000;
+/** A live ISO / Zoho datetime ("2026-10-05T04:15" naive IST, or "…:00+05:30" / "…Z") as IST wall time in epoch ms (rule 9), else null. */
+export function isoWall(t: string | null | undefined): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?(Z|[+-]\d{2}:?\d{2})?$/.exec(String(t ?? "").trim());
+  if (!m) return null;
+  if (m[6]) {
+    const off = m[6].length === 5 ? m[6].slice(0, 3) + ":" + m[6].slice(3) : m[6];
+    const ms = Date.parse(m[1] + "-" + m[2] + "-" + m[3] + "T" + (m[4] || "00") + ":" + (m[5] || "00") + ":00" + off);
+    return Number.isFinite(ms) ? ms + IST_MS : null;
+  }
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
+}
+/** Parse "04 Jan" or "04 Jan 10:30" (or a live ISO datetime) to the nearest such date around NOW (±200 days). */
 export function when(NOW: string, t: string | null | undefined): number | null {
   if (!t) return null;
+  const iso = isoWall(t);
+  if (iso != null) return iso;
   const m = /^(\d{1,2})\s+([A-Za-z]{3})(?:\s+(\d{2}):(\d{2}))?$/.exec(String(t).trim());
   if (!m) return null;
   const mo = MONI[m[2][0].toUpperCase() + m[2].slice(1, 3).toLowerCase()];
@@ -60,7 +74,7 @@ export function ago(NOW: string, t: string | null | undefined): string {
 }
 /** the write stamp: NOW's day and NOW's time of day */
 export const stamp = (NOW: string): string => fmtStamp(nowFull(NOW));
-export const day6 = (t: string | null | undefined): string => String(t || "").slice(0, 6);
+export const day6 = (t: string | null | undefined): string => { const ms = isoWall(t); return ms != null ? fmtDay(ms) : String(t || "").slice(0, 6); };
 export const plusDays = (NOW: string, n: number): string => fmtDay(nowDay(NOW) + n * DAY);
 /** floor to midnight */
 export const mid = (d: number | null): number | null => (d == null ? null : d - (((d % DAY) + DAY) % DAY));

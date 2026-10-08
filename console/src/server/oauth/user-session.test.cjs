@@ -242,7 +242,7 @@ test('callback: a seated Zoho user gets a server session with the refresh token 
   assert.equal(rec.expiresAt - rec.createdAt, SESSION_ABSOLUTE_MS);
 
   const cur = await h.sessions.current(result.sid);
-  assert.deepEqual(cur, { ok: true, session: result.session, expiresAt: rec.expiresAt });
+  assert.deepEqual(cur, { ok: true, session: result.session, expiresAt: rec.expiresAt, name: FULL_NAME }, 'B-15: the display name rides in memory with the session, never in the store');
   const cred = await h.sessions.credential(result.sid);
   assert.equal(cred.ok, true);
   assert.equal(cred.credential.accessToken, ACCESS);

@@ -1,9 +1,11 @@
 /* B-15 / B-26 — the session's one-person book carries the person's saved badge (colour, shape, initials from
-   PUT /api/me/style), which was written and never read back. Synthetic ids; no store but an in-memory reader. */
+   PUT /api/me/style), which was written and never read back; and the display name Zoho gave at sign-in.
+   Synthetic ids; no store but an in-memory reader. */
 import { describe, expect, it } from "vitest";
 import { ZOHO_SEAT_OF_TOKEN } from "./guard-core";
 import { NO_GRANTS } from "./policy";
 import { sessionAccessOf } from "./session-access";
+import { nameOfCurrentUser } from "../oauth/user-session";
 
 const WHO = "554023000000300004";
 const token = Object.entries(ZOHO_SEAT_OF_TOKEN).find(([, s]) => s === "investor-relations")?.[0] ?? Object.keys(ZOHO_SEAT_OF_TOKEN)[0]!;
@@ -22,5 +24,26 @@ describe("sessionAccessOf — saved badge (B-15/B-26)", () => {
     expect(failed?.lead).toEqual(plain?.lead);
     const junk = await sessionAccessOf(session, NO_GRANTS, { get: async () => ({ c: 99, i: "toolong" }) as never });
     expect(junk?.lead).toEqual(plain?.lead);
+  });
+});
+
+describe("nameOfCurrentUser", () => {
+  it("full_name, else first + last, tidied; nothing usable is null", () => {
+    expect(nameOfCurrentUser({ users: [{ full_name: "  Asha   Rao " }] })).toBe("Asha Rao");
+    expect(nameOfCurrentUser({ users: [{ first_name: "Asha", last_name: "Rao" }] })).toBe("Asha Rao");
+    expect(nameOfCurrentUser({ users: [{ full_name: "A<b>\u0007sha" }] })).toBe("Absha");
+    expect(nameOfCurrentUser({ users: [{}] })).toBeNull();
+    expect(nameOfCurrentUser(null)).toBeNull();
+  });
+});
+
+describe("sessionAccessOf with a name (B-15)", () => {
+  it("fills n and initials; a saved badge's initials win; blank stays blank", async () => {
+    const named = await sessionAccessOf(session, NO_GRANTS, undefined, "Asha Rao");
+    expect(named?.lead).toMatchObject({ n: "Asha Rao", i: "AR" });
+    const badge = await sessionAccessOf(session, NO_GRANTS, { get: async () => ({ i: "XY" }) }, "Asha Rao");
+    expect(badge?.lead).toMatchObject({ n: "Asha Rao", i: "XY" });
+    const blank = await sessionAccessOf(session, NO_GRANTS);
+    expect(blank?.lead).toMatchObject({ n: "", i: "" });
   });
 });

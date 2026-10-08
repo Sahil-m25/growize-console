@@ -212,3 +212,12 @@ test('an IR has no Investors-side Today: refused, one refusal line with codes on
   assert.deepEqual([r.ok, r.reason], [false, 'no-book']);
   assert.equal(rig.queries.length, 0);
 });
+
+test('W2-KAM-3 / W2-KAM-4: Last heard counts only the account KAM\'s own touches (another person\'s touch on the origin lead does not), and the queue row carries the ARL code', async () => {
+  const rig = await makeRig(load, route()); rig.refusals = [];
+  // the recorded touches on these leads are Imran's: the account now held by Latha has none of its own
+  const { q } = queues(rig, { book: [entry(C(1), 'Anil', 'Rao', 4, LATHA, L[0]), entry(C(2), 'Bina', 'Shah', 2, IMRAN, L[1])] });
+  const r = await q.today(await principal(rig, DIVYA, 'amlead', 'amlead'));
+  assert.deepEqual(r.queue.accounts.map((a) => [a.name, a.lastHeardAt]), [['Anil Rao', null], ['Bina Shah', '2026-06-20T10:00']]);
+  assert.deepEqual(r.queue.rows.map((y) => y.investor.code), r.queue.rows.map((y) => 'ARL-' + y.investor.id.slice(-3)));
+});

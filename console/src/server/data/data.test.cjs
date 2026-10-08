@@ -253,7 +253,7 @@ test('the book reads back what the wired IR writes put on the Lead and in Touche
   assert.equal(b.reply, '12 Sep 08:00');
   assert.equal(b.fc, null);
   const t = r.queries.find((q) => /from Touches/.test(q));
-  assert.match(t, /^select Lead, Channel, Occurred_At, Is_Reply, Voided_At from Touches where Lead in \('\d+', '\d+'\) order by Occurred_At desc limit 0, 200$/);
+  assert.match(t, /^select Lead, Channel, Occurred_At, Is_Reply, Note, Voided_At from Touches where Lead in \('\d+', '\d+'\) order by Occurred_At desc limit 0, 200$/);
 });
 
 test('a field the org does not have yet (Engagement_Skipped, Rung_Undone_At, Touches.Voided_At) is dropped from the read, not a failure', async () => {

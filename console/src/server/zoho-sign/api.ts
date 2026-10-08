@@ -106,6 +106,15 @@ const API_DOMAIN_OF_SIGN: Readonly<Record<string, string>> = Object.freeze({
   "sign.zoho.sa": "https://www.zohoapis.sa",
 });
 
+/* B-19: when Zoho Sign refuses the person's own token outright (403, or a token it does not accept), Sign is not set up for
+   them: say that, with the code that says it, instead of "not answering" over a `forbidden` code. */
+export const SIGN_NOT_CONFIGURED_KINDS: ReadonlySet<string> = new Set(["forbidden", "auth-rejected"]);
+export const SIGN_NOT_CONFIGURED = "Zoho Sign is not connected for your account yet, so nothing can be sent or changed from here. Ask Digital Infrastructure to connect it.";
+/** The code and words for a failed Sign call: not-configured when Sign refused the token, else Zoho's kind and "not answering". */
+export function signFailure(kind: string, answering: string): { readonly reasonCode: string; readonly message: string } {
+  return SIGN_NOT_CONFIGURED_KINDS.has(kind) ? { reasonCode: "not-configured", message: SIGN_NOT_CONFIGURED } : { reasonCode: kind, message: answering };
+}
+
 /** Zoho Sign answers `{ code: 0, status: "success" }`; anything else on a 2xx is a refusal. */
 function classifySign(status: number, body: unknown): { ok: true; body: Obj } | { ok: false; failure: ZohoFailure } {
   const b = obj(body);

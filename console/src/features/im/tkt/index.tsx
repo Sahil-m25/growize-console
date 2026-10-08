@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import {
-  aged, day6, I, isAM, isSuper, may, mayTkt, needsFin, readBook, safeNote, who,
+  aged, day6, fmtAt, I, isAM, isSuper, may, mayTkt, needsFin, readBook, safeNote, who,
 } from "@/lib/im";
 import type { ImTicket } from "@/lib/im";
 import { useApiRead, useApiWrite } from "@/lib/data/api";
@@ -77,7 +77,7 @@ export function TkRow({ s, me, dispatch, t, watched, delivery = null }: ImPagePr
         <span><span className="mono">{t.number ?? t.id}</span> · {t.cat} · {x ? x.n : t.inv} ·{" "}
           <ImPname s={s} k={t.own} first /> · opened <span className="mono">{day6(t.opened)}</span>{
             t.state === "closed" ? <> · closed <span className="mono">{day6(t.closed)}</span></>
-              : ` · ${d} day${d === 1 ? "" : "s"} old, SLA ${t.sla}`}</span>
+              : ` · ${d} day${d === 1 ? "" : "s"} old, SLA ${t.sla ? fmtAt(t.sla) : "not set"}`}</span>
         {t.d ? <span className="sm" style={{ marginTop: 4, display: "block" }}>{safeNote(s, me, t.d)}</span> : null}</div>
       {t.handed ? <span className="tag br">handed to {first(t.own)} by {first(t.handed.by)} · {day6(t.handed.at)}</span> : null}
       {watched ? <span className="sm">Yours until you handed it on. You can see where it has got to
