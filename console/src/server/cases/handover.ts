@@ -6,11 +6,17 @@
  *     (a KAM or the Head of AM working their own ticket) or by the super user; nobody else
  *   - Finance is Finance Operations, else the Head of Finance (prototype finSeats: "ops" first) — an active
  *     Zoho user seated from their role/profile ids, read on the person's own token (GET /users)
- *   - two writes on the person's own token, in this order:
- *       1. PUT /Cases/{id} Handed_By = me, Handed_At = now, guarded by If-Unmodified-Since (D44)
- *       2. PUT /Cases/{id}/actions/change_owner → the Finance user (Zoho notifies them)
- *     Written in that order because the KAM cannot write the Case once it is not theirs. A lost second
- *     write leaves Handed_By set and the Owner unchanged; pressing again repeats both (idempotent).
+ *   - ONE write on the person's own token: PUT /Cases/{id} { Owner: Finance, Handed_By: me, Handed_At: now },
+ *     guarded by If-Unmodified-Since (D44). Zoho applies a record's update whole or not at all, so the owner and
+ *     the watcher move together — there is no state where the ticket says "handed" and is still the KAM's.
+ *     W2-KAM-6 (8 Oct 2026): it was two writes (Handed_By first, then actions/change_owner). On staging the KAM
+ *     profile may not change a Case's owner; Zoho answered change_owner with a per-record NO_PERMISSION inside a
+ *     400 (read as invalid-data), after Handed_By was already written — a half-written ticket, the owner unchanged,
+ *     and "Zoho is not answering" on screen. Now a refused owner change writes nothing and is said as a refusal
+ *     ("owner-change-refused"). Zoho's change_owner e-mail to the new owner is not sent by an update; Finance
+ *     finds the ticket in their queue (Tickets, Today).
+ *     Zoho config (HUMAN; not yet in zoho/access/spec.json): the KAM and AM Head profiles need Edit + Change Owner on Cases, and
+ *     Handed_By's lookup must give its user read access to the record (the "keep watching" below).
  *   - the watcher is Handed_By (a user lookup; jev decide a=0.62, PROVISIONAL). The KAM's register reads
  *     `Owner = me or Handed_By = me` (./register), and Zoho's user-lookup sharing on Handed_By keeps their
  *     token able to read the Case after it changes owner — a Zoho config item (HUMAN). They cannot work it:
@@ -40,7 +46,8 @@ const ZOHO_DT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 const USERS_PER_PAGE = 200;
 const MAX_USER_PAGES = 10;
 
-export type HandRefusal = "read-only" | "invalid-request" | "no-book" | "not-found" | "not-yours" | "not-finance-work" | "already-finance" | "no-finance";
+export type HandRefusal = "read-only" | "invalid-request" | "no-book" | "not-found" | "not-yours" | "not-finance-work" | "already-finance" | "no-finance"
+  | "owner-change-refused" | "handover-refused";
 
 export const HAND_TEXT: Readonly<Record<HandRefusal, string>> = Object.freeze({
   "read-only": WRITE_TEXT["read-only"],
@@ -51,7 +58,12 @@ export const HAND_TEXT: Readonly<Record<HandRefusal, string>> = Object.freeze({
   "not-finance-work": "Only a bank or compliance ticket held by Account Management is handed to Finance.",
   "already-finance": "This ticket is already with Finance.",
   "no-finance": "There is nobody on the Finance team to hand this to.",
+  "owner-change-refused": "Zoho did not let you hand this ticket on: your Zoho profile may not change a ticket's owner. Nothing was changed — it is still yours. Tell Digital Infrastructure.",
+  "handover-refused": "Zoho refused the hand-over: a field it writes (Handed By, Handed At or the owner) is missing or hidden from your seat. Nothing was changed — it is still yours. Tell Digital Infrastructure.",
 });
+
+/** Zoho's per-record codes for "this user may not do that to this record" (answered inside a 400, or as a 403). */
+const NO_PERMISSION: ReadonlySet<string> = new Set(["NO_PERMISSION", "PERMISSION_DENIED", "OPERATION_NOT_PERMITTED"]);
 
 export type HandResult =
   | { readonly ok: true; readonly row: CaseRow; readonly to: string; readonly already: boolean }
@@ -60,7 +72,7 @@ export type HandResult =
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string; readonly retryable: boolean };
 
 export interface HandoverDeps {
-  readonly crm: Pick<ZohoClient, "coql" | "update" | "changeOwner" | "listUsers">;
+  readonly crm: Pick<ZohoClient, "coql" | "update" | "listUsers">;
   readonly seats: Pick<ZohoSeatDirectory, "resolveDirectoryUser">;
   readonly cache: ScopedCache;
   readonly events: InvestorEvents;
@@ -150,21 +162,26 @@ export function createCaseHandover(deps: HandoverDeps) {
       }
       // The watcher is whoever pressed (prototype: handed.by = the super user when they did it).
       const at = istIso(clock());
+      // One update: the owner and the watcher together, or neither (W2-KAM-6).
       let put;
       try {
-        put = await deps.crm.update(p.credential, CASES_MODULE, id, { Handed_By: { id: me }, Handed_At: at },
+        put = await deps.crm.update(p.credential, CASES_MODULE, id, { Owner: { id: to }, Handed_By: { id: me }, Handed_At: at },
           { ifUnmodifiedSince: typeof expectedModifiedTime === "string" ? expectedModifiedTime : modified ?? null, signal });
       } catch { return zohoFail("unexpected"); }
       if (!put.ok) {
         const c = conflictOf(deps.events, me, "case-hand", put.error);
-        return c ? { ok: false, kind: "conflict", recordId: c.recordId, reason: c.reason } : zohoFail(put.error.kind);
+        if (c) return { ok: false, kind: "conflict", recordId: c.recordId, reason: c.reason };
+        const e = put.error;
+        const code = "code" in e && typeof e.code === "string" ? e.code : "";
+        const field = "field" in e && typeof e.field === "string" ? e.field : null;
+        if (e.kind === "forbidden" || (e.kind === "invalid-data" && (NO_PERMISSION.has(code) || field === "Owner"))) return refuse(me, "owner-change-refused", [id, to]);
+        if (e.kind === "invalid-data") return refuse(me, "handover-refused", [id]);
+        return zohoFail(e.kind);
       }
-      let moved;
-      try { moved = await deps.crm.changeOwner(p.credential, CASES_MODULE, id, to, { notify: true, signal }); } catch { return zohoFail("unexpected"); }
-      if (!moved.ok) return zohoFail(moved.error.kind);
       await dropCuts();
       const handed = Object.freeze({ by: me, at: at.slice(0, 16) });
-      return { ok: true, to, already: false, row: Object.freeze({ ...row, own: to, handed, watched: true, version: null }) };   // change_owner moved Modified_Time again: unknown until re-read
+      const version = put.value.modifiedTime ?? null;   // Zoho's new Modified_Time, from the one write
+      return { ok: true, to, already: false, row: Object.freeze({ ...row, own: to, handed, watched: true, version }) };
     },
   });
 }

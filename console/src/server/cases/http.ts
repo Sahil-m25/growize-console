@@ -69,6 +69,12 @@ const WRITE_STATUS: Readonly<Record<string, number>> = Object.freeze({
   "not-found": 404, "invalid-request": 400, "not-in-book": 422, "identity-in-reply": 422, "identity-in-text": 422,
   "audience-not-in-zoho": 422, "empty-segment": 422, "segment-too-large": 422,
   "not-finance-work": 422, "already-finance": 409, "no-finance": 409,   /* M13-S04 hand to Finance */
+  "owner-change-refused": 403, "handover-refused": 502,                 /* W2-KAM-6: Zoho refused the one hand-over write; nothing written */
+});
+/** W2-KAM-6: Zoho REFUSING a write is not Zoho down — said as a refusal, never "not answering". */
+const WRITE_REFUSED: Readonly<Record<string, readonly [number, string]>> = Object.freeze({
+  "invalid-data": [502, "Zoho refused this change: a field it writes is missing or hidden from your seat. Nothing was changed. Tell Digital Infrastructure."] as const,
+  forbidden: [403, "Zoho does not let your seat make this change. Nothing was changed. Tell Digital Infrastructure."] as const,
 });
 
 /** A write's refusal, conflict or source failure as a response: the in-page message and a short code, never a Zoho body. */
@@ -78,6 +84,8 @@ export function writeFailure(r:
   | { kind: "source-error"; errorKind: string; retryable: boolean }): Response {
   if (r.kind === "refused") return Response.json({ error: r.message, code: r.reason }, { status: WRITE_STATUS[r.reason] ?? 422, headers: NO_STORE });
   if (r.kind === "conflict") return Response.json({ error: r.reason, code: "changed", recordId: r.recordId }, { status: 409, headers: NO_STORE });
+  const refused = WRITE_REFUSED[r.errorKind];
+  if (refused) return Response.json({ error: refused[1], code: r.errorKind }, { status: refused[0], headers: NO_STORE });
   return Response.json({ error: "Zoho is not answering. Nothing was changed that you cannot see; try again.", code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
 }
 

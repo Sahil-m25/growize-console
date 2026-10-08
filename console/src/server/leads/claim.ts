@@ -56,6 +56,23 @@ const RECORD_PREFIX = /^\d{6,16}$/;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const KEY_SEQ = /^CLAIM-(\d{15,22})-(\d{1,4})$/;
 const MAX_NOTE = 1_000;
+/**
+ * B-06 (owner ruling, 8 Oct 2026): an IR may create and view only their OWN Receipts rows — their payment reports.
+ * "Own" is Zoho's: Receipts sharing is Private, so the IR's token returns only the rows the IR owns. What the IR may
+ * read of those rows is Zoho's field-level security, and COQL refuses a whole query (INVALID_QUERY → invalid-data) if
+ * any field it selects or filters on is hidden. So:
+ *   - the lead page's read (`read`) selects only id, UTR (the claim key it filters on) and Match_State (the state) —
+ *     never the allotment, money, Matched_By, Reversal_Of or Idempotency_Key fields;
+ *   - the report (`report`) also reads back what it wrote (Allotment, Kind, Amount, Mode, Received_On) to recognise a
+ *     double press — the fields the IR writes on create, and so must hold Read/Write on.
+ * Zoho config (HUMAN; not yet in zoho/access/spec.json, whose receipt_money group still hides these from IR per D69):
+ * IR and IR Manager field permissions on Receipts — Read/Write: UTR, Match_State, Kind, Amount, Mode, Received_On,
+ * Allotment, Note; hidden: Matched_By, Reversal_Of, Idempotency_Key. Module: View + Create only (no Edit, so a report
+ * cannot be changed after it is sent). A validation rule must hold an IR's create to Match_State = Claimed and a
+ * UTR starting CLAIM- (rule 3: an IR records a report, never matched money).
+ */
+export const CLAIM_READ_FIELDS = "id, UTR, Match_State";
+const CLAIM_REPORT_FIELDS = "id, UTR, Allotment, Kind, Amount, Mode, Received_On, Match_State";
 const MAX_LIVE_ALLOTMENTS = 100;
 
 export type ClaimRefusal =
@@ -204,11 +221,16 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
   });
   const sourceError = (k: ZohoFailureKind | "unexpected"): ClaimResult => failed(k, k === "forbidden"
     ? "Not saved — your Zoho profile cannot save payment reports. Tell Digital Infrastructure."
-    : "Not saved yet — Zoho is not answering. Try again.");
+    : k === "invalid-data"
+      ? "Not saved — your Zoho profile cannot see the payment report's fields. Tell Digital Infrastructure."
+      : "Not saved yet — Zoho is not answering. Try again.");
   /** A READ's failure (B-06b): never "Not saved", and a refusal is said as one, not as an outage. */
   const readError = (k: ZohoFailureKind | "unexpected"): ClaimResult => failed(k, k === "forbidden"
     ? "Payment reports can't be read for this lead yet — your Zoho profile cannot see them. Tell Digital Infrastructure."
-    : "Zoho is not answering. Try again.");
+    : k === "invalid-data"
+      // B-06: COQL's INVALID_QUERY — a report field (the claim key or its state) is hidden from this profile. A refusal, not an outage.
+      ? "Payment reports can't be read for this lead yet — your Zoho profile cannot see the report's fields. Tell Digital Infrastructure."
+      : "Zoho is not answering. Try again.");
 
   /** Rule 1: the front end's own check, then whole rupees. */
   function parseDraft(me: string, body: unknown): Draft | ClaimResult {
@@ -262,9 +284,11 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
 
   interface Existing { readonly id: string; readonly seq: number; readonly allotmentId: string | null; readonly kind: unknown; readonly amount: unknown;
     readonly mode: unknown; readonly receivedOn: unknown; readonly state: unknown }
-  /** Every claim key ever written for this lead (the sequence, and an open one). */
-  async function claimsOf(cred: UserCredential, leadId: string, signal?: AbortSignal): Promise<readonly Existing[] | { fail: ZohoFailureKind } | "invalid"> {
-    const r = await coql(cred, `select id, UTR, Allotment, Kind, Amount, Mode, Received_On, Match_State from ${RECEIPTS_MODULE} where UTR like '${CLAIM_KEY_PREFIX}${leadId}-%' limit 0, 200`, signal);
+  /** Every claim key ever written for this lead (the sequence, and an open one). `fields`: the lead page's read asks only
+   *  for what it shows (CLAIM_READ_FIELDS — B-06: COQL refuses the WHOLE query as INVALID_QUERY when one selected field is
+   *  hidden from the profile, so the IR's read never names a field it does not need); the report asks for what it compares. */
+  async function claimsOf(cred: UserCredential, leadId: string, signal?: AbortSignal, fields: string = CLAIM_REPORT_FIELDS): Promise<readonly Existing[] | { fail: ZohoFailureKind } | "invalid"> {
+    const r = await coql(cred, `select ${fields} from ${RECEIPTS_MODULE} where UTR like '${CLAIM_KEY_PREFIX}${leadId}-%' limit 0, 200`, signal);
     if ("fail" in r) return { fail: r.fail };
     if ("invalid" in r || r.page.moreRecords) return "invalid";
     const out: Existing[] = [];
@@ -336,14 +360,15 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
       masked ? `Reference the investor gave: ${masked}` : "No reference given.",
       d.note ? `IR's note: ${d.note}` : "",
     ].filter(Boolean);
+    // Name: the module's record name (mandatory on a custom module; every other receipt writer sets one) — the claim key.
     const fields: ZohoFields = {
-      Allotment: { id: allotmentId }, Kind: d.zohoKind, Amount: d.amountRupees, Mode: d.mode, UTR: key,
+      Name: key, Allotment: { id: allotmentId }, Kind: d.zohoKind, Amount: d.amountRupees, Mode: d.mode, UTR: key,
       Received_On: receivedOnOf(d.saidOn), Match_State: CLAIM_STATE, Note: noteLines.join("\n"),
     };
 
     /** The key is unique: after an ambiguous or refused write, read it back to learn what Zoho holds. */
     const recover = async (): Promise<ClaimResult | null> => {
-      const r = await coql(cred, `select id, UTR, Allotment, Kind, Amount, Mode, Received_On, Match_State from ${RECEIPTS_MODULE} where UTR = '${key}' limit 0, 2`);
+      const r = await coql(cred, `select ${CLAIM_REPORT_FIELDS} from ${RECEIPTS_MODULE} where UTR = '${key}' limit 0, 2`);
       if (!("page" in r) || r.page.records.length !== 1) return null;
       const row: ZohoRecord = r.page.records[0]!;
       if (!validId(row.id)) return null;
@@ -388,7 +413,7 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
       let g: GateResult;
       try { g = await gates.read({ credential: cred, sessionId: principal.sessionId }, leadId, signal); } catch { return fail(readError("unexpected")); }
       if (!g.ok) return fail(g.kind === "refused" ? refuse(cred.userId, g.reasonCode, [leadId]) : readError(g.errorKind));
-      const past = await claimsOf(cred, leadId, signal);
+      const past = await claimsOf(cred, leadId, signal, CLAIM_READ_FIELDS);
       if (past === "invalid") return fail(refuse(cred.userId, "source-invalid", [leadId]));
       if ("fail" in past) return fail(readError(past.fail));
       const out = (claimId: string | null, state: ClaimStateView["state"], answer: ClaimStateView["answer"] = null, reason: string | null = null): StateResult => ({

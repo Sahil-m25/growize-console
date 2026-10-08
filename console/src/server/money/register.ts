@@ -16,10 +16,19 @@
  *   still due  = over Reserved allotments, units × unit price − the allotment's matched net, never below 0
  *   recorded   = recorded, not yet matched (Pending): { received, refunded, net } — shown apart, never in the above
  * All of it is ./ledger ledgerOf, the one signed ledger the Money section and the receipt replay use: a matched
- * reversal (Reversal_Of) cancels the receipt it names once; a ledger whose reversals break that convention is
- * refused as source-invalid rather than summed two ways.
+ * reversal (Reversal_Of) cancels the receipt it names once; a reversal that breaks that convention changes no figure.
  * Counts and totals are over the farm the person picked (all farms when none), before the kind and
  * reconciliation cuts, so the chips read the same whichever chip is on.
+ *
+ * B-02 (8 Oct 2026): ONE ROW NEVER BLANKS THE REGISTER. Until then any row this module could not parse refused the
+ * whole page as source-invalid (502), so one stray receipt hid every rupee from Finance. Now a receipt or allotment
+ * that cannot be read is left out of the rows and of the figures it would have moved, and is named in `problems`
+ * ("<reason>:<count>"; the record ids go to the ops log only, never to the page). The page says so beside the totals:
+ * they are then over what could be read — a stated partial figure, never a guessed one.
+ * The legitimate shapes Zoho answers are read as such: picklist values in any letter case ("full" → Full, "not found"
+ * → Not found), an Amount sent as a whole-number string or a whole currency value, a lookup as { id } or a bare id,
+ * Received_On as a date or a datetime (sent as its YYYY-MM-DD day), and an allotment with no readable Customer or LLP
+ * (its receipts still count; the investor or farm reads as unknown).
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
@@ -39,12 +48,25 @@ const RECORD_PREFIX = /^\d{6,16}$/;
 const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
 
 export type RegisterKind = "advance" | "balance" | "full" | "refund" | "forfeit";
+/** The Zoho Kind, keyed by canon (lower case), → the register's kind. Part is the live name of D70's Balance. */
 const KIND: Readonly<Record<string, RegisterKind>> = Object.freeze({
-  Advance: "advance", Part: "balance", Balance: "balance", Full: "full", Refund: "refund", Forfeit: "forfeit",
+  advance: "advance", part: "balance", balance: "balance", full: "full", refund: "refund", forfeit: "forfeit",
 });
 /** RegisterKind → the Zoho Kind the ledger reads (Part and Balance are one balance kind). */
 const KIND_NAME: Readonly<Record<RegisterKind, string>> = Object.freeze({ advance: "Advance", balance: "Part", full: "Full", refund: "Refund", forfeit: "Forfeit" });
-const MATCH_STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not found", "Reversed", "Claimed"]);
+/** Match_State, keyed by canon (lower case), → the org's spelling, which the ledger reads. */
+const MATCH_STATE: Readonly<Record<string, string>> = Object.freeze({
+  pending: "Pending", matched: "Matched", "not found": "Not found", reversed: "Reversed", claimed: "Claimed",
+});
+
+/** Why a row was left out of the register, or read only in part. */
+export type RegisterProblem =
+  | "receipt-unreadable"    // no valid id, an unknown Kind or Match_State, an Amount that is not whole rupees above 0
+  | "receipt-unlinked"      // no Allotment, or one this token cannot read or this module cannot parse
+  | "allotment-unreadable"  // no valid id or no Allocation_Status (its receipts are then receipt-unlinked)
+  | "allotment-unnamed"     // no readable Customer or LLP: kept, the investor or farm reads as unknown
+  | "price-missing"         // a Reserved allotment with no units × price: kept, its still-due is not counted
+  | "reversal-anomaly";     // a reversal that breaks the ledger's convention (./ledger): it changes no figure
 
 export interface RegisterAccess {
   readonly actor: SeatedZohoUser;
@@ -78,12 +100,15 @@ export interface RegisterRow {
   readonly canReveal: boolean;
   /** true: the screen reads "Finance only". */
   readonly utrHidden: boolean;
+  /** The day it was received, YYYY-MM-DD. */
   readonly receivedOn: string | null;
   readonly matchState: string;
   readonly reconciled: boolean;
   readonly allotmentId: string;
-  readonly investor: { readonly id: string; readonly name: string | null };
-  readonly farm: { readonly id: string; readonly name: string | null };
+  /** id null: the allotment names no readable Customer (problem allotment-unnamed) — the row still counts. */
+  readonly investor: { readonly id: string | null; readonly name: string | null };
+  /** id null: the allotment names no readable LLP (problem allotment-unnamed) — the row still counts. */
+  readonly farm: { readonly id: string | null; readonly name: string | null };
   readonly recordedById: string | null;
   readonly reversalOf: string | null;
 }
@@ -97,8 +122,7 @@ export interface RegisterTotals {
 export type RegisterResult =
   | { readonly ok: true; readonly value: { readonly rows: readonly RegisterRow[]; readonly counts: RegisterCounts; readonly totals: RegisterTotals;
       readonly farms: readonly { readonly id: string; readonly name: string | null }[]; readonly readOnly: boolean;
-      /** B-02b: what the totals could not count, as codes ("price-missing:<n>": n Reserved allotments carry no unit price, so
-       *  their commitment is left out of still due). Empty when the totals are whole. */
+      /** What was left out or read in part, as "<RegisterProblem>:<count>", in a fixed order. Empty when every row read. */
       readonly problems: readonly string[] } }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: "invalid-request" | "session-changed" | "capability-missing" | "source-invalid" }
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
@@ -111,13 +135,26 @@ export interface RegisterDependencies {
   readonly clock?: () => number;
 }
 
-interface Allot { id: string; investorId: string; investorName: string | null; farmId: string; farmName: string | null; status: string; commitment: number; priceMissing: boolean }
+interface Allot { id: string; investorId: string | null; investorName: string | null; farmId: string | null; farmName: string | null; status: string; commitment: number }
 class Fail { constructor(readonly kind: ZohoFailureKind | "unexpected") {} }
-class Invalid { constructor(readonly ids: string[]) {} }
+
+const PROBLEM_ORDER: readonly RegisterProblem[] = ["receipt-unreadable", "receipt-unlinked", "allotment-unreadable", "allotment-unnamed", "price-missing", "reversal-anomaly"];
 
 /** "••• 1234": the last four and no more (lib/format maskRef — the same rule, kept here so the server module stays standalone). */
 export const maskRef = (v: string): string => (v.trim().length <= 4 ? "••••" : "••• " + v.trim().slice(-4));
-const int = (v: unknown): number | null => (typeof v === "number" && Number.isSafeInteger(v) ? v : null);
+/** A picklist value as a lookup key: trimmed, lower case, "_" / "-" / runs of spaces as one space. "-None-" is no value. */
+const canon = (v: unknown): string | null => {
+  if (typeof v !== "string") return null;
+  const c = v.trim().toLowerCase().replace(/[\s_-]+/g, " ").trim();
+  return c && c !== "none" ? c : null;
+};
+/** Whole numbers: a safe integer, or a whole-number string ("1500000", "1500000.00") as Zoho may send a currency. */
+const whole = (v: unknown): number | null => {
+  const x = typeof v === "number" ? v : typeof v === "string" && /^\d{1,16}(\.0+)?$/.test(v.trim()) ? Number(v.trim()) : NaN;
+  return Number.isSafeInteger(x) ? x : null;
+};
+/** Received_On, a date or a datetime, as its YYYY-MM-DD day (Zoho stamps it in the org's zone, Asia/Kolkata — rule 9). */
+const dayOf = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null);
 const name = (v: unknown): string | null => {
   const n = v && typeof v === "object" ? (v as { name?: unknown }).name : undefined;
   return typeof n === "string" ? n.slice(0, 120) : null;
@@ -131,7 +168,8 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
   const { crm, access, log } = deps;
   const clock = deps.clock ?? Date.now;
   const validId = (v: unknown): v is string => typeof v === "string" && RECORD_ID.test(v) && v.startsWith(deps.recordIdPrefix);
-  const idOf = (v: unknown): string | null => { const id = v && typeof v === "object" ? (v as { id?: unknown }).id : undefined; return validId(id) ? id : null; };
+  /** A lookup, as { id, name? } or a bare id. */
+  const idOf = (v: unknown): string | null => { const id = v && typeof v === "object" ? (v as { id?: unknown }).id : v; return validId(id) ? id : null; };
   const all = async (cred: UserCredential, q: string, signal?: AbortSignal): Promise<ZohoRecord[]> => {
     const rows: ZohoRecord[] = [];
     for (let off = 0; off < MAX_ROWS; off += PAGE) {
@@ -144,16 +182,19 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
     throw new Fail("unexpected");
   };
   const ALLOT = "id, Customer, LLP, Allocation_Status, Issued_Units, Reserved_Units, Unit_Price";
-  const parseAllot = (r: ZohoRecord): Allot => {
-    const investorId = idOf(r.Customer), farmId = idOf(r.LLP), status = typeof r.Allocation_Status === "string" ? r.Allocation_Status : "";
-    const units = status === "Issued" ? int(r.Issued_Units) : int(r.Reserved_Units), price = int(r.Unit_Price);
-    if (!validId(r.id) || !investorId || !farmId || !status) throw new Invalid([r.id]);
-    const commitment = units !== null && price !== null && units >= 0 && price >= 0 ? units * price : null;
-    if (status === "Reserved" && commitment !== null && !Number.isSafeInteger(commitment)) throw new Invalid([r.id]);
-    /* B-02b: an unpriced reservation (no Unit_Price, or no units) does not blank the register — its commitment is
-       left out of still due and the answer names it in `problems`. An unreadable id, investor or farm still refuses. */
-    const priceMissing = status === "Reserved" && commitment === null;
-    return { id: r.id, investorId, investorName: name(r.Customer), farmId, farmName: name(r.LLP), status, commitment: commitment ?? 0, priceMissing };
+  type Note = (p: RegisterProblem, id: unknown) => void;
+  /** One allotment, or null when it cannot be one (its receipts are then receipt-unlinked). */
+  const parseAllot = (r: ZohoRecord, note: Note): Allot | null => {
+    const status = typeof r.Allocation_Status === "string" ? r.Allocation_Status.trim() : "";
+    if (!validId(r.id) || !status || status === "-None-") { note("allotment-unreadable", r.id); return null; }
+    const investorId = idOf(r.Customer), farmId = idOf(r.LLP);
+    if (!investorId || !farmId) note("allotment-unnamed", r.id);
+    const units = status === "Issued" ? whole(r.Issued_Units) : whole(r.Reserved_Units), price = whole(r.Unit_Price);
+    const c = units !== null && price !== null && units >= 0 && price >= 0 ? units * price : null;
+    const priced = c !== null && Number.isSafeInteger(c);
+    if (status === "Reserved" && !priced) note("price-missing", r.id);
+    return { id: r.id, investorId, investorName: investorId ? name(r.Customer) : null, farmId, farmName: farmId ? name(r.LLP) : null,
+      status, commitment: priced ? (c as number) : 0 };
   };
 
   return Object.freeze({
@@ -174,28 +215,32 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
         log.refusal({ at: clock(), actor, action: "payments-register", reason: "capability-missing", recordIds: [] });
         return { ok: false, kind: "refused", reasonCode: "capability-missing" };
       }
+      const problems = new Map<RegisterProblem, string[]>();
+      const note: Note = (p, id) => { const ids = problems.get(p) ?? []; ids.push(typeof id === "string" && RECORD_ID.test(id) ? id : ""); problems.set(p, ids); };
       try {
         const receipts = await all(cred, "select id, Allotment, Kind, Amount, Mode, UTR, Received_On, Match_State, Reversal_Of, Created_By from Receipts where id is not null order by Received_On desc", signal);
         const reserved = await all(cred, `select ${ALLOT} from ${ALLOTMENTS_MODULE} where Allocation_Status = 'Reserved' order by id asc`, signal);
         const allots = new Map<string, Allot>();
-        for (const r of reserved) { const p = parseAllot(r); allots.set(p.id, p); }
-        const need = [...new Set(receipts.map((r) => idOf(r.Allotment)).filter((id): id is string => !!id && !allots.has(id)))];
+        const asked = new Set<string>();
+        for (const r of reserved) { const p = parseAllot(r, note); if (p) allots.set(p.id, p); if (validId(r.id)) asked.add(r.id); }
+        const need = [...new Set(receipts.map((r) => idOf(r.Allotment)).filter((id): id is string => !!id && !asked.has(id)))];
         for (let i = 0; i < need.length; i += COQL_IN_LIMIT) {
           const rows = await all(cred, `select ${ALLOT} from ${ALLOTMENTS_MODULE} where id in (${need.slice(i, i + COQL_IN_LIMIT).map((x) => `'${x}'`).join(", ")}) order by id asc`, signal);
-          for (const r of rows) { const p = parseAllot(r); allots.set(p.id, p); }
+          for (const r of rows) { const p = parseAllot(r, note); if (p) allots.set(p.id, p); }
         }
 
         const rows: RegisterRow[] = [];
         for (const r of receipts) {
+          const kindKey = canon(r.Kind), stateKey = canon(r.Match_State);
+          const kind = kindKey ? KIND[kindKey] : undefined, amount = whole(r.Amount), match = stateKey ? MATCH_STATE[stateKey] : undefined;
+          if (!validId(r.id) || !kind || amount === null || amount <= 0 || !match) { note("receipt-unreadable", r.id); continue; }
           const allotmentId = idOf(r.Allotment), al = allotmentId ? allots.get(allotmentId) : undefined;
-          const kind = typeof r.Kind === "string" ? KIND[r.Kind] : undefined, amount = int(r.Amount);
-          const match = typeof r.Match_State === "string" && MATCH_STATES.has(r.Match_State) ? r.Match_State : null;
-          if (!validId(r.id) || !al || !kind || amount === null || amount <= 0 || !match) throw new Invalid([r.id]);
-          const utr = typeof r.UTR === "string" ? r.UTR.slice(0, 80) : null;
+          if (!al) { note("receipt-unlinked", r.id); continue; }
+          const utr = typeof r.UTR === "string" && r.UTR.trim() ? r.UTR.slice(0, 80) : null;
           rows.push(Object.freeze({
-            id: r.id, kind, amount, mode: typeof r.Mode === "string" ? r.Mode : null,
+            id: r.id, kind, amount, mode: typeof r.Mode === "string" && r.Mode && r.Mode !== "-None-" ? r.Mode : null,
             utr: null, utrMask: a.seesUtr && utr ? maskRef(utr) : null, canReveal: a.seesUtr && !!utr, utrHidden: !a.seesUtr,
-            receivedOn: typeof r.Received_On === "string" ? r.Received_On : null,
+            receivedOn: dayOf(r.Received_On),
             matchState: match, reconciled: match === "Matched", allotmentId: al.id,
             investor: Object.freeze({ id: al.investorId, name: al.investorName }), farm: Object.freeze({ id: al.farmId, name: al.farmName }),
             recordedById: idOf(r.Created_By), reversalOf: idOf(r.Reversal_Of),
@@ -204,14 +249,13 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
 
         const inFarm = filter.farm ? rows.filter((r) => r.farm.id === filter.farm) : rows;
         // The one signed ledger (./ledger): refunds out, a matched reversal cancels its receipt once, Pending apart (D21).
+        // A reversal that breaks the convention cancels nothing (the ledger's own rule): reported, never a refusal.
         const ledger = ledgerOf(rows.map((r) => ({ id: r.id, allotmentId: r.allotmentId, kind: KIND_NAME[r.kind], amount: r.amount, matchState: r.matchState, reversalOf: r.reversalOf })));
-        if (ledger.anomalies.length) throw new Invalid([...ledger.anomalies]);
+        for (const id of ledger.anomalies) note("reversal-anomaly", id);
         const inFarmAllots = new Set([...allots.values()].filter((x) => !filter.farm || x.farmId === filter.farm).map((x) => x.id));
         let received = 0, refunded = 0, recIn = 0, recOut = 0;
         for (const id of inFarmAllots) { const s = sumsOf(ledger, id); received += s.matchedIn; refunded += s.matchedOut; recIn += s.pendingIn; recOut += s.pendingOut; }
-        const priced = [...allots.values()].filter((x) => inFarmAllots.has(x.id) && !x.priceMissing);
-        const stillDue = priced.reduce((t, x) => t + dueOf(x.status, x.commitment, sumsOf(ledger, x.id)), 0);
-        const unpriced = [...allots.values()].filter((x) => inFarmAllots.has(x.id) && x.priceMissing).length;
+        const stillDue = [...allots.values()].filter((x) => inFarmAllots.has(x.id)).reduce((t, x) => t + dueOf(x.status, x.commitment, sumsOf(ledger, x.id)), 0);
         const cut: Record<string, (r: RegisterRow) => boolean> = {
           advance: (r) => r.kind === "advance",
           full: (r) => r.kind === "full" || r.kind === "balance",
@@ -221,20 +265,21 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
           out: inFarm.filter(cut.out).length, pending: inFarm.filter((r) => !r.reconciled).length });
         const shown = inFarm.filter((r) => (!filter.kind || cut[filter.kind](r)) && (filter.reconciled === undefined || r.reconciled === filter.reconciled));
         const farms = new Map<string, string | null>();
-        for (const x of allots.values()) if (!farms.has(x.farmId)) farms.set(x.farmId, x.farmName);
+        for (const x of allots.values()) if (x.farmId && !farms.has(x.farmId)) farms.set(x.farmId, x.farmName);
+        // Record ids only, to the ops log (never to the page, never an amount or a name): one line per reason.
+        for (const p of PROBLEM_ORDER) {
+          const ids = problems.get(p);
+          if (ids) log.refusal({ at: clock(), actor, action: "payments-register", reason: `source-invalid.${p}`, recordIds: [...new Set(ids.filter(Boolean))] });
+        }
         return { ok: true, value: {
           rows: Object.freeze(shown), counts,
           totals: Object.freeze({ received, refunded, netBanked: received - refunded, stillDue,
             recorded: Object.freeze({ received: recIn, refunded: recOut, net: recIn - recOut }) }),
           farms: Object.freeze([...farms].sort((x, y) => x[0].localeCompare(y[0])).map(([id, n]) => Object.freeze({ id, name: n }))),
           readOnly: !a.canRecord,
-          problems: Object.freeze(unpriced ? [`price-missing:${unpriced}`] : []),
+          problems: Object.freeze(PROBLEM_ORDER.filter((p) => problems.has(p)).map((p) => `${p}:${problems.get(p)!.length}`)),
         } };
       } catch (e) {
-        if (e instanceof Invalid) {
-          log.refusal({ at: clock(), actor, action: "payments-register", reason: "source-invalid", recordIds: e.ids.filter((id) => RECORD_ID.test(id)) });
-          return { ok: false, kind: "refused", reasonCode: "source-invalid" };
-        }
         if (e instanceof Fail) return { ok: false, kind: "source-error", errorKind: e.kind, retryable: e.kind === "network" || e.kind === "server" || e.kind === "busy" };
         throw e;
       }

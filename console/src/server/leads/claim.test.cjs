@@ -82,6 +82,8 @@ function rig(o = {}) {
         const q = JSON.parse(init.body).select_query; calls.push({ op: 'coql', q });
         if (q.includes('from Contacts')) return toResponse(recorded('contacts.one'));
         if (q.includes('from LLP_UnitAllocation_Module')) return toResponse(recorded(f.allotments));
+        // `hidden`: the IR profile's field-level security — COQL refuses the whole query when it names a hidden field (B-06).
+        if (o.hidden && q.includes('from Receipts') && o.hidden.some((h) => new RegExp(`\\b${h}\\b`).test(q))) return toResponse(recorded('claims.invalid-query'));
         if (q.includes('where UTR like')) return toResponse(recorded(f.claims));
         if (q.includes('where UTR =')) return toResponse(recorded(f.readBack));
         if (q.includes('from Receipts where Allotment in')) return toResponse(recorded(f.receipts));
@@ -120,7 +122,7 @@ test('TC-E08-011: a balance report writes one Claimed receipt, the stage does no
   const ins = r.inserts();
   assert.equal(ins.length, 1, 'exactly one record');
   const [row] = ins[0].data;
-  assert.deepEqual({ ...row, Note: undefined }, { Allotment: { id: A }, Kind: 'Part', Amount: 1500000, Mode: 'SWIFT', UTR: `CLAIM-${L7}-1`,
+  assert.deepEqual({ ...row, Note: undefined }, { Name: `CLAIM-${L7}-1`, Allotment: { id: A }, Kind: 'Part', Amount: 1500000, Mode: 'SWIFT', UTR: `CLAIM-${L7}-1`,
     Received_On: '2026-08-27T00:00:00+05:30', Match_State: 'Claimed', Note: undefined });
   assert.match(row.Note, /••••8001/);
   assert.ok(!JSON.stringify(ins).includes(REF), 'the full reference is never stored');
@@ -288,4 +290,36 @@ test('B-06b: a report Zoho refuses (no Receipts create) says the profile cannot 
   assert.deepEqual([res.ok, res.kind, res.errorKind], [false, 'source-error', 'forbidden']);
   assert.match(res.message, /your Zoho profile cannot save payment reports/);
   assert.equal(r.inserts().length, 0);
+});
+
+/* B-06 (8 Oct, after D134 gave the IR View + Create on Receipts): the read answered 502 invalid-data on every lead open —
+ * COQL refused the query because it selected allotment and money fields the IR profile cannot see. Owner ruling: an IR
+ * creates and views only their own Receipts rows. The read now names only the claim key and its state. */
+const IR_HIDDEN = ['Allotment', 'Kind', 'Amount', 'Mode', 'Received_On', 'Matched_By', 'Reversal_Of', 'Idempotency_Key'];
+test('B-06: the lead page\'s read selects only id, UTR and Match_State — an IR with no reports reads "none", never an error', async () => {
+  const r = rig({ hidden: IR_HIDDEN });
+  const none = await r.svc.read(principal(), L7);
+  assert.equal(none.ok, true, JSON.stringify(none));
+  assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null });
+  const q = r.calls.find((c) => c.op === 'coql' && c.q.includes('where UTR like')).q;
+  assert.match(q, /^select id, UTR, Match_State from Receipts where UTR like 'CLAIM-\d+-%' limit 0, 200$/);
+  const waiting = await rig({ hidden: IR_HIDDEN, claims: 'claims.open' }).svc.read(principal(), L7);
+  assert.deepEqual([waiting.ok, waiting.value.state, waiting.value.claimId], [true, 'waiting', R], 'the IR\'s own waiting report reads back');
+  const answered = await rig({ hidden: IR_HIDDEN, claims: 'claims.not-found', notes: 'notes.not-found' }).svc.read(principal(), L7);
+  assert.deepEqual([answered.ok, answered.value.state, answered.value.answer], [true, 'answered', 'not-found']);
+});
+
+test('B-06: a report field still hidden from the profile is said as a refusal of the read, not as Zoho down or "Not saved"', async () => {
+  const r = await rig({ hidden: ['UTR'] }).svc.read(principal(), L7);
+  assert.deepEqual([r.ok, r.kind, r.errorKind, r.retryable], [false, 'source-error', 'invalid-data', false]);
+  assert.match(r.message, /your Zoho profile cannot see the report's fields/);
+  assert.doesNotMatch(r.message, /Not saved|not answering/);
+});
+
+test('B-06: the report names the claim row (Name = the claim key) and a hidden field on its check says so', async () => {
+  const r = rig({ hidden: ['Amount'] });
+  const res = await r.svc.report(principal(), L7, body());
+  assert.deepEqual([res.ok, res.errorKind], [false, 'invalid-data']);
+  assert.match(res.message, /cannot see the payment report's fields/);
+  assert.equal(r.inserts().length, 0, 'nothing is written while the profile cannot read back what it writes');
 });

@@ -11,7 +11,7 @@ vi.mock("@/lib/data/endpoints/payments", async (orig) => {
   const m = await orig<typeof import("@/lib/data/endpoints/payments")>();
   return { ...m, paymentsRegister: { ...m.paymentsRegister, fixture: (b: never, a: never) => {
     const r = m.paymentsRegister.fixture!(b, a) as { ok: boolean; data?: Record<string, unknown> };
-    return r.ok ? { ...r, data: { ...r.data, problems: ["price-missing:2"] } } : r;
+    return r.ok ? { ...r, data: { ...r.data, problems: ["receipt-unreadable:2", "receipt-unlinked:1", "price-missing:2"] } } : r;
   } } };
 });
 vi.mock("@/lib/data/endpoints/investors", async (orig) => {
@@ -30,6 +30,11 @@ describe("degraded Finance reads", () => {
   it("the register says how many reservations still due leaves out", () => {
     const h = renderToStaticMarkup(<ImTxn s={state()} me="meena" dispatch={() => {}} />);
     expect(h).toContain("2 reservations have no unit price (or units) in Zoho, so “still due” leaves them out.");
+  });
+  it("B-02: the register still renders when Zoho holds payments it cannot read, and says how many are left out", () => {
+    const h = renderToStaticMarkup(<ImTxn s={state()} me="meena" dispatch={() => {}} />);
+    expect(h).toContain("3 payments in Zoho could not be read, so the list and the totals above leave them out.");
+    expect(h).toContain("still due");
   });
   it("the Investors list reads KYC as not visible, says why, and offers no 'KYC not passed' cut", () => {
     const h = renderToStaticMarkup(<ImInv s={state()} me="harsha" dispatch={() => {}} />);

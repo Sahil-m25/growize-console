@@ -292,15 +292,82 @@ test('a non-Finance seat reads the UTR as hidden; a viewer is read-only; a KAM i
   assert.equal(kam.queries.length, 0);
 });
 
-test('register refuses a bad filter, and a malformed receipt is source-invalid, never a guessed total', async () => {
+const plainTotals = (v) => ({ ...v.totals, recorded: { ...v.totals.recorded } });
+const BASE_TOTALS = { received: 1500000, refunded: 100000, netBanked: 1400000, stillDue: 1500000, recorded: { received: 1500000, refunded: 0, net: 1500000 } };
+
+test('register refuses a bad filter', async () => {
   const r = registerRig();
   assert.equal((await r.svc.read(principal(), { kind: 'everything' })).reasonCode, 'invalid-request');
   assert.equal((await r.svc.read(principal(), { farm: '12345' })).reasonCode, 'invalid-request');
-  const bad = registerRig({}, (rows) => { rows[2].Amount = 1.5; });
+});
+
+test('B-02: one malformed receipt never blanks the register — it is left out, named in problems, its id in the ops log only', async () => {
+  const bad = registerRig({}, (rows) => { rows[2].Amount = 1.5; });   // the Matched ₹5 L Advance on the Reserved allotment
   const res = await bad.svc.read(principal());
-  assert.deepEqual(res, { ok: false, kind: 'refused', reasonCode: 'source-invalid' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([...res.value.problems], ['receipt-unreadable:1']);
+  assert.equal(res.value.rows.length, 5);
+  assert.ok(!res.value.rows.some((x) => x.id === `${P}740996304`));
+  assert.deepEqual(plainTotals(res.value), { received: 1000000, refunded: 100000, netBanked: 900000, stillDue: 2000000,
+    recorded: { received: 1500000, refunded: 0, net: 1500000 } }, 'the figures are over what could be read — never the unread ₹5 L');
   const refusal = bad.sink.records().find((x) => x.kind === 'refusal');
+  assert.equal(refusal.reason, 'source-invalid.receipt-unreadable');
   assert.deepEqual(refusal.recordIds, [`${P}740996304`]);
+  assert.ok(!JSON.stringify(res.value.problems).includes(P), 'record ids stay out of the page');
+});
+
+test('B-02: the seed\'s shapes read as legitimate — lower-case Kind and Match_State, whole-number string amounts, a date-only Received_On, a bare-id lookup', async () => {
+  const r = registerRig({}, (rows) => {
+    for (const x of rows) { x.Kind = x.Kind.toLowerCase(); x.Match_State = x.Match_State.toLowerCase(); }
+    rows[2].Amount = '500000';             // a currency as a string
+    rows[4].Amount = '750000.00';          // … with its paise
+    rows[4].Received_On = '2026-08-20';    // a date, not a datetime
+    rows[5].Allotment = rows[5].Allotment.id; // a lookup as a bare id
+    rows[0].Match_State = 'CLAIMED';
+  });
+  const res = await r.svc.read(principal());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([...res.value.problems], []);
+  assert.deepEqual(plainTotals(res.value), BASE_TOTALS, 'the same money as the Title-case fixture');
+  assert.deepEqual({ ...res.value.counts }, { all: 6, advance: 2, full: 3, out: 1, pending: 2 });
+  assert.deepEqual(res.value.rows.map((x) => x.matchState), ['Claimed', 'Matched', 'Matched', 'Pending', 'Matched', 'Matched'], 'the org\'s spelling goes out');
+  assert.deepEqual(res.value.rows.map((x) => x.kind), ['balance', 'refund', 'advance', 'full', 'full', 'advance']);
+  assert.ok(res.value.rows.every((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.receivedOn)), 'Received_On goes out as its day');
+  assert.equal(res.value.rows[4].receivedOn, '2026-08-20');
+});
+
+test('B-02: rows the register cannot place are reported by reason, the rest still reads', async () => {
+  const r = registerRig({}, (rows) => {
+    rows[0].Allotment = null;              // a Claimed row with no allotment
+    rows[3].Kind = 'Bonus';                // a Kind the ledger does not know
+    rows.push({ id: `${P}740996307`, Allotment: { id: `${P}740996003` }, Kind: 'Refund', Amount: 999, Mode: 'NEFT', UTR: null,
+      Received_On: '2026-09-02T10:00:00+05:30', Match_State: 'Matched', Reversal_Of: { id: `${P}740996302` }, Created_By: null }); // reverses a receipt of another allotment, another amount
+  }, (allots) => {
+    delete allots[0].LLP;                  // an Issued allotment with no readable farm
+    allots[1].Unit_Price = null;           // the Reserved allotment has no price
+  });
+  const res = await r.svc.read(principal());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([...res.value.problems], ['receipt-unreadable:1', 'receipt-unlinked:1', 'allotment-unnamed:1', 'price-missing:1', 'reversal-anomaly:1']);
+  const a1 = res.value.rows.filter((x) => x.allotmentId === `${P}740996001`);
+  assert.equal(a1.length, 2, 'the unnamed allotment\'s receipts still count');
+  assert.ok(a1.every((x) => x.farm.id === null && x.farm.name === null && x.investor.id === C1));
+  assert.ok(!res.value.farms.some((f) => f.id === null), 'no unknown farm is offered as a filter');
+  assert.deepEqual(plainTotals(res.value), { received: 1500000, refunded: 100000, netBanked: 1400000, stillDue: 0,
+    recorded: { received: 0, refunded: 0, net: 0 } }, 'the anomalous reversal moves nothing; an unpriced reservation adds no due');
+  const reasons = r.sink.records().filter((x) => x.kind === 'refusal').map((x) => x.reason);
+  assert.deepEqual(reasons, ['source-invalid.receipt-unreadable', 'source-invalid.receipt-unlinked', 'source-invalid.allotment-unnamed',
+    'source-invalid.price-missing', 'source-invalid.reversal-anomaly']);
+});
+
+test('B-02: a Zoho failure is still a source error, never an empty register', async () => {
+  const sink = createMemorySink();
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log: createOpsLog(sink), maxAttempts: 1, clock: () => NOW,
+    fetch: async () => toResponse({ status: 500, body: { code: 'INTERNAL_ERROR', status: 'error' } }) });
+  const authority = { async recheck(c) { return { actor: { userId: c.userId }, seesRegister: true, seesUtr: true, canRecord: true }; } };
+  const res = await createPaymentsRegister({ crm, access: authority, log: createOpsLog(sink), recordIdPrefix: P, clock: () => NOW }).read(principal());
+  assert.equal(res.ok, false);
+  assert.equal(res.kind, 'source-error');
 });
 
 /* B-02b: a seed (or a hand-made) reservation with no Unit_Price must not blank the whole register. */
@@ -318,7 +385,12 @@ test('an unpriced Reserved allotment does not blank the register: still due leav
   assert.deepEqual([zero.ok, [...zero.value.problems]], [true, []], 'a price of 0 is a price (the seed fix sets it), not a missing one');
 });
 
-test('an allotment with an unreadable investor or farm is still source-invalid', async () => {
+test('B-02: an allotment with an unreadable investor is kept — its receipts count, the investor reads as unknown, the answer says so', async () => {
   const res = await registerRig({}, null, (rows) => { rows[1].Customer = null; }).svc.read(principal());
-  assert.deepEqual(res, { ok: false, kind: 'refused', reasonCode: 'source-invalid' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([...res.value.problems], ['allotment-unnamed:1']);
+  assert.deepEqual(plainTotals(res.value), BASE_TOTALS);
+  const theirs = res.value.rows.filter((x) => x.allotmentId === `${P}740996002`);
+  assert.equal(theirs.length, 2);
+  assert.ok(theirs.every((x) => x.investor.id === null && x.investor.name === null && x.farm.id === F1));
 });

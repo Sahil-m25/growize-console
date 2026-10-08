@@ -1,0 +1,19 @@
+{
+ "status": 400,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "code": "INVALID_DATA",
+    "details": {
+     "api_name": "Handed_By",
+     "json_path": "$.data[0].Handed_By"
+    },
+    "message": "invalid data",
+    "status": "error"
+   }
+  ]
+ }
+}

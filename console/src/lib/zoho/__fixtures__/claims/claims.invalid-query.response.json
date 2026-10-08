@@ -1,0 +1,14 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "api_name": "Amount"
+    },
+    "message": "synthetic: a selected column is not visible to this profile",
+    "status": "error"
+  }
+}

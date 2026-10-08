@@ -22,7 +22,7 @@ const CUT: Record<string, RegisterArgs> = { all: {}, adv: { kind: "advance" }, f
 const COUNT: Record<string, "all" | "advance" | "full" | "out" | "pending"> = { all: "all", adv: "advance", full: "full", out: "out", pend: "pending" };
 
 /** the row as the book's own ImTxn, for the pieces that are not wired here (Match it reads it) */
-const asTxn = (r: RegisterRowView): ImTxn => ({ id: r.id, inv: r.investor.id, kind: r.kind, amt: r.amount, mode: r.mode ?? "", utr: r.utr ?? "",
+const asTxn = (r: RegisterRowView): ImTxn => ({ id: r.id, inv: r.investor.id ?? "", kind: r.kind, amt: r.amount, mode: r.mode ?? "", utr: r.utr ?? "",
   on: r.receivedOn ?? "", by: r.recordedById ?? "", rec: r.reconciled ? "matched" : "pending" });
 /** the demo book stamps "02 Sep 10:00"; the route sends "2026-09-02" */
 const dayOf = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? fmtDate(v).slice(0, 6) : day6(v));
@@ -108,6 +108,8 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
   const rec = totals.recorded;
   /* B-02b: reservations Zoho holds no unit price for are left out of "still due" — said, never silently */
   const unpriced = (r.data.problems ?? []).map(p => /^price-missing:(\d+)$/.exec(p)).find(Boolean);
+  /* B-02: payments Zoho holds that the register could not read are left out of the list and the totals — said, never a blank page */
+  const unread = (r.data.problems ?? []).map(p => /^receipt-[a-z]+:(\d+)$/.exec(p)).reduce((n, m) => n + (m ? Number(m[1]) : 0), 0);
   return (
     <>
       <div className="ph"><h1>Payments</h1>
@@ -124,6 +126,8 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
       </div>
       {unpriced ? <div className="note bad" role="status" style={{ marginBottom: 8 }}>{unpriced[1] + (unpriced[1] === "1" ? " reservation has" : " reservations have")
         + " no unit price (or units) in Zoho, so “still due” leaves them out. Tell Digital Infrastructure."}</div> : null}
+      {unread ? <div className="note bad" role="status" style={{ marginBottom: 8 }}>{unread + (unread === 1 ? " payment" : " payments")
+        + " in Zoho could not be read, so the list and the totals above leave " + (unread === 1 ? "it" : "them") + " out. Tell Digital Infrastructure."}</div> : null}
       {rec.received || rec.refunded ? <p className="sm" style={{ margin: "0 0 8px" }}>Recorded, not yet matched: <b>{money(rec.received)}</b> in
         {rec.refunded ? <> and <b>−{money(rec.refunded)}</b> out</> : null} · not counted above until Finance matches it.</p> : null}
       <div className="secbar">{Object.entries(TXNF).map(([k, [t]]) => (
@@ -134,9 +138,9 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
         <thead><tr><th>Reference</th><th>Investor</th><th>Kind</th><th className="n">Amount</th>
           <th>Mode · UTR</th><th aria-label="Show or hide the reference"></th><th>Recorded</th><th>Reconciled</th></tr></thead>
         <tbody>{rows.length ? rows.map(t => (
-          <tr className="k" key={t.id} onClick={() => dispatch({ type: "go", v: "inv", id: t.investor.id })} tabIndex={0}>
+          <tr className="k" key={t.id} onClick={() => { if (t.investor.id) dispatch({ type: "go", v: "inv", id: t.investor.id }); }} tabIndex={0}>
             <td className="mono">{t.id}</td>
-            <td>{t.investor.name ?? t.investor.id}<div className="sm mono">{t.investor.id}</div></td>
+            <td>{t.investor.name ?? t.investor.id ?? "Investor not readable"}<div className="sm mono">{t.investor.id ?? ""}</div></td>
             <td><span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold"
               : t.kind === "forfeit" ? "due" : "go"}`}>{t.kind}</span></td>
             <td className="n mono"><b>{t.kind === "refund" ? "−" : ""}{money(t.amount)}</b></td>

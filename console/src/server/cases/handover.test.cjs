@@ -66,7 +66,7 @@ test('Finance is Finance Operations, else the Head of Finance, else nobody — a
   assert.equal(financeTarget(left, seats), HARSHA, 'a leaver is never handed a ticket');
 });
 
-test('TC-IM08-007: Imran hands "Change the bank account for payouts" to Finance — watcher written first, then change_owner to Meena, on his own token', async () => {
+test('TC-IM08-007: Imran hands "Change the bank account for payouts" to Finance — owner and watcher in ONE guarded write to Meena, on his own token', async () => {
   const r = await rig();
   const out = await r.svc.handToFinance({ credential: await r.cred(IMRAN), seat: 'kam' }, CASE, '2026-09-27T10:00:00+05:30');
   assert.equal(out.ok, true);
@@ -75,14 +75,15 @@ test('TC-IM08-007: Imran hands "Change the bank account for payouts" to Finance 
   assert.equal(out.row.own, MEENA);
   assert.deepEqual({ ...out.row.handed }, { by: IMRAN, at: '2026-09-28T11:30' });
   assert.equal(out.row.watched, true);
-  const [coql, users, put, change] = r.calls;
+  assert.equal(out.row.version, '2026-09-28T11:30:00+05:30', 'the one write\'s Modified_Time');
+  const [coql, users, put, ...rest] = r.calls;
   assert.match(coql.body.select_query, /Handed_By, Handed_At, Modified_Time from Cases where id = '554023000000500114'/);
   assert.equal(users.query.get('type'), 'ActiveUsers');
   assert.equal(put.path, `/Cases/${CASE}`);
-  assert.deepEqual(put.body, { data: [{ Handed_By: { id: IMRAN }, Handed_At: '2026-09-28T11:30:00+05:30' }] });
+  // W2-KAM-6: the owner and the watcher move together or not at all; user lookups are { id }.
+  assert.deepEqual(put.body, { data: [{ Owner: { id: MEENA }, Handed_By: { id: IMRAN }, Handed_At: '2026-09-28T11:30:00+05:30' }] });
   assert.equal(put.headers['if-unmodified-since'], '2026-09-27T10:00:00+05:30', 'guarded write (D44)');
-  assert.equal(change.path, `/Cases/${CASE}/actions/change_owner`);
-  assert.deepEqual(change.body, { owner: { id: MEENA }, notify: true });
+  assert.deepEqual(rest, [], 'no second write (no actions/change_owner)');
   for (const c of r.calls) assert.equal(c.headers.authorization, `Zoho-oauthtoken synthetic-${IMRAN}-never-live`, 'D53: his own token');
   assert.doesNotMatch(JSON.stringify(r.sink.records()), /Test User|example\.invalid|payouts/, 'Plane B holds ids and codes only');
 });
@@ -130,16 +131,38 @@ test('someone changed the ticket since it was loaded: refused as a conflict, the
   const b = await rig({ put: 'conflict' });
   const z = await b.svc.handToFinance({ credential: await b.cred(IMRAN), seat: 'kam' }, CASE);
   assert.equal(z.kind, 'conflict');
-  assert.equal(b.writes().filter((c) => c.path.endsWith('change_owner')).length, 0, 'Zoho\'s 412 stops before the owner moves');
+  assert.equal(b.writes().length, 1, 'Zoho\'s 412 refuses the one write: the owner does not move');
 });
 
-test('Zoho refuses change_owner: a source error (not retryable); pressing again repeats both writes', async () => {
-  const r = await rig({ owner: 'change-owner.case.no-permission' });
+/* W2-KAM-6: staging answered the KAM's owner change with a per-record NO_PERMISSION inside a 400 (our invalid-data),
+ * after Handed_By had been written by a first PUT — half-written, and "Zoho is not answering" on screen. */
+test('W2-KAM-6: Zoho refuses the owner change — said as a refusal, and nothing is half-written (one write, refused whole)', async () => {
+  const r = await rig({ put: 'update.case.owner-no-permission' });
   const out = await r.svc.handToFinance({ credential: await r.cred(IMRAN), seat: 'kam' }, CASE);
-  assert.equal(out.ok, false);
-  assert.equal(out.kind, 'source-error');
-  assert.equal(out.retryable, false);
-  assert.deepEqual(r.writes().map((c) => c.path), [`/Cases/${CASE}`, `/Cases/${CASE}/actions/change_owner`]);
+  assert.deepEqual([out.ok, out.kind, out.reason], [false, 'refused', 'owner-change-refused']);
+  assert.equal(out.message, HAND_TEXT['owner-change-refused']);
+  assert.match(out.message, /Nothing was changed — it is still yours/);
+  assert.doesNotMatch(out.message, /not answering/);
+  assert.deepEqual(r.writes().map((c) => c.path), [`/Cases/${CASE}`], 'one write; no change_owner after a written watcher');
+  assert.ok(r.sink.records().some((l) => l.kind === 'refusal' && l.reason === 'owner-change-refused'), 'a Plane B line, ids and codes only');
+  const owner = await rig({ put: 'update.case.owner-invalid' });
+  const o = await owner.svc.handToFinance({ credential: await owner.cred(IMRAN), seat: 'kam' }, CASE);
+  assert.equal(o.reason, 'owner-change-refused', 'Zoho naming the Owner field is the same refusal');
+});
+
+test('W2-KAM-6: Zoho refusing a hand-over field (Handed_By missing or hidden) is a refusal too, never "Zoho is not answering"', async () => {
+  const r = await rig({ put: 'update.case.handed-by-invalid' });
+  const out = await r.svc.handToFinance({ credential: await r.cred(IMRAN), seat: 'kam' }, CASE);
+  assert.deepEqual([out.ok, out.kind, out.reason], [false, 'refused', 'handover-refused']);
+  assert.equal(r.writes().length, 1);
+});
+
+test('W2-KAM-6: a ticket left half-written by the old two-step (Handed_By = me, still mine) is handed on whole by the next press', async () => {
+  const r = await rig({ caseFx: 'coql.case.hand-half-written' });
+  const out = await r.svc.handToFinance({ credential: await r.cred(IMRAN), seat: 'kam' }, CASE);
+  assert.equal(out.ok, true, JSON.stringify(out));
+  assert.equal(out.already, false);
+  assert.deepEqual(r.writes()[0].body.data[0].Owner, { id: MEENA });
 });
 
 /* ---- the register: the KAM keeps watching; another KAM never sees it ---- */

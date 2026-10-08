@@ -3,7 +3,7 @@
    Run: npx vitest run src/server/investors/http.test.ts */
 import { describe, expect, it } from "vitest";
 import { failureResponse as investorsFailure } from "./http";
-import { failureResponse as casesFailure } from "../cases/http";
+import { failureResponse as casesFailure, writeFailure as casesWriteFailure } from "../cases/http";
 
 describe("investors failureResponse", () => {
   it("answers invalid-data with 502 and an honest message, never 'not answering'", async () => {
@@ -38,6 +38,24 @@ describe("cases failureResponse (tickets, farms, events)", () => {
     expect(casesFailure({ kind: "source-error", errorKind: "forbidden", retryable: false }).status).toBe(403);
     expect(casesFailure({ kind: "source-error", errorKind: "server", retryable: true }).status).toBe(503);
     expect(casesFailure({ kind: "source-error", errorKind: "unexpected", retryable: false }).status).toBe(502);
+  });
+});
+
+/* W2-KAM-6: a write Zoho refuses (a per-record NO_PERMISSION inside a 400 reads as invalid-data) is not "Zoho is not answering". */
+describe("cases writeFailure", () => {
+  it("answers a refused write as a refusal: invalid-data 502, forbidden 403 — never 'not answering'", async () => {
+    const bad = casesWriteFailure({ kind: "source-error", errorKind: "invalid-data", retryable: false });
+    const b = await bad.json();
+    expect([bad.status, b.code]).toEqual([502, "invalid-data"]);
+    expect(b.error).toMatch(/Zoho refused this change/);
+    expect(b.error).not.toMatch(/not answering/);
+    expect(casesWriteFailure({ kind: "source-error", errorKind: "forbidden", retryable: false }).status).toBe(403);
+    expect(casesWriteFailure({ kind: "source-error", errorKind: "server", retryable: true }).status).toBe(503);
+  });
+  it("gives the hand-over's own refusals their statuses", async () => {
+    const r = casesWriteFailure({ kind: "refused", reason: "owner-change-refused", message: "m" });
+    expect([r.status, (await r.json()).code]).toEqual([403, "owner-change-refused"]);
+    expect(casesWriteFailure({ kind: "refused", reason: "handover-refused", message: "m" }).status).toBe(502);
   });
 });
 
