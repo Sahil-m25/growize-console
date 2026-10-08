@@ -82,7 +82,13 @@ function Body(_: DrawerProps) {
         </button>
       </div>
 
-      </> : null}
+      </> : <div className="ux-account-menu">
+        <button type="button" className="ux-account-row" onClick={() => openAndClose("help")}>
+          <Icon name="help" />
+          <span>Help with this page</span>
+          <Icon name="next" />
+        </button>
+      </div>}
 
       <section className="rd-account-appearance">
         <h3>Appearance</h3>

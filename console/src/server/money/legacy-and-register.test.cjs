@@ -222,7 +222,7 @@ test('the old columns are retired: a write naming one is refused before it leave
 });
 
 /* ---------------- register ---------------- */
-function registerRig(access = {}, mutateReceipts = null) {
+function registerRig(access = {}, mutateReceipts = null, mutateAllotments = null) {
   const queries = [];
   const sink = createMemorySink();
   const log = createOpsLog(sink);
@@ -231,6 +231,7 @@ function registerRig(access = {}, mutateReceipts = null) {
       const q = JSON.parse(init.body).select_query; queries.push(q);
       if (/from Receipts/.test(q)) { const rc = recorded('register.receipts'); if (mutateReceipts) mutateReceipts(rc.body.data); return toResponse(rc); }
       const all = recorded('register.allotments');
+      if (mutateAllotments) mutateAllotments(all.body.data);
       if (/Allocation_Status = 'Reserved'/.test(q)) all.body.data = all.body.data.filter((a) => a.Allocation_Status === 'Reserved');
       else { const ids = [...q.matchAll(/'(\d+)'/g)].map((m) => m[1]); all.body.data = all.body.data.filter((a) => ids.includes(a.id)); }
       return toResponse(all);
@@ -300,4 +301,24 @@ test('register refuses a bad filter, and a malformed receipt is source-invalid, 
   assert.deepEqual(res, { ok: false, kind: 'refused', reasonCode: 'source-invalid' });
   const refusal = bad.sink.records().find((x) => x.kind === 'refusal');
   assert.deepEqual(refusal.recordIds, [`${P}740996304`]);
+});
+
+/* B-02b: a seed (or a hand-made) reservation with no Unit_Price must not blank the whole register. */
+test('an unpriced Reserved allotment does not blank the register: still due leaves it out and the answer says so', async () => {
+  const whole = await registerRig().svc.read(principal());
+  assert.deepEqual([...whole.value.problems], [], 'a whole answer names no problem');
+  const r = registerRig({}, null, (rows) => { for (const a of rows) if (a.Allocation_Status === 'Reserved') delete a.Unit_Price; });
+  const res = await r.svc.read(principal());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual([...res.value.problems], ['price-missing:1']);
+  assert.equal(res.value.totals.stillDue, 0, 'the unpriced reservation is not guessed into still due');
+  assert.equal(res.value.totals.received, 1500000, 'matched money is still counted');
+  assert.equal(res.value.rows.length, 6, 'every receipt is still listed');
+  const zero = await registerRig({}, null, (rows) => { for (const a of rows) if (a.Allocation_Status === 'Reserved') a.Unit_Price = 0; }).svc.read(principal());
+  assert.deepEqual([zero.ok, [...zero.value.problems]], [true, []], 'a price of 0 is a price (the seed fix sets it), not a missing one');
+});
+
+test('an allotment with an unreadable investor or farm is still source-invalid', async () => {
+  const res = await registerRig({}, null, (rows) => { rows[1].Customer = null; }).svc.read(principal());
+  assert.deepEqual(res, { ok: false, kind: 'refused', reasonCode: 'source-invalid' });
 });

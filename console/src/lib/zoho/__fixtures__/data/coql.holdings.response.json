@@ -7,15 +7,15 @@
     "data": [
       {
         "id": "9007199254740998501",
-        "Contact": {
+        "Investor": {
           "id": "9007199254740997101",
           "name": "x"
         },
-        "Instrument_Type": "CCD",
-        "Amount_Invested": 1000000,
-        "Invested_On": "2025-04-01",
-        "Interest_Rate": 9,
-        "Maturity_On": "2028-04-01"
+        "Instrument_Class": "CCD",
+        "Invested_Amount": 1000000,
+        "Invested_Date": "2025-04-01",
+        "Interest_Rate_Pct": 9,
+        "Maturity_Date": "2028-04-01"
       }
     ],
     "info": {

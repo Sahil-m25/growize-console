@@ -191,7 +191,9 @@ test('an IR adds a lead: created in Zoho with their token, owned by them, cache 
 });
 
 test('M14-S03-NOTE-5: every Consent_How the capture writes is on the org picklist, for every source, and Consent_Visit is never written', async () => {
-  assert.deepEqual([...CONSENT_HOW_PICKLIST], ['Form', 'Verbal', 'Email reply', 'Event sheet']); // Leads.Consent_How, live metadata 4 Oct 2026
+  assert.deepEqual([...CONSENT_HOW_PICKLIST], ['Form', 'Verbal', 'Call', 'Email reply', 'Event sheet']); // Leads.Consent_How, live metadata 4 Oct 2026 + B-03 "Call"
+  assert.equal(CONSENT_HOW.call, 'Call', 'B-03: a call is no longer written as Verbal (in person)');
+  assert.equal(CONSENT_HOW.person, 'Verbal');
   assert.equal(CONSENT_HOW.event, 'Event sheet');
   for (const [k, v] of Object.entries(CONSENT_HOW)) assert.ok(CONSENT_HOW_PICKLIST.includes(v), `${k} -> ${v}`);
   for (const how of Object.keys(CONSENT_HOW)) {
@@ -342,7 +344,7 @@ test('Zoho rejecting the row or failing is reported, never retried, and leaks no
 
 test('the lookup matches every stored spelling of the number, with the person\'s own token', async () => {
   assert.equal(mobileClause('+919845033021'),
-    "(Mobile in ('+919845033021', '919845033021', '9845033021', '09845033021') or Mobile like '%9845033021')");
+    "(Mobile in ('+919845033021', '919845033021', '9845033021', '09845033021', '+91 98450 33021', '+91 9845033021', '98450 33021') or Mobile like '%9845033021')");
   assert.equal(mobileClause('+442079460958'), "Mobile in ('+442079460958', '442079460958')");
   const r = rig('coql.duplicate-none');
   const res = await r.dupes.lookup(principal(IR), '098450 33021');

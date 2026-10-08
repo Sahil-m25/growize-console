@@ -14,13 +14,13 @@ import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { cookies } from "next/headers";
 import { SID_COOKIE } from "@/server/oauth/user-session";
-import { NO_STORE, failureResponse, receiptsConfigured, recordReceipt } from "./compose";
+import { NO_STORE, failureResponse, receiptsConfigured, RECEIPTS_OFF, recordReceipt } from "./compose";
 
 export const dynamic = "force-dynamic";
 const MAX_BODY = 8 * 1024;
 
 async function post_(req: Request) {
-  if (!receiptsConfigured()) return Response.json({ error: "Not saved yet — receipts are recorded in Zoho once it is connected.", code: "not-configured", saved: false }, { status: 503, headers: NO_STORE });
+  if (!receiptsConfigured()) return Response.json({ error: "Not saved yet — " + RECEIPTS_OFF, code: "not-configured", saved: false }, { status: 503, headers: NO_STORE });
   const s = await sessionCredential();
   if (!s.ok) return s.response;
   const sid = (await cookies()).get(SID_COOKIE)?.value ?? "";

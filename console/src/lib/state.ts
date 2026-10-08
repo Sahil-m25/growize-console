@@ -778,8 +778,10 @@ export function reducer(state: ConsoleState, a: Action): ConsoleState {
   if (a.type === "openDrawer") state = imClose(state);
   /* an Investors-only seat holds no lead-side account: the only lead-side things it may do are be signed in as itself, pick a
      theme, and open or close "Your account" (sign out, appearance). Every lead action stays refused. */
-  const accountDoor = a.type === "closeDrawer" || (a.type === "openDrawer" && a.k === "account");
-  if (!accountAllowed(state) && !accountDoor && !["setPerson", "setRole", "setTheme"].includes(a.type)) return state;
+  const accountDoor = a.type === "closeDrawer" || (a.type === "openDrawer" && (a.k === "account" || a.k === "help"));
+  /* furniture: the rail width and the Help search are this browser's own, never a lead-side draft (B-17, B-24) */
+  const furniture = a.type === "setUi" && Object.keys(a.patch).every((k) => k === "RAILMIN" || k === "HQ");
+  if (!accountAllowed(state) && !accountDoor && !furniture && !["setPerson", "setRole", "setTheme"].includes(a.type)) return state;
   if (LEAD_WRITES.has(a.type) && !canOperateLeads(state)) return state;
   if ((LEADPAGE_WRITES as readonly string[]).includes(a.type)) return leadPageReducer(state, a as LeadPageAction, reducer);
   if (a.type.startsWith("pr")) return state; // Paper's source mirror is written only in Investor Management.

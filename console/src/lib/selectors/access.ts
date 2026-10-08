@@ -504,8 +504,9 @@ export function canOpenDrawer(ctx: Ctx, kind: string, id: string | null): boolea
   /* "Your account" is the one door every signed-in seat holds — an Investors-only seat (no lead-side account) too: it is how
      they sign out. Its body offers them nothing of the lead side (drawers/account.tsx). */
   if (kind === "account") return true;
-  if (!accountAllowed(ctx)) return false;
+  /* Help is plain text about the screen you are on, so an Investors-only seat holds it too (B-24). */
   if (kind === "help") return true;
+  if (!accountAllowed(ctx)) return false;
   /* "account" is always about the signed-in person — no id to check. "updates" is the bell: a
      page-owned drawer body, but a leadless one. A "p:" panel delegates to whatever page registers
      it — its own registerDrawer body decides, the same as any other page-owned screen. */

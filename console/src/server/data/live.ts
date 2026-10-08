@@ -38,7 +38,7 @@ import { contactsWhere, createInvestorGuard, investorsKey, type GuardRefusal, ty
 import { MODULES } from "./projections";
 import { scopedKey, scopesFor, type BookScope, type SeatScopes } from "./scope";
 import { amKey, amScopeOf, isAmSeat } from "./am-scope";
-import { readPeople } from "./people";
+import { readPeople, type PeopleDeps } from "./people";
 import type { ZohoUserDirectory } from "../identity/users";
 import type { ZohoSeatDirectory } from "../oauth/seat";
 
@@ -64,6 +64,8 @@ export interface LiveDeps {
    */
   readonly seats?: ZohoSeatDirectory;
   readonly users?: Pick<ZohoUserDirectory, "entry">;
+  /** Each person's own badge, read into PEOPLE (B-13). */
+  readonly styles?: PeopleDeps["styles"];
   readonly cache: ScopedCache;
   readonly log: OpsLog;
   readonly events: InvestorEvents;
@@ -137,8 +139,9 @@ const LEAD_OPTIONAL = OPTIONAL_JOURNEY_FIELDS;
 const CONSENT: Readonly<Partial<Record<Channel, string>>> = { msg: "Consent_WhatsApp", email: "Consent_Email", call: "Consent_Call" };
 /** Zoho's channel words → the console's (the inverse of followup.ts TOUCH_CHANNEL; NEXT_CHANNEL uses the same words). */
 const CHANNEL_OF: Readonly<Record<string, Channel>> = Object.freeze(Object.fromEntries(Object.entries(TOUCH_CHANNEL).map(([k, v]) => [v, k as Channel])));
-/** Leads.Consent_How picklist → the console's word (capture.ts CONSENT_HOW inverted; Verbal stands for in person or a call). */
-const HOW_OF: Readonly<Record<string, string>> = Object.freeze({ Form: "form", Verbal: "person", "Email reply": "msg", "Event sheet": "event" });
+/** Leads.Consent_How picklist → the console's word (capture.ts CONSENT_HOW inverted). Verbal is in person; "Call" is a call
+ *  (B-03: before the picklist had it, a call was written as Verbal and read back as in person). */
+const HOW_OF: Readonly<Record<string, string>> = Object.freeze({ Form: "form", Verbal: "person", Call: "call", "Email reply": "msg", "Event sheet": "event" });
 const FC_OF: Readonly<Record<string, FcCat>> = Object.freeze(Object.fromEntries(Object.entries(FORECAST_OF).map(([k, v]) => [v, k as FcCat])));
 /* Touches (Lead, Channel, Occurred_At, Is_Reply): the human touches of the book's leads, newest first, one read per 100 leads.
    Voided_At (J12) is not in production yet: asked for, and dropped from the read when the org rejects it. */
@@ -217,9 +220,11 @@ export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Tou
       ...(nextTm ? { tm: nextTm } : {}), ch: (nextCh && CHANNEL_OF[nextCh]) || "other",
     } : null,
     fc: fcCat ? { c: fcCat, by: dayOf(detail?.Forecast_Paid_By), ev: "", at: "", who: row.ownerId ?? "" } : null,
-    consent: false, con,
+    /* B-03: the flag the UI gates every channel on (selectors conFor) is true once any channel's permission is recorded;
+       the per-channel `con` then decides each channel. Hard-coded false, permission saved but never read back. */
+    consent: Object.values(con).some((v) => v === true), con,
     ...(how ? { conHow: HOW_OF[how] ?? null } : {}),
-    ...(conAt ? { conAt: stampOf(conAt) } : {}),
+    ...(conAt ? { conAt: stampOf(conAt), conAtIso: istIso(conAt) } : {}),
     ...(conBy ? { conBy } : {}),
     ...(pref ? { contactPreference: pref } : {}),
     ...(undone ? { undoAt: stampOf(undone) } : {}),
@@ -244,7 +249,7 @@ export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], block
     pan: null, aadh: null, aref: null, kyc: "pending", kycOn: null,
     bank: { acct: "", ifsc: "", name: "", drop: "" },
     units, blocks, st: live.some((a) => a.Allocation_Status === "Issued") ? "allocated" : paid ? "paid" : live.length ? "reserved" : allots.length ? "lapsed" : "said yes",
-    ir: c.originatingIrId ?? "", src: "", since: c.saidYesAt ?? c.createdAt ?? "", nominee: c.nominee ?? "",
+    ir: c.originatingIrId ?? "", src: "", since: stampOf(c.saidYesAt ?? c.createdAt).slice(0, 6), nominee: c.nominee ?? "",
     kam: c.kamId, kamOn: c.kamSince, intro: c.introAt, ...(c.originLeadId ? { lead: c.originLeadId } : {}),
     ...(holdOf(live) ? { hold: holdOf(live)! } : {}),
   };
@@ -438,8 +443,12 @@ export function createLiveDataLayer(deps: LiveDeps) {
       await readInvestors(p, scopes, ds, problems, signal);
       if (deps.seats && deps.crm.listUsers) {
         // Per request, never cached (rule 8: a name list is not an aggregate); Zoho scopes what the viewer may list.
-        const r = await readPeople({ crm: { listUsers: deps.crm.listUsers }, seats: deps.seats, users: deps.users }, p.credential, signal);
-        if (r.ok) { ds.PEOPLE = r.value.people; ds.im.P = r.value.im; } else problems.push(`people:${r.code}`);
+        const r = await readPeople({ crm: { listUsers: deps.crm.listUsers }, seats: deps.seats, users: deps.users, styles: deps.styles }, p.credential, signal);
+        if (r.ok) {
+          ds.PEOPLE = r.value.people; ds.im.P = r.value.im;
+          // name the lead-side people (originating IRs, authors) on this side, so a raw Zoho id never reaches a sentence
+          for (const [k, p] of Object.entries(r.value.people)) if (!ds.im.P[k]) ds.im.IRN[k] = { n: p.n, i: p.i, x: true };
+        } else problems.push(`people:${r.code}`);
       }
       return { ds, scopes, problems: Object.freeze(problems) };
     },

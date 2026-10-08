@@ -26,7 +26,10 @@ export interface PeopleDeps {
   readonly crm: Pick<ZohoClient, "listUsers">;
   readonly seats: ZohoSeatDirectory;
   readonly users?: Pick<ZohoUserDirectory, "entry">;
+  /** Each person's own badge (colour, shape, initials) from the console's state store; a failed read keeps the hash colour. */
+  readonly styles?: { getMany(userIds: readonly string[]): Promise<Readonly<Record<string, BadgeStyles>>> };
 }
+type BadgeStyles = { readonly c?: number; readonly sq?: boolean; readonly i?: string };
 
 export interface People {
   readonly people: Record<PersonKey, Person>;
@@ -38,12 +41,13 @@ export type PeopleRead = { readonly ok: true; readonly value: People } | { reado
 
 const slot = (id: string): ColourSlot => ((Number(id.slice(-3)) % 8) + 1) as ColourSlot;
 
-function build(members: readonly OrgMember[], viewer: string): People {
+function build(members: readonly OrgMember[], viewer: string, styles: Readonly<Record<string, BadgeStyles>> = {}): People {
   const people: Record<PersonKey, Person> = {};
   const im: Record<string, ImPerson> = {};
   for (const m of members) {
     const em = m.id === viewer ? m.email : "";
-    const p = { ...personOf(m, em), c: slot(m.id) };
+    const st = styles[m.id];
+    const p = { ...personOf(m, em), c: (st?.c ?? slot(m.id)) as ColourSlot, ...(st?.sq !== undefined ? { sq: st.sq } : {}), ...(st?.i ? { i: st.i } : {}) };
     people[m.id] = p;
     const side = ZOHO_SEAT_SIDES[m.seat].im;
     if (side && !m.left) im[m.id] = { n: m.name, i: p.i, r: side, c: p.c, em, ...(m.mgr ? { mgr: m.mgr } : {}) };
@@ -71,5 +75,7 @@ export async function readPeople(d: PeopleDeps, as: UserCredential, signal?: Abo
     else if (!members.length) return { ok: false, code };
     else code = "self-not-listed";
   }
-  return { ok: true, value: build(members, viewer) };
+  let styles: Readonly<Record<string, BadgeStyles>> = {};
+  if (d.styles) { try { styles = await d.styles.getMany(members.map((m) => m.id)); } catch { styles = {}; } }
+  return { ok: true, value: build(members, viewer, styles) };
 }

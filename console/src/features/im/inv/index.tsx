@@ -72,7 +72,7 @@ function useDebounced<T>(v: T, ms: number): T {
 
 /* M09-S01-W1: Finance's cuts, over the rows of GET /api/investors/finance (the same four, in the words of invExceptions) */
 const FIN_EXC: Record<string, [string, (r: FinanceInvestorRow) => boolean]> = {
-  kyc: ["KYC not passed", r => r.kyc !== "passed" && r.kyc !== "na"],
+  kyc: ["KYC not passed", r => r.kyc !== "passed" && r.kyc !== "na" && r.kyc !== "hidden"],
   hold: ["Balance outstanding", r => r.due > 0],
   nri: ["NRI", r => r.nri],
   fema: ["FEMA outstanding", r => r.fema === "outstanding"],
@@ -119,6 +119,7 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
       {searchErr ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{searchErr}</div> : null}
       {fin.state === "error" && fin.err.status !== 403 ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{fin.err.error}</div> : null}
+      {fin.state === "ok" && fin.data.statusHidden ? <div className="note" role="status" style={{ marginBottom: 8 }}>KYC and FEMA are not visible to your seat in Zoho, so KYC reads “not visible” and FEMA is not counted. Tell Digital Infrastructure.</div> : null}
       <div className="secbar">
         <button className={`sc ${IFILT ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{am ? (shown ? shown.underCare : base.length) : frows.length}</i></button>
         {Object.entries(EXC).map(([k, [t, f]]) => {
@@ -417,7 +418,7 @@ function SecWho(p: ImPageProps & { x: ImInvestor }) {
             <span className="pii"><span className="v">{"•••• •••• " + x.aadh}</span>{" "}
               <span className="sm">last four only</span></span>
             <div className="sm mono">{x.aref}</div></>
-            : <span className="sm">not applicable — non-resident</span>}</dd>
+            : <span className="sm">{x.nri ? "not applicable — non-resident" : live ? "not read by the console" : "not on file"}</span>}</dd>
         <dt>KYC</dt><dd>{nf ? (x.kyc === "passed"
           ? <span className="tag go"><span className="dot" />clear</span>
           : <span className="tag due"><span className="dot" />with Finance</span>)

@@ -47,7 +47,13 @@ export const FINANCE_CONTACT_FIELDS: readonly string[] = (() => {
   return Object.freeze(f);
 })();
 
-export type FinanceKyc = "passed" | "pending" | "failed" | "na";
+/** The KYC/FEMA status columns. Finance Ops reads them (owner ruling 8 Oct, B-02a); if a profile still hides one, Zoho's COQL
+ *  refuses the whole select (400 INVALID_QUERY → invalid-data), so the list is re-read once without them (and without the
+ *  lifecycle field) and says `statusHidden` — one hidden status field never blanks the whole list. */
+export const FINANCE_STATUS_FIELDS: readonly string[] = Object.freeze(["KYC", "KYC_Completed_On", "FEMA_Applicable", "FEMA_Verified_At"]);
+
+/** "hidden": the seat's profile does not show KYC, so the status is not known — never shown as "pending". */
+export type FinanceKyc = "passed" | "pending" | "failed" | "na" | "hidden";
 
 export interface FinanceFarm { readonly llpId: string; readonly name: string; readonly block: string; readonly units: number }
 
@@ -90,7 +96,9 @@ export interface FinanceSummary {
 }
 
 export type FinanceListResult =
-  | { readonly ok: true; readonly rows: readonly FinanceInvestorRow[]; readonly summary: FinanceSummary; readonly truncated: boolean }
+  | { readonly ok: true; readonly rows: readonly FinanceInvestorRow[]; readonly summary: FinanceSummary; readonly truncated: boolean;
+      /** KYC and FEMA could not be read on this seat's token: every row's kyc is "hidden" and fema null; the counts exclude them. */
+      readonly statusHidden: boolean }
   | { readonly ok: false; readonly kind: "refused"; readonly reason: "seat-denied" | "scope-drift" | "source-invalid" | string }
   | { readonly ok: false; readonly kind: "source-error"; readonly book: string; readonly errorKind: ZohoFailureKind | "unexpected" };
 
@@ -110,6 +118,7 @@ export function buildFinanceRows(
   llps: ReadonlyMap<string, { readonly name: string; readonly block: string }>,
   /** Contact id → IR resolved through the Lead lookup, for Contacts without Originating_IR. */
   leadIr: ReadonlyMap<string, string> = new Map(),
+  statusHidden = false,
 ): { rows: FinanceInvestorRow[]; summary: FinanceSummary } {
   const ledger = ledgerOf(receipts);
   const byContact = new Map<string, AllotmentRow[]>();
@@ -139,8 +148,9 @@ export function buildFinanceRows(
       id: c.id, code: str(c, "ARL_ID", 40) ?? "", name: [str(c, "First_Name", 40), last].filter(Boolean).join(" "),
       city: str(c, "Mailing_City", 120) ?? "", email: str(c, "Email", 100) ?? "",
       residency, nri: residency === "NRI" || residency === "OCI",
-      kyc: kycOf(str(c, "KYC", 40)), kycOn: (str(c, "KYC_Completed_On", 40) ?? "").slice(0, 10) || null,
-      fema: femaApplies ? (str(c, "FEMA_Verified_At", 40) ? "done" : "outstanding") : null,
+      kyc: statusHidden ? "hidden" : kycOf(str(c, "KYC", 40)),
+      kycOn: statusHidden ? null : (str(c, "KYC_Completed_On", 40) ?? "").slice(0, 10) || null,
+      fema: !statusHidden && femaApplies ? (str(c, "FEMA_Verified_At", 40) ? "done" : "outstanding") : null,
       units: live.reduce((t, a) => t + a.Committed_Units, 0), farms: Object.freeze([...farms.values()]),
       state, stateLabel: stateLabel({ blueprint: LIFECYCLE_FIELD ? c[LIFECYCLE_FIELD] : null, derived: state, saidYesAt }),
       paid, due, ir: idOf(c.Originating_IR) ?? leadIr.get(c.id) ?? null, lead: idOf(c.Origin_Lead), saidYesAt,
@@ -149,7 +159,7 @@ export function buildFinanceRows(
   const summary: FinanceSummary = Object.freeze({
     onBook: rows.length,
     units: rows.reduce((t, r) => t + r.units, 0),
-    kycNotPassed: rows.filter((r) => r.kyc !== "passed" && r.kyc !== "na").length,
+    kycNotPassed: rows.filter((r) => r.kyc !== "passed" && r.kyc !== "na" && r.kyc !== "hidden").length,
     balanceOutstanding: rows.filter((r) => r.due > 0).length,
     nri: rows.filter((r) => r.nri).length,
     femaOutstanding: rows.filter((r) => r.fema === "outstanding").length,
@@ -167,18 +177,27 @@ export function createFinanceInvestorList(deps: FinanceListDeps) {
     return s.kind === "org" || s.kind === "all" ? s : null;
   };
 
-  async function contacts(cred: UserCredential, signal?: AbortSignal): Promise<{ ok: true; rows: ZohoRecord[]; truncated: boolean } | { ok: false; errorKind: ZohoFailureKind | "unexpected" }> {
+  const FULL = [...FINANCE_CONTACT_FIELDS, ...(LIFECYCLE_FIELD ? [LIFECYCLE_FIELD] : [])];
+  const BARE = FINANCE_CONTACT_FIELDS.filter((f) => !FINANCE_STATUS_FIELDS.includes(f));
+
+  async function contacts(cred: UserCredential, signal?: AbortSignal): Promise<{ ok: true; rows: ZohoRecord[]; truncated: boolean; statusHidden: boolean } | { ok: false; errorKind: ZohoFailureKind | "unexpected" }> {
     const rows: ZohoRecord[] = [];
+    let fields = FULL, statusHidden = false;
     for (let page = 0; page < maxPages; page++) {
       let r: Awaited<ReturnType<typeof deps.crm.coql>>;
       try {
-        r = await deps.crm.coql(cred, `select ${[...FINANCE_CONTACT_FIELDS, ...(LIFECYCLE_FIELD ? [LIFECYCLE_FIELD] : [])].join(", ")} from ${MODULES.contacts} where (id is not null) order by id asc limit ${page * PAGE}, ${PAGE}`, { signal });
+        r = await deps.crm.coql(cred, `select ${fields.join(", ")} from ${MODULES.contacts} where (id is not null) order by id asc limit ${page * PAGE}, ${PAGE}`, { signal });
+        /* B-02a: COQL refuses a column the profile hides — re-read once without the status columns. */
+        if (!r.ok && r.error.kind === "invalid-data" && page === 0 && !statusHidden) {
+          fields = BARE; statusHidden = true;
+          r = await deps.crm.coql(cred, `select ${fields.join(", ")} from ${MODULES.contacts} where (id is not null) order by id asc limit 0, ${PAGE}`, { signal });
+        }
       } catch { return { ok: false, errorKind: "unexpected" }; }
       if (!r.ok) return { ok: false, errorKind: r.error.kind };
       rows.push(...r.value.records);
-      if (!r.value.moreRecords) return { ok: true, rows, truncated: false };
+      if (!r.value.moreRecords) return { ok: true, rows, truncated: false, statusHidden };
     }
-    return { ok: true, rows, truncated: true };
+    return { ok: true, rows, truncated: true, statusHidden };
   }
 
   async function list(cred: UserCredential, seat: string, signal?: AbortSignal): Promise<FinanceListResult> {
@@ -200,8 +219,8 @@ export function createFinanceInvestorList(deps: FinanceListDeps) {
     const irs = await resolveIrs(deps.crm, cred, origin, signal);
     const leadIr = new Map<string, string>();
     origin.forEach((o, i) => { if (!o.originatingIrId && irs[i]) leadIr.set(o.id, irs[i]!); });
-    const { rows, summary } = buildFinanceRows(c.rows, al.rows, rc.rows, llps, leadIr);
-    return { ok: true, rows: Object.freeze(rows), summary, truncated: c.truncated || al.truncated || rc.truncated || ll.truncated };
+    const { rows, summary } = buildFinanceRows(c.rows, al.rows, rc.rows, llps, leadIr, c.statusHidden);
+    return { ok: true, rows: Object.freeze(rows), summary, truncated: c.truncated || al.truncated || rc.truncated || ll.truncated, statusHidden: c.statusHidden };
   }
 
   return Object.freeze({

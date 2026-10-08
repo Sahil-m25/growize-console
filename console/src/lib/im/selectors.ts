@@ -469,6 +469,6 @@ export function journey(s: ImCtx, WHO: string, x: ImInvestor, money: (v: number)
       t: t.kind === "advance" ? "Advance received" : t.kind === "refund" ? "Refund issued" : t.kind === "forfeit" ? "Forfeit retained" : "Payment received",
       m: money(t.amt) + " · " + t.mode + " " + t.utr, who: t.by })))
     .concat([{ at: x.since + " 00:00", side: "fin", t: "Account opened", who: null,
-      m: "Brought in by " + who(s, x.ir).n + " from " + x.src + (x.lead ? " · lead " + x.lead : "") }]);
+      m: "Brought in by " + who(s, x.ir).n + (x.src ? " from " + x.src : "") + (x.lead ? " · lead " + x.lead : "") }]);
   return ev.filter(e => e.at).sort((a, b) => (when(s.data.NOW, b.at) || 0) - (when(s.data.NOW, a.at) || 0));
 }

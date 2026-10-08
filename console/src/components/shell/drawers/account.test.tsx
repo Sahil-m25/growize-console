@@ -40,14 +40,25 @@ describe("Your account for an Investors-only seat", () => {
   it("nothing else of the lead side opens or runs for them", () => {
     for (const k of INVESTORS_ONLY) {
       const s = as(k);
-      for (const d of ["help", "updates", "presence", "p:add.quick"] as const) expect(reducer(s, { type: "openDrawer", k: d }).DRW, `${k} ${d}`).toBeNull();
+      for (const d of ["updates", "presence", "p:add.quick"] as const) expect(reducer(s, { type: "openDrawer", k: d }).DRW, `${k} ${d}`).toBeNull();
       expect(reducer(s, { type: "go", v: "leads" }), k).toEqual(s);
+    }
+  });
+  it("Help opens for them (B-24), and the rail width and the Help search are theirs to set (B-17)", () => {
+    for (const k of INVESTORS_ONLY) {
+      const s = as(k);
+      expect(canOpenDrawer(s, "help", null), k).toBe(true);
+      expect(reducer(s, { type: "openDrawer", k: "help", id: "inv" }).DRW, k).toEqual({ k: "help", id: "inv" });
+      expect(reducer(s, { type: "setUi", patch: { RAILMIN: true } }).ui.RAILMIN, k).toBe(true);
+      expect(reducer(s, { type: "setUi", patch: { HQ: "pay" } }).ui.HQ, k).toBe("pay");
+      /* any other key (a lead-side draft) stays refused */
+      expect(reducer(s, { type: "setUi", patch: { RAILMIN: true, NDRAFT: "x" } }), k).toEqual(s);
     }
   });
   it("a lead-side seat is unchanged: the account opens as before", () => {
     expect(reducer(as("rohit"), { type: "openDrawer", k: "account" }).DRW).toEqual({ k: "account", id: null });
   });
-  it("the drawer for them: the person, appearance and Sign out — no lead-side availability, Profile or Team availability", () => {
+  it("the drawer for them: the person, appearance and Sign out and Help — no lead-side availability, Profile or Team availability", () => {
     seat.k = "meena";
     const def = drawerDef("account")!;
     const props = { id: null } as unknown as DrawerProps;
@@ -55,7 +66,8 @@ describe("Your account for an Investors-only seat", () => {
     const body = text(renderToStaticMarkup(<def.Body {...props} />));
     expect(body).toContain("Meena Raghavan");
     expect(body).toContain("Appearance");
-    for (const gone of ["Your availability", "Profile", "Team availability", "Help with this page"]) expect(body).not.toContain(gone);
+    for (const gone of ["Your availability", "Profile", "Team availability"]) expect(body).not.toContain(gone);
+    expect(body).toContain("Help with this page");
     expect(text(renderToStaticMarkup(<Foot {...props} />))).toContain("Sign out");
   });
   it("the drawer for a lead-side seat still offers all of it", () => {

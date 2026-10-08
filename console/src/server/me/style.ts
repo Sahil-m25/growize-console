@@ -46,7 +46,10 @@ export function createStyle(deps: { readonly state: SharedState }) {
     /** Everyone's badge for the people list (a failed read answers nothing for that person, never a guess). */
     async getMany(userIds: readonly string[]): Promise<Readonly<Record<string, MyStyle>>> {
       const out: Record<string, MyStyle> = {};
-      for (const id of userIds.slice(0, 500)) { const s = await get(id); if (Object.keys(s).length) out[id] = s; }
+      const ids = userIds.slice(0, 500);
+      for (let i = 0; i < ids.length; i += 16) { // bounded fan-out: one state read per person
+        await Promise.all(ids.slice(i, i + 16).map(async (id) => { const s = await get(id); if (Object.keys(s).length) out[id] = s; }));
+      }
       return out;
     },
     /** Merge a change into MY entry. `userId` is the session's own id. */

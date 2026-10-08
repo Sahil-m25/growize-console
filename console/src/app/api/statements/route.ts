@@ -16,6 +16,7 @@ import { SID_COOKIE } from "@/server/oauth/user-session";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = Object.freeze({ "Cache-Control": "no-store" });
+const NOT_FINANCE = () => Response.json({ error: "Statements belong to Finance.", code: "not-finance", saved: false }, { status: 403, headers: NO_STORE });
 const MAX_REQUEST = 2 * 1024 * 1024 + 64 * 1024;
 
 async function principal() {
@@ -26,20 +27,22 @@ async function principal() {
 }
 
 async function get_() {
-  const { statementsConfigured, statements, moneyFailure } = await import("@/server/money/runtime");
-  if (!statementsConfigured()) return Response.json({ latest: null, configured: false }, { headers: NO_STORE });
+  const { statementsConfigured, statements, moneyFailure, sessionMayPay } = await import("@/server/money/runtime");
   const p = await principal();
   if (!p.ok) return p.response;
+  if (!(await sessionMayPay(p.principal.sessionId, p.principal.credential.userId))) return NOT_FINANCE();
+  if (!statementsConfigured()) return Response.json({ latest: null, configured: false }, { headers: NO_STORE });
   const r = await (await statements()).latest(p.principal);
   if (r.ok) return Response.json({ latest: r.value, configured: true }, { headers: NO_STORE });
   return moneyFailure(r, NO_STORE);
 }
 
 async function post_(req: Request) {
-  const { statementsConfigured, statements, moneyFailure } = await import("@/server/money/runtime");
-  if (!statementsConfigured()) return Response.json({ error: "Not uploaded — the Statements module is not in Zoho yet.", code: "not-configured", saved: false }, { status: 503, headers: NO_STORE });
+  const { statementsConfigured, statements, moneyFailure, sessionMayPay } = await import("@/server/money/runtime");
   const p = await principal();
   if (!p.ok) return p.response;
+  if (!(await sessionMayPay(p.principal.sessionId, p.principal.credential.userId))) return NOT_FINANCE();
+  if (!statementsConfigured()) return Response.json({ error: "Not uploaded — the Statements module is not in Zoho yet.", code: "not-configured", saved: false }, { status: 503, headers: NO_STORE });
   const len = Number(req.headers.get("Content-Length") ?? "0");
   if (Number.isFinite(len) && len > MAX_REQUEST) return Response.json({ error: "The statement is larger than 2 MB. Upload one week's CSV from net banking.", code: "too-large", saved: false }, { status: 413, headers: NO_STORE });
   let file: { name: string; type: string; bytes: Uint8Array } | null = null;

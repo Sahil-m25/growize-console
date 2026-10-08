@@ -367,6 +367,8 @@ export interface Lead {
    *  asked, when, and by whom. */
   conHow?: string | null;
   conAt?: string | null;
+  /** When permission was given, as naive IST "YYYY-MM-DDTHH:mm" (conAt is the printed stamp): the permission drawer preloads it. */
+  conAtIso?: string | null;
   conBy?: PersonKey | null;
   /** False only when the capture form was told the investor's unit count is not yet known — never
    *  absent for an ordinary lead, so `knownUnitIntent` reads a lead with no opinion on the field as

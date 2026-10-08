@@ -78,6 +78,7 @@ export const paymentsRegister: ReadEndpoint<ImBook, RegisterArgs, RegisterView> 
       totals: { received, refunded, netBanked: received - refunded, stillDue, recorded: { received: recIn, refunded: recOut, net: recIn - recOut } },
       farms: [...farms].map(([id, name]) => ({ id, name })),
       readOnly: !may(s, me, "pay"),
+      problems: [],
     });
   },
 };

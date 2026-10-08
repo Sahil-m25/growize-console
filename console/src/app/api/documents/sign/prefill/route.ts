@@ -11,7 +11,8 @@ async function get(req: Request) {
   const c = await investorsContext();
   if (!c.ok) return c.response;
   const { principal } = c.ctx;
-  const { signPersonRuntime } = await import("@/server/zoho-sign/runtime");
+  const { signPersonRuntime, signPersonConfigured } = await import("@/server/zoho-sign/runtime");
+  if (!signPersonConfigured()) return Response.json({ error: "Sending for signature is not connected yet.", code: "not-configured" }, { status: 503, headers: NO_STORE });
   const q = new URL(req.url).searchParams;
   const r = await signPersonRuntime().sender.prefill({ credential: principal.credential, seat: principal.session.seat }, q.get("paper"), q.get("id"), req.signal);
   if (r.ok) return Response.json({ prefill: r.value }, { headers: NO_STORE });

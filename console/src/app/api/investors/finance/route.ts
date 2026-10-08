@@ -15,7 +15,7 @@ async function get(req: Request) {
   const list = createFinanceInvestorList({ crm, cache: rt.cache, events: rt.events });
   const r = await list.list(principal.credential, principal.session.seat, req.signal);
   if (!r.ok) return failureResponse(r);
-  return Response.json({ rows: r.rows, summary: r.summary, truncated: r.truncated }, { headers: NO_STORE });
+  return Response.json({ rows: r.rows, summary: r.summary, truncated: r.truncated, statusHidden: r.statusHidden }, { headers: NO_STORE });
 }
 
 export const GET = withErrorCapture(guardApi("/api/investors", get), "/api/investors/finance");

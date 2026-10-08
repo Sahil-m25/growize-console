@@ -129,7 +129,7 @@ test('unassigned needs the queue user; when every insert fails the claim is hand
 });
 
 test('number spellings and keys', () => {
-  assert.deepEqual(spellings('+919400000001'), ['+919400000001', '919400000001', '9400000001', '09400000001']);
+  assert.deepEqual(spellings('+919400000001'), ['+919400000001', '919400000001', '9400000001', '09400000001', '+91 94000 00001', '+91 9400000001', '94000 00001']);
   assert.equal(phoneKey('+91 94000 00001'), '9400000001');
 });
 
@@ -196,7 +196,7 @@ test('M18-S09-NOTE-3: 2,000 rows load in one call — book check and inserts 4 a
   const r = await createSheetLoader(rig).load(await rig.cred(ROHIT), PRESTIGE, { kind: 'round-robin' }, intake(bigRows()));
   assert.equal(r.ok, true, JSON.stringify(r).slice(0, 200));
   assert.deepEqual([r.value.inFile, r.value.loaded, r.value.duplicates, r.value.refused, r.value.continuing], [BIG, BIG, 0, 0, null]);
-  assert.equal(z.coqls, 80, '25 numbers × 4 spellings per COQL');
+  assert.equal(z.coqls, 143, '14 numbers × 7 spellings per COQL');
   assert.ok(z.peak > 1 && z.peak <= 4, `insert peak ${z.peak}`);
   assert.equal(z.leads.size, BIG);
   assert.deepEqual(z.counts.map((c) => [c.Rows_Loaded, c.Rows_In_File, c.guard]), [[BIG, BIG, '2026-09-28T11:29:00+05:30']]);

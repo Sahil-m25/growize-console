@@ -8,7 +8,7 @@
 
 import { FAQ, HELP } from "@/domain";
 import type { PersonKey } from "@/domain";
-import { mgrOf, P } from "@/lib/selectors";
+import { accountAllowed, mgrOf, P } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { ActLegend } from "@/components/ui";
 import { rich } from "../rich";
@@ -18,9 +18,15 @@ type HelpEntry = { t: string; p: string; b?: string[] };
 const HELPMAP = HELP as unknown as Record<string, HelpEntry | undefined>;
 const FAQLIST = FAQ as unknown as readonly { q: string; a: string }[];
 
+/* An Investors-side screen has no entry of its own yet: say so plainly rather than describe "My day" (B-24). */
+const IM_FALLBACK: HelpEntry = {
+  t: "Investors",
+  p: "This screen belongs to the Investors side. Use the left rail to move between investors, payments, documents and the team. Everything shown is read from Zoho as you, so what you see is what your seat may see.",
+};
+
 function Body({ id }: DrawerProps) {
   const { state, dispatch } = useConsole();
-  const h = HELPMAP[id ?? state.VIEW] ?? HELPMAP[state.VIEW] ?? (HELPMAP.today as HelpEntry);
+  const h = HELPMAP[id ?? state.VIEW] ?? HELPMAP[state.VIEW] ?? (accountAllowed(state) ? (HELPMAP.today as HelpEntry) : IM_FALLBACK);
   const HQ = state.ui.HQ;
   const q = (HQ || "").trim().toLowerCase();
   const fq = FAQLIST.filter((x) => !q || (x.q + " " + x.a).toLowerCase().indexOf(q) >= 0);

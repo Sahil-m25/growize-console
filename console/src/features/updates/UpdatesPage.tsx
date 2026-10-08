@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation";
 import { gNew, P, feedRows, feedScope, unread, updateCount, updates } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { Chip } from "@/components/ui";
 import { useGoLead } from "@/features/leads/nav";
 import { useMarkRead } from "@/lib/data/endpoints/ownership";

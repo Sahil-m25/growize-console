@@ -46,6 +46,17 @@ function rig(users: (page: string) => string = (p) => `users.all.page${p}`, dir:
 }
 
 describe("readPeople", () => {
+  it("reads each person's stored badge (colour, shape, initials) into PEOPLE; a failed style read keeps the hash colour (B-13)", async () => {
+    const styles = { async getMany() { return { [U("05")]: { c: 5, sq: true, i: "ZZ" } }; } };
+    const res = await readPeople({ crm: rig().crm, seats, styles }, await credential(U("05")));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.value.people[U("05")]).toMatchObject({ c: 5, sq: true, i: "ZZ" });
+    expect(res.value.people[U("04")]!.sq).toBeUndefined();
+    const down = await readPeople({ crm: rig().crm, seats, styles: { async getMany() { throw new Error("state down"); } } }, await credential(U("05")));
+    expect(down.ok && down.value.people[U("05")]!.c).toBeGreaterThanOrEqual(1);
+  });
+
   it("lists what Zoho returns on the viewer's own token: names, seats, managers, leavers; the viewer's email only", async () => {
     const r = rig();
     const res = await readPeople({ crm: r.crm, seats }, await credential(U("05")));

@@ -25,6 +25,8 @@ const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 export const ACTIVITY_QUERIES = Object.freeze({
   task: { module: "Tasks", fields: ["id", "Subject", "Due_Date", "Status", "What_Id"], open: "Status != 'Completed'" },
   call: { module: "Calls", fields: ["id", "Subject", "Call_Start_Time", "Outgoing_Call_Status", "What_Id"], open: "Outgoing_Call_Status = 'Scheduled'" },
+  // HUMAN (B-01): follow-up Meetings are now linked to the lead by Participants, not What_Id (v8 Events take no Leads
+  // What_Id). This reader is not wired today; before it is, match Events on their lead participant (followup.ts linkedTo).
   meeting: { module: "Events", fields: ["id", "Event_Title", "Start_DateTime", "End_DateTime", "What_Id"], open: null },
 } as const);
 type ActivityKind = keyof typeof ACTIVITY_QUERIES;

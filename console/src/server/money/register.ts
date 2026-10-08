@@ -96,7 +96,10 @@ export interface RegisterTotals {
 }
 export type RegisterResult =
   | { readonly ok: true; readonly value: { readonly rows: readonly RegisterRow[]; readonly counts: RegisterCounts; readonly totals: RegisterTotals;
-      readonly farms: readonly { readonly id: string; readonly name: string | null }[]; readonly readOnly: boolean } }
+      readonly farms: readonly { readonly id: string; readonly name: string | null }[]; readonly readOnly: boolean;
+      /** B-02b: what the totals could not count, as codes ("price-missing:<n>": n Reserved allotments carry no unit price, so
+       *  their commitment is left out of still due). Empty when the totals are whole. */
+      readonly problems: readonly string[] } }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: "invalid-request" | "session-changed" | "capability-missing" | "source-invalid" }
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: ZohoFailureKind | "unexpected"; readonly retryable: boolean };
 
@@ -108,7 +111,7 @@ export interface RegisterDependencies {
   readonly clock?: () => number;
 }
 
-interface Allot { id: string; investorId: string; investorName: string | null; farmId: string; farmName: string | null; status: string; commitment: number }
+interface Allot { id: string; investorId: string; investorName: string | null; farmId: string; farmName: string | null; status: string; commitment: number; priceMissing: boolean }
 class Fail { constructor(readonly kind: ZohoFailureKind | "unexpected") {} }
 class Invalid { constructor(readonly ids: string[]) {} }
 
@@ -146,8 +149,11 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
     const units = status === "Issued" ? int(r.Issued_Units) : int(r.Reserved_Units), price = int(r.Unit_Price);
     if (!validId(r.id) || !investorId || !farmId || !status) throw new Invalid([r.id]);
     const commitment = units !== null && price !== null && units >= 0 && price >= 0 ? units * price : null;
-    if (status === "Reserved" && (commitment === null || !Number.isSafeInteger(commitment))) throw new Invalid([r.id]);
-    return { id: r.id, investorId, investorName: name(r.Customer), farmId, farmName: name(r.LLP), status, commitment: commitment ?? 0 };
+    if (status === "Reserved" && commitment !== null && !Number.isSafeInteger(commitment)) throw new Invalid([r.id]);
+    /* B-02b: an unpriced reservation (no Unit_Price, or no units) does not blank the register — its commitment is
+       left out of still due and the answer names it in `problems`. An unreadable id, investor or farm still refuses. */
+    const priceMissing = status === "Reserved" && commitment === null;
+    return { id: r.id, investorId, investorName: name(r.Customer), farmId, farmName: name(r.LLP), status, commitment: commitment ?? 0, priceMissing };
   };
 
   return Object.freeze({
@@ -203,7 +209,9 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
         const inFarmAllots = new Set([...allots.values()].filter((x) => !filter.farm || x.farmId === filter.farm).map((x) => x.id));
         let received = 0, refunded = 0, recIn = 0, recOut = 0;
         for (const id of inFarmAllots) { const s = sumsOf(ledger, id); received += s.matchedIn; refunded += s.matchedOut; recIn += s.pendingIn; recOut += s.pendingOut; }
-        const stillDue = [...allots.values()].filter((x) => inFarmAllots.has(x.id)).reduce((t, x) => t + dueOf(x.status, x.commitment, sumsOf(ledger, x.id)), 0);
+        const priced = [...allots.values()].filter((x) => inFarmAllots.has(x.id) && !x.priceMissing);
+        const stillDue = priced.reduce((t, x) => t + dueOf(x.status, x.commitment, sumsOf(ledger, x.id)), 0);
+        const unpriced = [...allots.values()].filter((x) => inFarmAllots.has(x.id) && x.priceMissing).length;
         const cut: Record<string, (r: RegisterRow) => boolean> = {
           advance: (r) => r.kind === "advance",
           full: (r) => r.kind === "full" || r.kind === "balance",
@@ -220,6 +228,7 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
             recorded: Object.freeze({ received: recIn, refunded: recOut, net: recIn - recOut }) }),
           farms: Object.freeze([...farms].sort((x, y) => x[0].localeCompare(y[0])).map(([id, n]) => Object.freeze({ id, name: n }))),
           readOnly: !a.canRecord,
+          problems: Object.freeze(unpriced ? [`price-missing:${unpriced}`] : []),
         } };
       } catch (e) {
         if (e instanceof Invalid) {

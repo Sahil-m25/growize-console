@@ -44,11 +44,16 @@ describe("Team — a KAM's book (R5)", () => {
   it("the Head of AM sees each KAM's book size, a Move book action on a KAM who has one, and a link to the rights grid", () => {
     const h = html("divya"), t = text(h);
     expect(t).toContain("Imran Sheikh imran@agresearchlabs.com Account Management 4 accounts Move book");
-    expect(t).toContain("Edit what a seat may do");
+    expect(t).toContain("See what each seat may do");
     expect(h).toContain('id="seat-rights"');
     expect(t).not.toContain("Move their accounts to");   /* the panel opens on a press */
   });
   it("a seat without the assign right is shown no Move book", () => {
     expect(text(html("latha"))).not.toContain("Move book");
+  });
+  it("a seat that changes no seat is shown no rights chip (B-21), and the banner matches D113", () => {
+    const t = text(html("latha"));
+    expect(t).not.toContain("See what each seat may do");
+    expect(t).toContain("on the Investors side they read only the investors who came from their own leads");
   });
 });

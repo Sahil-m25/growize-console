@@ -72,7 +72,7 @@ async function post_(req: Request, { params }: { params: Promise<{ id: string }>
   if (r.kind === "refused") return Response.json({ error: r.message, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
   if (r.kind === "unknown-outcome") return Response.json({ error: r.message, code: "unknown-outcome" }, { status: 503, headers: NO_STORE });
   if (r.errorKind !== "unexpected") noteZohoFailure({ kind: r.errorKind, status: null } as never);
-  return Response.json({ error: r.message, code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
+  return Response.json({ error: r.message, code: r.errorKind }, { status: r.errorKind === "forbidden" ? 403 : r.retryable ? 503 : 502, headers: NO_STORE });
 }
 
 async function get_(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -86,7 +86,8 @@ async function get_(req: Request, { params }: { params: Promise<{ id: string }> 
   if (r.kind === "refused") return Response.json({ error: r.message, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
   if (r.kind === "source-error") {
     if (r.errorKind !== "unexpected") noteZohoFailure({ kind: r.errorKind, status: null } as never);
-    return Response.json({ error: r.message, code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
+    // B-06b: Zoho refusing the read (the profile has no Receipts view) is a 403, not an outage
+    return Response.json({ error: r.message, code: r.errorKind }, { status: r.errorKind === "forbidden" ? 403 : r.retryable ? 503 : 502, headers: NO_STORE });
   }
   return Response.json({ error: r.message, code: "unknown-outcome" }, { status: 503, headers: NO_STORE });
 }

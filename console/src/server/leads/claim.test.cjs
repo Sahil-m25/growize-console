@@ -270,4 +270,22 @@ test('M10-S03: the read refuses an unseen lead and a bad id, and a Zoho failure 
   const bad = await rig({ claims: 'source.server-error' }).svc.read(principal(), L7);
   assert.equal(bad.ok, false);
   assert.equal(bad.kind, 'source-error');
+  assert.doesNotMatch(bad.message, /Not saved/, 'a read never says "Not saved" (B-06b)');
+  assert.equal(bad.message, 'Zoho is not answering. Try again.');
+});
+
+/* B-06b: an IR profile without Receipts view gets a 403 from Zoho; that is a refusal, said as one — not an outage, not "Not saved". */
+test('B-06b: a Receipts read Zoho refuses (no profile permission) is a forbidden read with its own words', async () => {
+  const r = await rig({ claims: 'source.forbidden' }).svc.read(principal(), L7);
+  assert.deepEqual([r.ok, r.kind, r.errorKind, r.retryable], [false, 'source-error', 'forbidden', false]);
+  assert.match(r.message, /can't be read for this lead yet/);
+  assert.doesNotMatch(r.message, /Not saved|not answering/);
+});
+
+test('B-06b: a report Zoho refuses (no Receipts create) says the profile cannot save it, and nothing is claimed as written', async () => {
+  const r = rig({ claims: 'source.forbidden' });
+  const res = await r.svc.report(principal(), L7, body());
+  assert.deepEqual([res.ok, res.kind, res.errorKind], [false, 'source-error', 'forbidden']);
+  assert.match(res.message, /your Zoho profile cannot save payment reports/);
+  assert.equal(r.inserts().length, 0);
 });

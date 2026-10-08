@@ -288,7 +288,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
 
   interface Farm { name: string; price: number }
   const readFarm = async (cred: UserCredential, llpId: string, signal?: AbortSignal): Promise<Farm | "not-visible" | { closed: string; name: string }> => {
-    const r = await crm.getRecord(cred, LLPS_MODULE, llpId, { fields: ["Name", "Unit_Price", "Total_Units", "LLP_Status"], signal });
+    const r = await crm.getRecord(cred, LLPS_MODULE, llpId, { fields: ["Name", "Pet_Unit_Price", "Total_Units", "LLP_Status"], signal });
     if (!r.ok) {
       if (r.error.kind === "not-found" || r.error.kind === "forbidden") return "not-visible";
       throw new SourceFail(r.error.kind);
@@ -297,7 +297,8 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     const l = r.value;
     if (l.id !== llpId) throw new Unreadable([llpId]);
     const name = typeof l.Name === "string" ? l.Name.slice(0, 80) : "";
-    const price = l.Unit_Price, total = l.Total_Units, status = typeof l.LLP_Status === "string" ? l.LLP_Status : "";
+    // B-23: the LLP's price field is `Pet_Unit_Price` ("Per Unit Price", farms/shelf.ts); `Unit_Price` is the allotment's.
+    const price = l.Pet_Unit_Price, total = l.Total_Units, status = typeof l.LLP_Status === "string" ? l.LLP_Status : "";
     if (!ON_SALE.has(status)) return { closed: status || "not open", name };
     if (typeof price !== "number" || !Number.isSafeInteger(price) || price <= 0 || typeof total !== "number" || !Number.isSafeInteger(total) || total < 0) {
       throw new Unreadable([llpId]);

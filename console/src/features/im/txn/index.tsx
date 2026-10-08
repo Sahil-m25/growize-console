@@ -106,6 +106,8 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
   if (r.state === "error") return r.err.status === 403 ? null : <div className="note bad" role="alert">{r.err.error}</div>;
   const { rows, counts, totals } = r.data;
   const rec = totals.recorded;
+  /* B-02b: reservations Zoho holds no unit price for are left out of "still due" — said, never silently */
+  const unpriced = (r.data.problems ?? []).map(p => /^price-missing:(\d+)$/.exec(p)).find(Boolean);
   return (
     <>
       <div className="ph"><h1>Payments</h1>
@@ -120,6 +122,8 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
         <div className="stat"><b>{money(totals.stillDue)}</b>
           <span>still due</span></div>
       </div>
+      {unpriced ? <div className="note bad" role="status" style={{ marginBottom: 8 }}>{unpriced[1] + (unpriced[1] === "1" ? " reservation has" : " reservations have")
+        + " no unit price (or units) in Zoho, so “still due” leaves them out. Tell Digital Infrastructure."}</div> : null}
       {rec.received || rec.refunded ? <p className="sm" style={{ margin: "0 0 8px" }}>Recorded, not yet matched: <b>{money(rec.received)}</b> in
         {rec.refunded ? <> and <b>−{money(rec.refunded)}</b> out</> : null} · not counted above until Finance matches it.</p> : null}
       <div className="secbar">{Object.entries(TXNF).map(([k, [t]]) => (

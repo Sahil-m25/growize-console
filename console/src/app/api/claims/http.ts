@@ -2,16 +2,18 @@
 import { cookies } from "next/headers";
 import { sessionCredential } from "@/server/oauth/request";
 import { SID_COOKIE } from "@/server/oauth/user-session";
-import { NO_STORE, receiptsConfigured } from "../receipts/compose";
+import { NO_STORE, receiptsConfigured, RECEIPTS_OFF } from "../receipts/compose";
 
 export { NO_STORE };
 
 export async function claimsContext() {
-  if (!receiptsConfigured()) return { ok: false as const, response: Response.json({ error: "Reports are answered in Zoho once it is connected.", code: "not-configured", saved: false }, { status: 503, headers: NO_STORE }) };
   const s = await sessionCredential();
   if (!s.ok) return { ok: false as const, response: s.response };
   const sid = (await cookies()).get(SID_COOKIE)?.value ?? "";
-  const { claimAnswers, moneyFailure } = await import("@/server/money/runtime");
+  const { claimAnswers, moneyFailure, sessionMayPay } = await import("@/server/money/runtime");
+  // The seat wall answers before the config check: a seat that may not answer reports learns nothing about Zoho (B-09).
+  if (!(await sessionMayPay(sid, s.credential.userId))) return { ok: false as const, response: Response.json({ error: "Reports are answered by Finance.", code: "not-finance", saved: false }, { status: 403, headers: NO_STORE }) };
+  if (!receiptsConfigured()) return { ok: false as const, response: Response.json({ error: "Reports cannot be answered yet — " + RECEIPTS_OFF, code: "not-configured", saved: false }, { status: 503, headers: NO_STORE }) };
   return { ok: true as const, answers: await claimAnswers(), principal: { credential: s.credential, sessionId: sid }, moneyFailure };
 }
 

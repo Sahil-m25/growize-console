@@ -24,6 +24,8 @@ import { oauthParts, userSessions, zohoSignInConfigured } from "../oauth/runtime
 import { createZohoUserDirectory } from "../identity/users";
 import { SID_COOKIE } from "../oauth/user-session";
 import { rosterRuntime } from "../roster/runtime";
+import { createStyle } from "../me/style";
+import { sharedState } from "../state/runtime";
 import { createInvestorEvents, type InvestorEvents } from "./events";
 import { createLiveDataLayer, type LiveLoad, type SeatIds } from "./live";
 import { noteLiveFailure, noteLiveRead } from "./freshness";
@@ -51,7 +53,7 @@ export function dataRuntime(): DataRuntime {
 /** M01-S03-NOTE-4: the seat directory and the Users reader that put names into PEOPLE (the same directory the sign-in door uses). */
 function peopleDeps(rt: DataRuntime, env: NodeJS.ProcessEnv) {
   const o = oauthParts(env);
-  return { seats: o.seats, users: createZohoUserDirectory({ seats: o.seats, gate: rt.gate, log: rt.log }) };
+  return { seats: o.seats, users: createZohoUserDirectory({ seats: o.seats, gate: rt.gate, log: rt.log }), styles: createStyle({ state: sharedState() }) };
 }
 
 export class LiveReadError extends Error {

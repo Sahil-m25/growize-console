@@ -118,6 +118,9 @@ import type { Action, ConsoleState } from "@/lib/store";
 
 /* ---- the small immutable primitives --------------------------------------------------------- */
 
+/** B-25: the channel itself when the lead allows it (or it is "other"), else "other". */
+const allowedChannel = (l: Lead | null | undefined, ch: string): string =>
+  ch === "other" || conFor(l, ch as Channel) ? ch : "other";
 const leadOf = (state: ConsoleState, id: LeadId): Lead | null =>
   state.LEADS.find((x) => x.id === id) ?? null;
 
@@ -183,9 +186,9 @@ function seedNext(state: ConsoleState, l: Lead | null) {
         t: l.nx!.t,
         d: l.nx!.d || (nxDate(l, state.NOW) ? iso(nxDate(l, state.NOW) as Date) : iso(now)),
         tm: l.nx!.tm || "",
-        ch: l.nx!.ch && ([...TOUCHCHANNELS, "other"] as readonly string[]).includes(l.nx!.ch)
+        ch: allowedChannel(l, l.nx!.ch && ([...TOUCHCHANNELS, "other"] as readonly string[]).includes(l.nx!.ch)
           ? l.nx!.ch
-          : channelForAction(l.nx!.t),
+          : channelForAction(l.nx!.t)),
       }
     : { t: "", d: iso(plusD(now, 1)), tm: "10:00", ch: NEXT_FALLBACK_ORDER.find((k) => conFor(l, k)) || "other" };
 }
@@ -639,8 +642,9 @@ export function pagesAReducer(state: ConsoleState, action: Action): ConsoleState
     case "setNXD": {
       const NXD = { ...uiNXDLocal(state), [a.k]: a.v };
       if (a.k === "t") {
+        /* B-25: a channel the lead gave no permission for is never the default — "other" instead, so Save is not a 403 */
         const mapped = channelForAction(a.v);
-        if (mapped !== "other") NXD.ch = mapped;
+        if (mapped !== "other") NXD.ch = allowedChannel(state.DRW?.id ? leadOf(state, state.DRW.id) : null, mapped);
       }
       if (state.DRW && state.DRW.k === "next" && state.DRW.id) NEXTDRAFTS.set(nextDraftKey(state, state.DRW.id), NXD);
       return withUi(state, { NXD });

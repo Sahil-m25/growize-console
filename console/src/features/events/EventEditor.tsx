@@ -29,8 +29,8 @@ import { eventCount, P, assignees, may } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { askedOf, changedNote, eventChange, eventCreate, eventList, eventOne, eventRecOf, eventRemove, type EventArgs } from "@/lib/data/endpoints/events";
-import type { DrawerProps } from "@/components/shell";
-import { pathOf } from "@/components/shell";
+import type { DrawerProps } from "@/components/shell/drawers/registry";
+import { pathOf } from "@/components/shell/routes";
 import { Icon, Pav } from "@/components/ui";
 import { EVCH, EVTYPES, evDateText, evGaps, evISODate, uiEVD, type EventDraft } from "./eventDraft";
 

@@ -219,7 +219,7 @@ export interface ZohoApi<C extends Credential> {
    *  lost reply is checked with `wasDeleted()`. Used to take back a write inside its Undo window. */
   deleteRecord(as: C, module: string, id: string, options?: CallOptions): Promise<ZohoResult<{ readonly deleted: true }>>;
   /** PUT /users/{id} for the signed-in person's own user: only full name and mobile (M17-S05). */
-  updateOwnUser(as: C, fields: { readonly first_name?: string; readonly last_name: string; readonly mobile?: string | null }, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
+  updateOwnUser(as: C, fields: { readonly first_name?: string; readonly last_name?: string; readonly mobile?: string | null }, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
   /** PUT /users/{id} (M03-S04-T02): another user's role and profile — a seat change, on the changer's own
    *  user token only (D53; a service credential is refused). Never retried: a lost reply is re-read. */
   updateUserSeat(as: C, userId: string, seat: UserSeatWrite, options?: CallOptions): Promise<ZohoResult<{ readonly updated: true }>>;
@@ -1379,7 +1379,10 @@ function buildApi<C extends Credential>(kind: C["kind"], options: ZohoClientOpti
       const userId = (as as { userId?: unknown }).userId;
       if (typeof userId !== "string" || !RECORD.test(userId)) throw new TypeError("updateOwnUser() needs a user credential.");
       const allowed = ["first_name", "last_name", "mobile"];
-      if (!fields || typeof fields !== "object" || Object.keys(fields).some((k) => !allowed.includes(k)) || typeof fields.last_name !== "string") {
+      // B-26: any of the three, at least one; a name change still carries last_name (Zoho's required name part).
+      const keys = fields && typeof fields === "object" ? Object.keys(fields) : [];
+      if (!keys.length || keys.some((k) => !allowed.includes(k)) || (fields.last_name !== undefined && typeof fields.last_name !== "string")
+        || (fields.first_name !== undefined && typeof fields.last_name !== "string")) {
         throw new TypeError("updateOwnUser() changes first_name, last_name and mobile only.");
       }
       const out = await execute(as, {

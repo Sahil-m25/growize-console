@@ -5,7 +5,9 @@
    - body over 16 KB / not a JSON object  → 413 / 400 { code: "invalid-request" }
    - a write that INSERTS (a Touch, a Note, a next-step activity) needs an Idempotency-Key header (one per press): the same
      key from the same person on the same lead, with the same body, runs once and replays its answer (server/state/idempotent)
-   - a refusal → { error: <the inline message>, code } with the status below; a Zoho failure → 502/503, never a Zoho body */
+   - a refusal → { error: <the inline message>, code } with the status below; a Zoho failure → 502/503, never a Zoho body
+   - a Zoho REFUSAL after the Lead write (everything taken back) → its code: 403 activity-forbidden / zoho-forbidden for
+     NO_PERMISSION, 502 zoho-refused for invalid data, each with { zoho: { module, code, field } } — codes, never values (B-01) */
 import { cookies } from "next/headers";
 import { noteZohoFailure } from "@/server/http/error-capture";
 import { sessionCredential } from "@/server/oauth/request";
@@ -33,9 +35,29 @@ export function answer<T>(r: FollowupResult<T> | PressRefused): Response {
   if (r.ok) return Response.json(r.value, { headers: NO_STORE });
   if (r.kind === "press") return Response.json({ error: PRESS[r.code].error, code: r.code === "busy" ? "sending" : r.code }, { status: PRESS[r.code].status, headers: NO_STORE });
   if (r.kind === "refused") return Response.json({ error: `Not saved — ${r.reason}.`, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
-  if (r.errorKind !== "unexpected") noteZohoFailure({ kind: r.errorKind, status: null } as never);
+  const d = r.kind === "source-error" ? r.detail : undefined;
+  if (r.errorKind !== "unexpected") noteZohoFailure({ kind: r.errorKind, status: null, ...(d?.code ? { code: d.code } : {}) } as never);
+  // B-01: when Zoho answered with a refusal, say so (its code and the module), not "Zoho is not answering". Everything the
+  // save wrote was taken back before this answer (a partial take-back is the followup-partial refusal above).
+  if (d) {
+    const what = MODULE_WORD[d.module] ?? d.module;
+    const zoho = { module: d.module, code: d.code, field: d.field };
+    if (d.kind === "forbidden") {
+      return Response.json({ error: `Not saved — your Zoho profile cannot save ${what}; nothing was kept.`,
+        code: ACTIVITY.has(d.module) ? "activity-forbidden" : "zoho-forbidden", zoho }, { status: 403, headers: NO_STORE });
+    }
+    if (d.kind === "invalid-data" || d.kind === "partial") {
+      return Response.json({ error: `Not saved — Zoho refused the ${what.replace(/s$/, "")} (${d.code ?? "INVALID_DATA"}${d.field ? ` on ${d.field}` : ""}); nothing was kept.`,
+        code: "zoho-refused", zoho }, { status: 502, headers: NO_STORE });
+    }
+    return Response.json({ error: "Not saved — Zoho is not answering; nothing was kept. Try again.", code: d.kind, zoho }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
+  }
+  if (r.errorKind === "forbidden") return Response.json({ error: "Not saved — your Zoho profile does not allow this.", code: "zoho-forbidden" }, { status: 403, headers: NO_STORE });
   return Response.json({ error: "Not saved — Zoho is not answering. Try again.", code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
 }
+/** The person's word for a Zoho module named in a refusal (API "Events" are Meetings in the CRM's own UI). */
+const MODULE_WORD: Readonly<Record<string, string>> = { Tasks: "Tasks", Calls: "Calls", Events: "Meetings", Touches: "Touches", Leads: "Leads", Notes: "Notes" };
+const ACTIVITY: ReadonlySet<string> = new Set(["Tasks", "Calls", "Events"]);
 
 export interface LeadWriteContext {
   readonly principal: { credential: UserCredential; sessionId: string };

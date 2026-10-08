@@ -9,6 +9,7 @@ import type { CacheError, CacheFresh, CacheStale } from "../../lib/zoho/cache";
 import { createZohoClient, type UserCredential, type ZohoClient } from "../../lib/zoho/client";
 import type { ScopedCache } from "../../lib/zoho/cache";
 import type { InvestorEvents } from "../data/events";
+import { SOURCE_REFUSED } from "../investors/http";
 
 export const NO_STORE = Object.freeze({ "Cache-Control": "no-store" });
 
@@ -56,6 +57,8 @@ export function failureResponse(r: { kind: "refused"; reason: string } | { kind:
     const [status, error] = REFUSED[r.reason] ?? [403, "Refused."];
     return Response.json({ error, code: r.reason }, { status, headers: NO_STORE });
   }
+  const refused = SOURCE_REFUSED[r.errorKind];
+  if (refused) return Response.json({ error: refused[1], code: r.errorKind }, { status: refused[0], headers: NO_STORE });
   return Response.json({ error: "Zoho is not answering. Try again.", code: r.errorKind }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
 }
 

@@ -30,7 +30,7 @@ import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { eventOne, eventRecOf, ruleOf, sheetLoad, sheetState } from "@/lib/data/endpoints/events";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { evDraftOf, evTitleDates } from "./eventDraft";
 import { intakeRows, parseIntake, sheetRows } from "./sheet";
 import { loadingLine, runningCounts, runningOf, sheetTag, type Running } from "./sheet-progress";

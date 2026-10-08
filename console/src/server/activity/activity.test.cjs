@@ -110,6 +110,25 @@ test('T01: a failed, refused or stuck export alerts and leaves the day unsealed;
   assert.throws(() => createZohoAuditExportSource({ credential: serviceCredential('provider-callback', { access_token: 't', api_domain: 'https://www.zohoapis.in', expires_in: 60 }, NOW), fetch: async () => res(200, {}) }));
 });
 
+test('B-27: a short scheduler call that runs out of polls answers export-pending (no alert); the next call resumes the same Zoho job', async () => {
+  const dir = fs.mkdtempSync(path.join(scratch, 'resume-'));
+  const archive = createLocalAuditArchive({ dir, clock: () => NOW });
+  const store = new Map();
+  const pending = { get: async (d) => store.get(d) ?? null, set: async (d, id) => { store.set(d, id); }, clear: async (d) => { store.delete(d); } };
+  const z = zohoFetch();
+  const source = createZohoAuditExportSource({ credential: cred, fetch: z.fetch });
+  const alerts = [];
+  const first = await runAuditExport({ source, archive, userIdOf: () => null, clock: () => NOW, sleep: async () => {}, maxPolls: 1, pending, onFailure: (c) => alerts.push(c) });
+  assert.deepEqual(first, { ok: false, day: '2026-09-02', code: 'export-pending' });
+  assert.deepEqual(alerts, [], 'a pending export is not a failure');
+  assert.equal(store.size, 1);
+  const second = await runAuditExport({ source, archive, userIdOf: () => null, clock: () => NOW, sleep: async () => {}, maxPolls: 1, pending, onFailure: (c) => alerts.push(c) });
+  assert.equal(second.ok, true);
+  assert.equal(second.rows, 7);
+  assert.equal(z.calls.filter((c) => c.method === 'POST').length, 1, 'the export is requested once, then resumed');
+  assert.equal(store.size, 0, 'the pending job is forgotten once the day is sealed');
+});
+
 test('T01: an edited archive file reads as tampered, never as data', async () => {
   const a = await archived();
   const f = path.join(a.dir, fs.readdirSync(a.dir).find((x) => x.startsWith('audit-')));

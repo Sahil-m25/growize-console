@@ -26,7 +26,7 @@ import {
 } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import type { UiState } from "@/lib/store";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { Chip, Field } from "@/components/ui";
 import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { eventDates, eventPicker } from "@/lib/data/endpoints/events";
@@ -227,6 +227,13 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                         : null}
                     </div>
                   )
+                  : hint.state === "ok" && dupe
+                    ? (
+                      <div className="note bad" style={{ margin: "8px 0 0" }}>
+                        <b>{dupe.n.split(" ")[0]}</b> is already in your book with this number. Duplicates are refused, never merged.
+                        {dupeOpen ? <div className="chips" style={{ marginTop: 7 }}><Chip onClick={() => openLead(dupe.id)}>Open {dupe.n.split(" ")[0]}</Chip></div> : null}
+                      </div>
+                    )
                   : hint.state === "ok" ? <p className="sm g2-ok" style={{ margin: "8px 0 0" }}>No existing record with this number in your book.</p>
                     : hint.state === "error" ? <p className="sm" style={{ margin: "8px 0 0" }}>Could not check this number just now. Saving checks it again, and Zoho refuses a duplicate.</p>
                       : <p className="sm" style={{ margin: "8px 0 0" }}>Checking the number…</p>

@@ -1,5 +1,5 @@
 /* /api/me — my own display name and mobile, on my own Zoho user (M17-S05, D53; ZohoCRM.users.UPDATE).
-   PATCH { name, mobile? }  → { name, mobile }   mobile omitted = leave it; "" or null = clear it
+   PATCH { name?, mobile? } → { name, mobile }  either alone (B-26); omitted = leave it (name answers null); mobile "" or null = clear it
    The user id is the signed-in credential's own: the request cannot name another user. The sign-in email is Zoho's and is
    refused (400 email-read-only). 4xx/5xx → { error, code } — nothing changed: 400 invalid · 409 session changed ·
    422 name too short or mobile not a number · 502 Zoho refused · 503 Zoho not configured. */
@@ -29,7 +29,7 @@ async function patch(req: Request) {
   if (!b) return Response.json({ error: "Nothing changed — the request is incomplete.", code: "invalid-request" }, { status: 400, headers: NO_STORE });
   const sessionId = (await cookies()).get(SID_COOKIE)?.value ?? "";
   const r = await meRuntime().profile.update({ credential: s.credential, sessionId },
-    { name: b.name as string, ...("mobile" in b ? { mobile: b.mobile as string | null } : {}), ...("email" in b ? { email: b.email } : {}) }, req.signal);
+    { ...("name" in b ? { name: b.name as string } : {}), ...("mobile" in b ? { mobile: b.mobile as string | null } : {}), ...("email" in b ? { email: b.email } : {}) }, req.signal);
   if (r.ok) return Response.json(r.value, { headers: NO_STORE });
   if (r.kind === "refused") return Response.json({ error: `Nothing changed — ${r.reason}.`, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
   return Response.json({ error: "Nothing changed — Zoho did not accept it. Try again.", code: r.errorKind }, { status: 502, headers: NO_STORE });

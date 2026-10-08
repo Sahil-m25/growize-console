@@ -13,13 +13,13 @@ import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { sessionCredential } from "@/server/oauth/request";
 import { SID_COOKIE } from "@/server/oauth/user-session";
-import { NO_STORE, receiptsConfigured } from "../../compose";
+import { NO_STORE, receiptsConfigured, RECEIPTS_OFF } from "../../compose";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
 
 async function post_(req: Request, { params }: Ctx) {
-  if (!receiptsConfigured()) return Response.json({ error: "Not matched — receipts are matched in Zoho once it is connected.", code: "not-configured", saved: false }, { status: 503, headers: NO_STORE });
+  if (!receiptsConfigured()) return Response.json({ error: "Not matched — " + RECEIPTS_OFF, code: "not-configured", saved: false }, { status: 503, headers: NO_STORE });
   const s = await sessionCredential();
   if (!s.ok) return s.response;
   const sid = (await cookies()).get(SID_COOKIE)?.value ?? "";

@@ -200,10 +200,20 @@ export type ExportRun =
   | { readonly ok: true; readonly day: string; readonly rows: number; readonly skipped: boolean }
   | { readonly ok: false; readonly day: string; readonly code: string };
 
+/** B-27: the Zoho export job requested for a day and not yet downloaded, kept between runs (SharedState in the runtime), so
+ *  a scheduler call that may only last seconds polls the job the previous call asked for instead of asking again. */
+export interface PendingExports {
+  get(day: string): Promise<string | null>;
+  set(day: string, jobId: string): Promise<void>;
+  clear(day: string): Promise<void>;
+}
+
 export async function runAuditExport(o: {
   readonly source: AuditExportSource; readonly archive: AuditArchive; readonly userIdOf: (label: string) => string | null;
   readonly day?: string; readonly clock?: () => number; readonly sleep?: (ms: number) => Promise<void>;
   readonly pollMs?: number; readonly maxPolls?: number; readonly onFailure?: (code: string) => void;
+  /** With `pending`, a run that runs out of polls answers "export-pending" (no alert) and the next run resumes the job. */
+  readonly pending?: PendingExports;
 }): Promise<ExportRun> {
   const clock = o.clock ?? Date.now;
   const day = o.day ?? previousIstDay(clock());
@@ -215,14 +225,16 @@ export async function runAuditExport(o: {
   };
   try {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return fail("bad-day");
-    if (await o.archive.has(day)) return { ok: true, day, rows: 0, skipped: true };
-    const job = await o.source.request(`${day}T00:00:00+05:30`, `${day}T23:59:59+05:30`);
+    if (await o.archive.has(day)) { await o.pending?.clear(day).catch(() => {}); return { ok: true, day, rows: 0, skipped: true }; }
+    const resumed = o.pending ? await o.pending.get(day).catch(() => null) : null;
+    const job = resumed && /^\d{1,25}$/.test(resumed) ? resumed : await o.source.request(`${day}T00:00:00+05:30`, `${day}T23:59:59+05:30`);
+    if (o.pending && job !== resumed) await o.pending.set(day, job);
     let links: readonly string[] = [];
     for (let n = 0; ; n++) {
       const s = await o.source.status(job);
-      if (s.state === "failed") return fail("export-failed");
+      if (s.state === "failed") { await o.pending?.clear(day).catch(() => {}); return fail("export-failed"); }
       if (s.state === "done") { links = s.links; break; }
-      if (n + 1 >= (o.maxPolls ?? 60)) return fail("export-timeout");
+      if (n + 1 >= (o.maxPolls ?? 60)) return o.pending ? { ok: false, day, code: "export-pending" } : fail("export-timeout");
       await sleep(o.pollMs ?? 30_000);
     }
     if (!links.length) return fail("no-download");
@@ -235,6 +247,7 @@ export async function runAuditExport(o: {
     }
     const inDay = rows.filter((r) => r.day === day);
     const w = await o.archive.write(day, inDay);
+    await o.pending?.clear(day).catch(() => {});
     return { ok: true, day, rows: w.rows, skipped: false };
   } catch (e) {
     return fail(e instanceof ExportError ? e.code : "unexpected");

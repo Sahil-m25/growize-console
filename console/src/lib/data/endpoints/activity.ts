@@ -71,7 +71,8 @@ export const recordHistory: ReadEndpoint<ImBook, { module: string; id: string | 
    the page shows them, so the view type adds optional `detail`, `touch`, `human` the fixture fills and the live half leaves empty
    — PROVISIONAL (see the report). */
 export type LeadActivityRowView = ActivityRow & { readonly detail?: string | null; readonly touch?: number | null; readonly human?: boolean };
-export type LeadActivityView = Omit<Ok, "ok" | "rows"> & { readonly rows: readonly LeadActivityRowView[] };
+/** `archive` (live only, app/api/activity): the audit archive's kind, or "not-configured" — B-27: the page says so rather than "0 actions". */
+export type LeadActivityView = Omit<Ok, "ok" | "rows"> & { readonly rows: readonly LeadActivityRowView[]; readonly archive?: string };
 /** null → nothing to read (the whole-month read is the same read when no day is picked) */
 export type LeadActivityArgs = { month: string; day: string | null; person: string | null; kind: string | null } | null;
 

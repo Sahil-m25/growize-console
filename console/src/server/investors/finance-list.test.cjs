@@ -141,6 +141,37 @@ test('a Zoho failure is an error result, never an empty list passed off as the b
   assert.deepEqual([res.ok, res.kind, res.book], [false, 'source-error', 'receipts']);
 });
 
+/* B-02a: Zoho's COQL refuses the whole select (400 INVALID_QUERY) when the profile hides one column — KYC for Finance Ops. */
+const hidesKyc = (q) => (/from Contacts/.test(q) && /\bKYC\b/.test(q.split(' from ')[0])
+  ? { status: 400, body: { code: 'INVALID_QUERY', message: 'invalid column given', details: { column_name: 'KYC' }, status: 'error' } } : route(q));
+
+test('B-02a: a hidden KYC column does not blank the list — it is re-read once without the status columns and says so', async () => {
+  const r = rig(hidesKyc);
+  const res = await r.list.list(creds.get(FIN), 'fin');
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.statusHidden, true);
+  assert.equal(res.rows.length, 4, 'every investor is still listed');
+  assert.ok(res.rows.every((x) => x.kyc === 'hidden' && x.kycOn === null && x.fema === null), 'KYC is "hidden", never passed off as "pending"');
+  assert.deepEqual([res.summary.kycNotPassed, res.summary.femaOutstanding, res.summary.balanceOutstanding], [0, 0, 2], 'hidden status is not counted; money still is');
+  const contactQs = r.queries.filter((q) => /from Contacts/.test(q));
+  assert.equal(contactQs.length, 2, 'one refused read, one retry');
+  assert.ok(!/KYC|FEMA/.test(contactQs[1].split(' from ')[0]), 'the retry selects no status column');
+  assert.ok(!/PAN|Bank|Aadhaar/i.test(contactQs[1].split(' from ')[0]));
+});
+
+test('B-02a: a full read says statusHidden false; a refusal that survives the retry is still an error, not an empty book', async () => {
+  const ok = await rig().list.list(creds.get(FIN), 'fin');
+  assert.equal(ok.statusHidden, false);
+  const bad = rig((q) => (/from Contacts/.test(q) ? { status: 400, body: { code: 'INVALID_QUERY', status: 'error' } } : route(q)));
+  const res = await bad.list.list(creds.get(FIN), 'fin');
+  assert.deepEqual([res.ok, res.kind, res.book, res.errorKind], [false, 'source-error', 'investors', 'invalid-data']);
+  assert.equal(bad.queries.filter((q) => /from Contacts/.test(q)).length, 2, 'retried once only');
+  const forbidden = rig((q) => (/from Contacts/.test(q) ? { status: 403, body: { code: 'NO_PERMISSION', status: 'error' } } : route(q)));
+  const f = await forbidden.list.list(creds.get(FIN), 'fin');
+  assert.deepEqual([f.ok, f.errorKind], [false, 'forbidden']);
+  assert.equal(forbidden.queries.filter((q) => /from Contacts/.test(q)).length, 1, 'only invalid-data is retried');
+});
+
 /* M03-S09-T03 record share at hand-off: retired (D123) — Zoho field sharing (Originating_IR, IR_Access) grants the IR; the ir-guard re-checks every row. */
 
 /* ---- M01-S08-NOTE-3: the Finance list reads money through money/ledger, so it agrees with the Payments register ---- */

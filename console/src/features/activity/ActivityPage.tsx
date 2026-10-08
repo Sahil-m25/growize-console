@@ -38,6 +38,12 @@ function DownloadIcon() {
   );
 }
 
+/** B-27: the lead actions come from Zoho's nightly audit export, so the page says when they appear, or that the export is not
+ *  set up here — never a bare "0 actions" that reads as nothing done. (Same-day rows wait on an owner ruling.) */
+export const archiveNote = (archive: string): string => archive === "not-configured"
+  ? "The activity log is not set up on this environment yet: lead actions will show once the nightly Zoho audit export runs here."
+  : "Lead actions appear here the day after, from Zoho's nightly audit export.";
+
 export function ActivityPage() {
   const { state, dispatch } = useConsole();
   const set = (patch: { ACTM?: Date; ACTDAY?: string | null; ACTWHO?: PersonKey | null;
@@ -58,6 +64,7 @@ export function ActivityPage() {
         <div>
           <h1>Activity</h1>
           <p className="sub">{solo ? "Your actions" : "You and your team"}, latest first.</p>
+          {D?.archive ? <p className="sm" id="activity-archive-note">{archiveNote(D.archive)}</p> : null}
         </div>
         <div className="sp" />
         <div className="ux-activity-exports">

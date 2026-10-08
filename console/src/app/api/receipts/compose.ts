@@ -15,11 +15,34 @@ import type { RecordReceipt } from "@/server/money/record-receipt";
 
 export const NO_STORE = Object.freeze({ "Cache-Control": "no-store" });
 
-export function receiptsConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
-  const long = (v: string | undefined) => typeof v === "string" && Buffer.byteLength(v, "utf8") >= 32;
-  return /^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "") && long(env.RECEIPT_IDEMPOTENCY_SECRET)
-    && long(env.RECEIPT_CONTEXT_SIGNING_SECRET) && env.RECEIPT_IDEMPOTENCY_SECRET !== env.RECEIPT_CONTEXT_SIGNING_SECRET;
+/** What keeps receipts (and payment reports) switched off, by variable NAME — never a value (B-06a). Empty when configured. */
+export function receiptsConfigProblems(env: NodeJS.ProcessEnv = process.env): string[] {
+  const out: string[] = [];
+  if (!/^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "")) out.push("ZOHO_CRM_RECORD_ID_PREFIX is missing or not 6–16 digits");
+  for (const k of ["RECEIPT_IDEMPOTENCY_SECRET", "RECEIPT_CONTEXT_SIGNING_SECRET"] as const) {
+    const v = env[k];
+    if (typeof v !== "string" || !v) out.push(`${k} is missing`);
+    else if (Buffer.byteLength(v, "utf8") < 32) out.push(`${k} is shorter than 32 bytes`);
+  }
+  if (env.RECEIPT_IDEMPOTENCY_SECRET && env.RECEIPT_IDEMPOTENCY_SECRET === env.RECEIPT_CONTEXT_SIGNING_SECRET) {
+    out.push("RECEIPT_IDEMPOTENCY_SECRET and RECEIPT_CONTEXT_SIGNING_SECRET are the same value; they must differ");
+  }
+  return out;
 }
+
+let toldOnce = false;
+export function receiptsConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+  const problems = receiptsConfigProblems(env);
+  if (problems.length && !toldOnce) {
+    toldOnce = true;
+    // the server log says exactly what to set (names and rules only); the page says receipts are switched off
+    console.error(`[receipts] switched off: ${problems.join("; ")}. /api/receipts/** and Finance's /api/claims/** answer 503 not-configured until this is fixed.`);
+  }
+  return problems.length === 0;
+}
+
+/** The page's words while receipts are switched off (503 not-configured): honest, and no setting named to a browser. */
+export const RECEIPTS_OFF = "receipts are switched off on this server (its receipt secrets are not set). Tell Digital Infrastructure.";
 
 const G = globalThis as typeof globalThis & { __gzRecordReceipt?: RecordReceipt };
 export async function recordReceipt(env: NodeJS.ProcessEnv = process.env): Promise<RecordReceipt> {

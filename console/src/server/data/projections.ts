@@ -98,8 +98,9 @@ export const PROJECTIONS: Readonly<Record<ModuleKey, readonly string[]>> = Objec
     "Created_Time", "Ticket_Category", "SLA_Due", "Closed_At",
     "Modified_Time",
   ]),
+  /* B-08a: the org's own API names (getFields, 28 Sep 2026 — investors/holdings.ts), not the older projection's. */
   holdings: checkProjection(MODULES.holdings, [
-    "id", "Contact", "Instrument_Type", "Amount_Invested", "Invested_On", "Interest_Rate", "Maturity_On",
+    "id", "Investor", "Instrument_Class", "Invested_Amount", "Invested_Date", "Interest_Rate_Pct", "Maturity_Date",
   ]),
-  arlTransactions: checkProjection(MODULES.arlTransactions, ["id", "Holding", "Type", "Date", "Amount"]),
+  arlTransactions: checkProjection(MODULES.arlTransactions, ["id", "Holding", "Type", "Txn_Date", "Amount"]),
 });

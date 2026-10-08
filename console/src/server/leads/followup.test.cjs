@@ -114,6 +114,8 @@ function rig(routes, overrides = {}) {
     writes: () => calls.filter((c) => c.key.startsWith('PUT') || c.key.startsWith('DELETE') || (c.key.startsWith('POST') && !c.key.includes('coql'))) };
 }
 
+const noDelete = (r) => assert.ok(!r.calls.some((c) => c.key.startsWith('DELETE')), 'a human token holds no Delete: nothing is deleted');
+
 const CMD = Object.freeze({
   leadId: LEAD, expectedModifiedTime: LOADED,
   contact: { channel: 'call', outcome: 'Spoke', occurredAt: '2026-09-27T20:30:00+05:30', reached: true, note: 'Synthetic call note' },
@@ -123,10 +125,10 @@ const CMD = Object.freeze({
 const ROUTES = () => ({
   [`GET /Leads/${LEAD}`]: 'lead.guard', [`GET /Tasks/${TASK}`]: 'task.scheduled',
   [`PUT /Leads/${LEAD}`]: 'lead.updated', 'POST /Touches': 'touch.created', [`PUT /Tasks/${TASK}`]: 'task.updated', 'POST /Calls': 'call.created',
-  'DELETE /Touches': 'deleted', 'DELETE /Calls': 'deleted',
+  'PUT /Touches': 'touch.voided', 'PUT /Calls': 'call.cancelled',
 });
 
-test('one tap writes the lead (guarded) first, then exactly one touch, the completed task and one next step', async () => {
+test('one tap writes the lead (guarded) first, then the completed task, one next step and exactly one touch (B-01: the touch last)', async () => {
   now = Date.parse('2026-09-27T15:30:00Z');
   const r = rig(ROUTES());
   const res = await r.svc.save(principal(), CMD);
@@ -134,16 +136,16 @@ test('one tap writes the lead (guarded) first, then exactly one touch, the compl
   assert.equal(res.value.touchId, TOUCH);
   assert.equal(res.value.nextId, CALL);
   assert.equal(res.value.undoUntil, now + UNDO_WINDOW_MS);
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Tasks/${TASK}`, 'POST /Calls']);
-  const [lead, touch, task, call] = r.writes();
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Calls', 'POST /Touches']);
+  const [lead, task, call, touch] = r.writes();
   assert.equal(lead.headers['If-Unmodified-Since'], LOADED);
   assert.deepEqual(lead.body.data[0], { Next_Step: 'Call back after the deck', Next_Step_At: '2026-09-29T11:00:00+05:30', Next_Step_Channel: 'Call',
     First_Touch_At: '2026-09-27T20:30:00+05:30' });
   assert.deepEqual(touch.body.data[0], { Name: 'Call 2026-09-27T20:30:00+05:30', Lead: { id: LEAD }, Channel: 'Call',
     Occurred_At: '2026-09-27T20:30:00+05:30', Is_Reply: false, Note: 'Spoke — Synthetic call note' });
   assert.deepEqual(task.body.data[0], { Status: 'Completed' });
-  assert.deepEqual(call.body.data[0], { Subject: 'Call back after the deck', Call_Type: 'Outbound', Call_Start_Time: '2026-09-29T11:00:00+05:30',
-    Reminder: '15 mins', What_Id: { id: LEAD }, $se_module: 'Leads' });
+  assert.deepEqual(call.body.data[0], { Subject: 'Call back after the deck', Call_Type: 'Outbound', Outgoing_Call_Status: 'Scheduled',
+    Call_Start_Time: '2026-09-29T11:00:00+05:30', What_Id: { id: LEAD }, $se_module: 'Leads' });
   assert.ok(!JSON.stringify(r.sink.records()).includes('Synthetic call note'), 'the note never reaches Plane B');
 });
 
@@ -158,14 +160,17 @@ test('M12-S11-NOTE-5: the guard read never asks Zoho for Consent_Visit (the org 
   assert.ok(decodeURIComponent(reads[0].search).includes('Consent_Call'));
 });
 
-test('Undo within ten seconds restores the lead and deletes what the save created; after ten seconds it is refused', async () => {
+test('Undo within ten seconds restores the lead and voids / cancels what the save created, never deleting; after ten seconds it is refused', async () => {
   now = Date.parse('2026-09-27T15:30:00Z');
   const saved = await rig(ROUTES()).svc.save(principal(), CMD);
   now += 9_000;
   const r = rig({ ...ROUTES(), [`PUT /Leads/${LEAD}`]: 'lead.updated' });
   const undone = await r.svc.undo(principal(), saved.value.undoToken);
   assert.deepEqual(undone, { ok: true, value: { undone: true } });
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `DELETE /Calls/${CALL}`, `DELETE /Touches/${TOUCH}`, `PUT /Tasks/${TASK}`]);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Touches/${TOUCH}`, `PUT /Calls/${CALL}`, `PUT /Tasks/${TASK}`]);
+  assert.deepEqual(r.writes()[1].body.data[0], { Voided_At: '2026-09-27T21:00:09+05:30' });
+  assert.deepEqual(r.writes()[2].body.data[0], { Outgoing_Call_Status: 'Cancelled' });
+  noDelete(r);
   assert.equal(r.writes()[0].headers['If-Unmodified-Since'], '2026-09-27T21:00:00+05:30', 'restored only if nobody changed it since the save');
   assert.deepEqual(r.writes()[0].body.data[0], { Next_Step: 'Send the deck', Next_Step_At: '2026-09-27T18:00:00+05:30', Next_Step_Channel: 'WhatsApp',
     Last_Reply_At: null, First_Touch_At: null, Lost_At: null, Lost_Reason: null });
@@ -239,40 +244,66 @@ test('the save is refused, with nothing written, when a rule of the flow is brok
   assert.equal((await r.svc.save(principal(), CMD)).reasonCode, 'session-changed');
 });
 
-test('a failure after the lead write takes back everything already written', async () => {
+test('B-01: when the next step cannot be created, only updates take back the save — no Touch is ever created, nothing deleted', async () => {
   now = Date.parse('2026-09-27T15:30:00Z');
   const r = rig({ ...ROUTES(), 'POST /Calls': 'server-error', [`PUT /Leads/${LEAD}`]: ['lead.updated', 'lead.updated'] });
   const res = await r.svc.save(principal(), CMD);
   assert.equal(res.kind, 'source-error');
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Tasks/${TASK}`, 'POST /Calls',
-    `DELETE /Touches/${TOUCH}`, `PUT /Tasks/${TASK}`, `PUT /Leads/${LEAD}`]);
-  assert.equal(r.writes()[6].headers['If-Unmodified-Since'], '2026-09-27T21:00:00+05:30');
+  assert.equal(res.errorKind, 'server');
+  assert.deepEqual(res.detail, { module: 'Calls', kind: 'server', code: 'INTERNAL_ERROR', field: null });
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Calls',
+    `PUT /Tasks/${TASK}`, `PUT /Leads/${LEAD}`]);
+  assert.equal(r.writes()[4].headers['If-Unmodified-Since'], '2026-09-27T21:00:00+05:30');
+  noDelete(r);
+});
+
+test('B-01: a profile with no Create on the activity answers forbidden with Zoho\'s code, logged, and leaves no orphan Touch', async () => {
+  for (const fixture of ['activity.forbidden', 'activity.no-permission-record']) {
+    now = Date.parse('2026-09-27T15:30:00Z');
+    const r = rig({ ...ROUTES(), 'POST /Calls': fixture, [`PUT /Leads/${LEAD}`]: ['lead.updated', 'lead.updated'] });
+    const res = await r.svc.save(principal(), { ...CMD, scheduled: null });
+    assert.equal(res.kind, 'source-error', fixture);
+    assert.equal(res.errorKind, 'forbidden', fixture);
+    assert.deepEqual(res.detail, { module: 'Calls', kind: 'forbidden', code: 'NO_PERMISSION', field: null }, fixture);
+    assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Calls', `PUT /Leads/${LEAD}`], fixture);
+    assert.ok(!r.calls.some((c) => c.key.startsWith('POST /Touches')), 'no Touch is written before the step exists');
+    const line = r.sink.records().filter((x) => x.kind === 'refusal').pop();
+    assert.equal(line.reason, 'insert.calls.no-permission');
+    assert.deepEqual(line.recordIds, [LEAD]);
+  }
 });
 
 test('if taking back fails too, the refusal names every record for repair', async () => {
   now = Date.parse('2026-09-27T15:30:00Z');
-  const r = rig({ ...ROUTES(), 'POST /Calls': 'server-error', 'DELETE /Touches': 'server-error', [`PUT /Leads/${LEAD}`]: ['lead.updated', 'lead.updated'] });
+  const r = rig({ ...ROUTES(), 'POST /Touches': 'server-error', 'PUT /Calls': 'server-error', [`PUT /Leads/${LEAD}`]: ['lead.updated', 'lead.updated'] });
   const res = await r.svc.save(principal(), CMD);
   assert.equal(res.reasonCode, 'followup-partial');
   const line = r.sink.records().filter((x) => x.kind === 'refusal').pop();
-  assert.deepEqual(line.recordIds, [LEAD, TOUCH]);
+  assert.deepEqual(line.recordIds, [LEAD, CALL]);
 });
 
-test('if the touch cannot be written, the lead is put back and nothing else is created', async () => {
+test('if the touch cannot be written, the call is cancelled, the task reopened and the lead put back — by updates only', async () => {
   now = Date.parse('2026-09-27T15:30:00Z');
   const r = rig({ ...ROUTES(), 'POST /Touches': 'server-error', [`PUT /Leads/${LEAD}`]: ['lead.updated', 'lead.updated'] });
   const res = await r.svc.save(principal(), CMD);
   assert.equal(res.kind, 'source-error');
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Leads/${LEAD}`]);
+  assert.equal(res.detail.module, 'Touches');
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Calls', 'POST /Touches',
+    `PUT /Calls/${CALL}`, `PUT /Tasks/${TASK}`, `PUT /Leads/${LEAD}`]);
+  assert.deepEqual(r.writes()[4].body.data[0], { Outgoing_Call_Status: 'Cancelled' });
+  noDelete(r);
 });
 
 test('D58: call backs and onboarding calls are Calls, office meetings and farm visits Meetings, the rest Tasks on the day', () => {
   const at = '2026-09-29T15:00:00+05:30';
   assert.equal(activityFor({ text: 'Call back', at }, LEAD).module, 'Calls');
-  assert.equal(activityFor({ text: 'Onboarding call — app access', at }, LEAD).row.Reminder, '15 mins');
+  const call = activityFor({ text: 'Onboarding call — app access', at }, LEAD).row;
+  assert.equal(call.Outgoing_Call_Status, 'Scheduled', 'B-01: a future call is a scheduled one');
+  assert.ok(!('Reminder' in call), 'B-01: Reminder is not a documented v8 Calls key');
   const visit = activityFor({ text: 'Farm visit', at }, LEAD);
   assert.equal(visit.module, 'Events');
   assert.deepEqual(visit.row.Participants, [{ type: 'lead', participant: LEAD }]);
+  assert.ok(!('What_Id' in visit.row) && !('$se_module' in visit.row), 'B-01: v8 Events take no Leads What_Id; the lead is a participant');
   assert.equal(visit.row.End_DateTime, '2026-09-29T16:00:00+05:30');
   assert.equal(activityFor({ text: 'Office meeting', at }, LEAD).module, 'Events');
   const task = activityFor({ text: 'Send the yield note', at: '2026-09-29T23:59:00+05:30' }, LEAD);
@@ -289,7 +320,7 @@ test('the contact and the loss are recorded in one save, the next step cleared, 
   const r = rig(ROUTES());
   const res = await r.svc.save(principal(), LOSS);
   assert.equal(res.ok, true);
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Tasks/${TASK}`]);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Touches']);
   assert.deepEqual(r.writes()[0].body.data[0], { Next_Step: null, Next_Step_At: null, Next_Step_Channel: null,
     Lost_At: '2026-09-27T21:00:00+05:30', Lost_Reason: 'Timing - not now', First_Touch_At: '2026-09-27T20:30:00+05:30' });
   assert.ok(!('Lead_Status' in r.writes()[0].body.data[0]), 'the blueprint owns Lead_Status');
@@ -434,7 +465,6 @@ test('skip is only for Engagement when it is next, and marks the skip', async ()
 
 const NEXT = Object.freeze({ leadId: LEAD, expectedModifiedTime: LOADED,
   next: { text: 'Call back after the deck', at: '2026-09-29T11:00:00+05:30', channel: 'call' }, scheduled: { module: 'Tasks', id: TASK } });
-const noDelete = (r) => assert.ok(!r.calls.some((c) => c.key.startsWith('DELETE')), 'a human token holds no Delete: nothing is deleted');
 
 test('C1 setNext: the lead is written first (guarded), the open Task is deferred, then the D58 activity; nothing is deleted', async () => {
   now = Date.parse('2026-09-27T15:30:00Z');
@@ -481,6 +511,7 @@ test('C1 setNext: when the activity cannot be written the Lead and the Task are 
   const r = rig({ ...ROUTES(), 'POST /Calls': 'server-error' });
   const res = await r.svc.setNext(principal(), NEXT);
   assert.equal(res.ok, false);
+  assert.equal(res.detail.module, 'Calls', 'B-01: Zoho\'s answer is kept, not "unexpected"');
   assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Calls', `PUT /Tasks/${TASK}`, `PUT /Leads/${LEAD}`]);
   assert.deepEqual(r.writes()[3].body.data[0], { Status: 'Not Started' });
   assert.equal(r.writes()[4].body.data[0].Next_Step, 'Send the deck');
@@ -545,8 +576,30 @@ test('C1 save: completing the scheduled step with no activity id known clears th
   const r = rig(ROUTES());
   const res = await r.svc.save(principal(), { ...CMD, scheduled: null });
   assert.equal(res.ok, true);
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', 'POST /Calls']);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Calls', 'POST /Touches']);
   const lone = rig({ ...ROUTES(), [`GET /Leads/${LEAD}`]: 'lead.guard-no-next' });
   const done = await lone.svc.save(principal(), { ...CMD, scheduled: null, next: null, complete: true });
   assert.equal(done.reasonCode, 'next-step-needed', 'an active lead still needs a dated next step');
+});
+
+test('B-01 setNext: a Task refused for want of Create is forbidden with NO_PERMISSION, the Lead restored, nothing deleted', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const r = rig({ ...ROUTES(), 'POST /Tasks': 'activity.forbidden' });
+  const res = await r.svc.setNext(principal(), { ...NEXT, next: { text: 'Chase the paperwork', at: '2026-09-29T23:59:00+05:30', channel: 'other' }, scheduled: null });
+  assert.equal(res.errorKind, 'forbidden');
+  assert.deepEqual(res.detail, { module: 'Tasks', kind: 'forbidden', code: 'NO_PERMISSION', field: null });
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Tasks', `PUT /Leads/${LEAD}`]);
+  noDelete(r);
+});
+
+test('B-01: a scheduled Meeting is the lead\'s by its participant (Events carry no Leads What_Id)', async () => {
+  now = Date.parse('2026-09-27T15:30:00Z');
+  const EVENT = `${P}740997901`;
+  const r = rig({ ...ROUTES(), [`GET /Events/${EVENT}`]: 'event.scheduled' });
+  const res = await r.svc.setNext(principal(), { ...NEXT, scheduled: { module: 'Events', id: EVENT } });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const read = r.calls.find((c) => c.key === `GET /Events/${EVENT}`);
+  assert.ok(decodeURIComponent(read.search).includes('Participants'));
+  const other = rig({ ...ROUTES(), [`GET /Events/${EVENT}`]: 'event.other-lead' });
+  assert.equal((await other.svc.setNext(principal(), { ...NEXT, scheduled: { module: 'Events', id: EVENT } })).reasonCode, 'scheduled-changed');
 });

@@ -104,6 +104,29 @@ describe("POST /followup", () => {
     expect(r.status).toBe(503);
     expect(await r.json()).toEqual({ error: "Not saved — Zoho is not answering. Try again.", code: "server" });
   });
+  it("B-01: a profile with no Create on the activity is a 403 activity-forbidden naming the module and Zoho's code", async () => {
+    save.mockResolvedValueOnce({ ok: false, kind: "source-error", source: "zoho", errorKind: "forbidden", retryable: false,
+      detail: { module: "Events", kind: "forbidden", code: "NO_PERMISSION", field: null } });
+    const r = await followup.POST(req("POST", body, fresh()), ctx);
+    expect(r.status).toBe(403);
+    expect(await r.json()).toEqual({ error: "Not saved — your Zoho profile cannot save Meetings; nothing was kept.", code: "activity-forbidden",
+      zoho: { module: "Events", code: "NO_PERMISSION", field: null } });
+  });
+  it("B-01: an invalid-data refusal names Zoho's code and field, not 'Zoho is not answering'", async () => {
+    setNext.mockResolvedValueOnce({ ok: false, kind: "source-error", source: "zoho", errorKind: "invalid-data", retryable: false,
+      detail: { module: "Calls", kind: "invalid-data", code: "INVALID_DATA", field: "Call_Start_Time" } });
+    const r = await next.PUT(req("PUT", { expectedModifiedTime: MT, next: { text: "Call back", at: "2026-10-08T10:00:00+05:30", channel: "call" }, scheduled: null }, fresh()), ctx);
+    expect(r.status).toBe(502);
+    const j = await r.json();
+    expect(j.code).toBe("zoho-refused");
+    expect(j.error).toBe("Not saved — Zoho refused the Call (INVALID_DATA on Call_Start_Time); nothing was kept.");
+  });
+  it("a forbidden Zoho failure with no detail is a 403, not 'Zoho is not answering'", async () => {
+    save.mockResolvedValueOnce({ ok: false, kind: "source-error", source: "zoho", errorKind: "forbidden", retryable: false });
+    const r = await followup.POST(req("POST", body, fresh()), ctx);
+    expect(r.status).toBe(403);
+    expect((await r.json()).code).toBe("zoho-forbidden");
+  });
   it("a body that is not a JSON object is a 400; an oversize one a 413; not configured is a 503", async () => {
     expect((await followup.POST(req("POST", "nope", fresh()), ctx)).status).toBe(400);
     expect((await followup.POST(req("POST", "[]", fresh()), ctx)).status).toBe(400);

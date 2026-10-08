@@ -198,10 +198,17 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
     log.refusal({ at, actor: { kind: "user", userId: me }, action: "payment-claim", reason: code, recordIds: ids.filter(validId) });
     return { ok: false, kind: "refused", reasonCode: code, message: message ?? MESSAGE[code], retryable: false };
   };
-  const sourceError = (k: ZohoFailureKind | "unexpected"): ClaimResult => ({
-    ok: false, kind: "source-error", errorKind: k, message: "Not saved yet — Zoho is not answering. Try again.",
+  const failed = (k: ZohoFailureKind | "unexpected", message: string): ClaimResult => ({
+    ok: false, kind: "source-error", errorKind: k, message,
     retryable: k === "network" || k === "server" || k === "busy" || k === "concurrency-exceeded" || k === "rate-limited-unclassified" || k === "unexpected",
   });
+  const sourceError = (k: ZohoFailureKind | "unexpected"): ClaimResult => failed(k, k === "forbidden"
+    ? "Not saved — your Zoho profile cannot save payment reports. Tell Digital Infrastructure."
+    : "Not saved yet — Zoho is not answering. Try again.");
+  /** A READ's failure (B-06b): never "Not saved", and a refusal is said as one, not as an outage. */
+  const readError = (k: ZohoFailureKind | "unexpected"): ClaimResult => failed(k, k === "forbidden"
+    ? "Payment reports can't be read for this lead yet — your Zoho profile cannot see them. Tell Digital Infrastructure."
+    : "Zoho is not answering. Try again.");
 
   /** Rule 1: the front end's own check, then whole rupees. */
   function parseDraft(me: string, body: unknown): Draft | ClaimResult {
@@ -379,11 +386,11 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
         return fail(refuse(isUserCredential(cred) ? cred.userId : "unrecognised", "invalid-request"));
       }
       let g: GateResult;
-      try { g = await gates.read({ credential: cred, sessionId: principal.sessionId }, leadId, signal); } catch { return fail(sourceError("unexpected")); }
-      if (!g.ok) return fail(g.kind === "refused" ? refuse(cred.userId, g.reasonCode, [leadId]) : sourceError(g.errorKind));
+      try { g = await gates.read({ credential: cred, sessionId: principal.sessionId }, leadId, signal); } catch { return fail(readError("unexpected")); }
+      if (!g.ok) return fail(g.kind === "refused" ? refuse(cred.userId, g.reasonCode, [leadId]) : readError(g.errorKind));
       const past = await claimsOf(cred, leadId, signal);
       if (past === "invalid") return fail(refuse(cred.userId, "source-invalid", [leadId]));
-      if ("fail" in past) return fail(sourceError(past.fail));
+      if ("fail" in past) return fail(readError(past.fail));
       const out = (claimId: string | null, state: ClaimStateView["state"], answer: ClaimStateView["answer"] = null, reason: string | null = null): StateResult => ({
         ok: true, value: Object.freeze({ leadId, claimId, state, answer, reason, says: answer === "not-found" ? notFoundText(reason ?? "") : null }) });
       const latest = [...past].sort((a, b) => b.seq - a.seq)[0];
@@ -392,7 +399,7 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
       if (latest.state !== ANSWERED_STATE || typeof crm.getRelated !== "function") return out(latest.id, "answered");
       // Receipts has no answer fields: the two answers share Match_State "Not found" and differ by the Note's title.
       const r = await crm.getRelated(cred, RECEIPTS_MODULE, latest.id, "Notes", { fields: ["Note_Title", "Note_Content"], perPage: 200, signal });
-      if (!r.ok && r.error.kind !== "not-found") return fail(sourceError(r.error.kind));
+      if (!r.ok && r.error.kind !== "not-found") return fail(readError(r.error.kind));
       const notes = r.ok ? r.value.records : [];
       if (notes.some((n) => n.Note_Title === FOUND_TITLE)) return out(latest.id, "answered", "found");
       const nf = notes.find((n) => n.Note_Title === NOT_FOUND_TITLE);

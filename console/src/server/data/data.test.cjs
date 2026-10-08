@@ -319,6 +319,14 @@ test('Finance reads the org book: investors, LLPs, allotments, receipts, cases, 
   assert.ok(r.queries.filter((q) => /from LLP_Creation_Module/.test(q)).every((q) => /Pet_Unit_Price/.test(q) && !/\bUnit_Price|Insurer|Insured_Till/.test(q)));
   assert.equal(im.HOLDING.length, 1);
   assert.equal(im.ARLTXN[0].Type, 'Interest');
+  // B-08a: ARL_Holdings / ARL_Transactions by the org's API names (investors/holdings.ts), never the older projection's.
+  assert.deepEqual({ ...im.HOLDING[0] }, { id: `${P}740998501`, Contact: `${P}740997101`, Instrument_Type: 'CCD', Amount_Invested: 1000000,
+    Invested_On: '2025-04-01', Interest_Rate: 9, Maturity_On: '2028-04-01' });
+  assert.equal(im.ARLTXN[0].Date, '2026-04-01');
+  const hq = r.queries.filter((q) => /from ARL_(Holdings|Transactions)/.test(q)).map((q) => q.split(' from ')[0]).join(' ');
+  assert.match(hq, /Investor, Instrument_Class, Invested_Amount, Invested_Date, Interest_Rate_Pct, Maturity_Date/);
+  assert.match(hq, /Txn_Date/);
+  assert.doesNotMatch(hq, /\bContact\b|Instrument_Type|Amount_Invested|Invested_On|Maturity_On|\bDate\b/);
   const text = JSON.stringify(res.ds);
   assert.ok(!text.includes('FXPAN9999Z') && !text.includes('FXBANK123456'), 'no identity value reaches the Dataset');
   for (const q of r.queries) assert.ok(!/PAN|Bank_Account|Aadhaar|ISFC/i.test(q.split(' from ')[0]), q);

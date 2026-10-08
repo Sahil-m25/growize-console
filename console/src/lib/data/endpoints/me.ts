@@ -17,14 +17,15 @@ export const BAD_INITIALS = "Nothing changed — initials are letters and number
 const refused = (message: string): ApiErr => fail(422, "refused", message);
 
 /* ---- my name and mobile ---------------------------------------------------------------------------- */
-/** `name` is always the display name the route needs (it takes name + mobile together); `f` is the field that changed. */
-export type MyDetailsArgs = { f: "n" | "ph"; v: string; name: string };
-export type MyDetailsWritten = { name: string; mobile: string | null };
+/** `f` is the field that changed; only that field is sent (B-26: a mobile alone carried a blank name and was refused).
+ *  `name` is the display name as the page has it, kept for callers; the route no longer needs it. */
+export type MyDetailsArgs = { f: "n" | "ph"; v: string; name?: string };
+export type MyDetailsWritten = { name: string | null; mobile: string | null };
 
 export const myDetails: WriteEndpoint<ConsoleBook, MyDetailsArgs, MyDetailsWritten, ConsoleDispatch> = {
   method: "PATCH",
   path: () => "/api/me",
-  body: (a) => (a.f === "n" ? { name: a.v.trim() } : { name: a.name.trim(), mobile: a.v.trim() }),
+  body: (a) => (a.f === "n" ? { name: a.v.trim() } : { mobile: a.v.trim() }),
   pick: (j) => j as MyDetailsWritten,
   fixture(s, dispatch, a): ApiResult<MyDetailsWritten> {
     if (a.f === "n" && a.v.trim().length < 2) return refused(NAME_TOO_SHORT);

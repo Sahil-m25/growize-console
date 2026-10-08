@@ -12,7 +12,8 @@ async function get(req: Request) {
   const c = await investorsContext();
   if (!c.ok) return c.response;
   const { principal } = c.ctx;
-  const { signPersonRuntime } = await import("@/server/zoho-sign/runtime");
+  const { signPersonRuntime, signPersonConfigured } = await import("@/server/zoho-sign/runtime");
+  if (!signPersonConfigured()) return Response.json({ error: "Sending for signature is not connected yet.", code: "not-configured" }, { status: 503, headers: NO_STORE });
   const r = await signPersonRuntime().sender.templates({ credential: principal.credential, seat: principal.session.seat }, req.signal);
   if (r.ok) return Response.json({ templates: r.value }, { headers: NO_STORE });
   const status = r.kind === "source-error" ? 503 : r.reasonCode === "invalid-request" ? 400 : 403;

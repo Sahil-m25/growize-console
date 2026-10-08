@@ -42,6 +42,8 @@ declare module "@/lib/store" {
    carries the activity-log's plural forms ("Calls"/"Emails") instead, which is why the read-only
    "Current permission" summary below keeps using that and this form does not. */
 const CON_LABEL: Record<Channel, string> = { msg: "WhatsApp", call: "Call", email: "Email", visit: "Visit" };
+/** The Zoho picklist behind Preferred_Communication; server/leads/details.ts refuses anything else (B-11). */
+const PREFERENCES = ["Phone", "WhatsApp", "Email"];
 
 type ProfileDraft = {
   id: string; n: string; ph: string; em: string; city: string; units: string;
@@ -55,14 +57,16 @@ function buildProfileDraft(l: Lead): ProfileDraft {
     introducedBy: l.introducedBy || "", contactPreference: l.contactPreference || "",
   };
 }
-function buildPermissionDraft(state: ConsoleState, l: Lead): PermissionDraft {
+export function buildPermissionDraft(state: Pick<ConsoleState, "NOW">, l: Lead): PermissionDraft {
   const now = nowT(state.NOW);
+  /* B-03: a recorded "given at" preloads as it was, so a second save does not move it to now */
+  const given = l.conAtIso && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(l.conAtIso) ? l.conAtIso : null;
   return {
     id: l.id,
     con: { msg: conFor(l, "msg"), call: conFor(l, "call"), email: conFor(l, "email"), visit: conFor(l, "visit") },
     how: l.conHow || "",
-    date: iso(now),
-    time: hhmm(now),
+    date: given ? given.slice(0, 10) : iso(now),
+    time: given ? given.slice(11, 16) : hhmm(now),
   };
 }
 /* A draft for a different lead than the one open now (the drawer opened on somebody else since it
@@ -287,13 +291,18 @@ function DetailsBody({ lead }: DrawerProps) {
               </label>
             ) : null}
             <label className="fi" style={{ marginTop: "12px" }}>
-              <span>Preferred contact time or instructions · optional</span>
-              <textarea
-                id="detail-contactPreference" className="nta" rows={2} disabled={!can}
-                placeholder="e.g. Calls after 6pm; WhatsApp during the day"
+              <span>Preferred way to reach them · optional</span>
+              <select
+                id="detail-contactPreference" className="selw" disabled={!can}
                 value={profile.contactPreference}
                 onChange={(e) => setProfile({ ...profile, contactPreference: e.target.value })}
-              />
+              >
+                <option value="">Not recorded</option>
+                {PREFERENCES.map((v) => <option key={v} value={v}>{v}</option>)}
+                {profile.contactPreference && !PREFERENCES.includes(profile.contactPreference)
+                  ? <option value={profile.contactPreference}>{profile.contactPreference}</option> : null}
+              </select>
+              <span className="sm">For times or instructions (for example “after 6pm”), add a note on the lead.</span>
             </label>
             <p className="sm" style={{ margin: "9px 0 0" }}>
               Corrections keep their previous value, your name and the time. Unknown investment

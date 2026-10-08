@@ -20,7 +20,7 @@ import { GOALS } from "@/domain";
 import { useConsole } from "@/lib/store";
 import { useApiRead } from "@/lib/data/api";
 import { eventDates, eventList, eventMonth } from "@/lib/data/endpoints/events";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { Icon } from "@/components/ui";
 import { evDraft, evISODate, uiEventsView } from "./eventDraft";
 import { EventPage } from "./EventPage";

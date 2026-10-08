@@ -149,7 +149,9 @@ function Foot({ lead }: DrawerProps) {
   const save = useApiWrite(nextSave, state, dispatch);
   const live = useApiMode() === "live";
   const [refusal, setRefusal] = useState<string | null>(null);
-  const ok = !!NXD.t && /^\d{4}-\d{2}-\d{2}$/.test(NXD.d || "");
+  /* B-25: Save waits for a channel the lead allows ("other" always is); the server refuses the rest with no-consent */
+  const chNow = draftChannel(state, l, NXD.ch);
+  const ok = !!NXD.t && /^\d{4}-\d{2}-\d{2}$/.test(NXD.d || "") && (chNow === "other" || conFor(l, chNow));
   const press = () => {
     setRefusal(null);
     if (live && !l.mt) { setRefusal(NO_MT().error); return; }

@@ -107,3 +107,14 @@ test('Zoho refusing the change comes back as an error, not a save', async () => 
   assert.equal(res.ok, false);
   assert.equal(res.kind, 'source-error');
 });
+
+test('B-26: a mobile alone is saved with no name (the name is left as it is); a blank name is still refused; nothing at all is invalid', async () => {
+  const r = rig();
+  const res = await r.svc.update(principal(), { mobile: '+91 90000 07781' });
+  assert.deepEqual(res, { ok: true, value: { name: null, mobile: '+919000007781' } });
+  assert.deepEqual(r.calls, [{ path: `/crm/v8/users/${ME}`, method: 'PUT', body: { users: [{ mobile: '+919000007781' }] } }]);
+  const q = rig();
+  assert.equal((await q.svc.update(principal(), { name: '', mobile: '+91 90000 07781' })).reasonCode, 'name-too-short');
+  assert.equal((await q.svc.update(principal(), {})).reasonCode, 'invalid-request');
+  assert.equal(q.calls.length, 0);
+});

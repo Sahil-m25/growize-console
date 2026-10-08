@@ -8,6 +8,7 @@ import { withErrorCapture } from "@/server/ops/runtime";
 import { NO_STORE, routeContext } from "@/server/cases/http";
 import { authorityEvents } from "@/server/identity/authority";
 import { amServiceContext } from "@/server/investors/am-runtime";
+import { SOURCE_REFUSED } from "@/server/investors/http";
 import type { AmService } from "@/server/investors/am-service";
 import { createInvestorsSide, investorsSideFor } from "@/server/numbers/investors-side";
 
@@ -40,6 +41,8 @@ async function get(req: Request) {
     const [status, error] = REFUSED[r.reason] ?? [403, "Refused."];
     return Response.json({ error, code: r.reason }, { status, headers: NO_STORE });
   }
+  const refused = SOURCE_REFUSED[r.errorKind];
+  if (refused) return Response.json({ error: refused[1], code: r.errorKind, lastGoodAt: r.lastGoodAt }, { status: refused[0], headers: NO_STORE });
   return Response.json({ error: "Zoho is not answering. Try again.", code: r.errorKind, lastGoodAt: r.lastGoodAt }, { status: r.retryable ? 503 : 502, headers: NO_STORE });
 }
 

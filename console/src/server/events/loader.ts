@@ -115,11 +115,12 @@ export const phoneKey = (v: unknown): string | null => {
   const d = v.replace(/\D/g, "");
   return d.length >= 10 ? d.slice(-10) : d || null;
 };
-/** Spellings a stored number may carry (as duplicate.ts mobileClause), four per Indian number. */
+/** Spellings a stored number may carry (as duplicate.ts mobileClause), seven per Indian number. */
 export const spellings = (e164: string): string[] => {
   if (!e164.startsWith("+91")) return [e164, e164.slice(1)];
   const ten = e164.slice(3);
-  return [e164, e164.slice(1), ten, "0" + ten];
+  return [e164, e164.slice(1), ten, "0" + ten,
+    `+91 ${ten.slice(0, 5)} ${ten.slice(5)}`, `+91 ${ten}`, `${ten.slice(0, 5)} ${ten.slice(5)}`];
 };
 
 export interface LoaderDeps {
@@ -192,10 +193,10 @@ export function createSheetLoader(deps: LoaderDeps) {
   /** Which numbers the loader's own token already sees on the book (last-ten keys). */
   const onBook = async (cred: UserCredential, e164s: readonly string[], signal?: AbortSignal): Promise<Set<string> | LoadResult> => {
     const seen = new Set<string>();
-    const PER = 25; // 4 spellings each → ≤100 values in one IN
+    const PER = 14; // 7 spellings each → ≤98 values in one IN
     const chunks: string[][] = [];
     for (let i = 0; i < e164s.length; i += PER) chunks.push(e164s.slice(i, i + PER).flatMap(spellings));
-    // M18-S09-NOTE-3: 2,000 rows = 80 COQLs; 4 at a time (the gate's complex pool is shared with everyone else)
+    // M18-S09-NOTE-3: 2,000 rows = 143 COQLs; 4 at a time (the gate's complex pool is shared with everyone else)
     const r = await runBounded(chunks, deps.concurrency ?? 4, (values) =>
       pagedSelect(crm, cred, ["id", "Mobile"], LEADS_MODULE, `Mobile in (${values.map((v) => `'${v}'`).join(", ")})`, "id asc", signal, deps.maxPages));
     for (const { value: page } of r.done) {

@@ -12,7 +12,7 @@
           "name": "x"
         },
         "Type": "Interest",
-        "Date": "2026-04-01",
+        "Txn_Date": "2026-04-01",
         "Amount": 90000
       }
     ],

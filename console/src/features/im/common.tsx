@@ -40,7 +40,7 @@ const Tag = ({ c, children }: { c?: string; children: ReactNode }) =>
   <span className={`tag${c ? " " + c : ""}`}><span className="dot" />{children}</span>;
 
 export const KycTag = ({ x }: { x: { kyc: string } }) =>
-  x.kyc === "passed" ? <Tag c="go">KYC passed</Tag> : x.kyc === "failed" ? <Tag c="late">KYC failed</Tag> : <Tag c="due">KYC pending</Tag>;
+  x.kyc === "hidden" ? <Tag>KYC not visible</Tag> : x.kyc === "passed" ? <Tag c="go">KYC passed</Tag> : x.kyc === "failed" ? <Tag c="late">KYC failed</Tag> : <Tag c="due">KYC pending</Tag>;
 /** The state tag. `st` is the record route's own label (M08-S07); without it the book's `x.st` says the same words. */
 export function StTag({ x, st }: { x: Pick<ImInvestor, "st"> | null; st?: string | null }) {
   switch (st || x?.st) {

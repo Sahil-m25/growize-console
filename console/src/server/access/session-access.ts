@@ -13,7 +13,7 @@
  * the name arrives with the Teams read, M17-S01).
  */
 
-import type { CapGrid, Person } from "../../domain";
+import type { CapGrid, ColourSlot, Person } from "../../domain";
 import type { ImPerson } from "../../lib/im";
 import type { ConsoleSession } from "../oauth/user-session";
 import { ZOHO_SEAT_OF_TOKEN } from "./guard-core";
@@ -28,12 +28,26 @@ export interface SessionAccess {
   readonly grants: CapGrid;
 }
 
-/** The session's one-person book, or null when its seat token maps to no console seat. */
-export async function sessionAccessOf(session: ConsoleSession, grants: GrantReader): Promise<SessionAccess | null> {
+/** The person's saved badge (server/me/style), read on the session's own user id. */
+export interface BadgeReader {
+  get(userId: string): Promise<{ readonly c?: number; readonly sq?: boolean; readonly i?: string }>;
+}
+
+/** The session's one-person book, or null when its seat token maps to no console seat. With `badges`, the person's saved
+ *  colour, shape and initials ride on it (B-15/B-26: saved by PUT /api/me/style and never read back); a failed read is no badge. */
+export async function sessionAccessOf(session: ConsoleSession, grants: GrantReader, badges?: BadgeReader): Promise<SessionAccess | null> {
   const zseat = Object.prototype.hasOwnProperty.call(ZOHO_SEAT_OF_TOKEN, session.seat) ? ZOHO_SEAT_OF_TOKEN[session.seat]! : null;
   if (!zseat) return null;
   const sides = ZOHO_SEAT_SIDES[zseat];
   const g = await readGrants(grants, session.who, sides.lead);
   const b = accessBook(session.who, sides, g);
-  return Object.freeze({ lead: b.PEOPLE[session.who]!, im: b.im.P[session.who] ?? null, grants: b.GRANT[session.who] ?? {} });
+  let st: Awaited<ReturnType<BadgeReader["get"]>> = {};
+  if (badges) { try { st = await badges.get(session.who); } catch { st = {}; } }
+  const c = typeof st.c === "number" && Number.isInteger(st.c) && st.c >= 1 && st.c <= 8 ? st.c : null;
+  const i = typeof st.i === "string" && /^[A-Z0-9]{1,2}$/.test(st.i) ? st.i : null;
+  const lead: Person = { ...b.PEOPLE[session.who]!, ...(c ? { c: c as ColourSlot } : {}), ...(i ? { i } : {}),
+    ...(typeof st.sq === "boolean" ? { sq: st.sq } : {}) };
+  const imP = b.im.P[session.who];
+  const im: ImPerson | null = imP ? { ...imP, ...(c ? { c } : {}), ...(i ? { i } : {}) } : null;
+  return Object.freeze({ lead, im, grants: b.GRANT[session.who] ?? {} });
 }

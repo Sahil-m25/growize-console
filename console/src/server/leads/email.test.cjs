@@ -134,10 +134,10 @@ test('when the email was the planned step, the scheduled task is completed and a
   const r = rig({ [`GET /Leads/${LEAD}`]: 'lead.guard-email-step' });
   const res = await r.svc.send(principal(), { ...CMD, scheduled: { module: 'Tasks', id: TASK } });
   assert.equal(res.ok, true, JSON.stringify(res));
-  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, 'POST /Touches', `PUT /Tasks/${TASK}`, 'POST /Tasks']);
+  assert.deepEqual(r.writes().map((c) => c.key), [`PUT /Leads/${LEAD}`, `PUT /Tasks/${TASK}`, 'POST /Tasks', 'POST /Touches']);
   assert.equal(r.writes().filter((c) => c.key === 'POST /Touches').length, 1);
-  assert.equal(r.writes()[3].body.data[0].Subject, 'Nurture — check back');
-  assert.equal(r.writes()[3].body.data[0].Due_Date, '2026-10-01');
+  assert.equal(r.writes()[2].body.data[0].Subject, 'Nurture — check back');
+  assert.equal(r.writes()[2].body.data[0].Due_Date, '2026-10-01');
 });
 
 test('Zoho refusing the mail means Not sent and no touch', async () => {

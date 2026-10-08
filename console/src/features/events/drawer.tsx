@@ -15,7 +15,7 @@
    either events screen can open one. */
 
 import type { ConsoleState } from "@/lib/store";
-import { registerDrawer, type DrawerProps } from "@/components/shell";
+import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { EventDropBody, EventDropFoot, EventEditorBody, EventEditorFoot } from "./EventEditor";
 import { uiEVD } from "./eventDraft";
 

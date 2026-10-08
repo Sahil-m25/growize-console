@@ -118,6 +118,17 @@ export function statementsConfigured(env: NodeJS.ProcessEnv = process.env): bool
   return /^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "") && /^[A-Za-z][A-Za-z0-9_]{0,49}$/.test(env.ZOHO_STATEMENTS_MODULE ?? "");
 }
 
+/** The live session holds the Investors-side "pay" capability now (Finance Operations, Head of Finance, super user). Needs no Zoho module, so a wall can answer before the config check (B-09). */
+export async function sessionMayPay(sessionId: string, userId: string, env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
+  const { userSessions } = await import("../oauth/runtime");
+  const { zohoSeatOf } = await import("../data/live");
+  const { seatAccess } = await import("../access/policy");
+  const now = await userSessions(env).credential(sessionId);
+  if (!now.ok || now.credential.userId !== userId) return false;
+  const seat = zohoSeatOf(now.session.seat);
+  return !!seat && seatAccess(seat, now.session.who, {}).imCan("pay");
+}
+
 /** M10-S05 "Upload the bank statement": Finance ("pay") on the live session; the store is the Zoho Statements module. */
 export async function statements(env: NodeJS.ProcessEnv = process.env): Promise<Statements> {
   if (G.__gzStatements) return G.__gzStatements;

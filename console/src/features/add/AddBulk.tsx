@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import type { EventId } from "@/domain";
 import { canReach, may, P } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { Chip } from "@/components/ui";
 import { newIdempotencyKey, useApiMode, useApiWrite } from "@/lib/data/api";
 import { IMPORT_CHUNK, importRowsOf, leadImport, ROW_WHY } from "@/lib/data/endpoints/intake";

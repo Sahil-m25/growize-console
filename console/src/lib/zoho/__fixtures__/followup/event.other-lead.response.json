@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740997901",
+        "What_Id": null,
+        "Participants": [
+          {
+            "type": "lead",
+            "participant": "9007199254740996199",
+            "name": "Synthetic Lead"
+          }
+        ]
+      }
+    ]
+  }
+}

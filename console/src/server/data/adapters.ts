@@ -277,12 +277,12 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
     async holdings(cred: UserCredential, scope: BookScope, signal?: AbortSignal): Promise<ReadResult<ImHolding>> {
       if (scope.kind !== "org" && scope.kind !== "all") return EMPTY;
       return mapRows(await selectAll(cred, "holdings", "id is not null", signal), (x): ImHolding | null => {
-        const contact = idOf(x.Contact);
-        const type = s(x, "Instrument_Type", 20);
+        const contact = idOf(x.Investor);
+        const type = s(x, "Instrument_Class", 20);
         if (!idOf(x.id) || !contact || !type || !INSTRUMENTS.has(type)) return null;
         return Object.freeze({
-          id: x.id, Contact: contact, Instrument_Type: type as ImHolding["Instrument_Type"], Amount_Invested: n(x, "Amount_Invested") ?? 0,
-          Invested_On: day(s(x, "Invested_On", 40)) ?? "", Interest_Rate: n(x, "Interest_Rate"), Maturity_On: day(s(x, "Maturity_On", 40)),
+          id: x.id, Contact: contact, Instrument_Type: type as ImHolding["Instrument_Type"], Amount_Invested: n(x, "Invested_Amount") ?? 0,
+          Invested_On: day(s(x, "Invested_Date", 40)) ?? "", Interest_Rate: n(x, "Interest_Rate_Pct"), Maturity_On: day(s(x, "Maturity_Date", 40)),
         });
       });
     },
@@ -293,7 +293,7 @@ export function createInvestorsAdapters(deps: AdapterDeps) {
         const holding = idOf(x.Holding);
         const type = s(x, "Type", 20);
         if (!idOf(x.id) || !holding || !type || !ARL_TYPES.has(type)) return null;
-        return Object.freeze({ id: x.id, Holding: holding, Type: type as ImArlTxnType, Date: day(s(x, "Date", 40)) ?? "", Amount: n(x, "Amount") ?? 0 });
+        return Object.freeze({ id: x.id, Holding: holding, Type: type as ImArlTxnType, Date: day(s(x, "Txn_Date", 40)) ?? "", Amount: n(x, "Amount") ?? 0 });
       });
       if (!r.ok) return r;
       const allowed = new Set(holdingIds);

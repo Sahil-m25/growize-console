@@ -68,6 +68,18 @@ describe("the live book gets the signed-in person (the Investors side rendered n
     expect(s.authed).toBe(true);
     expect(navFor(s).map((n) => n.k)).toContain("leads");
   });
+  it("B-15: the person's name, initials, email and badge from the book survive the session overlay; the seat is the session's", () => {
+    const base = emptyDataset("2026-09-30T10:00");
+    const ds0 = { ...base,
+      PEOPLE: { [ZID]: { n: "IR A Test", i: "IA", seat: "ir" as const, mgr: null, on: true, c: 5 as const, em: "ira@example.test", ph: "", sq: true } },
+      im: { ...base.im, P: { [ZID]: { n: "Head Test", i: "HT", r: "head" as const, c: 3, em: "head@example.test" } } } };
+    const ds = withSessionAccess(ds0, ZID, { ...HEAD, lead: { ...HEAD.lead, i: "XY" } });
+    expect(ds.PEOPLE[ZID]).toMatchObject({ n: "IR A Test", i: "IA", em: "ira@example.test", c: 5, sq: true, seat: "fin", ext: "the Investors pages" });
+    expect(ds.im.P[ZID]).toMatchObject({ n: "Head Test", i: "HT", em: "head@example.test", c: 3, r: "head" });
+    /* no book record of the person (the people read failed): the session's own values stand */
+    const bare = withSessionAccess(base, ZID, { ...IR, lead: { ...IR.lead, i: "IA", c: 5 } });
+    expect(bare.PEOPLE[ZID]).toMatchObject({ n: "", i: "IA", c: 5, seat: "ir" });
+  });
   it("is a copy: the book it was given is not changed", () => {
     const ds = emptyDataset("2026-09-30T10:00");
     withSessionAccess(ds, ZID, HEAD);

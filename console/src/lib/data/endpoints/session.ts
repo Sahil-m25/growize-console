@@ -47,17 +47,33 @@ export const sessionRead: ReadEndpoint<ConsoleState, void, SessionAnswer> = {
 export function withSessionAccess(ds: Dataset, who: PersonKey, a: SessionAccess): Dataset {
   const out: Dataset = {
     ...ds,
-    PEOPLE: { ...ds.PEOPLE, [who]: { ...a.lead } },
+    PEOPLE: { ...ds.PEOPLE, [who]: keepIdentity({ ...a.lead }, ds.PEOPLE[who]) },
     SIGNINS: [...ds.SIGNINS.filter((k) => k !== who), who],
     GRANT: { ...ds.GRANT, [who]: a.grants as CapGrid },
   };
   if (a.im) {
     out.im = {
       ...ds.im,
-      P: { ...ds.im.P, [who]: { ...(a.im as ImPerson) } },
+      P: { ...ds.im.P, [who]: keepIdentity({ ...(a.im as ImPerson) }, ds.im.P[who]) },
       SIGNINS: [...ds.im.SIGNINS.filter((k) => k !== who), who],
     };
   }
+  return out;
+}
+
+/** B-15: the session decides the seat (seat, manager, grants); who the person IS — name, initials, email, phone, badge —
+ *  comes from the book's own record of them (the Zoho Users read with their saved badge) when it has one, because the
+ *  session's are blank. Overwriting them blanked the /today greeting, "Recorded by", note authors and the /me name. */
+type Identity = { n: string; i: string; em?: string; ph?: string; c: number; sq?: boolean };
+function keepIdentity<T extends Identity>(fromSession: T, onBook: Partial<Identity> | undefined): T {
+  if (!onBook) return fromSession;
+  const out = { ...fromSession } as T & Identity;
+  for (const k of ["n", "i", "em", "ph"] as const) {
+    const v = onBook[k];
+    if (typeof v === "string" && v) (out as Identity)[k] = v;
+  }
+  if (typeof onBook.c === "number") out.c = onBook.c;
+  if (typeof onBook.sq === "boolean") out.sq = onBook.sq;
   return out;
 }
 

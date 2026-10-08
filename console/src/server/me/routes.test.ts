@@ -47,6 +47,12 @@ describe("PATCH /api/me", () => {
     expect(principal.sessionId).toBe("session_fixture_1234567");
     expect(change).toEqual({ name: "Asha Rao", mobile: "98450 33021" });
   });
+  it("B-26: a mobile alone is passed on with no name", async () => {
+    update.mockResolvedValue({ ok: true, value: { name: null, mobile: "+919000007781" } });
+    const res = await PATCH(json("PATCH", { mobile: "+91 90000 07781" }), ctx);
+    expect(res.status).toBe(200);
+    expect(update.mock.calls[0]![1]).toEqual({ mobile: "+91 90000 07781" });
+  });
   it("a body that names a user id or any field but name, mobile and email is never passed on", async () => {
     update.mockResolvedValue({ ok: true, value: { name: "Asha Rao", mobile: null } });
     await PATCH(json("PATCH", { name: "Asha Rao", userId: "9007199254740995999", id: "1", role: "x" }), ctx);

@@ -568,7 +568,8 @@ function plannedChannel(l: Lead): Channel | "other" {
    (ir-console-redesigned.html:6203-6208) */
 export function chanOf(ctx: Ctx, l: Lead): string {
   const u = nextUp(ctx, l);
-  if (u.rec && u.rec.kind === "touch") return u.rec.k;
+  /* B-25: a touch owed on a channel the lead gave no permission for is not offered as that channel */
+  if (u.rec && u.rec.kind === "touch") return u.rec.k === "other" || conFor(l, u.rec.k as Channel) ? u.rec.k : "other";
   if (u.kind !== "step" || !hasNext(l)) return "other";
   const ch = plannedChannel(l);
   return ch === "other" || conFor(l, ch) ? ch : "other";

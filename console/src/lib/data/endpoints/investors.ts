@@ -112,7 +112,8 @@ export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
    Live: `id` is the Contact id (what the record route takes) and `code` the ARL ID. Fixture: both are the book's ARL id, the
    same word the reducer and the record route's fixture use. The demo book has no email, residency beyond NRI, KYC date, FEMA
    "done" or said-yes stamp: those come back null / derived and the screen reads none of them yet. */
-export type FinanceList = { rows: readonly FinanceInvestorRow[]; summary: FinanceSummary; truncated: boolean };
+/** statusHidden: the seat's Zoho profile hides KYC/FEMA, so those columns read "not visible" (B-02a). */
+export type FinanceList = { rows: readonly FinanceInvestorRow[]; summary: FinanceSummary; truncated: boolean; statusHidden: boolean };
 
 /** args: whether this seat is on the Finance side (nothing to read for an account-management seat) */
 export const financeInvestors: ReadEndpoint<ImBook, boolean, FinanceList> = {
@@ -132,7 +133,7 @@ export const financeInvestors: ReadEndpoint<ImBook, boolean, FinanceList> = {
       };
     });
     return ok({
-      rows, truncated: false,
+      rows, truncated: false, statusHidden: false,
       summary: {
         onBook: rows.length, units: rows.reduce((t, r) => t + r.units, 0),
         kycNotPassed: rows.filter(r => r.kyc !== "passed" && r.kyc !== "na").length, balanceOutstanding: rows.filter(r => r.due > 0).length,

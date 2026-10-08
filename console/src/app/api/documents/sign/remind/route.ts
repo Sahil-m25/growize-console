@@ -12,7 +12,8 @@ async function post(req: Request) {
   const c = await investorsContext();
   if (!c.ok) return c.response;
   const { principal } = c.ctx;
-  const { signPersonRuntime } = await import("@/server/zoho-sign/runtime");
+  const { signPersonRuntime, signPersonConfigured } = await import("@/server/zoho-sign/runtime");
+  if (!signPersonConfigured()) return Response.json({ error: "Sending for signature is not connected yet.", code: "not-configured" }, { status: 503, headers: NO_STORE });
   let b: Record<string, unknown> = {};
   try { b = (await req.json()) as Record<string, unknown>; } catch { b = {}; }
   const p = { credential: principal.credential, seat: principal.session.seat };

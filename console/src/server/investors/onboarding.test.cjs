@@ -221,6 +221,20 @@ test('two adds racing for one ARL code: the second takes the next one', async ()
   assert.equal(res.value.code, 'ARL-INV-0207');
 });
 
+/* B-23: the LLP's price is Pet_Unit_Price ("Per Unit Price"); Unit_Price is the allotment's field and does not exist on the LLP. */
+test('the farm price is read from the LLP\'s Pet_Unit_Price; an LLP carrying only Unit_Price is unreadable and nothing is written', async () => {
+  let r = rig();
+  const ok = await r.add.add(principal(), form());
+  assert.equal(ok.ok, true, JSON.stringify(ok));
+  const read = r.calls.find((c) => c[0] === 'GET' && c[1] === `/LLP_Creation_Module/${LLP}`);
+  assert.deepEqual(read[2].fields.split(','), ['Name', 'Pet_Unit_Price', 'Total_Units', 'LLP_Status']);
+  assert.equal(r.writes()[1][2].data[0].Unit_Price, 2_500_000, 'the allotment carries the LLP\'s price as its own Unit_Price');
+  r = rig({ llp: 'llp.open-allotment-field-only' });
+  const res = await r.add.add(principal(), form());
+  assert.deepEqual([res.ok, res.kind, res.errorKind], [false, 'not-saved', 'source-invalid']);
+  assert.equal(r.writes().length, 0);
+});
+
 test('the farm rules hold on the server: closed farm, too few units free, more money than the units cost', async () => {
   let r = rig({ llp: 'llp.closed' });
   let res = await r.add.add(principal(), form());

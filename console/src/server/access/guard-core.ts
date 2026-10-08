@@ -157,6 +157,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/webhooks/investor-app": { kind: "open", why: "the investor app's signed events (M13-S01): no person, authenticated by the contract HMAC" },
   "/api/jobs/sign-recheck": { kind: "open", why: "the platform scheduler's Zoho Sign re-check (M12-S05-T02): no person, authenticated by JOB_SECRET in X-Job-Secret" },
   "/api/jobs/outbox-drain": { kind: "open", why: "the platform scheduler's investor-app outbox drain (M13-S01): no person, authenticated by JOB_SECRET in X-Job-Secret" },
+  "/api/jobs/audit-export": { kind: "open", why: "the platform scheduler's nightly Zoho audit-log export into the activity archive (M15-S03-T01, B-27): no person, authenticated by JOB_SECRET in X-Job-Secret" },
   "/api/sign/embed": { kind: "open", why: "the investor app's sign.embed request (M12-S08): no Zoho person, authenticated by the contract HMAC; the Contact must be the Sign recipient" },
   "/api/contracts": { kind: "session" },
   "/api/activity": { kind: "session" },

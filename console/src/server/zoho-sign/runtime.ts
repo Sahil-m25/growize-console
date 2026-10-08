@@ -155,6 +155,9 @@ export interface SignPersonRuntime {
   readonly blocker: ReturnType<typeof createPaperBlocker>;
   readonly verifier: ReturnType<typeof createHandVerifier>;
 }
+/** Zoho Sign on the India DC is configured for the person-token paths (send, prefill, templates, recall, remind, block, verify). A route asks first, so a missing variable answers 503 with a body, never a bodiless 500 (B-19). */
+export const signPersonConfigured = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.ZOHO_SIGN_API_ORIGIN === INDIA_SIGN_ORIGIN && /^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "");
 export function signPersonRuntime(env: NodeJS.ProcessEnv = process.env): SignPersonRuntime {
   if (G.__gzSignPerson) return G.__gzSignPerson;
   const rt = dataRuntime();

@@ -84,7 +84,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
   const order = Object.keys(ROLE) as ImRoleKey[];
   return (
     <>
-      <div className="note" style={{ marginBottom: "8px" }}><b>Three teams, one wall.</b> Finance holds the money, the paper and the identity. Account Management holds the relationship after allotment — the requests, the app, the farm. Digital Infrastructure runs the software, holds every page and puts people in seats, but only Finance sees a PAN, an Aadhaar reference or a bank account. The IRs work the lead side and hold no Investors pages.</div>
+      <div className="note" style={{ marginBottom: "8px" }}><b>Three teams, one wall.</b> Finance holds the money, the paper and the identity. Account Management holds the relationship after allotment — the requests, the app, the farm. Digital Infrastructure runs the software, holds every page and puts people in seats, but only Finance sees a PAN, an Aadhaar reference or a bank account. The IRs work the lead side; on the Investors side they read only the investors who came from their own leads.</div>
       {r.state === "loading" ? <p className="sm">Reading the team…</p> : null}
       {r.state === "error" ? <p className="note bad" role="alert">{r.err.error}</p> : null}
       {err ? <p className="note bad" role="alert">{err}</p> : null}
@@ -108,7 +108,9 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
       ) : null}
       <div className="secw">
         <div className="card"><div className="ch"><h3>Who is here</h3><div className="sp" />
-          <button type="button" className="chip" onClick={() => document.getElementById("seat-rights")?.scrollIntoView({ block: "start" })}>Edit what a seat may do</button></div><div className="tw"><table>
+          {rows.some(w => w.seatOptions.length)
+            ? <button type="button" className="chip" onClick={() => document.getElementById("seat-rights")?.scrollIntoView({ block: "start" })}>See what each seat may do</button>
+            : null}</div><div className="tw"><table>
           <thead><tr><th>Name</th><th>Team</th><th>Seat</th><th>May</th><th className="n">Actions logged</th><th></th></tr></thead>
           <tbody>{rows.map(w => {
             const k = w.id, tm = w.role ? (ROLE[w.role] || {}).tm : null;

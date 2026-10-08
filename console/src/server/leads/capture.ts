@@ -27,13 +27,14 @@ const RECORD_ID = /^\d{15,22}$/;
 const RECORD_PREFIX = /^\d{6,16}$/;
 const SOURCE_SET: ReadonlySet<string> = new Set(SOURCES);
 
-/** Leads.Consent_How picklist as the org holds it (live metadata read 4 Oct 2026; -None- aside). */
-export const CONSENT_HOW_PICKLIST: readonly string[] = Object.freeze(["Form", "Verbal", "Email reply", "Event sheet"]);
+/** Leads.Consent_How picklist as the org holds it (live metadata read 4 Oct 2026; -None- aside), plus "Call" (B-03: the
+ *  sandbox change set adds it so a permission given on a call no longer reads back as given in person). */
+export const CONSENT_HOW_PICKLIST: readonly string[] = Object.freeze(["Form", "Verbal", "Call", "Email reply", "Event sheet"]);
 /** The console's words for how permission was given (features/add/state.ts CONHOW) → a value the picklist holds
- *  (M14-S03-NOTE-5). Form and event are exact. PROVISIONAL: in person and on a call are both Verbal; a WhatsApp
- *  reply is a written reply, so it takes "Email reply" (the nearest). Judgement for the owner: add "WhatsApp reply" to the picklist if the distinction matters. */
+ *  (M14-S03-NOTE-5). Form, event, in person (Verbal) and call are exact. PROVISIONAL: a WhatsApp reply is a written
+ *  reply, so it takes "Email reply" (the nearest). Judgement for the owner: add "WhatsApp reply" to the picklist if the distinction matters. */
 export const CONSENT_HOW: Readonly<Record<string, string>> = Object.freeze({
-  person: "Verbal", call: "Verbal", msg: "Email reply", form: "Form", event: "Event sheet",
+  person: "Verbal", call: "Call", msg: "Email reply", form: "Form", event: "Event sheet",
 });
 // Leads has no Consent_Visit in the org (M12-S11-NOTE-5): a visit permission is accepted from the form but not written.
 const CONSENT_FIELDS = Object.freeze({ msg: "Consent_WhatsApp", call: "Consent_Call", email: "Consent_Email" } as const);

@@ -14,16 +14,16 @@ const recorder = (s: ConsoleState) => { const sent: Action[] = []; let cur = s; 
 const bodyOf = (f: ReturnType<typeof fetchOf>) => JSON.parse(String(f.mock.calls[0]![1]!.body));
 
 describe("PATCH /api/me — name and mobile", () => {
-  it("live: a name change sends the name alone; a mobile change sends the display name with it (the route takes both)", async () => {
+  it("live: a name change sends the name alone; a mobile change sends the mobile alone (B-26: never a blank name)", async () => {
     const f = fetchOf(200, { name: "Asha Rao", mobile: null });
     const r = await runWrite("live", myDetails, as("kavya"), () => {}, { f: "n", v: " Asha Rao ", name: "Kavya" }, { fetch: f });
     expect(r).toEqual({ ok: true, data: { name: "Asha Rao", mobile: null } });
     expect(f.mock.calls[0]![0]).toBe("/api/me");
     expect(f.mock.calls[0]![1]!.method).toBe("PATCH");
     expect(bodyOf(f)).toEqual({ name: "Asha Rao" });
-    const g = fetchOf(200, { name: "Kavya", mobile: "+919845033021" });
-    await runWrite("live", myDetails, as("kavya"), () => {}, { f: "ph", v: "98450 33021", name: "Kavya" }, { fetch: g });
-    expect(bodyOf(g)).toEqual({ name: "Kavya", mobile: "98450 33021" });
+    const g = fetchOf(200, { name: null, mobile: "+919845033021" });
+    await runWrite("live", myDetails, as("kavya"), () => {}, { f: "ph", v: "98450 33021", name: "" }, { fetch: g });
+    expect(bodyOf(g)).toEqual({ mobile: "98450 33021" });
   });
   it("live: the route's refusal comes back in its own words and nothing is dispatched", async () => {
     const d = vi.fn();

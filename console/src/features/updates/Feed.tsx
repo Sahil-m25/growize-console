@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { dLabel } from "@/lib/format";
 import { P, feedRows, feedScope, logNote, navFor } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { Chip } from "@/components/ui";
 import { useGoLead } from "@/features/leads/nav";
 

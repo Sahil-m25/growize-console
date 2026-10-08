@@ -15,7 +15,7 @@
 import { useRouter } from "next/navigation";
 import { feedRows, feedScope, gNew, unread, updates } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { pathOf } from "@/components/shell";
+import { pathOf } from "@/components/shell/routes";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { useMarkRead } from "@/lib/data/endpoints/ownership";
 import { Feed } from "./Feed";

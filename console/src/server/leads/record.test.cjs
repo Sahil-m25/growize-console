@@ -159,7 +159,7 @@ test('permission: the three Consent_* flags, How from the picklist, when given, 
   const w = r.writes()[0];
   assert.equal(w.headers['If-Unmodified-Since'], LOADED);
   assert.deepEqual(w.body.data[0], { Consent_WhatsApp: true, Consent_Email: true, Consent_Call: false, Consent_By: { id: IR },
-    Consent_How: 'Verbal', Consent_At: '2026-09-27T18:30:00+05:30' });
+    Consent_How: 'Call', Consent_At: '2026-09-27T18:30:00+05:30' });
   assert.ok(!JSON.stringify(r.calls).includes('Consent_Visit'), 'no visit consent is read or written');
 });
 

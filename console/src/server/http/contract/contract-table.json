@@ -983,6 +983,15 @@
     }
    }
   },
+  "/api/jobs/audit-export": {
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (X-Job-Secret header = JOB_SECRET; no body)"
+    }
+   }
+  },
   "/api/leads/[id]/followup": {
    "POST": {
     "body": {

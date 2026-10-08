@@ -2363,7 +2363,7 @@ body.ux-redesign .ux-system{container:system-checks / inline-size}
 .lp-lbl{line-height:1.2}
 .lp-alert{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;margin:0 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card-2);font-size:var(--text-body);color:var(--ink-2)}
 .lp-alert>span{flex:1;min-width:200px}
-.lp-alert.bad{background:var(--late-bg);border-color:transparent;color:var(--late-ink,var(--late))}
+.lp-alert.bad{background:var(--late-bg);border-color:transparent;color:var(--late)}
 .lp-alert.due{background:var(--due-bg);border-color:transparent}
 .lp-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px;align-items:start}
 .lp-main{display:flex;flex-direction:column;gap:16px;min-width:0}

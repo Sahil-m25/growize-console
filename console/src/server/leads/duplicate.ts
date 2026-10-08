@@ -45,6 +45,8 @@ export function mobileClause(e164: string): string {
   if (e164.startsWith("+91")) {
     const ten = e164.slice(3);
     forms.add(ten).add("0" + ten);
+    /* stored with spaces, as imported or seeded: "+91 98765 43210", "+91 9876543210", "98765 43210" */
+    forms.add(`+91 ${ten.slice(0, 5)} ${ten.slice(5)}`).add(`+91 ${ten}`).add(`${ten.slice(0, 5)} ${ten.slice(5)}`);
     return `(Mobile in (${[...forms].map((f) => `'${f}'`).join(", ")}) or Mobile like '%${ten}')`;
   }
   return `Mobile in (${[...forms].map((f) => `'${f}'`).join(", ")})`;

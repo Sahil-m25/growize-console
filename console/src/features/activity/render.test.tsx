@@ -14,6 +14,7 @@ function stateFor(k: string) {
   return cache.get(k)!;
 }
 import { ActivityPage } from "./index";
+import { archiveNote } from "./ActivityPage";
 import { DocsPage } from "@/features/docs/DocsPage";
 
 const text = (h: string) => h.replace(/<[^>]+>/g, " ").replace(/&#x27;/g, "'").replace(/\s+/g, " ");
@@ -33,6 +34,15 @@ describe("Activity (lead side)", () => {
     expect(t).toContain("You and your team, latest first.");
     expect(t).toContain("By person");
     expect(t).toMatch(/When Action Person Investor/);
+  });
+});
+
+describe("Activity archive note (B-27)", () => {
+  it("says the log is not set up when the archive is not configured, and next-day otherwise; the fixture book shows neither", () => {
+    expect(archiveNote("not-configured")).toMatch(/not set up on this environment/);
+    expect(archiveNote("stratus")).toMatch(/the day after/);
+    seat.k = "rohit";
+    expect(renderToStaticMarkup(<ActivityPage />)).not.toContain("activity-archive-note");
   });
 });
 

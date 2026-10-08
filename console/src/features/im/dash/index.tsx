@@ -43,11 +43,14 @@ function Wait({ r }: { r: Read<unknown> }) {
 const IST_MS = 5.5 * 3_600_000;
 const asOfText = (ms: number) => new Date(ms + IST_MS).toISOString().slice(11, 16);
 
+/** B-15: "<first name>'s day", or "Your day" when the name has not been read (never "'s day"). */
+const dayOf = (n: string | undefined): string => { const f = (n ?? "").trim().split(" ")[0]; return f ? `${f}'s day` : "Your day"; };
+
 /* vDashAM — imx.js 1376–1393. Account Management's day. Rows, tiles, cadence and last-heard: GET /api/queues/investors. */
 function VDashAM({ s, me, dispatch }: ImPageProps) {
   const r = useApiRead(investorQueue, { s, me }, undefined);
   if (!pageReadable(s, me, "dash") || !isAM(s, me)) return null;
-  const head = <div className="ph"><h1>{who(s, me).n.split(" ")[0]}&apos;s day</h1>
+  const head = <div className="ph"><h1>{dayOf(who(s, me).n)}</h1>
     {r.state === "ok" && r.data.side === "am" ? <span className="sub">{(r.data.book === "kam"
       ? r.data.tiles.accountsHeld + " account" + (r.data.tiles.accountsHeld === 1 ? "" : "s") : "the whole book")
       + (r.data.waiting ? " · " + r.data.waiting + " waiting on you" : " · nothing waiting on you")}</span> : null}</div>;
@@ -154,7 +157,7 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
   const hl = useApiRead(holdsList, { s, me }, undefined), land = useApiRead(holdsLand, { s, me }, undefined);
   if (!pageReadable(s, me, "dash") || isAM(s, me) || isSys(s, me)) return null;
   const sup = isSuper(s, me);
-  const head = (sub: string) => <div className="ph"><h1>{who(s, me).n.split(" ")[0]}&apos;s day</h1><span className="sub">{sub}</span></div>;
+  const head = (sub: string) => <div className="ph"><h1>{dayOf(who(s, me).n)}</h1><span className="sub">{sub}</span></div>;
   if (r.state !== "ok" || r.data.side !== "money") return <>{head("")}<Wait r={r} /></>;
   const d = r.data, q = d.rows;
   /* The super user's second queue (Account Management's) has no route — the money route serves one queue per seat —
