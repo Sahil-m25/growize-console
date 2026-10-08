@@ -11,6 +11,7 @@ import type { OpsLog } from "../../lib/zoho/log";
 import { dataRuntime } from "../data/zoho-source";
 import { createSignApi } from "../zoho-sign/api";
 import { createSignStatusReader } from "../zoho-sign/status";
+import { fakeSign, signIsFake } from "../zoho-sign/runtime";
 import { createDocumentsList, type DocumentsList, type SignStatusReader } from "./list";
 import { sharedState } from "../state/runtime";
 import { createUploader, type Uploader } from "./upload";
@@ -29,6 +30,8 @@ export function documentUploader(env: NodeJS.ProcessEnv = process.env): Uploader
 /** The per-viewer Sign status reader, or undefined when Zoho Sign is not configured (India DC only). */
 export function documentsSignStatus(env: NodeJS.ProcessEnv = process.env): SignStatusReader | undefined {
   if (G.__gzDocSignStatus !== undefined) return G.__gzDocSignStatus ?? undefined;
+  /* test signing (sandbox only): the rows read the fake's request states, the same reader */
+  if (signIsFake(env)) return (G.__gzDocSignStatus = createSignStatusReader(fakeSign(env)));
   if (env.ZOHO_SIGN_API_ORIGIN !== INDIA_SIGN_ORIGIN) return undefined;
   const rt = dataRuntime();
   G.__gzDocSignStatus = createSignStatusReader(createSignApi({ origin: INDIA_SIGN_ORIGIN, gate: rt.gate, log: rt.log }));

@@ -151,6 +151,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/updates": { kind: "page", page: "invupd" },
   "/api/test/session": { kind: "open", why: "D124 staging test sign-in (sandbox only, 404 unless its gate is on): no session, authenticated by GZ_TEST_SIGNIN_SECRET in X-Test-Signin-Secret" },
   "/api/test/state-health": { kind: "open", why: "D125 staging diagnostics (same gate as the test sign-in: sandbox only, 404 unless on): no session, authenticated by GZ_TEST_SIGNIN_SECRET in X-Test-Signin-Secret" },
+  "/api/test/sign/complete": { kind: "open", why: "test signing (ZOHO_SIGN_MODE=fake, sandbox only; 404 unless the D124 gate and fake mode are on): no session, authenticated by GZ_TEST_SIGNIN_SECRET in X-Test-Signin-Secret" },
   "/api/session": { kind: "open", why: "the sign-in door itself: GET answers who is signed in, DELETE signs out" },
   "/api/errors": { kind: "open", why: "the client error beacon: carries no data and reports from the sign-in screen too" },
   "/api/webhooks/zoho-sign": { kind: "open", why: "a provider callback: no person, authenticated by its HMAC signature" },

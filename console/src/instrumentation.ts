@@ -16,7 +16,9 @@ export async function register(): Promise<void> {
     // SIGN_CHECK_TIMER refuses the start instead of failing closed on every request.
     const { grantStoreKind } = await import("./server/access/grants");
     grantStoreKind();
-    const { signCheckTimerOn } = await import("./server/zoho-sign/runtime");
+    const { signCheckTimerOn, signModeStartupCheck } = await import("./server/zoho-sign/runtime");
     signCheckTimerOn();
+    // Test signing (ZOHO_SIGN_MODE=fake) outside a sandbox staging deployment refuses the start (server/zoho-sign/fake.ts).
+    signModeStartupCheck();
   }
 }

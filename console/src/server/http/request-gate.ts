@@ -97,7 +97,7 @@ export interface RateRule {
 
 /** THE ONE CONFIG. N per minute per (IP + session); per IP alone, IP_SHARE × N. */
 export const RATE_LIMITS: ReadonlyArray<RateRule> = Object.freeze([
-  { name: "test-signin", matches: (r: string) => r === "/api/test/session" || r.startsWith("/api/test/session/") || r === "/api/test/state-health", perMinute: 10 },
+  { name: "test-signin", matches: (r: string) => r === "/api/test/session" || r.startsWith("/api/test/session/") || r === "/api/test/state-health" || r === "/api/test/sign/complete", perMinute: 10 },
   { name: "auth", matches: (r: string) => r === "/api/auth" || r.startsWith("/api/auth/"), perMinute: 20 },
   { name: "search", matches: (r: string) => /^\/api\/[^/]+\/search$/.test(r), perMinute: 60 },
   { name: "upload", matches: (r: string) => r === "/api/documents/upload", perMinute: 20 },
