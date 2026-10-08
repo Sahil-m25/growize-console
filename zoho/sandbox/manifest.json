@@ -13,6 +13,8 @@
     "Units_Released": 62,
     "Soil_Type": "Red loam",
     "Crop_Stage": "Alphonso · year 3",
+    "Pet_Unit_Price": 2500000,
+    "LLP_Status": "Open for Issuance",
     "$persona": {
      "Owner": "admin"
     }
@@ -27,6 +29,8 @@
     "Units_Released": 34,
     "Soil_Type": "Red loam",
     "Crop_Stage": "Alphonso · year 2",
+    "Pet_Unit_Price": 2500000,
+    "LLP_Status": "Open for Reservation",
     "$persona": {
      "Owner": "admin"
     }
@@ -41,6 +45,8 @@
     "Units_Released": 0,
     "Soil_Type": "Sandy loam",
     "Crop_Stage": "Prepared, not planted",
+    "Pet_Unit_Price": 2500000,
+    "LLP_Status": "Darft",
     "$persona": {
      "Owner": "admin"
     }
@@ -55,6 +61,8 @@
     "Units_Released": 0,
     "Soil_Type": "Sandy loam",
     "Crop_Stage": "Survey pending",
+    "Pet_Unit_Price": 2500000,
+    "LLP_Status": "Darft",
     "$persona": {
      "Owner": "admin"
     }
@@ -1615,6 +1623,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 4,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1636,6 +1645,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 1,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1657,6 +1667,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 2,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1678,6 +1689,8 @@
     "Allocation_Status": "Reserved",
     "Issued_Units": 0,
     "Reserved_Units": 1,
+    "Unit_Price": 2500000,
+    "Hold_Until": "23 Sep",
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1699,6 +1712,8 @@
     "Allocation_Status": "Reserved",
     "Issued_Units": 0,
     "Reserved_Units": 4,
+    "Unit_Price": 2500000,
+    "Hold_Until": "21 Sep",
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1720,6 +1735,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 1,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1741,6 +1757,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 6,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1762,6 +1779,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 4,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1783,6 +1801,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 2,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1804,6 +1823,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 5,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1825,6 +1845,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 2,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1846,6 +1867,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 3,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1867,6 +1889,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 1,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },
@@ -1888,6 +1911,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 1,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_a"
     },
@@ -1909,6 +1933,7 @@
     "Allocation_Status": "Issued",
     "Issued_Units": 3,
     "Reserved_Units": 0,
+    "Unit_Price": 2500000,
     "$persona": {
      "Owner": "ir_b"
     },

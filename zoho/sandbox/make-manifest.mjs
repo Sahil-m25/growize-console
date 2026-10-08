@@ -31,13 +31,25 @@ const PRIORITY = { high: "High", normal: "Medium" }, STATUS = { open: "New", wai
 
 const stage = (l) => Object.fromEntries(l.at_.map((s, i) => [STAGE_AT[i], s]).filter(([k]) => k));
 const firstAlloc = (invId) => { const i = INV.find((x) => x.id === invId); return `${invId}/${Object.keys(i.blocks)[0]}`; };
+/* D134: every seeded farm and allotment carries a price (Rs 25 lakh a unit: the seed's receipts are whole multiples of it),
+   farms a status the shelf and Add investor read, and a Reserved allotment its 30-day hold from the first advance. */
+const UNIT_PRICE = 2500000;
+const LLP_STATUS = { A: "Open for Issuance", B: "Open for Reservation" };
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const holdUntil = (invId) => {
+  const t = TXN.find((x) => x.inv === invId && /advance/i.test(x.kind));
+  const m = t && /^(\d{2}) (\w{3})/.exec(t.on);
+  if (!m) return null;
+  const d = new Date(Date.UTC(2026, MON.indexOf(m[2]), +m[1] + 30));
+  return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]}`;
+};
 
 const records = {
-  LLP_Creation_Module: FARMS.map((f) => tag(f.k, { Name: f.n, Block_Code: f.k, Acreage_Acres: f.acres, Total_Units: f.units, Units_Released: f.released, Soil_Type: f.soil, Crop_Stage: f.crop, $persona: { Owner: "admin" } })),
+  LLP_Creation_Module: FARMS.map((f) => tag(f.k, { Name: f.n, Block_Code: f.k, Acreage_Acres: f.acres, Total_Units: f.units, Units_Released: f.released, Soil_Type: f.soil, Crop_Stage: f.crop, Pet_Unit_Price: UNIT_PRICE, LLP_Status: LLP_STATUS[f.k] ?? "Darft", $persona: { Owner: "admin" } })),
   Leads: LEADS.map((l) => tag(l.id, { ...split(l.n), Company: "Seed", Mobile: l.ph, Email: l.em, City: l.city, Lead_Source: l.src, Units_Interested: l.units, ...stage({ at_: l.at }), $persona: { Owner: who(l.own) } })),
   Contacts: INV.map((i) => tag(i.id, { ARL_ID: i.id, ...split(i.n), Mobile: i.ph, Email: i.em, Mailing_City: i.city, Residency: i.nri ? "NRI" : "Resident", Said_Yes_At: `${i.since} 12:00`, ...(i.kam ? { KAM_Since: i.kamOn, KAM_Intro_At: i.intro } : {}), $persona: { Owner: who(i.ir), Originating_IR: who(i.ir), ...(i.kam ? { KAM: who(i.kam) } : {}) } })),
   Touches: LEADS.flatMap((l) => Object.entries(l.touch).flatMap(([ch, stamps]) => stamps.map((at, n) => tag(`${l.id}/${ch}/${n}`, { Name: `${l.id} ${ch} ${n + 1}`, Channel: CHANNEL[ch], Occurred_At: at, Is_Reply: false, $persona: { Owner: who(l.own) }, $refs: { Lead: ["Leads", l.id] } })))),
-  LLP_UnitAllocation_Module: INV.flatMap((i) => Object.entries(i.blocks || {}).map(([blk, n]) => tag(`${i.id}/${blk}`, { Name: `${i.n} / ${blk}`, Allocation_Status: i.st === "allocated" ? "Issued" : "Reserved", Issued_Units: i.st === "allocated" ? n : 0, Reserved_Units: i.st === "allocated" ? 0 : n, $persona: { Owner: who(i.ir) }, $refs: { Customer: ["Contacts", i.id], LLP: ["LLP_Creation_Module", blk] } }))),
+  LLP_UnitAllocation_Module: INV.flatMap((i) => Object.entries(i.blocks || {}).map(([blk, n]) => tag(`${i.id}/${blk}`, { Name: `${i.n} / ${blk}`, Allocation_Status: i.st === "allocated" ? "Issued" : "Reserved", Issued_Units: i.st === "allocated" ? n : 0, Reserved_Units: i.st === "allocated" ? 0 : n, Unit_Price: UNIT_PRICE, ...(i.st === "allocated" ? {} : { Hold_Until: holdUntil(i.id) }), $persona: { Owner: who(i.ir) }, $refs: { Customer: ["Contacts", i.id], LLP: ["LLP_Creation_Module", blk] } }))),
   // UTR is an identity-class value: replaced by a synthetic one. Recorded_By has no field (Receipts.Owner carries the recorder's persona).
   Receipts: TXN.map((t) => tag(t.id, { Name: t.id, Kind: t.kind, Amount: t.amt, Mode: t.mode, UTR: `SEED-${t.id}`, Received_On: t.on, Match_State: t.rec, $persona: { Owner: who(t.by) }, $refs: { Allotment: ["LLP_UnitAllocation_Module", firstAlloc(t.inv)] } })),
   Cases: TKT.map((k) => tag(k.id, { Subject: k.t, Ticket_Category: k.cat, Priority: PRIORITY[k.pri] ?? k.pri, Status: STATUS[k.state] ?? k.state, $persona: { Owner: who(k.own) }, $refs: { Related_To: ["Contacts", k.inv] } })),
