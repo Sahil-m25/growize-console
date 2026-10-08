@@ -22,6 +22,8 @@ import { createSignActions, createOpenRequestCheck } from "./actions";
 import { createPaperBlocker } from "./block";
 import { createHandVerifier, createSignedFiler, type SignedFiler } from "./file";
 import { createEmbedEndpoint, type EmbedEndpoint } from "./embed";
+import { randomBytes } from "node:crypto";
+import { createFakeSign, signMode, type FakeSign } from "./fake";
 
 const gate = createGate();
 export const providerCallbackOps = createMemorySink();
@@ -91,7 +93,26 @@ export interface DeadLetter { readonly at: number; readonly reason: string; read
 const G = globalThis as typeof globalThis & {
   __gzSignSeen?: SeenEvents; __gzSignDead?: DeadLetter[]; __gzSignPerson?: SignPersonRuntime;
   __gzSignService?: { api: SignApi; filer: SignedFiler }; __gzSignTimer?: ReturnType<typeof setInterval> | null; __gzSignEmbed?: EmbedEndpoint;
+  __gzSignFake?: FakeSign; __gzSignFakeSecret?: string;
 };
+
+/* ---- test signing (sandbox only, ./fake.ts): ZOHO_SIGN_MODE=fake swaps the Sign adapter, nothing else ---- */
+/** True when this deployment signs with the sandbox fake. Throws when ZOHO_SIGN_MODE=fake is set where it is refused. */
+export const signIsFake = (env: NodeJS.ProcessEnv = process.env): boolean => signMode(env) === "fake";
+/** The one fake per process; its requests live in the shared state store, so every instance sees the same ones. */
+export function fakeSign(env: NodeJS.ProcessEnv = process.env): FakeSign {
+  if (!signIsFake(env)) throw new Error("Test signing is off (ZOHO_SIGN_MODE is not fake).");
+  return (G.__gzSignFake ??= createFakeSign({ state: sharedState() }));
+}
+/** The webhook secret in fake mode: random per process, never configured or shown, so only this process's
+ *  POST /api/test/sign/complete can sign a callback, which it hands to the real webhook handler. */
+export function fakeWebhookSecret(): string {
+  return (G.__gzSignFakeSecret ??= randomBytes(32).toString("base64url"));
+}
+/** Server start (src/instrumentation.ts): ZOHO_SIGN_MODE=fake outside a sandbox staging deployment refuses the start. */
+export function signModeStartupCheck(env: NodeJS.ProcessEnv = process.env): "real" | "fake" {
+  return signMode(env);
+}
 const seen = () => (G.__gzSignSeen ??= seenFor("sign-webhook"));
 const deadStore = () => logSinks().planeStore("sign-dead");
 const DEAD_LETTER_DAYS = 14;
@@ -113,16 +134,17 @@ function deadLetter(entry: DeadLetter): void {
 /** The service half (provider-callback): Sign API + the M12-S06 filer. */
 function serviceHalf(): { api: SignApi; filer: SignedFiler } {
   if (G.__gzSignService) return G.__gzSignService;
-  const api = createSignApi({ origin: requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN), gate, log, maxAttempts: 1 });
+  const api: SignApi = signIsFake() ? fakeSign() : createSignApi({ origin: requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN), gate, log, maxAttempts: 1 });
   const crm = createZohoServiceClient({ gate, log, recordIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"), maxAttempts: 1 });
   G.__gzSignService = { api, filer: createSignedFiler({ crm, sign: api, log }) };
   return G.__gzSignService;
 }
 
 export function zohoSignWebhookDeps(): ZohoSignWebhookDeps {
-  const origin = requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN);
-  const current = required("ZOHO_SIGN_WEBHOOK_SECRET");
-  const previous = process.env.ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS;
+  const fake = signIsFake();
+  const origin = fake ? null : requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN);
+  const current = fake ? fakeWebhookSecret() : required("ZOHO_SIGN_WEBHOOK_SECRET");
+  const previous = fake ? undefined : process.env.ZOHO_SIGN_WEBHOOK_SECRET_PREVIOUS;
   return {
     secrets: previous ? [current, previous] : [current],
     credential: (signal) => provider().credential(signal),
@@ -136,7 +158,7 @@ export function zohoSignWebhookDeps(): ZohoSignWebhookDeps {
       recordIdPrefix: required("ZOHO_CRM_RECORD_ID_PREFIX"),
       maxAttempts: 1,
     }),
-    sign: createZohoSignClient({ origin, gate, log, maxAttempts: 1 }),
+    sign: origin === null ? fakeSign() : createZohoSignClient({ origin, gate, log, maxAttempts: 1 }),
     seen: seen(),
     deadLetter,
     file: (credential, target, requestId, signal) => serviceHalf().filer.file(credential, target, requestId, signal),
@@ -155,14 +177,14 @@ export interface SignPersonRuntime {
   readonly blocker: ReturnType<typeof createPaperBlocker>;
   readonly verifier: ReturnType<typeof createHandVerifier>;
 }
-/** Zoho Sign on the India DC is configured for the person-token paths (send, prefill, templates, recall, remind, block, verify). A route asks first, so a missing variable answers 503 with a body, never a bodiless 500 (B-19). */
+/** Zoho Sign on the India DC — or test signing (ZOHO_SIGN_MODE=fake, sandbox only) — is configured for the person-token paths (send, prefill, templates, recall, remind, block, verify). A route asks first, so a missing variable answers 503 with a body, never a bodiless 500 (B-19). */
 export const signPersonConfigured = (env: NodeJS.ProcessEnv = process.env): boolean =>
-  env.ZOHO_SIGN_API_ORIGIN === INDIA_SIGN_ORIGIN && /^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "");
+  (signIsFake(env) || env.ZOHO_SIGN_API_ORIGIN === INDIA_SIGN_ORIGIN) &&/^\d{6,16}$/.test(env.ZOHO_CRM_RECORD_ID_PREFIX ?? "");
 export function signPersonRuntime(env: NodeJS.ProcessEnv = process.env): SignPersonRuntime {
   if (G.__gzSignPerson) return G.__gzSignPerson;
   const rt = dataRuntime();
   const crm = createZohoClient({ gate: rt.gate, log: rt.log, recordIdPrefix: env.ZOHO_CRM_RECORD_ID_PREFIX! });
-  const sign = createSignApi({ origin: requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN), gate: rt.gate, log: rt.log });
+  const sign: SignApi = signIsFake(env) ? fakeSign(env) : createSignApi({ origin: requiredExact("ZOHO_SIGN_API_ORIGIN", INDIA_SIGN_ORIGIN), gate: rt.gate, log: rt.log });
   G.__gzSignPerson = Object.freeze({
     sender: createSignSender({ crm, sign, log: rt.log, state: sharedState() }),
     actions: createSignActions({ crm, sign, log: rt.log }),

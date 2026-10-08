@@ -13,6 +13,7 @@
 import { SignRowCell } from "../paper2/SignCell";
 import { AgreedDraftOffer, SUPP_TEMPLATE, useAgreedDraft } from "../paper2/AgreedDraft";
 import { TemplatePick, useTemplatePick } from "../paper2/TemplatePick";
+import { TestSigningMark } from "../paper2/TestSigningMark";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { newIdempotencyKey, runWrite, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { dayOf, documentUpload, documentsList } from "@/lib/data/endpoints/documents";
@@ -444,6 +445,7 @@ function SendBody(c: Ctx) {
       {t && t.noSign ? <p className="sm" style={{ margin: "0 0 12px" }}>A receipt is issued, not signed.</p>
         : <><p className="lbl">Signing</p><div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg =>
           <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`} onClick={() => set(c, { DSIG: sg })}>{sg}</button>)}</div></>}
+      <TestSigningMark on={!!paper && pre.state === "ok" && pre.data.testSigning} />
       {paper === "supplementary" && ag.draft ? <AgreedDraftOffer draft={ag.draft} /> : null}
       <TemplatePick paper={paper} pick={pick} DTID={DTID} onPick={v => set(c, { DTID: v })} />
       {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}

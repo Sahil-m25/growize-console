@@ -98,6 +98,8 @@ export interface Prefill {
   readonly note: string | null;
   /** supplementary only: the agreed final draft to send, or null (none agreed, or the lead is not readable by this seat) */
   readonly agreedDraft: AgreedDraft | null;
+  /** set by the prefill route when this deployment signs with the sandbox fake (ZOHO_SIGN_MODE=fake): the panel shows "Test signing" */
+  readonly testSigning?: boolean;
 }
 export type PrefillResult = { readonly ok: true; readonly value: Prefill } | { readonly ok: false; readonly kind: "refused" | "source-error"; readonly reasonCode: string; readonly message: string };
 

@@ -17,6 +17,7 @@ import { AgreedDraftOffer, SUPP_TEMPLATE, useAgreedDraft } from "../paper2/Agree
 import { ReadNote } from "../paper2/ReadNote";
 import { SignRowCell } from "../paper2/SignCell";
 import { TemplatePick, useTemplatePick } from "../paper2/TemplatePick";
+import { TestSigningMark } from "../paper2/TestSigningMark";
 import { UploadList, UploadPanel } from "../paper2/Upload";
 
 const first = (n: string | null | undefined): string => String(n || "—").split(" ")[0]!;
@@ -133,6 +134,7 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
         <p className="lbl">Signing</p>
         <div className="chips" style={{ marginBottom: 14 }}>{SIGS.map(sg => <button key={sg} className={`chip ${DSIG === sg ? "on" : ""}`}
           onClick={() => dispatch({ type: "setDraft", patch: { DSIG: sg } })}>{sg}</button>)}</div></>}
+      <TestSigningMark on={!!paper && pre.state === "ok" && pre.data.testSigning} />
       {paper === "supplementary" && ag.draft ? <AgreedDraftOffer draft={ag.draft} /> : null}
       <TemplatePick paper={paper} pick={pickT} DTID={DTID} onPick={v => dispatch({ type: "setDraft", patch: { DTID: v } })} />
       {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}

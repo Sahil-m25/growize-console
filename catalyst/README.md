@@ -66,6 +66,7 @@ CONTRACT_SIGNING_KEY_PREVIOUS.
 Policy and mail: ORG_EMAIL_DOMAINS, SIGN_EMBED_HOSTS, INVESTOR_APP_URL, ALERT_EMAIL_TO, STEPUP_ALERT_TO,
 GZ_RATE_LIMITS, GZ_SIGNIN_LIST, GZ_RELEASE_APPROVAL, GZ_EXTEND_APPROVAL.
 Staging test sign-in (D124, sandbox only): GZ_TEST_SIGNIN_SECRET, GZ_TEST_SIGNIN_USERS, GZ_TEST_REFRESH_<ZOHO_USER_ID>.
+Staging test signing (sandbox only, below): ZOHO_SIGN_MODE.
 Stores (see warning): LOG_STORE, LOG_DIR, LOG_SINK, GRANT_STORE, GRANT_DIR, AUDIT_ARCHIVE_DIR, CONTRACTS_DIR, STATE_STORE.
 Jobs: JOB_SECRET, SIGN_CHECK_TIMER.
 Platform: X_ZOHO_CATALYST_LISTEN_PORT (set by Catalyst), NODE_ENV.
@@ -230,4 +231,50 @@ per refresh token per 10 minutes; reuse the storage state instead of minting per
 **Turn it off:** unset `GZ_TEST_SIGNIN_SECRET` (and the `GZ_TEST_REFRESH_*` variables) and redeploy; the routes are
 404 again. Enrolled tokens stay valid at Zoho until revoked: revoke them per user in Zoho (accounts.zoho.in > Sessions >
 Connected Apps) when the test users are retired.
+
+## Test signing for staging (no Zoho Sign plan yet)
+
+Until the Zoho Sign API plan is bought (D72 AP3, D78), staging can run the NDA, supplementary-agreement and
+allocation-letter flows against a stand-in for Zoho Sign. Code: `console/src/server/zoho-sign/fake.ts` (same interface as
+the real adapter) and `fake-complete.ts` (route `POST /api/test/sign/complete`). It makes no network call, sends no email
+and never touches `sign.zoho.*`. Requests live in the shared state store (`fake-sign|req|<id>`; ids, codes, times and a
+hash of the recipient only). Send panels show **"Test signing (sandbox)"**, and the templates are named
+`Test signing (sandbox) — Non-disclosure agreement | Supplementary agreement | Allocation letter`.
+
+| Variable | Value |
+|---|---|
+| `ZOHO_SIGN_MODE` | `fake`. Refused at server start (and on every use) unless `ZOHO_CRM_ENVIRONMENT=sandbox`, `ZOHO_EXPECTED_ORG_ID` is set and is not the live org, `GZ_STATE_ENVIRONMENT` is not `Production`, and `ZOHO_SIGN_API_ORIGIN` is **unset**. `NODE_ENV=production` is allowed because staging runs the production build. |
+| `ZOHO_PROVIDER_CALLBACK_REFRESH_TOKEN` | a service refresh token minted **against the sandbox** (job `provider-callback`, CRM scopes). The completion step uses it, as a real Zoho Sign callback does. Secret. |
+| `GZ_TEST_SIGNIN_SECRET`, `GZ_TEST_SIGNIN_USERS` | as for the test sign-in above. The completion route uses the same gate and header. |
+| already set | `ZOHO_CRM_RECORD_ID_PREFIX`, `ZOHO_OAUTH_CLIENT_ID/SECRET`, `ZOHO_ACCOUNTS_ORIGIN`; recipients must pass `GZ_SANDBOX_MAIL_ALLOW` (seed emails do). `ZOHO_SIGN_WEBHOOK_SECRET` is not used. |
+
+**NDA cycle.** (1) As the IR, ask Finance to send the NDA; it lands on Finance's to-do. (2) Sign in as Finance Ops, open
+the send drawer for that investor, pick *Non-disclosure agreement* and the *Test signing (sandbox) — Non-disclosure
+agreement* template, then Send. The lead now holds `NDA_Sign_Req_Id`, and the Finance queue shows "… sent n days ago". The
+send response carries `sent.requestId`, which is also the lead's `NDA_Sign_Req_Id` in the sandbox CRM. (3) Play the signer:
+
+```sh
+curl -s -X POST https://<app-host>/api/test/sign/complete \
+  -H "X-Test-Signin-Secret: $GZ_TEST_SIGNIN_SECRET" -H "Content-Type: application/json" \
+  -d '{"requestId":"<NDA_Sign_Req_Id>"}'
+# 200 {"ok":true,"requestId":"99…","status":"completed","redelivered":false,"webhook":{"outcome":"filed","recordId":"<lead id>"}}
+```
+
+This runs the real webhook handler: re-read, find the lead by `NDA_Sign_Req_Id`, then the filer. The filer attaches a
+placeholder certificate, puts a placeholder PDF ("TEST SIGNING (SANDBOX) - NOT A SIGNED DOCUMENT") in the `NDA` slot and
+sets `NDA_Verified_At`, so the NDA gate opens on the next read. To exercise the hand path instead, upload a file to the
+slot and press "The signed copy is here" without calling the route.
+
+**Supplementary cycle.** The same steps on the allotment. Finance sends *Supplementary agreement* from the allotment; the
+allotment holds `Supplementary_Sign_Req_Id`. Completing that id sets `Supplementary_Verified_At` (the console's
+`Agreement_Signed`) and the `Supplementary_Agreement` slot, so the lead's alloc gate opens. The allocation letter works
+the same way.
+
+**Other answers.** `"outcome":"declined"` declines it (nothing is stamped; Finance may send again). Remind and recall work
+from the panel. Calling again for a request already completed re-delivers it (`redelivered:true`; the filer answers
+"already filed"), which retries a 502 `webhook-*` answer. 404 means the route is off or the secret is wrong. 409
+`unknown-request` means the id is not in the store (with `STATE_STORE=memory` an instance recycle forgets them; the
+panel then reads the paper as recalled and Finance can send again). 409 `not-out` means the request was recalled,
+declined or completed. **Turn it off:** unset `ZOHO_SIGN_MODE` and redeploy. With the real plan, set
+`ZOHO_SIGN_API_ORIGIN` and the webhook secret instead. Setting both is refused.
 
