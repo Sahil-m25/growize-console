@@ -80,7 +80,7 @@ test("seed keys become ids: every lookup holds the parent's id, no key leaks int
 
 test("persona distribution: IR A and IR B each own leads and investors, one KAM, admin holds the unassigned pool", async () => {
   const d = distribution(manifest);
-  assert.deepEqual(d["Leads.Owner"], { ir_a: 8, ir_b: 8, admin: 2 });
+  assert.deepEqual(d["Leads.Owner"], { ir_a: 13, ir_b: 15, admin: 2 });
   assert.deepEqual(d["Contacts.Owner"], { ir_a: 7, ir_b: 8 });
   assert.deepEqual(d["Contacts.Originating_IR"], { ir_a: 7, ir_b: 8 });
   assert.deepEqual(d["Contacts.KAM"], { kam: 8 });
@@ -141,4 +141,19 @@ test("dates keep their distance from the run day; identity never enters the mani
   const raw = readFileSync(new URL("./manifest.json", import.meta.url), "utf8");
   assert.doesNotMatch(raw, /"(pan|aadh|aref|bank|acct|ifsc|PAN|PAN_Number|Bank_Account_Number|Aadhaar_Number)":|AVRPM4471K|HDFC1206771/i);
   assert.ok(manifest.records.Receipts.every((r) => /^SEED-/.test(r.UTR)));
+});
+
+test("every Contact has an Origin_Lead: a seeded lead of the same name, or a new LX lead owned by the same IR; leads come before contacts", () => {
+  const leads = new Map(manifest.records.Leads.map((l) => [l.Seed_Key, l]));
+  const name = (r) => `${r.First_Name} ${r.Last_Name}`;
+  for (const c of manifest.records.Contacts) {
+    const key = c.$refs.Origin_Lead[1];
+    assert.equal(c.$refs.Origin_Lead[0], "Leads");
+    const lead = leads.get(key);
+    assert.ok(lead, `${c.Seed_Key} -> ${key} is not a seeded lead`);
+    assert.equal(name(lead), name(c));
+    assert.equal(lead.$persona.Owner, c.$persona.Originating_IR);
+  }
+  assert.equal(new Set(manifest.records.Contacts.map((c) => c.$refs.Origin_Lead[1])).size, 15);
+  assert.ok(manifest.records.Leads.filter((l) => /^LX-/.test(l.Seed_Key)).every((l) => l.Said_Yes_At && l.First_Touch_At && l.Lead_Source === "Founder network"));
 });

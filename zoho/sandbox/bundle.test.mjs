@@ -32,7 +32,7 @@ test("bundle has no imports and exposes the five functions", () => {
   assert.doesNotMatch(src, /^(import|export) /m);
   const { GZSeed } = load("60090668120");
   assert.deepEqual(Object.keys(GZSeed).sort(), ["applyFields", "counts", "plan", "planFields", "reset"]);
-  assert.equal(GZSeed.counts().seeded.Leads, 18);
+  assert.equal(GZSeed.counts().seeded.Leads, 30);
   assert.equal(GZSeed.counts().deferred.Documents.rows, 45);
 });
 

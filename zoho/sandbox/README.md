@@ -33,8 +33,8 @@ Prototype IRs: Kavya and Nikhil are IR A, Rohit and Ananya are IR B. Imran and N
 
 | Module | IR A | IR B | admin | other |
 |---|---|---|---|---|
-| Leads (Owner), 18 | 8 | 8 | 2 (U1, U2: the unassigned pool) | |
-| Contacts (Owner and Originating_IR), 15 | 7 | 8 | | |
+| Leads (Owner), 30 | 13 | 15 | 2 (U1, U2: the unassigned pool) | 12 LX leads (`LX-<ARL id>`) for investors with no lead of the same name |
+| Contacts (Owner and Originating_IR), 15 | 7 | 8 | | every Contact has Origin_Lead: 3 existing leads (L6, L7, L13), 12 LX leads |
 | Contacts.KAM | | | | `kam` on 8; 7 investors have no KAM |
 | Touches (Owner = their lead's), 57 | follows the lead | follows the lead | | |
 | Allotments (Owner = the investor's IR), 15 | follows the investor | follows the investor | | |

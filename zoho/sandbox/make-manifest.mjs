@@ -44,10 +44,28 @@ const holdUntil = (invId) => {
   return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]}`;
 };
 
+/* Every investor came from a lead (lead and investor are one person in one Zoho org), so every Contact gets an Origin_Lead.
+   A lead of the same First_Name+Last_Name is reused; an investor without one gets a new seeded lead, LX-<ARL id>, that carries
+   the same stage stamps up to Said_Yes_At. Leads are listed before Contacts, so the $refs resolve. */
+const fullKey = (n) => { const s = split(n); return `${s.First_Name}|${s.Last_Name}`; };
+const leadByName = new Map(LEADS.map((l) => [fullKey(l.n), l.id]));
+const originLead = (i) => leadByName.get(fullKey(i.n)) ?? `LX-${i.id}`;
+// "DD Mon HH:MM" for `days` before a "DD Mon" date.
+const daysBefore = (dm, days, hm) => {
+  const m = /^(\d{2}) (\w{3})/.exec(dm);
+  const d = new Date(Date.UTC(2026, MON.indexOf(m[2]), +m[1] - days));
+  return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]} ${hm}`;
+};
+const NEW_LEADS = INV.filter((i) => !leadByName.has(fullKey(i.n))).map((i) => tag(originLead(i), {
+  ...split(i.n), Company: "Seed", Mobile: i.ph, Email: i.em, City: i.city, Lead_Source: "Founder network",
+  First_Touch_At: daysBefore(i.since, 6, "10:00"), Qualified_At: daysBefore(i.since, 4, "11:00"), Engaged_At: daysBefore(i.since, 2, "15:00"),
+  Said_Yes_At: `${i.since} 12:00`, $persona: { Owner: who(i.ir) },
+}));
+
 const records = {
   LLP_Creation_Module: FARMS.map((f) => tag(f.k, { Name: f.n, Block_Code: f.k, Acreage_Acres: f.acres, Total_Units: f.units, Units_Released: f.released, Soil_Type: f.soil, Crop_Stage: f.crop, Pet_Unit_Price: UNIT_PRICE, LLP_Status: LLP_STATUS[f.k] ?? "Darft", $persona: { Owner: "admin" } })),
-  Leads: LEADS.map((l) => tag(l.id, { ...split(l.n), Company: "Seed", Mobile: l.ph, Email: l.em, City: l.city, Lead_Source: l.src, Units_Interested: l.units, ...stage({ at_: l.at }), $persona: { Owner: who(l.own) } })),
-  Contacts: INV.map((i) => tag(i.id, { ARL_ID: i.id, ...split(i.n), Mobile: i.ph, Email: i.em, Mailing_City: i.city, Residency: i.nri ? "NRI" : "Resident", Said_Yes_At: `${i.since} 12:00`, ...(i.kam ? { KAM_Since: i.kamOn, KAM_Intro_At: i.intro } : {}), $persona: { Owner: who(i.ir), Originating_IR: who(i.ir), ...(i.kam ? { KAM: who(i.kam) } : {}) } })),
+  Leads: [...LEADS.map((l) => tag(l.id, { ...split(l.n), Company: "Seed", Mobile: l.ph, Email: l.em, City: l.city, Lead_Source: l.src, Units_Interested: l.units, ...stage({ at_: l.at }), $persona: { Owner: who(l.own) } })), ...NEW_LEADS],
+  Contacts: INV.map((i) => tag(i.id, { ARL_ID: i.id, ...split(i.n), Mobile: i.ph, Email: i.em, Mailing_City: i.city, Residency: i.nri ? "NRI" : "Resident", Said_Yes_At: `${i.since} 12:00`, ...(i.kam ? { KAM_Since: i.kamOn, KAM_Intro_At: i.intro } : {}), $persona: { Owner: who(i.ir), Originating_IR: who(i.ir), ...(i.kam ? { KAM: who(i.kam) } : {}) }, $refs: { Origin_Lead: ["Leads", originLead(i)] } })),
   Touches: LEADS.flatMap((l) => Object.entries(l.touch).flatMap(([ch, stamps]) => stamps.map((at, n) => tag(`${l.id}/${ch}/${n}`, { Name: `${l.id} ${ch} ${n + 1}`, Channel: CHANNEL[ch], Occurred_At: at, Is_Reply: false, $persona: { Owner: who(l.own) }, $refs: { Lead: ["Leads", l.id] } })))),
   LLP_UnitAllocation_Module: INV.flatMap((i) => Object.entries(i.blocks || {}).map(([blk, n]) => tag(`${i.id}/${blk}`, { Name: `${i.n} / ${blk}`, Allocation_Status: i.st === "allocated" ? "Issued" : "Reserved", Issued_Units: i.st === "allocated" ? n : 0, Reserved_Units: i.st === "allocated" ? 0 : n, Unit_Price: UNIT_PRICE, ...(i.st === "allocated" ? {} : { Hold_Until: holdUntil(i.id) }), $persona: { Owner: who(i.ir) }, $refs: { Customer: ["Contacts", i.id], LLP: ["LLP_Creation_Module", blk] } }))),
   // UTR is an identity-class value: replaced by a synthetic one. Recorded_By has no field (Receipts.Owner carries the recorder's persona).

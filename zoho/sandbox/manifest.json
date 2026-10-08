@@ -376,6 +376,222 @@
     "$persona": {
      "Owner": "ir_a"
     }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0205",
+    "Test_Seed": true,
+    "First_Name": "Radhika",
+    "Last_Name": "Menon",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00018",
+    "Email": "tech+gzseed-lx-arl-inv-0205@agresearchlabs.com",
+    "City": "Bengaluru",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "19 Jul 10:00",
+    "Qualified_At": "21 Jul 11:00",
+    "Engaged_At": "23 Jul 15:00",
+    "Said_Yes_At": "25 Jul 12:00",
+    "$persona": {
+     "Owner": "ir_a"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0206",
+    "Test_Seed": true,
+    "First_Name": "Abhijit",
+    "Last_Name": "Sen",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00019",
+    "Email": "tech+gzseed-lx-arl-inv-0206@agresearchlabs.com",
+    "City": "Bengaluru",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "02 Aug 10:00",
+    "Qualified_At": "04 Aug 11:00",
+    "Engaged_At": "06 Aug 15:00",
+    "Said_Yes_At": "08 Aug 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0207",
+    "Test_Seed": true,
+    "First_Name": "Meenakshi",
+    "Last_Name": "Sundaram",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00020",
+    "Email": "tech+gzseed-lx-arl-inv-0207@agresearchlabs.com",
+    "City": "Coimbatore",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "14 Aug 10:00",
+    "Qualified_At": "16 Aug 11:00",
+    "Engaged_At": "18 Aug 15:00",
+    "Said_Yes_At": "20 Aug 12:00",
+    "$persona": {
+     "Owner": "ir_a"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0212",
+    "Test_Seed": true,
+    "First_Name": "Sanjay",
+    "Last_Name": "Kulkarni",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00021",
+    "Email": "tech+gzseed-lx-arl-inv-0212@agresearchlabs.com",
+    "City": "Pune",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "06 Jun 10:00",
+    "Qualified_At": "08 Jun 11:00",
+    "Engaged_At": "10 Jun 15:00",
+    "Said_Yes_At": "12 Jun 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0213",
+    "Test_Seed": true,
+    "First_Name": "Fatima",
+    "Last_Name": "Zaidi",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00022",
+    "Email": "tech+gzseed-lx-arl-inv-0213@agresearchlabs.com",
+    "City": "Hyderabad",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "27 Jun 10:00",
+    "Qualified_At": "29 Jun 11:00",
+    "Engaged_At": "01 Jul 15:00",
+    "Said_Yes_At": "03 Jul 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0214",
+    "Test_Seed": true,
+    "First_Name": "Deepak",
+    "Last_Name": "Chandra",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00023",
+    "Email": "tech+gzseed-lx-arl-inv-0214@agresearchlabs.com",
+    "City": "Bengaluru",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "12 Jul 10:00",
+    "Qualified_At": "14 Jul 11:00",
+    "Engaged_At": "16 Jul 15:00",
+    "Said_Yes_At": "18 Jul 12:00",
+    "$persona": {
+     "Owner": "ir_a"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0215",
+    "Test_Seed": true,
+    "First_Name": "Anjali",
+    "Last_Name": "Deshpande",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00024",
+    "Email": "tech+gzseed-lx-arl-inv-0215@agresearchlabs.com",
+    "City": "Mumbai",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "21 Jun 10:00",
+    "Qualified_At": "23 Jun 11:00",
+    "Engaged_At": "25 Jun 15:00",
+    "Said_Yes_At": "27 Jun 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0216",
+    "Test_Seed": true,
+    "First_Name": "Harish",
+    "Last_Name": "Gowda",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00025",
+    "Email": "tech+gzseed-lx-arl-inv-0216@agresearchlabs.com",
+    "City": "Mysuru",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "03 Jul 10:00",
+    "Qualified_At": "05 Jul 11:00",
+    "Engaged_At": "07 Jul 15:00",
+    "Said_Yes_At": "09 Jul 12:00",
+    "$persona": {
+     "Owner": "ir_a"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0217",
+    "Test_Seed": true,
+    "First_Name": "Nirmala",
+    "Last_Name": "Reddy",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00026",
+    "Email": "tech+gzseed-lx-arl-inv-0217@agresearchlabs.com",
+    "City": "Bengaluru",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "25 Jul 10:00",
+    "Qualified_At": "27 Jul 11:00",
+    "Engaged_At": "29 Jul 15:00",
+    "Said_Yes_At": "31 Jul 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0218",
+    "Test_Seed": true,
+    "First_Name": "T.",
+    "Last_Name": "Balasubramanian",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00027",
+    "Email": "tech+gzseed-lx-arl-inv-0218@agresearchlabs.com",
+    "City": "Chennai",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "08 Jul 10:00",
+    "Qualified_At": "10 Jul 11:00",
+    "Engaged_At": "12 Jul 15:00",
+    "Said_Yes_At": "14 Jul 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0219",
+    "Test_Seed": true,
+    "First_Name": "Ritu",
+    "Last_Name": "Malhotra",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00028",
+    "Email": "tech+gzseed-lx-arl-inv-0219@agresearchlabs.com",
+    "City": "Delhi",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "24 Aug 10:00",
+    "Qualified_At": "26 Aug 11:00",
+    "Engaged_At": "28 Aug 15:00",
+    "Said_Yes_At": "30 Aug 12:00",
+    "$persona": {
+     "Owner": "ir_a"
+    }
+   },
+   {
+    "Seed_Key": "LX-ARL-INV-0211",
+    "Test_Seed": true,
+    "First_Name": "Vikram",
+    "Last_Name": "Anand",
+    "Company": "Seed",
+    "Mobile": "+91 90000 00029",
+    "Email": "tech+gzseed-lx-arl-inv-0211@agresearchlabs.com",
+    "City": "Bengaluru",
+    "Lead_Source": "Founder network",
+    "First_Touch_At": "15 Aug 10:00",
+    "Qualified_At": "17 Aug 11:00",
+    "Engaged_At": "19 Aug 15:00",
+    "Said_Yes_At": "21 Aug 12:00",
+    "$persona": {
+     "Owner": "ir_b"
+    }
    }
   ],
   "Contacts": [
@@ -385,7 +601,7 @@
     "ARL_ID": "ARL-INV-0205",
     "First_Name": "Radhika",
     "Last_Name": "Menon",
-    "Mobile": "+91 90000 00018",
+    "Mobile": "+91 90000 00030",
     "Email": "tech+gzseed-arl-inv-0205@agresearchlabs.com",
     "Mailing_City": "Bengaluru",
     "Residency": "Resident",
@@ -396,6 +612,12 @@
      "Owner": "ir_a",
      "Originating_IR": "ir_a",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0205"
+     ]
     }
    },
    {
@@ -404,7 +626,7 @@
     "ARL_ID": "ARL-INV-0206",
     "First_Name": "Abhijit",
     "Last_Name": "Sen",
-    "Mobile": "+91 90000 00019",
+    "Mobile": "+91 90000 00031",
     "Email": "tech+gzseed-arl-inv-0206@agresearchlabs.com",
     "Mailing_City": "Bengaluru",
     "Residency": "Resident",
@@ -412,6 +634,12 @@
     "$persona": {
      "Owner": "ir_b",
      "Originating_IR": "ir_b"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0206"
+     ]
     }
    },
    {
@@ -420,7 +648,7 @@
     "ARL_ID": "ARL-INV-0207",
     "First_Name": "Meenakshi",
     "Last_Name": "Sundaram",
-    "Mobile": "+91 90000 00020",
+    "Mobile": "+91 90000 00032",
     "Email": "tech+gzseed-arl-inv-0207@agresearchlabs.com",
     "Mailing_City": "Coimbatore",
     "Residency": "Resident",
@@ -431,6 +659,12 @@
      "Owner": "ir_a",
      "Originating_IR": "ir_a",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0207"
+     ]
     }
    },
    {
@@ -439,7 +673,7 @@
     "ARL_ID": "ARL-INV-0208",
     "First_Name": "Prakash",
     "Last_Name": "Bhat",
-    "Mobile": "+91 90000 00021",
+    "Mobile": "+91 90000 00033",
     "Email": "tech+gzseed-arl-inv-0208@agresearchlabs.com",
     "Mailing_City": "Mysuru",
     "Residency": "Resident",
@@ -447,6 +681,12 @@
     "$persona": {
      "Owner": "ir_b",
      "Originating_IR": "ir_b"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "L6"
+     ]
     }
    },
    {
@@ -455,7 +695,7 @@
     "ARL_ID": "ARL-INV-0209",
     "First_Name": "Joseph",
     "Last_Name": "Mathew",
-    "Mobile": "+91 90000 00022",
+    "Mobile": "+91 90000 00034",
     "Email": "tech+gzseed-arl-inv-0209@agresearchlabs.com",
     "Mailing_City": "Dubai",
     "Residency": "NRI",
@@ -463,6 +703,12 @@
     "$persona": {
      "Owner": "ir_a",
      "Originating_IR": "ir_a"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "L7"
+     ]
     }
    },
    {
@@ -471,7 +717,7 @@
     "ARL_ID": "ARL-INV-0210",
     "First_Name": "R.",
     "Last_Name": "Sundaram",
-    "Mobile": "+91 90000 00023",
+    "Mobile": "+91 90000 00035",
     "Email": "tech+gzseed-arl-inv-0210@agresearchlabs.com",
     "Mailing_City": "Bengaluru",
     "Residency": "Resident",
@@ -479,6 +725,12 @@
     "$persona": {
      "Owner": "ir_a",
      "Originating_IR": "ir_a"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "L13"
+     ]
     }
    },
    {
@@ -487,7 +739,7 @@
     "ARL_ID": "ARL-INV-0212",
     "First_Name": "Sanjay",
     "Last_Name": "Kulkarni",
-    "Mobile": "+91 90000 00024",
+    "Mobile": "+91 90000 00036",
     "Email": "tech+gzseed-arl-inv-0212@agresearchlabs.com",
     "Mailing_City": "Pune",
     "Residency": "Resident",
@@ -498,6 +750,12 @@
      "Owner": "ir_b",
      "Originating_IR": "ir_b",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0212"
+     ]
     }
    },
    {
@@ -506,7 +764,7 @@
     "ARL_ID": "ARL-INV-0213",
     "First_Name": "Fatima",
     "Last_Name": "Zaidi",
-    "Mobile": "+91 90000 00025",
+    "Mobile": "+91 90000 00037",
     "Email": "tech+gzseed-arl-inv-0213@agresearchlabs.com",
     "Mailing_City": "Hyderabad",
     "Residency": "Resident",
@@ -517,6 +775,12 @@
      "Owner": "ir_b",
      "Originating_IR": "ir_b",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0213"
+     ]
     }
    },
    {
@@ -525,7 +789,7 @@
     "ARL_ID": "ARL-INV-0214",
     "First_Name": "Deepak",
     "Last_Name": "Chandra",
-    "Mobile": "+91 90000 00026",
+    "Mobile": "+91 90000 00038",
     "Email": "tech+gzseed-arl-inv-0214@agresearchlabs.com",
     "Mailing_City": "Bengaluru",
     "Residency": "Resident",
@@ -536,6 +800,12 @@
      "Owner": "ir_a",
      "Originating_IR": "ir_a",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0214"
+     ]
     }
    },
    {
@@ -544,7 +814,7 @@
     "ARL_ID": "ARL-INV-0215",
     "First_Name": "Anjali",
     "Last_Name": "Deshpande",
-    "Mobile": "+91 90000 00027",
+    "Mobile": "+91 90000 00039",
     "Email": "tech+gzseed-arl-inv-0215@agresearchlabs.com",
     "Mailing_City": "Mumbai",
     "Residency": "Resident",
@@ -555,6 +825,12 @@
      "Owner": "ir_b",
      "Originating_IR": "ir_b",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0215"
+     ]
     }
    },
    {
@@ -563,7 +839,7 @@
     "ARL_ID": "ARL-INV-0216",
     "First_Name": "Harish",
     "Last_Name": "Gowda",
-    "Mobile": "+91 90000 00028",
+    "Mobile": "+91 90000 00040",
     "Email": "tech+gzseed-arl-inv-0216@agresearchlabs.com",
     "Mailing_City": "Mysuru",
     "Residency": "Resident",
@@ -574,6 +850,12 @@
      "Owner": "ir_a",
      "Originating_IR": "ir_a",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0216"
+     ]
     }
    },
    {
@@ -582,7 +864,7 @@
     "ARL_ID": "ARL-INV-0217",
     "First_Name": "Nirmala",
     "Last_Name": "Reddy",
-    "Mobile": "+91 90000 00029",
+    "Mobile": "+91 90000 00041",
     "Email": "tech+gzseed-arl-inv-0217@agresearchlabs.com",
     "Mailing_City": "Bengaluru",
     "Residency": "Resident",
@@ -593,6 +875,12 @@
      "Owner": "ir_b",
      "Originating_IR": "ir_b",
      "KAM": "kam"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0217"
+     ]
     }
    },
    {
@@ -601,7 +889,7 @@
     "ARL_ID": "ARL-INV-0218",
     "First_Name": "T.",
     "Last_Name": "Balasubramanian",
-    "Mobile": "+91 90000 00030",
+    "Mobile": "+91 90000 00042",
     "Email": "tech+gzseed-arl-inv-0218@agresearchlabs.com",
     "Mailing_City": "Chennai",
     "Residency": "Resident",
@@ -609,6 +897,12 @@
     "$persona": {
      "Owner": "ir_b",
      "Originating_IR": "ir_b"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0218"
+     ]
     }
    },
    {
@@ -617,7 +911,7 @@
     "ARL_ID": "ARL-INV-0219",
     "First_Name": "Ritu",
     "Last_Name": "Malhotra",
-    "Mobile": "+91 90000 00031",
+    "Mobile": "+91 90000 00043",
     "Email": "tech+gzseed-arl-inv-0219@agresearchlabs.com",
     "Mailing_City": "Delhi",
     "Residency": "Resident",
@@ -625,6 +919,12 @@
     "$persona": {
      "Owner": "ir_a",
      "Originating_IR": "ir_a"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0219"
+     ]
     }
    },
    {
@@ -633,7 +933,7 @@
     "ARL_ID": "ARL-INV-0211",
     "First_Name": "Vikram",
     "Last_Name": "Anand",
-    "Mobile": "+91 90000 00032",
+    "Mobile": "+91 90000 00044",
     "Email": "tech+gzseed-arl-inv-0211@agresearchlabs.com",
     "Mailing_City": "Bengaluru",
     "Residency": "Resident",
@@ -641,6 +941,12 @@
     "$persona": {
      "Owner": "ir_b",
      "Originating_IR": "ir_b"
+    },
+    "$refs": {
+     "Origin_Lead": [
+      "Leads",
+      "LX-ARL-INV-0211"
+     ]
     }
    }
   ],
