@@ -1,5 +1,5 @@
 {
- "note": "Generated 25 Sep 2026 from growize-console-plan.json tests with ui_mode=ui on In-plan stories; one expect_fail calibration case per epic (D85 build start).",
+ "note": "Generated 25 Sep 2026 from growize-console-plan.json tests with ui_mode=ui on In-plan stories; one expect_fail calibration case per epic (D85 build start). REG-* cases (group REG, one per staging defect of the 6-9 Oct 2026 test waves, fields bug and jira) are hand-added and not produced by the generator; see docs/uat/STAGING-DEFECTS.md.",
  "cases": [
   {
    "id": "TC-E01-001",
@@ -8092,6 +8092,793 @@
     "ANANYA_ON_LEAVE_NIKHIL_COVERS"
    ],
    "group": "M08"
+  },
+  {
+   "id": "REG-B01",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-01 regression: Saving a follow-up or next step answered 502",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Meera Krishnan",
+    "Press 'Call' in the Next step card",
+    "Press 'Interested'",
+    "Press 'Call back' under What's next?",
+    "Press 'Tomorrow'",
+    "Press 'Evening 18:00'"
+   ],
+   "expected": [
+    "A notice reads 'Saved' and offers 'Undo'.",
+    "The page shows 'Call back' as the next step.",
+    "No message says Zoho is not answering."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "CLOCK_28AUG_1536",
+    "NO_DIALER"
+   ],
+   "group": "REG",
+   "bug": "B-01",
+   "jira": "GC-1466"
+  },
+  {
+   "id": "REG-B02",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-02 regression: Investors, Payments, Tickets and Numbers lists never loaded ('Could not refresh')",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Payments' in the menu",
+    "Press 'Tickets' in the menu"
+   ],
+   "expected": [
+    "The Investors list shows investor rows.",
+    "The Payments page lists the recorded receipts.",
+    "The Tickets page lists the open tickets.",
+    "No page says it could not refresh."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "REG",
+   "bug": "B-02",
+   "jira": "GC-1467"
+  },
+  {
+   "id": "REG-B03",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-03 regression: Permission saved (200) but never read back: 'No contact permission yet' stayed, Call/WhatsApp/Email never offe",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Girish Rao"
+   ],
+   "expected": [
+    "Girish Rao's page offers the buttons Call, WhatsApp, Email and 'Log a contact'.",
+    "The page does not say contact permission is missing."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-03",
+   "jira": "GC-1468"
+  },
+  {
+   "id": "REG-B04",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-04 regression: Un-tick refused: 'Zoho has no field for this yet (Leads.Rung_Undone_At)'",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Sanjay Menon",
+    "Press 'Undo' beside the stage",
+    "Press 'Ticked the wrong rung'"
+   ],
+   "expected": [
+    "The lead is back at the stage before the one that was undone.",
+    "No message says Zoho has no field for this."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "L2_NOTE_EVENINGS_ONLY"
+   ],
+   "group": "REG",
+   "bug": "B-04",
+   "jira": "GC-1469"
+  },
+  {
+   "id": "REG-B05",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-05 regression: Opening the route directly intermittently replaced the app with 'Application error: a client-side exception'",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Open the Updates page from the bell",
+    "Press 'Add lead' in the top bar"
+   ],
+   "expected": [
+    "The Updates page opened without an error.",
+    "The Add lead form is showing.",
+    "No page says there was an application error."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-05",
+   "jira": "GC-1470"
+  },
+  {
+   "id": "REG-B06",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-06 regression: Claim reads failed: IR lead open fired a 502 'Not saved yet' on a read",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Meera Krishnan"
+   ],
+   "expected": [
+    "The lead page opened.",
+    "No notice says 'Not saved yet' or that Zoho is not answering."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-06",
+   "jira": "GC-1471"
+  },
+  {
+   "id": "REG-B07",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-07 regression: Sandbox seed not regenerated after D131: leads still carried pre-sink phone numbers and emails",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Anand Pillai"
+   ],
+   "expected": [
+    "The lead header shows a phone number starting +91 90000.",
+    "The header does not show +91 99001 44821."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-07",
+   "jira": "GC-1472"
+  },
+  {
+   "id": "REG-B08",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-08 regression: Holdings stuck on 'Reading the allotments'",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Joseph Mathew'",
+    "Press 'What they hold'"
+   ],
+   "expected": [
+    "The Allotments card lists Joseph Mathew's holdings.",
+    "The page shows when the hold ends.",
+    "No message says Zoho is not answering."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "REG",
+   "bug": "B-08",
+   "jira": "GC-1473"
+  },
+  {
+   "id": "REG-B09",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-09 regression: Investors-side endpoints answered an IR without a seat refusal",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Look at the menu"
+   ],
+   "expected": [
+    "The menu shows Today, Leads, Activity, Events, Payments and Documents.",
+    "The menu does not show Investors-side finance pages such as Transfers or Numbers."
+   ],
+   "fixtures": [
+    "DEMO_STAFF"
+   ],
+   "group": "REG",
+   "bug": "B-09",
+   "jira": "GC-1474"
+  },
+  {
+   "id": "REG-B10",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-10 regression: IR sees rupee figures (Rs 1 Cr, Rs 25 L) from a hard-coded prototype unit price although price is hidden from ",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Joseph Mathew"
+   ],
+   "expected": [
+    "No rupee amount is shown anywhere on the lead record."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-10",
+   "jira": "GC-1475"
+  },
+  {
+   "id": "REG-B11",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-11 regression: Free-text contact preference invited but refused",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Sanjay Menon",
+    "Press 'Investor file'",
+    "Press the 'People & details' tab",
+    "Press 'Edit'",
+    "Press 'Profile'"
+   ],
+   "expected": [
+    "The Profile tab offers 'Preferred way to reach them' as a choice of Phone, WhatsApp or Email.",
+    "The Profile tab does not invite free text for a preferred contact time."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-11",
+   "jira": "GC-1476"
+  },
+  {
+   "id": "REG-B12",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-12 regression: Own-book duplicate mobile reported as 'No existing record with this number' while the blocker said it was on t",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Add lead' in the top bar",
+    "Type '+91 98450 66123' in the Mobile box"
+   ],
+   "expected": [
+    "The form says the number is already in your book.",
+    "The form does not say there is no existing record with this number."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-12",
+   "jira": "GC-1477"
+  },
+  {
+   "id": "REG-B13",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-13 regression: Badge colour change acknowledged (200) but never showed or persisted",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Your account' in the top bar",
+    "Press 'Profile'",
+    "Press 'Badge colour 5, square'"
+   ],
+   "expected": [
+    "The Badge section shows 'Badge colour 5, square, in use by you'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-13",
+   "jira": "GC-1478"
+  },
+  {
+   "id": "REG-B14",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-14 regression: 'No contact permission yet' banner unreadable (white on pale pink)",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Joseph Mathew"
+   ],
+   "expected": [
+    "The permission banner text is dark on a light background and readable.",
+    "The latest note line names who wrote it."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-14",
+   "jira": "GC-1479"
+  },
+  {
+   "id": "REG-B15",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-15 regression: Signed-in person had no name: greeting read \"'s day\"",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Look at the greeting on Today"
+   ],
+   "expected": [
+    "The greeting names Harsha, not just \"'s day\"."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-15",
+   "jira": "GC-1480"
+  },
+  {
+   "id": "REG-B16",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-16 regression: Journey showed a raw Zoho user id, ISO timestamps and a dangling 'from'",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Radhika Menon'",
+    "Press 'Journey'"
+   ],
+   "expected": [
+    "The Journey lists entries with dates in words such as '26 Aug'.",
+    "No entry shows a raw user number or a timestamp like 2026-08-26T12:00."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-16",
+   "jira": "GC-1481"
+  },
+  {
+   "id": "REG-B17",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-17 regression: Collapse button did nothing for Finance Ops",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Collapse the sidebar'"
+   ],
+   "expected": [
+    "The menu is collapsed.",
+    "The page offers 'Expand the sidebar'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-17",
+   "jira": "GC-1482"
+  },
+  {
+   "id": "REG-B18",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-18 regression: Residency 'Resident' but Aadhaar line said 'not applicable - non-resident'",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Radhika Menon'"
+   ],
+   "expected": [
+    "Residency reads Resident.",
+    "The Aadhaar line does not call the investor non-resident."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-18",
+   "jira": "GC-1483"
+  },
+  {
+   "id": "REG-B19",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-19 regression: Opening the send panel called a prefill that returned a bodiless 500 (templates and NDA prefill too)",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Documents' in the menu",
+    "Press 'Send one'"
+   ],
+   "expected": [
+    "The Send a document panel lists the templates.",
+    "The panel shows no error message."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-19",
+   "jira": "GC-1484"
+  },
+  {
+   "id": "REG-B20",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-20 regression: Receipt reference (UTR) shown in clear with no step-up",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press 'Radhika Menon'",
+    "Press 'What they hold'",
+    "Press 'Receipts'"
+   ],
+   "expected": [
+    "The receipt's payment reference is masked until revealed."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "REG",
+   "bug": "B-20",
+   "jira": "GC-1485"
+  },
+  {
+   "id": "REG-B21",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-21 regression: Dead 'Edit what a seat may do' button on a read-only page",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Teams' in the menu"
+   ],
+   "expected": [
+    "The Teams page is marked read only.",
+    "The page does not offer 'Edit what a seat may do'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-21",
+   "jira": "GC-1486"
+  },
+  {
+   "id": "REG-B22",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-22 regression: Matrix expected controls the app hides by design and contradicted itself for Finance Ops",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Investors' in the menu"
+   ],
+   "expected": [
+    "The Investors page lists only investors from this IR's own leads.",
+    "The page offers no way to change an investor."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-22",
+   "jira": "GC-1487"
+  },
+  {
+   "id": "REG-B23",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-23 regression: Farm list empty, so an already-paid investor could never be added",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Investors'",
+    "Press '＋ Add investor'"
+   ],
+   "expected": [
+    "The Add investor form has a farm choice that lists at least one farm."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-23",
+   "jira": "GC-1488"
+  },
+  {
+   "id": "REG-B24",
+   "story": null,
+   "seat": "harsha",
+   "title": "B-24 regression: Help could not be opened ('?' did nothing",
+   "steps": [
+    "Press Harsha Bhat on the sign-in screen",
+    "Press 'Your account' in the top bar",
+    "Press 'Help'"
+   ],
+   "expected": [
+    "The Help panel is open.",
+    "The panel offers 'Find an answer'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-24",
+   "jira": "GC-1489"
+  },
+  {
+   "id": "REG-B25",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-25 regression: Opened with 'Call - permission needed' pre-selected",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Meera Krishnan",
+    "Press 'Mark done'",
+    "Press 'Set the next step'",
+    "Press 'Tomorrow'"
+   ],
+   "expected": [
+    "The Follow-up channel shows a channel available to this person.",
+    "The Follow-up channel is not one marked 'permission needed'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-25",
+   "jira": "GC-1490"
+  },
+  {
+   "id": "REG-B26",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-26 regression: Mobile/Initials not saved while display name blank (PATCH /api/me 422)",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Your account' in the top bar",
+    "Press 'Profile'",
+    "Type '+91 90000 07781' in the Mobile box",
+    "Press the Tab key"
+   ],
+   "expected": [
+    "The Mobile box reads +91 90000 07781.",
+    "No message says nothing changed."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-26",
+   "jira": "GC-1491"
+  },
+  {
+   "id": "REG-B27",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-27 regression: Activity showed 0 actions after notes, lost/re-open, forecast, absence",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Activity' in the menu"
+   ],
+   "expected": [
+    "The Activity page lists at least one action by Rohit.",
+    "The page does not say 0 actions."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-27",
+   "jira": "GC-1492"
+  },
+  {
+   "id": "REG-W2KAM1",
+   "story": null,
+   "seat": "imran",
+   "title": "W2-KAM-1 regression: KAM sees unit price and holding value in rupees on the record and Farms",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list",
+    "Press 'What they hold'"
+   ],
+   "expected": [
+    "No rupee amount is shown on the page.",
+    "The units are shown without a price."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "IM:MONEY_DEMO"
+   ],
+   "group": "REG",
+   "bug": "W2-KAM-1",
+   "jira": "GC-1493"
+  },
+  {
+   "id": "REG-W2KAM2",
+   "story": null,
+   "seat": "imran",
+   "title": "W2-KAM-2 regression: Ticket rows read 'opened 2026-1 - null days old, SLA' (live ISO dates parsed as demo dates)",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Tickets' in the menu"
+   ],
+   "expected": [
+    "Each ticket row shows when it was opened as a readable date.",
+    "Each ticket row shows its age in days.",
+    "No row says 'null days old'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK__C"
+   ],
+   "group": "REG",
+   "bug": "W2-KAM-2",
+   "jira": "GC-1494"
+  },
+  {
+   "id": "REG-W2KAM3",
+   "story": null,
+   "seat": "imran",
+   "title": "W2-KAM-3 regression: 'Last heard' disagreed across screens and was printed as a raw timestamp",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Look at the Last heard list on Today",
+    "Press 'Investors'"
+   ],
+   "expected": [
+    "The Last heard dates are readable words, not timestamps like 2026-10-08T22:05.",
+    "My accounts agrees with Today about when each account was last heard."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "W2-KAM-3",
+   "jira": "GC-1495"
+  },
+  {
+   "id": "REG-W2KAM4",
+   "story": null,
+   "seat": "imran",
+   "title": "W2-KAM-4 regression: ARL ID showed the Zoho record id instead of the ARL code",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Investors' in the menu"
+   ],
+   "expected": [
+    "The ARL ID column shows codes starting ARL-INV-.",
+    "No ARL ID is a long number."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "W2-KAM-4",
+   "jira": "GC-1496"
+  },
+  {
+   "id": "REG-W2KAM5",
+   "story": null,
+   "seat": "imran",
+   "title": "W2-KAM-5 regression: KAM could not log a conversation on 7 of 8 accounts: 'this investor has no origin lead'",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Investors' in the menu",
+    "Press 'Sanjay Kulkarni' in the investors list",
+    "Press 'Care'",
+    "Press 'Log a conversation'",
+    "Press 'Call'",
+    "Press 'Fine'",
+    "Press 'Record it'"
+   ],
+   "expected": [
+    "The conversation is saved and the drawer closes.",
+    "No message says the investor has no origin lead."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "W2-KAM-5",
+   "jira": "GC-1497"
+  },
+  {
+   "id": "REG-W2KAM6",
+   "story": null,
+   "seat": "imran",
+   "title": "W2-KAM-6 regression: 'Hand it to Finance' failed 502 invalid-data",
+   "steps": [
+    "Press Imran Sheikh on the sign-in screen",
+    "Press 'Tickets' in the menu",
+    "Press 'Hand it to Finance' on the Change the bank account for payouts row"
+   ],
+   "expected": [
+    "The ticket says it was handed to Finance.",
+    "The row no longer offers 'Hand it to Finance'.",
+    "No message says Zoho is not answering."
+   ],
+   "fixtures": [
+    "DEMO_BOOK__C"
+   ],
+   "group": "REG",
+   "bug": "W2-KAM-6",
+   "jira": "GC-1498"
+  },
+  {
+   "id": "REG-W2IRB1",
+   "story": null,
+   "seat": "kavya",
+   "title": "W2-IRB-1 regression: IR B Investors page empty",
+   "steps": [
+    "Press Kavya Nair on the sign-in screen",
+    "Press 'Investors' in the menu"
+   ],
+   "expected": [
+    "The Investors page lists at least one investor from this IR's own leads.",
+    "The page does not list investors from another IR's leads."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "W2-IRB-1",
+   "jira": "GC-1499"
+  },
+  {
+   "id": "REG-W2IRB2",
+   "story": null,
+   "seat": "kavya",
+   "title": "W2-IRB-2 regression: A follow-up saved as 'Interested' showed 'Reply received' on the lead",
+   "steps": [
+    "Press Kavya Nair on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Farida Contractor",
+    "Press 'Mark first contact made'",
+    "Press 'Interested'"
+   ],
+   "expected": [
+    "The lead shows 'Last contact: Inbound reply · Interested'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "W2-IRB-2",
+   "jira": "GC-1500"
+  },
+  {
+   "id": "REG-W2REG1",
+   "story": null,
+   "seat": "rohit",
+   "title": "W2-REG-1 regression: Top-bar 'Undo the rung' never offered after a live tick",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press the Leads link in the menu",
+    "Open Sanjay Menon",
+    "Press 'Mark done'"
+   ],
+   "expected": [
+    "The top bar offers 'Reason for taking the rung back'.",
+    "The top bar offers an Undo for the rung just ticked."
+   ],
+   "fixtures": [
+    "DEMO_BOOK",
+    "L2_NOTE_EVENINGS_ONLY"
+   ],
+   "group": "REG",
+   "bug": "W2-REG-1",
+   "jira": "GC-1501"
   }
  ],
  "retired": [

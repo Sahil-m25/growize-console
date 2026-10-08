@@ -90,6 +90,7 @@ creates work and does not add a line here has not finished.
 | C-11 | Tasks, Events, Calls and Cases are `user_hidden` in the org, though the console uses Tasks for follow-ups (B05, B10). The API still answers; IRs opening Zoho would not see them | Org as found |
 | C-12 | Permanent-name quirks in the org: `FEMA_Applicable` is a picklist on Leads and a boolean on Contacts; `ISFC_Code` (sic, IFSC) on Contacts; `LLP_Creation_Module.Pet_Unit_Price`; `LLP_Status` value `Darft`. API names cannot be changed — map them, do not fight them | Org as found |
 | C-05 | `console-src-backup-2026-09-17/` is not a clean duplicate — 93 files differ, 22,969 lines of churn. Neither side is in git |
+| C-13 | **Open staging defects from the 6–9 Oct test waves** — 20 of 36 are not yet closed: fixed in code but not deployed or retested (12), seed data to fix (3: B-07, W2-KAM-5, W2-IRB-1), owner rulings (4: B-10/W2-KAM-1, B-20, B-22), one env/job (B-27). Each has a regression case. Register, Jira keys and fix commits: `docs/uat/STAGING-DEFECTS.md` | D133, D134, GC-1466…GC-1501 |
 
 ## D · Unverified, settle in the trial org
 

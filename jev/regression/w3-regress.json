@@ -1,0 +1,617 @@
+[
+ {
+  "id": "W3-REG-B05",
+  "title": "B-05 / GC-1470 regression: cold loads of /updates and /add (three each) never show the client-side exception",
+  "seat": "irA",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/today",
+  "steps": [
+   {
+    "action": "goto",
+    "value": "/updates"
+   },
+   {
+    "action": "expectText",
+    "value": "Application error",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "client-side exception",
+    "not": true
+   },
+   {
+    "action": "goto",
+    "value": "/add"
+   },
+   {
+    "action": "expectText",
+    "value": "Application error",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "client-side exception",
+    "not": true
+   },
+   {
+    "action": "goto",
+    "value": "/updates"
+   },
+   {
+    "action": "expectText",
+    "value": "Application error",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "client-side exception",
+    "not": true
+   },
+   {
+    "action": "goto",
+    "value": "/add"
+   },
+   {
+    "action": "expectText",
+    "value": "Application error",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "client-side exception",
+    "not": true
+   },
+   {
+    "action": "goto",
+    "value": "/updates"
+   },
+   {
+    "action": "expectText",
+    "value": "Application error",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "client-side exception",
+    "not": true
+   },
+   {
+    "action": "goto",
+    "value": "/add"
+   },
+   {
+    "action": "expectText",
+    "value": "Application error",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "client-side exception",
+    "not": true
+   }
+  ],
+  "covers": [
+   "CM-0500",
+   "CM-3127",
+   "CM-3133"
+  ],
+  "judge": "deterministic"
+ },
+ {
+  "id": "W3-REG-B07",
+  "title": "B-07 / GC-1472 regression: sandbox seed carries the post-D131 sink phone number, not the pre-sink one",
+  "seat": "irA",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/leads",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "in your book"
+   },
+   {
+    "action": "click",
+    "target": {
+     "text": "Anand Pillai",
+     "exact": true
+    }
+   },
+   {
+    "action": "expectUrl",
+    "value": "^/leads/\\d+$"
+   },
+   {
+    "action": "expectText",
+    "value": "Anand Pillai"
+   },
+   {
+    "action": "expectText",
+    "value": "99001 44821",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "90000 0"
+   }
+  ],
+  "covers": [
+   "CM-0993",
+   "CM-3367"
+  ],
+  "judge": "deterministic"
+ },
+ {
+  "id": "W3-REG-B10",
+  "title": "B-10 / GC-1475 regression (owner ruling pending): IR Today focus card and lead header show no rupee figure",
+  "seat": "irA",
+  "tier": "opus",
+  "kind": "permission",
+  "route": "/today",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "₹",
+    "not": true
+   },
+   {
+    "action": "goto",
+    "value": "/leads"
+   },
+   {
+    "action": "expectText",
+    "value": "in your book"
+   },
+   {
+    "action": "click",
+    "target": {
+     "text": "Joseph Mathew",
+     "exact": true
+    }
+   },
+   {
+    "action": "expectUrl",
+    "value": "^/leads/\\d+$"
+   },
+   {
+    "action": "expectText",
+    "value": "₹",
+    "not": true
+   },
+   {
+    "action": "expectText",
+    "value": "Cr · ",
+    "not": true
+   }
+  ],
+  "covers": [
+   "CM-3352",
+   "CM-3824"
+  ],
+  "facts": [
+   "No rupee amount is shown on the Today page or on Joseph Mathew's lead header"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B14",
+  "title": "B-14 / GC-1479 regression: contact-permission banner is legible and the latest note names its author",
+  "seat": "irA",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/leads",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "in your book"
+   },
+   {
+    "action": "click",
+    "target": {
+     "text": "Girish Rao",
+     "exact": true
+    }
+   },
+   {
+    "action": "expectUrl",
+    "value": "^/leads/\\d+$"
+   },
+   {
+    "action": "expectText",
+    "value": "Latest note"
+   },
+   {
+    "action": "expectVisible",
+    "target": {
+     "text": "All notes"
+    }
+   }
+  ],
+  "facts": [
+   "The latest note line names the person who wrote it, not an empty name",
+   "Any banner about missing contact permission is dark text on a light background that can be read easily"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B15-FIN",
+  "title": "B-15 / GC-1480 regression: Finance greeting and session carry the signed-in person's name",
+  "seat": "fin",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/today",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "(^|\\s)['’]s day",
+    "regex": true,
+    "not": true
+   },
+   {
+    "action": "apiGet",
+    "value": "/api/session",
+    "expect": {
+     "status": 200,
+     "notContains": "\"n\":\"\""
+    }
+   }
+  ],
+  "covers": [
+   "CM-0070"
+  ],
+  "facts": [
+   "The greeting at the top of Today names the signed-in person"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B15-IRA",
+  "title": "B-15 / GC-1480 regression: IR session carries the signed-in person's name; Profile shows a display name",
+  "seat": "irA",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/me",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "Display name"
+   },
+   {
+    "action": "apiGet",
+    "value": "/api/session",
+    "expect": {
+     "status": 200,
+     "notContains": "\"n\":\"\""
+    }
+   }
+  ],
+  "facts": [
+   "The Display name field on Profile is filled in"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B19",
+  "title": "B-19 / GC-1484 regression: Documents > Send one opens and its templates answer 200 (no bodiless 500)",
+  "seat": "fin",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/docs",
+  "steps": [
+   {
+    "action": "click",
+    "target": {
+     "role": "button",
+     "name": "Send one"
+    }
+   },
+   {
+    "action": "expectText",
+    "value": "Send a document"
+   },
+   {
+    "action": "expectText",
+    "value": "Non-disclosure agreement"
+   },
+   {
+    "action": "expectText",
+    "value": "Could not",
+    "not": true
+   },
+   {
+    "action": "apiGet",
+    "value": "/api/documents/sign/templates",
+    "expect": {
+     "status": 200
+    }
+   }
+  ],
+  "covers": [
+   "CM-0878",
+   "CM-1014"
+  ],
+  "facts": [
+   "The Send a document panel lists document templates and shows no error message"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B21",
+  "title": "B-21 / GC-1486 regression: read-only Teams offers no 'Edit what a seat may do' and its banner agrees with D113",
+  "seat": "fin",
+  "tier": "sonnet",
+  "kind": "permission",
+  "route": "/teams",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "read only"
+   },
+   {
+    "action": "expectHidden",
+    "target": {
+     "role": "button",
+     "name": "Edit what a seat may do"
+    }
+   },
+   {
+    "action": "expectText",
+    "value": "Edit what a seat may do",
+    "not": true
+   }
+  ],
+  "covers": [
+   "CM-1935",
+   "CM-1943"
+  ],
+  "facts": [
+   "The Teams page is read only and offers no control to edit what a seat may do"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B23",
+  "title": "B-23 / GC-1488 regression: Add investor drawer offers at least one farm to choose",
+  "seat": "fin",
+  "tier": "opus",
+  "kind": "read",
+  "route": "/inv",
+  "steps": [
+   {
+    "action": "click",
+    "target": {
+     "role": "button",
+     "name": "Add investor"
+    }
+   },
+   {
+    "action": "expectVisible",
+    "target": {
+     "text": "Add an investor who already paid"
+    }
+   },
+   {
+    "action": "expectText",
+    "value": "No farms",
+    "not": true
+   }
+  ],
+  "facts": [
+   "The Add investor drawer has a farm choice that lists at least one farm"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-B27",
+  "title": "B-27 / GC-1492 regression: Activity lists the IR's lead actions (not 0 actions) and export is usable",
+  "seat": "irA",
+  "tier": "sonnet",
+  "kind": "read",
+  "route": "/activity",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "Activity"
+   },
+   {
+    "action": "expectText",
+    "value": "(^|\\s)0 actions",
+    "regex": true,
+    "not": true
+   },
+   {
+    "action": "apiGet",
+    "value": "/api/activity?month=2026-10",
+    "expect": {
+     "status": 200
+    }
+   }
+  ],
+  "facts": [
+   "Activity lists at least one action by the signed-in IR (notes, lost or re-open, forecast or absence)"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-W2-IRB-1",
+  "title": "W2-IRB-1 / GC-1499 regression (needs seed fix): IR B Investors lists Prakash Bhat from IR B's own lead; IR A's investors stay absent",
+  "seat": "irB",
+  "tier": "opus",
+  "kind": "permission",
+  "route": "/inv",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "from your leads"
+   },
+   {
+    "action": "expectText",
+    "value": "Prakash Bhat"
+   },
+   {
+    "action": "expectText",
+    "value": "0 from your leads",
+    "not": true
+   },
+   {
+    "action": "expectHidden",
+    "target": {
+     "text": "Radhika Menon",
+     "exact": true
+    }
+   },
+   {
+    "action": "apiGet",
+    "value": "/api/investors/mine",
+    "expect": {
+     "status": 200,
+     "contains": "Prakash",
+     "notContains": "Radhika"
+    }
+   }
+  ],
+  "covers": [
+   "CM-3182",
+   "CM-3348"
+  ],
+  "facts": [
+   "The Investors page lists Prakash Bhat as an investor from the signed-in IR's own lead and does not list Radhika Menon"
+  ],
+  "judge": "both"
+ },
+ {
+  "id": "W3-REG-W2-IRB-2",
+  "title": "W2-IRB-2 / GC-1500 regression: follow-up saved as Interested reads 'Interested' on the lead after reload, not 'Reply received'",
+  "seat": "irB",
+  "tier": "sonnet",
+  "kind": "write",
+  "route": "/leads",
+  "steps": [
+   {
+    "action": "expectText",
+    "value": "in your book"
+   },
+   {
+    "action": "click",
+    "target": {
+     "text": "Farida Contractor",
+     "exact": true
+    }
+   },
+   {
+    "action": "expectUrl",
+    "value": "^/leads/\\d+$"
+   },
+   {
+    "action": "expectText",
+    "value": "Farida Contractor"
+   },
+   {
+    "action": "click",
+    "target": {
+     "role": "button",
+     "name": "Mark first contact made"
+    }
+   },
+   {
+    "action": "select",
+    "target": {
+     "label": "Outcome"
+    },
+    "value": "Interested",
+    "within": {
+     "role": "dialog"
+    }
+   },
+   {
+    "action": "select",
+    "target": {
+     "css": "#funext"
+    },
+    "value": "Call back",
+    "within": {
+     "role": "dialog"
+    }
+   },
+   {
+    "action": "select",
+    "target": {
+     "css": "#funchannel"
+    },
+    "value": "Internal task",
+    "within": {
+     "role": "dialog"
+    }
+   },
+   {
+    "action": "click",
+    "target": {
+     "role": "button",
+     "name": "Tomorrow"
+    },
+    "within": {
+     "role": "dialog"
+    }
+   },
+   {
+    "action": "fill",
+    "target": {
+     "label": "Conversation note"
+    },
+    "value": "harness W3-REG-W2-IRB-2",
+    "within": {
+     "role": "dialog"
+    }
+   },
+   {
+    "action": "click",
+    "target": {
+     "role": "button",
+     "name": "Save follow-up"
+    },
+    "within": {
+     "role": "dialog"
+    }
+   },
+   {
+    "action": "wait",
+    "value": 2500
+   },
+   {
+    "action": "expectHidden",
+    "target": {
+     "role": "alert"
+    },
+    "within": {
+     "role": "dialog"
+    }
+   }
+  ],
+  "covers": [
+   "CM-2732",
+   "CM-3689",
+   "CM-3692"
+  ],
+  "facts": [
+   "Farida Contractor's last contact reads Interested, not just Reply received"
+  ],
+  "writes": {
+   "records": [
+    "Farida Contractor"
+   ],
+   "verify": [
+    {
+     "action": "expectText",
+     "value": "Inbound reply · Interested"
+    },
+    {
+     "action": "expectText",
+     "value": "Call back"
+    }
+   ],
+   "recordHint": "Touches on Farida Contractor (outcome in Touches.Note)"
+  },
+  "judge": "both"
+ }
+]

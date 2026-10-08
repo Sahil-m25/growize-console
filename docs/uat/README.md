@@ -10,6 +10,7 @@ It serves story M18-S08 (subtasks M18-S08-H5 and M18-S08-H6). Every step cites t
 | `scenarios/01-ir.md` … `10-auditor-viewer.md` | One script per seat. Each walks that seat's real day, step by step. |
 | `signoff-sheet.csv` | One row per step: expected result, pass/fail, evidence, defect id, notes, tester, date. Open it in Excel or Sheets. |
 | `defect-intake.md` | One page: how to report a problem, where it goes, how fast it is looked at. |
+| `STAGING-DEFECTS.md` | The register of the 36 staging defects found in the 6–9 Oct 2026 test waves: Jira key, status, fix commit and the regression cases that keep each one from returning. |
 | `usability-tasks.md` | The two-IR observed session: ten tasks, what counts as a stumble, how a session passes [M18-S08-T03]. |
 | `usability-consent.md` | The text read out and signed before a usability session. |
 | `usability-timing-sheet.csv` | One row per task per participant: times, help, stumbles, severity, defect id. The observer fills it in. |
