@@ -48,3 +48,20 @@ describe("B-16: the Finance journey prints live stamps formatted", () => {
     expect(ev.findIndex(e => e.t === "Account opened")).toBeLessThan(ev.findIndex(e => e.t === "Payment received"));
   });
 });
+
+describe("W3-2: the origin lead is named in words, never a raw Zoho record id", () => {
+  it("Journey 'Account opened' names the lead (live) or shows the code (demo); a bare record id reads as nothing", async () => {
+    const { imDemoData } = await import("@fixtures/im/demo");
+    const { initialImUi } = await import("./reducer");
+    const { journey, money, leadWords } = await import("./index");
+    const data = imDemoData();
+    const opened = (patch: object) => {
+      data.INV[0] = { ...data.INV[0]!, ...patch } as never;
+      return journey({ data, ui: initialImUi() }, "harsha", data.INV[0]!, money).find(e => e.t === "Account opened")!.m!;
+    };
+    expect(opened({ lead: "1454168000003022169", leadName: "Radhika Menon" })).toContain(" · lead Radhika Menon");
+    expect(opened({ lead: "1454168000003022169", leadName: null })).not.toMatch(/lead|\d{10,}/);
+    expect(opened({ lead: "L-0412", leadName: undefined })).toContain(" · lead L-0412");
+    expect(leadWords({ lead: "1454168000003022169" })).toBeNull();
+  });
+});

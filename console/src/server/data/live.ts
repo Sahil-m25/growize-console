@@ -267,7 +267,7 @@ export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], block
     bank: { acct: "", ifsc: "", name: "", drop: "" },
     units, blocks, st: live.some((a) => a.Allocation_Status === "Issued") ? "allocated" : paid ? "paid" : live.length ? "reserved" : allots.length ? "lapsed" : "said yes",
     ir: c.originatingIrId ?? "", src: "", since: stampOf(c.saidYesAt ?? c.createdAt).slice(0, 6), nominee: c.nominee ?? "",
-    kam: c.kamId, kamOn: c.kamSince, intro: c.introAt, ...(c.originLeadId ? { lead: c.originLeadId } : {}),
+    kam: c.kamId, kamOn: c.kamSince, intro: c.introAt, ...(c.originLeadId ? { lead: c.originLeadId } : {}), ...(c.originLeadName ? { leadName: c.originLeadName } : {}),
     ...(holdOf(live) ? { hold: holdOf(live)! } : {}),
   };
 }
