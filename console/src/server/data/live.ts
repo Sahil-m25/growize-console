@@ -185,13 +185,16 @@ export function touchesOf(rows: readonly ZohoRecord[]): Map<string, Touch> {
 }
 
 /** The newest touch per lead with the outcome it was saved under. followup.ts writes Note as "<outcome>" or "<outcome> — <words>"
- *  and sets Is_Reply for an inbound touch (which carries no Channel); a voided touch is skipped. */
+ *  and sets Is_Reply for an inbound touch (a bare reply carries no Channel; a "Reply received" logged on WhatsApp keeps WhatsApp); a voided touch is skipped. */
 export function lastTouchOf(rows: readonly ZohoRecord[]): Map<string, NonNullable<Lead["lastTouch"]>> {
   const out = new Map<string, NonNullable<Lead["lastTouch"]>>();
   const at = new Map<string, number>();
   for (const r of rows) {
     const lead = lookupId(r.Lead), when = Date.parse(String(r.Occurred_At));
-    const channel: Channel | "reply" | undefined = r.Is_Reply === true ? "reply" : typeof r.Channel === "string" ? CHANNEL_OF[r.Channel] : undefined;
+    /* W3-E2E-1: a touch saved on a channel keeps it even when its outcome is "Reply received" (Is_Reply is then true as well);
+       only a touch with no Channel at all is the bare inbound reply. */
+    const chosen = typeof r.Channel === "string" ? CHANNEL_OF[r.Channel] : undefined;
+    const channel: Channel | "reply" | undefined = chosen ?? (r.Is_Reply === true ? "reply" : undefined);
     const outcome = typeof r.Note === "string" ? r.Note.split(" — ")[0]!.trim().slice(0, 80) : "";
     const stamp = stampOf(str(r.Occurred_At));
     if (!lead || !channel || !outcome || !stamp || !Number.isFinite(when) || str(r.Voided_At)) continue;
