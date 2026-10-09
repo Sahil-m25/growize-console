@@ -389,6 +389,11 @@ export interface Lead {
   profileHistory?: { who: PersonKey; at: string; changes: { field: string; from: string; to: string }[] }[];
   /** One entry per saved contact-permission write, newest first (ir-console-redesigned.html:11978). */
   permissionHistory?: { recordedAt: string; who: PersonKey; channels: Partial<Record<Channel, boolean>>; givenAt: string | null }[];
+  /** Zoho's Lead_Status as the book read it (the blueprint's, D45). Live only; GC-1523 reads it for "converted". */
+  status?: string | null;
+  /** GC-1523: the investor record (Contact with Origin_Lead = this lead) the viewer read on their own token, when there is
+   *  one — its Contact id, ARL code and the Investors side's state. Live only; absent when the viewer reads no such Contact. */
+  investor?: { id: string; code: string | null; st: string } | null;
 }
 
 /* ===== EVENTS ============================================================================= */

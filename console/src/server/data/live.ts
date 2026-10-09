@@ -257,6 +257,7 @@ export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Tou
     ...(lastTouch ? { lastTouch } : {}),
     lost: row.lostAt ? { why: lostWhy as LostWhy, note: "", at: stampOf(row.lostAt), by: row.ownerId ?? "", stage: done } : null,
     mt: typeof detail?.Modified_Time === "string" && detail.Modified_Time ? detail.Modified_Time : null,
+    ...(row.status ? { status: row.status } : {}),
     ...(skipped ? { skipped: true } : {}),
     ...(row.coverById ? { cov: { by: row.coverById, to: row.coverUntil ? stampOf(row.coverUntil + "T00:00:00+05:30").slice(0, 6) : "", why: "" } } : {}),
   };
@@ -279,6 +280,20 @@ export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], block
     kam: c.kamId, kamOn: c.kamSince, intro: c.introAt, ...(c.originLeadId ? { lead: c.originLeadId } : {}), ...(c.originLeadName ? { leadName: c.originLeadName } : {}),
     ...(holdOf(live) ? { hold: holdOf(live)! } : {}),
   };
+}
+
+/**
+ * GC-1523: each lead with the investor record that came from it (Contact.Origin_Lead = the lead), out of the Contacts this
+ * same person already read on their own token — never a second read, never another seat's rows (D53). A lead whose
+ * Contact the viewer cannot read carries no link; selectors `converted` then decides on the lead's own stamps and status.
+ */
+export function linkInvestors(leads: readonly Lead[], inv: readonly ImInvestor[]): Lead[] {
+  const by = new Map<string, ImInvestor>();
+  for (const x of inv) if (x.lead && !by.has(x.lead)) by.set(x.lead, x);
+  return leads.map((l) => {
+    const x = by.get(l.id);
+    return x ? { ...l, investor: { id: x.id, code: x.code ?? null, st: x.st } } : l;
+  });
 }
 
 /** The earliest Hold_Until among Reserved allotments (the hold banner, M09-S03), or null. */
@@ -467,6 +482,7 @@ export function createLiveDataLayer(deps: LiveDeps) {
       const problems: string[] = [];
       ds.LEADS = await readLeads(p, scopes.leads, problems, signal);
       await readInvestors(p, scopes, ds, problems, signal);
+      ds.LEADS = linkInvestors(ds.LEADS, ds.im.INV);
       if (deps.seats && deps.crm.listUsers) {
         // Per request, never cached (rule 8: a name list is not an aggregate); Zoho scopes what the viewer may list.
         const r = await readPeople({ crm: { listUsers: deps.crm.listUsers }, seats: deps.seats, users: deps.users, styles: deps.styles }, p.credential, signal);

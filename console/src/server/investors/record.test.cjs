@@ -69,6 +69,12 @@ function route(url, q) {
   if (!q) {
     const att = u.match(/\/(Contacts|LLP_UnitAllocation_Module|LLP_Creation_Module)\/(\d+)\/Attachments/);
     if (att) return recorded('investors', att[1] === 'Contacts' ? 'record.attachments-contact' : att[1] === 'LLP_Creation_Module' ? 'record.attachments-llp' : 'record.attachments-allotment');
+    /* GC-1524: the origin lead's stamps, on the reader's own token — Prakash's lead is returned, any other is not (204) */
+    const lead = u.match(/\/Leads\/(\d+)(\?|$)/);
+    if (lead) return lead[1] === `${P}740996401` ? { status: 200, body: { data: [{ id: lead[1], Created_Time: '2026-07-01T10:00:00+05:30',
+      First_Touch_At: '2026-07-01T12:00:00+05:30', Qualified_At: '2026-07-10T12:00:00+05:30', Engaged_At: '2026-07-20T12:00:00+05:30',
+      Said_Yes_At: '2026-08-20T11:00:00+05:30', Reserved_At: '2026-08-25T10:00:00+05:30', Fully_Paid_At: null, Allocated_At: null, Onboarded_At: null }] } }
+      : { status: 204, body: {} };
     const one = u.match(/\/Contacts\/(\d+)(\?|$)/);
     if (one) return CONTACT[one[1]] ? recorded('investors', CONTACT[one[1]]) : recorded('data', 'coql.none');
     throw new Error('unrouted GET ' + u);
@@ -83,6 +89,11 @@ function route(url, q) {
   if (/from Receipts/.test(q)) return q.includes(`${P}740998301`) ? recorded('investors', receiptsFx) : recorded('data', 'coql.none');
   if (/from LLP_Creation_Module/.test(q)) return recorded('investors', 'coql.finance-llps');
   if (/from Cases/.test(q)) return recorded('data', 'coql.none');
+  if (/from Touches/.test(q)) return q.includes(`${P}740996401`) ? { status: 200, body: { data: [
+    { id: `${P}740999001`, Lead: { id: `${P}740996401` }, Channel: 'WhatsApp', Occurred_At: '2026-07-01T12:00:00+05:30', Is_Reply: false },
+    { id: `${P}740999002`, Lead: { id: `${P}740996401` }, Channel: 'Call', Occurred_At: '2026-07-05T12:00:00+05:30', Is_Reply: false },
+    { id: `${P}740999003`, Lead: { id: `${P}740996401` }, Occurred_At: '2026-07-06T09:00:00+05:30', Is_Reply: true }],
+    info: { count: 3, more_records: false } } } : recorded('data', 'coql.none');
   throw new Error('unrouted query: ' + q);
 }
 
@@ -230,4 +241,34 @@ test('D69: Rohit\'s own-lead Investors book lists Kiran, from his lead', async (
   assert.equal(one.investor.n, 'Kiran Joshi');
   assert.equal(one.investor.ir, ROHIT);
   assert.ok(r.calls.slice(scoped).some((q) => new RegExp(`from Contacts where \\(id = '${KIRAN}'\\)`).test(q)), 'the guard reads the Contact by id');
+});
+
+/* ---------------- GC-1524 ---------------- */
+
+test('GC-1524: the record\'s story — the origin lead\'s stamps and touches on the reader\'s own token, the investor side after', async () => {
+  const r = rig();
+  const res = await r.reader.read(creds.get(HARSHA), 'head', PRAKASH, undefined, { story: true });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const st = res.record.story;
+  assert.equal(st.leadSide, 'lead');
+  assert.deepEqual(st.steps.filter((e) => e.side === 'lead').map((e) => [e.t, e.done]),
+    [['Lead captured', true], ['First touch made', true], ['Qualified', true], ['Engagement done', true], ['Investor said yes', true]]);
+  assert.deepEqual(st.touches, { total: 2, byChannel: { WhatsApp: 1, Call: 1 }, replies: 1, first: '2026-07-01T12:00:00+05:30', last: '2026-07-06T09:00:00+05:30' });
+  const inv = Object.fromEntries(st.steps.filter((e) => e.side === 'investor').map((e) => [e.k, e]));
+  assert.deepEqual([inv.Reserved_At.done, inv.Reserved_At.src, inv.Fully_Paid_At.done, inv.Allocated_At.done], [true, 'lead', false, false]);
+  const leadGet = r.calls.find((c) => /GET .*\/Leads\/\d+/.test(c));
+  assert.ok(leadGet && !/Mobile|Email|PAN/i.test(decodeURIComponent(leadGet)), 'only the rung stamps are asked of the lead');
+});
+
+test('GC-1524: a lead Zoho does not return to the reader narrows the story to the Contact\'s own stamps; no story unless asked', async () => {
+  const r = rig();
+  const res = await r.reader.read(creds.get(FIN), 'fin', KIRAN, undefined, { story: true });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.record.story.leadSide, 'contact');
+  assert.deepEqual(res.record.story.steps.filter((e) => e.side === 'lead').map((e) => [e.t, e.at, e.src]), [['Investor said yes', '2026-09-27T16:00', 'contact']]);
+  assert.equal(res.record.story.touches, null);
+  const plain = rig();
+  const p = await plain.reader.read(creds.get(FIN), 'fin', KIRAN);
+  assert.equal(p.record.story, null);
+  assert.equal(plain.calls.some((c) => /\/Leads\/\d+|from Touches/.test(c)), false, 'the preview and test-link readers do not pay for the story');
 });

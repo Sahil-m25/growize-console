@@ -25,7 +25,7 @@ import { MERGE } from "@/domain/signin";
 import { imReach } from "@/lib/im";
 import type { Cap, Ctx } from "./ctx";
 import { me, P } from "./ctx";
-import { custodian, inBook, inBookOf, lost, openable } from "./leads";
+import { converted, custodian, inBook, inBookOf, lost, openable } from "./leads";
 
 /* the shape of one NAV row, taken off the data rather than guessed at */
 export type NavItem = (typeof NAV)[number];
@@ -429,6 +429,7 @@ export function canEdit(ctx: Ctx, lead: Lead | null | undefined): boolean {
      every other write is refused here rather than at twenty call sites that would drift apart */
   if (lost(l)) return false;
   if (custodian(l) === "Closed") return false;             /* every rung done — the record stands */
+  if (converted(l)) return false;                          /* GC-1523: an investor now — the lead side is read-only */
   return inBookOf(ctx, l) || ["conv", "ops"].includes(roleOf(ctx.PEOPLE, me(ctx))!);
 }
 

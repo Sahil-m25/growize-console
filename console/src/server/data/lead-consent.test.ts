@@ -13,6 +13,13 @@ const ROW: LeadRow = {
 };
 const detail = (f: Record<string, unknown>) => ({ id: ROW.id, ...f });
 
+describe("leadOf — Lead_Status (GC-1523)", () => {
+  it("carries the blueprint's status when Zoho has one, and leaves it off when it has none", () => {
+    expect(leadOf({ ...ROW, status: "Allocated" }, detail({})).status).toBe("Allocated");
+    expect("status" in leadOf(ROW, detail({}))).toBe(false);
+  });
+});
+
 describe("leadOf — permission (B-03)", () => {
   it("a lead with permission on WhatsApp and Call reads as consented on those channels only", () => {
     const l = leadOf(ROW, detail({ Consent_WhatsApp: true, Consent_Email: false, Consent_Call: true, Consent_How: "Verbal",

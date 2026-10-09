@@ -20,6 +20,7 @@ import { TkRow } from "./TkRow";
 import { KamControl } from "./KamControl";
 import { AppActivityCard, AppBadge, useAppActivity } from "./AppActivity";
 import { nudgeIds } from "@/lib/im/app-activity";
+import { journeyFirst, StoryJourney } from "./Story";   /* GC-1524 */
 import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks } from "../money/record";
 import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
@@ -340,7 +341,8 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
     jrn: () => ({ k: "jrn", t: "Journey" }),
     tkt: () => ({ k: "tkt", t: "Tickets", n: tkOf(s, me, x.id).filter(t => t.state !== "closed").length }),
   };
-  const SECS: ImSec[] = rec.sections.map(k => SECT[k]());
+  /* GC-1524: Journey is the record's main view — first, so the record opens on it */
+  const SECS: ImSec[] = journeyFirst(rec.sections).map(k => SECT[k]());
   const v = "inv:" + x.id;
   const S = secOf(s.ui.SEC, v, SECS);
   const T = tierOf(x)!;
@@ -401,8 +403,9 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
           </div></div>
         ) : null}
         {S === "paper" ? (papers ? <SecPaperLive {...p} papers={papers} /> : <SecPaper {...p} />) : null}
-        {S === "jrn" && p.irSeat ? <IrJourney x={x} /> : null}
-        {S === "jrn" && !p.irSeat ? (
+        {S === "jrn" && rec.story ? <StoryJourney s={s} me={me} x={x} rec={{ ...rec, story: rec.story }} irSeat={!!p.irSeat} /> : null}
+        {S === "jrn" && !rec.story && p.irSeat ? <IrJourney x={x} /> : null}
+        {S === "jrn" && !rec.story && !p.irSeat ? (
           <div className="card fill"><div className="ch"><h3>The journey</h3><div className="sp" />
             <span className="tag ir">Lead side</span><span className="tag br">Investors side</span></div>
             <div className="cb"><div className="jrn">{journey(s, me, x, money).map((e, i) => (

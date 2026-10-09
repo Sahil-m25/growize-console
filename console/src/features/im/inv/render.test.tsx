@@ -40,7 +40,7 @@ describe("ImInv — vOne, the record", () => {
   it("Finance (harsha) on a reservation: the hold note, masked PII, money and paper", () => {
     const who = rec("harsha", "ARL-INV-0208", "who").t;
     expect(who).toContain("₹22.5 L due in 21 days. The hold ends 23 Sep. A lapse forfeits ₹50,000 and puts 1 unit back on the shelf.");
-    expect(who).toContain("Who they areWhat they holdMoney1PaperJourneyTickets");
+    expect(who).toContain("JourneyWho they areWhat they holdMoney1PaperTickets");   /* GC-1524: Journey first */
     expect(who).toContain("PANAFT•••••Lreveal");
     expect(who).toContain("HDFC0000911 · PRAKASH BHAT · name match matched");
     const money = rec("harsha", "ARL-INV-0208", "money").t;
