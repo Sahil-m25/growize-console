@@ -51,9 +51,9 @@ export const paymentsRegister: ReadEndpoint<ImBook, RegisterArgs, RegisterView> 
       const x = s.data.INV.find(y => y.id === t.inv);
       const blk = x ? Object.keys(x.blocks)[0] : undefined;
       return {
-        id: t.id, kind: t.kind, amount: t.amt, mode: t.mode || null, utr: null, utrMask: seesUtr && t.utr ? maskRefTail(t.utr) : null, canReveal: mayShow && !!t.utr, utrHidden: !seesUtr,
+        id: t.id, ref: t.id, kind: t.kind, amount: t.amt, mode: t.mode || null, utr: null, utrMask: seesUtr && t.utr ? maskRefTail(t.utr) : null, canReveal: mayShow && !!t.utr, utrHidden: !seesUtr,
         receivedOn: t.on, matchState: t.rec === "matched" ? "Matched" : "Pending", reconciled: t.rec === "matched",
-        allotmentId: al ? al.id : "", investor: { id: t.inv, name: x ? x.n : null },
+        allotmentId: al ? al.id : "", investor: { id: t.inv, name: x ? x.n : null, code: t.inv },
         farm: l ? { id: l.id, name: l.Name } : { id: blk || "", name: blk ? "Block " + blk : null },
         recordedById: t.by || null, reversalOf: null,
       };

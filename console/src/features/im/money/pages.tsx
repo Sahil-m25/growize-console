@@ -65,8 +65,8 @@ export function PayoutsDue({ s, me, dispatch }: ImPageProps) {
     const open = () => dispatch({ type: "go", v: "inv", id: p.investor.id ?? "" });
     return (
       <tr key={p.id} className="k" tabIndex={0} onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
-        <td className="mono sm">{p.id}<div className="sm">{p.instalment} of 60</div></td>
-        <td>{p.investor.name ?? p.investor.id}<div className="sm mono">{p.investor.id}</div></td>
+        <td className="mono sm">{p.ref ?? "—"}<div className="sm">{p.instalment} of 60</div></td>
+        <td>{p.investor.name ?? p.investor.code ?? "Investor not readable"}<div className="sm mono">{p.investor.code ?? ""}</div></td>
         <td className="sm">{p.farm.name ?? p.farm.id}</td>
         <td className="sm mono">{fmtDate(p.dueOn)}{late ? <div><span className="tag late">overdue</span></div> : null}</td>
         <td className="n mono">{inr(p.gross)}</td>

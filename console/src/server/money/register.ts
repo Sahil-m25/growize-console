@@ -89,6 +89,8 @@ export interface RegisterFilter {
 }
 export interface RegisterRow {
   readonly id: string;
+  /** The receipt's own reference (Receipts.Name, e.g. T-0027) — what the page prints; the record id never reaches the screen (W3-1). */
+  readonly ref: string | null;
   readonly kind: RegisterKind;
   readonly amount: number;
   readonly mode: string | null;
@@ -106,7 +108,7 @@ export interface RegisterRow {
   readonly reconciled: boolean;
   readonly allotmentId: string;
   /** id null: the allotment names no readable Customer (problem allotment-unnamed) — the row still counts. */
-  readonly investor: { readonly id: string | null; readonly name: string | null };
+  readonly investor: { readonly id: string | null; readonly name: string | null; /** the ARL ID (ARL-INV-0206), null when Zoho holds none */ readonly code: string | null };
   /** id null: the allotment names no readable LLP (problem allotment-unnamed) — the row still counts. */
   readonly farm: { readonly id: string | null; readonly name: string | null };
   readonly recordedById: string | null;
@@ -135,7 +137,7 @@ export interface RegisterDependencies {
   readonly clock?: () => number;
 }
 
-interface Allot { id: string; investorId: string | null; investorName: string | null; farmId: string | null; farmName: string | null; status: string; commitment: number }
+interface Allot { id: string; investorId: string | null; investorName: string | null; investorCode: string | null; farmId: string | null; farmName: string | null; status: string; commitment: number }
 class Fail { constructor(readonly kind: ZohoFailureKind | "unexpected") {} }
 
 const PROBLEM_ORDER: readonly RegisterProblem[] = ["receipt-unreadable", "receipt-unlinked", "allotment-unreadable", "allotment-unnamed", "price-missing", "reversal-anomaly"];
@@ -160,6 +162,9 @@ const name = (v: unknown): string | null => {
   return typeof n === "string" ? n.slice(0, 120) : null;
 };
 
+/** A short reference text (Receipts.Name, Contacts.ARL_ID): trimmed, never an empty string or "-None-". */
+const code = (v: unknown): string | null => (typeof v === "string" && v.trim() && v.trim() !== "-None-" ? v.trim().slice(0, 40) : null);
+
 export function createPaymentsRegister(deps: RegisterDependencies) {
   if (!deps || typeof deps.crm?.coql !== "function" || typeof deps.access?.recheck !== "function"
     || typeof deps.log?.refusal !== "function" || typeof deps.recordIdPrefix !== "string" || !RECORD_PREFIX.test(deps.recordIdPrefix)) {
@@ -181,7 +186,7 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
     }
     throw new Fail("unexpected");
   };
-  const ALLOT = "id, Customer, LLP, Allocation_Status, Issued_Units, Reserved_Units, Unit_Price";
+  const ALLOT = "id, Customer, Customer.ARL_ID, LLP, Allocation_Status, Issued_Units, Reserved_Units, Unit_Price";
   type Note = (p: RegisterProblem, id: unknown) => void;
   /** One allotment, or null when it cannot be one (its receipts are then receipt-unlinked). */
   const parseAllot = (r: ZohoRecord, note: Note): Allot | null => {
@@ -193,7 +198,7 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
     const c = units !== null && price !== null && units >= 0 && price >= 0 ? units * price : null;
     const priced = c !== null && Number.isSafeInteger(c);
     if (status === "Reserved" && !priced) note("price-missing", r.id);
-    return { id: r.id, investorId, investorName: investorId ? name(r.Customer) : null, farmId, farmName: farmId ? name(r.LLP) : null,
+    return { id: r.id, investorId, investorName: investorId ? name(r.Customer) : null, investorCode: investorId ? code(r["Customer.ARL_ID"]) : null, farmId, farmName: farmId ? name(r.LLP) : null,
       status, commitment: priced ? (c as number) : 0 };
   };
 
@@ -218,7 +223,7 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
       const problems = new Map<RegisterProblem, string[]>();
       const note: Note = (p, id) => { const ids = problems.get(p) ?? []; ids.push(typeof id === "string" && RECORD_ID.test(id) ? id : ""); problems.set(p, ids); };
       try {
-        const receipts = await all(cred, "select id, Allotment, Kind, Amount, Mode, UTR, Received_On, Match_State, Reversal_Of, Created_By from Receipts where id is not null order by Received_On desc", signal);
+        const receipts = await all(cred, "select id, Name, Allotment, Kind, Amount, Mode, UTR, Received_On, Match_State, Reversal_Of, Created_By from Receipts where id is not null order by Received_On desc", signal);
         const reserved = await all(cred, `select ${ALLOT} from ${ALLOTMENTS_MODULE} where Allocation_Status = 'Reserved' order by id asc`, signal);
         const allots = new Map<string, Allot>();
         const asked = new Set<string>();
@@ -238,11 +243,11 @@ export function createPaymentsRegister(deps: RegisterDependencies) {
           if (!al) { note("receipt-unlinked", r.id); continue; }
           const utr = typeof r.UTR === "string" && r.UTR.trim() ? r.UTR.slice(0, 80) : null;
           rows.push(Object.freeze({
-            id: r.id, kind, amount, mode: typeof r.Mode === "string" && r.Mode && r.Mode !== "-None-" ? r.Mode : null,
+            id: r.id, ref: code(r.Name), kind, amount, mode: typeof r.Mode === "string" && r.Mode && r.Mode !== "-None-" ? r.Mode : null,
             utr: null, utrMask: a.seesUtr && utr ? maskRef(utr) : null, canReveal: a.seesUtr && !!utr, utrHidden: !a.seesUtr,
             receivedOn: dayOf(r.Received_On),
             matchState: match, reconciled: match === "Matched", allotmentId: al.id,
-            investor: Object.freeze({ id: al.investorId, name: al.investorName }), farm: Object.freeze({ id: al.farmId, name: al.farmName }),
+            investor: Object.freeze({ id: al.investorId, name: al.investorName, code: al.investorCode }), farm: Object.freeze({ id: al.farmId, name: al.farmName }),
             recordedById: idOf(r.Created_By), reversalOf: idOf(r.Reversal_Of),
           }));
         }

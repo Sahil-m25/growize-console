@@ -11,7 +11,11 @@ vi.mock("@/lib/data/endpoints/payments", async (orig) => {
   const m = await orig<typeof import("@/lib/data/endpoints/payments")>();
   return { ...m, paymentsRegister: { ...m.paymentsRegister, fixture: (b: never, a: never) => {
     const r = m.paymentsRegister.fixture!(b, a) as { ok: boolean; data?: Record<string, unknown> };
-    return r.ok ? { ...r, data: { ...r.data, problems: ["receipt-unreadable:2", "receipt-unlinked:1", "price-missing:2"] } } : r;
+    if (!r.ok) return r;
+    /* live-shaped rows: the register's own reference and the investor's ARL ID, over a Zoho record id for the key (W3-1) */
+    const rows = (r.data!.rows as { id: string; ref: string | null; investor: { id: string | null; code: string | null } }[]).map((x, i) =>
+      i === 0 ? { ...x, id: "1454168000003024857", ref: "T-0027", investor: { ...x.investor, id: "1454168000003024655", code: "ARL-INV-0206" } } : x);
+    return { ...r, data: { ...r.data, rows, problems: ["receipt-unreadable:2", "receipt-unlinked:1", "price-missing:2"] } };
   } } };
 });
 vi.mock("@/lib/data/endpoints/investors", async (orig) => {
@@ -35,6 +39,12 @@ describe("degraded Finance reads", () => {
     const h = renderToStaticMarkup(<ImTxn s={state()} me="meena" dispatch={() => {}} />);
     expect(h).toContain("3 payments in Zoho could not be read, so the list and the totals above leave them out.");
     expect(h).toContain("still due");
+  });
+  it("W3-1: the register prints the receipt's reference and the ARL ID, never a Zoho record id", () => {
+    const h = renderToStaticMarkup(<ImTxn s={state()} me="meena" dispatch={() => {}} />);
+    expect(h).toContain("T-0027");
+    expect(h).toContain("ARL-INV-0206");
+    expect(h).not.toMatch(/>\d{15,}</);
   });
   it("the Investors list reads KYC as not visible, says why, and offers no 'KYC not passed' cut", () => {
     const h = renderToStaticMarkup(<ImInv s={state()} me="harsha" dispatch={() => {}} />);

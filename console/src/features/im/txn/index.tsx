@@ -139,8 +139,8 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
           <th>Mode · UTR</th><th aria-label="Show or hide the reference"></th><th>Recorded</th><th>Reconciled</th></tr></thead>
         <tbody>{rows.length ? rows.map(t => (
           <tr className="k" key={t.id} onClick={() => { if (t.investor.id) dispatch({ type: "go", v: "inv", id: t.investor.id }); }} tabIndex={0}>
-            <td className="mono">{t.id}</td>
-            <td>{t.investor.name ?? t.investor.id ?? "Investor not readable"}<div className="sm mono">{t.investor.id ?? ""}</div></td>
+            <td className="mono">{t.ref ?? "—"}</td>
+            <td>{t.investor.name ?? t.investor.code ?? "Investor not readable"}<div className="sm mono">{t.investor.code ?? ""}</div></td>
             <td><span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold"
               : t.kind === "forfeit" ? "due" : "go"}`}>{t.kind}</span></td>
             <td className="n mono"><b>{t.kind === "refund" ? "−" : ""}{money(t.amount)}</b></td>

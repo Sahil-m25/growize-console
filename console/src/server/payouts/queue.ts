@@ -22,16 +22,18 @@ import { dayOf, lookupId, numOf, PAYOUTS_MODULE, quoteIds } from "./schedule";
 const RECORD_ID = /^\d{15,22}$/;
 const MAX_PAGES = 5;
 
-export const QUEUE_FIELDS = Object.freeze(["id", "Allotment", "Payout_Kind", "Instalment_No", "Period_Month", "Due_On",
+export const QUEUE_FIELDS = Object.freeze(["id", "Name", "Allotment", "Payout_Kind", "Instalment_No", "Period_Month", "Due_On",
   "Gross_Amount", "TDS_Amount", "Net_Amount", "Payout_State"]);
 export const SCHEDULE_FIELDS = Object.freeze([...QUEUE_FIELDS, "Paid_On", "Payout_Mode", "Payout_UTR", "Paid_By", "Modified_Time"]);
-export const QUEUE_ALLOTMENT_FIELDS = checkProjection(MODULES.allotments, ["id", "Customer", "LLP"]);
+export const QUEUE_ALLOTMENT_FIELDS = checkProjection(MODULES.allotments, ["id", "Customer", "Customer.ARL_ID", "LLP"]);
 
 export type PayoutState = "Scheduled" | "Paid" | "Held" | "Failed" | "Cancelled";
 const STATES: readonly PayoutState[] = ["Scheduled", "Paid", "Held", "Failed", "Cancelled"];
 
 export interface PayoutLine {
   readonly id: string;
+  /** The payout's own reference (Investor_Payouts.Name) — what the page prints instead of the record id (W3-1). */
+  readonly ref: string | null;
   readonly allotmentId: string;
   readonly kind: string | null;
   readonly instalment: number | null;
@@ -53,7 +55,7 @@ export interface ScheduleLine extends PayoutLine {
   readonly modifiedTime: string | null;
 }
 export interface QueueLine extends PayoutLine {
-  readonly investor: { readonly id: string | null; readonly name: string | null };
+  readonly investor: { readonly id: string | null; readonly name: string | null; /** the ARL ID, null when Zoho holds none */ readonly code: string | null };
   readonly farm: { readonly id: string | null; readonly name: string | null };
 }
 
@@ -76,7 +78,7 @@ export function lineOf(r: ZohoRecord): PayoutLine | null {
   const gross = money(r.Gross_Amount), tds = money(r.TDS_Amount);
   const month = dayOf(r.Period_Month);
   return {
-    id: r.id, allotmentId, kind: text(r.Payout_Kind), instalment: numOf(r.Instalment_No), month: month ? month.slice(0, 7) : null,
+    id: r.id, ref: text(r.Name), allotmentId, kind: text(r.Payout_Kind), instalment: numOf(r.Instalment_No), month: month ? month.slice(0, 7) : null,
     dueOn: dayOf(r.Due_On), gross, tds, net: r.Net_Amount === null || r.Net_Amount === undefined ? gross - tds : money(r.Net_Amount),
     state: STATES.includes(st as PayoutState) ? (st as PayoutState) : null,
   };
@@ -177,7 +179,7 @@ export function createPayoutReads(deps: PayoutReadDeps) {
       // A payout whose allotment the token does not show is not the seat's to see: left out, never guessed.
       const withNames = lines.filter((l) => allots.has(l.allotmentId)).map((l): QueueLine => {
         const a = allots.get(l.allotmentId)!;
-        return Object.freeze({ ...l, investor: Object.freeze({ id: lookupId(a.Customer), name: nameOf(a.Customer) }), farm: Object.freeze({ id: lookupId(a.LLP), name: nameOf(a.LLP) }) });
+        return Object.freeze({ ...l, investor: Object.freeze({ id: lookupId(a.Customer), name: nameOf(a.Customer), code: text(a["Customer.ARL_ID"]) }), farm: Object.freeze({ id: lookupId(a.LLP), name: nameOf(a.LLP) }) });
       }).sort(byDue);
       return {
         ok: true, month, truncated: got.truncated,
