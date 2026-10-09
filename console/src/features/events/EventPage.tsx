@@ -18,6 +18,7 @@
    that last, rare gap instead of this page assuming it away). — ponytail: known ceiling, upgrade
    when the reducer exports its own row list. */
 
+import { Tw } from "@/components/ui";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ASSIGNRULE, UNIT } from "@/domain";
@@ -280,7 +281,7 @@ export function EventPage({ id }: { id: string }) {
               <h3>Leads from this event</h3><div className="sp" />
               <span className="sm mono">{ran && untagged ? `${st.tagged} of ${captured} tagged` : st.tagged}</span>
             </div>
-            <div className="tw scroll"><table>
+            <Tw className="scroll"><table>
               <thead><tr>
                 <th scope="col">Lead</th><th scope="col">Stage</th>
                 <th scope="col" style={{ textAlign: "right" }}>Total</th>
@@ -322,7 +323,7 @@ export function EventPage({ id }: { id: string }) {
                   </td></tr>
                 )}
               </tbody>
-            </table></div>
+            </table></Tw>
           </div>
         </div>
 

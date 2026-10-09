@@ -22,6 +22,7 @@
    "History · n" chip in the heading — see `./Feed`, the `updates.feed` panel's body.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { gNew, P, feedRows, feedScope, unread, updateCount, updates } from "@/lib/selectors";
@@ -138,7 +139,7 @@ export function UpdatesPage() {
                         }}>{x.k === "owner" ? "Open Leads" : "Open Today"}</Chip>
                       </div>
                     ) : expanded ? (
-                      <div className="tw"><table><tbody>
+                      <Tw><table><tbody>
                         {x.rows.map((r, i) => {
                           const l = r.lead ? state.LEADS.find((y) => y.id === r.lead) : undefined;
                           return (
@@ -158,7 +159,7 @@ export function UpdatesPage() {
                             </tr>
                           );
                         })}
-                      </tbody></table></div>
+                      </tbody></table></Tw>
                     ) : null}
                   </div>
                 );

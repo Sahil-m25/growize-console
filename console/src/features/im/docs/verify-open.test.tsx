@@ -1,6 +1,7 @@
 /* W3-E2E-5 — Documents > Verify opened nothing live: the drawer gate looked the paper up in the demo book (DOCS), which is
    empty live, so the reducer refused openDrawer and the drawer host refused to draw. Live, the row is GET /api/documents'
    and the drawer opens by the row's key; the routes re-derive the right on the press. Synthetic book only. */
+import { Tw } from "@/components/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -78,7 +79,7 @@ function find(n: ReactNode, words: string, out: ReactElement<{ onClick?: (e: unk
   if (Array.isArray(n)) { n.forEach((c) => find(c, words, out)); return out; }
   if (!isValidElement(n)) return out;
   const el = n as ReactElement<{ children?: ReactNode; onClick?: () => void }>;
-  if (typeof el.type === "function") return out;
+  if (typeof el.type === "function" && el.type !== Tw) return out;   /* Tw is the scroll wrapper, a plain div around its children */
   if (el.type === "button" && el.props.children === words) out.push(el as never);
   find(el.props.children, words, out);
   return out;

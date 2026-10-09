@@ -8,6 +8,7 @@
    but "Koramangala Club: 26 names, 9 qualified, nothing reserved — it breaks at reservation."
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { SOURCES, SPREAD } from "@/domain";
 import type { EventRec } from "@/domain";
 import {
@@ -70,7 +71,7 @@ export function NumbersMkt() {
         {S === "events" && (
           <div className="card fill"><div className="ch"><h3>By event</h3><div className="sp" />
             <span className="sm">every figure counted off the lead records, not typed</span></div>
-            <div className="tw"><table>
+            <Tw><table>
               <thead><tr><th>Event</th><th>When</th><th className="n">Captured</th><th className="n">In the book</th>
                 <th className="n">Qualified</th><th className="n">Reserved</th><th className="n">Cost / capture</th>
                 <th>Where it breaks</th></tr></thead>
@@ -83,13 +84,13 @@ export function NumbersMkt() {
                   <td className="n">{st.qual}</td><td className="n">{st.res}</td>
                   <td className="n mono">{st.captured ? rupee(e.cost / st.captured) : "—"}</td>
                   <td><Brk b={b} /></td></tr>
-              ))}</tbody></table></div></div>
+              ))}</tbody></table></Tw></div>
         )}
 
         {S === "channels" && (
           <div className="card fill"><div className="ch"><h3>By channel</h3><div className="sp" />
             <span className="sm">where the name came from, at capture</span></div>
-            <div className="tw"><table>
+            <Tw><table>
               <thead><tr><th>Channel</th><th className="n">Captured</th><th className="n">Touched</th>
                 <th className="n">Qualified</th><th className="n">Reserved</th><th className="n">Closed lost</th>
                 <th>Where it breaks</th></tr></thead>
@@ -100,7 +101,7 @@ export function NumbersMkt() {
                   <td className="n">{st.qual}</td><td className="n">{st.res}</td>
                   <td className="n">{st.lost || "—"}</td>
                   <td><Brk b={b} /></td></tr>
-              ))}</tbody></table></div></div>
+              ))}</tbody></table></Tw></div>
         )}
 
         {S === "breaks" && (

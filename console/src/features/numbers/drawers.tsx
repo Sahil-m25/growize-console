@@ -12,6 +12,7 @@
    `@/features/pay/reducer` already uses for RCACT/RCWHO, just declared from here since Numbers,
    not pay, owns this drawer in this split. ────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { BANDS, RECOVACTS } from "@/domain";
 import type { PersonKey, RecovAction } from "@/domain";
 import { dAdd, dOf, dayGap, dayOf, iso } from "@/lib/format";
@@ -161,7 +162,7 @@ function StageBody() {
   return (
     <div className="card ux-numbers-panel">
       <Hd t="Time in stage" />
-      <div className="tw"><table className="ttab">
+      <Tw><table className="ttab">
         <thead><tr><th>From → to</th><th className="n">Median</th><th className="n">Range</th>
           <th className="n">Made it</th><th>Longest waiting now</th></tr></thead>
         <tbody>{trans.filter(t => t.n || t.sitting.length).map(t => (
@@ -183,7 +184,7 @@ function StageBody() {
                 ? <> <span className="tag late" title="More than twice the median for this step">stuck</span></> : null}
             </>) : "—"}</td>
           </tr>
-        ))}</tbody></table></div>
+        ))}</tbody></table></Tw>
       <div className="cb"><p className="sm" style={{ margin: 0 }}>A stuck investor has waited over twice the
         usual time for this step. Open the relationship to review the blocker and next follow-up.</p></div>
     </div>
@@ -198,7 +199,7 @@ function AgeBody() {
   return (
     <div className="card ux-numbers-panel">
       <Hd t="Age of the active book" />
-      <div className="tw"><table className="ttab">
+      <Tw><table className="ttab">
         <thead><tr><th>Since last touch</th>
           {BANDS.slice(0, 3).map(b => (
             <th className="n" key={b.t}><span className="sw" style={{ background: b.c }} />{b.t}</th>))}
@@ -210,7 +211,7 @@ function AgeBody() {
                 {...(i === 0 && row[0] === "31 d +" && v ? { style: { color: "var(--late)" } } : {})}
               >{v || "—"}</td>
             ))}</tr>
-        ))}</tbody></table></div>
+        ))}</tbody></table></Tw>
       <div className="cb"><p className="sm" style={{ margin: 0 }}>Review older relationships for an unresolved
         blocker or missing next step. Choose the follow-up using the investor’s recorded contact
         permissions.</p></div>

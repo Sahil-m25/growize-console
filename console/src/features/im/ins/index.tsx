@@ -4,6 +4,7 @@
    Service section draws for an Account Management seat. In the console this is the Investors half
    of Numbers. The money view, and only the money view — the funnel belongs to the lead side. */
 
+import { Tw } from "@/components/ui";
 import type { KeyboardEvent } from "react";
 import { fmtDay, inr, isAM, money, pageReadable, secOf, TIERS, FORFEIT } from "@/lib/im";
 import { useApiRead, type Read } from "@/lib/data/api";
@@ -162,7 +163,7 @@ function Svc({ v, s, am }: { v: Extract<SectionValue, { section: "svc" }>; s: Im
       </div>
       {mgr ? (
         <div className="card"><div className="ch"><h3>By manager</h3><div className="sp"></div>
-          <span className="sm">the load, and whether it is being carried</span></div><div className="tw"><table>
+          <span className="sm">the load, and whether it is being carried</span></div><Tw><table>
           <thead><tr><th>Manager</th><th className="n">Accounts</th><th className="n">Tier A</th>
             <th className="n">Gone quiet</th><th className="n">Conversations</th><th className="n">Open tickets</th>
             <th>Read of the book</th></tr></thead>
@@ -183,7 +184,7 @@ function Svc({ v, s, am }: { v: Extract<SectionValue, { section: "svc" }>; s: Im
               <td className="n">—</td><td className="n">—</td>
               <td className="sm">{v.pool.shouldBeNamed ? flag(v.pool.shouldBeNamed, "should be named", "n") : <span className="tag go">nothing flagged</span>}</td></tr>
           ) : null}
-          </tbody></table></div>
+          </tbody></table></Tw>
           <div className="cb" style={{ paddingTop: "9px" }}><p className="sm" style={{ margin: 0 }}><b>What this measures,
             and what it does not.</b>{" Every column here is service — was the conversation had, was the ticket answered, did the account end the call warm. None of it is outcome: a manager can score perfectly on this table while not one of their accounts ever buys a second unit. That is a deliberate choice for now, and it is the same objection that was put to the lead side before it started naming the work — worth revisiting once this team has a year behind it."}</p>
           </div></div>
@@ -195,7 +196,7 @@ function Svc({ v, s, am }: { v: Extract<SectionValue, { section: "svc" }>; s: Im
 
 function Comp({ v, goInv }: { v: Extract<SectionValue, { section: "comp" }>; goInv: (id: string) => void }) {
   return (
-    <div className="card fill"><div className="ch"><h3>Who is not compliant</h3></div><div className="tw"><table>
+    <div className="card fill"><div className="ch"><h3>Who is not compliant</h3></div><Tw><table>
       <thead><tr><th>Investor</th><th>KYC</th><th>PAN</th><th>Bank match</th>
         <th>FEMA</th><th>Blocks</th></tr></thead>
       <tbody>{v.rows.map(x => (
@@ -210,7 +211,7 @@ function Comp({ v, goInv }: { v: Extract<SectionValue, { section: "comp" }>; goI
             : <span className="tag go"><span className="dot"></span>on file</span>) : <span className="sm">n/a</span>}</td>
           <td className="sm">{x.blocks ?? "—"}</td></tr>
       ))}
-      </tbody></table></div>
+      </tbody></table></Tw>
       <div className="cb" style={{ paddingTop: "9px" }}><p className="sm" style={{ margin: 0 }}>{"The last column is the point of the table: what is actually held up. Nothing here blocks a conversation or a reservation — it blocks "}<b>allotment</b>{", and it does so silently unless somebody reads this."}</p>
       </div></div>
   );

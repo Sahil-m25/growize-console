@@ -9,6 +9,7 @@
    (`doorRow`, 8487-8488) into `PANELS["updates.feed"]`, so both `UpdatesPage` (for the door's
    count) and `./drawer` (for the panel body) need it, and neither should import the other. */
 
+import { Tw } from "@/components/ui";
 import { Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { dLabel } from "@/lib/format";
@@ -30,7 +31,7 @@ export function Feed() {
 
   return rows.length
     ? (
-      <div className="tw"><table><tbody>
+      <Tw><table><tbody>
         {rows.map((e, i) => {
           const note = logNote(state, e);
           const l = state.LEADS.find((x) => x.id === e.lead);
@@ -58,7 +59,7 @@ export function Feed() {
             </Fragment>
           );
         })}
-      </tbody></table></div>
+      </tbody></table></Tw>
     )
     : (
       <div className="empty">

@@ -5,6 +5,7 @@
    phase 1 from the demo book. A record the person cannot open shows an in-page refusal and nothing
    is read. An IR sees an investor's emails only for an investor from their own lead (D69). */
 
+import { Tw } from "@/components/ui";
 import { useState } from "react";
 import type { EmailLine } from "@/lib/zoho/client";
 import type { ImState, RecEmail } from "@/lib/im";
@@ -26,7 +27,7 @@ export function EmailList({ src, kind, id, lines, title, sub, empty }: { src: Sr
   return (
     <div className="card fill"><div className="ch"><h3>{title}</h3><div className="sp" />
       <span className="sm">{sub || lines.length + " email" + (lines.length === 1 ? "" : "s") + " · read only"}</span></div>
-      <div className="tw"><table><thead><tr><th>From</th><th>Subject</th><th>When</th></tr></thead>
+      <Tw><table><thead><tr><th>From</th><th>Subject</th><th>When</th></tr></thead>
         <tbody>{lines.length ? lines.map(r => {
           const on = open === r.messageId, go = () => setOpen(on ? null : r.messageId);
           return (
@@ -37,7 +38,7 @@ export function EmailList({ src, kind, id, lines, title, sub, empty }: { src: Sr
               <td className="sm mono">{emailWhen(r.sentTime)}</td>
             </tr>
           );
-        }) : <tr><td colSpan={3}><div className="empty">{empty}</div></td></tr>}</tbody></table></div>
+        }) : <tr><td colSpan={3}><div className="empty">{empty}</div></td></tr>}</tbody></table></Tw>
       {line && one.state === "loading" ? <p className="sm" style={{ margin: "8px 16px" }}>Reading the email…</p> : null}
       {line && one.state === "error" ? <div className="note bad" role="alert" style={{ margin: 8 }}>{one.err.error}</div> : null}
       {line && one.state === "ok" ? (

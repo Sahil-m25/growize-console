@@ -5,6 +5,7 @@
    It holds no investor detail of its own — every figure is counted off records that exist
    elsewhere, and every investor-bearing line reads "Investor details withheld". */
 
+import { Tw } from "@/components/ui";
 import {
   activityBase, allocated, day6, freeUnits, GLYPH, nOpen, nState, pageReadable, released, reserved,
   role, safeNote, secOf, sysChecks, teamOf, who,
@@ -106,7 +107,7 @@ function Agree({ s }: { s: ImState }) {
         <Stat v={freeUnits(s)} t="free to sell" bad={over} />
         <Stat v={marks.length} t="marks that disagree with the ledger" bad={!!marks.length} />
       </div>
-      <div className="card fill"><div className="ch"><h3>Every check, and what it would cost</h3></div><div className="tw"><table>
+      <div className="card fill"><div className="ch"><h3>Every check, and what it would cost</h3></div><Tw><table>
         <thead><tr><th>Check</th><th>Now</th><th>What a failure means</th></tr></thead><tbody>
           {rows.map(([t, ok, now, cost]) => (
             <tr key={t}>
@@ -116,7 +117,7 @@ function Agree({ s }: { s: ImState }) {
                 <div className="sm">{now}</div></td>
               <td className="sm">{cost}</td></tr>
           ))}
-        </tbody></table></div>
+        </tbody></table></Tw>
         <div className="cb" style={{ paddingTop: "9px" }}><p className="sm" style={{ margin: 0 }}>{"Every one of these is computed, here, from the records the Investors side holds — none of it is a stored status anybody can set. A check that fails is therefore a fact about the data, not a flag somebody forgot to clear."}</p></div></div>
     </>
   );
@@ -148,7 +149,7 @@ function WhoDid({ s, me, reveals, seats }: { s: ImState; me: string; reveals: En
           {" An administrator can hand somebody else a seat that reads every identity in the book. Nothing in software prevents that — it is what administration "}<em>is</em>{" — so the answer is not a lock: it is that the act appears above with a name and a time, on a page you read. What is closed is the version with only one person in it, because nobody can promote themselves."}</p>
       </div></div>
       <div className="card fill" style={{ marginTop: "8px" }}><div className="ch"><h3>How busy each seat has been</h3>
-        <div className="sp"></div><span className="sm">this session</span></div><div className="tw"><table>
+        <div className="sp"></div><span className="sm">this session</span></div><Tw><table>
         <thead><tr><th>Person</th><th>Team</th><th>Seat</th><th className="n">Actions</th>
           <th className="n">Identity reveals</th><th>Last thing they did</th></tr></thead>
         <tbody>{s.data.SIGNINS.map(k => {
@@ -162,7 +163,7 @@ function WhoDid({ s, me, reveals, seats }: { s: ImState; me: string; reveals: En
               <td className="sm">{mine.length ? <>{mine[0].what} <span className="mono">{day6(mine[0].at)}</span></> : "nothing yet"}</td>
             </tr>
           );
-        })}</tbody></table></div></div>
+        })}</tbody></table></Tw></div>
     </>
   );
 }

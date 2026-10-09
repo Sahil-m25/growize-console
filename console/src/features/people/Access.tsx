@@ -8,6 +8,7 @@
    the feature exists. A login is never shared: the page is lent, to one named person, for a stated
    window, with a reason — and never more than the lender holds. */
 
+import { Tw } from "@/components/ui";
 import { CAPT, PAGECAPS, TSTATE } from "@/domain";
 import type { NavKey, TempGrant, TempStateRead } from "@/domain";
 import { Pname } from "@/components/ui";
@@ -104,7 +105,7 @@ export function Access() {
             keep an audit record.
           </p>
           {live.length ? (
-            <div className="tw">
+            <Tw>
               <table>
                 {HEAD}
                 <tbody>
@@ -113,7 +114,7 @@ export function Access() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Tw>
           ) : (
             <div className="empty">No active temporary access.</div>
           )}
@@ -132,7 +133,7 @@ export function Access() {
             </span>
           </div>
           {past.length ? (
-            <div className="tw">
+            <Tw>
               <table>
                 {HEAD}
                 <tbody>
@@ -141,7 +142,7 @@ export function Access() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Tw>
           ) : (
             <div className="empty">No previous grants.</div>
           )}

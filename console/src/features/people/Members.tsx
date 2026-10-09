@@ -5,6 +5,7 @@
    ONE of them opens in the drawer, so this screen never splits into two columns the eye has to
    choose between. */
 
+import { Tw } from "@/components/ui";
 import { PAGECAPS } from "@/domain";
 import type { PersonKey } from "@/domain";
 import { Pname } from "@/components/ui";
@@ -28,7 +29,7 @@ export function Members({ rows }: { rows: MemberRow[] }) {
           <div className="sp" />
           <span className="sm">Open a member for availability, role and access</span>
         </div>
-        <div className="tw">
+        <Tw label="Members, scrolls sideways">
           <table>
             <thead>
               <tr>
@@ -139,7 +140,7 @@ export function Members({ rows }: { rows: MemberRow[] }) {
               })}
             </tbody>
           </table>
-        </div>
+        </Tw>
       </div>
     </div>
   );

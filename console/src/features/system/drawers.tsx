@@ -5,6 +5,7 @@
    What it does, what breaks if it stops, who owns it, and the last three weeks day by day. The
    history is read off the record, not sampled. */
 
+import { Tw } from "@/components/ui";
 import { CKDAYS, CKS } from "@/domain";
 import { Pname } from "@/components/ui";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers";
@@ -77,7 +78,7 @@ function Body({ id }: DrawerProps) {
         </div>
         <div className="drwsec">
           <p className="lbl">Day by day</p>
-          <div className="tw">
+          <Tw>
             <table>
               <tbody>
                 {h
@@ -97,7 +98,7 @@ function Body({ id }: DrawerProps) {
                   ))}
               </tbody>
             </table>
-          </div>
+          </Tw>
         </div>
       </details>
     </>

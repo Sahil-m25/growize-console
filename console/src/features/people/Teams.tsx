@@ -8,6 +8,7 @@
    something they hold themselves. A seat that asks for a page its chain cannot reach is a CLASH —
    named here rather than quietly dropped. */
 
+import { Tw } from "@/components/ui";
 import { SEAT } from "@/domain";
 import type { Person, PersonKey, SeatKey } from "@/domain";
 import { Ag, Pav, Pname } from "@/components/ui";
@@ -206,7 +207,7 @@ export function Teams({ scope, sel }: { scope: PersonKey[]; sel: PersonKey | nul
             <div className="sp" />
             <span className="sm">every one of them, with a name on it</span>
           </div>
-          <div className="tw">
+          <Tw label="Teams, scrolls sideways">
             <table>
               <thead>
                 <tr>
@@ -246,7 +247,7 @@ export function Teams({ scope, sel }: { scope: PersonKey[]; sel: PersonKey | nul
                 )}
               </tbody>
             </table>
-          </div>
+          </Tw>
         </div>
       </details>
     </div>

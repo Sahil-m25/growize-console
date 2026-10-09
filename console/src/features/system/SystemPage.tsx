@@ -8,6 +8,7 @@
    carries the logged-action count that used to be a tile you could not click) and, for the page
    owner, the failed-write test. */
 
+import { Tw } from "@/components/ui";
 import { CAPT, CKDAYS, CKS, DEFSEATS, NOSIGN, PAGECAPS, SEAT, SEATCAPS } from "@/domain";
 import type { Check, PersonKey, SeatKey } from "@/domain";
 import { useRouter } from "next/navigation";
@@ -98,7 +99,7 @@ function GridBody() {
               {def.includes(seat) ? "" : nos.includes(seat) ? " · Investors pages only" : " · by grant only"}
             </summary>
             {def.includes(seat) ? (
-              <div className="tw">
+              <Tw>
                 <table>
                   <thead>
                     <tr>
@@ -117,7 +118,7 @@ function GridBody() {
                       ))}
                   </tbody>
                 </table>
-              </div>
+              </Tw>
             ) : (
               <p className="sm" style={{ margin: "8px 0" }}>
                 {nos.includes(seat)
@@ -173,7 +174,7 @@ function LogBody() {
                 </span>
               ) : null}
             </div>
-            <div className="tw">
+            <Tw>
               <table>
                 <thead>
                   <tr>
@@ -239,7 +240,7 @@ function LogBody() {
                   )}
                 </tbody>
               </table>
-            </div>
+            </Tw>
       {rows.length ? (
         <div style={{ paddingTop: "8px" }}>
           <ActLegend />

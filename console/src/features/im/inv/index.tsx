@@ -4,6 +4,8 @@
    record. The record is built as one page with sections rather than a wall: who they are, what
    they hold, what they have paid, what paper exists, and the journey that got them here. */
 
+import { Tw } from "@/components/ui";
+import { useDocTitle } from "@/components/shell/useDocTitle";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { StepUp } from "../stepup";
 import {
@@ -157,7 +159,7 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           ) : null;
         })}
       </div>
-      <div className="secw"><div className="card fill"><div className="tw"><table>
+      <div className="secw"><div className="card fill"><Tw><table>
         <thead><tr><th>Investor</th><th>ARL ID</th><th className="n">Units</th>
           {am ? <><th>Tier</th><th>Manager</th><th>Last heard</th><th>Next owed</th><th>Land</th><th>App</th></>
             : <><th>Land</th><th>State</th><th>KYC</th><th className="n">Paid</th><th className="n">Due</th><th>IR</th></>}
@@ -198,7 +200,7 @@ function VInv({ s, me, dispatch }: ImPageProps) {
         : <tr><td colSpan={9}><div className="empty">Nobody matches that.{s.ui.IQ.trim()
           ? <div className="sm">{"No investor you can open matches “" + s.ui.IQ.trim() + "”"
             + (IFILT ? " under " + EXC[IFILT][0] : "") + "."}</div> : null}</div></td></tr>}
-        </tbody></table></div></div></div>
+        </tbody></table></Tw></div></div>
     </>
   );
 }
@@ -240,7 +242,7 @@ function VIrInv({ s, me, dispatch }: ImPageProps) {
         {never.size ? <button className={`sc ${cut ? "on" : ""}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: "appnever" } })}>
           Invited, never signed in <i className="warn">{never.size}</i></button> : null}
       </div>
-      <div className="secw"><div className="card fill"><div className="tw"><table>
+      <div className="secw"><div className="card fill"><Tw><table>
         <thead><tr>{IR_COLS.map(c => <th key={c}>{c}</th>)}<th>App</th></tr></thead>
         <tbody>{rows.length ? rows.map(x => (
           <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
@@ -254,7 +256,7 @@ function VIrInv({ s, me, dispatch }: ImPageProps) {
         )) : <tr><td colSpan={IR_COLS.length + 1}>{r.state === "loading" || r.state === "idle" ? <div className="empty">Reading your investors…</div>
           : <div className="empty">{q ? "Nobody matches that." : "None of your leads has said yes yet."}
             {q ? <div className="sm">{"No investor from your leads matches “" + s.ui.IQ.trim() + "”."}</div> : null}</div>}</td></tr>}
-        </tbody></table></div></div></div>
+        </tbody></table></Tw></div></div>
     </>
   );
 }
@@ -326,6 +328,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   const papersRead = useApiRead(documentsList, { s, me }, live && rec.sections.includes("paper") ? "all" : null);
   const papers: PaperRows = !live ? null : papersRead.state === "ok" ? { rows: papersRead.data.rows.filter(d => d.contactId === rec.id || d.contactId === x?.id) }
     : papersRead.state === "error" ? { error: papersRead.err.error } : { loading: true };
+  useDocTitle(x ? `${x.n || x.id} · Investor · Growize console` : null);
   if (!x) return null;
   const am = isAM(s, me), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
   const hr = heard?.get(x.id), o = heard === undefined ? overdue(s, me, x) : hr?.overdue ?? null;
@@ -617,8 +620,8 @@ function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne>; rec: Inves
             ? Object.entries(x.blocks).map(([k, n], i) => {
               const f = s.data.FARMS.find(y => y.k === k);
               return (
-                <Fragment key={k}>{i ? <br /> : null}<b>{n}</b> on <span style={{ cursor: "pointer", color: "var(--accent)", fontWeight: 600 }}
-                  role="button" tabIndex={0} onClick={() => dispatch({ type: "go", v: "farms" })}>{f ? f.n : "Block " + k}</span></Fragment>
+                <Fragment key={k}>{i ? <br /> : null}<b>{n}</b> on <button type="button" className="lnk" style={{ color: "var(--accent)", fontSize: "inherit", minHeight: 24, minWidth: 24, padding: "2px 0" }}
+                  onClick={() => dispatch({ type: "go", v: "farms" })}>{f ? f.n : "Block " + k}</button></Fragment>
               );
             })
             : <span className="tag late">none — the units went back on the shelf</span>}</dd>
@@ -745,7 +748,7 @@ export function SecPaperLive({ s, me, dispatch, x, papers }: ImPageProps & { x: 
       <div className="card fill"><div className="ch"><h3>Everything on file</h3><div className="sp" />
         <span className="sm">{rows.length + " document" + (rows.length === 1 ? "" : "s") + " with a signing request, all under "}<span className="mono">{x.code ?? x.id}</span></span>
         {may(s, me, "doc") ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "send", id: x.id, seed: { DTPL: null } })}>＋ Send one</button> : null}</div>
-        <div className="tw"><table><thead><tr><th>Document</th><th>Sent</th><th>Signing</th><th>State</th><th></th></tr></thead>
+        <Tw><table><thead><tr><th>Document</th><th>Sent</th><th>Signing</th><th>State</th><th></th></tr></thead>
           <tbody>{rows.length ? rows.map(d => (
             <tr key={d.key}>
               <td><b>{d.label}</b><div className="sm">{d.module === "Contacts" ? "Personal" : "Allotment"}</div></td>
@@ -758,7 +761,7 @@ export function SecPaperLive({ s, me, dispatch, x, papers }: ImPageProps & { x: 
                 ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.recordId, seed: { DREF: "" } })}>Verify</button> : null}</td>
             </tr>
           )) : <tr><td colSpan={5}><div className="empty">Nothing on file.</div></td></tr>}
-          </tbody></table></div></div>
+          </tbody></table></Tw></div>
       <InvUploads s={s} me={me} dispatch={dispatch} inv={x.id} />
     </>
   );
@@ -788,7 +791,7 @@ function SecPaper({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
       <div className="card fill"><div className="ch"><h3>Everything on file</h3><div className="sp" />
         <span className="sm">{docs.length + " document" + (docs.length === 1 ? "" : "s") + ", all under "}<span className="mono">{x.id}</span></span>
         {may(s, me, "doc") ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "send", id: x.id, seed: { DTPL: null } })}>＋ Send one</button> : null}</div>
-        <div className="tw"><table><thead><tr><th>Document</th><th>Sent</th><th>Signing</th><th>State</th>
+        <Tw><table><thead><tr><th>Document</th><th>Sent</th><th>Signing</th><th>State</th>
           <th>Reference</th><th></th></tr></thead>
           <tbody>{docs.length ? docs.map(d => (
             <tr key={d.id}>
@@ -803,7 +806,7 @@ function SecPaper({ s, me, dispatch, x }: ImPageProps & { x: ImInvestor }) {
                 : <BlockIt s={s} me={me} dispatch={dispatch} d={d} />}</td>
             </tr>
           )) : <tr><td colSpan={6}><div className="empty">Nothing on file.</div></td></tr>}
-          </tbody></table></div></div>
+          </tbody></table></Tw></div>
       <InvUploads s={s} me={me} dispatch={dispatch} inv={x.id} />
     </>
   );

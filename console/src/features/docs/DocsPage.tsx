@@ -6,6 +6,7 @@
    move says so ("Your move · …") and opens that lead's Paperwork row, where the step is done.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { IMP } from "@/domain";
 import { may } from "@/lib/selectors";
 import { useApiRead } from "@/lib/data/api";
@@ -61,10 +62,10 @@ export function DocsPage() {
       <section className="ux-docs ux-section">
       <ReadNote r={r} what="the documents" />
       <div className="card fill"><div className="ch"><h3>Document register</h3><span className="cnt">{all.length}</span></div>
-        <div className="tw"><table>
+        <Tw label="Document register, scrolls sideways"><table>
           <thead><tr><th>Document</th><th>Investor</th><th>Sent / issued</th><th>Status</th><th>Completed</th></tr></thead>
           <tbody>{all.length ? <>{grp("Waiting", open)}{grp("Complete", done)}</>
-            : <tr><td colSpan={5} className="empty">{r.state === "loading" ? "Reading…" : "No Finance documents on your eligible investors."}</td></tr>}</tbody></table></div></div>
+            : <tr><td colSpan={5} className="empty">{r.state === "loading" ? "Reading…" : "No Finance documents on your eligible investors."}</td></tr>}</tbody></table></Tw></div>
       </section>
     </>
   );
