@@ -7,7 +7,7 @@
    reducer's moveTicket / handToFinance. A success re-reads every live read (the record's ticket list included). */
 
 import { useState, type MouseEvent } from "react";
-import { aged, day6, I, isAM, isSuper, may, mayTkt, needsFin, safeNote, watchedTkt, who } from "@/lib/im";
+import { aged, day6, fmtAt, I, isAM, isSuper, may, mayTkt, needsFin, safeNote, watchedTkt, who } from "@/lib/im";
 import type { ImTicket } from "@/lib/im";
 import { useApiMode, useApiWrite } from "@/lib/data/api";
 import { caseHandover, caseMove } from "@/lib/data/endpoints/cases";
@@ -38,7 +38,7 @@ export function TkRow({ s, me, dispatch, t, investorName, watched }: ImPageProps
         <span><span className="mono">{t.id}</span>{" · " + t.cat + " · " + (x ? x.n : investorName || t.inv) + " · "}
           <ImPname s={s} k={t.own} first />{" · opened "}<span className="mono">{day6(t.opened)}</span>
           {t.state === "closed" ? <>{" · closed "}<span className="mono">{day6(t.closed)}</span></>
-            : " · " + d + " day" + (d === 1 ? "" : "s") + " old, SLA " + t.sla}</span>
+            : " · " + d + " day" + (d === 1 ? "" : "s") + " old, SLA " + (t.sla ? fmtAt(t.sla) : "not set")}</span>
         {t.d ? <span className="sm" style={{ marginTop: 4, display: "block" }}>{safeNote(s, me, t.d)}</span> : null}</div>
       {t.handed ? <span className="tag br">{"handed to " + first(t.own) + " by " + first(t.handed.by) + " · " + day6(t.handed.at)}</span> : null}
       {(watched ?? watchedTkt(s, me, t)) ? <span className="sm">Yours until you handed it on. You can see where it has got to and tell them; you cannot work it, which is the point.</span> : null}
