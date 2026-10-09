@@ -11,6 +11,10 @@
           "id": "9007199254740994010"
         },
         "Kind": "Part",
+        "Amount": 40000,
+        "UTR": "SYNTHUTR000000003",
+        "Received_On": "2026-09-27",
+        "Matched_By": { "id": "9007199254740993091" },
         "Match_State": "Matched"
       }
     ],

@@ -23,6 +23,7 @@ import { moneyBlocks, arlHoldings } from "@/lib/data/endpoints/payments";
 import { payoutSchedule, payoutScheduleRun } from "@/lib/data/endpoints/payouts";
 import { appCard, appUnlock } from "@/lib/data/endpoints/app";
 import { OVERRIDE_REASON_MAX, OVERRIDE_REASON_MIN, TEN_PERCENT_HINT, TEN_PERCENT_UNKNOWN_HINT } from "@/lib/im/app-gate";
+import { TenTrail } from "@/components/money/TenTrail";
 
 type P = ImPageProps & { x: ImInvestor };
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
@@ -232,6 +233,8 @@ export function AppAccessCard(p: P) {
             : <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "applock", id: x.id })}>Lock app access</button>}
         </div>
           {gateShut ? <p className="sm" role="status" data-gate="ten-percent" style={{ margin: "9px 0 0" }}>{gateWhy}</p> : null}
+          {/* D137 ruling 2(a): the gate explains itself — the matched receipts, their running total and the 10% line */}
+          {card.access === "Hold" && card.tenPercentTrail ? <TenTrail trail={card.tenPercentTrail} nameOf={id => who(s, id).n} /> : null}
           {gateShut && card.mayOverride && card.tenPercent === "not-verified"
             ? <AppOverride name={x.n} onUnlock={reason => unlock({ id: x.id, expectedModifiedTime: card.modifiedTime, override: { reason } }).then(r => r.ok)} /> : null}
           <p className="sm" style={{ margin: "9px 0 0" }}>The welcome never goes by itself: the account is created on hold and stays locked — a match does not unlock it — until this button. Every change is on their Activity.</p></div>
@@ -245,7 +248,7 @@ export function AppAccessCard(p: P) {
 }
 
 /* ---- GC-1526: Finance's override — unlock without a verified 10%, with a typed reason and an on-page confirmation (never a
-   native dialog, M18-S11). Shown only to Finance Operations and the Head of Finance (the card's mayOverride); the server re-checks
+   native dialog, M18-S11). Shown only to Finance Operations, the Head of Finance and Digital Infrastructure (D137 2(b); the card's mayOverride); the server re-checks
    the seat, writes the reason as a Note on the Contact under their name, and logs it (Plane C app-access-override). ---- */
 export function AppOverride({ name, onUnlock, start = "", reason = "" }: {
   name: string; onUnlock: (reason: string) => Promise<boolean>;

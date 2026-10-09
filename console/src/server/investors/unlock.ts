@@ -28,11 +28,13 @@
  * Each release writes one ops-log line (Plane B, `app-access` / `unlocked`, the releaser and the Contact id only) and,
  * M08-S08-NOTE-10, one Plane C authority line (`app-access-released`: who, seat, the Contact id, ok / refused + code).
  *
- * G2 (owner workflow, 8 Oct; D136 proposed): the release opens only after the 10% is verified — at least one MATCHED Advance or
- * Full receipt on one of the investor's live (not Cancelled) allotments, read on the releaser's own token (Receipts ← allotment
- * ← Customer, as money/match reads it). Without one the unlock is refused (`ten-percent-not-verified`) and the card says why; a
- * read that fails or cannot be trusted refuses too (`ten-percent-unknown`) — never an unlock on an unknown.
- * GC-1526: Finance Operations and the Head of Finance (only — `authority.mayOverride`) may unlock without it, with a typed reason
+ * G2 (owner workflow, 8 Oct; D136 proposed; D137 ruling 2(a)): the release opens only after the 10% is verified — the SUM of
+ * Finance-MATCHED inbound receipts (Advance, Part, Balance, Full, minus matched refunds) on the investor's live (not Cancelled)
+ * allotments reaches 10% of their committed amount (units × Unit_Price), read on the releaser's own token (Receipts ← allotment
+ * ← Customer, as money/match reads it). A Part counts. Without it the unlock is refused (`ten-percent-not-verified`) and the card
+ * carries the trail (lib/money/ten-percent: IST date-time, amount, masked reference, who matched, running total vs 10%); a read
+ * that fails or cannot be trusted refuses too (`ten-percent-unknown`) — never an unlock on an unknown.
+ * GC-1526 + D137 ruling 2(b): Finance Operations, the Head of Finance and Digital Infrastructure (only — `authority.mayOverride`) may unlock without it, with a typed reason
  * (>= OVERRIDE_REASON_MIN characters) and an explicit confirmation. The reason is written FIRST, as a Note on the Contact under
  * their own name (no note, no unlock; an unlock that then fails takes the note back), then the guarded Hold → Invite; one ops-log
  * line (`app-access` / `override-unlocked`) and one Plane C line (`app-access-override`, beside the `app-access-released` one).
@@ -48,7 +50,9 @@ import { isUserCredential } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
 import type { OpsLog } from "../../lib/zoho/log";
 import type { InvestorEvents } from "../data/events";
-import { NOT_OVERRIDE_TEXT, OVERRIDE_REASON_MIN, TEN_PERCENT_KINDS, TEN_PERCENT_TEXT, TEN_PERCENT_UNKNOWN_TEXT, overrideReasonShort } from "../../lib/im/app-gate";
+import { NOT_OVERRIDE_TEXT, OVERRIDE_REASON_MIN, TEN_PERCENT_TEXT, TEN_PERCENT_UNKNOWN_TEXT, overrideReasonShort } from "../../lib/im/app-gate";
+import { tenPercentTrail, type TenPercentTrail } from "../../lib/money/ten-percent";
+import { committedOf, readReceipts } from "../money/matched-receipts";
 
 export const CONTACTS_MODULE = "Contacts";
 export const APP_ACCESS_FIELD = "App_Access";
@@ -60,6 +64,8 @@ export const ALLOTMENTS_MODULE = "LLP_UnitAllocation_Module";
 export const RECEIPTS_MODULE = "Receipts";
 /* G2 / GC-1526: the gate's words and limits are shared with the card (lib/im/app-gate — values only, client-safe). */
 export { NOT_OVERRIDE_TEXT, OVERRIDE_REASON_MIN, TEN_PERCENT_KINDS, TEN_PERCENT_TEXT, TEN_PERCENT_UNKNOWN_TEXT } from "../../lib/im/app-gate";
+/** D137 ruling 2(b): the override's Note names the gate it bypassed, so the record says who, when (the Note's time), why and which gate. */
+export const OVERRIDE_NOTE_TITLE = "App access unlocked without the 10% advance (gate bypassed: ten-percent)";
 /** D115 ruling 1: what the card says before any account exists — it is created On hold and waits for the release. */
 export const NO_ACCOUNT_TEXT = "No account yet — it is created On hold, and sign-in stays locked until Finance presses Send welcome and unlock";
 const RECORD_ID = /^\d{15,22}$/;
@@ -98,7 +104,10 @@ export interface AppAccessCard {
   /** G2: is the 10% verified (a matched Advance/Full receipt)? Read only while the account is on Hold and for a person who may
    *  release it (null otherwise); "unknown" = the receipts could not be read. */
   readonly tenPercent: TenPercent | null;
-  /** GC-1526: may this person unlock without the 10% (Finance Operations, Head of Finance)? Every other seat: false. */
+  /** D137 ruling 2(a): how the 10% stands — each matched receipt (IST date-time, amount, masked reference, who matched it) with the
+   *  running total against the threshold. Only beside `tenPercent` (Hold, a person who may release); null otherwise or when unread. */
+  readonly tenPercentTrail: TenPercentTrail | null;
+  /** GC-1526 / D137 2(b): may this person unlock without the 10% (Finance Operations, Head of Finance, Digital Infrastructure)? Every other seat: false. */
   readonly mayOverride: boolean;
 }
 export type TenPercent = "verified" | "not-verified" | "unknown";
@@ -108,7 +117,7 @@ export interface AppAccessPrincipal { readonly credential: UserCredential; reado
 export interface AppAccessAuthority {
   /** Re-derived from the live session: may this person change app access (Finance, super user)? */
   mayChange(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
-  /** GC-1526: may this person unlock without a verified 10% (Finance Operations, Head of Finance — never another seat)? Absent: nobody. */
+  /** GC-1526 / D137 2(b): may this person unlock without a verified 10% (Finance Operations, Head of Finance, Digital Infrastructure — never another seat)? Absent: nobody. */
   mayOverride?(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean>;
 }
 
@@ -225,21 +234,27 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
     try { deps.events.appAccessOverride?.(p.credential.userId, p.seat ?? null, validId(contactId) ? contactId : "", outcome, reason); } catch { /* never blocks */ }
   };
 
-  /** G2: a matched Advance or Full receipt on one of the investor's live allotments (the 10%), on the person's own token. A read
-   *  that fails, is cut short or names a record it cannot read is "unknown" — never "not verified", never "verified". */
-  const tenPercent = async (cred: UserCredential, contactId: string, signal?: AbortSignal): Promise<TenPercent> => {
+  /** G2 + D137 ruling 2(a): the 10% is verified when the SUM of Finance-matched inbound receipts (Advance, Part, Balance, Full; minus
+   *  matched refunds) on the investor's live allotments reaches 10% of their committed amount (units × Unit_Price), read on the
+   *  person's own token. A read that fails, is cut short, names a record it cannot read or cannot price the commitment is
+   *  "unknown" — never "not verified", never "verified". The trail (each receipt's IST date-time, amount, masked reference, who
+   *  matched it and the running total) goes on the card so the gate explains itself. */
+  const tenPercent = async (cred: UserCredential, contactId: string, signal?: AbortSignal): Promise<{ ten: TenPercent; trail: TenPercentTrail | null }> => {
+    const unknown = { ten: "unknown" as const, trail: null };
     try {
-      const a = await crm.coql(cred, `select id, Customer, Allocation_Status from ${ALLOTMENTS_MODULE} where Customer = '${contactId}' limit 0, 100`, { signal });
-      if (!a.ok || a.value.invalidRecordIds || a.value.moreRecords) return "unknown";
-      if (a.value.records.some((r) => !validId(r.id))) return "unknown";
-      const live = a.value.records.filter((r) => r.Allocation_Status !== "Cancelled" && (idOfRef(r.Customer) ?? contactId) === contactId).map((r) => r.id);
-      if (!live.length) return "not-verified";
-      const r = await crm.coql(cred, `select id, Allotment, Kind, Match_State from ${RECEIPTS_MODULE} where Allotment in (${live.map((x) => `'${x}'`).join(", ")}) and Match_State = 'Matched' limit 0, 200`, { signal });
-      if (!r.ok || r.value.invalidRecordIds) return "unknown";
-      const hit = r.value.records.some((x) => x.Match_State === "Matched" && typeof x.Kind === "string" && TEN_PERCENT_KINDS.has(x.Kind)
-        && live.includes(idOfRef(x.Allotment) ?? ""));
-      return hit ? "verified" : r.value.moreRecords ? "unknown" : "not-verified";
-    } catch { return "unknown"; }
+      const a = await crm.coql(cred, `select id, Customer, Allocation_Status, Reserved_Units, Issued_Units, Unit_Price from ${ALLOTMENTS_MODULE} where Customer = '${contactId}' limit 0, 100`, { signal });
+      if (!a.ok || a.value.invalidRecordIds || a.value.moreRecords) return unknown;
+      if (a.value.records.some((r) => !validId(r.id))) return unknown;
+      const liveRows = a.value.records.filter((r) => r.Allocation_Status !== "Cancelled" && (idOfRef(r.Customer) ?? contactId) === contactId);
+      const live = liveRows.map((r) => r.id);
+      if (!live.length) return { ten: "not-verified", trail: null };
+      const committed = committedOf(liveRows);
+      if (committed === null) return unknown;
+      const r = await readReceipts(crm, cred, `Allotment in (${live.map((x) => `'${x}'`).join(", ")})`, signal);
+      if (!r.ok) return unknown;
+      const trail = tenPercentTrail(committed, r.rows.filter((x) => live.includes(x.allotmentId ?? "")));
+      return { ten: trail.reached ? "verified" : "not-verified", trail };
+    } catch { return unknown; }
   };
 
   const readContact = async (cred: UserCredential, id: string, signal?: AbortSignal): Promise<ZohoRecord | null> => {
@@ -262,7 +277,8 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
         .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
     } catch { return null; }
   };
-  const view = (rec: ZohoRecord, hist: readonly AppAccessChange[] | null, may: boolean, ten: TenPercent | null = null, override = false): AppAccessCard => {
+  const view = (rec: ZohoRecord, hist: readonly AppAccessChange[] | null, may: boolean, ten: TenPercent | null = null, override = false,
+    trail: TenPercentTrail | null = null): AppAccessCard => {
     const raw = rec[APP_ACCESS_FIELD];
     const access: AppAccess | null = raw === "Hold" || raw === "Invite" ? raw : null;
     const welcomeAt = typeof rec.App_Welcome_At === "string" && ZOHO_DATETIME.test(rec.App_Welcome_At) ? rec.App_Welcome_At : null;
@@ -278,6 +294,7 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
       modifiedTime: typeof rec.Modified_Time === "string" && ZOHO_DATETIME.test(rec.Modified_Time) ? rec.Modified_Time : null,
       history: Object.freeze([...h]), mayChange: may, historyRead: hist !== null,
       tenPercent: access === "Hold" ? ten : null, mayOverride: may && override,
+      tenPercentTrail: access === "Hold" && ten !== null ? trail : null,
     });
   };
 
@@ -315,7 +332,7 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
     /* G2: the release waits for the 10% (a matched Advance or Full receipt); GC-1526 waives it with a recorded reason */
     let noteId: string | null = null;
     if (to === "Invite") {
-      const ten = await tenPercent(p.credential, contactId, signal);
+      const { ten } = await tenPercent(p.credential, contactId, signal);
       if (ten === "unknown") return refuse(me, "ten-percent-unknown", TEN_PERCENT_UNKNOWN_TEXT, [contactId]);
       if (ten === "not-verified") {
         if (!override) return refuse(me, "ten-percent-not-verified", TEN_PERCENT_TEXT, [contactId]);
@@ -367,9 +384,9 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
       if (!rec) return refuse(p.credential.userId, "not-visible", "This investor is not visible to you.", [contactId]);
       const [hist, may] = await Promise.all([history(p.credential, contactId, signal), mayChange(p, signal)]);
       /* G2: the gate is read only where it decides something — an account on Hold, for a person who may release it */
-      const gate: readonly [TenPercent | null, boolean] = rec[APP_ACCESS_FIELD] === "Hold" && may
+      const gate: readonly [{ ten: TenPercent; trail: TenPercentTrail | null } | null, boolean] = rec[APP_ACCESS_FIELD] === "Hold" && may
         ? await Promise.all([tenPercent(p.credential, contactId, signal), mayOverride(p, signal)]) : [null, false];
-      return { ok: true, value: view(rec, hist, may, gate[0], gate[1]), already: false };
+      return { ok: true, value: view(rec, hist, may, gate[0]?.ten ?? null, gate[1], gate[0]?.trail ?? null), already: false };
     },
     async unlock(principal, contactId, expectedModifiedTime, signal) {
       const p = trusted(principal);
@@ -410,7 +427,7 @@ export function createAppAccess(deps: AppAccessDependencies): AppAccessService {
       return change(p, contactId, "Hold", "Invite", expectedModifiedTime, signal, undefined, {
         writeNote: async (id) => {
           const r = await crm.insert(p.credential, "Notes", [{
-            Note_Title: "App access unlocked without the 10% advance",
+            Note_Title: OVERRIDE_NOTE_TITLE,
             Note_Content: why,
             Parent_Id: { module: { api_name: CONTACTS_MODULE }, id },
           }], { signal });

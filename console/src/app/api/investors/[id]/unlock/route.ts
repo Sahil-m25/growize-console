@@ -4,7 +4,7 @@
                                              app sends the one welcome; nothing is mailed from here)
    DELETE { reason, expectedModifiedTime }   "Lock app access": App_Access Invite → Hold, reason as a Note
    POST   { expectedModifiedTime, override: { reason, confirmed: true } }
-                                             GC-1526 "Unlock without the 10%": Finance Operations / Head of Finance only;
+                                             GC-1526 "Unlock without the 10%": Finance Operations / Head of Finance / Digital Infrastructure (D137) only;
                                              the reason (10+ characters) is a Note on the Contact under their name
    200 → { card, already, noteSaved? }  ·  403 not Finance / not visible / not-override  ·  409 changed ("reload") /
    confirm-needed  ·  422 no account / reason required / ten-percent-not-verified (G2: no matched Advance or Full receipt) /
@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 const MAX_BODY = 4 * 1024;
 const STATUS: Record<string, number> = { "not-finance": 403, "not-visible": 403, changed: 409, "no-account": 422, "reason-required": 422, "invalid-request": 400,
   "ten-percent-not-verified": 422, "ten-percent-unknown": 503, "not-override": 403, "override-reason-short": 422, "confirm-needed": 409, "note-failed": 502 };
-/** GC-1526: the seats that may unlock without a verified 10% — Finance Operations and the Head of Finance, nobody else. */
-const OVERRIDE_SEATS: ReadonlySet<string> = new Set(["finance-operations", "head-of-finance"]);
+/** GC-1526 + D137 ruling 2(b): the seats that may unlock without a verified 10% — Finance Operations, the Head of Finance and Digital Infrastructure, nobody else. */
+const OVERRIDE_SEATS: ReadonlySet<string> = new Set(["finance-operations", "head-of-finance", "digital-infrastructure"]);
 type Ctx = { params: Promise<{ id: string }> };
 
 async function service() {

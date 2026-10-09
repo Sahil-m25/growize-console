@@ -10,7 +10,10 @@
         "Customer": {
           "id": "9007199254740994001"
         },
-        "Allocation_Status": "Reserved"
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 10,
+        "Issued_Units": 0,
+        "Unit_Price": 100000
       }
     ],
     "info": {

@@ -82,14 +82,14 @@ describe("POST /api/investors/[id]/unlock — G2 gate and GC-1526 override", () 
       expect([code, res.status]).toEqual([code, status]);
     }
   });
-  it("the override right is Finance Operations and the Head of Finance only — not the super user, not a KAM, not Compliance", async () => {
+  it("the override right is Finance Operations, the Head of Finance and Digital Infrastructure (D137 2(b)) — not a KAM, not Compliance", async () => {
     unlock.mockResolvedValue({ ok: true, value: card, already: false });
     await unlockRoute.POST(post({}), params(CONTACT));
     const a = deps!.authority;
     const verdict = async (seat: string) => { liveSeat = seat; return [await a.mayChange({ userId: ME }, "s"), await a.mayOverride!({ userId: ME }, "s")]; };
     expect(await verdict("fin-ops")).toEqual([true, true]);
     expect(await verdict("fin-head")).toEqual([true, true]);
-    expect(await verdict("di")).toEqual([true, false]);
+    expect(await verdict("di")).toEqual([true, true]);
     expect(await verdict("kam")).toEqual([false, false]);
     expect(await verdict("comp")).toEqual([false, false]);
   });

@@ -1,0 +1,36 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994021",
+        "Allotment": { "id": "9007199254740994010" },
+        "Kind": "Part",
+        "Amount": 60000,
+        "UTR": "SYNTHUTR000000005",
+        "Received_On": "2026-09-20",
+        "Matched_At": "2026-09-20T11:30:00+05:30",
+        "Matched_By": { "id": "9007199254740993091" },
+        "Match_State": "Matched"
+      },
+      {
+        "id": "9007199254740994022",
+        "Allotment": { "id": "9007199254740994010" },
+        "Kind": "Part",
+        "Amount": 50000,
+        "UTR": "SYNTHUTR000000006",
+        "Received_On": "2026-09-26",
+        "Matched_At": "2026-09-26T15:05:00+05:30",
+        "Matched_By": { "id": "9007199254740993092" },
+        "Match_State": "Matched"
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

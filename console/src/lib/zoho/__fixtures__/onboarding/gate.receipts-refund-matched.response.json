@@ -11,6 +11,10 @@
           "id": "9007199254740994010"
         },
         "Kind": "Refund",
+        "Amount": 50000,
+        "UTR": "SYNTHUTR000000004",
+        "Received_On": "2026-09-27",
+        "Matched_By": { "id": "9007199254740993091" },
         "Match_State": "Matched"
       }
     ],

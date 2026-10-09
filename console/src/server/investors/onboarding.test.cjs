@@ -97,8 +97,12 @@ function rig(o = {}) {
         if (/select id from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(state.allotInserted ? 'receipts.one-pending' : 'receipts.none'));
         if (/from Receipts where Allotment = /.test(q)) return toResponse(recorded(state.receiptInserted ? 'receipts.one-pending' : 'receipts.none'));
         /* G2: the release's 10% gate — the investor's allotments, then their matched receipts (default: a matched Advance) */
-        if (/^select id, Customer, Allocation_Status from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(o.gateAllot ?? 'gate.allotments'));
-        if (/from Receipts where Allotment in \(.*\) and Match_State = 'Matched'/.test(q)) return toResponse(recorded(o.gateReceipts ?? 'gate.receipts-advance-matched'));
+        if (/^select id, Customer, Allocation_Status, Reserved_Units, Issued_Units, Unit_Price from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(o.gateAllot ?? 'gate.allotments'));
+        /* D137: the gate's receipts read (money/matched-receipts) asks for Matched_At first; o.noMatchedAt: Zoho refuses that field */
+        if (/from Receipts where Allotment in \(.*\) order by id asc/.test(q)) {
+          if (o.noMatchedAt && /Matched_At/.test(q)) return toResponse(recorded('gate.invalid-field'));
+          return toResponse(recorded(o.gateReceipts ?? 'gate.receipts-advance-matched'));
+        }
         throw new Error(`unexpected query ${q}`);
       }
       if (m === 'GET' && p === '/Contacts/search') return toResponse(recorded(pick(o.search ?? 'contacts.search-none', state.searches++)));
@@ -523,27 +527,42 @@ test('M08-S08-NOTE-10: the release is also a Plane C authority line — releaser
 
 const UNLOCKED = { contact: (n) => (n === 0 ? 'contact.hold' : 'contact.invite'), timeline: 'timeline.unlocked' };
 
-test('G2: a matched Advance or a matched Full receipt opens the gate — the unlock writes Invite, read on the releaser\'s token', async () => {
-  for (const gateReceipts of ['gate.receipts-advance-matched', 'gate.receipts-full-matched']) {
+test('G2 + D137 2(a): matched money reaching 10% of the committed amount opens the gate — an Advance, a Full, or two Parts summed', async () => {
+  for (const gateReceipts of ['gate.receipts-advance-matched', 'gate.receipts-full-matched', 'gate.receipts-parts-sum-matched']) {
     const r = rig({ ...UNLOCKED, gateReceipts });
     const res = await r.app.unlock(principal(), CONTACT, T1);
     assert.equal(res.ok, true, gateReceipts + ' ' + JSON.stringify(res));
     assert.deepEqual(r.writes().map((c) => c[2].data[0]), [{ App_Access: 'Invite' }]);
     const q = r.calls.filter((c) => c[1] === '/coql').map((c) => c[2].select_query);
-    assert.match(q[0], new RegExp(`from LLP_UnitAllocation_Module where Customer = '${CONTACT}'`));
-    assert.match(q[1], new RegExp(`where Allotment in \\('${ALLOT}'\\) and Match_State = 'Matched'`));
+    assert.match(q[0], new RegExp(`Unit_Price from LLP_UnitAllocation_Module where Customer = '${CONTACT}'`));
+    assert.match(q[1], new RegExp(`from Receipts where Allotment in \\('${ALLOT}'\\) order by id asc`));
     assert.ok(r.calls.filter((c) => c[1] === '/coql').every((c) => c[3].Authorization === 'Zoho-oauthtoken synthetic-user-access-token-never-live'),
       'the gate is read on the person\'s own token (D53)');
   }
 });
 
-test('G2: no matched Advance/Full — none at all, only a Part, only a Refund, or only a Cancelled allotment — refuses the unlock, nothing written', async () => {
+test('D137 2(a): the card carries the trail — IST date-time, amount, masked reference, who matched, running total vs 10%; Matched_At missing degrades to the received day', async () => {
+  const r = rig({ gateReceipts: 'gate.receipts-parts-sum-matched' });
+  const res = await r.app.card(principal(), CONTACT);
+  const t = res.value.tenPercentTrail;
+  assert.deepEqual([t.committed, t.threshold, t.matched, t.reached], [1000000, 100000, 110000, true]);
+  assert.deepEqual(t.rows.map((x) => [x.atIst, x.amount, x.refMasked, x.matchedById, x.runningTotal, x.reachedTen]), [
+    ['20 Sep 2026, 11:30 IST', 60000, '••• 0005', '9007199254740993091', 60000, false],
+    ['26 Sep 2026, 15:05 IST', 50000, '••• 0006', '9007199254740993092', 110000, true]]);
+  assert.ok(!JSON.stringify(res).includes('SYNTHUTR000000005'), 'the full reference never leaves the server');
+  assert.ok(!JSON.stringify(r.sink.records()).includes('SYNTHUTR'), 'nor reaches the log');
+  const old = rig({ gateReceipts: 'gate.receipts-part-matched', noMatchedAt: true });
+  const o = await old.app.card(principal(), CONTACT);
+  assert.deepEqual([o.value.tenPercent, o.value.tenPercentTrail.rows[0].atIst], ['not-verified', '27 Sep 2026 (received)']);
+});
+
+test('G2 + D137: under 10% — nothing matched, one Part of 4%, only a Refund, or only a Cancelled allotment — refuses the unlock, nothing written', async () => {
   for (const o of [{ gateReceipts: 'receipts.none' }, { gateReceipts: 'gate.receipts-part-matched' }, { gateReceipts: 'gate.receipts-refund-matched' },
     { gateAllot: 'gate.allotments-cancelled' }, { gateAllot: 'receipts.none' }]) {
     const r = rig(o);
     const res = await r.app.unlock({ ...principal(), seat: 'fin' }, CONTACT, T1);
     assert.deepEqual([res.ok, res.reasonCode], [false, 'ten-percent-not-verified'], JSON.stringify(o));
-    assert.match(res.message, /10% advance is not verified yet: this investor has no matched Advance or Full receipt/);
+    assert.match(res.message, /the 10% is not verified yet: Finance-matched receipts \(advance and part payments together\) do not reach 10%/);
     assert.deepEqual(r.writes(), [], JSON.stringify(o));
     assert.deepEqual(r.planeC, [[ACTOR, 'fin', CONTACT, 'refused', 'ten-percent-not-verified']]);
     assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'ten-percent-not-verified'));
@@ -587,7 +606,7 @@ test('GC-1526: Finance Operations / Head of Finance unlock without the 10%: the 
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.equal(res.noteSaved, true);
   assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), ['POST /Notes', `PUT /Contacts/${CONTACT}`], 'the reason is on the record before access opens');
-  assert.deepEqual(r.writes()[0][2].data[0], { Note_Title: 'App access unlocked without the 10% advance', Note_Content: WHY,
+  assert.deepEqual(r.writes()[0][2].data[0], { Note_Title: 'App access unlocked without the 10% advance (gate bypassed: ten-percent)', Note_Content: WHY,
     Parent_Id: { module: { api_name: 'Contacts' }, id: CONTACT } });
   assert.deepEqual(r.writes()[1][2].data[0], { App_Access: 'Invite' });
   assert.equal(r.writes()[1][3]['If-Unmodified-Since'], T1);
@@ -603,7 +622,7 @@ test('GC-1526: other seats are refused the override before anything is read — 
   for (const o of [{ gateReceipts: 'receipts.none', override: false }, { gateReceipts: 'receipts.none', override: true, finance: false }]) {
     const r = rig(o);
     const res = await r.app.overrideUnlock({ ...principal(), seat: 'kam' }, CONTACT, WHY, true, T1);
-    assert.deepEqual([res.ok, res.reasonCode, res.message], [false, 'not-override', 'Only Finance Operations or the Head of Finance can unlock without the 10%.']);
+    assert.deepEqual([res.ok, res.reasonCode, res.message], [false, 'not-override', 'Only Finance Operations, the Head of Finance or Digital Infrastructure can unlock without the 10%.']);
     assert.equal(r.calls.length, 0);
     assert.deepEqual(r.overrides, [[ACTOR, 'kam', CONTACT, 'refused', 'not-override']]);
   }

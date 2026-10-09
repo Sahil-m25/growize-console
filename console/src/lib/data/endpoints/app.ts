@@ -14,6 +14,8 @@ import {
 } from "@/lib/im";
 import { NOT_OVERRIDE_TEXT, OVERRIDE_REASON_MAX, OVERRIDE_REASON_MIN, TEN_PERCENT_TEXT, overrideReasonShort } from "@/lib/im/app-gate";
 import type { ImAccess, ImTestLink } from "@/lib/im";
+import { tenPercentTrail, type TenPercentTrail } from "@/lib/money/ten-percent";
+import { UNIT } from "@/domain";
 import { fail, ok, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
 
@@ -42,13 +44,22 @@ const cardOf = (b: ImBook, id: string, a: ImAccess | null): AppAccessCard => {
     mayChange: mayAccess(b.s, b.me), historyRead: true,
     /* G2 / GC-1526 (D136 proposed): the demo book's matched advance or full receipt, and the two Finance seats that may override */
     tenPercent: a && a.App_Access === "Hold" && mayAccess(b.s, b.me) ? (tenVerified(b, id) ? "verified" : "not-verified") : null,
+    tenPercentTrail: a && a.App_Access === "Hold" && mayAccess(b.s, b.me) ? trailOf(b, id) : null,
     mayOverride: mayAccess(b.s, b.me) && mayOverrideIn(b),
   };
 };
-/** G2: the 10% is verified — a matched advance or full receipt in the demo book (live: server/investors/unlock tenPercent). */
-const tenVerified = (b: ImBook, id: string): boolean => b.s.data.TXN.some(t => t.inv === id && t.rec === "matched" && (t.kind === "advance" || t.kind === "full"));
-/** GC-1526: Finance Operations and the Head of Finance only (live: the route's OVERRIDE_SEATS). */
-const mayOverrideIn = (b: ImBook): boolean => { const r = who(b.s, b.me).r; return r === "head" || r === "ops"; };
+const ZOHO_KIND: Readonly<Record<string, string>> = { advance: "Advance", balance: "Part", full: "Full", refund: "Refund" };
+/** D137 ruling 2(a): the demo book's matched receipts against 10% of units × unit price (live: server/investors/unlock tenPercent). */
+const trailOf = (b: ImBook, id: string): TenPercentTrail => {
+  const x = I(b.s, b.me, id);
+  return tenPercentTrail(x ? x.units * UNIT : null, b.s.data.TXN.filter(t => t.inv === id).map(t => ({
+    id: t.id, kind: ZOHO_KIND[t.kind] ?? t.kind, amount: t.amt, state: t.rec === "matched" ? "Matched" : "Pending",
+    at: t.on || null, atIsReceived: true, ref: t.utr, matchedById: t.by || null,
+  })));
+};
+const tenVerified = (b: ImBook, id: string): boolean => trailOf(b, id).reached;
+/** GC-1526 + D137 2(b): Finance Operations, the Head of Finance and Digital Infrastructure (live: the route's OVERRIDE_SEATS). */
+const mayOverrideIn = (b: ImBook): boolean => { const r = who(b.s, b.me).r; return r === "head" || r === "ops" || r === "di"; };
 
 export const appCard: ReadEndpoint<ImBook, string | null, CardAnswer> = {
   path: id => (id ? `/api/investors/${enc(id)}/unlock` : null),
