@@ -97,7 +97,7 @@ test('LOG_SINK selects the adapter; file stays the default; misconfiguration fai
   assert.equal(logStoreKind({ LOG_SINK: 'file', LOG_STORE: 'jsonl' }), 'jsonl');
   assert.equal(logStoreKind({ LOG_SINK: 'stratus' }), 'stratus');
   assert.equal(logStoreKind({ LOG_SINK: 'stratus', FIXTURE_MODE: 'local', NODE_ENV: 'test' }), 'memory', 'fixture mode never writes anywhere');
-  assert.throws(() => logStoreKind({ LOG_SINK: 's3' }), /LOG_SINK must be "file" or "stratus"/);
+  assert.throws(() => logStoreKind({ LOG_SINK: 's3' }), /LOG_SINK must be "file", "stratus" or "state"/);
   assert.throws(() => logStoreKind({ LOG_SINK: 'stratus', LOG_STORE: 'jsonl' }), /unset LOG_STORE/);
   assert.equal(stratusConfig({ ...STRATUS_ENV, GZ_STATE_PROJECT_ID: undefined, CATALYST_PROJECT_ID: '10108000003823392' }).projectId, '10108000003823392', 'legacy fallback');
   assert.throws(() => createLogSinks({ LOG_SINK: 'stratus' }), /missing: STRATUS_BUCKET_URL, GZ_STATE_PROJECT_ID, STRATUS_CLIENT_ID, STRATUS_CLIENT_SECRET, STRATUS_REFRESH_TOKEN/);
