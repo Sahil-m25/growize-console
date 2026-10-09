@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994010",
+        "Customer": {
+          "id": "9007199254740994001"
+        },
+        "Allocation_Status": "Reserved"
+      }
+    ],
+    "info": {
+      "count": 1,
+      "more_records": true
+    }
+  }
+}

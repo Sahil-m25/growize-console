@@ -336,6 +336,9 @@ function LpPaperRow({ l }: { l: Lead }) {
   if (n.who === "Finance") {
     head = nm + " — with Finance in the IM portal";
     body = sub(n.k === "sent" ? "Finance sends it for signature." : "They say it is signed; Finance is checking the signed copy.");
+    /* G1 (D136 proposed): the IR asks Finance to send it; once asked, the row says so (it is on Finance's to-do list) */
+    if (n.k === "sent" && cur.requested) body = sub("Asked Finance to send it · " + cur.requested.at.slice(0, 10) + " — it is on Finance's to-do list.");
+    else if (n.k === "sent" && offer("request")) body = <>{body}<div className="chips">{chip(cur.round === "nda" ? "Ask Finance to send the NDA" : "Ask Finance to send the supplementary", () => paper("request"), "on")}</div></>;
   } else if (!mine) {
     head = nm + " — " + (n.t || "").toLowerCase();
     tag = <span className="tag">{l.own ? "With " + P(state.PEOPLE, l.own).n.split(" ")[0] : "No owner"}</span>;

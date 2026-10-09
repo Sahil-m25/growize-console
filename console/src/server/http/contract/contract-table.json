@@ -526,7 +526,7 @@
      "required": [
       "expectedModifiedTime"
      ],
-     "schema": "route doc"
+     "schema": "route doc (G2: refused without a matched Advance/Full receipt; GC-1526 optional override { reason (10-500 chars), confirmed: true })"
     }
    },
    "DELETE": {
@@ -715,7 +715,7 @@
       "beat",
       "rowToken"
      ],
-     "schema": "route doc (or { undoToken })"
+     "schema": "route doc (or { undoToken }); G1 beat \"request\" asks Finance to send the round's paper"
     }
    }
   },

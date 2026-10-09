@@ -100,9 +100,12 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
   /* M12-S12-NOTE-2: an agreed supplementary draft makes the Supplementary agreement the default document of the send */
   const ag = useAgreedDraft(s, me, pick);
   const DTPL = s.ui.drafts.DTPL || (ag.offered ? SUPP_TEMPLATE : s.ui.drafts.DTPL);
-  const x = I(s, me, pick), t = TPL.find(y => y.t === DTPL);
+  const t = TPL.find(y => y.t === DTPL);
   const paper = t ? PAPER_OF_TEMPLATE[t.t] ?? null : null;
-  const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: paper && x ? recordFor(paper, x, allotmentOf({ s, me }, x.id)) : null });
+  /* G1: opened from Finance's queue on an IR's NDA request — the NDA goes on that Lead (there may be no investor record yet) */
+  const lead = paper === "nda" && s.ui.drafts.DLEAD ? s.ui.drafts.DLEAD : null;
+  const x = lead ? null : I(s, me, pick);
+  const pre = useApiRead(signPrefill, { s, me }, { paper: paper as Paper, id: lead ?? (paper && x ? recordFor(paper, x, allotmentOf({ s, me }, x.id)) : null) });
   const send = useApiWrite(signSend, { s, me }, dispatch);
   const pickT = useTemplatePick(s, me, paper, DTID);
   const press = useRef<string | null>(null);
@@ -111,8 +114,15 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
     Operations, Compliance and the Head of Finance.</div></div>;
   const aadhaarOff = paper ? pre.state === "ok" && !pre.data.methods.includes("aadhaar") : !!(x && x.nri);
   const blocked = !!x && aadhaarOff && DSIG === "Aadhaar OTP";
-  const can = !!x && !!DTPL && !blocked && pickT.ready && (!paper || (pre.state === "ok" && pre.data.maySend));
+  const can = (!!x || !!lead) && !!DTPL && !blocked && pickT.ready && (!paper || (pre.state === "ok" && pre.data.maySend));
   const go = () => {
+    if (lead && DTPL) {
+      press.current ??= newIdempotencyKey();
+      void send({ paper: "nda", recordId: lead, method: METHOD_OF[DSIG] ?? "email-otp", templateId: pickT.tid,
+        expectedModifiedTime: pre.state === "ok" ? pre.data.modifiedTime ?? "" : "", book: { inv: lead, tpl: DTPL, sig: DSIG } },
+      { idempotencyKey: press.current }).then(r => { if (r.ok) { press.current = null; dispatch({ type: "setDraft", patch: { DLEAD: null } }); } });
+      return;
+    }
     if (!x || !DTPL || !pick) return;
     press.current ??= newIdempotencyKey();
     void send({ paper: paper ?? "other", recordId: (paper && recordFor(paper, x, allotmentOf({ s, me }, x.id))) || x.id, method: METHOD_OF[DSIG] ?? "email-otp",
@@ -121,9 +131,12 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
   };
   return (
     <div className="card"><div className="ch"><h3>Send a document</h3></div><div className="cb">
-      <label className="fi" style={{ marginBottom: 12 }}><span>Investor</span>
+      {lead ? <div className="note" data-send-lead={lead} style={{ marginBottom: 12 }}><b>The NDA an IR asked for.</b> It goes on their lead
+        {pre.state === "ok" && pre.data.recipient ? " — " + pre.data.recipient.name : ""}.{" "}
+        <button className="chip" onClick={() => dispatch({ type: "setDraft", patch: { DLEAD: null } })}>Pick an investor instead</button></div>
+        : <label className="fi" style={{ marginBottom: 12 }}><span>Investor</span>
         <select className="selw" id="dsel" value={pick || ""} onChange={e => dispatch({ type: "setSel", id: e.target.value })}>
-          {cands.map(c => <option key={c.id} value={c.id}>{c.n} — {c.code ?? c.id}{c.nri ? " · NRI" : ""}</option>)}</select></label>
+          {cands.map(c => <option key={c.id} value={c.id}>{c.n} — {c.code ?? c.id}{c.nri ? " · NRI" : ""}</option>)}</select></label>}
       <p className="lbl">Template</p>
       <div className="chips" style={{ marginBottom: 12 }}>{TPL.map(y => {
         const off = !!y.wet && DSIG !== "Wet signature";

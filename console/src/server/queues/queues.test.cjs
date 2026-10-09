@@ -22,6 +22,13 @@ const SECRET_EMAIL = 'synthetic.investor@example.invalid', SECRET_PHONE = '+9198
 
 const receiptsLedger = (q) => receiptRows(q, recorded('today-inv', 'receipts.rows-with-pending').body.data);
 const route = (o = {}) => (q) => {
+  /* G1: the IRs' "send it" requests on Leads (none unless a test says so), and the supplementary's investor / allotment */
+  if (/from Leads where/.test(q)) {
+    const r = /NDA_Requested_At is not null/.test(q) ? o.ndaReq : o.suppReq;
+    return typeof r === 'function' ? r(q) : r ?? ok([]);
+  }
+  if (/select id, Origin_Lead, First_Name, Last_Name from Contacts/.test(q)) return o.suppContacts ?? ok([]);
+  if (/Supplementary_Sign_Req_Id/.test(q)) return o.suppAllots ?? ok([]);
   if (/from Receipts/.test(q)) return receiptsLedger(q);
   if (/Hold_Until <= /.test(q)) return o.holds ?? ['holds', 'coql.holds'];
   if (/from Touches/.test(q)) return ['queues', o.touches ?? 'coql.touches.imran'];
@@ -55,7 +62,7 @@ function queues(rig, o = {}) {
   const holds = createHolds({ crm: rig.crm, cache: rig.cache, events: rig.events, clock: () => o.now ?? NOW });
   return { calls, q: createInvestorQueues({
     crm: rig.crm, log: { refusal: (e) => rig.sink.refusals?.push?.(e) ?? rig.refusals.push(e), call() {}, event() {} },
-    clock: () => o.now ?? NOW,
+    clock: () => o.now ?? NOW, financeLeadsShared: o.shared,
     holds: { list: (...a) => { calls.holds++; return o.holdsFail ? Promise.resolve({ ok: false, kind: 'source-error', errorKind: 'network', retryable: true }) : holds.list(...a); } },
     claims: { waiting: async () => { calls.claims++; return { ok: true, value: { claims: o.claims ?? [claimRow], superUser: false } }; } },
     documents: { read: async () => { calls.documents++; return { ok: true, page: { side: 'investors', cut: 'out', rows: o.docs ?? [], outCount: 0, files: null, actions: { send: true, verify: true }, truncated: false, fresh: {} } }; } },
@@ -220,4 +227,72 @@ test('W2-KAM-3 / W2-KAM-4: Last heard counts only the account KAM\'s own touches
   const r = await q.today(await principal(rig, DIVYA, 'amlead', 'amlead'));
   assert.deepEqual(r.queue.accounts.map((a) => [a.name, a.lastHeardAt]), [['Anil Rao', null], ['Bina Shah', '2026-06-20T10:00']]);
   assert.deepEqual(r.queue.rows.map((y) => y.investor.code), r.queue.rows.map((y) => 'ARL-' + y.investor.id.slice(-3)));
+});
+
+/* ---- G1 (D136 proposed): the IRs' "ask Finance to send it" on Finance's to-do ---------------------------------------------------- */
+
+const LEAD_A = `${P}740996101`, LEAD_B = `${P}740996102`, LEAD_C = `${P}740996103`;
+const reqLead = (id, first, at, by, extra = {}) => ({ id, First_Name: first, Last_Name: 'Synthetic', NDA_Requested_At: at, NDA_Requested_By: { id: IR },
+  'NDA_Requested_By.full_name': by, NDA_Sign_Req_Id: null, NDA_Verified_At: null, ...extra });
+const suppLead = (id, first, at) => ({ id, First_Name: first, Last_Name: 'Synthetic', Supp_Requested_At: at, Supp_Requested_By: { id: IR }, 'Supp_Requested_By.full_name': 'Rohit Iyer' });
+
+test('G1: "Send the NDA — requested by <IR> n days ago" for each lead asked for and not yet sent, oldest first, linking to the send panel', async () => {
+  const ndaReq = ok([reqLead(LEAD_A, 'Kiran', '2026-09-26T09:00:00+05:30', 'Rohit Iyer'), reqLead(LEAD_B, 'Meera', '2026-09-28T09:00:00+05:30', 'Kavya Rao'),
+    reqLead(LEAD_C, 'Out', '2026-09-20T09:00:00+05:30', 'Rohit Iyer', { NDA_Sign_Req_Id: '1234567890123' })]);
+  const rig = await makeRig(load, route({ ndaReq })); rig.refusals = [];
+  const r = await queues(rig, { now: NOW, claims: [] }).q.today(await principal(rig, HARSHA, 'head', 'head'));
+  const send = r.queue.rows.filter((y) => y.kind === 'send');
+  assert.deepEqual(send.map((y) => [y.investor.name, y.text, y.action, y.urg, y.days]), [
+    ['Kiran Synthetic', 'Send the NDA — requested by Rohit Iyer 2 days ago', 'Send it', 'now', 2],
+    ['Meera Synthetic', 'Send the NDA — requested by Kavya Rao today', 'Send it', 'now', 0],
+  ], 'a lead whose NDA is already out is not listed');
+  assert.deepEqual({ ...send[0].ref }, { leadId: LEAD_A, paper: 'nda' });
+  const q = rig.queries.find((x) => /NDA_Requested_At is not null/.test(x));
+  assert.match(q, /from Leads where \(\(\(NDA_Requested_At is not null and NDA_Sign_Req_Id is null\) and NDA_Verified_At is null\) and Lost_At is null\)/);
+  assert.equal(r.queue.requestsNote, rules.REQUESTS_PARTIAL_TEXT, 'until the Finance sharing rule on Leads is confirmed, the queue says the list may be partial');
+  const shared = await queues(await makeRig(load, route({ ndaReq })), { claims: [], shared: true }).q.today(await principal(rig, HARSHA, 'head', 'head'));
+  assert.equal(shared.queue.requestsNote, null);
+});
+
+test('G1: a Leads read Zoho refuses is said on the queue (requests cannot be read), never an empty "nothing waiting"; the rest is still served', async () => {
+  const refused = { status: 403, headers: { 'content-type': 'application/json' }, body: { code: 'NO_PERMISSION', message: 'permission denied', status: 'error', details: {} } };
+  const rig = await makeRig(load, route({ ndaReq: refused, suppReq: refused })); rig.refusals = [];
+  const r = await queues(rig, { now: SEP02 }).q.today(await principal(rig, HARSHA, 'head', 'head'));
+  assert.equal(r.ok, true);
+  assert.equal(r.queue.requestsNote, rules.REQUESTS_UNREAD_TEXT);
+  assert.ok(r.queue.problems.length >= 1 && r.queue.problems.every((x) => x.startsWith('send-requests:')), JSON.stringify(r.queue.problems));
+  assert.ok(r.queue.rows.some((y) => y.kind === 'claim'), 'the claims are still served');
+});
+
+test('G1: request fields Zoho does not know yet are named as such; the requester\'s name falls back to "an IR" when Zoho will not give it', async () => {
+  const bad = { status: 400, headers: { 'content-type': 'application/json' }, body: { code: 'INVALID_QUERY', message: 'invalid column', status: 'error', details: {} } };
+  const rig = await makeRig(load, route({ ndaReq: bad, suppReq: bad })); rig.refusals = [];
+  const r = await queues(rig, { claims: [] }).q.today(await principal(rig, HARSHA, 'head', 'head'));
+  assert.equal(r.queue.requestsNote, rules.REQUESTS_NO_FIELDS_TEXT);
+  // the name column refused, the plain read answers: no name → "an IR"
+  const ndaReq = (q) => (/full_name/.test(q) ? bad : ok([{ ...reqLead(LEAD_A, 'Kiran', '2026-09-27T09:00:00+05:30', null) }]));
+  const rig2 = await makeRig(load, route({ ndaReq })); rig2.refusals = [];
+  const r2 = await queues(rig2, { claims: [] }).q.today(await principal(rig2, HARSHA, 'head', 'head'));
+  assert.deepEqual(r2.queue.rows.filter((y) => y.kind === 'send').map((y) => y.text), ['Send the NDA — requested by an IR 1 day ago']);
+  assert.equal(r2.queue.requestsNote, rules.REQUESTS_PARTIAL_TEXT);
+});
+
+test('G1: the supplementary asked for is listed against the investor until a Sign request is on a live allotment; no investor yet → the lead', async () => {
+  const suppReq = ok([suppLead(LEAD_A, 'Kiran', '2026-09-25T09:00:00+05:30'), suppLead(LEAD_B, 'Meera', '2026-09-27T09:00:00+05:30'), suppLead(LEAD_C, 'Nobody', '2026-09-26T09:00:00+05:30')]);
+  const suppContacts = ok([{ id: C(1), Origin_Lead: { id: LEAD_A }, First_Name: 'Kiran', Last_Name: 'Investor' }, { id: C(2), Origin_Lead: { id: LEAD_B }, First_Name: 'Meera', Last_Name: 'Investor' }]);
+  const suppAllots = ok([{ id: `${P}740996204`, Customer: { id: C(2) }, Supplementary_Sign_Req_Id: '1234567890123', Supplementary_Verified_At: null }]);
+  const rig = await makeRig(load, route({ suppReq, suppContacts, suppAllots })); rig.refusals = [];
+  const r = await queues(rig, { claims: [] }).q.today(await principal(rig, FAHAD, 'comp', 'comp'));
+  const send = r.queue.rows.filter((y) => y.kind === 'send');
+  assert.deepEqual(send.map((y) => [y.investor.id, y.investor.name, y.text, { ...y.ref }]), [
+    [C(1), 'Kiran Investor', 'Send the supplementary agreement — requested by Rohit Iyer 3 days ago', { leadId: LEAD_A, contactId: C(1), paper: 'supplementary' }],
+    [LEAD_C, 'Nobody Synthetic', 'Send the supplementary agreement — requested by Rohit Iyer 2 days ago', { leadId: LEAD_C, paper: 'supplementary' }],
+  ], 'Meera\'s supplementary is out on her allotment');
+  assert.ok(rig.queries.some((x) => /Supplementary_Sign_Req_Id.*Allocation_Status != 'Cancelled'/.test(x)), 'only live allotments count as sent');
+});
+
+test('G1: a seat without the paper right (Head of AM, Auditor) never reads the requests', async () => {
+  const rig = await makeRig(load, route()); rig.refusals = [];
+  await queues(rig).q.today(await principal(rig, LATHA, 'audit', 'audit'));
+  assert.ok(!rig.queries.some((x) => /from Leads/.test(x)));
 });

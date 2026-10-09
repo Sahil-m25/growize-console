@@ -35,8 +35,10 @@ import type { KamBookService } from "../investors/book";
 import type { ClaimAnswers } from "../money/claim-answer";
 import {
   careRows, claimText, femaText, goneQuiet, overdueDays, holdText, isReadOnly, kycText, remindText, REMIND_AFTER_DAYS, sortQueue, tierFor, verifyText,
+  sendText, REQUESTS_NO_FIELDS_TEXT, REQUESTS_PARTIAL_TEXT, REQUESTS_UNREAD_TEXT,
   type CareAccount, type CareRow, type MoneyRow, type Tier,
 } from "./rules";
+import { coqlAll } from "../../lib/zoho/coql";
 
 export const TOUCHES_MODULE = "Touches";
 const TOUCH_FIELDS = Object.freeze(["id", "Lead", "Occurred_At", "Owner", "Mood"]);
@@ -50,7 +52,13 @@ const KYC_FIELDS: readonly string[] = (() => {
   if (off.length) throw new TypeError(`The KYC queue selects only Finance's status fields (${off.join(", ")}) — D52/D53.`);
   return Object.freeze(f);
 })();
-const KYC_WHERE = "(KYC not in ('Completed', 'NA') or KYC is null) or (FEMA_Applicable = true and FEMA_Verified_At is null)";
+/* G1 (D136 proposed): the IRs' "ask Finance to send it" (Leads.*_Requested_At / _Requested_By, written by server/leads/paperwork). */
+export const LEADS_MODULE = "Leads";
+const NDA_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "NDA_Requested_At", "NDA_Requested_By", "NDA_Sign_Req_Id", "NDA_Verified_At"]);
+const SUPP_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "Supp_Requested_At", "Supp_Requested_By"]);
+const NDA_REQUEST_WHERE = coqlAll(["NDA_Requested_At is not null", "NDA_Sign_Req_Id is null", "NDA_Verified_At is null", "Lost_At is null"]);
+const SUPP_REQUEST_WHERE = coqlAll(["Supp_Requested_At is not null", "Lost_At is null"]);
+const KYC_WHERE ="(KYC not in ('Completed', 'NA') or KYC is null) or (FEMA_Applicable = true and FEMA_Verified_At is null)";
 
 export interface QueuePrincipal {
   readonly credential: UserCredential;
@@ -69,6 +77,9 @@ export interface QueueDeps {
   readonly amBook: Pick<KamBookService, "list">;
   readonly clock?: () => number;
   readonly maxPages?: number;
+  /** G1: Digital Infrastructure has confirmed the Finance sharing rule on Leads (GZ_FINANCE_LEADS_SHARED=1). Until then the
+   *  queue says that requests on leads not shared with Finance cannot be listed (Zoho returns them as absent, not refused). */
+  readonly financeLeadsShared?: boolean;
 }
 
 export interface MoneyQueue {
@@ -79,6 +90,8 @@ export interface MoneyQueue {
   readonly today: number;
   readonly problems: readonly string[];
   readonly asOf: number;
+  /** G1: why the IRs' "send it" requests may be missing from the rows (unread, or the Leads sharing rule not confirmed); null: complete. */
+  readonly requestsNote?: string | null;
 }
 export interface AmAccount {
   readonly id: string;
@@ -140,6 +153,7 @@ export function createInvestorQueues(deps: QueueDeps) {
     if (isReadOnly(p.can)) return Object.freeze({ side: "money", readOnly: true, rows: [], waiting: 0, today: 0, problems: [], asOf: now });
     const cred = p.credential;
     const claimRows: MoneyRow[] = [], out: MoneyRow[] = [], problems: string[] = [];
+    let requestsNote: string | null = null;
     const failed = (src: string, k: string) => problems.push(`${src}:${k}`);
 
     if (p.can("pay")) {
@@ -195,6 +209,11 @@ export function createInvestorQueues(deps: QueueDeps) {
       reminds.sort((a, b) => (b.days ?? -1) - (a.days ?? -1));
       for (const x of reminds) out.push(x.row);
       }
+      // G1: the IRs' "ask Finance to send it" — NDA and supplementary rounds asked for and not yet out.
+      const sr = await sendRequests(cred, now, signal);
+      out.push(...sr.rows);
+      problems.push(...sr.problems);
+      requestsNote = sr.note;
     }
 
     if (p.can("kyc")) {
@@ -226,7 +245,82 @@ export function createInvestorQueues(deps: QueueDeps) {
     // finQueue: the per-investor rows, then the claims, sorted now → soon (stable).
     const rows = Object.freeze(sortQueue([...out, ...claimRows]));
     return Object.freeze({ side: "money", readOnly: false, rows, waiting: rows.length, today: rows.filter((r) => r.urg === "now").length,
-      problems: Object.freeze(problems), asOf: now });
+      problems: Object.freeze(problems), asOf: now, ...(p.can("doc") ? { requestsNote } : {}) });
+  }
+
+  /* ------------------------------------- G1: the IRs' "send it" requests ------------------------------------- */
+  /** One Leads select; with the requester's name through the user lookup when Zoho takes the column, else without it. */
+  async function requestedLeads(cred: UserCredential, fields: readonly string[], byField: string, where: string, signal?: AbortSignal) {
+    const named = await pagedSelect(deps.crm, cred, [...fields, `${byField}.full_name`], LEADS_MODULE, where, "id asc", signal, deps.maxPages);
+    if (named.ok || named.kind !== "source-error" || named.errorKind !== "invalid-data") return named;
+    return pagedSelect(deps.crm, cred, fields, LEADS_MODULE, where, "id asc", signal, deps.maxPages);
+  }
+  const daysSince = (at: string | null, now: number): number | null => {
+    const s = istStamp(at);
+    return s ? 0 - daysLeft(s.slice(0, 10), now) : null;   // 0 - x: today is 0, never -0
+  };
+  const byName = (r: ZohoRecord, f: string): string | null => {
+    const n = str(r, `${f}.full_name`, 80);
+    if (n) return n;
+    const v = r[f] && typeof r[f] === "object" ? (r[f] as { name?: unknown }).name : undefined;
+    return typeof v === "string" && v.trim() ? v.trim().slice(0, 80) : null;
+  };
+  const leadName = (r: ZohoRecord): string | null => [str(r, "First_Name", 60), str(r, "Last_Name", 80)].filter(Boolean).join(" ") || null;
+
+  async function sendRequests(cred: UserCredential, now: number, signal?: AbortSignal): Promise<{ rows: MoneyRow[]; problems: string[]; note: string | null }> {
+    const rows: MoneyRow[] = [], problems: string[] = [];
+    let unread: string | null = null;
+    const failedOn = (k: string) => { problems.push(`send-requests:${k}`); unread ??= k === "invalid-data" ? REQUESTS_NO_FIELDS_TEXT : REQUESTS_UNREAD_TEXT; };
+
+    // NDA: asked for, not sent (no Zoho Sign request on the Lead), not verified, lead not lost.
+    const nda = await requestedLeads(cred, NDA_REQUEST_FIELDS, "NDA_Requested_By", NDA_REQUEST_WHERE, signal);
+    if (!nda.ok) failedOn(nda.kind === "refused" ? nda.reason : nda.errorKind);
+    else {
+      if (nda.truncated) problems.push("send-requests:truncated");
+      for (const r of nda.rows) {
+        if (!idOf(r.id) || str(r, "NDA_Sign_Req_Id", 40) || str(r, "NDA_Verified_At", 40)) continue;
+        const at = str(r, "NDA_Requested_At", 40), days = daysSince(at, now);
+        rows.push(Object.freeze({ key: `send:nda:${r.id}`, kind: "send", investor: Object.freeze({ id: r.id, name: leadName(r) }),
+          text: sendText("nda", byName(r, "NDA_Requested_By"), days), urg: "now", days, action: "Send it",
+          ref: Object.freeze({ leadId: r.id, paper: "nda" }) }));
+      }
+    }
+
+    // Supplementary: asked for on the Lead; it is sent on the investor's allotment, so a live allotment carrying a Sign request
+    // (or a verified copy) means it is out. A read that cannot say is a problem, never a row and never a silent "nothing".
+    const sp = await requestedLeads(cred, SUPP_REQUEST_FIELDS, "Supp_Requested_By", SUPP_REQUEST_WHERE, signal);
+    if (!sp.ok) failedOn(sp.kind === "refused" ? sp.reason : sp.errorKind);
+    else if (sp.rows.length) {
+      if (sp.truncated) problems.push("send-requests:truncated");
+      const leadIds = sp.rows.map((r) => idOf(r.id)).filter((x): x is string => !!x);
+      const c = await byIds(cred, MODULES.contacts, ["id", "Origin_Lead", "First_Name", "Last_Name"], "Origin_Lead", leadIds, null, signal);
+      if (!c.ok) failedOn(c.kind === "refused" ? c.reason : c.errorKind);
+      else {
+        const contactOf = new Map<string, ZohoRecord>();
+        for (const x of c.rows) { const l = idOf(x.Origin_Lead); if (l && idOf(x.id) && !contactOf.has(l)) contactOf.set(l, x); }
+        const cids = [...contactOf.values()].map((x) => x.id);
+        const a = cids.length ? await byIds(cred, MODULES.amAllotments, ["id", "Customer", "Supplementary_Sign_Req_Id", "Supplementary_Verified_At"], "Customer", cids,
+          "Allocation_Status != 'Cancelled'", signal) : { ok: true as const, rows: [] as ZohoRecord[], truncated: false };
+        if (!a.ok) failedOn(a.kind === "refused" ? a.reason : a.errorKind);
+        else {
+          const out = new Set(a.rows.filter((x) => str(x, "Supplementary_Sign_Req_Id", 40) || str(x, "Supplementary_Verified_At", 40))
+            .map((x) => idOf(x.Customer)).filter(Boolean));
+          for (const r of sp.rows) {
+            if (!idOf(r.id)) continue;
+            const ct = contactOf.get(r.id) ?? null;
+            if (ct && out.has(ct.id)) continue;
+            const at = str(r, "Supp_Requested_At", 40), days = daysSince(at, now);
+            rows.push(Object.freeze({ key: `send:supp:${r.id}`, kind: "send",
+              investor: Object.freeze({ id: ct ? ct.id : r.id, name: (ct && leadName(ct)) || leadName(r) }),
+              text: sendText("supplementary", byName(r, "Supp_Requested_By"), days), urg: "now", days, action: "Send it",
+              ref: Object.freeze({ leadId: r.id, ...(ct ? { contactId: ct.id } : {}), paper: "supplementary" }) }));
+          }
+        }
+      }
+    }
+    // Oldest request first.
+    rows.sort((x, y) => (y.days ?? -1) - (x.days ?? -1));
+    return { rows, problems, note: unread ?? (deps.financeLeadsShared ? null : REQUESTS_PARTIAL_TEXT) };
   }
 
   /* ------------------------------------------------- AM side ------------------------------------------------- */

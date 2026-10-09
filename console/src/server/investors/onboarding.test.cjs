@@ -96,6 +96,9 @@ function rig(o = {}) {
         if (/from LLP_UnitAllocation_Module where \(+LLP = /.test(q)) throw new Error('the free units are the oversell guard\'s (farms/oversell), never counted inline');
         if (/select id from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(state.allotInserted ? 'receipts.one-pending' : 'receipts.none'));
         if (/from Receipts where Allotment = /.test(q)) return toResponse(recorded(state.receiptInserted ? 'receipts.one-pending' : 'receipts.none'));
+        /* G2: the release's 10% gate — the investor's allotments, then their matched receipts (default: a matched Advance) */
+        if (/^select id, Customer, Allocation_Status from LLP_UnitAllocation_Module where Customer = /.test(q)) return toResponse(recorded(o.gateAllot ?? 'gate.allotments'));
+        if (/from Receipts where Allotment in \(.*\) and Match_State = 'Matched'/.test(q)) return toResponse(recorded(o.gateReceipts ?? 'gate.receipts-advance-matched'));
         throw new Error(`unexpected query ${q}`);
       }
       if (m === 'GET' && p === '/Contacts/search') return toResponse(recorded(pick(o.search ?? 'contacts.search-none', state.searches++)));
@@ -121,20 +124,20 @@ function rig(o = {}) {
       if (m === 'GET' && p === `/Contacts/${CONTACT}`) return toResponse(recorded(pick(o.contact ?? 'contact.hold', calls.filter((c) => c[0] === 'GET' && c[1] === p).length - 1)));
       if (m === 'GET' && p === `/Contacts/${CONTACT}/__timeline`) return toResponse(recorded(pick(o.timeline ?? 'timeline.opened', calls.filter((c) => c[1] === p).length - 1)));
       if (m === 'PUT' && p === `/Contacts/${CONTACT}`) return toResponse(recorded(o.update ?? 'contact.updated'));
-      if (m === 'POST' && p === '/Notes') return toResponse(recorded(o.note ?? 'note.created'));
-      throw new Error(`unexpected call ${m} ${p}`);
+      if (m === 'POST' && p === '/Notes') return toResponse(recorded(o.note ?? 'note.created'));      throw new Error(`unexpected call ${m} ${p}`);
     } });
   const receipts = createAllotmentReceiptWrites({ crm, replay: { async replay() { throw new Error('the replay path is not used here'); } },
     log, recordIdPrefix: P, clock: () => NOW });
-  const allow = { mayAdd: async () => o.finance !== false, mayChange: async () => o.finance !== false };
+  const allow = { mayAdd: async () => o.finance !== false, mayChange: async () => o.finance !== false, mayOverride: async () => o.override === true };
   const guardRefusals = [];
   const oversell = createOversellGuard({ crm, events: { refusal: (...a) => guardRefusals.push(a) } });
   const addOn = (state) => createAddPaid({ crm, receipts, oversell, authority: allow, log, recordIdPrefix: P, clock: () => NOW, state });
   const add = addOn(undefined);
-  const planeC = [];
-  const app = createAppAccess({ crm, authority: allow, log, events: { appAccessReleased: (...x) => planeC.push(x) }, recordIdPrefix: P, clock: () => NOW });
+  const planeC = [], overrides = [];
+  const app = createAppAccess({ crm, authority: allow, log, recordIdPrefix: P, clock: () => NOW,
+    events: { appAccessReleased: (...x) => planeC.push(x), ...(o.noOverrideLine ? {} : { appAccessOverride: (...x) => overrides.push(x) }) } });
   const writes = () => calls.filter((c) => c[0] !== 'GET' && c[1] !== '/coql');
-  return { add, addOn, app, calls, sink, writes, guardRefusals, planeC };
+  return { add, addOn, app, calls, sink, writes, guardRefusals, planeC, overrides };
 }
 
 /* ---- pure pieces ---------------------------------------------------------------------------------- */
@@ -514,5 +517,129 @@ test('M08-S08-NOTE-10: the release is also a Plane C authority line — releaser
   assert.deepEqual(r.planeC, [[ACTOR, null, '', 'refused', 'invalid-request']], 'a bad id is never carried onto the line');
   assert.throws(() => createAppAccess({ crm: r.calls && { getRecord() {}, update() {}, insert() {}, timeline() {} }, authority: { mayChange: async () => true },
     log: createOpsLog(createMemorySink()), recordIdPrefix: P }), /Plane C events/);
+});
+
+/* ---- G2 (D136 proposed): the app account opens only after the 10% is verified ----------------------------------------------- */
+
+const UNLOCKED = { contact: (n) => (n === 0 ? 'contact.hold' : 'contact.invite'), timeline: 'timeline.unlocked' };
+
+test('G2: a matched Advance or a matched Full receipt opens the gate — the unlock writes Invite, read on the releaser\'s token', async () => {
+  for (const gateReceipts of ['gate.receipts-advance-matched', 'gate.receipts-full-matched']) {
+    const r = rig({ ...UNLOCKED, gateReceipts });
+    const res = await r.app.unlock(principal(), CONTACT, T1);
+    assert.equal(res.ok, true, gateReceipts + ' ' + JSON.stringify(res));
+    assert.deepEqual(r.writes().map((c) => c[2].data[0]), [{ App_Access: 'Invite' }]);
+    const q = r.calls.filter((c) => c[1] === '/coql').map((c) => c[2].select_query);
+    assert.match(q[0], new RegExp(`from LLP_UnitAllocation_Module where Customer = '${CONTACT}'`));
+    assert.match(q[1], new RegExp(`where Allotment in \\('${ALLOT}'\\) and Match_State = 'Matched'`));
+    assert.ok(r.calls.filter((c) => c[1] === '/coql').every((c) => c[3].Authorization === 'Zoho-oauthtoken synthetic-user-access-token-never-live'),
+      'the gate is read on the person\'s own token (D53)');
+  }
+});
+
+test('G2: no matched Advance/Full — none at all, only a Part, only a Refund, or only a Cancelled allotment — refuses the unlock, nothing written', async () => {
+  for (const o of [{ gateReceipts: 'receipts.none' }, { gateReceipts: 'gate.receipts-part-matched' }, { gateReceipts: 'gate.receipts-refund-matched' },
+    { gateAllot: 'gate.allotments-cancelled' }, { gateAllot: 'receipts.none' }]) {
+    const r = rig(o);
+    const res = await r.app.unlock({ ...principal(), seat: 'fin' }, CONTACT, T1);
+    assert.deepEqual([res.ok, res.reasonCode], [false, 'ten-percent-not-verified'], JSON.stringify(o));
+    assert.match(res.message, /10% advance is not verified yet: this investor has no matched Advance or Full receipt/);
+    assert.deepEqual(r.writes(), [], JSON.stringify(o));
+    assert.deepEqual(r.planeC, [[ACTOR, 'fin', CONTACT, 'refused', 'ten-percent-not-verified']]);
+    assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'ten-percent-not-verified'));
+  }
+});
+
+test('G2: receipts that cannot be read (a Zoho failure, a list cut short) refuse as unknown — never an unlock on an unknown', async () => {
+  for (const o of [{ gateAllot: 'source.server-error' }, { gateAllot: 'gate.allotments-more' }, { gateReceipts: 'source.server-error' }]) {
+    const r = rig(o);
+    const res = await r.app.unlock(principal(), CONTACT, T1);
+    assert.deepEqual([res.ok, res.reasonCode], [false, 'ten-percent-unknown'], JSON.stringify(o));
+    assert.deepEqual(r.writes(), []);
+  }
+});
+
+test('G2: the card says whether the 10% is verified (Hold only, Finance only) and who may override; other seats read neither', async () => {
+  let res = await rig().app.card(principal(), CONTACT);
+  assert.deepEqual([res.value.tenPercent, res.value.mayOverride], ['verified', false]);
+  res = await rig({ gateReceipts: 'receipts.none', override: true }).app.card(principal(), CONTACT);
+  assert.deepEqual([res.value.tenPercent, res.value.mayOverride], ['not-verified', true]);
+  res = await rig({ gateAllot: 'source.server-error' }).app.card(principal(), CONTACT);
+  assert.equal(res.value.tenPercent, 'unknown');
+  const kam = rig({ finance: false, override: true });
+  res = await kam.app.card(principal(), CONTACT);
+  assert.deepEqual([res.value.tenPercent, res.value.mayOverride], [null, false], 'a seat without the release right never sees the override');
+  assert.equal(kam.calls.filter((c) => c[1] === '/coql').length, 0, 'and its card reads no money');
+  const invited = rig({ contact: 'contact.invite-delivered', timeline: 'timeline.unlocked' });
+  res = await invited.app.card(principal(), CONTACT);
+  assert.equal(res.value.tenPercent, null, 'an unlocked account carries no gate');
+  assert.equal(invited.calls.filter((c) => c[1] === '/coql').length, 0);
+});
+
+/* ---- GC-1526: Finance's override — unlock without the 10%, with a typed reason and a confirmation ------------------------------ */
+
+const NO_TEN = { gateReceipts: 'receipts.none', override: true };
+const WHY = 'Paid by cheque, clearing on Monday';
+
+test('GC-1526: Finance Operations / Head of Finance unlock without the 10%: the reason is a Note on the Contact FIRST, then Invite; ops log + Plane C override line', async () => {
+  const r = rig({ ...NO_TEN, ...UNLOCKED });
+  const res = await r.app.overrideUnlock({ ...principal(), seat: 'fin' }, CONTACT, `  ${WHY}  `, true, T1);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.noteSaved, true);
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), ['POST /Notes', `PUT /Contacts/${CONTACT}`], 'the reason is on the record before access opens');
+  assert.deepEqual(r.writes()[0][2].data[0], { Note_Title: 'App access unlocked without the 10% advance', Note_Content: WHY,
+    Parent_Id: { module: { api_name: 'Contacts' }, id: CONTACT } });
+  assert.deepEqual(r.writes()[1][2].data[0], { App_Access: 'Invite' });
+  assert.equal(r.writes()[1][3]['If-Unmodified-Since'], T1);
+  assert.deepEqual(r.overrides, [[ACTOR, 'fin', CONTACT, 'ok', 'ten-percent-waived']]);
+  assert.deepEqual(r.planeC, [[ACTOR, 'fin', CONTACT, 'ok', 'override']]);
+  const line = r.sink.records().find((x) => x.kind === 'refusal' && x.action === 'app-access' && x.reason === 'override-unlocked');
+  assert.ok(line);
+  assert.deepEqual([...line.recordIds], [CONTACT, '9007199254740994030'], 'the Contact and the Note — never the reason');
+  assert.ok(!JSON.stringify(r.sink.records()).includes('cheque'), 'the typed reason never reaches the log');
+});
+
+test('GC-1526: other seats are refused the override before anything is read — even with a reason and the confirmation', async () => {
+  for (const o of [{ gateReceipts: 'receipts.none', override: false }, { gateReceipts: 'receipts.none', override: true, finance: false }]) {
+    const r = rig(o);
+    const res = await r.app.overrideUnlock({ ...principal(), seat: 'kam' }, CONTACT, WHY, true, T1);
+    assert.deepEqual([res.ok, res.reasonCode, res.message], [false, 'not-override', 'Only Finance Operations or the Head of Finance can unlock without the 10%.']);
+    assert.equal(r.calls.length, 0);
+    assert.deepEqual(r.overrides, [[ACTOR, 'kam', CONTACT, 'refused', 'not-override']]);
+  }
+});
+
+test('GC-1526: the reason must be at least 10 characters, and the confirmation must be given — nothing written otherwise', async () => {
+  for (const [why, confirmed, code] of [['too short', true, 'override-reason-short'], ['          ', true, 'override-reason-short'], [WHY, false, 'confirm-needed'],
+    [WHY, 'yes', 'confirm-needed'], ['x'.repeat(501), true, 'invalid-request']]) {
+    const r = rig(NO_TEN);
+    const res = await r.app.overrideUnlock(principal(), CONTACT, why, confirmed, T1);
+    assert.deepEqual([res.ok, res.reasonCode], [false, code], `${why.slice(0, 12)} / ${confirmed}`);
+    assert.deepEqual(r.writes(), []);
+  }
+});
+
+test('GC-1526: no Note, no unlock; an unlock that then fails takes the Note back; a verified 10% is a plain release (no Note, no override line)', async () => {
+  let r = rig({ ...NO_TEN, note: 'source.server-error' });
+  let res = await r.app.overrideUnlock(principal(), CONTACT, WHY, true, T1);
+  assert.deepEqual([res.ok, res.reasonCode], [false, 'note-failed']);
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), ['POST /Notes']);
+  r = rig({ ...NO_TEN, update: 'contact.conflict-412' });
+  res = await r.app.overrideUnlock(principal(), CONTACT, WHY, true, T1);
+  assert.equal(res.reasonCode, 'changed');
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), ['POST /Notes', `PUT /Contacts/${CONTACT}`, 'DELETE /Notes/9007199254740994030']);
+  r = rig({ override: true, ...UNLOCKED });
+  res = await r.app.overrideUnlock(principal(), CONTACT, WHY, true, T1);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(r.writes().map((c) => c[0] + ' ' + c[1]), [`PUT /Contacts/${CONTACT}`]);
+  assert.deepEqual(r.overrides, []);
+  assert.deepEqual(r.planeC, [[ACTOR, null, CONTACT, 'ok', 'released']]);
+});
+
+test('GC-1526: a deployment without the Plane C override line refuses the override rather than unlock unlogged', async () => {
+  const r = rig({ ...NO_TEN, noOverrideLine: true });
+  const res = await r.app.overrideUnlock(principal(), CONTACT, WHY, true, T1);
+  assert.deepEqual([res.ok, res.reasonCode], [false, 'not-override']);
+  assert.equal(r.calls.length, 0);
 });
 

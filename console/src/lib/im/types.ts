@@ -151,6 +151,8 @@ export type ImDrawerKey = "kam" | "talk" | "claim" | "pay" | "send" | "verify" |
   | ImMoneyDrawerKey;
 export type ImDrafts = {
   PUTR: string; DREF: string; DTPL: string | null; DSIG: string;
+  /** G1: the send panel opened from Finance's queue for an IR's NDA request — the Lead the NDA goes on (no investor record yet) */
+  DLEAD?: string | null;
   /** the Zoho Sign template picked for the send, as "<paper>:<templateId>" — a pick made for one paper never rides onto another (M12-S04-W2) */
   DTID: string; PKIND: "advance" | "balance";
   PMODE: string; DET: Partial<Record<"n" | "ph" | "em" | "city" | "addr" | "nominee", string>>;

@@ -167,7 +167,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/investors/app-activity": { kind: "page", page: "inv" },   /* GC-1525 App activity (sign-ins the investor app wrote back): read on the person's own token; server/investors/app-activity applies the seat's own book scope inside */
   "/api/investors/mine": { kind: "page", page: "inv" },   /* M09-S08 an IR's Investors list: the IR holds the Investors page (D113); server/investors/ir-list refuses any seat but the IR's own-lead scope inside */
   "/api/investors/add-paid": { kind: "page", page: "inv" },
-  "/api/investors/[id]/unlock": { kind: "page", page: "inv" },
+  "/api/investors/[id]/unlock": { kind: "page", page: "inv" },   /* M10-S21 + G2/GC-1526 (D136): release = "pay" right and a matched 10%; the override = Finance Operations / Head of Finance only, decided inside */
   "/api/investors/[id]/preview": { kind: "page", page: "inv" },   /* M10-S22 app preview: the record's own admission decides inside */
   "/api/investors/[id]/test-link": { kind: "page", page: "inv" }, /* M10-S23: super user only, decided inside */
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */

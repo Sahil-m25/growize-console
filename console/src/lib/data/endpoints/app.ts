@@ -10,8 +10,9 @@ import type { AppPreview, PreviewPayout } from "@/server/investors/preview";
 import type { TestLinkEntry, TestLinkState } from "@/server/investors/test-link";
 import {
   I, PREVIEW_TABS, accessOf, appOf, when, accessView, allotPayStatus, docOf, isAM, llpName, llpOf, mayAccess, mayTestLink, newTestLink,
-  nowFull, portfolioOf, testLinkGate, testLinkState, testLinks,
+  nowFull, portfolioOf, testLinkGate, testLinkState, testLinks, who,
 } from "@/lib/im";
+import { NOT_OVERRIDE_TEXT, OVERRIDE_REASON_MAX, OVERRIDE_REASON_MIN, TEN_PERCENT_TEXT, overrideReasonShort } from "@/lib/im/app-gate";
 import type { ImAccess, ImTestLink } from "@/lib/im";
 import { fail, ok, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
@@ -39,8 +40,15 @@ const cardOf = (b: ImBook, id: string, a: ImAccess | null): AppAccessCard => {
     modifiedTime: null,
     history: a && a.Locked_At ? [{ at: a.Locked_At, byId: a.Locked_By ?? null }] : [],
     mayChange: mayAccess(b.s, b.me), historyRead: true,
+    /* G2 / GC-1526 (D136 proposed): the demo book's matched advance or full receipt, and the two Finance seats that may override */
+    tenPercent: a && a.App_Access === "Hold" && mayAccess(b.s, b.me) ? (tenVerified(b, id) ? "verified" : "not-verified") : null,
+    mayOverride: mayAccess(b.s, b.me) && mayOverrideIn(b),
   };
 };
+/** G2: the 10% is verified — a matched advance or full receipt in the demo book (live: server/investors/unlock tenPercent). */
+const tenVerified = (b: ImBook, id: string): boolean => b.s.data.TXN.some(t => t.inv === id && t.rec === "matched" && (t.kind === "advance" || t.kind === "full"));
+/** GC-1526: Finance Operations and the Head of Finance only (live: the route's OVERRIDE_SEATS). */
+const mayOverrideIn = (b: ImBook): boolean => { const r = who(b.s, b.me).r; return r === "head" || r === "ops"; };
 
 export const appCard: ReadEndpoint<ImBook, string | null, CardAnswer> = {
   path: id => (id ? `/api/investors/${enc(id)}/unlock` : null),
@@ -51,17 +59,25 @@ export const appCard: ReadEndpoint<ImBook, string | null, CardAnswer> = {
   },
 };
 
-export type UnlockArgs = { id: string; expectedModifiedTime: string | null };
-export type LockArgs = UnlockArgs & { reason: string };
+/** `override` (GC-1526): "Unlock without the 10%" — the typed reason, sent only after the card's own confirmation step. */
+export type UnlockArgs = { id: string; expectedModifiedTime: string | null; override?: { reason: string } };
+export type LockArgs = Omit<UnlockArgs, "override"> & { reason: string };
 export type CardChanged = Pick<CardAnswer, "card" | "already">;
 
 export const appUnlock: WriteEndpoint<ImBook, UnlockArgs, CardChanged, ImDispatch> = {
   method: "POST",
   path: a => `/api/investors/${enc(a.id)}/unlock`,
-  body: a => ({ expectedModifiedTime: a.expectedModifiedTime }),
+  body: a => ({ expectedModifiedTime: a.expectedModifiedTime, ...(a.override ? { override: { reason: a.override.reason, confirmed: true } } : {}) }),
   pick: j => j as CardChanged,
   fixture(b, d, a): ApiResult<CardChanged> {
     const acc = accessOf(b.s, b.me, a.id);
+    /* G2: refused without the 10%, as the route refuses it; GC-1526: Finance's override with a reason (no Note in the demo book) */
+    if (acc && acc.App_Access === "Hold" && mayAccess(b.s, b.me) && !tenVerified(b, a.id)) {
+      if (!a.override) return fail(422, "ten-percent-not-verified", TEN_PERCENT_TEXT);
+      if (!mayOverrideIn(b)) return fail(403, "not-override", NOT_OVERRIDE_TEXT);
+      const why = a.override.reason.trim();
+      if (why.length < OVERRIDE_REASON_MIN || why.length > OVERRIDE_REASON_MAX) return fail(422, "override-reason-short", overrideReasonShort());
+    }
     const now: ImAccess = { App_Access: "Invite", App_Welcome_At: null, App_Welcome_Channel: null };
     return imFixtureWrite(b, d, { type: "sendWelcome", id: a.id }, { card: cardOf(b, a.id, acc ? now : null), already: false });
   },

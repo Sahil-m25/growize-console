@@ -190,7 +190,8 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
       <div className="card fill"><div className="ch"><h3>{sup ? "Finance's queue" + (fin ? " · primary: " + fin : "") : "Waiting on you"}</h3><div className="sp" />
         {d.today ? <span className="tag late"><span className="dot" />{d.today} today</span>
           : <span className="tag go"><span className="dot" />clear</span>}</div>
-        <div className="cb">{q.length ? <div className="q">{q.map(x => <QRow key={x.key} s={s} me={me} dispatch={dispatch} x={x} claims={claims} />)}</div>
+        <div className="cb">{d.requestsNote ? <div className="note" role="status" data-requests-note style={{ marginBottom: 8 }}>{d.requestsNote}</div> : null}
+          {q.length ? <div className="q">{q.map(x => <QRow key={x.key} s={s} me={me} dispatch={dispatch} x={x} claims={claims} />)}</div>
           : <div className="empty">Nothing is waiting on this seat.<br />
             <span className="sm">{!d.readOnly
               ? "Every document is out or signed, every claim is answered and no hold is close."
@@ -213,6 +214,18 @@ const KIND_WORD: Record<ClaimRow["kind"], string> = { advance: "Advance", balanc
 export const claimLine = (c: ClaimRow): string =>
   KIND_WORD[c.kind] + " · " + money(c.amountRupees) + " · " + c.mode + " · said " + (/^\d{4}-\d{2}-\d{2}/.test(c.saidOn) ? fmtDay(Date.parse(c.saidOn.slice(0, 10) + "T00:00:00Z")) : c.saidOn.slice(0, 6));
 
+/* G1 (D136 proposed): "Send it" on an IR's request — the NDA opens Documents › Send one on the lead; the supplementary opens the
+   investor's send drawer (it goes on their allotment), or Send one when there is no investor record yet. */
+export function sendIt(dispatch: ImPageProps["dispatch"], ref: MoneyRowView["ref"]): void {
+  if (ref.paper === "supplementary" && ref.contactId) {
+    dispatch({ type: "openDrawer", k: "send", id: ref.contactId, seed: { DTPL: "Supplementary agreement" } });
+    return;
+  }
+  dispatch({ type: "go", v: "docs" });
+  dispatch({ type: "setSec", v: "docs", k: "send" });
+  dispatch({ type: "setDraft", patch: ref.paper === "nda" ? { DTPL: "Non-disclosure agreement", DLEAD: ref.leadId ?? null } : { DTPL: "Supplementary agreement", DLEAD: null } });
+}
+
 /* qRow(x) — imx.js 1447–1466. One queue row, carrying the control that does it — the route's `action` names it. */
 export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | CareRow; claims?: ReadonlyMap<string, ClaimRow> }) {
   const id = x.investor.id;
@@ -229,8 +242,10 @@ export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | 
             : x.action === "Verify it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "verify", id: ref.paper ?? null, seed: { DREF: "" } }))}>Verify it</button>
               : x.action === "Check it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "kyc", id }))}>Check it</button>
                 : x.action === "Remind" ? <button className="act" onClick={stop(() => { dispatch({ type: "go", v: "inv", id }); dispatch({ type: "setSec", v: "inv:" + id, k: "paper" }); })}>Remind</button>
+                  : x.action === "Send it" ? <button className="act" onClick={stop(() => sendIt(dispatch, ref))}>Send it</button>
                   : <button className="act ghost" onClick={stop(() => dispatch({ type: "go", v: "inv", id }))}>Open the record</button>;
-  const open = () => dispatch({ type: "go", v: "inv", id });
+  /* G1: an NDA row may name a lead with no investor record yet — the row opens its send panel, never a missing record */
+  const open = x.kind === "send" && !ref.contactId ? () => sendIt(dispatch, ref) : () => dispatch({ type: "go", v: "inv", id });
   const from = "from" in x ? x.from : null;
   return (
     <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} role="button" tabIndex={0}

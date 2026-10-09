@@ -137,13 +137,14 @@ test('TC-E09-001: NDA sent by Finance → the IR\'s move is "told", one chip per
   assert.equal(r.writes().length, 0);
 });
 
-test('Finance has not sent the NDA → nobody on this side has a move; nothing offered', async () => {
+test('Finance has not sent the NDA → the move is Finance\'s; the IR is offered only G1\'s "ask Finance to send it"', async () => {
   const r = rig({ [LEAD_GET]: 'lead.nda-not-sent' });
   const res = await r.svc.read(principal(), LEAD);
   const nda = res.value.rounds.find((x) => x.round === 'nda');
   assert.equal(nda.next.k, 'sent');
   assert.equal(nda.next.who, 'Finance');
-  assert.deepEqual(res.value.offers, []);
+  assert.equal(nda.requested, null);
+  assert.deepEqual(res.value.offers.map((o) => [o.round, o.beat, o.channels.length]), [['nda', 'request', 0]]);
 });
 
 test('TC-E09-002: told by WhatsApp writes told (channel, by, at) guarded, one log line, and a 10 s Undo restores it', async () => {
@@ -379,7 +380,7 @@ test('after agreement the row is Finance\'s (read from the allotment); once Fina
   const notSent = rig({ [LEAD_GET]: 'lead.supp-agreed', 'COQL from Contacts': 'coql.contact-of-lead', 'COQL from LLP_UnitAllocation_Module': 'coql.empty' });
   const a = await notSent.svc.read(principal(), LEAD);
   assert.deepEqual({ ...a.value.rounds.find((x) => x.round === 'supp').next }, { k: 'sent', t: 'Send it for signature', who: 'Finance' });
-  assert.equal(a.value.offers.length, 0);
+  assert.deepEqual(a.value.offers.map((o) => [o.round, o.beat]), [['supp', 'request']], 'G1: the agreed supplementary can be asked for');
   const sent = rig({ [LEAD_GET]: 'lead.supp-agreed', 'COQL from Contacts': 'coql.contact-of-lead', 'COQL from LLP_UnitAllocation_Module': 'coql.allotment-supp-sent' });
   const b = await sent.svc.read(principal(), LEAD);
   assert.equal(b.value.rounds.find((x) => x.round === 'supp').next.k, 'told');
@@ -615,4 +616,75 @@ test('W3-E2E-4: a supplementary Finance sent before the NDA came back and before
   const unsent = await rig({ [LEAD_GET]: 'lead.nda-sent' }).svc.read(principal(), LEAD);
   assert.equal(unsent.value.rounds.find((x) => x.round === 'supp').sent, false);
   assert.notEqual(unsent.value.rounds.find((x) => x.round === 'supp').next.k, 'told');
+});
+
+/* ---- G1 (D136 proposed): the IR asks Finance to send the NDA / the supplementary ------------------------------------------- */
+
+test('G1: "Ask Finance to send the NDA" writes NDA_Requested_At / _By on the IR\'s token, guarded, one log line, and Undo takes it back', async () => {
+  const rowToken = await tokenFor('lead.nda-not-sent', 'nda', 'request');
+  const r = rig({ [LEAD_GET]: 'lead.nda-not-sent', [LEAD_PUT]: ['lead.updated', 'lead.restored'] });
+  const res = await r.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.already, undefined);
+  assert.deepEqual(r.writes().map((c) => c.key), [LEAD_PUT], 'the Lead only: no Touch, no Note, nothing of Finance\'s');
+  const put = r.writes()[0];
+  assert.equal(put.headers['If-Unmodified-Since'] ?? put.headers['if-unmodified-since'], LOADED);
+  assert.deepEqual(put.body.data[0], { NDA_Requested_At: '2026-09-28T11:00:00+05:30', NDA_Requested_By: { id: IR } });
+  assert.deepEqual(r.events().map((e) => e.reason), ['nda-request']);
+  const u = await r.svc.undo(principal(), res.value.undoToken);
+  assert.equal(u.ok, true, JSON.stringify(u));
+  assert.deepEqual(r.writes()[1].body.data[0], { NDA_Requested_At: null, NDA_Requested_By: null });
+});
+
+test('G1: a round already asked for answers `already` and writes nothing — even on a token read before the first press', async () => {
+  const rowToken = await tokenFor('lead.nda-not-sent', 'nda', 'request');
+  const r = rig({ [LEAD_GET]: 'lead.nda-requested' });
+  const res = await r.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.value.already, true);
+  assert.equal(res.value.undoToken, null);
+  assert.deepEqual(r.writes(), []);
+  const row = await rig({ [LEAD_GET]: 'lead.nda-requested' }).svc.read(principal(), LEAD);
+  assert.deepEqual({ ...row.value.rounds.find((x) => x.round === 'nda').requested }, { at: '2026-09-26T10:30:00+05:30' });
+  assert.equal(offer(row.value, 'nda', 'request'), undefined, 'asked once: no second offer');
+});
+
+test('G1: sent or verified already → refused (already-sent), nothing written; the sent row never offers it', async () => {
+  const rowToken = await tokenFor('lead.nda-not-sent', 'nda', 'request');
+  for (const fx of ['lead.nda-sent', 'lead.nda-verified']) {
+    const r = rig({ [LEAD_GET]: fx });
+    const res = await r.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken });
+    assert.equal(res.ok, false, fx);
+    assert.equal(res.reasonCode, 'already-sent', fx);
+    assert.deepEqual(r.writes(), [], fx);
+  }
+  const row = await rig({ [LEAD_GET]: 'lead.nda-sent' }).svc.read(principal(), LEAD);
+  assert.equal(offer(row.value, 'nda', 'request'), undefined);
+});
+
+test('G1: the request takes no channel, needs its own row token, and a 412 is "lead changed"; a lead outside the book is refused', async () => {
+  const rowToken = await tokenFor('lead.nda-not-sent', 'nda', 'request');
+  const a = rig({ [LEAD_GET]: 'lead.nda-not-sent' });
+  assert.equal((await a.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', channel: 'call', rowToken })).reasonCode, 'invalid-request');
+  assert.equal((await a.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken: 'forged' })).reasonCode, 'not-from-row');
+  const told = await tokenFor('lead.nda-sent', 'nda', 'told');
+  assert.equal((await a.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken: told })).reasonCode, 'not-from-row');
+  assert.deepEqual(a.writes(), []);
+  const b = rig({ [LEAD_GET]: 'lead.nda-not-sent', [LEAD_PUT]: 'conflict' });
+  assert.equal((await b.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken })).reasonCode, 'lead-changed');
+  const c = rig({ [LEAD_GET]: 'lead.other-owner' });
+  assert.equal((await c.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken })).reasonCode, 'not-in-book');
+});
+
+test('G1: "Ask Finance to send the supplementary" once the final draft is agreed writes Supp_Requested_*; once sent it is refused', async () => {
+  const routes = { [LEAD_GET]: 'lead.supp-agreed', 'COQL from Contacts': 'coql.contact-of-lead', 'COQL from LLP_UnitAllocation_Module': 'coql.empty' };
+  const row = await rig(routes).svc.read(principal(), LEAD);
+  const o = offer(row.value, 'supp', 'request');
+  assert.ok(o);
+  const r = rig({ ...routes, [LEAD_PUT]: 'lead.updated' });
+  const res = await r.svc.step(principal(), { leadId: LEAD, round: 'supp', beat: 'request', rowToken: o.rowToken });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(r.writes()[0].body.data[0], { Supp_Requested_At: '2026-09-28T11:00:00+05:30', Supp_Requested_By: { id: IR } });
+  const sent = rig({ ...routes, 'COQL from LLP_UnitAllocation_Module': 'coql.allotment-supp-sent' });
+  assert.equal((await sent.svc.step(principal(), { leadId: LEAD, round: 'supp', beat: 'request', rowToken: o.rowToken })).reasonCode, 'already-sent');
 });
