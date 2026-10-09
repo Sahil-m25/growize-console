@@ -78,7 +78,7 @@ B-10 and W2-KAM-1 are one ruling (no price-derived rupee figure for an IR or a K
 - **B-21** (Fixed+verified): W1B-FIN-TEAMS-EDIT-BTN (B-21) asserts the old behaviour (button shown); retire it, W3-REG-B21 replaces it.
 - **B-22** (Ruling): Cases assert the server-policy side (hidden/refused). Owner to confirm per the ruling list.
 - **B-23** (Fixed in code): Not in the verified list handed over; classed Fixed in code (code 9628d67, sandbox seed e581ef7).
-- **B-27** (Env): Code in 9628d67 (POST /api/jobs/audit-export). Needs ZOHO_AUDIT_ARCHIVE_REFRESH_TOKEN and the scheduler on staging.
+- **B-27** (Env): Code in 9628d67 (POST /api/jobs/audit-export); `LOG_SINK=state` (b27-archive) keeps the archive and Plane C in the existing NoSQL store. Owner steps: `docs/runbooks/b27-activity-archive-staging.md`.
 - **W2-KAM-1** (Ruling): Same ruling as B-10.
 - **W2-KAM-5** (Seed): Fails on staging until seed contacts get Origin_Lead.
 - **W2-KAM-6** (Fixed in code): Needs Change Owner on Cases for the KAM/AM Head profiles in Zoho (not made).

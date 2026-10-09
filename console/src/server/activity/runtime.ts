@@ -3,8 +3,9 @@
  *
  *   AUDIT_ARCHIVE_DIR        absolute directory of the local append-only archive (./archive.ts); unset →
  *                            the page reads Plane C only and says the archive is not configured.
- *                            With LOG_SINK=stratus the archive is the Stratus bucket instead (../logs/stratus.ts)
- *                            and AUDIT_ARCHIVE_DIR is ignored — an AppSail disk does not outlive its instance.
+ *                            With LOG_SINK=stratus the archive is the Stratus bucket instead (../logs/stratus.ts), and with
+ *                            LOG_SINK=state it is the Catalyst NoSQL state store (../logs/state-store.ts, B-27: no bucket);
+ *                            either way AUDIT_ARCHIVE_DIR is ignored — an AppSail disk does not outlive its instance.
  *   ZOHO_FINANCE_USER_IDS    comma-separated Zoho user ids of the Finance people, for the Auditor (optional)
  *   ZOHO_AUDIT_ARCHIVE_REFRESH_TOKEN  the "audit-archive" service grant (D53) the nightly export runs on (B-27), with
  *                            ZOHO_ACCOUNTS_ORIGIN, ZOHO_OAUTH_CLIENT_ID and ZOHO_OAUTH_CLIENT_SECRET. Unset → the job answers
@@ -26,6 +27,7 @@ import { reportOpsFailure } from "../ops/runtime";
 import { createZohoAuditExportSource, fetchUserDirectory, runAuditExport, type ExportRun, type HttpFetch, type PendingExports } from "./export-job";
 import { cleanRow, createLocalAuditArchive, type AuditArchive } from "./archive";
 import { createStratusAuditArchive } from "../logs/stratus";
+import { createStateAuditArchive } from "../logs/state-store";
 import type { ActivityDeps } from "./query";
 import { planeCBetween } from "./sources";
 
@@ -34,7 +36,9 @@ const G = globalThis as typeof globalThis & { __gzAuditArchive?: AuditArchive | 
 
 export function auditArchive(env: NodeJS.ProcessEnv = process.env): AuditArchive | null {
   if (G.__gzAuditArchive !== undefined) return G.__gzAuditArchive;
-  const objects = logSinks(env).objects;
+  const sinks = logSinks(env);
+  if (sinks.kind === "state") return (G.__gzAuditArchive = createStateAuditArchive({ state: sharedState(), clean: cleanRow }));
+  const objects = sinks.objects;
   if (objects) return (G.__gzAuditArchive = createStratusAuditArchive({ client: objects, clean: cleanRow }));
   const dir = (env.AUDIT_ARCHIVE_DIR ?? "").trim();
   G.__gzAuditArchive = dir ? createLocalAuditArchive({ dir }) : null;

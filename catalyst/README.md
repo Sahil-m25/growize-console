@@ -122,7 +122,7 @@ the app's `JOB_SECRET` secret; no body, no query parameters):
 |---|---|---|---|
 | `gz-sign-recheck` | `https://<app-host>/api/jobs/sign-recheck` | `*/10 * * * *` | M12-S05-T02: every 10 minutes, re-check open Zoho Sign requests so a missed webhook is still caught |
 | `gz-outbox-drain` | `https://<app-host>/api/jobs/outbox-drain` | `* * * * *` | M13-S01: retry queued pushes to the investor app even after the instance that queued them is gone |
-| `gz-audit-export` | `https://<app-host>/api/jobs/audit-export` | `*/10 20-21 * * *` (UTC = 01:30–03:20 IST; adjust if the scheduler runs in IST) | M15-S03-T01 / B-27: yesterday's Zoho audit-log export into the activity archive. Each call requests or resumes the export and polls ~20 s; needs `ZOHO_AUDIT_ARCHIVE_REFRESH_TOKEN` and `LOG_SINK=stratus` (or the page says the log is not set up) |
+| `gz-audit-export` | `https://<app-host>/api/jobs/audit-export` | `*/10 20-21 * * *` (UTC = 01:30–03:20 IST; adjust if the scheduler runs in IST) | M15-S03-T01 / B-27: yesterday's Zoho audit-log export into the activity archive. Each call requests or resumes the export and polls ~20 s; needs `ZOHO_AUDIT_ARCHIVE_REFRESH_TOKEN` and `LOG_SINK=state` (NoSQL, no bucket) or `stratus` (or the page says the log is not set up); runbook: `docs/runbooks/b27-activity-archive-staging.md` |
 
 Answers: 200 `{ran:true}` ran; 200 `already-running`; 401 wrong or missing secret; 503 `not-configured` (no
 `JOB_SECRET`) or `state-unavailable` (the state store did not answer — the next tick runs it). Set the job's retry
