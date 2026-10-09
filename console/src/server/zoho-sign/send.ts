@@ -34,7 +34,7 @@ import {
 
 export type SendRefusal =
   | "invalid-request" | "idempotency-key-invalid" | "idempotency-key-reused" | "seat-denied" | "not-visible" | "already-on-file"
-  | "already-out" | "aadhaar-not-for-nri" | "aadhaar-needs-template" | "no-recipient" | "record-changed" | "busy" | "template-shape";
+  | "already-out" | "nda-first" | "no-agreed-draft" | "aadhaar-not-for-nri" | "aadhaar-needs-template" | "no-recipient" | "record-changed" | "busy" | "template-shape";
 
 export const SEND_MESSAGE: Readonly<Record<SendRefusal, string>> = Object.freeze({
   "invalid-request": "Not sent — the send is incomplete.",
@@ -44,6 +44,8 @@ export const SEND_MESSAGE: Readonly<Record<SendRefusal, string>> = Object.freeze
   "not-visible": "You cannot open this record in Zoho.",
   "already-on-file": "Not sent — this paper is already on file, signed and verified.",
   "already-out": "Not sent — a request for this paper is already out for signature.",
+  "nda-first": "Not sent — the NDA has not come back signed and been verified yet. The supplementary agreement follows it.",
+  "no-agreed-draft": "Not sent — the IR has not recorded an agreed final draft of the supplementary agreement yet.",
   "aadhaar-not-for-nri": "Aadhaar eSign is not available: this investor is an NRI, and Aadhaar eSign needs an Aadhaar linked to a live Indian mobile. Send with email OTP.",
   "aadhaar-needs-template": "Aadhaar eSign is set in a Zoho Sign template. Pick the template, or send the uploaded PDF with email OTP.",
   "no-recipient": "Not sent — the record has no name and email to send to.",
@@ -178,6 +180,22 @@ export function createSignSender(deps: SendDeps) {
     } catch { return null; }
   }
 
+  /** W3-E2E-4 - the order of the two rounds (lib/selectors/paper prNext: the supplementary "waits for the NDA to come back signed",
+   *  and goes out only on the IR's agreed final draft). A contact that did not come through a lead (no Origin_Lead) has no lead-side
+   *  round to wait for. "unreadable": the lead could not be read, so the order cannot be proved and nothing is sent. */
+  async function orderGate(cred: UserCredential, contact: ZohoRecord | undefined, signal?: AbortSignal): Promise<"ok" | "nda-first" | "no-agreed-draft" | "unreadable"> {
+    const lead = idOf(contact?.Origin_Lead);
+    if (!lead || !RECORD_ID.test(lead)) return "ok";
+    try {
+      const r = await deps.crm.getRecord(cred, "Leads", lead, { fields: ["id", "NDA_Verified_At", ...AGREED_FIELDS], signal });
+      if (!r.ok || !r.value || r.value.id !== lead) return "unreadable";
+      const nda = s(r.value, "NDA_Verified_At", 40);
+      if (!nda || !DATETIME.test(nda)) return "nda-first";
+      const ref = s(r.value, ROUND_FIELDS.supp.agreedRef, 500), at = s(r.value, ROUND_FIELDS.supp.agreedAt, 40);
+      return ref && AGREED_REF.test(ref) && at && DATETIME.test(at) ? "ok" : "no-agreed-draft";
+    } catch { return "unreadable"; }
+  }
+
   /** What Zoho Sign says of the request already on the record (sender's token); null = could not read. */
   async function liveState(cred: UserCredential, requestId: string, signal?: AbortSignal): Promise<SignState | null> {
     try {
@@ -201,6 +219,11 @@ export function createSignSender(deps: SendDeps) {
       if (isLive(st)) return refuse(me, "already-out", [i.recordId], existing);
     }
     if (!party.recipient) return refuse(me, "no-recipient", [i.recordId]);
+    if (i.paper === "supplementary") {
+      const order = await orderGate(cred, party.contact, signal);
+      if (order === "unreadable") return { ok: false, kind: "not-saved", errorKind: "unexpected", message: NOT_SAVED, recalled: false };
+      if (order !== "ok") return refuse(me, order, [i.recordId]);
+    }
     if (i.method === "aadhaar" && party.nri) return refuse(me, "aadhaar-not-for-nri", [i.recordId]);
     if (i.method === "aadhaar" && i.source.kind === "pdf") return refuse(me, "aadhaar-needs-template", [i.recordId]);
 
@@ -277,12 +300,14 @@ export function createSignSender(deps: SendDeps) {
         current = { requestId: existing, state: st, label: STATE_LABEL[st] };
       }
       const blocked = current !== null && (current.state === "verified" || current.state === "signed" || isLive(current.state as SignState));
+      const order = paper === "supplementary" && !blocked ? await orderGate(cred, party.contact, signal) : "ok";
+      const held = order === "ok" ? null : order === "unreadable" ? "The lead's paperwork could not be read, so the order of the rounds cannot be checked. Try again." : SEND_MESSAGE[order];
       return { ok: true, value: Object.freeze({
         paper, recordId, recipient: party.recipient, nri: party.nri,
         methods: Object.freeze(party.nri ? ["email-otp"] as SignMethod[] : ["aadhaar", "email-otp"] as SignMethod[]),
         methodNote: party.nri ? SEND_MESSAGE["aadhaar-not-for-nri"] : null,
         modifiedTime: typeof party.rec.Modified_Time === "string" ? party.rec.Modified_Time : null,
-        current, maySend: !blocked && party.recipient !== null, note: primaryDoerNote(seat),
+        current, maySend: !blocked && party.recipient !== null && order === "ok", note: held ?? primaryDoerNote(seat),
         agreedDraft: paper === "supplementary" && !blocked ? await agreedDraftOf(cred, party.contact, signal) : null,
       }) };
     },

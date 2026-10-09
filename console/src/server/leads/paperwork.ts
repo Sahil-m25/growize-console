@@ -209,6 +209,14 @@ export function roundOf(L: ZohoRecord, rk: RoundKey, fin: FinanceSide): PaperRou
 export function nextOf(L: ZohoRecord, done: number, rounds: { readonly nda: PaperRound; readonly supp: PaperRound }, rk: RoundKey): PaperNext {
   // Zoho Sign's completion (or Finance's verification) is the signature: the round is done whatever the IR said.
   if (rounds[rk].ok && !L.Lost_At) return { k: "done", t: "Signed and verified", who: null };
+  // W3-E2E-4: once Finance has sent the paper it is out, whatever came before it: the IR's moves are to tell and to chase, and the lead
+  // must show it (the investor holds a live signing link). The order of the rounds is held at the send (zoho-sign/send), not here.
+  const r = rounds[rk];
+  if (r.sent && !L.Lost_At) {
+    if (!r.told) return { k: "told", t: "Tell them it is there", who: "IR" };
+    if (!r.said) return { k: "said", t: "Chase the signature", who: "IR" };
+    return { k: "ok", t: "Verify the signed copy", who: "Finance" };
+  }
   const lead = { id: L.id, done, lost: !!L.Lost_At } as unknown as Lead;
   const ctx = { PAPER: { [L.id]: rounds } } as unknown as Ctx;
   return prNext(ctx, lead, rk);
@@ -322,8 +330,9 @@ export function createPaperwork(deps: PaperworkDependencies) {
     const nda = roundOf(L, "nda", ndaFin);
     let supp = roundOf(L, "supp", { sentAt: null, okAt: null });
     let suppUnread = false;
-    // Finance's supplementary side matters only once the IR's half is through (agreed): read it then.
-    if (needSupp && ndaFin.okAt && done >= 5 && supp.agreed) {
+    // Finance's supplementary side is read whenever it is asked for: a paper that is out shows as out on the lead, in whatever order it
+    // went (W3-E2E-4: it used to be read only once the NDA was verified and the draft agreed, so an early send never showed).
+    if (needSupp) {
       const f = await suppFinance(p.credential, leadId, signal);
       if (f) supp = roundOf(L, "supp", f); else suppUnread = true;
     }

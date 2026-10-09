@@ -140,9 +140,13 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
       {paper && pre.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 12 }}>{pre.err.error}</div> : null}
       {paper && pre.state === "ok" && pre.data.recipient
         ? <p className="sm" style={{ margin: "0 0 10px" }}>{"To " + pre.data.recipient.name + " · " + pre.data.recipient.email}</p> : null}
+      {/* W3-E2E-4: a paper held for the order of the rounds says why (the route's note), rather than "already out" */}
+      {paper && pre.state === "ok" && !pre.data.maySend && !pre.data.current && pre.data.note
+        ? <div className="note bad" role="status" style={{ marginBottom: 12 }}>{pre.data.note}</div> : null}
       {can
         ? <button className="act" onClick={go}>Send through Zoho Sign</button>
-        : <button className="act" disabled title={paper && pre.state === "ok" && !pre.data.maySend ? "Already out or on file for this investor" : "Pick the investor, the template and how it is signed"}>Send through Zoho Sign</button>}
+        : <button className="act" disabled title={paper && pre.state === "ok" && !pre.data.maySend
+          ? (pre.data.current ? "Already out or on file for this investor" : pre.data.note ?? "Not yet: the order of the rounds") : "Pick the investor, the template and how it is signed"}>Send through Zoho Sign</button>}
       <p className="sm" style={{ margin: "10px 0 0" }}>Goes from the finance mailbox as an expiring link. The IR
         sees that it went — never what is in it — and it is their job from there to tell the investor
         and chase the signature.</p>

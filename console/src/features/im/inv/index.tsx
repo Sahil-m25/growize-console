@@ -28,6 +28,8 @@ import { useApiMode, useApiRead, useApiWrite, type Read } from "@/lib/data/api";
 import { appCard } from "@/lib/data/endpoints/app";
 import { amBook, amManagers, financeInvestors, investorRecord, investorSearch, irInvestorList, type AmManagers } from "@/lib/data/endpoints/investors";
 import { caseList } from "@/lib/data/endpoints/cases";
+import { dayOf as docDay, documentsList } from "@/lib/data/endpoints/documents";
+import { SIGN_CLOSED, type DocRow } from "@/server/documents/list";
 import { useGoLead } from "@/features/leads/nav";
 import type { NavKey } from "@/domain";
 import type { IrInvestorRow } from "@/server/investors/ir-list";
@@ -301,6 +303,11 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   /* an IR's record has no hold clock: its banner carries what a lapse forfeits (money) */
   const ho = useApiRead(holdOne, { s, me }, p.irSeat ? null : rec.holdings.find(h => h.status === "Reserved")?.id ?? null);
   const heard = useAmRows(p, isAM(s, me) && rec.sections.includes("care"));
+  /* W3-E2E-3: live, the Paper tab reads the papers Zoho holds (GET /api/documents/list), not the demo book's DOCS (empty live) */
+  const live = useApiMode() === "live";
+  const papersRead = useApiRead(documentsList, { s, me }, live && rec.sections.includes("paper") ? "all" : null);
+  const papers: PaperRows = !live ? null : papersRead.state === "ok" ? { rows: papersRead.data.rows.filter(d => d.contactId === rec.id || d.contactId === x?.id) }
+    : papersRead.state === "error" ? { error: papersRead.err.error } : { loading: true };
   if (!x) return null;
   const am = isAM(s, me), due = rec.money?.due ?? 0, got = rec.money?.paid ?? 0;
   const hr = heard?.get(x.id), o = heard === undefined ? overdue(s, me, x) : hr?.overdue ?? null;
@@ -311,7 +318,8 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
     hold: () => ({ k: "hold", t: "What they hold" }),
     care: () => ({ k: "care", t: "Care", n: isQuiet ? 1 : 0, warn: true }),
     money: () => ({ k: "money", t: "Money", n: due ? 1 : 0 }),
-    paper: () => ({ k: "paper", t: "Paper", n: roundsFor(s, me, x.id).filter(r => r.state !== "done").length, warn: true }),
+    paper: () => ({ k: "paper", t: "Paper", n: papers ? ("rows" in papers ? liveRounds(papers.rows).filter(r => r.tone !== "go").length : 0)
+      : roundsFor(s, me, x.id).filter(r => r.state !== "done").length, warn: true }),
     jrn: () => ({ k: "jrn", t: "Journey" }),
     tkt: () => ({ k: "tkt", t: "Tickets", n: tkOf(s, me, x.id).filter(t => t.state !== "closed").length }),
   };
@@ -373,7 +381,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
             {!may(s, me, "pay") ? <p className="sm" style={{ margin: "12px 0 0" }}>Read only — Finance Operations and the Head of Finance record money.</p> : null}
           </div></div>
         ) : null}
-        {S === "paper" ? <SecPaper {...p} /> : null}
+        {S === "paper" ? (papers ? <SecPaperLive {...p} papers={papers} /> : <SecPaper {...p} />) : null}
         {S === "jrn" && p.irSeat ? <IrJourney x={x} /> : null}
         {S === "jrn" && !p.irSeat ? (
           <div className="card fill"><div className="ch"><h3>The journey</h3><div className="sp" />
@@ -663,6 +671,73 @@ function SecCare({ s, me, dispatch, x, heard, hr, o }: ImPageProps & { x: ImInve
           </div>
         )) : <div className="empty">Nobody has spoken to them since they were allotted.</div>}
       </div></div>
+    </>
+  );
+}
+
+/* ---- W3-E2E-3: the Paper tab, live. Rounds and documents come from the rows GET /api/documents/list answers for this investor:
+   the supplementary round is the allotment's Supplementary_Sign_Req_Id (the same field Documents > Out for signature and the Send
+   panel's prefill read), so the three screens say one thing. The NDA is the lead side's round (the IR's lead page shows it). ---- */
+export type PaperRows = null | { rows: readonly DocRow[] } | { error: string } | { loading: true };
+type LiveRound = { key: string; title: string; tone: "go" | "late" | "due" | "ir"; tag: string; line: string; row: DocRow | null };
+
+/** The sender (Sign's owner name, or the user id resolved from the people directory) and the day it went, as one line. */
+const sentLine = (d: DocRow): string => (d.sign?.sentAt ? "sent " + docDay(d.sign.sentAt) : "");
+export function liveRounds(rows: readonly DocRow[]): LiveRound[] {
+  const supp = rows.filter(d => d.paper === "supplementary");
+  if (!supp.length) return [{ key: "supp", title: "Supplementary agreement", tone: "due", tag: "not sent", line: "Not sent yet", row: null }];
+  return supp.map((d): LiveRound => {
+    if (d.state === "verified") return { key: d.key, title: "Supplementary agreement", tone: "go", tag: "signed", line: "Signed and verified", row: d };
+    if (d.state === "signed") return { key: d.key, title: "Supplementary agreement", tone: "late", tag: "verify it", line: "Signed in Zoho Sign — verify it", row: d };
+    if (d.sign && SIGN_CLOSED.test(d.sign.status)) return { key: d.key, title: "Supplementary agreement", tone: "due", tag: "send again", line: (d.sign.label || d.sign.status) + " — send a new one", row: d };
+    return { key: d.key, title: "Supplementary agreement", tone: "ir", tag: "with the IR", line: "Out for signature — the IR is chasing", row: d };
+  });
+}
+
+export function SecPaperLive({ s, me, dispatch, x, papers }: ImPageProps & { x: ImInvestor; papers: NonNullable<PaperRows> }) {
+  if ("loading" in papers) return <div className="card"><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading the papers…</p></div></div>;
+  if ("error" in papers) return <div className="note bad" role="alert">{papers.error}</div>;
+  const rows = papers.rows, rounds = liveRounds(rows);
+  const sender = (d: DocRow) => (d.sign?.sentBy ? d.sign.sentBy.split(" ")[0] : d.sign?.sentById ? <ImPname s={s} k={d.sign.sentById} first /> : null);
+  return (
+    <>
+      <div className="card"><div className="ch"><h3>The two rounds</h3><div className="sp" />
+        <span className="prov here">the Investors side sends and verifies</span></div><div className="cb">
+        <div className="led" style={{ alignItems: "flex-start" }}>
+          <span className="tag ir"><span className="dot" />lead side</span>
+          <span style={{ minWidth: 0 }}><b>NDA</b>
+            <div className="sm">The NDA is the IR&apos;s round, on the lead — its state is on the lead page, not here.</div></span>
+        </div>
+        {rounds.map(r => (
+          <div className="led" style={{ alignItems: "flex-start" }} key={r.key}>
+            <span className={`tag ${r.tone}`}><span className="dot" />{r.tag}</span>
+            <span style={{ minWidth: 0 }}><b>{r.title}</b>
+              <div className="sm">{r.line}{r.row && sentLine(r.row) ? <>{" · " + sentLine(r.row)}{sender(r.row) ? <>{" by "}{sender(r.row)}</> : null}</> : null}
+                {r.row && r.row.method ? " · " + r.row.method : ""}</div>
+              {r.tone === "ir" ? <div className="sm"><ProvIR />{" the investor has been told and is being chased — that half is theirs and is not re-typed here."}</div> : null}</span>
+            {may(s, me, "doc") && (r.tone === "due") ? <button className="act" onClick={() => dispatch({ type: "openDrawer", k: "send", id: x.id, seed: { DTPL: "Supplementary agreement" } })}>Send it</button> : null}
+            {may(s, me, "doc") && r.tone === "late" && r.row ? <button className="act" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: r.row!.recordId, seed: { DREF: "" } })}>Verify it</button> : null}
+          </div>
+        ))}
+      </div></div>
+      <div className="card fill"><div className="ch"><h3>Everything on file</h3><div className="sp" />
+        <span className="sm">{rows.length + " document" + (rows.length === 1 ? "" : "s") + " with a signing request, all under "}<span className="mono">{x.code ?? x.id}</span></span>
+        {may(s, me, "doc") ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "send", id: x.id, seed: { DTPL: null } })}>＋ Send one</button> : null}</div>
+        <div className="tw"><table><thead><tr><th>Document</th><th>Sent</th><th>Signing</th><th>State</th><th></th></tr></thead>
+          <tbody>{rows.length ? rows.map(d => (
+            <tr key={d.key}>
+              <td><b>{d.label}</b><div className="sm">{d.module === "Contacts" ? "Personal" : "Allotment"}</div></td>
+              <td className="sm">{sender(d)} <span className="mono">{docDay(d.sign?.sentAt)}</span></td>
+              <td className="sm">{d.method || "—"}</td>
+              <td><span className={`tag ${d.state === "verified" ? "go" : d.state === "signed" ? "late" : "due"}`}><span className="dot" />{
+                d.state === "verified" ? "verified" : d.state === "signed" ? "signed — verify" : d.sign?.label || "out for signature"}</span>
+                {d.state === "sent" && d.sign?.expiresAt ? <div className="sm">{"link expires " + docDay(d.sign.expiresAt)}</div> : null}</td>
+              <td style={{ textAlign: "right" }}>{may(s, me, "doc") && d.state !== "verified"
+                ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "verify", id: d.recordId, seed: { DREF: "" } })}>Verify</button> : null}</td>
+            </tr>
+          )) : <tr><td colSpan={5}><div className="empty">Nothing on file.</div></td></tr>}
+          </tbody></table></div></div>
+      <InvUploads s={s} me={me} dispatch={dispatch} inv={x.id} />
     </>
   );
 }
