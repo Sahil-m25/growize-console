@@ -16,7 +16,7 @@ receipt, then the remainder within 30 days. After the 10% is verified an app acc
 1. **G1 — the IR's request.** While a round's next step is Finance's send ("Send it for signature"), the lead page's Paperwork row
    offers the IR "Ask Finance to send the NDA" (or "…the supplementary", once the final draft is agreed). It is one more IR beat
    (`request`) on `POST /api/leads/[id]/paperwork`: same row token, same If-Unmodified-Since, same 10 s Undo. It writes
-   `Leads.NDA_Requested_At` / `NDA_Requested_By` (or, for the supplementary, `Supp_Requested_At` only) on the IR's own token. A second press answers
+   `Leads.NDA_Requested_At` (and `Supp_Requested_At` for the supplementary) on the IR's own token; no `*_Requested_By` is written (see the 2026-10-10 note). A second press answers
    `already` and writes nothing; a paper already sent or verified is refused (`already-sent`, 409). Nothing of Finance's is written.
 2. **Finance's to-do.** Seats with the paper right (`doc`: Head of Finance, Finance Operations, Compliance, the super user) get one
    queue row per request not yet out: "Send the NDA — requested by <IR> n days ago" (now), oldest first, whose **Send it** opens
@@ -37,12 +37,16 @@ receipt, then the remainder within 30 days. After the 10% is verified an app acc
 | API name | Type | Read | Write |
 |---|---|---|---|
 | `NDA_Requested_At` | DateTime | IR, IR Manager, Channel Partner, Finance Operations, Head of Finance, Compliance and Audit, Digital Infrastructure | IR, IR Manager, Channel Partner (the console writes it on their token) |
-| `NDA_Requested_By` | Lookup (Users) | same | same |
 | `Supp_Requested_At` | DateTime | same | same |
 
 `Supp_Requested_By` is **dropped**: Zoho refused to create it in the sandbox (`LIMIT_EXCEEDED`, the Leads module has hit its user-lookup
 field limit). The supplementary request writes only `Supp_Requested_At`; Finance's queue names the requester as the lead's **Owner**
-(the IR who owns the lead). `NDA_Requested_By` exists and stays. Leads has no room for any further user lookup (see
+(the IR who owns the lead).
+
+**2026-10-10 note (owner decision): `Leads.NDA_Requested_By` is dropped too.** Leads is at its user-lookup limit and the slot is needed for
+`Leads.KAM_Access` (P-KAM-ACCESS). The console no longer writes or reads `NDA_Requested_By`; the NDA request writes only `NDA_Requested_At`
+(Undo clears only that), and Finance's queue names the requester as the lead's **Owner** (the IR who owns the lead, or the cover IR),
+exactly as for the supplementary. The existing field in the sandbox is to be deleted by Digital Infrastructure. Leads has no room for any further user lookup (see
 `zoho/changes/2026-10-08-09-sandbox.md`, P-KAM-ACCESS).
 
 Finance needs the Finance sharing rule on Leads (owed since B-21 / W3-E2E-2) to see the requested leads at all. No Contact or

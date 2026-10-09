@@ -620,7 +620,7 @@ test('W3-E2E-4: a supplementary Finance sent before the NDA came back and before
 
 /* ---- G1 (D136 proposed): the IR asks Finance to send the NDA / the supplementary ------------------------------------------- */
 
-test('G1: "Ask Finance to send the NDA" writes NDA_Requested_At / _By on the IR\'s token, guarded, one log line, and Undo takes it back', async () => {
+test('G1: "Ask Finance to send the NDA" writes NDA_Requested_At only (the requester is the lead Owner) on the IR\'s token, guarded, one log line, and Undo takes it back', async () => {
   const rowToken = await tokenFor('lead.nda-not-sent', 'nda', 'request');
   const r = rig({ [LEAD_GET]: 'lead.nda-not-sent', [LEAD_PUT]: ['lead.updated', 'lead.restored'] });
   const res = await r.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken });
@@ -629,11 +629,11 @@ test('G1: "Ask Finance to send the NDA" writes NDA_Requested_At / _By on the IR\
   assert.deepEqual(r.writes().map((c) => c.key), [LEAD_PUT], 'the Lead only: no Touch, no Note, nothing of Finance\'s');
   const put = r.writes()[0];
   assert.equal(put.headers['If-Unmodified-Since'] ?? put.headers['if-unmodified-since'], LOADED);
-  assert.deepEqual(put.body.data[0], { NDA_Requested_At: '2026-09-28T11:00:00+05:30', NDA_Requested_By: { id: IR } });
+  assert.deepEqual(put.body.data[0], { NDA_Requested_At: '2026-09-28T11:00:00+05:30' });
   assert.deepEqual(r.events().map((e) => e.reason), ['nda-request']);
   const u = await r.svc.undo(principal(), res.value.undoToken);
   assert.equal(u.ok, true, JSON.stringify(u));
-  assert.deepEqual(r.writes()[1].body.data[0], { NDA_Requested_At: null, NDA_Requested_By: null });
+  assert.deepEqual(r.writes()[1].body.data[0], { NDA_Requested_At: null });
 });
 
 test('G1: a round already asked for answers `already` and writes nothing — even on a token read before the first press', async () => {
@@ -676,7 +676,7 @@ test('G1: the request takes no channel, needs its own row token, and a 412 is "l
   assert.equal((await c.svc.step(principal(), { leadId: LEAD, round: 'nda', beat: 'request', rowToken })).reasonCode, 'not-in-book');
 });
 
-test('G1: "Ask Finance to send the supplementary" once the final draft is agreed writes Supp_Requested_*; once sent it is refused', async () => {
+test('G1: "Ask Finance to send the supplementary" once the final draft is agreed writes Supp_Requested_At; once sent it is refused', async () => {
   const routes = { [LEAD_GET]: 'lead.supp-agreed', 'COQL from Contacts': 'coql.contact-of-lead', 'COQL from LLP_UnitAllocation_Module': 'coql.empty' };
   const row = await rig(routes).svc.read(principal(), LEAD);
   const o = offer(row.value, 'supp', 'request');

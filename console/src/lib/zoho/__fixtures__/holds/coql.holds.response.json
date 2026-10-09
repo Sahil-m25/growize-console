@@ -12,6 +12,7 @@
      "name": "x"
     },
     "Customer.Full_Name": "Joseph Mathew",
+    "Customer.ARL_ID": "ARL-INV-0209",
     "Customer.Origin_Lead": null,
     "Customer.Originating_IR": null,
     "Customer.KAM": null,
@@ -34,6 +35,7 @@
      "name": "x"
     },
     "Customer.Full_Name": "Prakash Bhat",
+    "Customer.ARL_ID": "ARL-INV-0208",
     "Customer.Origin_Lead": {
      "id": "9007199254740991006"
     },

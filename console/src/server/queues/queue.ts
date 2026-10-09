@@ -54,7 +54,7 @@ const KYC_FIELDS: readonly string[] = (() => {
 })();
 /* G1 (D136 proposed): the IRs' "ask Finance to send it" (Leads.*_Requested_At / _Requested_By, written by server/leads/paperwork). */
 export const LEADS_MODULE = "Leads";
-const NDA_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "NDA_Requested_At", "NDA_Requested_By", "NDA_Sign_Req_Id", "NDA_Verified_At"]);
+const NDA_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "NDA_Requested_At", "Owner", "NDA_Sign_Req_Id", "NDA_Verified_At"]);
 const SUPP_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "Supp_Requested_At", "Owner"]);   // the requester is the lead's Owner: Leads has no room for a Supp_Requested_By user lookup
 const NDA_REQUEST_WHERE = coqlAll(["NDA_Requested_At is not null", "NDA_Sign_Req_Id is null", "NDA_Verified_At is null", "Lost_At is null"]);
 const SUPP_REQUEST_WHERE = coqlAll(["Supp_Requested_At is not null", "Lost_At is null"]);
@@ -181,7 +181,7 @@ export function createInvestorQueues(deps: QueueDeps) {
       if (!h.ok) failed("holds", h.kind === "refused" ? h.reason : h.errorKind);
       else for (const x of h.holds) {
         const t = holdText(x.daysLeft);
-        out.push(Object.freeze({ key: `hold:${x.allotmentId}`, kind: "hold", investor: Object.freeze({ id: x.investor.id, name: x.investor.name }),
+        out.push(Object.freeze({ key: `hold:${x.allotmentId}`, kind: "hold", investor: Object.freeze({ id: x.investor.id, name: x.investor.name, code: x.investor.code }),
           text: t.text, urg: t.urg, days: x.daysLeft, action: "Open the record", ref: Object.freeze({ allotmentId: x.allotmentId }) }));
       }
     }
@@ -273,7 +273,7 @@ export function createInvestorQueues(deps: QueueDeps) {
     const failedOn = (k: string) => { problems.push(`send-requests:${k}`); unread ??= k === "invalid-data" ? REQUESTS_NO_FIELDS_TEXT : REQUESTS_UNREAD_TEXT; };
 
     // NDA: asked for, not sent (no Zoho Sign request on the Lead), not verified, lead not lost.
-    const nda = await requestedLeads(cred, NDA_REQUEST_FIELDS, "NDA_Requested_By", NDA_REQUEST_WHERE, signal);
+    const nda = await requestedLeads(cred, NDA_REQUEST_FIELDS, "Owner", NDA_REQUEST_WHERE, signal);
     if (!nda.ok) failedOn(nda.kind === "refused" ? nda.reason : nda.errorKind);
     else {
       if (nda.truncated) problems.push("send-requests:truncated");
@@ -281,7 +281,7 @@ export function createInvestorQueues(deps: QueueDeps) {
         if (!idOf(r.id) || str(r, "NDA_Sign_Req_Id", 40) || str(r, "NDA_Verified_At", 40)) continue;
         const at = str(r, "NDA_Requested_At", 40), days = daysSince(at, now);
         rows.push(Object.freeze({ key: `send:nda:${r.id}`, kind: "send", investor: Object.freeze({ id: r.id, name: leadName(r) }),
-          text: sendText("nda", byName(r, "NDA_Requested_By"), days), urg: "now", days, action: "Send it",
+          text: sendText("nda", byName(r, "Owner"), days), urg: "now", days, action: "Send it",
           ref: Object.freeze({ leadId: r.id, paper: "nda" }) }));
       }
     }

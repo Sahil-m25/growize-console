@@ -138,6 +138,8 @@ test('TC-IM03-003 / T03: Harsha — the IR\'s claim on Prakash Bhat ("Answer it"
     ['Prakash Bhat', 'hold', 'Balance due — hold ends in 21 days', 'Open the record', 'soon'],
   ]);
   assert.equal(x.waiting, 3); assert.equal(x.today, 1);
+  // W6-FIN-1: a hold row carries the ARL ID, so the Today row never falls back to the raw Zoho id
+  assert.deepEqual(x.rows.filter((y) => y.kind === 'hold').map((y) => y.investor.code), ['ARL-INV-0209', 'ARL-INV-0208']);
   assert.equal(x.rows[0].ref.claimId, claimRow.claimId);
   assert.doesNotMatch(JSON.stringify(x), moneyWords);
   assert.equal(calls.claims, 1); assert.equal(calls.documents, 1);
@@ -232,8 +234,8 @@ test('W2-KAM-3 / W2-KAM-4: Last heard counts only the account KAM\'s own touches
 /* ---- G1 (D136 proposed): the IRs' "ask Finance to send it" on Finance's to-do ---------------------------------------------------- */
 
 const LEAD_A = `${P}740996101`, LEAD_B = `${P}740996102`, LEAD_C = `${P}740996103`;
-const reqLead = (id, first, at, by, extra = {}) => ({ id, First_Name: first, Last_Name: 'Synthetic', NDA_Requested_At: at, NDA_Requested_By: { id: IR },
-  'NDA_Requested_By.full_name': by, NDA_Sign_Req_Id: null, NDA_Verified_At: null, ...extra });
+const reqLead = (id, first, at, by, extra = {}) => ({ id, First_Name: first, Last_Name: 'Synthetic', NDA_Requested_At: at, Owner: { id: IR, name: by },
+  'Owner.full_name': by, NDA_Sign_Req_Id: null, NDA_Verified_At: null, ...extra });
 const suppLead = (id, first, at) => ({ id, First_Name: first, Last_Name: 'Synthetic', Supp_Requested_At: at, Owner: { id: IR, name: 'Rohit Iyer' }, 'Owner.full_name': 'Rohit Iyer' });
 
 test('G1: "Send the NDA — requested by <IR> n days ago" for each lead asked for and not yet sent, oldest first, linking to the send panel', async () => {
