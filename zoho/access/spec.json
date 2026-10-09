@@ -20,8 +20,20 @@
   "Lead_Events",
   "Tasks",
   "Calls",
-  "Notes"
+  "Notes",
+  "Events",
+  "ARL_Holdings",
+  "ARL_Transactions"
  ],
+ "moduleVisibility": {
+  "_": "Modules the sandbox shows in the UI. Applied 8-9 Oct 2026: Tasks, Calls and Events (Meetings) went from user_hidden to visible, so the IR, IR Manager and Channel Partner permissions below are usable. The planner reads GET /settings/modules and emits a MANUAL step when a status is not 'visible' (the update call is not recorded; see zoho/changes/2026-10-08-09-sandbox.md).",
+  "visible": [
+   "Tasks",
+   "Calls",
+   "Events"
+  ],
+  "was": "user_hidden"
+ },
  "general": {
   "_": "Per-module permissions matched by name prefix Crm_Implied_<prefix>_ (live probe 5 Oct 2026: Standard has Export, Import, Mass Delete/Transfer/Update, Change Owner, Share, Merge, Delete Mail on for most modules). View All / Edit All bypass sharing and stay off everywhere. Export off for all (rule 7). Share (D121 A, owner ruling 5 Oct 2026; D122: KAM access is Zoho-native, no sharing user): on only for IR Manager and Digital Infrastructure (manual override for cover windows and fixes), and only on Contacts, LLP_UnitAllocation_Module and Touches ('modules'); off everywhere else.",
   "export": {
@@ -137,14 +149,16 @@
     "Lead_Events": "vce",
     "Tasks": "vce",
     "Calls": "vce",
-    "Notes": "vce"
+    "Notes": "vce",
+    "ARL_Holdings": "v",
+    "ARL_Transactions": "v"
    }
   },
   {
    "name": "IR Manager",
    "seat": "IR Manager",
    "role": "IR Manager",
-   "description": "IR team lead: team's leads via the role tree, own investors read-only by record share. D121 A: views allotments (Share needs View) and holds manual Share on Contacts/allotments/Touches; allotment money stays hidden.",
+   "description": "IR team lead: team's leads via the role tree, own investors read-only by record share. D121 A: views allotments (Share needs View) and holds manual Share on Contacts/allotments/Touches; allotment money stays hidden. Receipts View+Create since 8 Oct 2026 (pending P-RECEIPTS-IR).",
    "modules": {
     "Leads": "vce",
     "Contacts": "v",
@@ -157,14 +171,16 @@
     "Lead_Events": "vce",
     "Tasks": "vce",
     "Calls": "vce",
-    "Notes": "vce"
+    "Notes": "vce",
+    "Events": "vce",
+    "Receipts": "vc"
    }
   },
   {
    "name": "IR",
    "seat": "Investor Relations",
    "role": "Investor Relations",
-   "description": "Investor Relations: own leads; own investors and their allotments read-only by Zoho field sharing (Contacts.Originating_IR, allotments IR_Access; D123); identity and money hidden (rule 7). Never Receipts (D69).",
+   "description": "Investor Relations: own leads; own investors and their allotments read-only by Zoho field sharing (Contacts.Originating_IR, allotments IR_Access; D123); identity and money hidden (rule 7). Receipts View+Create only since 8 Oct 2026 (sandbox test finding); this does not meet the D69 reading 'IR never reads receipts', owner to confirm before live (pending P-RECEIPTS-IR).",
    "modules": {
     "Leads": "vce",
     "Contacts": "v",
@@ -177,7 +193,9 @@
     "Lead_Events": "vce",
     "Tasks": "vce",
     "Calls": "vce",
-    "Notes": "vce"
+    "Notes": "vce",
+    "Events": "vce",
+    "Receipts": "vc"
    }
   },
   {
@@ -221,7 +239,9 @@
     "Lead_Events": "v",
     "Tasks": "vce",
     "Calls": "vce",
-    "Notes": "vce"
+    "Notes": "vce",
+    "ARL_Holdings": "v",
+    "ARL_Transactions": "v"
    }
   },
   {
@@ -244,7 +264,9 @@
     "Lead_Events": "v",
     "Tasks": "vce",
     "Calls": "vce",
-    "Notes": "vce"
+    "Notes": "vce",
+    "ARL_Holdings": "v",
+    "ARL_Transactions": "v"
    }
   },
   {
@@ -267,7 +289,9 @@
     "Lead_Events": "v",
     "Tasks": "vce",
     "Calls": "v",
-    "Notes": "vce"
+    "Notes": "vce",
+    "ARL_Holdings": "v",
+    "ARL_Transactions": "v"
    }
   },
   {
@@ -294,7 +318,7 @@
    "name": "KAM",
    "seat": "Key Account Manager",
    "role": "Key Account Manager",
-   "description": "KAM: own investors and allotments by record share; identity and money hidden. Leads view only (W3-KAM-1): Leads stay private, the KAM reads only its investors' origin leads through Leads.KAM_Access (read-only user-lookup sharing), so a Touch filed on the origin lead is accepted.",
+   "description": "KAM: own investors and allotments by record share; identity and money hidden. Leads view only (W3-KAM-1): Leads stay private, the KAM reads only its investors' origin leads through Leads.KAM_Access (read-only user-lookup sharing), so a Touch filed on the origin lead is accepted. Leads View applied 8 Oct 2026 (no create/edit/delete); the Leads.KAM_Access sharing that makes it useful is still pending (P-KAM-ACCESS).",
    "modules": {
     "Leads": "v",
     "Contacts": "ve",
@@ -321,7 +345,8 @@
     "Mail_Templates": "v",
     "Tasks": "vce",
     "Calls": "vce",
-    "Notes": "vce"
+    "Notes": "vce",
+    "Events": "vce"
    }
   },
   {
@@ -361,15 +386,13 @@
    },
    {
     "id": "identity",
-    "source": "ACCESS-PLAN 3 row 2; field-register Contacts.pan (writer compliance); rule 7",
+    "source": "ACCESS-PLAN 3 row 2; field-register Contacts.pan (writer compliance); rule 7; KYC and KYC_Completed_On moved to group kyc_status on 8 Oct 2026",
     "fields": {
      "Contacts": [
       "PAN_Number",
       "PAN_Proof",
       "Aadhaar_Last4",
       "Aadhaar_Ref",
-      "KYC",
-      "KYC_Completed_On",
       "FEMA_Declaration"
      ],
      "Leads": [
@@ -380,6 +403,23 @@
     "grant": {
      "Compliance and Audit": "read_write",
      "Finance Head": "read_only",
+     "Digital Infrastructure": "read_only"
+    }
+   },
+   {
+    "id": "kyc_status",
+    "source": "8 Oct 2026 sandbox change: Finance Ops sees the KYC outcome (read-only); identity numbers and proofs stay in group identity. Same grants as identity plus Finance Ops read_only",
+    "fields": {
+     "Contacts": [
+      "KYC",
+      "KYC_Completed_On"
+     ]
+    },
+    "default": "hidden",
+    "grant": {
+     "Compliance and Audit": "read_write",
+     "Finance Head": "read_only",
+     "Finance Ops": "read_only",
      "Digital Infrastructure": "read_only"
     }
    },
@@ -670,6 +710,135 @@
   "P11 Mass update on for heads only; import only for Digital Infrastructure; export and mass delete off for every created profile.",
   "P14 D121 A: IR Manager gets View on LLP_UnitAllocation_Module because Zoho enables Share only under View (parent permission); allotment money fields stay hidden and records are visible only where shared or owned below in the role tree.",
   "P15 D123 Q2: IR gets View on LLP_UnitAllocation_Module so Zoho field sharing (IR_Access, read-only) can show an IR its own investors' allotments; the old record share gave nothing because IR had no allotment permission. Money stays hidden; Unit_Price and Annual_Rental_Yield are hidden from IR only (group allotment_price_ir); Contacts identity stays hidden; IR never reads Receipts (D69).",
-  "P16 D123 Q1/Q3 (NOT expressible in this spec, owner applies in Zoho): Leads.Secondary_Owner field sharing OFF; Leads.Cover_By sharing read-write; Contacts.Originating_IR sharing read-only; new LLP_UnitAllocation_Module.IR_Access (userlookup, sharing read-only, read-only for every profile except Administrator). See docs/decisions/D123-field-sharing-cover-handoff.md."
+  "P16 D123 Q1/Q3 (NOT expressible in this spec, owner applies in Zoho): Leads.Secondary_Owner field sharing OFF; Leads.Cover_By sharing read-write; Contacts.Originating_IR sharing read-only; new LLP_UnitAllocation_Module.IR_Access (userlookup, sharing read-only, read-only for every profile except Administrator). See docs/decisions/D123-field-sharing-cover-handoff.md.",
+  "P17 8-9 Oct 2026 sandbox changes captured: Events vce for IR, IR Manager, Channel Partner; Receipts vc for IR and IR Manager; ARL_Holdings/ARL_Transactions View for Finance Ops, Finance Head, Compliance and Audit, Digital Infrastructure; KYC read-only for Finance Ops (group kyc_status). Receipts for IR contradicts the D69 reading in P15: owner to confirm before live. Listing Events and ARL_* under modules makes plan() switch those permissions off for every profile not listed; if the sandbox gave other profiles access through the Standard clone, plan() shows the difference."
+ ],
+ "pending": [
+  {
+   "id": "P-KAM-ACCESS",
+   "refs": [
+    "W3-KAM-1",
+    "CARRY-FORWARD B-21 (1)"
+   ],
+   "status": "proposed, NOT applied",
+   "what": "Create Leads.KAM_Access (user lookup), then PATCH its sharing_properties to read-only; update workflow/function gz_sync_kam_access (zoho/deluge/gz_sync_kam_access.deluge, gz_kam_access_check.deluge) so a KAM sees the origin leads of its investors; re-save each investor's KAM once to backfill.",
+   "reason": "Creates a field and changes a workflow that stamps access onto leads; held for owner sign-off. Until applied, KAM has Leads View (applied) but sees no lead, so a Touch on an origin lead is refused ('origin-lead-hidden').",
+   "spec": {
+    "fields": [
+     {
+      "module": "Leads",
+      "label": "KAM Access",
+      "api": "KAM_Access",
+      "data_type": "userlookup",
+      "sharing": "read-only"
+     }
+    ],
+    "deluge": [
+     "gz_sync_kam_access",
+     "gz_kam_access_check"
+    ]
+   }
+  },
+  {
+   "id": "P-KAM-CHANGE-OWNER",
+   "refs": [
+    "W3-KAM-3",
+    "CARRY-FORWARD B-21 (2)"
+   ],
+   "status": "proposed, NOT applied",
+   "what": "Change Owner on Cases for KAM and AM Head.",
+   "reason": "general.change_owner is module-wide today and AM Head already holds it on every module; a Cases-only grant needs a 'modules' scope on change_owner like Share has. The console refuses honestly without it. Awaiting sign-off.",
+   "spec": {
+    "general": {
+     "change_owner": {
+      "addProfiles": [
+       "KAM",
+       "AM Head"
+      ],
+      "modules": [
+       "Cases"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "P-FIN-LEADS-NDA",
+   "refs": [
+    "W3-E2E-2",
+    "CARRY-FORWARD B-21 (3)",
+    "B-12"
+   ],
+   "status": "proposed, NOT applied",
+   "what": "Criteria sharing rule on Leads, First_Touch_At is not empty, to Finance Operations and Head of Finance, read_write. Leads Edit on Finance Ops and Finance Head. Finance writes only NDA_Sign_Req_Id, NDA_Signed_Via, NDA_Verified_At, NDA_Verified_By (and NDA_Back_* once created); every other Leads field read_only for them.",
+   "reason": "Opens Leads to two money profiles (they see none today: Leads View, no sharing rule); wall-adjacent, owner sign-off. Not expressible yet: sharingRules support Record_Owner_Based only (no criteria rule), and a field-security group cannot say 'every other field' without the Leads field list.",
+   "spec": {
+    "sharingRule": {
+     "module": "Leads",
+     "type": "criteria",
+     "criteria": "First_Touch_At is not empty",
+     "to": [
+      "Finance Operations",
+      "Head of Finance"
+     ],
+     "permission": "read_write"
+    },
+    "modules": {
+     "Finance Ops": {
+      "Leads": "ve"
+     },
+     "Finance Head": {
+      "Leads": "ve"
+     }
+    },
+    "fieldWrite": {
+     "module": "Leads",
+     "writable": [
+      "NDA_Sign_Req_Id",
+      "NDA_Signed_Via",
+      "NDA_Verified_At",
+      "NDA_Verified_By"
+     ],
+     "rest": "read_only"
+    }
+   }
+  },
+  {
+   "id": "P-RECEIPTS-IR",
+   "refs": [
+    "B-06 (docs/uat/STAGING-DEFECTS.md, GC-1471)"
+   ],
+   "status": "proposed, NOT applied",
+   "what": "IR and IR Manager read Receipts fields UTR, Match_State, Kind, Amount, Mode, Received_On, Allotment, Note, plus a validation rule on Receipts.",
+   "reason": "Receipts View+Create is applied for IR and IR Manager (the claim read stops failing) but group receipt_money still hides the money fields from them, so a claim shows no amount. Granting the read contradicts D69 and the rule 7 wall: owner ruling needed; the validation rule's content is not specified. Allotment and Note are not in group receipt_money today.",
+   "spec": {
+    "fieldRead": {
+     "module": "Receipts",
+     "fields": [
+      "UTR",
+      "Match_State",
+      "Kind",
+      "Amount",
+      "Mode",
+      "Received_On",
+      "Allotment",
+      "Note"
+     ],
+     "profiles": [
+      "IR",
+      "IR Manager"
+     ],
+     "permission": "read_only"
+    },
+    "validationRule": "unspecified"
+   }
+  }
+ ],
+ "changes": [
+  {
+   "id": "2026-10-08-09-sandbox",
+   "file": "zoho/changes/2026-10-08-09-sandbox.md",
+   "fields": "zoho/sandbox/fields-plan.mjs (GZ_FIELD_DEFS, GZ_PICKLIST_ADDS)"
+  }
  ]
 }

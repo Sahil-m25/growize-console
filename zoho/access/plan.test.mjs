@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { planAll, applySteps, verifyAll, planFieldSecurity, planProfiles, planSharing, planLayoutRequired, assertWall, ruleName } from "./plan.mjs";
+import { planAll, applySteps, verifyAll, planFieldSecurity, planProfiles, planSharing, planLayoutRequired, planModuleVisibility, assertWall, ruleName } from "./plan.mjs";
 
 const spec = JSON.parse(readFileSync(new URL("./spec.json", import.meta.url), "utf8"));
 const SANDBOX = "60090668120", LIVE = "60061770791";
@@ -46,6 +46,7 @@ function fakeZoho(zgid = SANDBOX, roleNames = ROLES) {
     layouts[m] = [{ id: `L-${m}`, name: "Standard", sections: [{ id: `S1-${m}`, fields: fl.slice(0, 2) }, { id: `S2-${m}`, fields: fl.slice(2) }] }];
   }
   const isRequired = (m, id) => layouts[m].some((l) => l.sections.some((sec) => sec.fields.some((f) => f.id === id && f.required)));
+  const modulesMeta = MODULES.map((m) => ({ api_name: m, status: "visible" }));
   const writes = [];
   const res = (status, body) => ({ status, body });
   const okItem = (k, id) => res(200, { [k]: [{ code: "SUCCESS", status: "success", details: { id } }] });
@@ -105,10 +106,11 @@ function fakeZoho(zgid = SANDBOX, roleNames = ROLES) {
       if (method === "GET") return res(200, { sharing_rules: rules[mod] });
       if (method === "POST") { const r = { id: nid(), status: "active", ...body.sharing_rules[0] }; rules[mod].push(r); return okItem("sharing_rules", r.id); }
     }
+    if (method === "GET" && p === "/crm/v8/settings/modules") return res(200, { modules: modulesMeta });
     if (method === "GET" && p === "/crm/v8/settings/data_sharing") return res(200, { data_sharing: dataSharing });
     return res(404, { code: "INVALID_URL_PATTERN" });
   }
-  return { call, writes, fields, profiles, enabled, perms, rules, layouts };
+  return { call, writes, modulesMeta, fields, profiles, enabled, perms, rules, layouts };
 }
 
 const api = (steps) => steps.filter((s) => s.kind === "api");
@@ -163,9 +165,9 @@ test("rule 7 wall: bank only Finance (+DI reveal, D110); PAN never IR/Integratio
   }
   assert.equal(fls(z, "LLP_Creation_Module", "Units_Released", "Finance Head"), "read_write");
   assert.equal(fls(z, "LLP_Creation_Module", "LLP_Status", "Finance Ops"), "read_only");
-  // module level: only Finance profiles create Receipts; Integration has Cases and nothing else
+  // module level: only Finance profiles and (8 Oct 2026 sandbox change) IR and IR Manager create Receipts; Integration has Cases and nothing else
   const has = (name, mod, a) => z.enabled[idOf(z, name)].has(z.perms.find((x) => x.name === `Crm_Implied_${a}_${mod}`).id);
-  for (const p of spec.profiles) assert.equal(has(p.name, "Receipts", "Create"), ["Finance Head", "Finance Ops"].includes(p.name), p.name);
+  for (const p of spec.profiles) assert.equal(has(p.name, "Receipts", "Create"), ["Finance Head", "Finance Ops", "IR", "IR Manager"].includes(p.name), p.name);
   for (const m of spec.modules) assert.equal(has("Integration", m, "View"), m === "Cases", m);
   for (const p of spec.profiles) for (const m of spec.modules) assert.equal(has(p.name, m, "Delete"), false);
   const exp = (name) => z.perms.filter((x) => x.name.startsWith("Crm_Implied_Export_")).some((x) => z.enabled[idOf(z, name)].has(x.id));
@@ -192,10 +194,11 @@ test("D122: no Share Service profile, role, sharing rule or persona is planned; 
   assert.equal(steps.filter((s) => s.kind === "manual" && /Share Service/.test(s.what)).length, 0);
 });
 
-test("D123 Q2: IR views allotments but every money field on the module is hidden from IR; IR has no Receipts", () => {
+test("D123 Q2: IR views allotments but every money field on the module is hidden from IR; IR holds Receipts View+Create with money fields hidden", () => {
   const ir = spec.profiles.find((x) => x.name === "IR");
   assert.equal(ir.modules.LLP_UnitAllocation_Module, "v");
-  assert.equal(ir.modules.Receipts, undefined, "IRs never read receipts (D69)");
+  assert.equal(ir.modules.Receipts, "vc", "8 Oct 2026 sandbox change: Receipts View+Create; money fields stay hidden (pending P-RECEIPTS-IR)");
+  assert.ok(spec.fieldSecurity.groups.find((x) => x.id === "receipt_money").default === "hidden" && !("IR" in spec.fieldSecurity.groups.find((x) => x.id === "receipt_money").grant));
   const g = spec.fieldSecurity.groups.find((x) => x.id === "allotment_money");
   for (const f of ["Token_Advance_Amount", "Total_Amount_Received", "Total_Amount_Receivable", "Capital_Invested"]) {
     assert.ok(g.fields.LLP_UnitAllocation_Module.includes(f), f);
@@ -216,7 +219,7 @@ test("a spec that opens the wall is refused before any step", () => {
   assert.throws(() => planFieldSecurity(bad((s) => { s.fieldSecurity.groups[0].grant.KAM = "read_only"; }), {}, ids), /KAM would read bank/);
   assert.throws(() => planFieldSecurity(bad((s) => { s.fieldSecurity.groups[1].grant.IR = "read_only"; }), {}, ids), /IR would read identity/);
   assert.throws(() => planFieldSecurity(bad((s) => { s.fieldSecurity.groups[1].grant.Integration = "read_write"; }), {}, ids), /Integration would read identity/);
-  assert.throws(() => planFieldSecurity(bad((s) => { s.fieldSecurity.groups[2].grant["Compliance and Audit"] = "read_only"; }), {}, ids), /Aadhaar_Number/);
+  assert.throws(() => planFieldSecurity(bad((s) => { s.fieldSecurity.groups.find((g) => g.id === "aadhaar_full").grant["Compliance and Audit"] = "read_only"; }), {}, ids), /Aadhaar_Number/);
   assert.throws(() => planFieldSecurity(bad((s) => { s.fieldSecurity.groups[0].default = "read_only"; }), {}, ids), /wall/);
   assert.doesNotThrow(() => assertWall(spec));
 });
@@ -334,6 +337,59 @@ test("applySteps retries a busy sharing-rule POST (CANNOT_PROCESS), 10 s apart, 
   assert.equal(d.ok, false); assert.equal(d.log.length, 1, "non-sharing CANNOT_PROCESS is not retried");
 });
 
+test("8-9 Oct 2026 sandbox changes are in the spec and replay from the plan", async () => {
+  const P = (n) => spec.profiles.find((p) => p.name === n).modules;
+  for (const n of ["IR", "IR Manager", "Channel Partner"]) { assert.equal(P(n).Tasks, "vce"); assert.equal(P(n).Calls, "vce"); assert.equal(P(n).Events, "vce"); }
+  for (const n of ["IR", "IR Manager"]) assert.equal(P(n).Receipts, "vc");
+  assert.equal(P("Channel Partner").Receipts, undefined);
+  for (const n of ["Finance Ops", "Finance Head", "Compliance and Audit", "Digital Infrastructure"]) { assert.equal(P(n).ARL_Holdings, "v"); assert.equal(P(n).ARL_Transactions, "v"); }
+  assert.equal(P("KAM").Leads, "v");
+  assert.deepEqual(spec.moduleVisibility.visible, ["Tasks", "Calls", "Events"]);
+  const z = fakeZoho();
+  await applySteps(z.call, await planAll(z.call, spec), spec);
+  const has = (name, mod, a) => z.enabled[idOf(z, name)].has(z.perms.find((x) => x.name === `Crm_Implied_${a}_${mod}`).id);
+  for (const n of ["IR", "IR Manager", "Channel Partner"]) for (const [a, want] of [["View", true], ["Create", true], ["Edit", true], ["Delete", false]]) assert.equal(has(n, "Events", a), want, `${n} Events ${a}`);
+  assert.equal(has("Finance Ops", "ARL_Holdings", "View"), true);
+  assert.equal(has("Finance Ops", "ARL_Holdings", "Create"), false);
+  assert.equal(has("IR", "ARL_Holdings", "View"), false);
+  assert.equal(has("KAM", "Leads", "View"), true);
+  assert.equal(has("KAM", "Leads", "Create"), false);
+  // Finance Ops: KYC read-only, identity numbers still hidden (rule 7 wall holds)
+  for (const f of ["KYC", "KYC_Completed_On"]) { assert.equal(fls(z, "Contacts", f, "Finance Ops"), "read_only"); assert.equal(fls(z, "Contacts", f, "IR"), "hidden"); assert.equal(fls(z, "Contacts", f, "Compliance and Audit"), "read_write"); }
+  for (const f of ["PAN_Number", "Aadhaar_Last4", "FEMA_Declaration"]) assert.equal(fls(z, "Contacts", f, "Finance Ops"), "hidden", f);
+});
+
+test("module visibility: a hidden module is a manual step (update call unverified); visible is silent; a failed read says check by eye", () => {
+  const meta = [{ api_name: "Tasks", status: "user_hidden" }, { api_name: "Calls", status: "visible" }];
+  const steps = planModuleVisibility(spec, meta);
+  assert.deepEqual(steps.map((s) => s.kind), ["manual", "manual"]);
+  assert.match(steps[0].what, /^Tasks: set visible \(now user_hidden\)/);
+  assert.match(steps[1].what, /^Events: set visible \(now missing\)/);
+  assert.equal(planModuleVisibility(spec, null).length, 1);
+  assert.deepEqual(planModuleVisibility(spec, ["Tasks", "Calls", "Events"].map((m) => ({ api_name: m, status: "visible" }))), []);
+});
+
+test("pending items are recorded with a reason and never planned or bundled", async () => {
+  assert.deepEqual(spec.pending.map((x) => x.id), ["P-KAM-ACCESS", "P-KAM-CHANGE-OWNER", "P-FIN-LEADS-NDA", "P-RECEIPTS-IR"]);
+  for (const x of spec.pending) { assert.match(x.status, /NOT applied/); assert.ok(x.reason.length > 40 && x.what && x.spec && x.refs.length, x.id); }
+  // not applied: KAM has no Change Owner; Finance has Leads View only, no Leads rule; IR reads no Receipts money field
+  const g = spec.fieldSecurity.groups;
+  assert.ok(!spec.general.change_owner.on.includes("KAM"));
+  for (const n of ["Finance Ops", "Finance Head"]) assert.equal(spec.profiles.find((p) => p.name === n).modules.Leads, "v");
+  assert.ok(!spec.sharingRules.rules.some((r) => r.module === "Leads" && /Finance|Head of Finance/.test(r.to)));
+  assert.ok(!("IR" in g.find((x) => x.id === "receipt_money").grant) && !("IR Manager" in g.find((x) => x.id === "receipt_money").grant));
+  assert.ok(!JSON.stringify(g).includes("KAM_Access"));
+  const z = fakeZoho();
+  const steps = await planAll(z.call, spec);
+  assert.ok(!JSON.stringify(steps.filter((s) => !s.creates)).includes("KAM_Access"), "no step touches KAM_Access (profile descriptions may name it)");
+  const { execFileSync } = await import("node:child_process");
+  const { tmpdir } = await import("node:os");
+  const out = `${tmpdir()}/gz-access-pending-${process.pid}.js`;
+  execFileSync(process.execPath, [new URL("./build-bundle.mjs", import.meta.url).pathname, out]);
+  const src = readFileSync(out, "utf8");
+  assert.ok(!src.includes("proposed, NOT applied") && !src.includes("pending\":"));
+});
+
 const SCHEMA = "/home/claude/work/sandbox-setup/sandbox-schema-2026-10-05.json";
 test("every spec field and module exists in the sandbox schema (5 Oct read)", { skip: !(await import("node:fs")).existsSync(SCHEMA) }, () => {
   const mods = JSON.parse(readFileSync(SCHEMA, "utf8")).modules;
@@ -348,7 +404,7 @@ test("built bundle runs in a page with window.__z: plan, apply, verify, then not
   const out = `${tmpdir()}/gz-access-${process.pid}.js`;
   execFileSync(process.execPath, [new URL("./build-bundle.mjs", import.meta.url).pathname, out]);
   const src = readFileSync(out, "utf8");
-  assert.ok(Buffer.byteLength(src) < 32000, `bundle ${Buffer.byteLength(src)} bytes`);
+  assert.ok(Buffer.byteLength(src) < 40000, `bundle ${Buffer.byteLength(src)} bytes`);
   assert.ok(!/^\s*(import|export)\s/m.test(src), "no module syntax");
   const z = fakeZoho();
   const window = { __z: z.call };

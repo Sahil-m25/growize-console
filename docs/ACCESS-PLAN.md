@@ -40,6 +40,8 @@ That is 15 people plus the test user and the integration user. Seats are added o
 
 ## 3. Who can see which sensitive fields
 
+> **Sandbox changes of 8-9 Oct 2026** (in `zoho/access/spec.json`; log in `zoho/changes/2026-10-08-09-sandbox.md`): Finance Ops reads `KYC` and `KYC_Completed_On` read-only; IR and IR Manager hold Receipts View+Create with money fields still hidden, which departs from the D69 reading and awaits the owner before live.
+
 | Field | Hidden from every profile except |
 |---|---|
 | Bank_Account_Number, ISFC_Code, Account_Holder_Full_name, Bank_Name/Branch/Address/Account_Type, Bank_Proof, Bank_Verification | Finance Head, Finance Ops |

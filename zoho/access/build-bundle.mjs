@@ -1,7 +1,7 @@
 // Emits /home/claude/work/sandbox-setup/bundles/access.js: one IIFE (ES2020, no imports) defining window.GZAccess.
 // Paste into the admin's logged-in sandbox tab (window.__z present). Dry-run by default:
 //   const steps = await GZAccess.plan();  const r = await GZAccess.apply(steps);  await GZAccess.verify();
-// Repeat plan()/apply() until plan() holds only manual steps. Run: node zoho/access/build-bundle.mjs [outPath]
+// Replays the 8-9 Oct 2026 sandbox changes too (spec.pending is stripped: proposed items are never applied). Repeat plan()/apply() until plan() holds only manual steps. Run: node zoho/access/build-bundle.mjs [outPath]
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
@@ -9,7 +9,7 @@ const here = (f) => new URL(f, import.meta.url);
 const out = process.argv[2] || "/home/claude/work/sandbox-setup/bundles/access.js";
 const spec = JSON.parse(readFileSync(here("./spec.json"), "utf8"));
 const strip = (o) => (Array.isArray(o) ? o.map(strip) : o && typeof o === "object"
-  ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== "_" && k !== "provisional" && k !== "source" && k !== "seat").map(([k, v]) => [k, strip(v)])) : o);
+  ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== "_" && k !== "provisional" && k !== "source" && k !== "seat" && k !== "pending" && k !== "changes").map(([k, v]) => [k, strip(v)])) : o);
 const code = readFileSync(here("./plan.mjs"), "utf8")
   .split("\n").filter((l) => !/^\s*\/\//.test(l)).map((l) => l.trim()).filter(Boolean).join("\n")
   .replace(/^export /gm, "");

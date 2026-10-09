@@ -219,6 +219,18 @@ export function planFieldSecurity(spec, currentFields, profileIdsByName) {
   return steps;
 }
 
+/**
+ * Module visibility (8-9 Oct 2026: Tasks, Calls, Events user_hidden -> visible). modulesMeta = GET /settings/modules -> modules[]
+ * { api_name, status }. The update call is UNVERIFIED (not recorded), so a hidden module is a manual step, never a guessed write.
+ */
+export function planModuleVisibility(spec, modulesMeta) {
+  const v = spec.moduleVisibility;
+  if (!v) return [];
+  if (!modulesMeta) return [{ kind: "manual", where: "Setup > Customization > Modules and Fields", what: `check by eye that ${v.visible.join(", ")} are shown (GET modules failed)`, why: "module visibility" }];
+  return v.visible.filter((m) => ((modulesMeta.find((x) => x.api_name === m) || {}).status || "missing") !== "visible").map((m) => ({
+    kind: "manual", where: "Setup > Customization > Modules and Fields > show the module", what: `${m}: set visible (now ${(modulesMeta.find((x) => x.api_name === m) || {}).status || "missing"})`, why: "module visibility (8-9 Oct 2026 sandbox change)" }));
+}
+
 const SHORT = { LLP_UnitAllocation_Module: "Allotments", Investor_Payouts: "Payouts" };
 export const ruleName = (r) => `GZ ${SHORT[r.module] || r.module} - ${r.to}`;
 
@@ -307,11 +319,14 @@ export async function readState(call, spec) {
   for (const m of new Set(spec.sharingRules.rules.map((r) => r.module))) rules[m] = (await get(call, `${V}/settings/data_sharing/rules?module=${m}`)).sharing_rules || [];
   let dataSharing = null;
   try { dataSharing = (await get(call, `${V}/settings/data_sharing`)).data_sharing || []; } catch (e) { dataSharing = null; }
-  return { profiles, details, profileIdsByName, roleIds, fields, layouts, rules, dataSharing };
+  let modulesMeta = null;
+  try { modulesMeta = (await get(call, `${V}/settings/modules`)).modules || []; } catch (e) { modulesMeta = null; }
+  return { profiles, details, profileIdsByName, roleIds, fields, layouts, rules, dataSharing, modulesMeta };
 }
 
 export function planFromState(spec, s) {
   return [].concat(
+    planModuleVisibility(spec, s.modulesMeta),
     planProfiles(spec, { profiles: s.profiles, details: s.details }),
     planLayoutRequired(spec, s.layouts),
     planFieldSecurity(spec, s.fields, s.profileIdsByName),
@@ -412,6 +427,7 @@ export async function verifyAll(call, spec) {
     if (type === "_") continue;
     for (const m of ms) row("default", m, type, ((s.dataSharing.find((x) => modOf(x) === m)) || {}).share_type || "missing");
   }
+  for (const m of (spec.moduleVisibility || {}).visible || []) if (s.modulesMeta) row("visibility", m, "visible", (s.modulesMeta.find((x) => x.api_name === m) || {}).status || "missing");
   const fail = rows.filter((r) => !r.pass).length;
   return { pass: rows.length - fail, fail, rows };
 }
