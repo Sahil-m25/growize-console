@@ -1,7 +1,9 @@
 /* /api/leads/[id]/paperwork — the lead page's Paperwork row (M12-S11-T02, M12-S12-T01).
    GET  → { leadId, modifiedTime, rounds: [{ round, title, next, told, reminders, said, draft, agreed, sent, verified }], offers: [{ round, beat, channels, rowToken }], suppUnread }
-   POST { round: "nda"|"supp", beat: "told"|"chase"|"said"|"draft"|"redraft"|"agreed", channel?: "call"|"msg"|"email", rowToken, attachmentId? | link? }
-        → { round, beat, modifiedTime, touchId, noteId, draftVersion, undoToken, undoUntil }   (Undo lives 10 s)
+   POST { round: "nda"|"supp", beat: "told"|"chase"|"said"|"draft"|"redraft"|"agreed"|"request", channel?: "call"|"msg"|"email", rowToken, attachmentId? | link? }
+        → { round, beat, modifiedTime, touchId, noteId, draftVersion, undoToken, undoUntil, already? }   (Undo lives 10 s)
+        G1 "request": the IR asks Finance to send the round's paper (Lead.*_Requested_At/_By); `already: true` = asked before,
+        nothing written; 409 already-sent = Finance has sent or verified it
    POST { undoToken } → { undone: true, round, beat }
    A draft file is first uploaded to the Lead's Attachments through POST /api/documents/upload?scope=lead (M12-S02),
    then named here by its attachmentId. 4xx → { error, code } — nothing was written. */
@@ -21,7 +23,7 @@ const MAX_BODY = 8 * 1024;
 const STATUS: Partial<Record<PaperworkRefusal, number>> = {
   "session-changed": 401, "capability-missing": 403, "not-in-book": 403, "not-visible": 404, "not-from-row": 403,
   "finance-beat": 403, "no-consent": 403, "lead-changed": 409, "out-of-order": 409, "lead-lost": 409,
-  "undo-expired": 410, "undo-invalid": 403, "partial": 502, "source-invalid": 502,
+  "undo-expired": 410, "undo-invalid": 403, "partial": 502, "source-invalid": 502, "already-sent": 409,
 };
 const NOT_READY = () => Response.json({ error: "Paperwork is recorded in Zoho once sign-in is connected.", code: "not-configured" }, { status: 503, headers: NO_STORE });
 

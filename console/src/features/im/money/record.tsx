@@ -21,6 +21,7 @@ import { investorAllotments } from "@/lib/data/endpoints/allotments";
 import { moneyBlocks, arlHoldings } from "@/lib/data/endpoints/payments";
 import { payoutSchedule, payoutScheduleRun } from "@/lib/data/endpoints/payouts";
 import { appCard, appUnlock } from "@/lib/data/endpoints/app";
+import { OVERRIDE_REASON_MAX, OVERRIDE_REASON_MIN, TEN_PERCENT_HINT, TEN_PERCENT_UNKNOWN_HINT } from "@/lib/im/app-gate";
 
 type P = ImPageProps & { x: ImInvestor };
 const TagDot = ({ c, children }: { c: string; children: ReactNode }) =>
@@ -212,6 +213,9 @@ export function AppAccessCard(p: P) {
   if (!card) return r.state === "error" && r.err.status !== 403 ? <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>App access: {r.err.error}</p></div></div> : null;
   const last = card.history[0];
   const canWrite = card.mayChange;
+  /* G2 (D136 proposed): the release waits for the 10% — the server refuses it too; the button says why it is shut */
+  const gateShut = card.access === "Hold" && (card.tenPercent === "not-verified" || card.tenPercent === "unknown");
+  const gateWhy = card.tenPercent === "unknown" ? TEN_PERCENT_UNKNOWN_HINT : TEN_PERCENT_HINT;
   const tag = card.state === "delivered" ? "go" : card.state === "locked" ? "late" : card.state === "sending" ? "br" : card.state === "hold" ? "due" : "";
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>App access</h3><div className="sp" />
@@ -221,9 +225,14 @@ export function AppAccessCard(p: P) {
         {card.state === "locked" && last ? <p className="sm" style={{ margin: "4px 0 0" }}>{last.byId ? who(s, last.byId).n + " · " : ""}<span className="mono">{last.at}</span></p> : null}
         {canWrite && card.access ? <div className="drwsec"><div className="chips">
           {card.access === "Hold"
-            ? <button className="chip on" onClick={() => void unlock({ id: x.id, expectedModifiedTime: card.modifiedTime })}>Send welcome and unlock</button>
+            ? gateShut
+              ? <button className="chip" disabled aria-disabled="true" title={gateWhy}>Send welcome and unlock</button>
+              : <button className="chip on" onClick={() => void unlock({ id: x.id, expectedModifiedTime: card.modifiedTime })}>Send welcome and unlock</button>
             : <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "applock", id: x.id })}>Lock app access</button>}
         </div>
+          {gateShut ? <p className="sm" role="status" data-gate="ten-percent" style={{ margin: "9px 0 0" }}>{gateWhy}</p> : null}
+          {gateShut && card.mayOverride && card.tenPercent === "not-verified"
+            ? <AppOverride name={x.n} onUnlock={reason => unlock({ id: x.id, expectedModifiedTime: card.modifiedTime, override: { reason } }).then(r => r.ok)} /> : null}
           <p className="sm" style={{ margin: "9px 0 0" }}>The welcome never goes by itself: the account is created on hold and stays locked — a match does not unlock it — until this button. Every change is on their Activity.</p></div>
           : <p className="sm" style={{ margin: "9px 0 0" }}>{canWrite ? "The account is created on hold and stays locked until Finance presses Send welcome and unlock." : "Finance controls app access."}</p>}
         <div className="drwsec"><div className="chips">
@@ -231,6 +240,40 @@ export function AppAccessCard(p: P) {
           {mayTestLink(s, me) ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "testlink", id: x.id })}>Test sign-in link</button> : null}
         </div>{isSuper(s, me) ? <p className="sm" style={{ margin: "9px 0 0" }}>The preview is a mock-up with their figures. The test link opens the real app as them, once, for 10 minutes.</p> : null}</div>
       </div></div>
+  );
+}
+
+/* ---- GC-1526: Finance's override — unlock without a verified 10%, with a typed reason and an on-page confirmation (never a
+   native dialog, M18-S11). Shown only to Finance Operations and the Head of Finance (the card's mayOverride); the server re-checks
+   the seat, writes the reason as a Note on the Contact under their name, and logs it (Plane C app-access-override). ---- */
+export function AppOverride({ name, onUnlock, start = "", reason = "" }: {
+  name: string; onUnlock: (reason: string) => Promise<boolean>;
+  /** where the steps open (render tests); the card always opens them shut */
+  start?: "" | "why" | "confirm"; reason?: string;
+}) {
+  const [step, setStep] = useState<"" | "why" | "confirm">(start);
+  const [why, setWhy] = useState(reason);
+  const short = why.trim().length < OVERRIDE_REASON_MIN;
+  if (step === "") return <div className="chips" style={{ marginTop: 8 }}>
+    <button className="chip" onClick={() => setStep("why")}>Unlock without the 10%…</button></div>;
+  return (
+    <div className="drwsec" data-override={step}>
+      {step === "why" ? <>
+        <label className="fi"><span>Why unlock without the 10%? It goes on {name}&apos;s record with your name.</span>
+          <textarea className="inp" rows={3} maxLength={OVERRIDE_REASON_MAX} value={why} onChange={e => setWhy(e.target.value)}
+            aria-describedby="ovr-min" /></label>
+        <p className="sm" id="ovr-min" style={{ margin: "4px 0 8px" }}>At least {OVERRIDE_REASON_MIN} characters.</p>
+        <div className="chips">
+          <button className="chip on" disabled={short} onClick={() => setStep("confirm")}>Continue</button>
+          <button className="chip" onClick={() => { setStep(""); setWhy(""); }}>Cancel</button></div>
+      </> : <>
+        <p className="note bad" role="alert" style={{ margin: "0 0 8px" }}><b>Unlock {name}&apos;s app without a verified 10%?</b> The welcome
+          goes out now and they can sign in. Your reason is written on their record under your name.</p>
+        <div className="chips">
+          <button className="chip on" onClick={() => void onUnlock(why.trim()).then(done => { if (done) { setStep(""); setWhy(""); } })}>Yes, unlock without the 10%</button>
+          <button className="chip" onClick={() => setStep("why")}>Back</button></div>
+      </>}
+    </div>
   );
 }
 

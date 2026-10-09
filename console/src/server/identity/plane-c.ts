@@ -22,6 +22,8 @@ export type PlaneCAction = "sign-in" | "sign-in-refused" | "sign-out" | "session
   | "manager-change"
   /* M08-S08-NOTE-10: "Send welcome and unlock" — app access released (or the release refused); recordIds = [Contact] */
   | "app-access-released"
+  /* GC-1526: app access unlocked without a verified 10% (Finance Operations / Head of Finance; the typed reason is the Contact's Note) */
+  | "app-access-override"
   /* M15-S05-NOTE-1 / M10-S23: a one-time test sign-in link issued for a Contact; ttlMinutes = how long it lives */
   | "test-link-issued"
   /* D49 / M08-S05-NOTE-4: out of office / back on. who = the person who recorded it, whom = the person it is about (omitted when
@@ -89,7 +91,7 @@ export interface PlaneCLog {
 
 const ACTIONS: ReadonlySet<string> = new Set(["sign-in", "sign-in-refused", "sign-out", "session-expired", "session-revoked", "reveal", "step-up", "seat-change",
   "refused-page", "refused-action", "grant-change", "access-granted", "access-ended", "manager-change",
-  "app-access-released", "test-link-issued", "availability", "test-signin-enrolled", "test-signin-used"]);
+  "app-access-released", "app-access-override", "test-link-issued", "availability", "test-signin-enrolled", "test-signin-used"]);
 const RECORD_ID = /^\d{15,22}$/;
 const OUTCOMES: ReadonlySet<string> = new Set(["ok", "refused", "ended"]);
 const USER_ID = /^\d{15,25}$/;

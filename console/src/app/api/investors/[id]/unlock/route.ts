@@ -3,8 +3,12 @@
    POST   { expectedModifiedTime }           "Send welcome and unlock": App_Access Hold → Invite (the investor
                                              app sends the one welcome; nothing is mailed from here)
    DELETE { reason, expectedModifiedTime }   "Lock app access": App_Access Invite → Hold, reason as a Note
-   200 → { card, already, noteSaved? }  ·  403 not Finance / not visible  ·  409 changed ("reload")  ·
-   422 no account / reason required  ·  503 Zoho not answering. Server: server/investors/unlock. */
+   POST   { expectedModifiedTime, override: { reason, confirmed: true } }
+                                             GC-1526 "Unlock without the 10%": Finance Operations / Head of Finance only;
+                                             the reason (10+ characters) is a Note on the Contact under their name
+   200 → { card, already, noteSaved? }  ·  403 not Finance / not visible / not-override  ·  409 changed ("reload") /
+   confirm-needed  ·  422 no account / reason required / ten-percent-not-verified (G2: no matched Advance or Full receipt) /
+   override-reason-short  ·  502 note-failed  ·  503 ten-percent-unknown / Zoho not answering. Server: server/investors/unlock. */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { investorsContext, NO_STORE } from "@/server/investors/http";
@@ -12,7 +16,10 @@ import type { AppAccessResult } from "@/server/investors/unlock";
 
 export const dynamic = "force-dynamic";
 const MAX_BODY = 4 * 1024;
-const STATUS: Record<string, number> = { "not-finance": 403, "not-visible": 403, changed: 409, "no-account": 422, "reason-required": 422, "invalid-request": 400 };
+const STATUS: Record<string, number> = { "not-finance": 403, "not-visible": 403, changed: 409, "no-account": 422, "reason-required": 422, "invalid-request": 400,
+  "ten-percent-not-verified": 422, "ten-percent-unknown": 503, "not-override": 403, "override-reason-short": 422, "confirm-needed": 409, "note-failed": 502 };
+/** GC-1526: the seats that may unlock without a verified 10% — Finance Operations and the Head of Finance, nobody else. */
+const OVERRIDE_SEATS: ReadonlySet<string> = new Set(["finance-operations", "head-of-finance"]);
 type Ctx = { params: Promise<{ id: string }> };
 
 async function service() {
@@ -32,6 +39,12 @@ async function service() {
         if (!now.ok || now.credential.userId !== cred.userId) return false;
         const seat = zohoSeatOf(now.session.seat);
         return !!seat && seatAccess(seat, now.session.who, {}).imCan("pay");
+      },
+      async mayOverride(cred, sid) {
+        const now = await userSessions().credential(sid);
+        if (!now.ok || now.credential.userId !== cred.userId) return false;
+        const seat = zohoSeatOf(now.session.seat);
+        return !!seat && OVERRIDE_SEATS.has(seat) && seatAccess(seat, now.session.who, {}).imCan("pay");
       },
     },
   });
@@ -59,6 +72,10 @@ async function post_(req: Request, { params }: Ctx) {
   const s = await service();
   if (!s.ok) return s.response;
   const b = await bodyOf(req);
+  if (b.override !== undefined && b.override !== null) {
+    const o = typeof b.override === "object" && !Array.isArray(b.override) ? (b.override as Record<string, unknown>) : {};
+    return answer(await s.app.overrideUnlock(s.who, (await params).id, o.reason, o.confirmed, b.expectedModifiedTime, req.signal));
+  }
   return answer(await s.app.unlock(s.who, (await params).id, b.expectedModifiedTime, req.signal));
 }
 async function delete_(req: Request, { params }: Ctx) {

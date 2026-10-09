@@ -72,6 +72,9 @@ export async function queuesContext(env: NodeJS.ProcessEnv = process.env) {
   const claims = receiptsConfigured() ? await (await import("../money/runtime")).claimAnswers(env) : null;
   const queues = createInvestorQueues({
     crm, log: rt.log, claims,
+    /* G1: set once Digital Infrastructure has created the Finance sharing rule on Leads (B-21 / W3-E2E-2); until then the queue says
+       that a request on a lead Zoho does not share with Finance cannot be listed */
+    financeLeadsShared: env.GZ_FINANCE_LEADS_SHARED === "1",
     holds: createHolds({ crm, cache: rt.cache, events: rt.events }),
     documents: documentsList(crm, rt.log, env), // with the per-viewer Sign status (sent dates, Viewed/Declined/Recalled)
     cases: createCasesRegister({ crm, cache: rt.cache, events: rt.events }),

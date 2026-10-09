@@ -22,6 +22,13 @@
  * Finance's side is read where it already lives: NDA_Sign_Req_Id / NDA_Verified_At on the Lead,
  * Supplementary_Sign_Req_Id / Supplementary_Verified_At on the allotment (Lead ─Origin_Lead─ Contact ─Customer─).
  *
+ * G1 (owner workflow, 8 Oct; D136 proposed): "the IR asks Finance to send it". When a round's next step is Finance's send
+ * ("Send it for signature"), the row offers the IR one more beat, `request` — "Ask Finance to send the NDA" / "…the
+ * supplementary" — which writes Lead.<NDA|Supp>_Requested_At / _Requested_By on the IR's own token (same row token, same
+ * If-Unmodified-Since, same 10 s Undo). It is idempotent: a round already asked for answers `already` and writes nothing;
+ * a paper Finance has already sent or verified is refused (`already-sent`). Finance's side stays Finance's (D61): the
+ * request only puts the round on Finance's to-do (server/queues "Send the NDA — requested by <IR> n days ago").
+ *
  * Plane B gets ids and codes only — never a link, a note or a name.
  */
 
@@ -48,11 +55,11 @@ const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 const DRAFT_LINK = /^https:\/\/(?:writer|workdrive|docs)\.zoho\.(?:in|com)\/[A-Za-z0-9._~\/?#=&%-]{1,400}$/;
 
 export type RoundKey = "nda" | "supp";
-export type IrBeat = "told" | "chase" | "said" | "draft" | "redraft" | "agreed";
+export type IrBeat = "told" | "chase" | "said" | "draft" | "redraft" | "agreed" | "request";
 export type Channel = "call" | "msg" | "email";
 /** Finance's beats, named every way the prototype and the queue call them — refused here, always. */
 export const FINANCE_BEATS: ReadonlySet<string> = new Set(["sent", "send", "ok", "verify", "back", "bounce", "block"]);
-const IR_BEATS: ReadonlySet<string> = new Set(["told", "chase", "said", "draft", "redraft", "agreed"]);
+const IR_BEATS: ReadonlySet<string> = new Set(["told", "chase", "said", "draft", "redraft", "agreed", "request"]);
 const CHANNEL_VALUE: Readonly<Record<Channel, string>> = Object.freeze({ call: "Call", msg: "WhatsApp", email: "Email" });
 const CHANNEL_OF: Readonly<Record<string, Channel>> = Object.freeze({ Call: "call", WhatsApp: "msg", Email: "email" });
 const CONSENT: Readonly<Record<Channel, string>> = Object.freeze({ call: "Consent_Call", msg: "Consent_WhatsApp", email: "Consent_Email" });
@@ -79,6 +86,12 @@ export const BACK_FIELDS = Object.freeze({
   nda: Object.freeze({ at: "NDA_Back_At", by: "NDA_Back_By", why: "NDA_Back_Why" }),
   supp: Object.freeze({ at: "Supp_Back_At", by: "Supp_Back_By", why: "Supp_Back_Why" }),
 });
+/** G1: the IR's ask that Finance send the round's paper (PROPOSED names, D136) — written here by the IR, read by Finance's queue. */
+export const REQUEST_FIELDS = Object.freeze({
+  nda: Object.freeze({ at: "NDA_Requested_At", by: "NDA_Requested_By" }),
+  supp: Object.freeze({ at: "Supp_Requested_At", by: "Supp_Requested_By" }),
+});
+export const REQUEST_LEAD_FIELDS: readonly string[] = Object.freeze(Object.values(REQUEST_FIELDS).flatMap((f) => [f.at, f.by]));
 type AnyRoundFields = { readonly [k: string]: string };
 const fieldsOf = (rk: RoundKey): AnyRoundFields => ROUND_FIELDS[rk] as AnyRoundFields;
 /** Every proposed field, for the report and the field-contract test. */
@@ -86,7 +99,9 @@ export const PROPOSED_LEAD_FIELDS: readonly string[] = Object.freeze([...Object.
 
 const LEAD_READ = ["Modified_Time", "Owner", "Cover_By", "Cover_Until", "Lost_At", "Consent_Call", "Consent_WhatsApp", "Consent_Email",
   "NDA_Sign_Req_Id", "NDA_Verified_At", ...RUNGS.map((r) => r.field), ...PROPOSED_LEAD_FIELDS,
-  ...Object.values(BACK_FIELDS).flatMap((f) => [f.at, f.by, f.why])];
+  ...Object.values(BACK_FIELDS).flatMap((f) => [f.at, f.by, f.why]),
+  /* G1: the stamp only — the row reads 50 fields, Zoho's ceiling (lib/zoho/client MAX_FIELDS); who asked is Finance's queue's read */
+  ...Object.values(REQUEST_FIELDS).map((f) => f.at)];
 
 export interface FinanceSide { readonly sentAt: string | null; readonly okAt: string | null }
 export interface RoundView {
@@ -100,6 +115,8 @@ export interface RoundView {
   readonly agreed: { readonly version: number | null; readonly ref: string; readonly at: string } | null;
   /** Finance found nothing signed after the IR said it was ("Not signed after all"); null once the IR says it again. */
   readonly back: { readonly by: string | null; readonly at: string; readonly why: string | null } | null;
+  /** G1: the IR asked Finance to send it (who, when); null when nobody has. */
+  readonly requested: { readonly at: string } | null;
   /** Finance's side, read here, never written here. */
   readonly sent: boolean;
   readonly verified: boolean;
@@ -130,7 +147,7 @@ export interface PaperworkCommand {
 
 export type PaperworkRefusal = "invalid-request" | "session-changed" | "capability-missing" | "not-visible" | "not-in-book"
   | "not-from-row" | "lead-changed" | "finance-beat" | "out-of-order" | "no-consent" | "lead-lost" | "draft-needed"
-  | "draft-not-on-lead" | "undo-expired" | "undo-invalid" | "source-invalid" | "partial";
+  | "draft-not-on-lead" | "undo-expired" | "undo-invalid" | "source-invalid" | "partial" | "already-sent";
 export type PaperworkResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: PaperworkRefusal; readonly reason: string }
@@ -154,6 +171,7 @@ export const PAPERWORK_REASON: Readonly<Record<PaperworkRefusal, string>> = Obje
   "undo-invalid": "This Undo does not match a step of yours.",
   "source-invalid": "Zoho returned a record this console cannot read.",
   "partial": "The step could not be completed and could not be fully taken back; it has been reported.",
+  "already-sent": "Not saved — Finance has already sent it for signature.",
 });
 
 export interface PaperworkDependencies {
@@ -245,6 +263,15 @@ export function backOf(L: ZohoRecord, rk: RoundKey, verified: boolean): RoundVie
   const why = str(L[b.why]);
   return Object.freeze({ by: idOf(L[b.by]), at, why: why ? why.slice(0, 300) : null });
 }
+
+/** G1: the IR's ask, as Zoho holds it (its stamp); null when the round was never asked for. */
+export function requestedOf(L: ZohoRecord, rk: RoundKey): RoundView["requested"] {
+  const at = stamp(L[REQUEST_FIELDS[rk].at]);
+  return at ? Object.freeze({ at }) : null;
+}
+/** G1: the request is offered while the round waits on Finance's send, has not been asked for, and is not out or verified. */
+export const requestOffered = (v: Pick<RoundView, "next" | "requested" | "sent" | "verified">): boolean =>
+  v.next.k === "sent" && v.next.who === "Finance" && !v.requested && !v.sent && !v.verified;
 
 export function createPaperwork(deps: PaperworkDependencies) {
   if (!deps || typeof deps.crm?.getRecord !== "function" || typeof deps.crm?.update !== "function" || typeof deps.crm?.insert !== "function"
@@ -352,6 +379,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
       draft: r.draft ? { version: int(L[f.draftVersion!]), ref: r.draft.link, at: stamp(L[f.draftAt!]) } : null,
       agreed: r.agreed ? { version: int(L[f.agreedVersion!]) || null, ref: r.agreed.link, at: r.agreed.at as string } : null,
       back: backOf(L, rk, !!r.ok),
+      requested: requestedOf(L, rk),
       sent: !!r.sent, verified: !!r.ok,
     });
   }
@@ -386,7 +414,8 @@ export function createPaperwork(deps: PaperworkDependencies) {
         const exp = clock() + ROW_TOKEN_MS;
         const chans = consented(x.L);
         for (const v of rounds) {
-          for (const beat of beatsFor(v.next, x.rounds[v.round])) {
+          const beats: IrBeat[] = [...beatsFor(v.next, x.rounds[v.round]), ...(requestOffered(v) ? ["request" as const] : [])];
+          for (const beat of beats) {
             const channels = beat === "told" || beat === "chase" ? chans : [];
             if ((beat === "told" || beat === "chase") && !channels.length) continue;
             offers.push(Object.freeze({ round: v.round, beat, channels: Object.freeze(channels),
@@ -400,7 +429,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
     /** Record one IR beat from the row. */
     async step(principal: Principal, c: PaperworkCommand, signal?: AbortSignal): Promise<PaperworkResult<{
       readonly round: RoundKey; readonly beat: IrBeat; readonly modifiedTime: string | null; readonly touchId: string | null; readonly noteId: string | null;
-      readonly draftVersion: number | null; readonly undoToken: string; readonly undoUntil: number }>> {
+      readonly draftVersion: number | null; readonly undoToken: string | null; readonly undoUntil: number; readonly already?: boolean }>> {
       if (!principalOk(principal)) return refuse("unrecognised", "invalid-request");
       const cred = principal.credential, me = cred.userId;
       const lead = c && validId(c.leadId) ? c.leadId : null;
@@ -410,6 +439,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
       if (!isRound(c.round) || typeof c.beat !== "string" || !IR_BEATS.has(c.beat)) return refuse(me, "invalid-request", [lead]);
       const rk = c.round, beat = c.beat as IrBeat;
       const needsChannel = beat === "told" || beat === "chase";
+      const isRequest = beat === "request";
       if (needsChannel ? !isChannel(c.channel) : c.channel !== undefined && c.channel !== null) return refuse(me, "invalid-request", [lead]);
       if (rk === "nda" && (beat === "draft" || beat === "redraft" || beat === "agreed")) return refuse(me, "out-of-order", [lead]);
       const hasFile = c.attachmentId !== undefined && c.attachmentId !== null;
@@ -419,6 +449,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
       if (hasLink && (typeof c.link !== "string" || !DRAFT_LINK.test(c.link.trim()))) return refuse(me, "invalid-request", [lead]);
       if ((beat === "draft" || beat === "redraft") && !hasFile && !hasLink) return refuse(me, "draft-needed", [lead]);
       if (!(beat === "draft" || beat === "redraft" || beat === "agreed") && (hasFile || hasLink)) return refuse(me, "invalid-request", [lead]);
+      if (isRequest && c.channel !== undefined && c.channel !== null) return refuse(me, "invalid-request", [lead]);
 
       // ---- only from the lead page row: its token names this lead, this round, this beat, this person and sign-in
       const row = verify<RowClaims>(c.rowToken, "row");
@@ -431,11 +462,21 @@ export function createPaperwork(deps: PaperworkDependencies) {
       if (!("L" in x)) return x;
       const L = x.L;
       if (!x.inBook) return refuse(me, "not-in-book", [lead]);
+      if (rk === "supp" && x.suppUnread) return zoho("unexpected");
+      if (isRequest) {
+        /* G1: out or verified already → nothing to ask; asked already (a second press, or another IR) → `already`, no write.
+           Both are decided before the row's Modified_Time, so a double press answers the same thing twice. */
+        if (x.rounds[rk].sent || x.rounds[rk].ok) return refuse(me, "already-sent", [lead]);
+        if (requestedOf(L, rk)) {
+          return { ok: true, value: Object.freeze({ round: rk, beat, modifiedTime: L.Modified_Time as string, touchId: null, noteId: null, draftVersion: null,
+            undoToken: null, undoUntil: 0, already: true }) };
+        }
+      }
       if (L.Modified_Time !== row.mod) return refuse(me, "lead-changed", [lead]);
       if (L.Lost_At) return refuse(me, "lead-lost", [lead]);
-      if (rk === "supp" && x.suppUnread) return zoho("unexpected");
       const next = nextOf(L, x.done, x.rounds, rk);
-      if (!beatsFor(next, x.rounds[rk]).includes(beat)) return refuse(me, next.who === "Finance" ? "finance-beat" : "out-of-order", [lead]);
+      if (isRequest ? !requestOffered({ next, requested: null, sent: !!x.rounds[rk].sent, verified: !!x.rounds[rk].ok })
+        : !beatsFor(next, x.rounds[rk]).includes(beat)) return refuse(me, !isRequest && next.who === "Finance" ? "finance-beat" : "out-of-order", [lead]);
       if (needsChannel && L[CONSENT[c.channel as Channel]] !== true) return refuse(me, "no-consent", [lead]);
 
       // ---- the draft file must be on this lead (uploaded through M12-S02 to its Attachments)
@@ -464,6 +505,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
           draftVersion = int(L[f.draftVersion!]) || null;
           Object.assign(fields, { [f.agreedAt!]: now, [f.agreedBy!]: meRef, [f.agreedVersion!]: draftVersion, [f.agreedRef!]: ref ?? str(L[f.draftRef!]) });
           break;
+        case "request": Object.assign(fields, { [REQUEST_FIELDS[rk].at]: now, [REQUEST_FIELDS[rk].by]: meRef }); break;
       }
       const snapshot: Record<string, string | number | null | { id: string }> = {};
       for (const k of Object.keys(fields)) {

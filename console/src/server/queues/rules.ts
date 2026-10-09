@@ -111,18 +111,32 @@ export function careRows(accounts: readonly CareAccount[], now: number, o: { rea
 
 /* ---------------------------------------------- Finance's queue ---------------------------------------------- */
 
-export type MoneyKind = "claim" | "hold" | "verify" | "remind" | "kyc" | "fema";
+export type MoneyKind = "claim" | "hold" | "verify" | "remind" | "kyc" | "fema" | "send";
 export interface MoneyRow {
   readonly key: string;
   readonly kind: MoneyKind;
+  /** a "send" row of an NDA asked for before any investor record exists names the lead (id = the Lead id) */
   readonly investor: { readonly id: string; readonly name: string | null };
   readonly text: string;
   readonly urg: Urgency;
   readonly days: number | null;
-  readonly action: "Answer it" | "Verify it" | "Remind" | "Check it" | "Open the record";
-  /** The record the control acts on: the claim (Receipts row), the allotment, or the paper. */
-  readonly ref: { readonly claimId?: string; readonly allotmentId?: string; readonly paper?: string; readonly recordId?: string };
+  readonly action: "Answer it" | "Verify it" | "Remind" | "Check it" | "Open the record" | "Send it";
+  /** The record the control acts on: the claim (Receipts row), the allotment, or the paper. G1 "send" rows: `leadId` (the NDA
+   *  goes on the Lead), `contactId` when the investor record exists (the supplementary goes on its allotment), `paper`. */
+  readonly ref: { readonly claimId?: string; readonly allotmentId?: string; readonly paper?: string; readonly recordId?: string;
+    readonly leadId?: string; readonly contactId?: string };
 }
+
+/** G1 (D136 proposed): "Send the NDA — requested by Rohit 2 days ago"; today: "requested by Rohit today". */
+export function sendText(paper: "nda" | "supplementary", by: string | null, days: number | null): string {
+  const what = paper === "nda" ? "Send the NDA" : "Send the supplementary agreement";
+  const when = days === null ? "" : days <= 0 ? " today" : ` ${plural(days, "day")} ago`;
+  return `${what} — requested by ${by ?? "an IR"}${when}`;
+}
+/** G1: what the queue says when the IRs' requests could not be read, or may be incomplete (no Finance sharing rule on Leads yet). */
+export const REQUESTS_UNREAD_TEXT = "The IRs' requests to send an NDA or a supplementary could not be read — Zoho refused the Leads read for this seat. Until Digital Infrastructure adds the Finance sharing rule on Leads, requested papers do not show here.";
+export const REQUESTS_NO_FIELDS_TEXT = "The IRs' requests to send an NDA or a supplementary could not be read — Zoho does not know the request fields yet (Leads.NDA_Requested_At / Supp_Requested_At). Digital Infrastructure creates them.";
+export const REQUESTS_PARTIAL_TEXT = "Requests to send an NDA show only for leads Zoho shares with Finance. The Finance sharing rule on Leads is not confirmed yet, so a request on a lead not shared with you is not listed here.";
 
 export const claimText = "An IR says the money has arrived — confirm it";
 export function holdText(d: number): { text: string; urg: Urgency } {

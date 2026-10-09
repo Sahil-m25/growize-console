@@ -40,6 +40,9 @@ export interface InvestorEvents {
   /** M08-S08-NOTE-10: Plane C — "Send welcome and unlock" released app access (ok, reason "released") or the release was
    *  refused (reason = the refusal code). recordIds = [Contact]; ids and codes only, never a name or an email. */
   appAccessReleased(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string): void;
+  /** GC-1526: Plane C — app access unlocked WITHOUT a verified 10% (ok, reason "ten-percent-waived") or that override refused
+   *  (reason = the refusal code). recordIds = [Contact]; the typed reason lives only in the Contact's Note, never here. */
+  appAccessOverride(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string): void;
   /** M15-S05-NOTE-1 / M10-S23: Plane C — a test sign-in link issued for a Contact, living `ttlMinutes`; `real` = a real
    *  investor (after the warning), not a listed test account. Never the URL, the token or the reason's words. */
   testLinkIssued(userId: string, seat: string | null, contactId: string, ttlMinutes: number, real: boolean): void;
@@ -82,6 +85,9 @@ export function createInvestorEvents(deps: { readonly log: OpsLog; readonly plan
     },
     appAccessReleased(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string) {
       deps.planeC.record({ at: clock(), who: userId, action: "app-access-released", outcome, reason, seat, recordIds: ids([contactId]) });
+    },
+    appAccessOverride(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string) {
+      deps.planeC.record({ at: clock(), who: userId, action: "app-access-override", outcome, reason, seat, recordIds: ids([contactId]) });
     },
     testLinkIssued(userId: string, seat: string | null, contactId: string, ttlMinutes: number, real: boolean) {
       deps.planeC.record({ at: clock(), who: userId, action: "test-link-issued", outcome: "ok", reason: real ? "real-investor" : "test-account", seat,

@@ -47,7 +47,10 @@ const MODULE_BOOK = { Leads: 'leads', Contacts: 'investors', LLP_UnitAllocation_
 /* By-design reads of a book the seat does not hold, each with its reason (the route comment in guard-core API_ROUTES). */
 const BOOK_EXEMPT = {
   '/api/leads/[id]/hints': 'M12-S11-T03: the IR\'s word for Finance beside its queue, read on the viewer\'s own token (D53) — Zoho sharing decides, the reply carries no lead field beyond a hint',
+  /* narrowed to one module: every other book of this route is still held to the seat's scope */
+  '/api/queues/investors': { modules: ['Leads'], why: 'G1 (D136): Finance\'s to-do reads the IRs\' "send the NDA / supplementary" requests (Leads.*_Requested_*) on the viewer\'s own token (D53) — the Finance sharing rule on Leads decides; a row carries the lead\'s name and the request only' },
 };
+const exemptFor = (route, module) => { const e = BOOK_EXEMPT[route]; return !!e && (typeof e === 'string' || e.modules.includes(module)); };
 
 /* identity the Zoho double adds to every record it returns (synthetic shapes, never a real value) */
 const CANARY = { PAN_Number: 'ZZZZZ9999Z', PAN: 'ZZZZZ9998Z', Aadhaar_Number: '234567890123', Aadhaar_Ref: 'UIDAI-ZZ-90123456', Bank_Account_Number: '987654321098',
@@ -134,14 +137,13 @@ function identityProblems(c, seat, res) {
 
 function scopeProblems(c, seat, cs) {
   const bad = [];
-  const exempt = BOOK_EXEMPT[c.route];
   for (const x of reads(cs)) {
     const m = moduleOf(x), book = m && MODULE_BOOK[m];
     if (x.q) for (const w of WHO_VALUES) if (w !== H.WHO[seat.token] && x.q.includes(w)) bad.push(`a query names another seat's user id (${m})`);
     if (!book) continue;
     const kind = seat.books[book];
     const aggregate = x.q && /\b(count|sum|max|min|avg)\s*\(/i.test(x.q);
-    if (kind === 'none' && !exempt) bad.push(`reads ${m} (${book} book) but the seat's ${book} scope is none`);
+    if (kind === 'none' && !exemptFor(c.route, m)) bad.push(`reads ${m} (${book} book) but the seat's ${book} scope is none`);
     if (x.q && !aggregate && ['user', 'own-lead', 'own-book'].includes(kind) && !/\bid\s*(=|in)\s*[('"]/i.test(x.q) && book !== 'money' && book !== 'farms' && book !== 'holdings') {
       if (!x.q.includes(H.WHO[seat.token])) bad.push(`lists ${m} for a ${kind} seat without a filter naming the seat`);
     }

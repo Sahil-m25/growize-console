@@ -24,7 +24,8 @@ import type { ImBook } from "./im";
 
 export type LeadDispatch = (a: Action) => void;
 export type { PaperworkRow, RoundView, Offer, RoundKey };
-export type IrBeat = "told" | "chase" | "said" | "draft" | "redraft" | "agreed";
+/** "request" (G1): the IR asks Finance to send the round's paper — live only (the demo book has no request fields). */
+export type IrBeat = "told" | "chase" | "said" | "draft" | "redraft" | "agreed" | "request";
 export type PwChannel = "call" | "msg" | "email";
 const CHANNELS: readonly PwChannel[] = ["call", "msg", "email"];
 
@@ -64,6 +65,8 @@ export const paperworkRow: ReadEndpoint<ConsoleState, string | null, PaperworkRo
         draft: p.draft ? { version: p.draft.v, ref: p.draft.link, at: p.draft.at as string } : null,
         agreed: p.agreed ? { version: p.draft ? p.draft.v : null, ref: p.agreed.link, at: p.agreed.at as string } : null,
         back: p.back ? { by: p.back.by as string, at: p.back.at as string, why: p.back.why } : null,
+        /* G1: the demo book keeps no "asked Finance to send it" — the fixture neither shows nor offers it (live: Lead.*_Requested_*) */
+        requested: null,
         sent: !!p.sent, verified: !!p.ok,
       };
     });
@@ -79,7 +82,9 @@ export const ndaSigned = (row: PaperworkRow): boolean => !!row.rounds.find(r => 
 
 /* ---- a beat and its Undo ------------------------------------------------------------------------------ */
 export type StepArgs = { leadId: string; round: RoundKey; beat: IrBeat; channel?: PwChannel; rowToken: string; link?: string; attachmentId?: string };
-export type StepDone = { round: string; beat: string; undoToken: string | null; undoUntil: number | null; draftVersion: number | null };
+export type StepDone = { round: string; beat: string; undoToken: string | null; undoUntil: number | null; draftVersion: number | null;
+  /** G1: the round was already asked for — nothing was written */
+  already?: boolean };
 
 export const paperworkStep: WriteEndpoint<ConsoleState, StepArgs, StepDone, LeadDispatch> = {
   method: "POST",
@@ -143,6 +148,7 @@ export const stepSaved = (beat: string, round: string, channel: string | undefin
     told: nm + " — told them by " + by, chase: nm + " reminder by " + by + " · on the contact history too",
     said: "They say the " + nm + " is signed — Finance checks it in the IM portal", draft: "Supplementary draft sent",
     agreed: "Final draft agreed — Finance sends it for signature", redraft: "Draft " + (draftVersion + 1) + " sent",
+    request: "Asked Finance to send the " + (round === "nda" ? "NDA" : "supplementary agreement") + " — it is on Finance's to-do list",
   };
   return "Saved · " + (M[beat] || nm);
 };
