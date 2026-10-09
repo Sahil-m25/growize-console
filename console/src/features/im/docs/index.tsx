@@ -12,7 +12,7 @@ import { dayOf, documentsList } from "@/lib/data/endpoints/documents";
 import { NOT_A_SIGNATURE, paperworkQueue } from "@/lib/data/endpoints/paperwork";
 import { allotmentOf, METHOD_OF, PAPER_OF_TEMPLATE, signPrefill, signSend } from "@/lib/data/endpoints/sign";
 import type { DocRow, Paper } from "@/server/documents/list";
-import { DocTag, ImSecBar, type ImPageProps, type ImSec } from "../common";
+import { DocTag, ImPname, ImSecBar, type ImPageProps, type ImSec } from "../common";
 import { AgreedDraftOffer, SUPP_TEMPLATE, useAgreedDraft } from "../paper2/AgreedDraft";
 import { ReadNote } from "../paper2/ReadNote";
 import { SignRowCell } from "../paper2/SignCell";
@@ -60,12 +60,12 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
               <td><b>{d.label}</b><div className="sm">{(d.module === "Contacts" ? "Personal" : "Allotment") + " · " + d.recordId}</div></td>
               <td>{d.party || d.contactId}<div className="sm mono">{d.contactId}</div>
                 {S === "out" && hintOf(d) ? <div className="sm" data-hint>{hintOf(d)!.words}{hintOf(d)!.by?.name ? " — " + hintOf(d)!.by!.name : ""}. {NOT_A_SIGNATURE}</div> : null}</td>
-              <td className="sm">{first(d.sign && d.sign.sentBy)} <span className="mono">{dayOf(d.sign && d.sign.sentAt)}</span></td>
+              <td className="sm">{d.sign?.sentBy ? first(d.sign.sentBy) : d.sign?.sentById ? <ImPname s={s} k={d.sign.sentById} first /> : "—"} <span className="mono">{dayOf(d.sign && d.sign.sentAt)}</span></td>
               <td className="sm">{d.method || "—"}</td>
               <td><DocTag d={{ state: d.state === "verified" ? "signed" : d.key.startsWith("blocked:") ? "blocked" : "awaiting" }} />
                 {d.state === "sent" && !d.key.startsWith("blocked:") && d.sign
                   ? <div className="sm">{(ago(s.data.NOW, d.sign.sentAt) !== "—" ? ago(s.data.NOW, d.sign.sentAt) : "")
-                    + (d.sign.expiresAt ? " · expires " + d.sign.expiresAt : "")}</div>
+                    + (d.sign.expiresAt ? " · expires " + dayOf(d.sign.expiresAt) : "")}</div>
                   : d.verifiedAt ? <div className="sm mono">{dayOf(d.verifiedAt)}</div> : null}
                 <SignRowCell s={s} me={me} dispatch={dispatch} row={d} /></td>
               <td className="sm mono">{d.state === "verified" ? dayOf(d.verifiedAt) : "—"}</td>

@@ -53,7 +53,9 @@ export const PAPERS: readonly PaperSpec[] = Object.freeze([
 
 /** What Zoho Sign says of one request, read on the viewer's own Sign token (see above). `status` is "completed" when
  *  signed, else the reader's state (sent, viewed, declined, recalled, expired, draft, unknown); `label` its words. */
-export interface SignStatus { readonly status: string; readonly sentAt: string | null; readonly sentBy: string | null; readonly expiresAt: string | null; readonly label?: string | null }
+export interface SignStatus { readonly status: string; readonly sentAt: string | null; readonly sentBy: string | null; readonly expiresAt: string | null; readonly label?: string | null;
+  /** The sender's Zoho user id when Sign names no owner (the sandbox fake): the page resolves it to a name from the people directory (W3-E2E-8). */
+  readonly sentById?: string | null }
 /** A request Zoho Sign has closed without a signature: nobody can be reminded, a new one must be sent. */
 export const SIGN_CLOSED = /^(declined|recalled|expired)$/i;
 export type SignStatusReader = (cred: UserCredential, requestIds: readonly string[], signal?: AbortSignal) => Promise<ReadonlyMap<string, SignStatus>>;
