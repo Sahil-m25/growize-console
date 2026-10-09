@@ -6,6 +6,7 @@
    route's own filters. The route's answer already holds only what this seat may read, and an organisation audit
    has its investor details withheld by the route. */
 
+import { Tw } from "@/components/ui";
 import type { ReactNode } from "react";
 import { fmtDay, GLYPH, KINDS, navFor, pageReadable, who } from "@/lib/im";
 import type { ImKind } from "@/lib/im";
@@ -55,7 +56,7 @@ export function ImAct({ s, me, dispatch }: ImPageProps) {
         ))}
       </div>
       {shown.state !== "ok" ? <Wait r={shown} /> : null}
-      <div className="secw"><div className="card fill"><div className="tw"><table>
+      <div className="secw"><div className="card fill"><Tw><table>
         <thead><tr><th>When</th><th>Who</th><th>What</th><th>Investor</th><th>Detail</th></tr></thead>
         <tbody>{rows.length ? rows.map((e, i) => {
           const link = e.recordId && canInv ? e.recordId : null;
@@ -69,7 +70,7 @@ export function ImAct({ s, me, dispatch }: ImPageProps) {
               <td className="sm">{e.withheld ? "Investor details withheld" : e.detail ?? ""}</td></tr>
           );
         }) : shown.state === "ok" ? <tr><td colSpan={5}><div className="empty">Nothing in this cut.</div></td></tr> : null}
-        </tbody></table></div></div></div>
+        </tbody></table></Tw></div></div>
     </>
   );
 }

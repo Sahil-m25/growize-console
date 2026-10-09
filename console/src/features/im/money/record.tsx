@@ -7,6 +7,7 @@
    - App access (M10-S21) with Preview app (M10-S22) and Test sign-in link (M10-S23).
    - ARL holdings (M10-S09), read-only. */
 
+import { Tw } from "@/components/ui";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   I, accessOf, accessView, allotAmount, allotDue, allotOf, allotPaid, allotPayStatus, allotTxns, allotUnits, allotsOf,
@@ -63,7 +64,7 @@ export function AllotCard(p: P) {
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>Allotments</h3><div className="sp" />
       <span className="sm">{rows.length} farm LLP{rows.length === 1 ? "" : "s"} · one record each</span></div>
-      <div className="tw"><table>
+      <Tw><table>
         <thead><tr><th>Farm (LLP)</th><th className="n">Units</th>{fin ? <th className="n">Amount</th> : null}<th>Allocation</th>
           <th>Agreement</th>{fin ? <th>Payment</th> : null}<th></th></tr></thead>
         <tbody>{rows.map(l => {
@@ -89,7 +90,7 @@ export function AllotCard(p: P) {
               </>}
               open={oid === l.id ? otab : ""} />
           );
-        })}</tbody></table></div>
+        })}</tbody></table></Tw>
       {fin ? <div className="cb"><p className="sm" style={{ margin: 0 }}>An allotment is one investor on one farm. Its receipts and its monthly payouts belong to it, so each farm&apos;s money adds up from the same records.</p></div> : null}
     </div>
   );
@@ -133,7 +134,7 @@ function Payouts({ s, me, dispatch, a }: ImPageProps & { a: ImAllot }) {
     <>
       <p className="sm" style={{ margin: "4px 0 8px" }}>{po.length} monthly payouts at {a.Annual_Rental_Yield}% a year · {paid.length} paid,{" "}
         {inr(paid.reduce((n, x) => n + x.net, 0))} net so far. TDS is typed by Finance; net = gross − TDS.</p>
-      <div className="tw" style={{ maxHeight: 360, overflow: "auto" }}><table>
+      <Tw style={{ maxHeight: 360, overflow: "auto" }}><table>
         <thead><tr><th className="n">#</th><th>Month</th><th>Due</th><th className="n">Gross</th><th className="n">TDS</th><th className="n">Net</th>
           <th>State</th><th>Paid</th><th></th></tr></thead>
         <tbody>{po.map(x => (
@@ -149,7 +150,7 @@ function Payouts({ s, me, dispatch, a }: ImPageProps & { a: ImAllot }) {
             <td style={{ textAlign: "right" }}>{may(s, me, "pay") && x.state !== "Paid" && x.state !== "Cancelled" && (x.dueOn ?? "").slice(0, 7) <= mo
               ? <button className="chip" onClick={() => { dispatch({ type: "mset", k: "po:al", v: a.id }); dispatch({ type: "openDrawer", k: "payout", id: x.id }); }}>Mark paid</button> : null}</td>
           </tr>
-        ))}</tbody></table></div>
+        ))}</tbody></table></Tw>
     </>
   );
 }

@@ -11,6 +11,7 @@
    it only when asked for.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import type { EventRow } from "@/server/events/events";
 import {
@@ -165,7 +166,7 @@ export function EventsPage() {
           {view === "completed" ? (
             <div className="card fill">
               <div className="ch"><h3>Completed events</h3></div>
-              <div className="tw"><table>
+              <Tw><table>
                 <thead><tr>
                   <th scope="col">Event</th><th scope="col">Dates</th><th scope="col">Staff</th>
                   <th scope="col">Leads</th><th scope="col">vs need {need}</th>
@@ -182,7 +183,7 @@ export function EventsPage() {
                       </td></tr>
                     )}
                 </tbody>
-              </table></div>
+              </table></Tw>
               {ran.length > 0 && (
                 <p className="sm g4-foot">
                   {tot} leads captured · {taggedTotal} tagged{costCol ? "" : ". Cost per qualified appears once an event's captured leads are all tagged."}

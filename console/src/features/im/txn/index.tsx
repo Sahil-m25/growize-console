@@ -5,6 +5,7 @@
    (lib/data/endpoints/payments) — received, refunded, net banked and still due are MATCHED money only (D21); what
    is recorded and not yet matched is shown apart. The Match it button is M10-S02 (../money/pages). */
 
+import { Tw } from "@/components/ui";
 import { useState } from "react";
 import { day6, fmtDate, money, pageReadable, refShown, REVWHY, TXNF } from "@/lib/im";
 import type { ImTxn } from "@/lib/im";
@@ -134,7 +135,7 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
         <button key={k} className={`sc ${f === k ? "on" : ""}`}
           onClick={() => dispatch({ type: "setFilter", patch: { TFILT: k } })}>{t}<i>{counts[COUNT[k]]}</i></button>
       ))}</div>
-      <div className="secw"><div className="card fill"><div className="tw"><table>
+      <div className="secw"><div className="card fill"><Tw><table>
         <thead><tr><th>Reference</th><th>Investor</th><th>Kind</th><th className="n">Amount</th>
           <th>Mode · UTR</th><th aria-label="Show or hide the reference"></th><th>Recorded</th><th>Reconciled</th></tr></thead>
         <tbody>{rows.length ? rows.map(t => (
@@ -150,7 +151,7 @@ export function ImTxn({ s, me, dispatch }: ImPageProps) {
               : <span className="tag due"><span className="dot"></span>pending</span>}
               <MatchCell s={s} me={me} dispatch={dispatch} t={asTxn(t)} /></td></tr>
         )) : <tr><td colSpan={8}><div className="empty">Nothing in this cut.</div></td></tr>}
-        </tbody></table></div></div>
+        </tbody></table></Tw></div>
         <PayoutsDue s={s} me={me} dispatch={dispatch} /></div>
     </>
   );

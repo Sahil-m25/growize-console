@@ -11,6 +11,7 @@
    until it names the event every row will be tagged to.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { Fragment, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EventId } from "@/domain";
@@ -162,12 +163,12 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
           <div className="note bad" style={{ margin: "0 0 12px" }}>
             <b>{report.refused.length} row{report.refused.length === 1 ? "" : "s"}</b> of {report.file} {report.refused.length === 1 ? "was" : "were"} not added
             ({report.added} {report.added === 1 ? "was" : "were"}).
-            <div className="tw"><table>
+            <Tw><table>
               <thead><tr><th>Row</th><th>Name</th><th>Why</th></tr></thead>
               <tbody>
                 {report.refused.map(x => <tr key={x.line}><td className="mono">{x.line}</td><td>{x.n || "—"}</td><td className="sm">{x.why}</td></tr>)}
               </tbody>
-            </table></div>
+            </table></Tw>
             <div className="chips" style={{ marginTop: 9 }}><Chip onClick={() => setReport(null)}>Dismiss</Chip></div>
           </div>
         )}
@@ -231,7 +232,7 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                   {good.length > 0 && (
                     <details className="ux-disclosure" data-ux-key="capture-bulk-preview">
                       <summary>Preview {good.length} valid rows</summary>
-                      <div className="tw"><table>
+                      <Tw><table>
                         <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Units</th></tr></thead>
                         <tbody>
                           {good.map(r => (
@@ -241,20 +242,20 @@ export function AddBulk({ open, onToggle }: { open: boolean; onToggle: () => voi
                             </tr>
                           ))}
                         </tbody>
-                      </table></div>
+                      </table></Tw>
                     </details>
                   )}
                   {badN + dupN > 0 && (
                     <details className="ux-disclosure" data-ux-key="capture-bulk-rejected">
                       <summary>Rows skipped · {badN + dupN}</summary>
-                      <div className="tw"><table>
+                      <Tw><table>
                         <thead><tr><th>Row</th><th>Name</th><th>Reason</th></tr></thead>
                         <tbody>
                           {rows.filter(r => r.bad || r.dupe).map(r => (
                             <tr key={r.i}><td className="mono">{r.i}</td><td>{r.n || "—"}</td><td className="sm">{r.bad || r.dupe}</td></tr>
                           ))}
                         </tbody>
-                      </table></div>
+                      </table></Tw>
                     </details>
                   )}
 

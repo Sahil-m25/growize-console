@@ -4,6 +4,7 @@
    and what each seat holds. In the merged console this is the "Investors side seats" section on
    Teams: merge-glue.js strips the leading .ph block and wraps the rest — that is ImTeamBody. */
 
+import { Tw } from "@/components/ui";
 import { useState } from "react";
 import { activityActors, activityBase, CAN, may, pageReadable, ROLE } from "@/lib/im";
 import type { ImCan, ImRoleKey } from "@/lib/im";
@@ -110,7 +111,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
         <div className="card"><div className="ch"><h3>Who is here</h3><div className="sp" />
           {rows.some(w => w.seatOptions.length)
             ? <button type="button" className="chip" onClick={() => document.getElementById("seat-rights")?.scrollIntoView({ block: "start" })}>See what each seat may do</button>
-            : null}</div><div className="tw"><table>
+            : null}</div><Tw label="Team members, scrolls sideways"><table>
           <thead><tr><th>Name</th><th>Team</th><th>Seat</th><th>May</th><th className="n">Actions logged</th><th></th></tr></thead>
           <tbody>{rows.map(w => {
             const k = w.id, tm = w.role ? (ROLE[w.role] || {}).tm : null;
@@ -139,8 +140,8 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
                 <td style={{ textAlign: "right" }}>{pii ? <span className="tag late">{pii} reveal{pii === 1 ? "" : "s"}</span> : null}</td></tr>
             );
           })}
-          </tbody></table></div></div>
-        <div className="card fill" id="seat-rights"><div className="ch"><h3>What each seat holds</h3></div><div className="tw"><table>
+          </tbody></table></Tw></div>
+        <div className="card fill" id="seat-rights"><div className="ch"><h3>What each seat holds</h3></div><Tw label="What each seat holds, scrolls sideways"><table>
           <thead><tr><th>Right</th>{cols.map(c => <th key={c.seat} style={{ textAlign: "center" }}>{
             c.label.replace(" — read only", "")}<div className="sm" style={{ fontWeight: 400 }}>{c.zohoRole}</div></th>)}</tr></thead>
           <tbody>{(Object.keys(CAN) as ImCan[]).map(c => (
@@ -150,7 +151,7 @@ export function ImTeamBody({ s, me, dispatch }: ImPageProps) {
                 return <td key={col.seat} style={{ textAlign: "center", fontWeight: 700, color: on ? "var(--go)" : "var(--ink-3)", opacity: on ? 1 : .35 }}>{on ? "●" : "○"}</td>;
               })}</tr>
           ))}
-          </tbody></table></div>
+          </tbody></table></Tw>
           <div className="cb" style={{ paddingTop: "9px" }}><p className="sm" style={{ margin: 0 }}><b>Seeing a bank account
             and revealing a PAN are deliberately different rights.</b>{" Finance Operations moves money and needs the account; Compliance checks identity and needs the PAN; neither needs both, and the Auditor needs no write at all. A seat that quietly carried every right would make the log unreadable, because everything would be explicable."}</p></div></div>
       </div>

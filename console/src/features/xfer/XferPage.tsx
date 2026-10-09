@@ -5,6 +5,7 @@
    month; a month opens in place into who, when, how they came in, whose they are, how long it took
    and what has happened since. Read only: nothing here writes. Rules: `@/lib/selectors/xfer`. ── */
 
+import { Tw } from "@/components/ui";
 import { UNIT } from "@/domain";
 import { P, median, may, seeMoney } from "@/lib/selectors";
 import { xfAfter, xfHow, xfMonths } from "@/lib/selectors/xfer";
@@ -37,7 +38,7 @@ export function XferPage() {
   const xfToggle = (k: string) => dispatch({ type: "setUi", patch: { XFMON: XFMON === k ? null : k } });
 
   const list = (m: XfMonth) => (
-    <div className="tw d60c-tw"><table className="d60c-t"><thead><tr><th>Investor</th><th>Transferred</th><th>How they came in</th><th>Owner</th><th className="d60c-n">Days</th><th>Since</th></tr></thead><tbody>
+    <Tw className="d60c-tw"><table className="d60c-t"><thead><tr><th>Investor</th><th>Transferred</th><th>How they came in</th><th>Owner</th><th className="d60c-n">Days</th><th>Since</th></tr></thead><tbody>
       {m.rows.map(({ l, yes, days }) => {
         const a = xfAfter(l);
         return (
@@ -49,7 +50,7 @@ export function XferPage() {
             <td className="mono d60c-n">{days == null ? "—" : days}</td>
             <td><span className={`tag ${a.c}`}>{a.t}</span></td></tr>
         );
-      })}</tbody></table></div>
+      })}</tbody></table></Tw>
   );
 
   return (

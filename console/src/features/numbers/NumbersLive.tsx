@@ -23,6 +23,7 @@
    behind it.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { Fragment, type CSSProperties } from "react";
 import {
   FCAT, FORFEIT, GOALS, LADDER, LOSTWHY, ST, TOUCHDONE, TOUCHSLA, UNIT,
@@ -379,7 +380,7 @@ export function NumbersLive({ sec }: { sec: string }) {
         const can = seesTeam(state) && hasLeads;
         return (
           <div className="card fill"><Hd t="Owner books" right={can ? <span className="sm">tap a row to see their book</span> : undefined} />
-            <div className="tw"><table className="ttab">
+            <Tw><table className="ttab">
               <thead><tr><th>Owner</th><th className="n">Leads</th><th className="n">Active</th>
                 <th className="n">Units</th><th className="n" title="Evidenced Commit, in units">Commit</th>
                 <th className="n">No next</th><th className="n">Overdue</th><th className="n">Cold</th></tr></thead>
@@ -393,7 +394,7 @@ export function NumbersLive({ sec }: { sec: string }) {
                   <td className="n" {...(r.bare ? { style: { color: "var(--late)" } } : {})}>{r.bare || "—"}</td>
                   <td className="n" {...(r.late ? { style: { color: "var(--late)" } } : {})}>{r.late || "—"}</td>
                   <td className="n" {...(r.cold ? { style: { color: "var(--late)" } } : {})}>{r.cold || "—"}</td></tr>
-              ))}</tbody></table></div>
+              ))}</tbody></table></Tw>
             <div className="cb" style={{ paddingTop: 8 }}><p className="sm" style={{ margin: 0 }}>The state of each book, not the volume of work —
               who has leads needing attention. Work done is on Activity; assignments are in <b>Assignments by IR</b>.</p></div>
           </div>
@@ -475,7 +476,7 @@ export function NumbersLive({ sec }: { sec: string }) {
 
       {S("source") && (<>
         <div className="card"><Hd t="By source" right={hasLeads ? <span className="sm">tap a row to see the leads</span> : undefined} />
-          <div className="tw"><table className="ttab">
+          <Tw><table className="ttab">
             <thead><tr><th>Source</th><th className="n">Leads</th><th className="n">Qualified +</th>
               <th className="n">Said yes +</th><th className="n">Reserved +</th><th className="n">Units</th>
               <th className="n">→ Qualified</th></tr></thead>
@@ -486,7 +487,7 @@ export function NumbersLive({ sec }: { sec: string }) {
                 <td className="n">{r.n}</td><td className="n">{r.q || "—"}</td><td className="n">{r.y || "—"}</td>
                 <td className="n">{r.r || "—"}</td>
                 <td className="n">{r.u || "—"}</td><td className="n"><b>{rateOf(r.q, r.n)}</b></td></tr>
-            ))}</tbody></table></div>
+            ))}</tbody></table></Tw>
           <div className="cb" style={{ paddingTop: 8 }}><p className="sm" style={{ margin: 0 }}>“+” counts leads at that rung or past it.
             The plan needs {GOALS(state.PLAN).lead2qual}% of captures to qualify.</p></div>
         </div>

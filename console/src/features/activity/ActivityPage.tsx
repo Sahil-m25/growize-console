@@ -13,6 +13,7 @@
    `activityFilters` (./logic) is this feature's own layering of the toolbar's filters on top of
    `activityRows` (selectors/activity.ts), the actor- and record-access gate. */
 
+import { Tw } from "@/components/ui";
 import type { ActKind, PersonKey } from "@/domain";
 import { MON } from "@/lib/format";
 import { P, openable } from "@/lib/selectors";
@@ -170,7 +171,7 @@ function ActLog({
   const shown = rows.slice(0, limit);
   return (
     <>
-      <div className="tw">
+      <Tw label="Activity, scrolls sideways">
         <table className="rd-activity-log">
           <colgroup>
             <col className="rd-log-when" />
@@ -220,7 +221,7 @@ function ActLog({
             )}
           </tbody>
         </table>
-      </div>
+      </Tw>
       {shown.length < rows.length && (
         <div className="ux-activity-page">
           <span className="sm">Showing {shown.length} of {total} actions</span>
@@ -238,7 +239,7 @@ function ActTally({
   const kinds = Object.keys(kindNames).filter((k) => rows.some((e) => e.kind === k));
   const groups = actSummary(state, rows, view);
   return (
-    <div className="tw">
+    <Tw label="Activity summary, scrolls sideways">
       <table className="ux-activity-summary">
         <thead>
           <tr>
@@ -264,7 +265,7 @@ function ActTally({
           )}
         </tbody>
       </table>
-    </div>
+    </Tw>
   );
 }
 
@@ -272,7 +273,7 @@ function ActTally({
 function ActTouch({ rows }: { rows: readonly ActRow[] }) {
   const touch = rows.filter((e) => e.human);
   return (
-    <div className="tw">
+    <Tw label="Touches by people, scrolls sideways">
       <table>
         <thead><tr><th>Contact in the week</th><th className="n">Actions</th></tr></thead>
         <tbody>
@@ -284,6 +285,6 @@ function ActTouch({ rows }: { rows: readonly ActRow[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </Tw>
   );
 }

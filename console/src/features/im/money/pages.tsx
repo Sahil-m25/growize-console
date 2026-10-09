@@ -4,6 +4,7 @@
    this month queue (M10-S20), the farm LLP rows on Farms (M11-S01/S02), the Add investor button
    (M09-S09) and the test sign-in audit on System (M10-S23). */
 
+import { Tw } from "@/components/ui";
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import {
   auditText, mayPayouts, fmtAt, fmtDate, inr, may, mayAddInvestor, mayMatch,
@@ -81,10 +82,10 @@ export function PayoutsDue({ s, me, dispatch }: ImPageProps) {
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>Payouts due this month</h3><div className="sp" />
       <span className="sm">{rows.length} scheduled in {mo} · {inr(rows.reduce((n, p) => n + p.net, 0))} net{overdue.length ? " · " + overdue.length + " overdue" : ""}</span></div>
-      <div className="tw"><table>
+      <Tw label="Payouts due this month, scrolls sideways"><table>
         <thead><tr><th>Payout</th><th>Investor</th><th>Farm</th><th>Due</th><th className="n">Gross</th><th className="n">TDS</th><th className="n">Net</th><th></th></tr></thead>
         <tbody>{overdue.length || rows.length ? <>{overdue.map(p => line(p, true))}{rows.map(p => line(p, false))}</>
-          : <tr><td colSpan={8}><div className="empty">Nothing scheduled for {mo}.</div></td></tr>}</tbody></table></div>
+          : <tr><td colSpan={8}><div className="empty">Nothing scheduled for {mo}.</div></td></tr>}</tbody></table></Tw>
     </div>
   );
 }
@@ -101,7 +102,7 @@ export function FarmLlps({ s, me, dispatch }: ImPageProps) {
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>Farm LLPs</h3><div className="sp" />
       <span className="sm">{superUser ? "super user — every LLP, PAN masked" : "one record per farm, as Zoho holds it"}</span></div>
-      <div className="tw"><table>
+      <Tw label="Farm LLPs, scrolls sideways"><table>
         <thead><tr><th>LLP</th><th className="n">Acres</th><th className="n">Total</th><th className="n">Reserved</th><th className="n">Issued</th>
           <th className="n">Free</th><th className="n">Unit price</th><th>Status</th></tr></thead>
         <tbody>{rows.map(l => {
@@ -119,7 +120,7 @@ export function FarmLlps({ s, me, dispatch }: ImPageProps) {
                 {l.status === "Draft" ? <div className="sm">not on sale</div> : null}</td>
             </tr>
           );
-        })}</tbody></table></div>
+        })}</tbody></table></Tw>
       <div className="cb"><p className="sm" style={{ margin: 0 }}>Reserved and issued are counted off the allotments; a cancelled allotment counts for nothing. Open a farm for its PAN and GST (masked), SPOCs, insurance and who holds units on it.</p></div>
     </div>
   );
@@ -139,7 +140,7 @@ export function TestLinkAudit({ s, me }: ImPageProps) {
   return (
     <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>Test sign-in links</h3><div className="sp" />
       <span className="sm">one use, {10} minutes · nothing emailed</span></div>
-      <div className="tw"><table>
+      <Tw label="Test sign-in links, scrolls sideways"><table>
         <thead><tr><th>Link</th><th>Who</th><th>For</th><th>When</th><th>Why</th><th>Used</th></tr></thead>
         <tbody>{rows.map(l => {
           const st = testLinkState(l, now);
@@ -148,6 +149,6 @@ export function TestLinkAudit({ s, me }: ImPageProps) {
               <td className="sm">{auditText(s, me, l.inv)}</td><td className="sm mono">{fmtAt(l.at)}</td><td className="sm">{l.why}</td>
               <td>{st === "used" ? <span className="sm mono">{fmtAt(l.usedAt!)}</span> : <TagDot c={st === "live" ? "br" : ""}>{st === "live" ? "not yet — live" : "expired unused"}</TagDot>}</td></tr>
           );
-        })}</tbody></table></div></div>
+        })}</tbody></table></Tw></div>
   );
 }

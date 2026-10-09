@@ -7,6 +7,7 @@
    module once, for its registration side effect, before any door can be clicked — `TodayPage.tsx`
    does that the same way it already does for `@/features/lead/drawers`. ─────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { Pname } from "@/components/ui";
 import {
   avail,
@@ -182,7 +183,7 @@ function OwedBody(_props: DrawerProps) {
   return (
     <div className="card">
       <div className="cb">
-        <div className="tw">
+        <Tw>
           <table>
             <thead>
               <tr>
@@ -232,7 +233,7 @@ function OwedBody(_props: DrawerProps) {
               })}
             </tbody>
           </table>
-        </div>
+        </Tw>
         <p className="sm" style={{ margin: "10px 0 0" }}>
           The week is the plan divided by the weeks left — <b>{q.teamWeek}</b> names across {q.people}, which is{" "}
           {q.perWeek} each once it is rounded up so nobody is asked for a fraction. Nobody types either number. A

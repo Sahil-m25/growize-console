@@ -5,6 +5,7 @@
    request, cut to the seat — and Send one reads GET /api/documents/sign/prefill and POSTs /api/documents/sign/send
    with an Idempotency-Key per press (M12-S04-W1). A 503 draws the last good read's time, never old rows. */
 
+import { Tw } from "@/components/ui";
 import { useRef } from "react";
 import { ago, I, may, pageReadable, readBook, safeNote, secOf, SIGS, TPL } from "@/lib/im";
 import { newIdempotencyKey, useApiRead, useApiWrite } from "@/lib/data/api";
@@ -55,7 +56,7 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
         {S === "send" ? <SendPanel s={s} me={me} dispatch={dispatch} />
           : S === "up" ? <><UploadPanel s={s} me={me} dispatch={dispatch} /><div style={{ marginTop: 12 }}><UploadList s={s} me={me} /></div></>
           : <><ReadNote r={shown} what="the documents" />
-          {S === "out" && ranked && queue.data.note ? <div className="note" role="status" style={{ marginBottom: 8 }}>{queue.data.note}</div> : null}<div className="card fill"><div className="tw"><table>
+          {S === "out" && ranked && queue.data.note ? <div className="note" role="status" style={{ marginBottom: 8 }}>{queue.data.note}</div> : null}<div className="card fill"><Tw><table>
           <thead><tr><th>Document</th><th>Investor</th><th>Sent</th><th>Signing</th><th>State</th>
             <th>Verified</th><th></th></tr></thead>
           <tbody>{rows.length ? rows.map((d: DocRow) => (
@@ -79,7 +80,7 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
                   /* W3-E2E-5: by the row's key — one record (an allotment) carries several papers */
                   dispatch({ type: "openDrawer", k: "verify", id: d.key, seed: { DREF: "" } }); }}>Verify</button> : null}</td></tr>
           )) : <tr><td colSpan={7}><div className="empty">{shown.state === "loading" ? "Reading…" : S === "out" ? "Nothing out for signature." : "Nothing on file."}</div></td></tr>}
-          </tbody></table></div></div></>}
+          </tbody></table></Tw></div></>}
       </div>
     </>
   );

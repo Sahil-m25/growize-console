@@ -5,6 +5,7 @@
    "Record a payment" form is gone because Finance records receipts in the IM portal.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
+import { Tw } from "@/components/ui";
 import { FORFEIT, IMP, ST, UNIT } from "@/domain";
 import type { Lead, PayRec } from "@/domain";
 import { DAY, money, when } from "@/lib/format";
@@ -56,7 +57,7 @@ export function PayPage() {
         <span className="sub">Read only · recorded by Finance in the {IMP}</span></div>
       <section className="ux-pay ux-section">
       <div className="card fill"><div className="ch"><h3>Money received</h3><div className="sp" />
-        <span className="sm">{part} part · {full} full</span></div><div className="tw"><table>
+        <span className="sm">{part} part · {full} full</span></div><Tw label="Money received, scrolls sideways"><table>
         <thead><tr><th>Investor</th><th>Received</th><th>Status</th><th>Payment reference</th><th>Hold</th></tr></thead>
         <tbody>{rows.map(r => { const { l, p } = r, k = `pay:${l.id}`, see = seeMoney(state, l), shown = refShown(state, k);
           return (
@@ -73,7 +74,7 @@ export function PayPage() {
                     onClick={e => { e.stopPropagation(); dispatch({ type: "showRef", k, id: l.id, where: "Payments" }); }}>Show the reference</button></>}</td>
             <td>{hold(r)}</td></tr>); })}
           {!rows.length ? <tr><td colSpan={5} className="empty">No confirmed receipts yet.</td></tr> : null}
-        </tbody></table></div>
+        </tbody></table></Tw>
         {close ? <p className="sm g5-foot">A lapse forfeits ₹{FORFEIT.toLocaleString("en-IN")} per unit and returns the units. Only the BU Owner may extend.</p> : null}
       </div>
 

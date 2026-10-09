@@ -2809,3 +2809,13 @@ tr.d61-mine td:first-child b{color:var(--ink)}
 .colst.personal-work{display:flex;flex-direction:column;overflow:auto}
 .colst.personal-work>div{flex:none;overflow:visible;padding-right:0}
 .tw table.activity-log{min-width:0;width:100%}
+
+/* W6-A11Y-1: .tw is a focusable scroll region (components/ui/Tw.tsx) — an inset ring, so the wrapper's own overflow does not clip it */
+.tw:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--brand)}
+
+/* W6-A11Y-3: each Elsewhere-today chip sits in a role=listitem wrapper; the wrapper adds no box of its own */
+.sigs .sigi{display:contents}
+/* W6-A11Y-2: the queue card's name is its one control — it reads as the bold title it was, and keeps a 24px target */
+.qc .qc-open{font-size:inherit;font-weight:inherit;text-align:left;text-decoration:none;min-height:24px;padding:2px 0}
+.qc .qc-open:hover{text-decoration:underline}
+.qc .qc-open:focus-visible{box-shadow:var(--ring)}

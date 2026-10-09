@@ -5,6 +5,7 @@ export { Pname } from "./Pname";
 export { Ag, ActLegend } from "./Ag";
 export { SecBar, type Section } from "./SecBar";
 export { Icon, type IconName } from "./Icon";
+export { Tw } from "./Tw";
 export { AppearanceControls, APPEARANCE_KEY } from "./Appearance";
 export {
   Card,

@@ -22,10 +22,6 @@ import { ProvIR } from "../common";
 import type { ImPageProps } from "../common";
 import { holdsLand, holdsList, type HoldsList, type LandRead } from "@/lib/data/endpoints/holds";
 
-const enterOrSpace = (run: () => void) => (e: KeyboardEvent) => {
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); run(); }
-};
-
 /* vDash — imx.js 1371 */
 export function ImDash(p: ImPageProps) {
   const { s, me } = p;
@@ -167,8 +163,9 @@ function VDashFin({ s, me, dispatch }: ImPageProps) {
   const forfeit = holds.reduce((a, x) => a + FORFEIT * x.units, 0);
   const fin = primaryName(s.data, "head"), comp = primaryName(s.data, "comp"), aml = primaryName(s.data, "amlead");
   const sig = (k: string, t: string, run: () => void, warn: boolean) => (
-    <a key={k} className={`chip sig ${warn ? "warn" : ""}`} role="button" tabIndex={0} onClick={run} onKeyDown={enterOrSpace(run)}>
-      {t}<span className="sigto" aria-hidden="true">→</span></a>
+    <div key={k} role="listitem" className="sigi">
+      <button type="button" className={`chip sig ${warn ? "warn" : ""}`} onClick={run}>
+        {t}<span className="sigto" aria-hidden="true">→</span></button></div>
   );
   const t = today.state === "ok" ? today.data : null;
   const tk = t && (t.tickets.state === "fresh" || t.tickets.state === "stale-but-refreshing") ? t.tickets.value.open : null;
@@ -248,9 +245,10 @@ export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | 
   const open = x.kind === "send" && !ref.contactId ? () => sendIt(dispatch, ref) : () => dispatch({ type: "go", v: "inv", id });
   const from = "from" in x ? x.from : null;
   return (
-    <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} role="button" tabIndex={0}
-      onClick={open} onKeyDown={e => { if (e.key === "Enter") open(); }}>
-      <div className="who2"><b>{x.investor.name ?? id}</b><span>{x.text}{x.kind === "claim" && from ? <>{" · "}<ProvIR t={"from " + from} /></> : null}
+    /* W6-A11Y-2: the card is not itself a control (it held a real button: nested-interactive). The name is the one
+       keyboard/screen-reader stop that opens the record; a click anywhere else on the card still does, for the pointer. */
+    <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} onClick={open}>
+      <div className="who2"><b><button type="button" className="lnk qc-open" onClick={stop(open)}>{x.investor.name ?? id}</button></b><span>{x.text}{x.kind === "claim" && from ? <>{" · "}<ProvIR t={"from " + from} /></> : null}
         {" · "}<span className="mono">{("code" in x.investor && x.investor.code) || id}</span>
       </span></div>{b}</div>
   );

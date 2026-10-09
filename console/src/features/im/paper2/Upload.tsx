@@ -11,6 +11,7 @@
    The record ids and versions come from the investor record and the farm list. The list beside it is the
    three scopes of GET /api/documents/investor/[id] (M12-S01-W1). */
 
+import { Tw } from "@/components/ui";
 import { useRef, useState, type DragEvent } from "react";
 import {
   fileKind, fileSize, I, mayUpload, readBook, SCOPES, SLOTS, UPLOAD_ACCEPT, UPLOAD_MAX_MB, UPLOAD_REFUSED, uploadCheck,
@@ -175,14 +176,14 @@ export function UploadList({ s, me, inv, title }: { s: ImPageProps["s"]; me: str
       <ReadNote r={r} what="the files" />
       <div className="card fill"><div className="ch"><h3>{title || "Uploaded here"}</h3><div className="sp" />
         <span className="sm">{rows.length + " file" + (rows.length === 1 ? "" : "s")}</span></div>
-        <div className="tw"><table><thead><tr><th>File</th><th>Filed on</th><th>Added</th></tr></thead>
+        <Tw><table><thead><tr><th>File</th><th>Filed on</th><th>Added</th></tr></thead>
           <tbody>{rows.length ? rows.map((u, i) => (
             <tr key={u.id + i}>
               <td><b>{u.name}</b><div className="sm">{[u.slot, u.size == null ? null : fileSize(u.size)].filter(Boolean).join(" · ")}</div></td>
               <td className="sm">{u.where}</td>
               <td className="sm mono">{u.at || "—"}{u.by ? <div className="sm">{u.by}</div> : null}</td>
             </tr>
-          )) : <tr><td colSpan={3}><div className="empty">{r.state === "loading" ? "Reading…" : "Nothing uploaded yet."}</div></td></tr>}</tbody></table></div></div>
+          )) : <tr><td colSpan={3}><div className="empty">{r.state === "loading" ? "Reading…" : "Nothing uploaded yet."}</div></td></tr>}</tbody></table></Tw></div>
     </>
   );
 }
