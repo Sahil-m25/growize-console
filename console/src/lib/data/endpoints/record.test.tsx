@@ -9,7 +9,7 @@ import { ST } from "@/domain";
 import { canNote, canPlan, canWork, openable } from "@/lib/selectors";
 import { runWrite } from "../api";
 import { journeySkip, journeyTick, journeyUntick } from "./journey";
-import { detailsBody, leadDetailsSave, leadForecastSet, leadNoteAdd, leadPermissionSave } from "./record";
+import { detailsBody, leadChangesRead, leadDetailsSave, leadForecastSet, leadNoteAdd, leadPermissionSave, leadTouchesRead, stampOfZoho } from "./record";
 
 const as = (k: string): ConsoleState => reducer(initialState(demoBook()), { type: "signIn", k: k as PersonKey });
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -97,5 +97,20 @@ describe("fixture halves run the reducer", () => {
   it("a lead this seat cannot open is refused as the route would (404)", () => {
     const s = as("rohit");
     expect(journeyTick.fixture(s, nop, { id: "no-such-lead", expectedModifiedTime: null, via: "tick" })).toMatchObject({ ok: false, status: 404 });
+  });
+});
+
+describe("W3-E2E-7: the Investor file's history is read back, not drawn from this session's store", () => {
+  it("touches come from GET /api/leads/[id]/touches, the record of changes from the Lead's Zoho timeline", () => {
+    expect(leadTouchesRead.path("1454168000003024601")).toBe("/api/leads/1454168000003024601/touches");
+    expect(leadTouchesRead.path(null)).toBeNull();
+    expect(leadChangesRead.path("1454168000003024601")).toBe("/api/activity/history?module=Leads&id=1454168000003024601");
+    const t = { id: "t1", channel: "msg", outcome: "Reply received", note: null, at: "2026-10-09T11:53:00+05:30", byId: "u1", reply: true };
+    expect(leadTouchesRead.pick({ leadId: "x", touches: [t], truncated: false })).toEqual([t]);
+    expect(leadTouchesRead.pick({})).toEqual([]);
+    const c = { at: "2026-10-09T11:55", byId: "u1", action: "updated", fields: ["Qualified_At"] };
+    expect(leadChangesRead.pick({ entries: [c], more: false })).toEqual([c]);
+    expect(leadChangesRead.pick(null)).toEqual([]);
+    expect(stampOfZoho("2026-10-09T11:53:00+05:30")).toBe("09 Oct 11:53");
   });
 });

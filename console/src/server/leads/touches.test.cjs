@@ -203,3 +203,47 @@ test('the notes and outcomes written to Zoho never reach the ops log (Plane B ho
   await r.svc.record(principal(), { ...CMD, note: 'Synthetic private note' });
   assert.ok(!JSON.stringify(r.sink.records()).includes('Synthetic private note'));
 });
+
+/* W3-E2E-7: the history reads the lead's touches back (the Investor file forgot them on reload). */
+function listRig(rows, { visible = true } = {}) {
+  const calls = [];
+  const sink = createMemorySink();
+  const log = createOpsLog(sink);
+  const crm = createZohoClient({ recordIdPrefix: P, gate: immediateGate(), log, maxAttempts: 1, clock: () => now,
+    fetch: async (url, init) => {
+      const u = new URL(url);
+      calls.push({ path: u.pathname, body: init.body ? JSON.parse(init.body) : null });
+      if (u.pathname.endsWith('/coql')) return toResponse({ status: 200, body: { data: rows, info: { more_records: false } } });
+      if (!visible) return toResponse({ status: 404, body: { code: 'INVALID_DATA', status: 'error' } });
+      return toResponse(recorded('lead.guard'));
+    } });
+  const access = { async recheck(c) { return { actor: { userId: c.userId }, mayRecordFollowup: true, teamOwnerIds: [] }; } };
+  return { svc: createTouches({ crm, access, log, recordIdPrefix: P, clock: () => now }), calls };
+}
+const trow = (o) => ({ id: `${P}74099770${o.n}`, Occurred_At: '2026-10-09T11:53:00+05:30', Is_Reply: false, Owner: { id: IR }, Voided_At: null, ...o });
+
+test('list: touches newest first with the channel the IR picked (WhatsApp stays WhatsApp on "Reply received"), outcome split from words, voided left out', async () => {
+  const r = listRig([
+    trow({ n: 1, Channel: 'WhatsApp', Is_Reply: true, Note: 'Reply received' }),
+    trow({ n: 2, Channel: 'Call', Note: 'Interested \u2014 wants the deck' }),
+    trow({ n: 3, Channel: null, Is_Reply: true, Note: 'Reply received' }),
+    trow({ n: 4, Channel: 'Email', Note: 'Email sent', Voided_At: '2026-10-09T12:00:00+05:30' }),
+  ]);
+  const res = await r.svc.list(principal(), LEAD);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.value.touches.map((t) => [t.channel, t.outcome, t.note, t.reply]),
+    [['msg', 'Reply received', null, true], ['call', 'Interested', 'wants the deck', false], ['reply', 'Reply received', null, true]]);
+  assert.equal(res.value.touches[0].byId, IR);
+  const q = r.calls.find((c) => c.path.endsWith('/coql')).body.select_query;
+  assert.match(q, new RegExp(`from Touches where Lead = '${LEAD}' order by Occurred_At desc`));
+});
+
+test('list: a lead this token cannot open is not-visible, and a bad id is refused before any call', async () => {
+  const hidden = listRig([], { visible: false });
+  const res = await hidden.svc.list(principal(), LEAD);
+  assert.deepEqual([res.ok, res.reasonCode], [false, 'not-visible']);
+  assert.ok(!hidden.calls.some((c) => c.path.endsWith('/coql')));
+  const bad = listRig([]);
+  assert.equal((await bad.svc.list(principal(), 'not-an-id')).reasonCode, 'invalid-request');
+  assert.equal(bad.calls.length, 0);
+});

@@ -55,8 +55,25 @@ export interface TouchRecorded {
   readonly firstTouch: boolean;
 }
 
+/** One touch as the history reads it back (W3-E2E-7). `channel` is the channel the IR picked, "reply" only for a bare inbound reply. */
+export interface TouchRow {
+  readonly id: string;
+  readonly channel: TouchChannel | null;
+  /** Touches.Note up to " — ": "Interested", "Reply received", "Connected". */
+  readonly outcome: string;
+  /** The words after " — ", if any. */
+  readonly note: string | null;
+  readonly at: string | null;
+  readonly byId: string | null;
+  readonly reply: boolean;
+}
+export interface TouchList { readonly leadId: string; readonly touches: readonly TouchRow[]; readonly truncated: boolean }
+export type TouchListResult = FollowupResult<TouchList>;
+const TOUCH_LIST_MAX = 100;
+const CHANNEL_CODE: Readonly<Record<string, TouchChannel>> = Object.freeze({ WhatsApp: "msg", Email: "email", Call: "call", "Farm visit": "visit" });
+
 export interface TouchesDependencies {
-  readonly crm: Pick<ZohoClient, "getRecord" | "update" | "insert">;
+  readonly crm: Pick<ZohoClient, "getRecord" | "update" | "insert"> & Partial<Pick<ZohoClient, "coql">>;
   readonly access: FollowupAccessAuthority;
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
@@ -79,6 +96,39 @@ export function createTouches(deps: TouchesDependencies) {
   const zoho = <T>(k: ZohoFailureKind | "unexpected"): FollowupResult<T> => ({ ok: false, kind: "source-error", source: "zoho", errorKind: k, retryable: false });
 
   return Object.freeze({
+    /** The lead's logged touches, newest first, on the person's own token (D53): the Investor file's conversation history. A
+     *  voided touch is left out. Nothing is cached (D45). */
+    async list(principal: { credential: UserCredential; sessionId: string }, leadId: unknown, signal?: AbortSignal): Promise<TouchListResult> {
+      if (!principal || !isUserCredential(principal.credential) || !validId(principal.credential.userId)
+        || typeof principal.sessionId !== "string" || !SESSION_ID.test(principal.sessionId)) return refuse("unrecognised", "invalid-request");
+      const cred = principal.credential, me = cred.userId;
+      if (!validId(leadId) || typeof crm.coql !== "function") return refuse(me, "invalid-request", validId(leadId) ? [leadId] : []);
+      try {
+        const r = await access.recheck(cred, principal.sessionId, signal);
+        if (!r || r.actor?.userId !== me) return refuse(me, "session-changed");
+      } catch { return { ok: false, kind: "source-error", source: "access", errorKind: "unexpected", retryable: true }; }
+      let got: Awaited<ReturnType<typeof crm.getRecord>>;
+      try { got = await crm.getRecord(cred, LEADS_MODULE, leadId, { fields: ["Owner"], signal }); } catch { return zoho("unexpected"); }
+      if (!got.ok) return got.error.kind === "not-found" || got.error.kind === "forbidden" ? refuse(me, "not-visible", [leadId]) : zoho(got.error.kind);
+      if (!got.value || got.value.id !== leadId) return refuse(me, "not-visible", [leadId]);
+      let q: Awaited<ReturnType<NonNullable<typeof crm.coql>>>;
+      try {
+        q = await crm.coql(cred, `select id, Channel, Occurred_At, Is_Reply, Note, Owner, Voided_At from Touches where Lead = '${leadId}' order by Occurred_At desc limit 0, ${TOUCH_LIST_MAX + 1}`, { signal });
+      } catch { return zoho("unexpected"); }
+      if (!q.ok) return zoho(q.error.kind);
+      const touches = q.value.records.filter((t) => validId(t.id) && !(typeof t.Voided_At === "string" && t.Voided_At)).slice(0, TOUCH_LIST_MAX).map((t): TouchRow => {
+        const words = typeof t.Note === "string" ? t.Note.trim() : "";
+        const cut = words.indexOf(" — ");
+        const reply = t.Is_Reply === true;
+        const channel = typeof t.Channel === "string" ? CHANNEL_CODE[t.Channel] ?? null : reply ? "reply" : null;
+        return {
+          id: t.id, channel, outcome: (cut < 0 ? words : words.slice(0, cut)).slice(0, 80), note: cut < 0 ? null : words.slice(cut + 3).slice(0, 1_800) || null,
+          at: typeof t.Occurred_At === "string" ? t.Occurred_At : null, byId: idOf(t.Owner), reply,
+        };
+      });
+      return { ok: true, value: { leadId, touches, truncated: q.value.records.length > TOUCH_LIST_MAX } };
+    },
+
     async record(principal: { credential: UserCredential; sessionId: string }, c: TouchCommand, signal?: AbortSignal): Promise<FollowupResult<TouchRecorded>> {
       if (!principal || !isUserCredential(principal.credential) || !validId(principal.credential.userId)
         || typeof principal.sessionId !== "string" || !SESSION_ID.test(principal.sessionId)) return refuse("unrecognised", "invalid-request");
