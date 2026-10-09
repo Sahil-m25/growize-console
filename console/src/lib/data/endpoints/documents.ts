@@ -225,6 +225,10 @@ export const documentUpload: WriteEndpoint<ImBook, UploadArgs, UploadDone, ImDis
 
 /** "26 Aug" — a day as the book stamps it ("26 Aug 09:00"); the route's ISO time said the same way. */
 export function dayOf(t: string | null | undefined): string {
-  const m = t ? /^\d{4}-(\d{2})-(\d{2})/.exec(t) : null;
+  /* W4-E-2: a stamp that carries a zone (Z or +hh:mm) is read as the instant it is and said in Asia/Kolkata (rule 9);
+     a date or a zone-less stamp is already the console's own wall time and is read as written */
+  const ms = t && /T\d{2}:\d{2}.*(?:Z|[+-]\d{2}:?\d{2})$/.test(t) ? Date.parse(t) : NaN;
+  const ist = Number.isFinite(ms) ? new Date(ms + 5.5 * 3_600_000).toISOString() : t;
+  const m = ist ? /^\d{4}-(\d{2})-(\d{2})/.exec(ist) : null;
   return m ? `${m[2]} ${"JanFebMarAprMayJunJulAugSepOctNovDec".slice((+m[1] - 1) * 3, (+m[1] - 1) * 3 + 3)}` : String(t || "").slice(0, 6);
 }

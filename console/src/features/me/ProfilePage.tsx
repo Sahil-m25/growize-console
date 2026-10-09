@@ -41,12 +41,15 @@ export function ProfilePage() {
   const on = tempOn(state);
 
   const [bad, setBad] = useState<MeBad | null>(null);
+  /* W4-1: the field that just saved says so, so a reload of the book under it is never mistaken for a lost save */
+  const [saved, setSaved] = useState<MeBad["f"] | null>(null);
 
   /* setMe(f,v) — the reducer (src/features/people/reducer.ts) refuses a blank name or blank
      initials silently; the field belongs the complaint, not a window.alert. 10328–10346. */
   const commit = (f: "n" | "ph" | "i", el: HTMLInputElement) => {
     const v = el.value.trim();
     setBad(null);
+    setSaved(null);
     if (f === "n" && v.length < 2) {
       setBad({ f, v, m: "A display name is how every list finds you — two characters at least." });
       return;
@@ -71,6 +74,7 @@ export function ProfilePage() {
        Fixture: the endpoint half runs the same setMe the page always dispatched. */
     const done = (r: { ok: true } | { ok: false; error: string }) => {
       if (!r.ok) { setBad({ f, v, m: r.error }); return; }
+      setSaved(f);
       if (live) { dispatch({ type: "setMe", f, v }); reloadData(); }
     };
     if (f === "i") void saveStyle({ kind: "initials", v }).then(done);
@@ -165,6 +169,7 @@ export function ProfilePage() {
                   aria-describedby={bad?.f === "n" ? "mebad-n" : undefined}
                   onBlur={(e) => commit("n", e.currentTarget)}
                 />
+                {saved === "n" && bad?.f !== "n" ? <p className="sm" role="status" style={{ margin: "5px 0 0", color: "var(--ok, inherit)" }}>Saved</p> : null}
                 {bad?.f === "n" ? (
                   <p className="sm" id="mebad-n" role="alert" style={{ margin: "5px 0 0", color: "var(--late)" }}>
                     {bad.m}
@@ -184,6 +189,7 @@ export function ProfilePage() {
                   aria-describedby={bad?.f === "ph" ? "mebad-ph" : undefined}
                   onBlur={(e) => commit("ph", e.currentTarget)}
                 />
+                {saved === "ph" && bad?.f !== "ph" ? <p className="sm" role="status" style={{ margin: "5px 0 0", color: "var(--ok, inherit)" }}>Saved</p> : null}
                 {bad?.f === "ph" ? (
                   <p className="sm" id="mebad-ph" role="alert" style={{ margin: "5px 0 0", color: "var(--late)" }}>
                     {bad.m}
@@ -203,6 +209,7 @@ export function ProfilePage() {
                   aria-describedby={bad?.f === "i" ? "mebad-i" : undefined}
                   onBlur={(e) => commit("i", e.currentTarget)}
                 />
+                {saved === "i" && bad?.f !== "i" ? <p className="sm" role="status" style={{ margin: "5px 0 0", color: "var(--ok, inherit)" }}>Saved</p> : null}
                 {bad?.f === "i" ? (
                   <p className="sm" id="mebad-i" role="alert" style={{ margin: "5px 0 0", color: "var(--late)" }}>
                     {bad.m}

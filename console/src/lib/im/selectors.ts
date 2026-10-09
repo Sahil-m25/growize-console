@@ -95,6 +95,12 @@ export function auditText(s: ImCtx, WHO: string, value: unknown): string {
 export const leadWords = (x: Pick<ImInvestor, "lead" | "leadName"> | null | undefined): string | null =>
   x?.leadName || (x?.lead && !/^\d{10,}$/.test(x.lead) ? x.lead : null);
 
+/** W4-3: "<source> · lead <name>" with whichever parts exist, joined with one separator — never a doubled or dangling " · ". */
+export const originNote = (x: Pick<ImInvestor, "src" | "lead" | "leadName"> | null | undefined): string => {
+  const lw = leadWords(x);
+  return [x?.src || null, lw ? "lead " + lw : null].filter(Boolean).join(" · ");
+};
+
 export const tierOf = (x: ImInvestor | null | undefined): ImTier | null =>
   !x ? null : TIERS.find(t => x.units >= t.min) || TIERS[TIERS.length - 1];
 export const cadence = (x: ImInvestor | null | undefined): number => (tierOf(x) || { every: 180 }).every || 180;

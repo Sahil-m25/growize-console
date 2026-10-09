@@ -12,6 +12,7 @@ import { dayOf, documentsList } from "@/lib/data/endpoints/documents";
 import { NOT_A_SIGNATURE, paperworkQueue } from "@/lib/data/endpoints/paperwork";
 import { allotmentOf, METHOD_OF, PAPER_OF_TEMPLATE, signPrefill, signSend } from "@/lib/data/endpoints/sign";
 import type { DocRow, Paper } from "@/server/documents/list";
+import { docRecordWords, investorCode } from "@/lib/im/doc-ids";
 import { DocTag, ImPname, ImSecBar, type ImPageProps, type ImSec } from "../common";
 import { AgreedDraftOffer, SUPP_TEMPLATE, useAgreedDraft } from "../paper2/AgreedDraft";
 import { ReadNote } from "../paper2/ReadNote";
@@ -31,6 +32,8 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
   if (!pageReadable(s, me, "docs")) return null;
   const ranked = queue.state === "ok";
   const outRows: readonly DocRow[] = ranked ? queue.data.rows : out.state === "ok" ? out.data.rows : [], allRows = all.state === "ok" ? all.data.rows : [];
+  const book0 = readBook(s, me);
+  const codeOf = (d: DocRow) => investorCode(book0.find(x => x.id === d.contactId), d.contactId);
   const hintOf = (d: DocRow) => (ranked ? (d as DocRow & { hint?: { words: string; by: { name: string | null } | null } | null }).hint ?? null : null);
   const SECS: ImSec[] = [{ k: "out", t: "Out for signature", n: out.state === "ok" ? out.data.outCount : 0, warn: true },
     { k: "all", t: "Everything on file", n: allRows.length },
@@ -57,8 +60,8 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
             <th>Verified</th><th></th></tr></thead>
           <tbody>{rows.length ? rows.map((d: DocRow) => (
             <tr className="k" key={d.key} onClick={() => dispatch({ type: "go", v: "inv", id: d.contactId || "" })} tabIndex={0}>
-              <td><b>{d.label}</b><div className="sm">{(d.module === "Contacts" ? "Personal" : "Allotment") + " · " + d.recordId}</div></td>
-              <td>{d.party || d.contactId}<div className="sm mono">{d.contactId}</div>
+              <td><b>{d.label}</b><div className="sm">{docRecordWords(d, codeOf(d))}</div></td>
+              <td>{d.party || codeOf(d)}<div className="sm mono">{codeOf(d)}</div>
                 {S === "out" && hintOf(d) ? <div className="sm" data-hint>{hintOf(d)!.words}{hintOf(d)!.by?.name ? " — " + hintOf(d)!.by!.name : ""}. {NOT_A_SIGNATURE}</div> : null}</td>
               <td className="sm">{d.sign?.sentBy ? first(d.sign.sentBy) : d.sign?.sentById ? <ImPname s={s} k={d.sign.sentById} first /> : "—"} <span className="mono">{dayOf(d.sign && d.sign.sentAt)}</span></td>
               <td className="sm">{d.method || "—"}</td>
@@ -120,7 +123,7 @@ export function SendPanel({ s, me, dispatch }: ImPageProps) {
     <div className="card"><div className="ch"><h3>Send a document</h3></div><div className="cb">
       <label className="fi" style={{ marginBottom: 12 }}><span>Investor</span>
         <select className="selw" id="dsel" value={pick || ""} onChange={e => dispatch({ type: "setSel", id: e.target.value })}>
-          {cands.map(c => <option key={c.id} value={c.id}>{c.n} — {c.id}{c.nri ? " · NRI" : ""}</option>)}</select></label>
+          {cands.map(c => <option key={c.id} value={c.id}>{c.n} — {c.code ?? c.id}{c.nri ? " · NRI" : ""}</option>)}</select></label>
       <p className="lbl">Template</p>
       <div className="chips" style={{ marginBottom: 12 }}>{TPL.map(y => {
         const off = !!y.wet && DSIG !== "Wet signature";

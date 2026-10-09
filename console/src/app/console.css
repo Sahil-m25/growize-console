@@ -2729,7 +2729,12 @@ tr.d61-mine td:first-child b{color:var(--ink)}
 .tag.ir{background:var(--ir-bg);color:var(--ir);border-color:var(--ir-line)}
 .prov.ir{background:var(--ir-bg);color:var(--ir)}
 .note.ir{border-left-color:var(--ir-line);background:var(--ir-bg)}
-.qc .who2{flex:1;min-width:0}
+/* W4-2: the title column keeps a readable floor and the action block wraps under it, instead of the sentence beside the
+   button taking the row and leaving the title one word per line (drawer or note open = narrower page) */
+.qc:has(>.who2){flex-wrap:wrap;row-gap:8px}
+.qc .who2{flex:1 1 240px;min-width:min(240px,100%)}
+.qc>.chips{flex:1 1 260px;min-width:0;align-items:center}
+.qc>.chips .sm{flex:1 1 180px;min-width:0;white-space:normal;overflow-wrap:anywhere}
 .qc .who2 b{font-size:14px;display:block}
 .qc .who2>span{font-size:12px;color:var(--ink-2);display:block}
 @media(max-width:760px){.qc .who2{flex:1 1 100%}}

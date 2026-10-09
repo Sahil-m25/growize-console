@@ -145,7 +145,7 @@ const HOW_OF: Readonly<Record<string, string>> = Object.freeze({ Form: "form", V
 const FC_OF: Readonly<Record<string, FcCat>> = Object.freeze(Object.fromEntries(Object.entries(FORECAST_OF).map(([k, v]) => [v, k as FcCat])));
 /* Touches (Lead, Channel, Occurred_At, Is_Reply): the human touches of the book's leads, newest first, one read per 100 leads.
    Voided_At (J12) is not in production yet: asked for, and dropped from the read when the org rejects it. */
-const TOUCH_FIELDS = Object.freeze(["Lead", "Channel", "Occurred_At", "Is_Reply", "Note"]);
+const TOUCH_FIELDS = Object.freeze(["Lead", "Channel", "Occurred_At", "Is_Reply", "Note", "Created_Time"]);
 const TOUCH_OPTIONAL = Object.freeze(["Voided_At"]);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -188,7 +188,11 @@ export function touchesOf(rows: readonly ZohoRecord[]): Map<string, Touch> {
  *  and sets Is_Reply for an inbound touch (a bare reply carries no Channel; a "Reply received" logged on WhatsApp keeps WhatsApp); a voided touch is skipped. */
 export function lastTouchOf(rows: readonly ZohoRecord[]): Map<string, NonNullable<Lead["lastTouch"]>> {
   const out = new Map<string, NonNullable<Lead["lastTouch"]>>();
-  const at = new Map<string, number>();
+  /* [Occurred_At ms, Created_Time ms, id]: Occurred_At is kept to the minute, so two touches in one minute tie on it; the
+     one entered last (Created_Time, to the second) then wins, and the record id only settles an exact tie (W4-E-3). */
+  const at = new Map<string, readonly [number, number, string]>();
+  const newer = (a: readonly [number, number, string], b: readonly [number, number, string]): boolean =>
+    a[0] !== b[0] ? a[0] > b[0] : a[1] !== b[1] ? a[1] > b[1] : a[2] > b[2];
   for (const r of rows) {
     const lead = lookupId(r.Lead), when = Date.parse(String(r.Occurred_At));
     /* W3-E2E-1: a touch saved on a channel keeps it even when its outcome is "Reply received" (Is_Reply is then true as well);
@@ -198,7 +202,9 @@ export function lastTouchOf(rows: readonly ZohoRecord[]): Map<string, NonNullabl
     const outcome = typeof r.Note === "string" ? r.Note.split(" — ")[0]!.trim().slice(0, 80) : "";
     const stamp = stampOf(str(r.Occurred_At));
     if (!lead || !channel || !outcome || !stamp || !Number.isFinite(when) || str(r.Voided_At)) continue;
-    if (when >= (at.get(lead) ?? -Infinity)) { at.set(lead, when); out.set(lead, { channel, outcome, at: stamp }); }
+    const key = [when, Date.parse(String(r.Created_Time)) || 0, String(r.id ?? "")] as const;
+    const held = at.get(lead);
+    if (!held || newer(key, held)) { at.set(lead, key); out.set(lead, { channel, outcome, at: stamp }); }
   }
   return out;
 }

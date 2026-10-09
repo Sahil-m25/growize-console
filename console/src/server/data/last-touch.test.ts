@@ -22,6 +22,15 @@ describe("last touch with its outcome", () => {
     const bare = lastTouchOf([row({ Occurred_At: "2026-10-09T11:53:00+05:30", Is_Reply: true, Note: "Reply received" })]);
     expect(bare.get(L1)).toMatchObject({ channel: "reply" });
   });
+  it("W4-E-3: two touches in the same minute - the one entered last wins whatever order the rows come in (Created_Time, then id)", () => {
+    const call = row({ id: "1454168000003084069", Channel: "Call", Occurred_At: "2026-10-09T18:38:00+05:30", Created_Time: "2026-10-09T18:38:05+05:30", Is_Reply: false, Note: "Connected" });
+    const wa = row({ id: "1454168000003021149", Channel: "WhatsApp", Occurred_At: "2026-10-09T18:38:00+05:30", Created_Time: "2026-10-09T18:38:41+05:30", Is_Reply: true, Note: "Reply received" });
+    for (const rows of [[wa, call], [call, wa]]) expect(lastTouchOf(rows).get(L1)).toMatchObject({ channel: "msg", outcome: "Reply received" });
+    /* no Created_Time on either: the higher id is the later entry */
+    const a = row({ id: "1454168000000000010", Channel: "Call", Occurred_At: "2026-10-09T18:38:00+05:30", Note: "Connected" });
+    const b = row({ id: "1454168000000000020", Channel: "WhatsApp", Occurred_At: "2026-10-09T18:38:00+05:30", Note: "Reply received" });
+    for (const rows of [[a, b], [b, a]]) expect(lastTouchOf(rows).get(L1)).toMatchObject({ channel: "msg" });
+  });
   it("a touch with no outcome (older rows) says nothing, so the generic line stands", () => {
     expect(lastTouchOf([row({ Channel: "Call", Occurred_At: "2026-10-08T10:00:00+05:30", Is_Reply: false })]).size).toBe(0);
   });

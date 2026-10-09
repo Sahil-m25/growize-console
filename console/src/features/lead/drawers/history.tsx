@@ -18,6 +18,7 @@ import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/reg
 import { uiNdraft } from "@/features/leads/ui";
 import { useApiMode, useApiRead } from "@/lib/data/api";
 import { leadChangesRead, leadTouchesRead, stampOfZoho, useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
+import { describeChange } from "@/lib/history-words";
 import { FUCHANNELS } from "@/features/today/work";
 
 /* ir-console-redesigned.html 12173-12197's "Conversation history" block, ahead of the audit list —
@@ -77,7 +78,6 @@ function LiveConversation({ l }: { l: import("@/domain").Lead }) {
   );
 }
 
-const humanField = (f: string) => f.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 function LiveChanges({ l }: { l: import("@/domain").Lead }) {
   const { state } = useConsole();
   const r = useApiRead(leadChangesRead, state, l.id);
@@ -89,7 +89,7 @@ function LiveChanges({ l }: { l: import("@/domain").Lead }) {
       {r.data.map((e, i) => (
         <div className="ur rd-timeline-row" key={i}>
           <div className="rd-timeline-text">
-            <b>{(e.action ? e.action.charAt(0).toUpperCase() + e.action.slice(1) : "Changed")}{e.fields.length ? ": " + e.fields.map(humanField).join(", ") : ""}</b>
+            <b>{describeChange(e, i === r.data.length - 1)}</b>
             <div className="sm">{e.byId ? <Pname k={e.byId as PersonKey} first nw cls="xs" /> : null}</div>
           </div>
           <span className="sm mono rd-timeline-time">{stampOfZoho(e.at)}</span>

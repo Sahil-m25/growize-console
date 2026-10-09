@@ -555,7 +555,7 @@ function VerifyBody(c: Ctx) {
         <dt>Document</dt><dd><b>{row.label}</b>{mode === "fixture" && bookCls ? <> <span className="sm">{bookCls}</span></> : null}</dd>
         <dt>Sent</dt><dd>{sg && sg.sentBy ? sg.sentBy.split(" ")[0] + " " : ""}<span className="mono">{sg ? dayOf(sg.sentAt) : "—"}</span></dd>
         <dt>Signing</dt><dd>{row.method || "—"}</dd>
-        <dt>Out for</dt><dd>{age == null ? "—" : age + " day" + (age === 1 ? "" : "s")}{sg && sg.expiresAt ? ` · link expires ${sg.expiresAt}` : ""}</dd>
+        <dt>Out for</dt><dd>{age == null ? "—" : age + " day" + (age === 1 ? "" : "s")}{sg && sg.expiresAt ? ` · link expires ${dayOf(sg.expiresAt)}` : ""}</dd>
       </dl>
       {/* M12-S05 — the request's Zoho Sign status, a reminder and a recall (not in the prototype) */}
       <SignRowCell s={s} me={me} dispatch={dispatch} row={row} actions />

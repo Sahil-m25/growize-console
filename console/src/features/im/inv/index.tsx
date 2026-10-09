@@ -10,7 +10,7 @@ import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, mayCareOn, mayDetailsOn, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, leadWords, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtAt, fmtDay, fmtStamp, mid, nowDay, when, DAY,
+  tkOf, txOf, leadWords, originNote, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtAt, fmtDay, fmtStamp, mid, nowDay, when, DAY,
 } from "@/lib/im";
 import { EXTDAYS } from "@/domain";
 import type { ImInvestor } from "@/lib/im";
@@ -653,7 +653,7 @@ function SecCare({ s, me, dispatch, x, heard, hr, o }: ImPageProps & { x: ImInve
           <dt>Last heard</dt><dd>{heard !== undefined ? heardText(hr, heard) : l ? <>{CHANS[l.ch] + " · "}<ImPname s={s} k={l.by} first />{" · "}
             <span className="mono">{day6(l.at)}</span>{" · "}<span className={moodTag(l.mood)}>{MOODS[l.mood]}</span></>
             : <span className="tag late">never</span>}</dd>
-          <dt>Brought in by</dt><dd><ImPname s={s} k={x.ir} /> <span className="sm">{"· " + x.src + (leadWords(x) ? " · lead " + leadWords(x) : "") + " "}<ProvIR t="on the lead side" /></span></dd>
+          <dt>Brought in by</dt><dd><ImPname s={s} k={x.ir} /> <span className="sm">{(originNote(x) ? "· " + originNote(x) : "") + " "}<ProvIR t="on the lead side" /></span></dd>
         </dl>
         {(live ? mayCareOn(s, me, x) : mayCare(s, me, x)) ? <div className="drwsec">
           <button className="act" onClick={() => dispatch({ type: "openDrawer", k: "talk", id: x.id, seed: { CT: talk } })}>Log a conversation</button>

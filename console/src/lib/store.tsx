@@ -157,7 +157,16 @@ export function ConsoleProvider({ children, initial }: { children: ReactNode; in
       }
       return p;
     };
-    loadRef.current = load;
+    /* W4-1: a reload re-reads the session's one-person book first (live only) — the book the page loaded with holds the
+       mobile/name as they were at sign-in, and re-applying it on every reload put the old (blank) values back over a save. */
+    loadRef.current = async () => {
+      if (seat) {
+        const sess = await apiFetch("GET", "/api/session").then((r): SessionAnswer => (r.ok ? sessionRead.pick(r.data) : { session: null })).catch((): SessionAnswer => ({ session: null }));
+        if (dead) return null;
+        if (sess.session && sess.access) seat = { who: sess.session.who, access: sess.access };
+      }
+      return load();
+    };
     void (async () => {
       const [p, sess] = await Promise.all([
         load(),
