@@ -16,6 +16,12 @@ describe("last touch with its outcome", () => {
     ]);
     expect(m.get(L1)).toEqual({ channel: "reply", outcome: "Interested", at: stampOf("2026-10-08T22:15:00+05:30") });
   });
+  it("W3-E2E-1: a WhatsApp touch saved as 'Reply received' (Is_Reply true, Channel set) keeps WhatsApp; only a channel-less reply is 'reply'", () => {
+    const wa = lastTouchOf([row({ Channel: "WhatsApp", Occurred_At: "2026-10-09T11:53:00+05:30", Is_Reply: true, Note: "Reply received" })]);
+    expect(wa.get(L1)).toMatchObject({ channel: "msg", outcome: "Reply received" });
+    const bare = lastTouchOf([row({ Occurred_At: "2026-10-09T11:53:00+05:30", Is_Reply: true, Note: "Reply received" })]);
+    expect(bare.get(L1)).toMatchObject({ channel: "reply" });
+  });
   it("a touch with no outcome (older rows) says nothing, so the generic line stands", () => {
     expect(lastTouchOf([row({ Channel: "Call", Occurred_At: "2026-10-08T10:00:00+05:30", Is_Reply: false })]).size).toBe(0);
   });

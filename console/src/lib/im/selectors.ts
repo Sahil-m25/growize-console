@@ -91,6 +91,10 @@ export function auditText(s: ImCtx, WHO: string, value: unknown): string {
 }
 
 /* ============================ 3. the book ============================ */
+/** The origin lead in words: its name (live) or its code (the demo book); a bare Zoho record id is never words, so it reads as nothing (W3-2, B-16). */
+export const leadWords = (x: Pick<ImInvestor, "lead" | "leadName"> | null | undefined): string | null =>
+  x?.leadName || (x?.lead && !/^\d{10,}$/.test(x.lead) ? x.lead : null);
+
 export const tierOf = (x: ImInvestor | null | undefined): ImTier | null =>
   !x ? null : TIERS.find(t => x.units >= t.min) || TIERS[TIERS.length - 1];
 export const cadence = (x: ImInvestor | null | undefined): number => (tierOf(x) || { every: 180 }).every || 180;
@@ -478,6 +482,6 @@ export function journey(s: ImCtx, WHO: string, x: ImInvestor, money: (v: number)
       t: t.kind === "advance" ? "Advance received" : t.kind === "refund" ? "Refund issued" : t.kind === "forfeit" ? "Forfeit retained" : "Payment received",
       m: money(t.amt) + " · " + t.mode + " " + t.utr, who: t.by })))
     .concat([{ at: isoWall(x.since) != null ? x.since : x.since + " 00:00", side: "fin", t: "Account opened", who: null,
-      m: "Brought in by " + who(s, x.ir).n + (x.src ? " from " + x.src : "") + (x.lead ? " · lead " + x.lead : "") }]);
+      m: "Brought in by " + who(s, x.ir).n + (x.src ? " from " + x.src : "") + (leadWords(x) ? " · lead " + leadWords(x) : "") }]);
   return ev.filter(e => e.at).sort((a, b) => (when(s.data.NOW, b.at) || 0) - (when(s.data.NOW, a.at) || 0));
 }

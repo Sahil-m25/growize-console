@@ -23,6 +23,8 @@ export interface ContactRow {
   readonly kamSince: string | null;
   readonly introAt: string | null;
   readonly originLeadId: string | null;
+  /** The origin lead's name as the Origin_Lead lookup carries it — what the screens print instead of the record id (W3-2). */
+  readonly originLeadName?: string | null;
   readonly originatingIrId: string | null;
   readonly saidYesAt: string | null;
   readonly createdAt: string | null;
@@ -40,6 +42,12 @@ export const str = (r: ZohoRecord, k: string, max = 250): string | null => {
 const day = (v: string | null): string | null => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null);
 export const stamp = (v: string | null): string | null => (v && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v) ? v.slice(0, 16) : day(v));
 
+/** A lookup's display name ({ id, name }), or null. */
+const lookupName = (v: unknown): string | null => {
+  const n = v && typeof v === "object" ? (v as { name?: unknown }).name : undefined;
+  return typeof n === "string" && n.trim() ? n.trim().slice(0, 120) : null;
+};
+
 export function parseContact(r: ZohoRecord): ContactRow | null {
   if (!idOf(r.id)) return null;
   const lastName = str(r, "Last_Name", 80);
@@ -53,7 +61,7 @@ export function parseContact(r: ZohoRecord): ContactRow | null {
     mobile: str(r, "Mobile", 30), email: str(r, "Email", 100), city: str(r, "Mailing_City", 120), address: addr,
     residency: str(r, "Residency", 40), nominee: nominee ? (rel ? `${nominee} (${rel})` : nominee) : null,
     kamId: idOf(r.KAM), kamSince: stamp(str(r, "KAM_Since", 40)), introAt: stamp(str(r, "KAM_Intro_At", 40)),
-    originLeadId: idOf(r.Origin_Lead), originatingIrId: idOf(r.Originating_IR), saidYesAt: stamp(str(r, "Said_Yes_At", 40)),
+    originLeadId: idOf(r.Origin_Lead), originLeadName: lookupName(r.Origin_Lead), originatingIrId: idOf(r.Originating_IR), saidYesAt: stamp(str(r, "Said_Yes_At", 40)),
     createdAt: stamp(str(r, "Created_Time", 40)),
   });
 }

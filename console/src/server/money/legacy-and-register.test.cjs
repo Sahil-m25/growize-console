@@ -394,3 +394,19 @@ test('B-02: an allotment with an unreadable investor is kept — its receipts co
   assert.equal(theirs.length, 2);
   assert.ok(theirs.every((x) => x.investor.id === null && x.investor.name === null && x.farm.id === F1));
 });
+
+/* W3-1: the register carries the receipt's own reference (Receipts.Name) and the investor's ARL ID, so the page never prints a record id. */
+test('W3-1: every row carries ref (Receipts.Name) and the investor code (Customer.ARL_ID); missing ones are null, never the record id', async () => {
+  const r = registerRig({}, (rows) => { rows[0].Name = 'T-0027'; rows[1].Name = '-None-'; rows[2].Name = '  '; },
+    (allots) => { for (const a of allots) a['Customer.ARL_ID'] = 'ARL-INV-0206'; });
+  const res = await r.svc.read(principal());
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.ok(r.queries.some((q) => /^select id, Name, Allotment, Kind/.test(q)), 'Name is asked for');
+  assert.ok(r.queries.some((q) => /Customer\.ARL_ID/.test(q)), "the investor's ARL ID is asked for through the lookup");
+  assert.equal(res.value.rows[0].ref, 'T-0027');
+  assert.equal(res.value.rows[1].ref, null);
+  assert.equal(res.value.rows[2].ref, null);
+  assert.ok(res.value.rows.filter((x) => x.investor.id).every((x) => x.investor.code === 'ARL-INV-0206'));
+  const none = await registerRig().svc.read(principal());
+  assert.ok(none.value.rows.every((x) => x.investor.code === null && x.ref === null));
+});

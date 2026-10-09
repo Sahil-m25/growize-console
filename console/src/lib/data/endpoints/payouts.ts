@@ -20,7 +20,7 @@ const READ_ONLY = () => fail(403, "seat-denied", "Read only — payouts are Fina
 const maskUtr = (v: string | null): string | null => (v && v.trim() ? "••••" + v.trim().slice(-4) : null);
 
 const lineOf = (p: ImPayout) => ({
-  id: p.id, allotmentId: p.Allotment, kind: p.Payout_Kind, instalment: p.Instalment_No, month: p.Period_Month, dueOn: p.Due_On,
+  id: p.id, ref: p.id, allotmentId: p.Allotment, kind: p.Payout_Kind, instalment: p.Instalment_No, month: p.Period_Month, dueOn: p.Due_On,
   gross: p.Gross_Amount, tds: p.TDS_Amount, net: p.Net_Amount, state: p.Payout_State,
 });
 
@@ -35,7 +35,7 @@ export const payoutQueue: ReadEndpoint<ImBook, void, PayoutQueue> = {
     const month = thisMonth(s.data.NOW);
     const queue = (p: ImPayout): QueueLine => {
       const a = allotOf(s, p.Allotment)!, x = I(s, me, a.Customer), l = llpOf(s, a.LLP_Lookup);
-      return { ...lineOf(p), investor: { id: a.Customer, name: x ? x.n : null }, farm: { id: a.LLP_Lookup, name: l ? l.Name : null } };
+      return { ...lineOf(p), investor: { id: a.Customer, name: x ? x.n : null, code: a.Customer }, farm: { id: a.LLP_Lookup, name: l ? l.Name : null } };
     };
     const seen = (p: ImPayout) => { const a = allotOf(s, p.Allotment); return !!a && !!I(s, me, a.Customer); };
     return ok({

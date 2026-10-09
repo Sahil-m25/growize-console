@@ -6,7 +6,7 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { EXTDAYS, FORFEIT } from "@/domain";
-import { DAY } from "@/lib/format";
+import { holdDaysLeft } from "@/lib/im/dates";
 import { canAskExt, canDecideExt, inReservation, isFin, may, P } from "@/lib/selectors";
 import { useApiMode, useApiRead } from "@/lib/data/api";
 import { holdDay, leadGate } from "@/lib/data/endpoints/lead";
@@ -24,7 +24,7 @@ function Body({ lead }: DrawerProps) {
   const gate = useApiRead(leadGate, state, l.id);
   const until = gate.state === "ok" ? gate.data.holdUntil : null;
   const hold = until ? holdDay(until) : null;
-  const left = until ? Math.round((new Date(until + "T00:00:00").getTime() - state.NOW.getTime()) / DAY) : null;
+  const left = until ? holdDaysLeft(until, state.NOW.getTime())   /* rule 9: the one IST function */ : null;
 
   return (
     <>

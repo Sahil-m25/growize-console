@@ -52,6 +52,10 @@ export interface SignRequestDetail {
   readonly sentAt: number | null;
   readonly modifiedTime: number | null;
   readonly expiresAt: number | null;
+  /** The request's owner as Zoho Sign names it (owner_first_name owner_last_name): who sent it. */
+  readonly sentBy?: string | null;
+  /** The sender's Zoho user id, where the sender kept it (the sandbox fake). */
+  readonly sentById?: string | null;
   readonly declineReason: string | null;
   readonly actions: readonly SignAction[];
   readonly documentIds: readonly string[];
@@ -157,6 +161,7 @@ function parseDetail(body: Obj, expectedId: string): SignRequestDetail | null {
     requestId: expectedId, status,
     sentAt: millis(r.sign_submitted_time) ?? millis(r.submitted_time),
     modifiedTime: millis(r.modified_time), expiresAt: millis(r.expire_by),
+    sentBy: [r.owner_first_name, r.owner_last_name].filter((v): v is string => typeof v === "string" && v.trim() !== "").map((v) => v.trim()).join(" ").slice(0, 120) || null,
     declineReason: typeof reasonRaw === "string" ? reasonRaw.trim().slice(0, 300) : null,
     actions: Object.freeze(actions), documentIds: Object.freeze([...new Set(docs)]),
   });

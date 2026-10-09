@@ -7,7 +7,11 @@ import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { touchesService } from "@/server/leads/followup-runtime";
 import type { TouchCommand } from "@/server/leads/touches";
-import { leadWrite } from "@/app/api/leads/http";
+import { answer, leadWrite, NO_STORE } from "@/app/api/leads/http";
+import { emailConfigured } from "@/server/leads/email-runtime";
+import { sessionCredential } from "@/server/oauth/request";
+import { SID_COOKIE } from "@/server/oauth/user-session";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -27,3 +31,17 @@ async function post_(req: Request, ctx: { params: Promise<{ id: string }> }) {
 }
 
 export const POST = withErrorCapture(guardApi("/api/leads", post_), "/api/leads/[id]/touches");
+
+/* GET — the lead's logged touches, newest first, on the person's own token: the Investor file's conversation history
+   (W3-E2E-7: the file forgot every touch on reload because live mode never read them back).
+   200 → { leadId, touches: [{ id, channel, outcome, note, at, byId, reply }], truncated }   4xx → { error, code }. */
+async function get_(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!emailConfigured()) return Response.json({ error: "This is read from Zoho once sign-in is connected.", code: "not-configured" }, { status: 503, headers: NO_STORE });
+  const s = await sessionCredential();
+  if (!s.ok) return s.response;
+  const { id } = await params;
+  const sid = (await cookies()).get(SID_COOKIE)?.value ?? "";
+  return answer(await touchesService().list({ credential: s.credential, sessionId: sid }, id, req.signal));
+}
+
+export const GET = withErrorCapture(guardApi("/api/leads", get_), "/api/leads/[id]/touches");

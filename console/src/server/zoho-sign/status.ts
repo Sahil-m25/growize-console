@@ -21,7 +21,7 @@ export function createSignStatusReader(sign: Pick<SignApi, "getRequest">): SignS
       if (!r.ok) continue;
       const st = signStateOf(r.value);
       // list.ts treats /^(completed|signed)$/ as signed: pass Zoho's word for completed, our state otherwise.
-      out.set(id, Object.freeze({ status: st === "signed" ? "completed" : st, sentAt: iso(r.value.sentAt), sentBy: null, expiresAt: iso(r.value.expiresAt), label: STATE_LABEL[st] } as SignStatus));
+      out.set(id, Object.freeze({ status: st === "signed" ? "completed" : st, sentAt: iso(r.value.sentAt), sentBy: r.value.sentBy ?? null, sentById: r.value.sentById ?? null, expiresAt: iso(r.value.expiresAt), label: STATE_LABEL[st] } as SignStatus));
     }
     return out;
   };

@@ -128,9 +128,27 @@ export const leadNotesRead: ReadEndpoint<ConsoleBook, string | null, Note[]> = {
     return ok(state.NOTES[id] || []);
   },
 };
+/* ---- the Investor file's history, read back (W3-E2E-7) ------------------------------------------------ */
+/** One logged touch as GET /api/leads/[id]/touches answers it: `channel` is the one the IR picked, "reply" only for a bare inbound reply. */
+export type HistoryTouch = { id: string; channel: Channel | "reply" | null; outcome: string; note: string | null; at: string | null; byId: string | null; reply: boolean };
+/** One entry of the lead's Zoho timeline (GET /api/activity/history): who changed which fields, when - never the values. */
+export type HistoryChange = { at: string; byId: string | null; action: string; fields: readonly string[] };
+/** Live only: the file's conversation history is the lead's Touches. Fixture: the page draws state.INTERACTIONS itself, so there is nothing to read. */
+export const leadTouchesRead: ReadEndpoint<ConsoleBook, string | null, HistoryTouch[]> = {
+  path: id => (id ? `${base(id)}/touches` : null),
+  pick: j => ((j && typeof j === "object" && Array.isArray((j as { touches?: unknown }).touches)) ? (j as { touches: HistoryTouch[] }).touches : []),
+  fixture: () => ok([]),
+};
+/** Live only: the file's "Record of changes" is the Lead's own Zoho timeline (every tick and edit, whoever made it). */
+export const leadChangesRead: ReadEndpoint<ConsoleBook, string | null, HistoryChange[]> = {
+  path: id => (id ? `/api/activity/history?module=Leads&id=${encodeURIComponent(id)}` : null),
+  pick: j => ((j && typeof j === "object" && Array.isArray((j as { entries?: unknown }).entries)) ? (j as { entries: HistoryChange[] }).entries : []),
+  fixture: () => ok([]),
+};
+
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** A Zoho datetime printed as the console's stamp, in IST ("DD Mon HH:MM", as server/data/live stampOf). */
-function stampOfZoho(z: string): string {
+export function stampOfZoho(z: string): string {
   const ms = Date.parse(z);
   if (!Number.isFinite(ms)) return "";
   const d = new Date(ms + 5.5 * 3_600_000), p = (n: number) => String(n).padStart(2, "0");

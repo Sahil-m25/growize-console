@@ -178,7 +178,7 @@ export function createFakeSign(deps: FakeSignDeps): FakeSign {
 
   const detailOf = (r: FakeRequest): SignRequestDetail => Object.freeze({
     requestId: r.id, status: r.status, sentAt: r.sentAt, modifiedTime: r.modAt, expiresAt: r.sentAt + 14 * 86_400_000,
-    declineReason: r.declineReason,
+    declineReason: r.declineReason, sentById: r.by,
     actions: Object.freeze([Object.freeze({
       actionId: r.act, type: "SIGN", status: r.status === "completed" ? "SIGNED" : r.status === "declined" ? "DECLINED" : "UNOPENED",
       recipientEmail: null, embedded: false,

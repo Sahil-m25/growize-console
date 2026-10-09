@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { FCAT, LADDER, LOSTWHY, NAV, OBJS, ST, TOUCHCHANNELS, UNIT } from "@/domain";
 import type { Channel, Lead, NavKey } from "@/domain";
 import type { DrawerKind } from "@/lib/store";
+import { holdDaysLeft } from "@/lib/im/dates";
 import { DAY, dISOtoDisp, hhmm, iso, money, nowT, plusD, when, whenT } from "@/lib/format";
 import {
   active, canAssign, canClaim, canDecideMove, canLose, canNote, canOperateLeads, canPlan, canReach,
@@ -303,7 +304,10 @@ function LpPaperRow({ l }: { l: Lead }) {
   if (r.state === "error") return <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><p className="lp-err" role="alert" style={{ margin: 0 }}>{r.err.error}</p></div>;
   if (r.state !== "ok") return r.state === "loading" ? <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><span className="sm">Reading…</span></div> : null;
   const cur = currentRound(r.data);
-  if (!cur) return null;
+  /* W3-E2E-4: a paper Finance has already sent shows on the lead whatever round the row is on (the investor holds a live signing link) */
+  const alsoOut = r.data.rounds.find((x) => x.round !== cur?.round && x.sent && !x.verified);
+  const outNote = alsoOut ? <span className="d60d-sub d60d-out">{lpPaperName(alsoOut.round) + " — already sent for signature by Finance; the investor has the link."}</span> : null;
+  if (!cur) return outNote ? <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody">{outNote}</div></div> : null;
   const n = cur.next, nm = lpPaperName(cur.round);
   const offers = r.data.offers.filter((o) => o.round === cur.round), mine = n.who === "IR" && offers.length > 0;
   const offer = (beat: IrBeat) => offers.find((o) => o.beat === beat);
@@ -358,7 +362,7 @@ function LpPaperRow({ l }: { l: Lead }) {
   const back = cur.back ? <div className="note bad d60d-back" style={{ margin: "6px 0 0" }}><b>Not signed after all.</b> {cur.back.why || "Nothing has come back signed"}
     {cur.back.by && P(state.PEOPLE, cur.back.by as never).n !== cur.back.by ? " — " + P(state.PEOPLE, cur.back.by as never).n : ""} <span className="mono">{cur.back.at}</span>.</div> : null;
   return (
-    <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody"><b>{head}</b>{body}{back}{deck}</div>{tag}</div>
+    <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody"><b>{head}</b>{body}{back}{deck}{outNote}</div>{tag}</div>
   );
 }
 
@@ -520,7 +524,7 @@ export function LeadPage({ id }: { id: string }) {
   /* M08-S04-W1: the reservation clock's day is the gate route's `holdUntil` */
   if (gate.state === "ok" && gate.data.holdUntil) {
     const hold = holdDay(gate.data.holdUntil);
-    const dl = Math.round((new Date(gate.data.holdUntil + "T00:00:00").getTime() - state.NOW.getTime()) / DAY);
+    const dl = holdDaysLeft(gate.data.holdUntil, state.NOW.getTime());   /* rule 9: the one IST function Finance's Today uses */
     al("hold", dl <= 3 ? "bad" : "due", <><b>Reservation {dl < 0 ? "lapsed " + -dl + " days ago" : dl + " days left"}</b> — the balance is due by {hold}.</>, <button type="button" className="chip" onClick={() => open("hold")}>Details</button>);
   }
   if (!TOUCHCHANNELS.some((k) => conFor(l, k))) al("perm", "bad", <><b>No contact permission yet.</b> Record it before reaching out.</>,

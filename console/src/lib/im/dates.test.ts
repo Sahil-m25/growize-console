@@ -48,3 +48,34 @@ describe("B-16: the Finance journey prints live stamps formatted", () => {
     expect(ev.findIndex(e => e.t === "Account opened")).toBeLessThan(ev.findIndex(e => e.t === "Payment received"));
   });
 });
+
+describe("W3-2: the origin lead is named in words, never a raw Zoho record id", () => {
+  it("Journey 'Account opened' names the lead (live) or shows the code (demo); a bare record id reads as nothing", async () => {
+    const { imDemoData } = await import("@fixtures/im/demo");
+    const { initialImUi } = await import("./reducer");
+    const { journey, money, leadWords } = await import("./index");
+    const data = imDemoData();
+    const opened = (patch: object) => {
+      data.INV[0] = { ...data.INV[0]!, ...patch } as never;
+      return journey({ data, ui: initialImUi() }, "harsha", data.INV[0]!, money).find(e => e.t === "Account opened")!.m!;
+    };
+    expect(opened({ lead: "1454168000003022169", leadName: "Radhika Menon" })).toContain(" · lead Radhika Menon");
+    expect(opened({ lead: "1454168000003022169", leadName: null })).not.toMatch(/lead|\d{10,}/);
+    expect(opened({ lead: "L-0412", leadName: undefined })).toContain(" · lead L-0412");
+    expect(leadWords({ lead: "1454168000003022169" })).toBeNull();
+  });
+});
+
+describe("W3-E2E-6: one hold end, one count (rule 9)", () => {
+  it("holdDaysLeft counts IST calendar days, whatever the hour or the browser zone, and is the server's daysLeft", async () => {
+    const { holdDaysLeft } = await import("./dates");
+    const { daysLeft } = await import("../../server/holds/rules");
+    const at = (iso: string) => Date.parse(iso);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-09T12:00:00+05:30"))).toBe(16);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-09T23:59:00+05:30"))).toBe(16);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-10T00:01:00+05:30"))).toBe(15);
+    expect(holdDaysLeft("2026-10-25T00:00:00+05:30", at("2026-10-25T09:00:00+05:30"))).toBe(0);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-27T09:00:00+05:30"))).toBe(-2);
+    for (const t of ["2026-10-09T12:00:00+05:30", "2026-10-09T23:59:00+05:30", "2026-10-10T00:01:00+05:30"]) expect(daysLeft("2026-10-25", at(t))).toBe(holdDaysLeft("2026-10-25", at(t)));
+  });
+});

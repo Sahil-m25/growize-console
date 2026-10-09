@@ -11,7 +11,7 @@ import { investorsContext, NO_STORE } from "@/server/investors/http";
 export const dynamic = "force-dynamic";
 const STATUS: Record<string, number> = {
   "invalid-request": 400, "idempotency-key-invalid": 400, "idempotency-key-reused": 409, "seat-denied": 403, "not-visible": 403, "lead-not-shared": 403,
-  "already-on-file": 409, "already-out": 409, "aadhaar-not-for-nri": 409, "aadhaar-needs-template": 409, "no-recipient": 409,
+  "already-on-file": 409, "already-out": 409, "nda-first": 409, "no-agreed-draft": 409, "aadhaar-not-for-nri": 409, "aadhaar-needs-template": 409, "no-recipient": 409,
   "record-changed": 409, "busy": 409, "template-shape": 409,
 };
 

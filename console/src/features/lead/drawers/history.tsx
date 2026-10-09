@@ -16,7 +16,8 @@ import { Ag, Pname } from "@/components/ui";
 import { useConsole } from "@/lib/store";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { uiNdraft } from "@/features/leads/ui";
-import { useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
+import { useApiMode, useApiRead } from "@/lib/data/api";
+import { leadChangesRead, leadTouchesRead, stampOfZoho, useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
 import { FUCHANNELS } from "@/features/today/work";
 
 /* ir-console-redesigned.html 12173-12197's "Conversation history" block, ahead of the audit list —
@@ -51,6 +52,53 @@ function ConversationHistory({ l }: { l: import("@/domain").Lead }) {
   );
 }
 
+/* W3-E2E-7: live, the file's history is read back from Zoho - the lead's Touches (the conversation) and the Lead's own
+   timeline (the record of changes) - because state.INTERACTIONS and state.LOG are only ever filled by this session's own
+   writes and the file forgot everything on reload. Fixture mode keeps drawing the store, as before. */
+function LiveConversation({ l }: { l: import("@/domain").Lead }) {
+  const { state } = useConsole();
+  const r = useApiRead(leadTouchesRead, state, l.id);
+  if (r.state === "error") return <p className="sm lp-err" role="alert">The conversation history could not be read: {r.err.error}</p>;
+  if (r.state !== "ok") return <p className="sm">Reading the conversation…</p>;
+  if (!r.data.length) return null;
+  return (
+    <>
+      <p className="lbl">Conversation history</p>
+      {r.data.map((e) => (
+        <article className="nt" key={e.id}>
+          <b>{FUCHANNELS[e.channel ?? "other"] || e.channel} · {e.outcome || "Contact"}</b>
+          <div className="sm">
+            {e.at ? stampOfZoho(e.at) : ""}{e.byId ? <> · <Pname k={e.byId as PersonKey} first nw cls="xs" /></> : null}
+          </div>
+          {e.note ? <p className="fu-context-note">{e.note}</p> : null}
+        </article>
+      ))}
+    </>
+  );
+}
+
+const humanField = (f: string) => f.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+function LiveChanges({ l }: { l: import("@/domain").Lead }) {
+  const { state } = useConsole();
+  const r = useApiRead(leadChangesRead, state, l.id);
+  if (r.state === "error") return <p className="sm lp-err" role="alert">The record of changes could not be read: {r.err.error}</p>;
+  if (r.state !== "ok") return <p className="sm" style={{ margin: 0 }}>Reading the record of changes…</p>;
+  if (!r.data.length) return <p className="sm" style={{ margin: 0 }}>Nothing logged against this investor yet.</p>;
+  return (
+    <>
+      {r.data.map((e, i) => (
+        <div className="ur rd-timeline-row" key={i}>
+          <div className="rd-timeline-text">
+            <b>{(e.action ? e.action.charAt(0).toUpperCase() + e.action.slice(1) : "Changed")}{e.fields.length ? ": " + e.fields.map(humanField).join(", ") : ""}</b>
+            <div className="sm">{e.byId ? <Pname k={e.byId as PersonKey} first nw cls="xs" /> : null}</div>
+          </div>
+          <span className="sm mono rd-timeline-time">{stampOfZoho(e.at)}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /* Change 4 part 1 — reopenLost's own record: a lead that was closed and later re-opened keeps that
    closure in `lostWas`, written nowhere until now. */
 function PastClosures({ l }: { l: import("@/domain").Lead }) {
@@ -71,7 +119,20 @@ function PastClosures({ l }: { l: import("@/domain").Lead }) {
 
 function HistoryBody({ lead }: DrawerProps) {
   const { state } = useConsole();
+  const live = useApiMode() === "live";
   const l = lead!;
+  if (live) {
+    return (
+      <>
+        <LiveConversation l={l} />
+        <PastClosures l={l} />
+        <div className="drwsec">
+          <p className="lbl">Record of changes</p>
+          <LiveChanges l={l} />
+        </div>
+      </>
+    );
+  }
   const rows = state.LOG.filter((e) => e.lead === l.id && logReadable(state, e));
   let day = "";
   const audit = !rows.length ? (

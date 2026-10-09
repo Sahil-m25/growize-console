@@ -587,6 +587,8 @@ test('routes: every new route is named in API_ROUTES and wrapped withErrorCaptur
 /* ============ M12-S12-NOTE-2: Finance's Send offers the agreed supplementary draft ============ */
 const AGREED_LEAD = `${P}740996101`;
 const ok200 = (rec1) => ({ status: 200, headers: { 'content-type': 'application/json' }, body: { data: [rec1] } });
+// W3-E2E-4: the lead's NDA came back signed and was verified (the supplementary follows it)
+const NDA_OK = '2026-09-20T10:00:00+05:30';
 const contactOf = (originLead) => { const c = rec('crm.contact.kiran'); c.body.data[0].Origin_Lead = originLead ? { id: originLead } : null; return c; };
 const suppRig = (lead, contact = contactOf(AGREED_LEAD)) => {
   const r = rig((c) => readRoutes('crm.allotment.kiran-fresh', contact)(c)
@@ -595,7 +597,7 @@ const suppRig = (lead, contact = contactOf(AGREED_LEAD)) => {
 };
 
 test('M12-S12-NOTE-2: prefill of the supplementary carries the lead\'s agreed draft (ref, version, time) on the sender\'s own token', async () => {
-  const { r, sender } = suppRig(ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: 'https://workdrive.zoho.in/SUPP-L5-final', Supp_Agreed_Version: 2, Supp_Agreed_At: '2026-09-26T11:00:00+05:30' }));
+  const { r, sender } = suppRig(ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK, Supp_Agreed_Ref: 'https://workdrive.zoho.in/SUPP-L5-final', Supp_Agreed_Version: 2, Supp_Agreed_At: '2026-09-26T11:00:00+05:30' }));
   const p = await sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
   assert.equal(p.ok, true, JSON.stringify(p));
   assert.deepEqual(p.value.agreedDraft, { ref: 'https://workdrive.zoho.in/SUPP-L5-final', version: 2, at: '2026-09-26T11:00:00+05:30' });
@@ -608,19 +610,19 @@ test('M12-S12-NOTE-2: prefill of the supplementary carries the lead\'s agreed dr
 });
 
 test('M12-S12-NOTE-2: an attachment ref is offered; a bad ref, an unagreed lead, an unreadable lead or no origin lead offers nothing', async () => {
-  const att = await suppRig(ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: `attachment:${P}740999502`, Supp_Agreed_Version: '1', Supp_Agreed_At: '2026-09-26T11:00:00+05:30' })).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  const att = await suppRig(ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK, Supp_Agreed_Ref: `attachment:${P}740999502`, Supp_Agreed_Version: '1', Supp_Agreed_At: '2026-09-26T11:00:00+05:30' })).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
   assert.deepEqual(att.value.agreedDraft, { ref: `attachment:${P}740999502`, version: 1, at: '2026-09-26T11:00:00+05:30' });
-  for (const [name, lead, contact] of [
-    ['javascript ref', ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: 'javascript:alert(1)', Supp_Agreed_At: '2026-09-26T11:00:00+05:30' })],
-    ['not agreed', ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: null, Supp_Agreed_At: null })],
-    ['draft only, no agreed stamp', ok200({ id: AGREED_LEAD, Supp_Agreed_Ref: 'https://writer.zoho.in/x' })],
-    ['lead not readable', { status: 403, headers: { 'content-type': 'application/json' }, body: { code: 'NO_PERMISSION', status: 'error' } }],
-    ['no origin lead', ok200({ id: AGREED_LEAD }), contactOf(null)],
+  for (const [name, lead, contact, offered] of [
+    ['javascript ref', ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK, Supp_Agreed_Ref: 'javascript:alert(1)', Supp_Agreed_At: '2026-09-26T11:00:00+05:30' }), undefined, false],
+    ['not agreed', ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK, Supp_Agreed_Ref: null, Supp_Agreed_At: null }), undefined, false],
+    ['draft only, no agreed stamp', ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK, Supp_Agreed_Ref: 'https://writer.zoho.in/x' }), undefined, false],
+    ['lead not readable', { status: 403, headers: { 'content-type': 'application/json' }, body: { code: 'NO_PERMISSION', status: 'error' } }, undefined, false],
+    ['no origin lead', ok200({ id: AGREED_LEAD }), contactOf(null), true],
   ]) {
     const p = await suppRig(lead, contact).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
     assert.equal(p.ok, true, name);
     assert.equal(p.value.agreedDraft, null, name);
-    assert.equal(p.value.maySend, true, name + ': the send itself is still offered');
+    assert.equal(p.value.maySend, offered, name + ': the send is offered only when the order of the rounds allows it (W3-E2E-4)');
   }
 });
 
@@ -720,4 +722,35 @@ test('W3-E2E-2: a hidden Contact is still "not-visible" (only a Lead is the Fina
   const r = rig((c) => (c.host === 'crm' && c.url.includes(`/Contacts/${KIRAN}`) ? { status: 204 } : null));
   const p = await createSignSender({ crm: r.crm, sign: r.sign, log: r.log, clock: () => NOW }).prefill(who(HARSHA, 'fin'), 'fema', KIRAN);
   assert.equal(p.reasonCode, 'not-visible');
+});
+
+/* ============ W3-E2E-4: the order of the two rounds is enforced in the send path ============ */
+const AGREED = { Supp_Agreed_Ref: 'https://workdrive.zoho.in/SUPP-L5-final', Supp_Agreed_Version: 2, Supp_Agreed_At: '2026-09-26T11:00:00+05:30' };
+const SEND_INPUT = { paper: 'supplementary', recordId: ALLOT, method: 'email-otp', source: { kind: 'template', templateId: TPL }, expectedModifiedTime: MOD };
+
+test('W3-E2E-4: prefill holds the supplementary until the NDA is verified and the draft is agreed, and says which', async () => {
+  const noNda = await suppRig(ok200({ id: AGREED_LEAD, NDA_Verified_At: null, ...AGREED })).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  assert.equal(noNda.value.maySend, false);
+  assert.match(noNda.value.note, /NDA has not come back signed/);
+  const noDraft = await suppRig(ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK })).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  assert.equal(noDraft.value.maySend, false);
+  assert.match(noDraft.value.note, /agreed final draft/);
+  const both = await suppRig(ok200({ id: AGREED_LEAD, NDA_Verified_At: NDA_OK, ...AGREED })).sender.prefill(who(HARSHA, 'fin'), 'supplementary', ALLOT);
+  assert.equal(both.value.maySend, true);
+});
+
+test('W3-E2E-4: commit refuses a supplementary before the NDA is verified or before the agreed draft, and sends nothing; once both stand it goes', async () => {
+  const lead = (extra) => ok200({ id: AGREED_LEAD, ...extra });
+  for (const [extra, code] of [[{ NDA_Verified_At: null, ...AGREED }, 'nda-first'], [{ NDA_Verified_At: NDA_OK }, 'no-agreed-draft']]) {
+    const { r, sender } = suppRig(lead(extra));
+    const res = await sender.commit(who(HARSHA, 'fin'), SEND_INPUT, K1);
+    assert.equal(res.ok, false);
+    assert.equal(res.reasonCode, code);
+    assert.equal(signCalls(r, /POST/).length, 0, 'no Sign request was created');
+    assert.equal(crmWrites(r).length, 0);
+  }
+  const unreadable = suppRig({ status: 403, headers: { 'content-type': 'application/json' }, body: { code: 'NO_PERMISSION', status: 'error' } });
+  const res = await unreadable.sender.commit(who(HARSHA, 'fin'), SEND_INPUT, K1);
+  assert.deepEqual([res.ok, res.kind], [false, 'not-saved']);
+  assert.equal(signCalls(unreadable.r, /POST/).length, 0);
 });

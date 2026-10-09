@@ -88,6 +88,9 @@ function rig(routes, opts = {}) {
         const q = body.select_query;
         const hit = Object.keys(routes).find((k) => k.startsWith('COQL ') && q.includes(k.slice(5)));
         name = hit ? routes[hit] : undefined;
+        // W3-E2E-4: Finance's supplementary side is read whenever the row is; nothing sent unless a test says so.
+        if (!name && /^select id, Origin_Lead from Contacts where Origin_Lead/.test(q)) name = 'coql.contact-of-lead';
+        if (!name && /from LLP_UnitAllocation_Module where Customer/.test(q)) name = 'coql.empty';
         if (!name) throw new Error(`unexpected synthetic COQL ${q}`);
       }
       if (Array.isArray(name)) name = name.shift();
@@ -598,4 +601,18 @@ test('an Introduction email is untouched by the material rule (no deck mailer, n
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.equal('materialMarked' in res.value, false);
   assert.ok(!r.puts().some((c) => 'Pitch_Deck_Sent_At' in c.body.data[0]));
+});
+
+test('W3-E2E-4: a supplementary Finance sent before the NDA came back and before the draft was agreed still shows as out on the IR\'s lead', async () => {
+  const r = rig({ [LEAD_GET]: 'lead.nda-sent', 'COQL from Contacts': 'coql.contact-of-lead', 'COQL from LLP_UnitAllocation_Module': 'coql.allotment-supp-sent' });
+  const row = await r.svc.read(principal(), LEAD);
+  const supp = row.value.rounds.find((x) => x.round === 'supp');
+  assert.equal(supp.sent, true, 'the lead shows it went out');
+  assert.equal(supp.verified, false);
+  assert.equal(supp.next.k, 'told', 'the IR can tell and chase: the investor holds a live link');
+  const nda = row.value.rounds.find((x) => x.round === 'nda');
+  assert.equal(nda.verified, false, 'the NDA is still not back');
+  const unsent = await rig({ [LEAD_GET]: 'lead.nda-sent' }).svc.read(principal(), LEAD);
+  assert.equal(unsent.value.rounds.find((x) => x.round === 'supp').sent, false);
+  assert.notEqual(unsent.value.rounds.find((x) => x.round === 'supp').next.k, 'told');
 });
