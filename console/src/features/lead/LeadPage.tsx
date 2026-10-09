@@ -21,7 +21,7 @@ import { holdDaysLeft } from "@/lib/im/dates";
 import { DAY, dISOtoDisp, hhmm, iso, money, nowT, plusD, when, whenT } from "@/lib/format";
 import {
   active, canAssign, canClaim, canDecideMove, canLose, canNote, canOperateLeads, canPlan, canReach,
-  canReadFinance, canReopen, canWork, channelForAction, claimOf, conFor, covOf, fcOf, GATES, hasNext,
+  canReadFinance, canReopen, canWork, channelForAction, claimOf, conFor, converted, covOf, fcOf, GATES, hasNext,
   inReservation, isIR, lost, nextUp, nxDue, nxWhen, openable, P, paperNow, ph, pr, prChases,
   ragOf, seeMoney, stepOwner, undoStage, watching, whyLocked,
 } from "@/lib/selectors";
@@ -48,6 +48,7 @@ import { useFinishLead, useLoseLead, useReopenLost } from "./followupWrites";
 import { useJourneyWrites } from "@/lib/data/endpoints/journey";
 import { useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
 import { useAssignToMe } from "@/lib/data/endpoints/ownership";
+import { ConvertedAlert, LpPaperDone } from "./Converted";   /* GC-1523 */
 import { currentRound, ndaSigned, paperworkRow, paperworkStep, paperworkUndo, stepSaved, type IrBeat, type PwChannel } from "@/lib/data/endpoints/paperwork";
 
 type Ctx = ReturnType<typeof useConsole>;
@@ -492,7 +493,9 @@ export function LeadPage({ id }: { id: string }) {
     if (back === "event") { dispatch({ type: "go", v: "events" }); router.push(`/events/${encodeURIComponent(state.EVID)}`); return; }
     dispatch({ type: "go", v: back }); router.push(`/${back}`);
   };
-  const u = nextUp(state, l), due = nxDue(l, state.NOW), work = canWork(state, l), act = active(l) && !lost(l) && l.done < ST.ONBOARDED;
+  /* GC-1523: a converted lead is read-only — no milestone, no forecast, no contact controls; the banner leads to the investor */
+  const conv = converted(l);
+  const u = nextUp(state, l), due = nxDue(l, state.NOW), work = canWork(state, l), act = active(l) && !lost(l) && l.done < ST.ONBOARDED && !conv;
   const sig = ragOf(state, l), last = fuLatest(state, l), here = LADDER[l.done], und = undoStage(state, l);
   const flow = lpl.f?.flow || null;
   const open = (k: DrawerKind, seed?: Record<string, unknown>) => dispatch({ type: "openDrawer", k, id: l.id, ...(seed ? { seed } : {}) });
@@ -504,7 +507,8 @@ export function LeadPage({ id }: { id: string }) {
     canReopen(state, l) ? <button type="button" className="chip" onClick={() => void reopenW(l).then(said)}>Re-open</button> : null);
   if (!l.own) al("own", "bad", <b>No owner yet.</b>, canAssign(state) ? <button type="button" className="act" onClick={() => open("owner")}>Assign owner</button>
     : isIR(state.ROLE) ? <button type="button" className="act" onClick={() => void assignMe(l.id).then(said)}>Assign to me</button> : null);
-  if (watching(state, l)) al("watch", "", <><b>{whyLocked(state, l)}</b> You can see everything; changes are not yours to make.</>);
+  if (conv) A.push(<ConvertedAlert key="conv" l={l} />);
+  else if (watching(state, l)) al("watch", "", <><b>{whyLocked(state, l)}</b> You can see everything; changes are not yours to make.</>);
   const cv = covOf(state, l);
   if (cv) al("cov", "due", <><b>{P(state.PEOPLE, cv.by).n} is covering</b> for {P(state.PEOPLE, l.own).n} until {cv.to}.</>);
   if (r && r.state === "waiting") al("req", "due", <><b>{P(state.PEOPLE, r.by).n} asked to move this to {P(state.PEOPLE, r.to).n}</b> — {r.why}</>,
@@ -567,7 +571,7 @@ export function LeadPage({ id }: { id: string }) {
   if (act && gw && canClaim(state, l) && !cm && !reported && !notFound && !live)
     rows.push(<div key="pay" className="lp-stage"><span className="sm">Payment</span><b>Has the investor paid?</b>
       <button type="button" className="btn" onClick={() => open("claim", { CKIND: l.done >= ST.RESERVED ? "full" : "advance", CREF: "", CNOTE: "" })}>Investor says they paid</button></div>);
-  rows.push(<LpPaperRow key="paper" l={l} />);
+  rows.push(conv ? <LpPaperDone key="paper" l={l} /> : <LpPaperRow key="paper" l={l} />);
   if (act && l.done >= ST.QUALIFIED && canPlan(state, l)) {
     const fc = fcOf(l);
     rows.push(<div key="fc" className="lp-stage"><span className="sm">Forecast</span><b>{fc ? FCAT[fc as keyof typeof FCAT].t : "Not set"}</b>
@@ -591,6 +595,7 @@ export function LeadPage({ id }: { id: string }) {
     <section className="card lp-next" aria-label="Next step"><div className="cb">
       <div className="lp-nexthead"><div><span className="work-eyebrow">Next step</span><h2>{act && hasNext(l) ? l.nx!.t : u.t}</h2></div>
         {act && hasNext(l) ? <span className={`tag ${due === "overdue" ? "late" : due === "today" ? "due" : "go"}`}>{due === "overdue" ? "Overdue · " : ""}{nxWhen(l)}</span> : null}</div>
+      {conv ? <p className="lp-meta">Nothing is owed on the lead side. The money, the allotment and the app are on the investor record.</p> : null}
       {last ? <p className="lp-meta">Last contact: {FUCHANNELS[last.channel] || last.channel} · {last.outcome || ""} · {last.at || ""}</p> : null}
       {hasPref ? <p className="lp-meta">Prefers: {fuPreference(l)}</p> : null}
       {note0 ? <p className="lp-meta lp-lastnote">Latest note: “{note0.t.length > 140 ? note0.t.slice(0, 140) + "…" : note0.t}” — {P(state.PEOPLE, note0.who).n.split(" ")[0]} · {note0.at} · <button type="button" className="lp-link" onClick={() => openFile(l.id)}>All notes</button></p> : null}

@@ -52,6 +52,7 @@ function irRecord(s: ImBook["s"], me: string, id: string | null) {
     id: x.id, version: null, sections: IR_SIDE, investor: irView(x), state: x.st as InvestorStateLabel,
     kyc: null, fema: null, holdings, hold: x.hold ? { until: x.hold, extension: null } : null, money: null, paper: null,
     origin: { leadId: x.lead ?? null, irId: x.ir ?? null, irVia: null, saidYesAt: null },
+    story: null,   /* GC-1524: the demo book's Journey reads the book (journey()), not a story */
   } });
 }
 
@@ -82,6 +83,7 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
       /* not projected — the Paper section still reads the book until M12-S01-W1 */
       paper: null,
       origin: { leadId: x.lead ?? null, irId: x.ir ?? null, irVia: null, saidYesAt: null },
+      story: null,
     } });
   },
 };

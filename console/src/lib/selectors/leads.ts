@@ -162,6 +162,27 @@ export const active = (l: Lead): boolean =>
    clickthrough can never disagree. */
 export const stageAtLeast = (l: Lead | null | undefined, n: number): boolean => !!l && l.done >= n;
 
+/* ===== CONVERTED (GC-1523) ==================================================================
+   Owner, 9 Oct: "Issued means they have paid … we should have them under contacts and not leads." A lead whose journey has
+   reached Reserved (Finance's fact, D09), whose Lead_Status says the money is in, or whose investor record (Contact with
+   Origin_Lead = this lead, read on the viewer's own token) holds a live allotment, has become an investor. It is read-only on
+   the lead side: no next step owed, no SLA clock, off the working lists, still findable by search and by its own cut. A lead
+   closed as lost is never converted. */
+export const CONVERTED_STATUS: ReadonlySet<string> = new Set(["Reserved - 10% in", "Converted", "Fully paid", "Allocated", "Onboarded"]);
+const MONEY_IN: ReadonlySet<string> = new Set(["reserved", "paid", "allocated"]);
+export const converted = (l: Lead | null | undefined): boolean =>
+  !!l && !lost(l) && (l.done >= ST.RESERVED || CONVERTED_STATUS.has(l.status ?? "")
+    || (!!l.investor && MONEY_IN.has(l.investor.st)));
+
+/** The investor record a lead became, as this viewer read it: the live link (server/data/live linkInvestors), else the
+ *  Investors-side book's Contact whose origin lead is this one. Null when the viewer reads no such record. */
+export function investorFor(ctx: Ctx, l: Lead | null | undefined): { id: string; code: string | null } | null {
+  if (!l) return null;
+  if (l.investor) return { id: l.investor.id, code: l.investor.code };
+  const x = (ctx.IM?.INV || []).find((i) => i.lead === l.id);
+  return x ? { id: x.id, code: x.code ?? (/^ARL-INV-/.test(x.id) ? x.id : null) } : null;
+}
+
 /* ===== CUSTODY ==============================================================================
    THE GATE, NOT A HANDOVER. The lead never leaves the IR. Three rungs rest on a fact only Finance
    can establish, but ownership does not move; the truth gets checked. See selectors/ladder.ts.
@@ -224,6 +245,8 @@ export const whyLocked = (ctx: Ctx, l: Lead): string =>
     ? `Closed as lost. Re-opening it is the only thing left on this record.`
     : custodian(l) === "Closed"
     ? `Every rung on this one is done. Nothing here changes again.`
+    : converted(l)
+    ? `Converted — this lead is now an investor; their journey continues on the investor record.`
     : `${P(ctx.PEOPLE, l.own).n} is working this one.`;
 
 /* ===== THE NEXT ACTION ======================================================================
@@ -234,7 +257,7 @@ export const hasNext = (l: Lead): boolean => !!(l.nx && l.nx.t && l.nx.by);
 /* before the first touch lands, the three first-touch SLAs ARE the next action — the manual puts
    this control on Qualification and Nurture (Table 11), which starts once the touch is made */
 export const needsNext = (l: Lead): boolean =>
-  active(l) && !lost(l)
+  active(l) && !lost(l) && !converted(l)
   && (l.done > ST.TOUCH || (l.done === ST.TOUCH && touchDone(l) === TOUCHSLA.length));
 export const noNext = (l: Lead): boolean => needsNext(l) && !hasNext(l);
 
@@ -314,7 +337,7 @@ export const fcOK = (l: Lead, NOW: Date): boolean => {
   return !!fcDate(l, NOW);
 };
 export const fcBad = (l: Lead, NOW: Date): boolean =>
-  active(l) && l.done >= ST.QUALIFIED && !fcOK(l, NOW);
+  active(l) && !converted(l) && l.done >= ST.QUALIFIED && !fcOK(l, NOW);
 
 /* ===== MONEY ON A LEAD ====================================================================== */
 export const inReservation = (ctx: Ctx, l: Lead | null | undefined): boolean => {
@@ -407,7 +430,7 @@ export const bookFor = (ctx: Ctx, v: string): Lead[] =>
    owes one.
    ========================================================================================== */
 export function lateOf(l: Lead | null | undefined, NOW: Date): number {
-  if (!l || !l.own || !active(l)) return 0;
+  if (!l || !l.own || !active(l) || converted(l)) return 0;   /* GC-1523: a converted lead runs no clock */
   if (hasNext(l)) return Math.max(0, Math.floor((nxLate(l, NOW) as number) / 24));
   /* the first-touch service levels come first — a lead still owed a permitted-channel touch is
      late off the SAME clock `missingTouch` reads, not a second one (ir-console-redesigned.html
@@ -438,6 +461,7 @@ export type RagReason = { c: Rag; why: string; t: string };
 export function ragOf(ctx: Ctx, l: Lead): RagReason {
   const R = (c: Rag, why?: string): RagReason => ({ c, why: why || "", t: RAGT[c] + (why ? " · " + why : "") });
   const ds = (n: number): string => n === 1 ? "1 day" : n + " days";
+  if (converted(l)) return R("green", "converted to an investor");   /* GC-1523: no breach chip on a converted lead */
   if (!l.own) return R("red", "no owner");
   if (!P(ctx.PEOPLE, l.own).on) return R("red", "owner has left");    /* the owner has left — this needs a person */
   /* out with nobody on it at all. A named secondary IS the cover — secondaryMayWork hands them
@@ -581,6 +605,7 @@ export function chanOf(ctx: Ctx, l: Lead): string {
    `nextUp`'s `kind` and `missingTouch`, which only this file has both halves of. */
 export function workGroup(ctx: Ctx, l: Lead | null | undefined): "overdue" | "today" | "waiting" | "upcoming" {
   if (!l || lost(l) || l.done >= ST.ONBOARDED) return "upcoming";
+  if (converted(l) && !isFin(roleOf(ctx.PEOPLE, me(ctx))!)) return "upcoming";   /* GC-1523 */
   if (!l.own) return "today";
   const u = nextUp(ctx, l);
   if (u.kind === "consent") return "today";
@@ -609,6 +634,12 @@ export function nextUp(ctx: Ctx, l: Lead): NextUp {
     rec: isIR(roleOf(ctx.PEOPLE, me(ctx))!) && !canAssign(ctx) ? { kind: "assign" } : null, urg: "now", kind: "owner",
   };
   if (l.done >= ST.ONBOARDED) return { t: "Onboarded — relationship live", act: null, urg: "ok", kind: "closed" };
+  /* GC-1523: a converted lead owes the lead side nothing — the journey continues on the investor record. Finance still reads
+     its paper and money beats below. */
+  if (converted(l) && !isFin(roleOf(ctx.PEOPLE, me(ctx))!)) {
+    const x = investorFor(ctx, l);
+    return { t: "Converted" + (x?.code ? " · investor " + x.code : " — now an investor"), act: null, urg: "ok", kind: "closed" };
+  }
   const s = LADDER[l.done] || LADDER[0];
   /* Paper somebody owes: it outranks hygiene, because a signature nobody is chasing is the
      commonest way a converted lead goes quiet. For Finance it outranks everything on the lead,
@@ -702,7 +733,8 @@ export function todayList(ctx: Ctx, sc?: "mine" | "team"): Lead[] {
           return !(w.mine && w.n.who === "Finance");
         })
       : myWork(ctx)
-  ).filter(l => !lost(l) && l.done < ST.ONBOARDED && !!l.own);   /* closed is closed; unowned leads are the Leads page's (merged todayList) */
+  ).filter(l => !lost(l) && l.done < ST.ONBOARDED && !!l.own)   /* closed is closed; unowned leads are the Leads page's (merged todayList) */
+    .filter(l => !converted(l) || isFin(roleOf(ctx.PEOPLE, me(ctx))!));   /* GC-1523: a converted lead is off the IR's day */
 
   const ids = new Set(openable(ctx).map(l => l.id));
   const unique = [...new Map(base.filter(l => ids.has(l.id)).map(l => [l.id, l] as const)).values()];
@@ -914,20 +946,22 @@ export const dormant = (ctx: Ctx, l: Lead | null | undefined): boolean => {
 };
 
 /* the exceptions a list can be cut to — the manual's hygiene rules, plus the two that go stale */
-export type ExcKey = "nonext" | "overdue" | "cold" | "fcgap" | "consent" | "due" | "hold7" | "lost" | "dormant";
+export type ExcKey = "nonext" | "overdue" | "cold" | "fcgap" | "consent" | "due" | "hold7" | "lost" | "dormant" | "converted";
 export const EXC: Record<ExcKey, [string, (ctx: Ctx, l: Lead) => boolean]> = {
   nonext:  ["No next action",          (_c, l) => noNext(l)],
   /* merged ir-merged.js:4809 — Today's rule: a dated next step decides; without one, a missed first touch */
-  overdue: ["Overdue",                 (c, l) => { if (!active(l)) return false; const d = hasNext(l) && nxDue(l, c.NOW);
+  overdue: ["Overdue",                 (c, l) => { if (!active(l) || converted(l)) return false; const d = hasNext(l) && nxDue(l, c.NOW);
               return d ? d === "overdue" : missingTouch(c, l)?.state === "overdue"; }],
   cold:    ["Going cold",              (c, l) => cold(c, l, c.NOW)],
   fcgap:   ["Forecast with no date",   (c, l) => fcBad(l, c.NOW)],
-  consent: ["Permission missing",      (_c, l) => active(l) && !anyConsent(l)],
-  due:     ["Due today",               (c, l) => active(l) && nxDue(l, c.NOW) === "today"],
+  consent: ["Permission missing",      (_c, l) => active(l) && !converted(l) && !anyConsent(l)],
+  due:     ["Due today",               (c, l) => active(l) && !converted(l) && nxDue(l, c.NOW) === "today"],
   hold7:   ["Hold ends in 7 days",     (c, l) => inReservation(c, l)
               && ((when(payOf(c, l.id)!.hold, c.NOW) as Date).getTime() - c.NOW.getTime()) / DAY <= 7],
   dormant: ["Dormant — no decision",   (c, l) => dormant(c, l)],
   lost:    ["Closed as lost",          (_c, l) => lost(l)],
+  /* GC-1523: the converted leads' own cut — off the default list, one click away */
+  converted: ["Converted — investors",  (_c, l) => converted(l)],
 };
 
 /* Change 2 — the days-since-contact cuts, beside EXC. */
@@ -964,7 +998,8 @@ export const passesNoLost = (ctx: Ctx, l: Lead, f: LeadFilters): boolean =>
    quiet cut, or by the "include closed leads" switch itself. */
 export const passes = (ctx: Ctx, l: Lead, f: LeadFilters): boolean =>
   passesNoLost(ctx, l, f)
-  && (!lost(l) || !!f.LLOST || f.LFILT === "lost" || !!f.LSTAGE || !!f.LQUIET || !!f.LQ.trim());
+  && (!lost(l) || !!f.LLOST || f.LFILT === "lost" || !!f.LSTAGE || !!f.LQUIET || !!f.LQ.trim())
+  && (!converted(l) || !!f.LFILT || !!f.LSTAGE || !!f.LQ.trim());   /* GC-1523: converted leads are under their own cut */
 
 export const leadFilterOn = (f: LeadFilters): boolean =>
   !!(f.LQ.trim() || f.LFILT || f.LSRC || f.LSTAGE || f.LOWN || f.LLOST || f.LQUIET);
@@ -1134,7 +1169,7 @@ export function closers(ctx: Ctx, book: Lead[], n: number | undefined): Lead[] {
     if (!l.consent) x -= 18;
     return x + Math.min(6, l.units);
   };
-  return book.filter(l => !lost(l) && active(l)).map(l => ({ l, s: score(l) }))
+  return book.filter(l => !lost(l) && active(l) && !converted(l)).map(l => ({ l, s: score(l) }))
     .sort((a, b) => b.s - a.s).slice(0, n || 4).map(x => x.l);
 }
 
@@ -1147,7 +1182,9 @@ export type DueRow = { l: Lead; kind: "next" | "hold" | "fc"; t: string };
 /* everything dated on a given day, from whichever record carries the date */
 export function dueOn(ctx: Ctx, book: Lead[], d: Date): DueRow[] {
   const key = dISO(d), out: DueRow[] = [];
+  const fin = isFin(roleOf(ctx.PEOPLE, me(ctx))!);
   book.forEach(l => {
+    if (converted(l) && !fin) return;   /* GC-1523: a converted lead's dates are the investor record's, not the IR's day */
     const nd = nxDate(l, ctx.NOW);
     if (hasNext(l) && nd && dISO(nd) === key) out.push({ l, kind: "next", t: l.nx!.t });
     const p = payOf(ctx, l.id);

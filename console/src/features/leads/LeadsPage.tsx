@@ -24,6 +24,7 @@ import {
   isIR,
   knownUnitIntent,
   lost,
+  converted,
   P,
   passes,
   passesNoLost,
@@ -128,6 +129,8 @@ export function LeadsPage() {
   if (!lostShown && lostHeld)
     cuts.push({ t: <><b>{lostHeld}</b> closed as lost, held back</>, b: "Show the lost leads", c: () => set({ LLOST: true }), lost: true });
   const lostCut = cuts.find((c) => c.lost);
+  /* GC-1523: converted leads are investors now — off the default list, counted here, one click to their own cut */
+  const convHeld = f.LFILT || f.LSTAGE || q ? 0 : all.filter((l) => converted(l) && passesNoLost(state, l, f)).length;
 
   const book = team ? "the team's book" : "your book";
   const heading = (
@@ -143,6 +146,15 @@ export function LeadsPage() {
                   {" · "}
                   {lostCut.t}{" "}
                   <button type="button" className="lnk g2-lnk" onClick={lostCut.c}>
+                    Show
+                  </button>
+                </>
+              ) : null}
+              {convHeld ? (
+                <>
+                  {" · "}
+                  <b>{convHeld}</b> converted to investors{" "}
+                  <button type="button" className="lnk g2-lnk" onClick={() => set({ LFILT: "converted" })}>
                     Show
                   </button>
                 </>
@@ -387,7 +399,7 @@ export function LeadsPage() {
                   </div>
                 </td>
                 <td data-label="Stage">
-                  <span className="tag">{lost(l) ? "Closed as lost" : LADDER[Math.max(0, l.done - 1)].t}</span>
+                  <span className={`tag ${converted(l) ? "go" : ""}`}>{lost(l) ? "Closed as lost" : converted(l) ? "Converted" : LADDER[Math.max(0, l.done - 1)].t}</span>
                 </td>
                 <td data-label="Last contact">
                   {c ? (

@@ -48,10 +48,15 @@ describe("M09-S08 — the IR's Investors list", () => {
 });
 
 describe("M09-S08 — the IR's record, read-only with money sections hidden", () => {
+  it("GC-1524: the record opens on its Journey tab", () => {
+    const t = render("rohit", { SEL: "ARL-INV-0208" }).t;
+    expect(t).toContain("The journey");
+    expect(t).not.toContain("This is your own investor, read only.");
+  });
   it("Rohit on Prakash: Who they are, What they hold, Journey — no Money, Paper, Care or Tickets", () => {
     const who = rec("rohit", "ARL-INV-0208", "who").t;
     expect(who).toContain("Prakash BhatARL-INV-0208");
-    expect(who).toContain("Who they areWhat they holdJourney");
+    expect(who).toContain("JourneyWho they areWhat they hold");   /* GC-1524: Journey first */
     expect(who).toContain("Mobile+91 97400 55519");
     expect(who).toContain("This is your own investor, read only.");
     expect(who).not.toMatch(MONEY);

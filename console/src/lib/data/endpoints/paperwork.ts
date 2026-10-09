@@ -16,7 +16,7 @@ import type { Offer, PaperworkRow, RoundView, RoundKey } from "@/server/leads/pa
 import { ROUNDS } from "@/domain";
 import type { Action } from "@/lib/state";
 import type { ConsoleState } from "@/lib/store";
-import { canReadFinance, canWork, conFor, pr, prChases, prNext } from "@/lib/selectors";
+import { canReadFinance, canWork, conFor, converted, inBookOf, pr, prChases, prNext } from "@/lib/selectors";
 import type { LpSnap } from "@/features/lead/reducer";
 import { I, who } from "@/lib/im";
 import { fail, ok, type ApiResult, type ReadEndpoint, type WriteEndpoint } from "../api";
@@ -47,7 +47,8 @@ export const paperworkRow: ReadEndpoint<ConsoleState, string | null, PaperworkRo
   fixture(state, id) {
     const l = state.LEADS.find(x => x.id === id);
     if (!l) return fail(404, "not-visible", "Not saved — the lead is unavailable.");
-    if (!(canReadFinance(state, l, "docs") || canWork(state, l))) return fail(403, "not-in-book", "Not saved — this lead is not in your book.");
+    /* GC-1523: a converted lead is read-only for its IR, and its paperwork stays readable to them */
+    if (!(canReadFinance(state, l, "docs") || canWork(state, l) || (converted(l) && inBookOf(state, l)))) return fail(403, "not-in-book", "Not saved — this lead is not in your book.");
     const work = canWork(state, l);
     const channels = CHANNELS.filter(ch => conFor(l, ch));
     const offers: Offer[] = [];

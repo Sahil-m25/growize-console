@@ -38,6 +38,7 @@ import { moneyOf } from "../money/by-allotment";
 import { listAttachments, type AttachmentLine, type DocScope } from "../documents/attachments";
 import { FINANCE_CONTACT_FIELDS, type FinanceKyc } from "./finance-list";
 import { LIFECYCLE_FIELD, resolveIrs, stateLabel, type InvestorStateLabel } from "./lifecycle";
+import { readStory, type InvestorStory } from "./story";
 
 const RECORD_ID = /^\d{15,22}$/;
 
@@ -102,6 +103,10 @@ export interface InvestorRecord {
     readonly farms: readonly { readonly llpId: string; readonly files: readonly AttachmentLine[] }[];
   } | null;
   readonly origin: { readonly leadId: string | null; readonly irId: string | null; readonly irVia: "contact" | "lead" | null; readonly saidYesAt: string | null };
+  /** GC-1524: the whole story for the Journey tab — lead-side milestones, touches, investor-side milestones — read on this
+   *  person's own token (./story); what the seat may not read is left out, never fetched another way. Null when the caller
+   *  did not ask for it (the app preview, the test link) or in the demo book. */
+  readonly story: InvestorStory | null;
 }
 
 export type RecordResult =
@@ -137,7 +142,7 @@ export function createInvestorRecordReader(deps: RecordDeps) {
     return l.ok ? l.files : { errorKind: l.errorKind };
   };
 
-  async function read(cred: UserCredential, seat: string, contactId: string, signal?: AbortSignal): Promise<RecordResult> {
+  async function read(cred: UserCredential, seat: string, contactId: string, signal?: AbortSignal, opts: { readonly story?: boolean } = {}): Promise<RecordResult> {
     const me = cred.userId;
     if (typeof contactId !== "string" || !RECORD_ID.test(contactId)) return guard.refuse(me, seat, "investor-record", "invalid-request", []);
     const sections = sectionsFor(seat, me);
@@ -213,6 +218,9 @@ export function createInvestorRecordReader(deps: RecordDeps) {
     }
 
     const [ir] = await resolveIrs(deps.crm, cred, [c], signal);
+    const story = opts.story
+      ? await readStory(deps.crm, cred, { contact: c, allotments: allots, money: money ? { receipts, paid, due } : null, leadId: c.originLeadId }, signal)
+      : null;
     const investor = investorOf(c, allots, (id) => llps.get(id)?.Block_Code ?? "");
     const derived = !allots.length ? null : !live.length ? "lapsed" as const : investor.st;
     const holdUntil = holdOf(live);
@@ -231,6 +239,7 @@ export function createInvestorRecordReader(deps: RecordDeps) {
       money: money ? Object.freeze({ paid, due, receipts }) : null,
       paper: paperOut,
       origin: Object.freeze({ leadId: c.originLeadId, irId: ir ?? null, irVia: c.originatingIrId ? "contact" as const : ir ? "lead" as const : null, saidYesAt: c.saidYesAt }),
+      story,
     });
     return { ok: true, record };
   }
