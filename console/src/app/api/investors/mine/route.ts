@@ -3,7 +3,9 @@
    own filter in the WHERE and every row re-admitted by the IR guard. Columns only: id, ARL code, name, farms (name,
    block, units), state, lead link. Never a price, amount, yield, receipt, phone, email, address or identity field.
    Any seat but the IR is refused 403 by the list itself (no Zoho call). Nothing kept (D45).
-   200 → { rows: [{ id, code, name, farms, state, leadId }], truncated }   · 403 → { error, code } */
+   D137 ruling 3: `chase` — the IR's balance to-do: each Reserved allotment not yet converted in full (farm, units, Hold_Until,
+   days left; the amount due stays null — D69, D137 open question 1 — and `dueReadable` false).
+   200 → { rows: [{ id, code, name, farms, state, leadId }], truncated, chase, dueReadable }   · 403 → { error, code } */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { failureResponse, investorsContext, NO_STORE } from "@/server/investors/http";
@@ -17,7 +19,7 @@ async function get(req: Request) {
   const { rt, crm, principal } = c.ctx;
   const r = await createIrInvestorList({ crm, events: rt.events }).list(principal.credential, principal.session.seat, req.signal);
   if (!r.ok) return failureResponse(r);
-  return Response.json({ rows: r.rows, truncated: r.truncated }, { headers: NO_STORE });
+  return Response.json({ rows: r.rows, truncated: r.truncated, chase: r.chase ?? [], dueReadable: r.dueReadable ?? false }, { headers: NO_STORE });
 }
 
 export const GET = withErrorCapture(guardApi("/api/investors/mine", get), "/api/investors/mine");

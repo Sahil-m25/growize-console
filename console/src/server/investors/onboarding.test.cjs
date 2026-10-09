@@ -257,6 +257,12 @@ test('the farm rules hold on the server: closed farm, too few units free, more m
   res = await r.add.add(principal(), form({ amountPaid: 5_000_001 }));
   assert.equal(res.reasonCode, 'overpaid');
   assert.equal(r.writes().length, 0);
+  /* GC-1527 / D137: under 10% of 2 × ₹25,00,000 no investor record is created — the money goes on the lead */
+  r = rig();
+  res = await r.add.add(principal(), form({ amountPaid: 499_999 }));
+  assert.equal(res.reasonCode, 'below-ten-percent');
+  assert.match(res.message, /under 10% of ₹50,00,000.*record the money on their lead instead/);
+  assert.equal(r.writes().length, 0, 'no Contact below the 10%');
 });
 
 test('M11-S07: Zoho\'s oversell guard refusing the allotment insert is named with the LLP; the Contact is taken back', async () => {

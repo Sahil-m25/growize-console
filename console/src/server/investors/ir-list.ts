@@ -25,6 +25,8 @@ import { contactsWhere, createInvestorGuard, type PlaneCRefusal } from "../data/
 import { checkAmProjection, MODULES } from "../data/projections";
 import { scopesFor } from "../data/scope";
 import { LIFECYCLE_FIELD, stateLabel, type InvestorStateLabel } from "./lifecycle";
+import { readConverted } from "./full-paid";
+import { daysLeft } from "../holds/rules";
 
 /** What an IR's list reads of a Contact. Checked against identity and money names when this module loads. */
 export const IR_LIST_FIELDS: readonly string[] = checkAmProjection(MODULES.contacts, [
@@ -48,8 +50,48 @@ export interface IrInvestorRow {
   readonly leadId: string | null;
 }
 
+/**
+ * D137 ruling 3 — one row on the IR's to-do per Reserved allotment of their own-lead investor whose balance is still due (not
+ * stamped Converted_At). `holdUntil` / `daysLeft`: the balance deadline (Hold_Until, IST days). `due`: the amount still due —
+ * ALWAYS null today: D69 keeps every amount off the IR side (this module selects no money name, AC4 of ir-investors.test.cjs), and
+ * the owner's 9 Oct ruling asking for "amount due" on the IR's to-do is D137 open question 1. The row says Finance holds the
+ * figure. If the owner opens it, the read is the allotment's Total_Amount_Receivable on the IR's own token, shown only where field
+ * security lets the IR profile read it — the slot is here so the screen does not change.
+ */
+export interface IrChaseRow {
+  readonly contactId: string;
+  readonly code: string;
+  readonly name: string;
+  readonly leadId: string | null;
+  readonly allotmentId: string;
+  readonly farm: string;
+  readonly units: number;
+  readonly holdUntil: string | null;
+  readonly daysLeft: number | null;
+  readonly due: number | null;
+}
+
+/** Pure: the chase rows, soonest deadline first (no deadline last). */
+export function buildChase(contacts: readonly ContactRow[], reserved: readonly AllotmentRow[], farms: ReadonlyMap<string, { readonly name: string; readonly block: string }>,
+  stamps: ReadonlyMap<string, unknown>, dues: ReadonlyMap<string, number> | null, nowMs: number): IrChaseRow[] {
+  const byId = new Map(contacts.map((c) => [c.id, c]));
+  const rows: IrChaseRow[] = [];
+  for (const a of reserved) {
+    const c = byId.get(a.Customer);
+    if (!c || stamps.has(a.id)) continue;
+    const due = dues ? dues.get(a.id) ?? null : null;
+    if (due === 0) continue;   // Zoho says nothing is receivable: nothing to chase
+    rows.push(Object.freeze({
+      contactId: c.id, code: c.code, name: [c.firstName, c.lastName].filter(Boolean).join(" ").slice(0, 121), leadId: c.originLeadId,
+      allotmentId: a.id, farm: farms.get(a.LLP_Lookup)?.name ?? "", units: a.Committed_Units,
+      holdUntil: a.holdUntil, daysLeft: a.holdUntil ? daysLeft(a.holdUntil, nowMs) : null, due,
+    }));
+  }
+  return rows.sort((x, y) => (x.daysLeft ?? 1e9) - (y.daysLeft ?? 1e9) || x.name.localeCompare(y.name, "en-IN"));
+}
+
 export type IrListResult =
-  | { readonly ok: true; readonly rows: readonly IrInvestorRow[]; readonly truncated: boolean }
+  | { readonly ok: true; readonly rows: readonly IrInvestorRow[]; readonly truncated: boolean; readonly chase?: readonly IrChaseRow[]; readonly dueReadable?: boolean }
   | { readonly ok: false; readonly kind: "refused"; readonly reason: string }
   | { readonly ok: false; readonly kind: "source-error"; readonly book: string; readonly errorKind: ZohoFailureKind | "unexpected" };
 
@@ -58,6 +100,7 @@ export interface IrListDeps {
   readonly events: InvestorEvents;
   readonly planeCRefusal?: (e: PlaneCRefusal) => void;
   readonly maxPages?: number;
+  readonly clock?: () => number;
 }
 
 /** Pure: the rows from what was read. Units and farms count live allotments only; the state is the allotments' (no money to tell Paid). */
@@ -137,7 +180,12 @@ export function createIrInvestorList(deps: IrListDeps) {
     }
     const blueprint = new Map<string, unknown>();
     if (LIFECYCLE_FIELD) for (const raw of c.rows) blueprint.set(raw.id, raw[LIFECYCLE_FIELD]);
-    return { ok: true, rows: Object.freeze(buildIrRows(admitted.rows, al.rows, farms, blueprint)), truncated };
+    /* D137 ruling 3: the IR chases the balance of each Reserved allotment not yet converted in full */
+    const reserved = al.rows.filter((a) => a.Allocation_Status === "Reserved");
+    const stamps = reserved.length ? await readConverted(deps.crm, cred, reserved.map((a) => a.id), signal) : new Map();
+    const dues = null;   // D69: no amount on the IR side (D137 open question 1)
+    const chase = buildChase(admitted.rows, reserved, farms, stamps ?? new Map(), dues, deps.clock ? deps.clock() : Date.now());
+    return { ok: true, rows: Object.freeze(buildIrRows(admitted.rows, al.rows, farms, blueprint)), truncated, chase: Object.freeze(chase), dueReadable: false };
   }
 
   return Object.freeze({ list });

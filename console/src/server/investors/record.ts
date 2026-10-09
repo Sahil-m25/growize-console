@@ -39,6 +39,7 @@ import { listAttachments, type AttachmentLine, type DocScope } from "../document
 import { FINANCE_CONTACT_FIELDS, type FinanceKyc } from "./finance-list";
 import { LIFECYCLE_FIELD, resolveIrs, stateLabel, type InvestorStateLabel } from "./lifecycle";
 import { readStory, type InvestorStory } from "./story";
+import { readConverted } from "./full-paid";
 
 const RECORD_ID = /^\d{15,22}$/;
 
@@ -218,10 +219,15 @@ export function createInvestorRecordReader(deps: RecordDeps) {
     }
 
     const [ir] = await resolveIrs(deps.crm, cred, [c], signal);
+    /* D137 ruling 3: a Reserved allotment stamped Converted_At is converted in full (fully paid) — for every seat, money or not */
+    const reservedIds = live.filter((a) => a.Allocation_Status === "Reserved").map((a) => a.id);
+    const stamps = reservedIds.length ? await readConverted(deps.crm, cred, reservedIds, signal) : null;
+    const convertedIds = new Set(stamps ? stamps.keys() : []);
+    const convertedAt = stamps ? [...stamps.values()].map((x) => x.at).sort()[0] ?? null : null;
     const story = opts.story
-      ? await readStory(deps.crm, cred, { contact: c, allotments: allots, money: money ? { receipts, paid, due } : null, leadId: c.originLeadId }, signal)
+      ? await readStory(deps.crm, cred, { contact: c, allotments: allots, money: money ? { receipts, paid, due } : null, leadId: c.originLeadId, convertedAt }, signal)
       : null;
-    const investor = investorOf(c, allots, (id) => llps.get(id)?.Block_Code ?? "");
+    const investor = investorOf(c, allots, (id) => llps.get(id)?.Block_Code ?? "", convertedIds);
     const derived = !allots.length ? null : !live.length ? "lapsed" as const : investor.st;
     const holdUntil = holdOf(live);
     const holdRow = holdUntil ? live.find((a) => a.holdUntil === holdUntil) : undefined;

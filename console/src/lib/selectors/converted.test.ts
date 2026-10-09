@@ -21,18 +21,21 @@ const F: LeadFilters = { LQ: "", LFILT: null, LSRC: null, LSTAGE: null, LSTAGEMO
 const base = { done: ST.CONVERTED, lost: null } as unknown as Lead;
 
 describe("converted(l) — the rule", () => {
-  it("Reserved or beyond on the stamps is converted; Said yes alone is not", () => {
-    expect(converted({ ...base, done: ST.RESERVED })).toBe(true);
+  it("D137 ruling 3: Fully paid or beyond on the stamps is converted; Reserved (balance due) and Said yes are not", () => {
+    expect(converted({ ...base, done: ST.PAID })).toBe(true);
     expect(converted({ ...base, done: ST.ALLOCATED })).toBe(true);
+    expect(converted({ ...base, done: ST.RESERVED })).toBe(false);
     expect(converted(base)).toBe(false);
   });
-  it("Lead_Status says the money is in, even when the stamps lag (the owner's 'not moved forward' lead)", () => {
+  it("Lead_Status says the money is all in, even when the stamps lag (the owner's 'not moved forward' lead); 'Reserved - 10% in' does not", () => {
     for (const s of ["Converted", "Fully paid", "Allocated", "Onboarded"]) expect(converted({ ...base, status: s })).toBe(true);
     expect(converted({ ...base, status: "Investor said yes" })).toBe(false);
+    expect(converted({ ...base, status: "Reserved - 10% in" })).toBe(false);
   });
-  it("an investor record with a live allotment converts it; one that has only said yes does not", () => {
+  it("an investor record fully paid or allocated converts it; Reserved, said-yes or lapsed does not (D137 ruling 3)", () => {
     expect(converted({ ...base, investor: { id: "c1", code: "ARL-INV-0901", st: "allocated" } })).toBe(true);
-    expect(converted({ ...base, investor: { id: "c1", code: "ARL-INV-0901", st: "reserved" } })).toBe(true);
+    expect(converted({ ...base, investor: { id: "c1", code: "ARL-INV-0901", st: "paid" } })).toBe(true);
+    expect(converted({ ...base, investor: { id: "c1", code: "ARL-INV-0901", st: "reserved" } })).toBe(false);
     expect(converted({ ...base, investor: { id: "c1", code: "ARL-INV-0901", st: "said yes" } })).toBe(false);
     expect(converted({ ...base, investor: { id: "c1", code: "ARL-INV-0901", st: "lapsed" } })).toBe(false);
   });

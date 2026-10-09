@@ -16,12 +16,12 @@ function Body(_: DrawerProps) {
   if (!may(state, "xfer", "view")) return null;
   return (
     <>
-      <p>Finance-verified signed agreements and at least the confirmed 10% payment trigger the
-        investor copy. The original lead remains with its IR. Authorized integration administrators
-        can recover missing local copy tracking using the same account link.</p>
-      <p className="sm">This demo has no live investor intake or portal acknowledgement. Existing
-        portal accounts are reused, never created twice. Ongoing investor maintenance after lead
-        closure belongs in the Investor Management portal.</p>
+      <p>The investor record is created only when Finance confirms the 10% — Finance-matched money
+        (part payments counted together) reaching 10% of what the investor commits. Finance creates it
+        on their own sign-in; nobody copies a lead by hand (D137, GC-1527). The original lead remains
+        with its IR and links to the investor.</p>
+      <p className="sm">Transfers is the read-only log of the leads that became investors this way. An
+        investor who already exists is reused, never created twice.</p>
     </>
   );
 }

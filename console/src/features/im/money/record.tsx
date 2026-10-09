@@ -48,6 +48,10 @@ function TxLine({ s, t }: { s: ImPageProps["s"]; t: Line }) {
   );
 }
 
+/** D137 ruling 3: who may mark an allotment fully paid by hand — Finance Operations, Head of Finance, Digital Infrastructure, a KAM
+ *  (the route re-checks the seat: server/investors/full-paid via /api/investors/[id]/full-paid). */
+export const mayMarkFullPaid = (s: P["s"], me: string): boolean => ["ops", "head", "di", "kam"].includes(who(s, me).r);
+
 /* ---- Allotments card on "What they hold" ---- */
 export function AllotCard(p: P) {
   const { s, me, dispatch, x } = p;
@@ -87,7 +91,11 @@ export function AllotCard(p: P) {
                 <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{fin && a ? <>
                   <button className={`chip ${oid === l.id && otab === "receipts" ? "on" : ""}`} onClick={() => toggle(l.id, "receipts")}>Receipts <span className="u">{n}</span></button>{" "}
                   {mayPayouts(s, me) ? <PayoutsChip s={s} me={me} a={a} on={oid === l.id && otab === "payouts"} onClick={() => toggle(l.id, "payouts")} /> : null}
-                </> : null}</td>
+                </> : null}
+                  {/* D137 ruling 3: Finance, Digital Infrastructure or the KAM may convert a Reserved allotment in full by hand (logged) */}
+                  {l.status === "Reserved" && mayMarkFullPaid(s, me) ? <>{" "}<button className="chip" onClick={() => {
+                    dispatch({ type: "mset", k: "fp:allot:" + x.id, v: l.id }); dispatch({ type: "openDrawer", k: "fullpaid", id: x.id });
+                  }}>Mark fully paid…</button></> : null}</td>
               </>}
               open={oid === l.id ? otab : ""} />
           );

@@ -1,7 +1,9 @@
-/* ── Transfers — the merged prototype's D60 transfer rules (ir-merged.js 6879–6905).
-   One Zoho org: a lead becomes an investor record the moment it reaches "Investor said yes", so
-   that rung IS the transfer and its stamp is the transfer date. A lead lost after saying yes still
-   counts, on its said-yes date. Names are only ever leads this seat may already open. ────────── */
+/* ── Transfers — the merged prototype's D60 transfer rules (ir-merged.js 6879–6905), re-dated by D137.
+   GC-1527 / D137 ruling 1 (owner, 9 Oct): a lead becomes an investor record only when Finance confirms the 10% — the investor
+   (Contact) is created on Finance's own token at that moment (server/investors/convert). So the transfer is the Reserved rung
+   ("10% in"), its stamp is the transfer date, and Transfers (G3) is the read-only log of leads that became investors: there is no
+   manual copy action anywhere. A lead lost after the 10% still counts, on its Reserved date. Names are only ever leads this seat
+   may already open. ──────────────────────────────────────────────────────────────────────────── */
 
 import { ST } from "@/domain";
 import type { Lead } from "@/domain";
@@ -12,13 +14,13 @@ import { may } from "./access";
 import { lost, openable } from "./leads";
 
 export const xfYes = (l: Lead | null | undefined, NOW: Date): Date | null =>
-  (l && l.done >= ST.CONVERTED) ? whenT((l.at || [])[ST.CONVERTED - 1], NOW) : null;
+  (l && l.done >= ST.RESERVED) ? whenT((l.at || [])[ST.RESERVED - 1], NOW) : null;
 export const xfMonthKey = (d: Date): string => d.getFullYear() + "-" + d.getMonth();
 
-export const xfAfter = (l: Lead): { t: string; c: string } => lost(l) ? { t: "Lost after yes", c: "late" }
+export const xfAfter = (l: Lead): { t: string; c: string } => lost(l) ? { t: "Lost after the 10%", c: "late" }
   : l.done >= ST.ALLOCATED ? { t: "Allocated", c: "go" }
   : l.done >= ST.PAID ? { t: "Fully paid", c: "go" }
-  : l.done >= ST.RESERVED ? { t: "10% in", c: "br" }
+  : l.done >= ST.RESERVED ? { t: "Reserved — balance due", c: "br" }
   : { t: "Awaiting 10%", c: "" };
 
 const partnerLabel = (ctx: Ctx, l: Lead): string => l && l.src === "Channel partner"

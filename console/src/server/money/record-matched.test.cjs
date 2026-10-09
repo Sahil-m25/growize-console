@@ -139,7 +139,7 @@ test('D113: Finance records → matched by the recorder; the gate opens through 
   assert.equal(ins.length, 1);
   assert.equal(ins[0][1].Match_State, 'Pending');
   const receiptPuts = r.calls.filter((c) => c[0] === 'put' && c[1] === 'Receipts');
-  assert.deepEqual(receiptPuts.map((c) => c.slice(2)), [[RECEIPT, { Match_State: 'Matched', Matched_By: { id: FINANCE } }]]);
+  assert.deepEqual(receiptPuts.map((c) => c.slice(2)), [[RECEIPT, { Match_State: 'Matched', Matched_By: { id: FINANCE }, Matched_At: '2026-09-02T09:02:00+05:30' }]]);
   assert.equal(r.state(), 'Matched');
   // what a match sets moving, exactly as "Match it"
   assert.equal(v.match.gate, 'opens-through-receipts');

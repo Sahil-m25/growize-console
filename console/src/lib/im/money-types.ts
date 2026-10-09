@@ -118,7 +118,7 @@ export type ImTestLink = {
   url: string;
 };
 
-export type ImMoneyDrawerKey = "payout" | "llp" | "addinv" | "applock" | "testlink" | "preview";
+export type ImMoneyDrawerKey = "payout" | "llp" | "addinv" | "applock" | "testlink" | "preview" | "convert" | "fullpaid";
 
 export type ImMoneyAction =
   | { type: "mset"; k: string; v: string }

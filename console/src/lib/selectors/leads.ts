@@ -167,11 +167,14 @@ export const stageAtLeast = (l: Lead | null | undefined, n: number): boolean => 
    reached Reserved (Finance's fact, D09), whose Lead_Status says the money is in, or whose investor record (Contact with
    Origin_Lead = this lead, read on the viewer's own token) holds a live allotment, has become an investor. It is read-only on
    the lead side: no next step owed, no SLA clock, off the working lists, still findable by search and by its own cut. A lead
-   closed as lost is never converted. */
-export const CONVERTED_STATUS: ReadonlySet<string> = new Set(["Reserved - 10% in", "Converted", "Fully paid", "Allocated", "Onboarded"]);
-const MONEY_IN: ReadonlySet<string> = new Set(["reserved", "paid", "allocated"]);
+   closed as lost is never converted.
+   D137 ruling 3 (owner, 9 Oct): a RESERVED allotment is NOT converted for the lead lists — the IR chases the balance — until it is
+   fully paid: the journey at Fully paid or beyond, Lead_Status Fully paid / Allocated / Onboarded / Converted, or the investor
+   record's allotment fully paid (live.ts: matched money covers it, or the allotment carries the D137 Converted_At stamp) or issued. */
+export const CONVERTED_STATUS: ReadonlySet<string> = new Set(["Converted", "Fully paid", "Allocated", "Onboarded"]);
+const MONEY_IN: ReadonlySet<string> = new Set(["paid", "allocated"]);
 export const converted = (l: Lead | null | undefined): boolean =>
-  !!l && !lost(l) && (l.done >= ST.RESERVED || CONVERTED_STATUS.has(l.status ?? "")
+  !!l && !lost(l) && (l.done >= ST.PAID || CONVERTED_STATUS.has(l.status ?? "")
     || (!!l.investor && MONEY_IN.has(l.investor.st)));
 
 /** The investor record a lead became, as this viewer read it: the live link (server/data/live linkInvestors), else the

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { demoBook } from "@fixtures/book";
 import { applyFixtures } from "@fixtures/apply";
 import { initialState, reducer } from "@/lib/state";
-import type { PersonKey } from "@/domain";
+import { ST, type PersonKey } from "@/domain";
 import { arData, arPeriods, arTo } from "./assign";
 import { xfAfter, xfMonths } from "./xfer";
 
@@ -39,16 +39,23 @@ describe("Assignments by IR — arData (ir-merged.js 11205)", () => {
   });
 });
 
-describe("Transfers — xfMonths (ir-merged.js 6899)", () => {
-  it("counts leads by the month they said yes", () => {
-    const M = xfMonths(as("tasneem"));
-    expect(M.map(m => [m.d.getMonth(), m.rows.length])).toEqual([[7, 3], [6, 1]]);
+describe("Transfers — xfMonths (ir-merged.js 6899, re-dated by D137 / GC-1527)", () => {
+  it("counts leads by the month Finance confirmed the 10% (Reserved) — a said-yes lead is not an investor yet", () => {
+    const s = as("tasneem");
+    const M = xfMonths(s);
+    expect(M.map(m => [m.d.getMonth(), m.rows.length])).toEqual([[7, 2], [6, 1]]);
+    expect(M.flatMap(m => m.rows).every(r => r.l.done >= ST.RESERVED)).toBe(true);
+    const yesOnly = s.LEADS.filter(l => l.done === ST.CONVERTED);
+    expect(M.flatMap(m => m.rows).some(r => yesOnly.includes(r.l))).toBe(false);
   });
-  it("a lead lost after yes still counts, marked Lost after yes", () => {
-    const M = xfMonths(as("tasneem", "DEEPA_LOST_AFTER_YES"));
-    const deepa = M[0].rows.find(r => r.l.n === "Deepa Varghese")!;
-    expect(M[0].rows.length).toBe(3);
-    expect(xfAfter(deepa.l).t).toBe("Lost after yes");
+  it("a lead lost after the 10% still counts, marked Lost after the 10%; one lost after only saying yes does not", () => {
+    const s0 = as("tasneem", "DEEPA_LOST_AFTER_YES");
+    const deepa = s0.LEADS.find(l => l.n === "Deepa Varghese")!;
+    expect(xfMonths(s0).flatMap(m => m.rows).some(r => r.l.id === deepa.id)).toBe(deepa.done >= ST.RESERVED);
+    const r0 = xfMonths(as("tasneem")).flatMap(m => m.rows)[0]!.l;
+    const s1 = { ...s0, LEADS: s0.LEADS.map(l => (l.id === r0.id ? { ...l, lost: { why: "Changed their mind" } } as unknown as typeof l : l)) };
+    const row = xfMonths(s1).flatMap(m => m.rows).find(r => r.l.id === r0.id)!;
+    expect(xfAfter(row.l).t).toBe("Lost after the 10%");
   });
   it("an IR has no Transfers", () => {
     expect(xfMonths(as("rohit"))).toEqual([]);

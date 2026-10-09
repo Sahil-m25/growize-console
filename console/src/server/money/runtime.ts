@@ -53,9 +53,12 @@ async function parts(env: NodeJS.ProcessEnv) {
 export async function receiptMatch(env: NodeJS.ProcessEnv = process.env): Promise<ReceiptMatch> {
   if (G.__gzReceiptMatch) return G.__gzReceiptMatch;
   const { createReceiptMatch } = await import("./match");
+  const { createFullPaid } = await import("../investors/full-paid");
   const { rt, crm, recordIdPrefix, seatNow, writes, publish } = await parts(env);
+  /* D137 ruling 3: the automatic full conversion after a match, on the matcher's own token */
+  const fullPaid = createFullPaid({ crm, log: rt.log, events: rt.events, recordIdPrefix });
   return (G.__gzReceiptMatch = createReceiptMatch({
-    crm, writes, publish, log: rt.log, recordIdPrefix,
+    crm, writes, publish, log: rt.log, recordIdPrefix, fullPaid,
     authority: {
       async mayMatch(cred, sid) {
         const s = await seatNow(cred.userId, sid);

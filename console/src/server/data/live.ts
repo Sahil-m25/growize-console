@@ -41,6 +41,7 @@ import { amKey, amScopeOf, isAmSeat } from "./am-scope";
 import { readPeople, type PeopleDeps } from "./people";
 import type { ZohoUserDirectory } from "../identity/users";
 import type { ZohoSeatDirectory } from "../oauth/seat";
+import { readConverted } from "../investors/full-paid";
 
 export interface LivePrincipal {
   readonly credential: UserCredential;
@@ -264,12 +265,15 @@ export function leadOf(row: LeadRow, detail: ZohoRecord | undefined, touch?: Tou
 }
 
 /** A Contact (and its allotments) as the Investors side's investor. Identity fields are never read: pan null, bank blank. */
-export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], blockOf: (llpId: string) => string): ImInvestor {
+/** D137 ruling 3: `converted` — the allotment ids stamped Converted_At (investors/full-paid readConverted); a Reserved allotment so
+ *  stamped is fully paid even for a seat that reads no money (the IR, an AM seat). Absent: no stamp is known. */
+export function investorOf(c: ContactRow, allots: readonly AllotmentRow[], blockOf: (llpId: string) => string, converted?: ReadonlySet<string>): ImInvestor {
   const live = allots.filter((a) => a.Allocation_Status !== "Cancelled");
   const units = live.reduce((t, a) => t + a.Committed_Units, 0);
   const blocks: Record<string, number> = {};
   for (const a of live) { const b = blockOf(a.LLP_Lookup) || a.LLP_Lookup; blocks[b] = (blocks[b] ?? 0) + a.Committed_Units; }
-  const paid = live.length > 0 && live.every((a) => (a.receivable ?? 1) === 0 && (a.received ?? 0) > 0);
+  const paid = live.length > 0 && (live.every((a) => (a.receivable ?? 1) === 0 && (a.received ?? 0) > 0)
+    || live.every((a) => a.Allocation_Status === "Issued" || !!converted?.has(a.id)));
   return {
     id: c.id, ...(c.code ? { code: c.code } : {}), n: [c.firstName, c.lastName].filter(Boolean).join(" "), ph: c.mobile ?? "", em: c.email ?? "", city: c.city ?? "", addr: c.address,
     nri: !!c.residency && /non|nri/i.test(c.residency),
@@ -463,7 +467,14 @@ export function createLiveDataLayer(deps: LiveDeps) {
     for (const a of allots) byContact.set(a.Customer, [...(byContact.get(a.Customer) ?? []), a]);
     const custOf = new Map(allots.map((a) => [a.id, a.Customer]));
     const im = ds.im;
-    im.INV = contacts.map((c) => investorOf(c, byContact.get(c.id) ?? [], (id) => blockOf.get(id) ?? ""));
+    /* D137 ruling 3: which Reserved allotments are converted in full (Converted_At) — read only for a seat that reads no money (IR,
+       AM: it cannot tell "paid" from the amounts) and only when there are Reserved ones; a money seat already sees paid from the
+       allotment's amounts (one call per book, read-budget.test), and the record (record.ts) reads the stamp for every seat. A failed
+       or field-less read leaves them Reserved (never the other way round). */
+    const reservedIds = noMoney ? allots.filter((a) => a.Allocation_Status === "Reserved").map((a) => a.id) : [];
+    const stamped = reservedIds.length ? await readConverted(deps.crm, p.credential, reservedIds, signal) : null;
+    const convertedIds = new Set(stamped ? stamped.keys() : []);
+    im.INV = contacts.map((c) => investorOf(c, byContact.get(c.id) ?? [], (id) => blockOf.get(id) ?? "", convertedIds));
     im.LLP = [...llps];
     im.ALLOT = allots.map(toImAllot);
     im.TXN = txnOf(receipts.filter((x) => x.allotmentId && custOf.has(x.allotmentId)), custOf);
@@ -510,12 +521,15 @@ export function createLiveDataLayer(deps: LiveDeps) {
       const al = await adapters.allotments(p.credential, scopes.money, [one.contact.id], signal, true, !noMoney);
       if (!al.ok) return al.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: al.errorKind };
       const own = al.rows.filter((a) => a.Customer === one.contact.id);
-      if (noMoney) return { ok: true, investor: investorOf(one.contact, own, () => ""), allotments: own.map(toImAllot), receipts: [] };
+      const res = own.filter((a) => a.Allocation_Status === "Reserved").map((a) => a.id);
+      const stamps = res.length ? await readConverted(deps.crm, p.credential, res, signal) : null;   // D137 ruling 3
+      const conv = new Set(stamps ? stamps.keys() : []);
+      if (noMoney) return { ok: true, investor: investorOf(one.contact, own, () => "", conv), allotments: own.map(toImAllot), receipts: [] };
       const rc = await adapters.receipts(p.credential, scopes.money, own.map((a) => a.id), signal, true);
       if (!rc.ok) return rc.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: rc.errorKind };
       return {
         ok: true,
-        investor: investorOf(one.contact, own, () => ""),
+        investor: investorOf(one.contact, own, () => "", conv),
         allotments: own.map(toImAllot),
         receipts: rc.rows,
       };

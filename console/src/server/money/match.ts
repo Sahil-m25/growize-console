@@ -48,6 +48,11 @@
  *      When this match writes the hold, hold.changed { deadline, state: open, by } goes to the investor app through
  *      the same publisher (server/contracts/runtime publishToInvestorApp), built by ../holds/rules holdChangedEvent
  *      so the deadline and event id are the holds' own (TC-IM05-028). A kept longer hold publishes nothing.
+ *   6. D137 ruling 3: when matched money on the allotment now covers units × Unit_Price, the Reserved allotment converts in full
+ *      automatically — investors/full-paid `auto` stamps Converted_At / Converted_By (the matcher) / Converted_Via "Finance match"
+ *      on the matcher's own token (`converted` in the view; `fields-missing` until the fields exist).
+ * D137 ruling 2(a): the match write also carries Receipts.Matched_At (IST) for the 10% trail; an org without the field gets the
+ * match written without it.
  *
  * Nothing is cached (D45). Logs carry ids and codes only.
  */
@@ -61,6 +66,7 @@ import type { AllotmentReceiptWrites, PaymentStatusReading } from "./allotment-r
 import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "./receipt-replay";
 import { ALLOTMENT_UNLINKED, missingLinks } from "../investors/allotment-guard";
 import { holdChangedEvent } from "../holds/rules";
+import { MATCHED_AT_FIELD } from "./matched-receipts";
 
 export const CONTACTS_MODULE = "Contacts";
 export const HOLD_DAYS = 30;
@@ -143,7 +149,11 @@ export interface MatchView {
   readonly hold: Consequence<{ readonly until: string; readonly written: boolean }>;
   /** hold.changed 'open' when this match started the hold; null when no hold was written. */
   readonly holdChanged: Published | null;
+  /** D137 ruling 3: the full conversion this match triggered ("converted"), or why not; null when not wired / not inbound. */
+  readonly converted?: FullPaidOutcome | null;
 }
+/** investors/full-paid AutoOutcome, restated so this module does not import the investors side. */
+export type FullPaidOutcome = { readonly ok: boolean; readonly value: "converted" | "already" | "not-yet" | "not-reserved" | null; readonly code: string | null };
 
 export type MatchResult =
   | { readonly ok: true; readonly value: MatchView }
@@ -169,6 +179,8 @@ export interface MatchDependencies {
   readonly log: OpsLog;
   readonly recordIdPrefix: string;
   readonly clock?: () => number;
+  /** D137 ruling 3: the automatic full conversion after a match (investors/full-paid). Absent: not run (tests, doubles). */
+  readonly fullPaid?: { auto(cred: UserCredential, allotmentId: string, signal?: AbortSignal): Promise<FullPaidOutcome> };
 }
 
 /** ISO 8601 in Asia/Kolkata (+05:30) — the one clock (rule 9). */
@@ -306,16 +318,22 @@ export function createReceiptMatch(deps: MatchDependencies) {
         }
       }
     }
-    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound, holdChanged);
+    /* D137 ruling 3: the remaining amount confirmed by Finance converts the Reserved allotment in full, automatically, on the
+       matcher's own token (investors/full-paid auto: Converted_At / _By / _Via = "Finance match"). Reported, never undoing the match. */
+    let converted: FullPaidOutcome | null = null;
+    if (inbound && deps.fullPaid) {
+      try { converted = await deps.fullPaid.auto(cred, t.allotmentId, signal); } catch { converted = { ok: false, value: null, code: "unexpected" }; }
+    }
+    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound, holdChanged, converted);
   }
 
   const view = (t: Target, investorId: string, paymentStatus: PaymentStatusReading | null, moneyConfirmed: Published | null, firstMoney: boolean,
     accountOpened: Published | null, appAccess: MatchView["appAccess"], appMark: MatchView["appMark"], hold: MatchView["hold"], inbound: boolean,
-    holdChanged: Published | null = null): MatchView => Object.freeze({
+    holdChanged: Published | null = null, converted: FullPaidOutcome | null = null): MatchView => Object.freeze({
     receiptId: t.id, state: "matched" as const, duplicate: t.duplicate, matchedBy: t.matchedBy, matchedAt: istIso(t.matchedAt),
     kind: t.kind, amountRupees: t.amount, link: Object.freeze({ allotmentId: t.allotmentId, investorId }),
     gate: inbound ? "opens-through-receipts" as const : "not-money" as const,
-    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, holdChanged,
+    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, holdChanged, converted,
   });
 
   /** Publish, and log the delivery result (type + status code + record ids — never the payload). */
@@ -455,8 +473,15 @@ export function createReceiptMatch(deps: MatchDependencies) {
         return sourceError("unexpected");
       }
 
-      const w = await crm.update(cred, RECEIPTS_MODULE, receiptId, { Match_State: "Matched", Matched_By: { id: me } },
+      /* D137 ruling 2(a): the match's date-time goes on the receipt (Receipts.Matched_At) so the 10% trail can say when. An org
+         without the field refuses it as invalid-data naming it: the match is then written without it, never refused for it. */
+      const atWrite = now();
+      let w = await crm.update(cred, RECEIPTS_MODULE, receiptId, { Match_State: "Matched", Matched_By: { id: me }, [MATCHED_AT_FIELD]: istIso(atWrite) },
         { ifUnmodifiedSince: rec.Modified_Time as string, signal });
+      if (!w.ok && w.error.kind === "invalid-data" && (w.error.field === MATCHED_AT_FIELD || w.error.records?.some((r) => r.field === MATCHED_AT_FIELD))) {
+        w = await crm.update(cred, RECEIPTS_MODULE, receiptId, { Match_State: "Matched", Matched_By: { id: me } },
+          { ifUnmodifiedSince: rec.Modified_Time as string, signal });
+      }
       if (!w.ok) {
         const e = w.error;
         if (e.kind === "conflict") return refuse(me, "receipt-changed", [receiptId]);
@@ -467,7 +492,7 @@ export function createReceiptMatch(deps: MatchDependencies) {
         if (e.kind === "invalid-data") return refuse(me, "source-invalid", [receiptId]);
         return sourceError(e.kind);
       }
-      const at = now();
+      const at = atWrite;
       return { ok: true, value: await consequences(cred, sessionId, {
         id: receiptId, kind: rec.Kind as string, amount: rec.Amount as number, allotmentId: idOf(rec.Allotment)!, matchedBy: me, matchedAt: at, duplicate: false,
       }, signal) };

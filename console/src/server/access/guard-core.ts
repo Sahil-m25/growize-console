@@ -138,6 +138,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/data/version": { kind: "session" },
   "/api/leads": { kind: "page", page: "leads" },
   "/api/leads/search": { kind: "session" },   /* M06-S03-W2 (D110): the top-bar search follows the seat — server/leads/seat-search decides inside (Finance/KAM/Head of AM search investors and hold no Leads page) */
+  "/api/leads/[id]/conversion": { kind: "session" },   /* GC-1527 / D137: Finance confirms the 10% and creates the investor (Finance Operations / Head of Finance write, DI reads) — server/investors/convert and the route decide inside; the lead must be shared with Finance in Zoho */
   "/api/leads/[id]/hints": { kind: "session" },   /* M12-S11-T03 the IR's word for Finance beside its queue: read on the viewer's own token (D53), Zoho sharing decides */
   "/api/grants": { kind: "page", page: "people" },
   "/api/users": { kind: "session" },   /* M03-S04-T02 seat change: maySeat (the Investors Team rule) decides inside */
@@ -167,7 +168,8 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/investors/app-activity": { kind: "page", page: "inv" },   /* GC-1525 App activity (sign-ins the investor app wrote back): read on the person's own token; server/investors/app-activity applies the seat's own book scope inside */
   "/api/investors/mine": { kind: "page", page: "inv" },   /* M09-S08 an IR's Investors list: the IR holds the Investors page (D113); server/investors/ir-list refuses any seat but the IR's own-lead scope inside */
   "/api/investors/add-paid": { kind: "page", page: "inv" },
-  "/api/investors/[id]/unlock": { kind: "page", page: "inv" },   /* M10-S21 + G2/GC-1526 (D136): release = "pay" right and a matched 10%; the override = Finance Operations / Head of Finance only, decided inside */
+  "/api/investors/[id]/unlock": { kind: "page", page: "inv" },   /* M10-S21 + G2/GC-1526 (D136, D137): release = "pay" right and matched receipts summing to 10%; the override = Finance Operations / Head of Finance / Digital Infrastructure, decided inside */
+  "/api/investors/[id]/full-paid": { kind: "page", page: "inv" },   /* D137 ruling 3: mark a Reserved allotment fully paid by hand — Finance, DI or KAM, decided inside (server/investors/full-paid) */
   "/api/investors/[id]/preview": { kind: "page", page: "inv" },   /* M10-S22 app preview: the record's own admission decides inside */
   "/api/investors/[id]/test-link": { kind: "page", page: "inv" }, /* M10-S23: super user only, decided inside */
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */

@@ -1,7 +1,7 @@
 "use client";
 
 /* ── Transfers — the merged prototype's `vXfer()` (ir-merged.js 6907–6932).
-   Leads that became investors, by the month they said yes. The page leads with transfers per
+   Leads that became investors (GC-1527 / D137: when Finance confirmed the 10%), by month. The page leads with transfers per
    month; a month opens in place into who, when, how they came in, whose they are, how long it took
    and what has happened since. Read only: nothing here writes. Rules: `@/lib/selectors/xfer`. ── */
 
@@ -38,7 +38,7 @@ export function XferPage() {
   const xfToggle = (k: string) => dispatch({ type: "setUi", patch: { XFMON: XFMON === k ? null : k } });
 
   const list = (m: XfMonth) => (
-    <Tw className="d60c-tw"><table className="d60c-t"><thead><tr><th>Investor</th><th>Transferred</th><th>How they came in</th><th>Owner</th><th className="d60c-n">Days</th><th>Since</th></tr></thead><tbody>
+    <Tw className="d60c-tw"><table className="d60c-t"><thead><tr><th>Investor</th><th>10% confirmed</th><th>How they came in</th><th>Owner</th><th className="d60c-n">Days</th><th>Since</th></tr></thead><tbody>
       {m.rows.map(({ l, yes, days }) => {
         const a = xfAfter(l);
         return (
@@ -55,7 +55,7 @@ export function XferPage() {
 
   return (
     <>
-      <div className="ph"><h1>Transfers</h1><span className="sub">Leads that became investors, by the month they said yes · read only</span></div>
+      <div className="ph"><h1>Transfers</h1><span className="sub">Leads that became investors — Finance confirmed the 10% — by month · read only</span></div>
       <section className="d60c-xfer">{months.length ? (<>
         <p className="d60c-sum">{all.length} transferred since {mName(months[months.length - 1].d)}{medT}</p>
         <div className="card d60c-card">{months.map(m => {
@@ -69,9 +69,9 @@ export function XferPage() {
               {open ? <div id={`d60c-l-${m.k}`}>{list(m)}</div> : null}</div>
           );
         })}</div>
-        <p className="sm d60c-foot">A lead is transferred on the day it reaches “Investor said yes” — that is when its investor record is created. A lead lost afterwards still counts, on that date.{cash ? " Value is units × " + inr(UNIT) + "." : ""}</p>
+        <p className="sm d60c-foot">A lead is transferred on the day Finance confirms its 10% — that is when its investor record is created, on Finance's own sign-in (D137). Nobody copies a lead by hand. A lead lost afterwards still counts, on that date.{cash ? " Value is units × " + inr(UNIT) + "." : ""}</p>
       </>) : (
-        <div className="card"><div className="empty">No transfers yet. A lead appears here the day it reaches “Investor said yes”.</div></div>
+        <div className="card"><div className="empty">No transfers yet. A lead appears here the day Finance confirms its 10%.</div></div>
       )}</section>
     </>
   );

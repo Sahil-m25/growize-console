@@ -121,7 +121,7 @@ test('the Head of Finance matches Meena\'s pending balance: one guarded PUT, mon
   assert.equal(v.gate, 'opens-through-receipts');
   const p = puts(r.calls);
   assert.equal(p.length, 1, 'only the receipt is written: not the first money, not an advance');
-  assert.deepEqual(p[0].slice(1, 4), ['Receipts', R, { Match_State: 'Matched', Matched_By: { id: HEAD } }]);
+  assert.deepEqual(p[0].slice(1, 4), ['Receipts', R, { Match_State: 'Matched', Matched_By: { id: HEAD }, Matched_At: '2026-09-02T09:02:00+05:30' }]);
   assert.equal(p[0][4], '2026-09-02T08:00:00+05:30', 'If-Unmodified-Since is the receipt as it was read (D44)');
   // banked to date rises by ₹22.5 L: 2.5 L before → 25 L after; Zoho's workflow value is absent, so computed.
   assert.equal(v.paymentStatus.receivedRupees, 2_500_000);
@@ -147,7 +147,7 @@ test('D113: the recorder matches her own ordinary receipt — no second person; 
   assert.equal(res.ok, true, JSON.stringify(res));
   assert.equal(res.value.matchedBy, HEAD);
   const p = puts(r.calls);
-  assert.deepEqual(p[0].slice(1, 4), ['Receipts', R, { Match_State: 'Matched', Matched_By: { id: HEAD } }]);
+  assert.deepEqual(p[0].slice(1, 4), ['Receipts', R, { Match_State: 'Matched', Matched_By: { id: HEAD }, Matched_At: '2026-09-02T09:02:00+05:30' }]);
   assert.equal(r.events.filter((e) => e.type === 'money.confirmed').length, 1);
   assert.equal(r.sink.records().filter((x) => x.kind === 'refusal').length, 0);
 });
@@ -262,7 +262,7 @@ test('an investor\'s first matched money: account.opened tentative, App_Access o
   assert.deepEqual(v.hold, { ok: true, value: { until: '2026-10-02', written: true }, code: null });
   const p = puts(r.calls);
   assert.deepEqual(p.map((c) => [c[1], c[3]]), [
-    ['Receipts', { Match_State: 'Matched', Matched_By: { id: HEAD } }],
+    ['Receipts', { Match_State: 'Matched', Matched_By: { id: HEAD }, Matched_At: '2026-09-02T09:02:00+05:30' }],
     ['Contacts', { App_Access: 'Hold', App_Account_Mark: 'Tentative', App_Mark_At: '2026-09-02T09:02:00+05:30' }],
     ['LLP_UnitAllocation_Module', { Hold_Until: '2026-10-02' }],
   ]);

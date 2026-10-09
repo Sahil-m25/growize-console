@@ -1,4 +1,4 @@
-/* G2 / GC-1526 (D136 proposed) — the App account card's 10% gate and Finance's override, rendered from the endpoint's fixture half.
+/* G2 / GC-1526 (D136) + D137 ruling 2 — the App account card's 10% gate and Finance's override, rendered from the endpoint's fixture half.
    Run: npx vitest run src/features/im/money/app-gate.test.tsx */
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -19,33 +19,48 @@ const card = (s: ImState, me: string) => renderToStaticMarkup(<AppAccessCard s={
 const text = (h: string) => h.replace(/<[^>]+>/g, " ").replace(/&#x27;/g, "'").replace(/\s+/g, " ");
 const unlockButton = (h: string) => /<button[^>]*>Send welcome and unlock<\/button>/.exec(h)?.[0] ?? "";
 
-describe("G2: Send welcome and unlock waits for the 10%", () => {
-  it("no matched advance: the button is disabled and says why", () => {
+/** 10% of what ARL-INV-0205 commits in the demo book (units × ₹25,00,000) */
+const tenOf = (s: ImState) => Math.ceil(s.data.INV.find(x => x.id === ID)!.units * 2_500_000 / 10);
+
+describe("G2 + D137: Send welcome and unlock waits for matched money summing to 10%", () => {
+  it("nothing matched (a pending advance): the button is disabled, says why, and the trail shows what is recorded", () => {
     const h = card(held([{ kind: "advance", rec: "pending" }]), "harsha");
     expect(unlockButton(h)).toMatch(/disabled=""/);
-    expect(unlockButton(h)).toContain("Waits for the 10% advance");
-    expect(text(h)).toContain("Waits for the 10% advance — no matched Advance or Full receipt yet.");
+    expect(unlockButton(h)).toContain("Waits for the 10%");
+    expect(text(h)).toContain("Waits for the 10% — the matched receipts do not reach 10% of the committed amount yet.");
+    expect(h).toContain('data-trail="ten-percent"');
+    expect(text(h)).toContain("recorded and waiting for Finance to match it");
   });
-  it("a matched advance (or a matched full payment) opens it", () => {
+  it("a matched advance or full payment of at least 10% opens it", () => {
     for (const kind of ["advance", "full"] as const) {
-      const h = card(held([{ kind, rec: "matched" }]), "harsha");
+      const s = held();
+      const h = card(held([{ kind, rec: "matched", amt: tenOf(s) }]), "harsha");
       expect(unlockButton(h)).not.toMatch(/disabled/);
       expect(h).not.toContain("data-gate");
       expect(h).not.toContain("Unlock without the 10%");
     }
   });
-  it("a matched balance or refund alone is not the 10%", () => {
-    expect(unlockButton(card(held([{ kind: "balance", rec: "matched" }, { kind: "refund", rec: "matched" }]), "harsha"))).toMatch(/disabled=""/);
+  it("D137 ruling 2(a): two matched part payments that together reach 10% open it; one part under 10%, or a refund, does not", () => {
+    const t = tenOf(held());
+    expect(unlockButton(card(held([{ kind: "balance", rec: "matched", amt: Math.ceil(t / 2) }, { kind: "balance", rec: "matched", amt: Math.ceil(t / 2) }]), "harsha"))).not.toMatch(/disabled/);
+    expect(unlockButton(card(held([{ kind: "balance", rec: "matched", amt: t - 1 }]), "harsha"))).toMatch(/disabled=""/);
+    expect(unlockButton(card(held([{ kind: "refund", rec: "matched", amt: t }]), "harsha"))).toMatch(/disabled=""/);
+  });
+  it("the trail masks the reference to its last four", () => {
+    const h = card(held([{ kind: "balance", rec: "matched", amt: 1000, utr: "SYNTHUTRGATE0009876" }]), "harsha");
+    expect(h).toContain("••• 9876");
+    expect(h).not.toContain("SYNTHUTRGATE0009876");
   });
 });
 
-describe("GC-1526: the override is Finance Operations' and the Head of Finance's only", () => {
-  it("Head of Finance and Finance Operations see 'Unlock without the 10%…'", () => {
+describe("GC-1526 + D137 2(b): the override is Finance Operations', the Head of Finance's and Digital Infrastructure's", () => {
+  it("Head of Finance, Finance Operations and the super user (Digital Infrastructure) see 'Unlock without the 10%…'", () => {
     expect(card(held(), "harsha")).toContain("Unlock without the 10%…");
     expect(card(held(), "meena")).toContain("Unlock without the 10%…");
+    expect(card(held(), "sahil")).toContain("Unlock without the 10%…");
   });
-  it("the super user, a KAM and the Auditor never see it", () => {
-    for (const me of ["sahil", "imran", "latha"]) expect([me, card(held(), me).includes("Unlock without the 10%")]).toEqual([me, false]);
+  it("a KAM and the Auditor never see it", () => {
+    for (const me of ["imran", "latha"]) expect([me, card(held(), me).includes("Unlock without the 10%")]).toEqual([me, false]);
     expect(card(held(), "imran")).toContain("Finance controls app access.");
   });
   it("step one asks for the reason (10+ characters) and Continue stays shut until it is long enough", () => {

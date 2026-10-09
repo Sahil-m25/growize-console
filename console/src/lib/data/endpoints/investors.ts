@@ -10,7 +10,7 @@ import type { AmServiceView } from "@/server/investors/am-service";
 import type { KamAssigned } from "@/server/investors/kam-assign";
 import type { AddPaidCreated } from "@/server/investors/add-paid";
 import type { InvestorSearchResult } from "@/server/investors/search";
-import type { IrInvestorRow } from "@/server/investors/ir-list";
+import type { IrChaseRow, IrInvestorRow } from "@/server/investors/ir-list";
 import type { FinanceInvestorRow, FinanceSummary } from "@/server/investors/finance-list";
 import {
   I, KAMS, allots, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
@@ -92,7 +92,9 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
    The investors that came from the signed-in IR's own leads (Contacts.Originating_IR = me): id, ARL code, name, farms, state,
    lead link — the columns of M09-S08-NOTE-3 and nothing else (no price, amount, yield, receipt, phone, email or identity).
    Arg: whether this seat is an IR (nothing to read for any other). The fixture is `irInvestors` over the demo book. */
-export type IrListAnswer = { rows: IrInvestorRow[]; truncated: boolean };
+/** D137 ruling 3: `chase` is the IR's balance to-do (Reserved allotments not yet converted in full); `dueReadable` false = Zoho
+ *  hides the amount from this IR and the row says Finance holds it. */
+export type IrListAnswer = { rows: IrInvestorRow[]; truncated: boolean; chase?: IrChaseRow[]; dueReadable?: boolean };
 
 export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
   path: ir => (ir ? "/api/investors/mine" : null),
@@ -104,7 +106,12 @@ export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
       /* the demo's farm is its block letter (the live route reads the LLP's own id, name and block) */
       farms: Object.entries(x.blocks).map(([block, units]) => ({ llpId: block, name: s.data.FARMS.find(f => f.k === block)?.n ?? "", block, units })),
     })).sort((a, b) => a.name.localeCompare(b.name, "en-IN") || a.id.localeCompare(b.id));
-    return ok({ rows, truncated: false });
+    /* D137 ruling 3: the demo's reserved investors are the IR's balance to-do; the demo keeps no IR-readable amount (dueReadable false) */
+    const chase: IrChaseRow[] = irInvestors(s, me).filter(x => x.st === "reserved").map(x => ({
+      contactId: x.id, code: x.id, name: x.n, leadId: x.lead ?? null, allotmentId: allotsOf(s, me, x.id)[0]?.id ?? x.id,
+      farm: Object.keys(x.blocks).map(b => s.data.FARMS.find(f => f.k === b)?.n ?? b).join(", "), units: x.units, holdUntil: null, daysLeft: null, due: null,
+    }));
+    return ok({ rows, truncated: false, chase, dueReadable: false });
   },
 };
 

@@ -43,6 +43,10 @@ export interface InvestorEvents {
   /** GC-1526: Plane C — app access unlocked WITHOUT a verified 10% (ok, reason "ten-percent-waived") or that override refused
    *  (reason = the refusal code). recordIds = [Contact]; the typed reason lives only in the Contact's Note, never here. */
   appAccessOverride(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string): void;
+  /** D137: Plane C — a lead became an investor on Finance's confirmation of the 10% (reason "ten-percent-confirmed"), or an
+   *  allotment converted in full (reason "fully-paid-auto" / "fully-paid-manual"), or that was refused (reason = the code).
+   *  recordIds = the Lead / Contact / allotment ids; never a name, an amount, a reference or a typed reason. */
+  investorConverted(userId: string, seat: string | null, recordIds: readonly string[], outcome: "ok" | "refused", reason: string): void;
   /** M15-S05-NOTE-1 / M10-S23: Plane C — a test sign-in link issued for a Contact, living `ttlMinutes`; `real` = a real
    *  investor (after the warning), not a listed test account. Never the URL, the token or the reason's words. */
   testLinkIssued(userId: string, seat: string | null, contactId: string, ttlMinutes: number, real: boolean): void;
@@ -88,6 +92,9 @@ export function createInvestorEvents(deps: { readonly log: OpsLog; readonly plan
     },
     appAccessOverride(userId: string, seat: string | null, contactId: string, outcome: "ok" | "refused", reason: string) {
       deps.planeC.record({ at: clock(), who: userId, action: "app-access-override", outcome, reason, seat, recordIds: ids([contactId]) });
+    },
+    investorConverted(userId: string, seat: string | null, recordIds: readonly string[], outcome: "ok" | "refused", reason: string) {
+      deps.planeC.record({ at: clock(), who: userId, action: "investor-converted", outcome, reason, seat, recordIds: ids(recordIds) });
     },
     testLinkIssued(userId: string, seat: string | null, contactId: string, ttlMinutes: number, real: boolean) {
       deps.planeC.record({ at: clock(), who: userId, action: "test-link-issued", outcome: "ok", reason: real ? "real-investor" : "test-account", seat,

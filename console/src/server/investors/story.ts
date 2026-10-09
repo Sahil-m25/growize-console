@@ -70,6 +70,8 @@ export function storyOf(input: {
   /** Matched receipts and the money totals — only for a seat whose record shows Money; null otherwise. */
   readonly money: { readonly receipts: readonly ReceiptRow[]; readonly paid: number; readonly due: number } | null;
   readonly touches: StoryTouches | null;
+  /** D137 ruling 3: the earliest Converted_At stamp on the investor's Reserved allotments (converted in full), or null. */
+  readonly convertedAt?: string | null;
 }): InvestorStory {
   const { contact: c, lead: L, money } = input;
   const steps: StoryStep[] = [];
@@ -92,8 +94,9 @@ export function storyOf(input: {
   const reservedAt = stamp("Reserved_At"), paidAt = stamp("Fully_Paid_At"), allocAt = stamp("Allocated_At"), onboardAt = stamp("Onboarded_At");
   add({ k: "Reserved_At", t: "Reserved — 10% in", side: "investor", done: !!reservedAt || live.length > 0 || matchedIn.length > 0,
     at: reservedAt ?? advanceOn, src: reservedAt ? "lead" : advanceOn ? "receipt" : live.length ? "allotment" : null });
-  add({ k: "Fully_Paid_At", t: "Fully paid", side: "investor", done: !!paidAt || paidUp || issued.length > 0,
-    at: paidAt ?? (paidUp ? latest(matchedIn.map((x) => x.on)) : null), src: paidAt ? "lead" : paidUp ? "receipt" : issued.length ? "allotment" : null });
+  const conv = input.convertedAt ?? null;
+  add({ k: "Fully_Paid_At", t: "Fully paid", side: "investor", done: !!paidAt || paidUp || issued.length > 0 || !!conv,
+    at: paidAt ?? (paidUp ? latest(matchedIn.map((x) => x.on)) : conv), src: paidAt ? "lead" : paidUp ? "receipt" : issued.length || conv ? "allotment" : null });
   const issuedOn = earliest(issued.map((a) => a.Issued_On));
   add({ k: "Allocated_At", t: "Allocated", side: "investor", done: !!allocAt || issued.length > 0,
     at: allocAt ?? issuedOn, src: allocAt ? "lead" : issued.length ? "allotment" : null });

@@ -6,7 +6,7 @@
 
 import type { KeyboardEvent, MouseEvent } from "react";
 import {
-  careQueue, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad,
+  careQueue, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad, may,
   money, pageReadable, poolBook, tierOf, TIERS, who, FORFEIT, primaryName, fmtAt, fmtDay,
 } from "@/lib/im";
 import type { ImInvestor } from "@/lib/im";
@@ -224,7 +224,7 @@ export function sendIt(dispatch: ImPageProps["dispatch"], ref: MoneyRowView["ref
 }
 
 /* qRow(x) — imx.js 1447–1466. One queue row, carrying the control that does it — the route's `action` names it. */
-export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | CareRow; claims?: ReadonlyMap<string, ClaimRow> }) {
+export function QRow({ s, me, dispatch, x, claims }: ImPageProps & { x: MoneyRowView | CareRow; claims?: ReadonlyMap<string, ClaimRow> }) {
   const id = x.investor.id;
   const stop = (run: () => void) => (e: MouseEvent) => { e.stopPropagation(); run(); };
   const talk = () => dispatch({ type: "openDrawer", k: "talk", id, seed: { CT: { ch: "call", mood: "good", note: "", next: "" } } });
@@ -239,7 +239,12 @@ export function QRow({ dispatch, x, claims }: ImPageProps & { x: MoneyRowView | 
             : x.action === "Verify it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "verify", id: ref.paper ?? null, seed: { DREF: "" } }))}>Verify it</button>
               : x.action === "Check it" ? <button className="act" onClick={stop(() => dispatch({ type: "openDrawer", k: "kyc", id }))}>Check it</button>
                 : x.action === "Remind" ? <button className="act" onClick={stop(() => { dispatch({ type: "go", v: "inv", id }); dispatch({ type: "setSec", v: "inv:" + id, k: "paper" }); })}>Remind</button>
-                  : x.action === "Send it" ? <button className="act" onClick={stop(() => sendIt(dispatch, ref))}>Send it</button>
+                  : x.action === "Send it" ? <>
+                    <button className="act" onClick={stop(() => sendIt(dispatch, ref))}>Send it</button>
+                    {/* GC-1527 / D137: a lead with no investor yet — Finance records its money here and confirms the 10% */}
+                    {ref.leadId && !ref.contactId && may(s, me, "pay")
+                      ? <button className="act ghost" onClick={stop(() => dispatch({ type: "openDrawer", k: "convert", id: ref.leadId ?? null }))}>Money and the 10%</button> : null}
+                  </>
                   : <button className="act ghost" onClick={stop(() => dispatch({ type: "go", v: "inv", id }))}>Open the record</button>;
   /* G1: an NDA row may name a lead with no investor record yet — the row opens its send panel, never a missing record */
   const open = x.kind === "send" && !ref.contactId ? () => sendIt(dispatch, ref) : () => dispatch({ type: "go", v: "inv", id });

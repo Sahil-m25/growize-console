@@ -47,7 +47,6 @@ const KNOWN: Record<string, string> = {
   "features/people/Access.tsx#revokeTemp": "temporary access revoke: no route (only reachable once grantTemp exists)",
   "features/people/drawers.tsx#addPerson": "add a team member: no route (People page; live reachability not verified)",
   "features/people/drawers.tsx#removePerson": "leaver flow: no route (People page; live reachability not verified)",
-  "features/lead/drawers/investor-copy.tsx#copyInvestor": "investor copy (demo projection): no route; live reachability not verified",
   "features/pay/PayPage.tsx#showRef": "receipt reference reveal: no route; likely unreachable live (the lead side never reads Receipts, D69)",
 };
 /** Guarded on the live console in a way this scan cannot see (verified by reading the site). */

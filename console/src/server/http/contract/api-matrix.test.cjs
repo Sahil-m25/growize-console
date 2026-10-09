@@ -49,6 +49,7 @@ const BOOK_EXEMPT = {
   '/api/leads/[id]/hints': 'M12-S11-T03: the IR\'s word for Finance beside its queue, read on the viewer\'s own token (D53) — Zoho sharing decides, the reply carries no lead field beyond a hint',
   /* narrowed to one module: every other book of this route is still held to the seat's scope */
   '/api/queues/investors': { modules: ['Leads'], why: 'G1 (D136): Finance\'s to-do reads the IRs\' "send the NDA / supplementary" requests (Leads.*_Requested_*) on the viewer\'s own token (D53) — the Finance sharing rule on Leads decides; a row carries the lead\'s name and the request only' },
+  '/api/leads/[id]/conversion': { modules: ['Leads'], why: 'GC-1527 (D137): Finance confirms the 10% on ONE lead by id and creates the investor from it — the lead is read on Finance\'s own token (D53); the Finance sharing rule on Leads decides whether Zoho returns it' },
 };
 const exemptFor = (route, module) => { const e = BOOK_EXEMPT[route]; return !!e && (typeof e === 'string' || e.modules.includes(module)); };
 

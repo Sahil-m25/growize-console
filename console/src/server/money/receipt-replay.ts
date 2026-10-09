@@ -64,7 +64,8 @@ const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export const RECEIPT_KINDS = ["Advance", "Part", "Full", "Refund"] as const;
 export type ReceiptKind = (typeof RECEIPT_KINDS)[number];
-export const RECEIPT_MODES = ["NEFT", "RTGS", "IMPS", "SWIFT", "UPI", "Cheque"] as const;
+import { RECEIPT_MODES } from "../../lib/money/receipt-modes";
+export { RECEIPT_MODES };
 export type ReceiptMode = (typeof RECEIPT_MODES)[number];
 export const ALLOCATION_STATES = ["Reserved", "Issued", "Cancelled"] as const;
 export type AllocationState = (typeof ALLOCATION_STATES)[number];

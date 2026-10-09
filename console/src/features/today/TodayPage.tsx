@@ -61,6 +61,7 @@ import type { DrawerKind } from "@/lib/store";
 import { useConsole } from "@/lib/store";
 import type { ConsoleState } from "@/lib/store";
 import { useGoLead, useGoView } from "@/features/leads/nav";
+import { BalanceChase } from "./BalanceChase";
 import { uiHorizon, uiTchan } from "@/features/leads/ui";
 import { fuPreference } from "@/features/lead/followupContext";
 import { useMoveNextTo } from "@/features/lead/followupWrites";
@@ -146,6 +147,7 @@ function useGoPaper() {
 function WorkToday() {
   const { state, dispatch } = useConsole();
   const goView = useGoView();
+  const goLeadChase = useGoLead("today");
   const moveNextTo = useMoveNextTo();
   const liveMode = useApiMode() === "live";
   /* WORKSELECT / TODAYGROUP / WORKRESCHEDULE / WORKNOTICE are the prototype's page globals; they
@@ -410,6 +412,8 @@ function WorkToday() {
     <>
       {heading(more(true))}
       {workNotice}
+      {/* D137 ruling 3: after Reserved the IR chases the balance — one item per Reserved allotment with the balance still due */}
+      {ir ? <BalanceChase onOpenLead={goLeadChase} /> : null}
       {team && movesWaiting(state).length ? (
         <div className="work-notice">
           <span>{movesWaiting(state).length} ownership requests need a decision.</span>

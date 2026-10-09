@@ -100,6 +100,7 @@ export type AddPaidRefusal =
   | "units-not-free"
   | "allotment-unlinked"
   | "overpaid"
+  | "below-ten-percent"
   | "idempotency-key-invalid"
   | "in-progress";
 
@@ -371,6 +372,9 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     const total = f.units * farm.price;
     if (!Number.isSafeInteger(total)) return refuse(me, "units-invalid", "Not saved yet — units are whole units.", [f.llpId]);
     if (f.amountPaid > total) return refuse(me, "overpaid", "Not saved yet — " + inr(f.amountPaid) + " is more than " + pl(f.units, "unit") + " cost (" + inr(total) + ").", [f.llpId]);
+    /* GC-1527 / D137 ruling 1: an investor record exists only once 10% is in — under that, the money goes on their lead instead */
+    if (f.amountPaid < Math.ceil(total / 10)) return refuse(me, "below-ten-percent", "Not saved yet — " + inr(f.amountPaid) + " is under 10% of "
+      + inr(total) + ". The investor record is created only once Finance confirms 10% (D137): record the money on their lead instead.", [f.llpId]);
     const full = f.amountPaid >= total;
 
     // 2. the Contact, App_Access = Hold (D115 ruling 1: created On hold, released only by unlock.ts). No email is sent from here (D93).

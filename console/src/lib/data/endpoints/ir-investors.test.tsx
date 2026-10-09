@@ -42,10 +42,15 @@ describe("M09-S08-W1 — the IR's list (GET /api/investors/mine)", () => {
     expect(rohit.filter(id => kavya.includes(id))).toEqual([]);
     expect(s.data.INV.filter(x => x.ir === "kavya").map(x => x.id).sort()).toEqual([...kavya].sort());
   });
-  it("AC4: no price, amount, yield, receipt, KYC or identity name anywhere in the answer", () => {
-    const a = ok<unknown>(irInvestorList.fixture({ s: demo(), me: "rohit" }, true));
-    expect(keysOf(a).filter(k => NEVER.test(k))).toEqual([]);
-    expect(JSON.stringify(a)).not.toMatch(/₹|\d{6,}/);
+  it("AC4: no price, amount, yield, receipt, KYC or identity name anywhere in the rows", () => {
+    const a = ok<{ rows: unknown; chase?: { due: number | null }[]; dueReadable?: boolean }>(irInvestorList.fixture({ s: demo(), me: "rohit" }, true));
+    expect(keysOf(a.rows).filter(k => NEVER.test(k))).toEqual([]);
+    expect(JSON.stringify(a.rows)).not.toMatch(/₹|\d{6,}/);
+    /* D137 ruling 3: the balance to-do may carry the amount due ONLY where Zoho's field security shows it to the IR (open question
+       1 vs D69); the demo book holds none, so every `due` is null and dueReadable false */
+    expect(a.dueReadable).toBe(false);
+    expect((a.chase ?? []).every(c => c.due === null)).toBe(true);
+    expect(keysOf(a.chase ?? []).filter(k => NEVER.test(k) && k !== "due")).toEqual([]);
   });
   it("a seat on the Investors side is refused: the list is an IR's own", () => {
     expect(irInvestorList.fixture({ s: demo(), me: "harsha" }, true)).toMatchObject({ ok: false, status: 403 });

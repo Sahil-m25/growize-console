@@ -14,6 +14,7 @@ import {
 import type { ImMoneyDrawerKey, ImPayoutMode } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { AppPreview } from "./preview";
+import { CONVERT_DRAWER_DEFS } from "./convert";
 import { newIdempotencyKey, useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { FarmDocs } from "../paper2/FarmDocs";
 import { farmOne } from "@/lib/data/endpoints/farms";
@@ -362,6 +363,8 @@ export const MONEY_DRAWER_DEFS: Record<ImMoneyDrawerKey, DrawerDef> = {
   applock: { w: 430, t: "Lock app access", sub: nameOf, body: c => <LockBody {...c} />, foot: c => <LockFoot {...c} /> },
   testlink: { w: 430, t: "Test sign-in link", sub: nameOf, body: c => <LinkBody {...c} />, foot: c => <LinkFoot {...c} /> },
   preview: { w: 420, t: "App preview", sub: nameOf, body: c => (c.id ? <AppPreview s={c.s} me={c.me} dispatch={c.dispatch} id={c.id} /> : null), foot: () => null },
+  /* GC-1527 / D137: Money on a lead (Finance confirms the 10%), and mark fully paid by hand */
+  ...CONVERT_DRAWER_DEFS,
 };
 
 /* ---- the receipt drawer's allotment picker (M10-S07): pre-picked when there is one, required when several ---- */
