@@ -15,6 +15,11 @@
  *     and "Zoho is not answering" on screen. Now a refused owner change writes nothing and is said as a refusal
  *     ("owner-change-refused"). Zoho's change_owner e-mail to the new owner is not sent by an update; Finance
  *     finds the ticket in their queue (Tickets, Today).
+ *     W3-KAM-3 (9 Oct 2026): without Change Owner, Zoho answers that PUT SUCCESS and silently drops Owner (the KAM
+ *     still owns it, Modified_Time moved) — the answer was built from what was sent, a false "Finance has it". Now
+ *     the Case is read back after the write: success only when Zoho's Owner is Finance; otherwise any Handed_By /
+ *     Handed_At it did store is put back to empty (guarded by the version just read) and the answer is 403
+ *     owner-change-refused, "Nothing was changed — it is still yours" (409 owner-change-half if that undo fails).
  *     Zoho config (HUMAN; not yet in zoho/access/spec.json): the KAM and AM Head profiles need Edit + Change Owner on Cases, and
  *     Handed_By's lookup must give its user read access to the record (the "keep watching" below).
  *   - the watcher is Handed_By (a user lookup; jev decide a=0.62, PROVISIONAL). The KAM's register reads
@@ -33,7 +38,7 @@ import { scopesFor } from "../data/scope";
 import { ZOHO_SEAT_SIDES } from "../access/policy";
 import type { ZohoSeat, ZohoSeatDirectory } from "../oauth/seat";
 import { seatOrg } from "../teams/teams";
-import { RECORD_ID, str } from "./predicate";
+import { idOf, RECORD_ID, str } from "./predicate";
 import { CASE_FIELDS, CASES_MODULE, caseOf, READ_ONLY_SEATS, type CaseRow } from "./register";
 import { imRightsOf, type ImRights } from "./rights";
 import { istIso, REFUSAL_TEXT as WRITE_TEXT } from "./writes";
@@ -47,7 +52,7 @@ const USERS_PER_PAGE = 200;
 const MAX_USER_PAGES = 10;
 
 export type HandRefusal = "read-only" | "invalid-request" | "no-book" | "not-found" | "not-yours" | "not-finance-work" | "already-finance" | "no-finance"
-  | "owner-change-refused" | "handover-refused";
+  | "owner-change-refused" | "owner-change-half" | "handover-refused";
 
 export const HAND_TEXT: Readonly<Record<HandRefusal, string>> = Object.freeze({
   "read-only": WRITE_TEXT["read-only"],
@@ -59,6 +64,8 @@ export const HAND_TEXT: Readonly<Record<HandRefusal, string>> = Object.freeze({
   "already-finance": "This ticket is already with Finance.",
   "no-finance": "There is nobody on the Finance team to hand this to.",
   "owner-change-refused": "Zoho did not let you hand this ticket on: your Zoho profile may not change a ticket's owner. Nothing was changed — it is still yours. Tell Digital Infrastructure.",
+  /* W3-KAM-3: Zoho kept the owner but the hand-over mark it did store could not be taken back (a newer change, or Zoho down). */
+  "owner-change-half": "Zoho did not let you hand this ticket on — it is still yours — but its \"handed to Finance\" mark could not be taken back. Reload; tell Digital Infrastructure if it still shows as handed.",
   "handover-refused": "Zoho refused the hand-over: a field it writes (Handed By, Handed At or the owner) is missing or hidden from your seat. Nothing was changed — it is still yours. Tell Digital Infrastructure.",
 });
 
@@ -179,9 +186,35 @@ export function createCaseHandover(deps: HandoverDeps) {
         return zohoFail(e.kind);
       }
       await dropCuts();
-      const handed = Object.freeze({ by: me, at: at.slice(0, 16) });
-      const version = put.value.modifiedTime ?? null;   // Zoho's new Modified_Time, from the one write
-      return { ok: true, to, already: false, row: Object.freeze({ ...row, own: to, handed, watched: true, version }) };
+      // W3-KAM-3: Zoho answers the PUT SUCCESS and silently drops Owner when the profile lacks Change Owner (staging,
+      // 9 Oct: owner still the KAM, Modified_Time moved). So success is what Zoho holds afterwards, never what was sent.
+      let back;
+      try {
+        back = await deps.crm.coql(p.credential, `select ${CASE_FIELDS.join(", ")} from ${CASES_MODULE} where id = '${id}' limit 0, 1`, { signal });
+      } catch { return zohoFail("unexpected"); }
+      if (!back.ok) return zohoFail(back.error.kind);
+      const now: ZohoRecord | undefined = back.value.records[0];
+      if (!now) {
+        // Gone from this token's sight: only an owner change can do that to a ticket that was theirs a moment ago. It is
+        // with Finance; Handed_By's user-lookup sharing (HUMAN) is what keeps them watching, and it is not on yet.
+        const handed = Object.freeze({ by: me, at: at.slice(0, 16) });
+        return { ok: true, to, already: false, row: Object.freeze({ ...row, own: to, handed, watched: false, version: put.value.modifiedTime ?? null }) };
+      }
+      const after = caseOf(now);
+      if (after && after.own === to) {
+        return { ok: true, to, already: false, row: Object.freeze({ ...after, watched: true }) };
+      }
+      // The owner did not move. Take back whatever of the hand-over Zoho did store (Handed_By / Handed_At), guarded by
+      // the version just read, so the ticket is exactly as it was — "it is still yours" must be true.
+      const stamped = idOf(now.Handed_By) === me || str(now, "Handed_At", 40) === at;
+      if (stamped) {
+        const since = str(now, "Modified_Time", 40);
+        let undo;
+        try { undo = await deps.crm.update(p.credential, CASES_MODULE, id, { Handed_By: null, Handed_At: null }, { ifUnmodifiedSince: since ?? null, signal }); } catch { undo = null; }
+        if (!undo || !undo.ok) return refuse(me, "owner-change-half", [id, to]);
+        await dropCuts();
+      }
+      return refuse(me, "owner-change-refused", [id, to]);
     },
   });
 }

@@ -14,6 +14,8 @@ vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => ({ value: "s
 vi.mock("@/server/access/guard", () => ({ guardApi: (_route: string, handler: unknown) => handler }));
 vi.mock("@/server/ops/runtime", () => ({ withErrorCapture: (handler: unknown) => handler }));
 vi.mock("@/server/oauth/user-session", () => ({ SID_COOKIE: "sid" }));
+const noteOwnProfile = vi.fn(async () => {});
+vi.mock("@/server/oauth/runtime", () => ({ userSessions: () => ({ noteOwnProfile }) }));
 vi.mock("@/server/oauth/request", () => ({
   sessionCredential: async () => signedIn
     ? { ok: true, credential: { kind: "user", userId: ME }, session: { seat: "ir" } }
@@ -52,6 +54,14 @@ describe("PATCH /api/me", () => {
     const res = await PATCH(json("PATCH", { mobile: "+91 90000 07781" }), ctx);
     expect(res.status).toBe(200);
     expect(update.mock.calls[0]![1]).toEqual({ mobile: "+91 90000 07781" });
+    /* B-26 reopened: the session remembers the mobile Zoho accepted, so /api/session carries it after save and reload */
+    expect(noteOwnProfile).toHaveBeenLastCalledWith("session_fixture_1234567", { mobile: "+919000007781" });
+  });
+  it("B-26: a refused save never touches what the session remembers", async () => {
+    noteOwnProfile.mockClear();
+    update.mockResolvedValue({ ok: false, kind: "refused", reasonCode: "invalid-mobile", reason: "x" });
+    await PATCH(json("PATCH", { mobile: "12" }), ctx);
+    expect(noteOwnProfile).not.toHaveBeenCalled();
   });
   it("a body that names a user id or any field but name, mobile and email is never passed on", async () => {
     update.mockResolvedValue({ ok: true, value: { name: "Asha Rao", mobile: null } });

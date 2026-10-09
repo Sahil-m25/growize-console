@@ -294,8 +294,9 @@
    "name": "KAM",
    "seat": "Key Account Manager",
    "role": "Key Account Manager",
-   "description": "KAM: own investors and allotments by record share; identity and money hidden.",
+   "description": "KAM: own investors and allotments by record share; identity and money hidden. Leads view only (W3-KAM-1): Leads stay private, the KAM reads only its investors' origin leads through Leads.KAM_Access (read-only user-lookup sharing), so a Touch filed on the origin lead is accepted.",
    "modules": {
+    "Leads": "v",
     "Contacts": "ve",
     "LLP_UnitAllocation_Module": "ve",
     "LLP_Creation_Module": "v",

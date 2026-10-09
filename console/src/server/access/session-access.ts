@@ -36,7 +36,7 @@ export interface BadgeReader {
 
 /** The session's one-person book, or null when its seat token maps to no console seat. With `badges`, the person's saved
  *  colour, shape and initials ride on it (B-15/B-26: saved by PUT /api/me/style and never read back); a failed read is no badge. */
-export async function sessionAccessOf(session: ConsoleSession, grants: GrantReader, badges?: BadgeReader, name?: string | null): Promise<SessionAccess | null> {
+export async function sessionAccessOf(session: ConsoleSession, grants: GrantReader, badges?: BadgeReader, name?: string | null, mobile?: string | null): Promise<SessionAccess | null> {
   const zseat = Object.prototype.hasOwnProperty.call(ZOHO_SEAT_OF_TOKEN, session.seat) ? ZOHO_SEAT_OF_TOKEN[session.seat]! : null;
   if (!zseat) return null;
   const sides = ZOHO_SEAT_SIDES[zseat];
@@ -49,7 +49,9 @@ export async function sessionAccessOf(session: ConsoleSession, grants: GrantRead
   /* B-15: the display name Zoho gave at sign-in (blank when Zoho named no one). Initials: the saved badge wins, else the name's. */
   const n = name?.trim() ?? "", ni = n.split(" ").filter(Boolean).slice(0, 2).map((w) => Array.from(w)[0]!.toUpperCase()).join("");
   const ii = i ?? (ni || null);
-  const lead: Person = { ...b.PEOPLE[session.who]!, ...(n ? { n } : {}), ...(c ? { c: c as ColourSlot } : {}), ...(ii ? { i: ii } : {}),
+  /* B-26: the person's OWN mobile, from their own Zoho user (CurrentUser at sign-in / refresh, or the save Zoho just accepted) */
+  const ph = mobile?.trim() ?? "";
+  const lead: Person = { ...b.PEOPLE[session.who]!, ...(n ? { n } : {}), ...(ph ? { ph } : {}), ...(c ? { c: c as ColourSlot } : {}), ...(ii ? { i: ii } : {}),
     ...(typeof st.sq === "boolean" ? { sq: st.sq } : {}) };
   const imP = b.im.P[session.who];
   const im: ImPerson | null = imP ? { ...imP, ...(n ? { n } : {}), ...(c ? { c } : {}), ...(ii ? { i: ii } : {}) } : null;

@@ -47,12 +47,17 @@ const SID = 'sid_fixture_care_000000000000000000000000';
 const ok = (value) => ({ ok: true, value, status: 200, creditsRemaining: null });
 const bad = (kind, extra = {}) => ({ ok: false, error: { kind, status: kind === 'conflict' ? 412 : 500, code: kind, recordId: CONTACT, ...extra }, creditsRemaining: null });
 
-function rig({ me = KAM, grant = { seat: 'kam', ownBook: true }, contact = {}, allotted = true, pan = true, aref = true, fail = {} } = {}) {
+function rig({ me = KAM, grant = { seat: 'kam', ownBook: true }, contact = {}, allotted = true, pan = true, aref = true, fail = {}, leadRead = null } = {}) {
   const calls = [];
   const events = { refusals: [], conflicts: [], refusal(u, a, r, ids) { this.refusals.push({ u, a, r, ids }); }, conflict(u, a, id) { this.conflicts.push({ u, a, id }); } };
   const rec = { id: CONTACT, KAM: { id: KAM }, Origin_Lead: { id: LEAD }, KAM_Intro_At: null, Residency: 'Resident', Modified_Time: MT, ...contact };
   const crm = {
-    async getRecord(cred, module, id, o) { calls.push({ op: 'get', module, id, fields: o.fields, as: cred.userId }); return fail.get ? bad(fail.get) : ok(id === CONTACT ? rec : null); },
+    async getRecord(cred, module, id, o) {
+      calls.push({ op: 'get', module, id, fields: o.fields, as: cred.userId });
+      if (fail.get) return bad(fail.get);
+      if (module === 'Leads') return leadRead ?? ok(id === LEAD ? { id: LEAD } : null);
+      return ok(id === CONTACT ? rec : null);
+    },
     async coql(cred, q) {
       calls.push({ op: 'coql', q, as: cred.userId });
       if (fail.coql) return bad(fail.coql);
@@ -64,6 +69,7 @@ function rig({ me = KAM, grant = { seat: 'kam', ownBook: true }, contact = {}, a
     async update(cred, module, id, fields, o) { calls.push({ op: 'update', module, id, fields, since: o.ifUnmodifiedSince, as: cred.userId }); return fail.update ? bad(fail.update) : ok({ id, modifiedTime: MT2 }); },
     async insert(cred, module, records) {
       calls.push({ op: 'insert', module, records, as: cred.userId });
+      if (fail.insertWith) return fail.insertWith;
       if (fail.insert) return bad(fail.insert);
       return ok([{ index: 0, ok: true, id: module === 'Notes' ? NOTE : TOUCH, code: 'SUCCESS' }]);
     },
@@ -140,6 +146,36 @@ test('logContact: a Zoho failure on the Touch is surfaced as a source error and 
 test('logContact: a Zoho failure reading the Contact is a source error (503), not a refusal', async () => {
   const { care, p } = rig({ fail: { get: 'unavailable' } });
   assert.deepEqual(await care.logContact(p, CONTACT, { expectedModifiedTime: MT, channel: 'call', mood: 'ok' }), { ok: false, kind: 'source-error', errorKind: 'unavailable' });
+});
+
+/* W3-KAM-1: the KAM cannot see the origin lead (owned by an IR, Leads private) — Zoho refuses the Touch's Lead lookup. */
+test('logContact W3-KAM-1: the origin lead hidden from the KAM → 403 origin-lead-hidden, asked BEFORE anything is written', async () => {
+  for (const leadRead of [ok(null), bad('not-found'), { ok: false, error: { kind: 'forbidden', status: 403, code: 'NO_PERMISSION' }, creditsRemaining: null }]) {
+    const { care, calls, events, p } = rig({ leadRead });
+    const r = await care.logContact(p, CONTACT, { expectedModifiedTime: MT, channel: 'call', mood: 'ok' });
+    assert.deepEqual(r, { ok: false, kind: 'refused', reason: 'origin-lead-hidden' });
+    assert.equal(writes(calls).length, 0, 'no introduction, no touch');
+    const g = calls.find((c) => c.op === 'get' && c.module === 'Leads');
+    assert.deepEqual([g.id, g.fields, g.as], [LEAD, ['id'], KAM], 'id only, on the KAM\'s own token');
+    assert.deepEqual(events.refusals.at(-1), { u: KAM, a: 'investor-contact', r: 'origin-lead-hidden', ids: [CONTACT, LEAD] });
+  }
+  assert.equal(CARE_STATUS['origin-lead-hidden'], 403);
+});
+test('logContact W3-KAM-1: Zoho refusing the insert on the Lead lookup is origin-lead-hidden (not "not answering"); the introduction is taken back', async () => {
+  const refusedLead = { ok: false, error: { kind: 'invalid-data', status: 200, code: 'INVALID_DATA', field: 'Lead',
+    records: [{ index: 0, ok: false, id: null, code: 'INVALID_DATA', field: 'Lead', action: null }] }, creditsRemaining: null };
+  const { care, calls, p } = rig({ fail: { insertWith: refusedLead } });
+  const r = await care.logContact(p, CONTACT, { expectedModifiedTime: MT, channel: 'call', mood: 'ok' });
+  assert.deepEqual(r, { ok: false, kind: 'refused', reason: 'origin-lead-hidden' });
+  assert.deepEqual(calls.filter((c) => c.op === 'update').map((c) => c.fields), [{ KAM_Intro_At: '2026-10-06T11:30:00+05:30' }, { KAM_Intro_At: null }]);
+  const other = { ok: false, error: { kind: 'invalid-data', status: 200, code: 'INVALID_DATA', field: 'Channel', records: null }, creditsRemaining: null };
+  const y = rig({ fail: { insertWith: other } });
+  assert.equal((await y.care.logContact(y.p, CONTACT, { expectedModifiedTime: MT, channel: 'call', mood: 'ok' })).reason, 'touch-refused');
+});
+test('logContact W3-KAM-1: a Zoho outage reading the lead stays a source error', async () => {
+  const { care, calls, p } = rig({ leadRead: bad('server') });
+  assert.deepEqual(await care.logContact(p, CONTACT, { expectedModifiedTime: MT, channel: 'call', mood: 'ok' }), { ok: false, kind: 'source-error', errorKind: 'server' });
+  assert.equal(writes(calls).length, 0);
 });
 
 /* ---- saveDetails ---- */

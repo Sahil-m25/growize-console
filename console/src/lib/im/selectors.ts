@@ -327,6 +327,8 @@ export const readOnlySeat = (s: ImCtx, WHO: string): boolean =>
   !(Object.keys(CAN) as ImCan[]).filter(c => !["view", "bank", "pii", "log"].includes(c)).some(c => may(s, WHO, c));
 
 /* ---- the drawer gate ---- */
+/** A Documents row key ("fema:D-041", "supplementary:<allotment id>") or a bare document id → the document id. */
+export const docRefOf = (id: string): string => id.replace(/^[a-z-]+:/, "");
 export function drawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string | null | undefined): boolean {
   if (!s.data.P[WHO] || !may(s, WHO, "view")) return false;
   if (MONEY_DRAWERS.includes(k)) return moneyDrawerReadable(s, WHO, k, id);   /* M10/M11 later decisions: money.ts */
@@ -335,7 +337,14 @@ export function drawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string
     return k === "kam" ? may(s, WHO, "assign") : k === "talk" ? mayCare(s, WHO, x) : k === "details" ? mayDetails(s, WHO, x)
       : k === "pay" ? may(s, WHO, "pay") : k === "send" ? may(s, WHO, "doc") : !notFin(s, WHO);
   }
-  if (k === "verify") { const d = s.data.DOCS.find(x => x.id === id); return !!d && !!I(s, WHO, d.inv) && may(s, WHO, "doc"); }
+  /* W3-E2E-5: live, the demo book holds no documents (DOCS is empty): the row is GET /api/documents' on the person's own
+     token, opened by its key ("<paper>:<record id>"), and the verify / block routes re-derive the right on the press. As for
+     a claim, whether the paper exists is the route's answer; the book is asked only when it holds the paper. */
+  if (k === "verify") {
+    if (!id || !may(s, WHO, "doc")) return false;
+    const d = s.data.DOCS.find(x => x.id === docRefOf(id));
+    return d ? !!I(s, WHO, d.inv) : true;
+  }
   /* M10-S03-W1: whether the report exists is the route's answer (GET /api/claims/[id]), not the book's */
   if (k === "claim") return !!id && !notFin(s, WHO) && may(s, WHO, "pay");
   return k === "tkt" ? may(s, WHO, "tkt") && (!id || !!I(s, WHO, id)) : k === "upd" ? may(s, WHO, "upd") : k === "field" ? may(s, WHO, "field") : false;

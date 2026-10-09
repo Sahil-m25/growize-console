@@ -1,6 +1,6 @@
 void schedule.gz_kam_access_check()
 {
-// D122 nightly safety net (owner: nightly). Read-only: compares KAM_Access on allotments and touches with the
+// D122 nightly safety net (owner: nightly). Read-only: compares KAM_Access on allotments, touches and (W3-KAM-1) leads with the
 // investor's Contacts.KAM and mails Digital Infrastructure the mismatches (module, record id, expected, actual user ids only).
 // Catches what the instant workflows miss: imports/API writes with workflows off, workflow failures, hand edits.
 // D123 Q2: also compares allotment IR_Access with the investor's Contacts.Originating_IR.
@@ -73,7 +73,7 @@ for each  p in pages
 }
 bad = List();
 checked = 0;
-for each  mod in {"LLP_UnitAllocation_Module","Touches"}
+for each  mod in {"LLP_UnitAllocation_Module","Touches","Leads"}
 {
 	done = false;
 	for each  p in pages
@@ -84,7 +84,12 @@ for each  mod in {"LLP_UnitAllocation_Module","Touches"}
 			for each  r in recs
 			{
 				want = "";
-				if(mod == "Touches")
+				if(mod == "Leads")
+				{
+					// W3-KAM-1: an origin lead carries its investor's KAM read-only; any other lead carries none
+					want = ifnull(kamOfLead.get(r.get("id").toString()),"");
+				}
+				else if(mod == "Touches")
 				{
 					if(r.get("Lead") != null)
 					{

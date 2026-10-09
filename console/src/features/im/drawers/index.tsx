@@ -22,7 +22,7 @@ import { allotmentOf, HAND_METHODS, METHOD_OF, NOTHING_CAME_BACK, PAPER_OF_TEMPL
 import type { Paper } from "@/server/documents/list";
 import {
   CHANS, FSTATE, I, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
-  aged, cadence, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
+  aged, cadence, docRefOf, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
   mayDetails, mayCareOn, mayDetailsOn, money, notFin, plusDays, readBook, roundOf, safeNote, tierOf, who,
   fileKind, llpOf, UPLOAD_ACCEPT, uploadCheck, uploadKey,
 } from "@/lib/im";
@@ -511,7 +511,8 @@ function VerifyBody(c: Ctx) {
   const { DREF } = draft(c);
   if (list.state === "loading") return <p className="sm" style={{ margin: 0 }}>Reading the document…</p>;
   if (list.state === "error") return <p className="sm" role="alert" style={{ margin: 0 }}>{list.err.error}</p>;
-  if (!row) return null;
+  /* W3-E2E-5: the drawer now opens on the route's word, so a paper that is not on this person's list says so */
+  if (!row) return <p className="sm" role="alert" style={{ margin: 0 }}>This paper is not on your list any more. Reload Documents.</p>;
   const modified = pre.state === "ok" ? pre.data.modifiedTime ?? "" : "";
   const how: HandMethod = method ?? ((HAND_METHODS as readonly string[]).includes(row.method || "") ? (row.method as HandMethod) : "Uploaded");
   const sg = row.sign, age = sg ? aged(s.data.NOW, sg.sentAt) : null;
@@ -856,7 +857,7 @@ export const DRAWERS: Record<ImDrawerKey, DrawerDef> = {
   send: { w: 440, t: "Send for signature", sub: nameOf, body: c => <SendBody {...c} />, foot: c => <SendFoot {...c} /> },
   verify: {
     w: 430, t: "Verify the signed copy",
-    sub: ({ s, me, id }) => { const d = s.data.DOCS.find(y => y.id === id); return d ? (I(s, me, d.inv) || { n: "" }).n || d.inv : ""; },
+    sub: ({ s, me, id }) => { const d = id ? s.data.DOCS.find(y => y.id === docRefOf(id)) : null; return d ? (I(s, me, d.inv) || { n: "" }).n || d.inv : ""; },
     body: c => <VerifyBody {...c} />, foot: () => null,
   },
   kyc: { w: 430, t: "KYC", sub: c => <CareName {...c} />, body: c => <KycBody {...c} />, foot: c => <KycFoot {...c} /> },

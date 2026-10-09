@@ -45,11 +45,12 @@ export interface CarePrincipal { readonly credential: UserCredential; readonly s
 
 export type CareRefusal =
   | "invalid-request" | "seat-denied" | "not-visible" | "not-yours" | "not-allotted" | "no-origin-lead"
-  | "no-pan" | "no-aadhaar" | "nothing-to-change";
+  | "no-pan" | "no-aadhaar" | "nothing-to-change" | "origin-lead-hidden" | "touch-refused";
 /** HTTP status per refusal (the route answers with these; a refusal is never "not found" — the guard's rule). */
 export const CARE_STATUS: Readonly<Record<CareRefusal, number>> = Object.freeze({
   "invalid-request": 400, "seat-denied": 403, "not-visible": 403, "not-yours": 403, "not-allotted": 422,
   "no-origin-lead": 422, "no-pan": 422, "no-aadhaar": 422, "nothing-to-change": 422,
+  "origin-lead-hidden": 403, "touch-refused": 422,
 });
 export const CARE_TEXT: Readonly<Record<CareRefusal, string>> = Object.freeze({
   "invalid-request": "Not saved — the request is incomplete.",
@@ -61,6 +62,10 @@ export const CARE_TEXT: Readonly<Record<CareRefusal, string>> = Object.freeze({
   "no-pan": "There is no PAN on this record. KYC cannot pass without one.",
   "no-aadhaar": "No Aadhaar verification reference on this record.",
   "nothing-to-change": "Nothing to save — no detail was changed.",
+  /* W3-KAM-1: Zoho refuses a Touch whose Lead lookup points at a lead hidden from the person (INVALID_DATA on Lead) —
+     a sharing gap, not an outage, so it is said as one (D122: Leads.KAM_Access, read-only, synced by GZ KAM Access Sync). */
+  "origin-lead-hidden": "Not saved — Zoho does not yet let your seat see this investor's origin lead, so the conversation cannot be filed on it. Nothing was changed. Tell Digital Infrastructure (KAM access to the origin lead).",
+  "touch-refused": "Not saved — Zoho refused the conversation. Nothing was changed. Tell Digital Infrastructure.",
 });
 
 export type CareResult<V> =
@@ -77,6 +82,8 @@ export const DETAIL_FIELDS = Object.freeze({ ph: "Mobile", em: "Email", city: "M
 export type DetailKey = keyof typeof DETAIL_FIELDS;
 
 const RECORD_ID = /^\d{15,22}$/;
+/** How Zoho answers a read of a record hidden from the token (no sharing, or no module permission). */
+const LEAD_HIDDEN: ReadonlySet<string> = new Set(["not-found", "forbidden", "invalid-data"]);
 const ZOHO_DT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 const PHONE = /^\+?[0-9 ()-]{6,24}$/;
@@ -242,6 +249,13 @@ export function createInvestorCare(deps: CareDeps) {
       if (!al.ok) return source(al.error.kind);
       if (!al.value.records.some((x) => idOf(x.Customer) === c.contactId)) return refuse(me, action, "not-allotted", [c.contactId]);
 
+      // W3-KAM-1: the Touch's Lead lookup must name a lead this token can see, or Zoho refuses the insert (INVALID_DATA on
+      // Lead). Asked first (id only), so nothing — not even the introduction — is written when it cannot be filed.
+      let lr: Awaited<ReturnType<typeof crm.getRecord>>;
+      try { lr = await crm.getRecord(p.credential, "Leads", lead, { fields: ["id"], signal }); } catch { return source("unexpected"); }
+      if (!lr.ok && !LEAD_HIDDEN.has(lr.error.kind)) return source(lr.error.kind);
+      if (!lr.ok || lr.value?.id !== lead) return refuse(me, action, "origin-lead-hidden", [c.contactId, lead]);
+
       const at = istStamp(clock());
       // 1. the introduction, guarded, BEFORE the insert: a 412 here means nothing has been written
       const introduce = idOf(rec.KAM) === me && !str(rec, "KAM_Intro_At", 40);
@@ -253,12 +267,19 @@ export function createInvestorCare(deps: CareDeps) {
       }
       // 2. the touch (D76): channel, when, and the words — the mood rides in the Note (no verified Touches.Mood field)
       const words = CARE_MOODS[c.mood] + (c.note ? " — " + c.note : "");
-      let touchId: string | null = null; let failKind = "unexpected";
+      let touchId: string | null = null; let failKind = "unexpected"; let refusal: CareRefusal | null = null;
       try {
         const r = await crm.insert(p.credential, "Touches", [{
           Name: `${CARE_CHANNELS[c.channel]} ${at}`, Lead: { id: lead }, Channel: CARE_CHANNELS[c.channel], Occurred_At: at, Is_Reply: false, Note: words,
         }], { signal });
-        if (!r.ok) failKind = r.error.kind;
+        if (!r.ok) {
+          failKind = r.error.kind;
+          // Zoho said no (not down): name it — a refused Lead lookup is the sharing gap, anything else a plain refusal
+          if (r.error.kind === "invalid-data" || r.error.kind === "partial") {
+            const blamed = r.error.kind === "invalid-data" ? r.error.field ?? r.error.records?.find((x) => !x.ok)?.field ?? null : r.error.records.find((x) => !x.ok)?.field ?? null;
+            refusal = blamed === "Lead" ? "origin-lead-hidden" : "touch-refused";
+          } else if (r.error.kind === "forbidden") refusal = "touch-refused";
+        }
         const o = r.ok && r.value.length === 1 ? r.value[0] : null;
         touchId = o && o.ok && typeof o.id === "string" && RECORD_ID.test(o.id) ? o.id : null;
       } catch { touchId = null; }
@@ -267,7 +288,7 @@ export function createInvestorCare(deps: CareDeps) {
         if (introduce && modifiedTime) {
           try { await crm.update(p.credential, "Contacts", c.contactId, { KAM_Intro_At: null }, { ifUnmodifiedSince: modifiedTime, signal }); } catch { /* the failure is reported below */ }
         }
-        return source(failKind);
+        return refusal ? refuse(me, action, refusal, [c.contactId, lead]) : source(failKind);
       }
       return { ok: true, value: Object.freeze({ contactId: c.contactId, touchId, introduced: introduce, modifiedTime }) };
     },

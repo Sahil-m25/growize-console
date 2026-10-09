@@ -77,6 +77,19 @@ describe("POST /api/investors/[id]/contact", () => {
       expect(typeof j.error).toBe("string");
     }
   });
+  it("W3-KAM-1: a hidden origin lead is 403 origin-lead-hidden, and Zoho refusing (invalid-data) is never 'not answering'", async () => {
+    logContact.mockResolvedValueOnce(refused("origin-lead-hidden")).mockResolvedValueOnce({ ok: false, kind: "source-error", errorKind: "invalid-data" });
+    const a = await contact.POST(req("POST", body, fresh()), ctx);
+    expect(a.status).toBe(403);
+    const ja = await a.json();
+    expect(ja.code).toBe("origin-lead-hidden");
+    expect(ja.error).toMatch(/origin lead/);
+    const b = await contact.POST(req("POST", body, fresh()), ctx);
+    expect(b.status).toBe(422);
+    const jb = await b.json();
+    expect(jb.code).toBe("invalid-data");
+    expect(jb.error).not.toMatch(/not answering/);
+  });
   it("a body over 4 KB is 413; not configured is 503", async () => {
     expect((await contact.POST(req("POST", { ...body, note: "x".repeat(5000) }, fresh()), ctx)).status).toBe(413);
     configured = false;

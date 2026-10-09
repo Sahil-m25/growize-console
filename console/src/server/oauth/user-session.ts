@@ -165,7 +165,7 @@ export type CallbackResult =
   | { readonly ok: false; readonly code: RefusalCode; readonly message: string; readonly why?: string };
 
 export type CurrentResult =
-  | { readonly ok: true; readonly session: ConsoleSession; readonly expiresAt: number; readonly name?: string }
+  | { readonly ok: true; readonly session: ConsoleSession; readonly expiresAt: number; readonly name?: string; readonly mobile?: string }
   /** why: null when there simply is no session; a reason when this read ended one. */
   | { readonly ok: false; readonly why: SignOutWhy | null };
 
@@ -185,6 +185,9 @@ export interface UserSessions {
   /** D124 staging test sign-in: an enrolled refresh token → an access token → the SAME post-token pipeline the OAuth
    *  callback runs (org check, CurrentUser, seat, admission) → a normal session. The token is never revoked here. */
   signInWithRefreshToken(refreshToken: string): Promise<CallbackResult>;
+  /** B-26: after the person's own profile write that Zoho accepted (PATCH /api/me), what this process remembers of their
+   *  name and mobile follows it at once; the next CurrentUser read (token refresh) re-reads both from Zoho. */
+  noteOwnProfile(sid: string | null | undefined, change: { readonly name?: string | null; readonly mobile?: string | null }): Promise<void>;
 }
 
 /** A person's display name out of Zoho's CurrentUser answer (`users[0].full_name`, else first + last); null when it names no one. */
@@ -195,6 +198,23 @@ export function nameOfCurrentUser(body: unknown): string | null {
   const str = (v: unknown) => (typeof v === "string" ? v : "");
   const n = (str(o.full_name) || [str(o.first_name), str(o.last_name)].filter(Boolean).join(" ")).replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
   return n || null;
+}
+
+/** A phone as the console shows one: an Indian number "+91 XXXXX XXXXX", anything else as Zoho holds it (digits, +, spaces). */
+export function phoneShown(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.replace(/[^\d+ ()-]/g, "").trim().slice(0, 24);
+  if (!t) return null;
+  const d = t.replace(/[\s()-]/g, "");
+  const m = /^(?:\+?91)?([6-9]\d{4})(\d{5})$/.exec(d);   /* an Indian mobile; a landline stays as Zoho holds it */
+  return m ? `+91 ${m[1]} ${m[2]}` : t;
+}
+/** B-26: the person's OWN mobile out of Zoho's CurrentUser answer (`users[0].mobile`, else `phone`); null when it has none.
+ *  Only ever the signed-in person's own user — another user's phone is never read here. */
+export function mobileOfCurrentUser(body: unknown): string | null {
+  const u = body && typeof body === "object" ? (body as { users?: unknown }).users : null;
+  const o = Array.isArray(u) && u[0] && typeof u[0] === "object" ? (u[0] as Record<string, unknown>) : null;
+  return o ? phoneShown(o.mobile) ?? phoneShown(o.phone) : null;
 }
 
 /** The Zoho seat behind a console seat token (CONSOLE_SEAT inverted; Administrator seats have none). */
@@ -213,7 +233,12 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
   const live = new Map<string, UserCredential>();
   /** The person's display name from Zoho's CurrentUser answer (B-15). Memory only, like the credentials: a name is never kept at rest. */
   const names = new Map<string, string>();
-  const remember = (key: string, id: { name: string | null }) => { if (id.name) names.set(key, id.name); else names.delete(key); };
+  /** B-26: the person's own mobile from the same answer — memory only, like the name. */
+  const mobiles = new Map<string, string>();
+  const remember = (key: string, id: { name: string | null; mobile?: string | null }) => {
+    if (id.name) names.set(key, id.name); else names.delete(key);
+    if (id.mobile) mobiles.set(key, id.mobile); else mobiles.delete(key);
+  };
   /** One refresh at a time per session. */
   const refreshing = new Map<string, Promise<CredentialResult>>();
 
@@ -237,7 +262,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
   }
 
   /** Mint the person's credential; the same CurrentUser answer names their seat. */
-  async function identify(grant: TokenGrant): Promise<{ credential: UserCredential; resolution: ReturnType<ZohoSeatDirectory["resolveCurrentUser"]>; name: string | null } | null> {
+  async function identify(grant: TokenGrant): Promise<{ credential: UserCredential; resolution: ReturnType<ZohoSeatDirectory["resolveCurrentUser"]>; name: string | null; mobile: string | null } | null> {
     let body: unknown = null;
     try {
       const credential = await userCredential(normalised(grant), {
@@ -245,7 +270,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
         ...(d.identityFetch ? { fetch: d.identityFetch } : {}),
         onCurrentUser: (b) => { body = b; },
       });
-      return { credential, resolution: d.seats.resolveCurrentUser(body), name: nameOfCurrentUser(body) };
+      return { credential, resolution: d.seats.resolveCurrentUser(body), name: nameOfCurrentUser(body), mobile: mobileOfCurrentUser(body) };
     } catch {
       return null;
     }
@@ -261,7 +286,7 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     if (sid !== undefined && d.onSessionEnd) {
       try { d.onSessionEnd(rec.who, sid); } catch { /* discarding queued work never blocks the sign-out */ }
     }
-    live.delete(key);
+    live.delete(key); names.delete(key); mobiles.delete(key);
     await d.store.delete(key);
     if (revoke && !rec.keepGrant) await revokeQuietly(d.sealer.open(rec.sealedRefresh, key) ?? undefined, rec.who);
     const action = why === "chose" ? "sign-out" : why === "expired" ? "session-expired" : "session-revoked";
@@ -437,7 +462,15 @@ export function createUserSessions(d: UserSessionDeps): UserSessions {
     async current(sid: string | null | undefined): Promise<CurrentResult> {
       const got = await load(sid);
       if (!("key" in got)) return got;
-      return { ok: true, session: { who: got.rec.who, seat: got.rec.seat }, expiresAt: got.rec.expiresAt, ...(names.has(got.key) ? { name: names.get(got.key)! } : {}) };
+      return { ok: true, session: { who: got.rec.who, seat: got.rec.seat }, expiresAt: got.rec.expiresAt, ...(names.has(got.key) ? { name: names.get(got.key)! } : {}),
+        ...(mobiles.has(got.key) ? { mobile: mobiles.get(got.key)! } : {}) };
+    },
+
+    async noteOwnProfile(sid: string | null | undefined, change: { readonly name?: string | null; readonly mobile?: string | null }): Promise<void> {
+      const got = await load(sid);
+      if (!("key" in got)) return;
+      if (typeof change.name === "string" && change.name.trim()) names.set(got.key, change.name.trim().slice(0, 80));
+      if (change.mobile !== undefined) { const m = phoneShown(change.mobile); if (m) mobiles.set(got.key, m); else mobiles.delete(got.key); }
     },
 
     async credential(sid: string | null | undefined): Promise<CredentialResult> {

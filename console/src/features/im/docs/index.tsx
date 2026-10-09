@@ -73,7 +73,8 @@ export function ImDocs({ s, me, dispatch }: ImPageProps) {
                 ? <span className="sm">{safeNote(s, me, (s.data.DOCS.find(x => x.id === d.recordId) || { why: "" }).why)}</span>
                 : may(s, me, "doc") && d.state !== "verified"
                 ? <button className="chip" onClick={e => { e.stopPropagation();
-                  dispatch({ type: "openDrawer", k: "verify", id: d.recordId, seed: { DREF: "" } }); }}>Verify</button> : null}</td></tr>
+                  /* W3-E2E-5: by the row's key — one record (an allotment) carries several papers */
+                  dispatch({ type: "openDrawer", k: "verify", id: d.key, seed: { DREF: "" } }); }}>Verify</button> : null}</td></tr>
           )) : <tr><td colSpan={7}><div className="empty">{shown.state === "loading" ? "Reading…" : S === "out" ? "Nothing out for signature." : "Nothing on file."}</div></td></tr>}
           </tbody></table></div></div></>}
       </div>

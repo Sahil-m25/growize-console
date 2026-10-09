@@ -34,7 +34,8 @@ import {
 
 export type SendRefusal =
   | "invalid-request" | "idempotency-key-invalid" | "idempotency-key-reused" | "seat-denied" | "not-visible" | "already-on-file"
-  | "already-out" | "aadhaar-not-for-nri" | "aadhaar-needs-template" | "no-recipient" | "record-changed" | "busy" | "template-shape";
+  | "already-out" | "aadhaar-not-for-nri" | "aadhaar-needs-template" | "no-recipient" | "record-changed" | "busy" | "template-shape"
+  | "lead-not-shared";
 
 export const SEND_MESSAGE: Readonly<Record<SendRefusal, string>> = Object.freeze({
   "invalid-request": "Not sent — the send is incomplete.",
@@ -50,6 +51,10 @@ export const SEND_MESSAGE: Readonly<Record<SendRefusal, string>> = Object.freeze
   "record-changed": "Not saved yet — the record changed in Zoho. Reload and send again.",
   "busy": "Not saved yet — this send is still going. Wait a moment.",
   "template-shape": "Not sent — that Zoho Sign template does not have exactly one signer. Finance fixes it in Zoho Sign.",
+  /* W3-E2E-2: the NDA lives on the IR's Lead (D79) and Leads are private to their IR (D52). Finance reaches a lead only
+     through the Zoho sharing rule that hands it leads whose NDA round is open — until that rule exists, or for a lead
+     outside it, Zoho hides the lead from Finance's own token. Said as what it is, never as "cannot open this record". */
+  "lead-not-shared": "Not sent — Zoho has not shared this lead with Finance. A lead reaches Finance once its NDA round is open (first touch recorded by the IR). If it is, tell Digital Infrastructure: the Finance sharing rule on Leads is missing.",
 });
 export const NOT_SAVED = "Not saved yet";
 
@@ -120,6 +125,8 @@ const HELD_TTL_MS = 30 * 60_000;
 const SEND_LOCK_S = 120;
 const idOf = (v: unknown): string | null => (v && typeof v === "object" && typeof (v as { id?: unknown }).id === "string" ? (v as { id: string }).id : null);
 const s = (r: ZohoRecord, k: string, max = 200): string | null => (typeof r[k] === "string" && (r[k] as string).trim() !== "" ? (r[k] as string).trim().slice(0, max) : null);
+/** W3-E2E-2: a paper on a Lead that the sender's token cannot read is the Finance sharing gap, not an unknown record. */
+const hiddenCode = (f: PaperFields): "lead-not-shared" | "not-visible" => (f.module === "Leads" ? "lead-not-shared" : "not-visible");
 const isNri = (residency: string | null): boolean => residency !== null && /^(nri|oci)$|non[- ]?resident/i.test(residency);
 
 export function createSignSender(deps: SendDeps) {
@@ -191,7 +198,7 @@ export function createSignSender(deps: SendDeps) {
     const me = cred.userId;
     const f = PAPER_FIELDS[i.paper];
     const party = await readParty(cred, f, i.recordId, signal);
-    if (!party.ok) return party.code === "not-visible" ? refuse(me, "not-visible", [i.recordId]) : { ok: false, kind: "not-saved", errorKind: party.errorKind, message: NOT_SAVED, recalled: false };
+    if (!party.ok) return party.code === "not-visible" ? refuse(me, hiddenCode(f), [i.recordId]) :{ ok: false, kind: "not-saved", errorKind: party.errorKind, message: NOT_SAVED, recalled: false };
     if (verifiedOf(party.rec, f)) return refuse(me, "already-on-file", [i.recordId]);
     const existing = reqIdOf(party.rec, f);
     if (existing) {
@@ -267,7 +274,7 @@ export function createSignSender(deps: SendDeps) {
       const f = PAPER_FIELDS[paper];
       const party = await readParty(cred, f, recordId, signal);
       if (!party.ok) return party.code === "not-visible"
-        ? { ok: false, kind: "refused", reasonCode: "not-visible", message: SEND_MESSAGE["not-visible"] }
+        ? { ok: false, kind: "refused", reasonCode: hiddenCode(f), message: SEND_MESSAGE[hiddenCode(f)] }
         : { ok: false, kind: "source-error", reasonCode: party.errorKind, message: "Zoho is not answering. Try again." };
       const existing = reqIdOf(party.rec, f);
       let current: Prefill["current"] = null;

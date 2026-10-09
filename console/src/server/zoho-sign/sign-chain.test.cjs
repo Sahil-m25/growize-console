@@ -688,3 +688,36 @@ test('D131: in sandbox, CRM send_mail is all-or-nothing and makes no request whe
     assert.ok(r.sink.records().some((x) => x.kind === 'refusal' && x.reason === 'sandbox-mail-blocked'));
   });
 });
+
+/* W3-E2E-2: the NDA lives on the IR's Lead (D79); Leads are private to their IR. Finance's own token reaches a lead only
+ * through the Finance sharing rule on Leads (NDA round open). Hidden → said as the sharing gap; shared → prefill/send work. */
+const NDA_LEAD = `${P}740998601`;
+test('W3-E2E-2: an NDA lead hidden from Finance is "lead-not-shared" on prefill and on send — nothing is sent, the wall is not bypassed', async () => {
+  for (const hidden of [{ status: 204 }, { status: 403, body: { code: 'NO_PERMISSION', status: 'error', message: 'x', details: {} } }]) {
+    const r = rig((c) => (c.host === 'crm' && c.method === 'GET' && c.url.includes(`/Leads/${NDA_LEAD}`) ? hidden : null));
+    const sender = createSignSender({ crm: r.crm, sign: r.sign, log: r.log, clock: () => NOW });
+    const p = await sender.prefill(who(HARSHA, 'fin'), 'nda', NDA_LEAD);
+    assert.deepEqual([p.ok, p.reasonCode], [false, 'lead-not-shared'], JSON.stringify(p));
+    assert.match(p.message, /not shared this lead with Finance/);
+    const s = await sender.commit(who(HARSHA, 'fin'), { paper: 'nda', recordId: NDA_LEAD, method: 'email-otp', source: { kind: 'template', templateId: TPL }, expectedModifiedTime: MOD }, K1);
+    assert.equal(s.reasonCode, 'lead-not-shared');
+    assert.equal(signCalls(r, /POST/).length, 0, 'no Sign request');
+    assert.equal(crmWrites(r).length, 0, 'no CRM write');
+  }
+});
+test('W3-E2E-2: once the lead is shared with Finance, the NDA prefill names the lead\'s person and offers Send; a KAM is still refused', async () => {
+  const lead = ok200({ id: NDA_LEAD, First_Name: 'Synthetic', Last_Name: 'Kiran', Email: 'kiran.fixture@example.invalid', NDA_Sign_Req_Id: null, NDA_Verified_At: null, Modified_Time: MOD });
+  const r = rig((c) => (c.host === 'crm' && c.method === 'GET' && c.url.includes(`/Leads/${NDA_LEAD}`) ? lead : null));
+  const sender = createSignSender({ crm: r.crm, sign: r.sign, log: r.log, clock: () => NOW });
+  const p = await sender.prefill(who(HARSHA, 'fin'), 'nda', NDA_LEAD);
+  assert.equal(p.ok, true, JSON.stringify(p));
+  assert.deepEqual(p.value.recipient, { name: 'Synthetic Kiran', email: 'kiran.fixture@example.invalid' });
+  assert.equal(p.value.maySend, true);
+  assert.equal(p.value.modifiedTime, MOD);
+  assert.equal((await sender.prefill(who(KAMU, 'kam'), 'nda', NDA_LEAD)).reasonCode, 'seat-denied', 'only Finance sends the NDA');
+});
+test('W3-E2E-2: a hidden Contact is still "not-visible" (only a Lead is the Finance sharing gap)', async () => {
+  const r = rig((c) => (c.host === 'crm' && c.url.includes(`/Contacts/${KIRAN}`) ? { status: 204 } : null));
+  const p = await createSignSender({ crm: r.crm, sign: r.sign, log: r.log, clock: () => NOW }).prefill(who(HARSHA, 'fin'), 'fema', KIRAN);
+  assert.equal(p.reasonCode, 'not-visible');
+});

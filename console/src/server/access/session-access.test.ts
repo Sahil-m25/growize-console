@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { ZOHO_SEAT_OF_TOKEN } from "./guard-core";
 import { NO_GRANTS } from "./policy";
 import { sessionAccessOf } from "./session-access";
-import { nameOfCurrentUser } from "../oauth/user-session";
+import { mobileOfCurrentUser, nameOfCurrentUser } from "../oauth/user-session";
 
 const WHO = "554023000000300004";
 const token = Object.entries(ZOHO_SEAT_OF_TOKEN).find(([, s]) => s === "investor-relations")?.[0] ?? Object.keys(ZOHO_SEAT_OF_TOKEN)[0]!;
@@ -45,5 +45,19 @@ describe("sessionAccessOf with a name (B-15)", () => {
     expect(badge?.lead).toMatchObject({ n: "Asha Rao", i: "XY" });
     const blank = await sessionAccessOf(session, NO_GRANTS);
     expect(blank?.lead).toMatchObject({ n: "", i: "" });
+  });
+});
+
+describe("B-26 reopened: the person's own mobile", () => {
+  it("fills ph from the session's own Zoho user; none stays blank", async () => {
+    expect((await sessionAccessOf(session, NO_GRANTS, undefined, "Asha Rao", "+91 90000 07781"))?.lead.ph).toBe("+91 90000 07781");
+    expect((await sessionAccessOf(session, NO_GRANTS, undefined, "Asha Rao"))?.lead.ph).toBe("");
+  });
+  it("reads only the CurrentUser's own mobile (else phone), shown +91 XXXXX XXXXX", () => {
+    expect(mobileOfCurrentUser({ users: [{ mobile: "+919000007781" }] })).toBe("+91 90000 07781");
+    expect(mobileOfCurrentUser({ users: [{ mobile: null, phone: "080-2345 6789" }] })).toBe("080-2345 6789");
+    expect(mobileOfCurrentUser({ users: [{ mobile: "9845033021" }] })).toBe("+91 98450 33021");
+    expect(mobileOfCurrentUser({ users: [{}] })).toBeNull();
+    expect(mobileOfCurrentUser(null)).toBeNull();
   });
 });

@@ -816,3 +816,26 @@ test('D124 mint: the same refusals as the OAuth door — wrong org, no grant, a 
   assert.equal(refused.calls.revoke.length, 0);
   assert.equal((await harness().sessions.signInWithRefreshToken('')).code, 'failed');
 });
+
+/* B-26 reopened (w3b-mobile2): the mobile saved on /me was stored by Zoho but never read back — the person's own Mobile is now
+ * read from their own CurrentUser answer, kept in memory only, and follows a save Zoho accepted. */
+test('B-26: the person\'s own mobile rides in memory from CurrentUser (never the store); a save Zoho accepted updates it; sign-out forgets it', async () => {
+  const MOBILE = '+919000007781';
+  const h = harness({ user: { users: [{ ...accepted('ir-manager').users[0], mobile: MOBILE }] } });
+  const { result } = await signIn(h);
+  assert.equal(result.ok, true);
+  const cur = await h.sessions.current(result.sid);
+  assert.equal(cur.mobile, '+91 90000 07781', 'shown the console\'s way');
+  assert.ok(!JSON.stringify(h.store.raw()).includes('9000007781'), 'never at rest');
+  await h.sessions.noteOwnProfile(result.sid, { mobile: '+919845033021' });
+  assert.equal((await h.sessions.current(result.sid)).mobile, '+91 98450 33021');
+  await h.sessions.noteOwnProfile(result.sid, { mobile: null });
+  assert.equal((await h.sessions.current(result.sid)).mobile, undefined, 'cleared');
+  await h.sessions.noteOwnProfile('not-a-session', { mobile: '+919845033021' });
+  await h.sessions.noteOwnProfile(result.sid, { mobile: '+919845033021' });
+  await h.sessions.signOut(result.sid);
+  assert.equal((await h.sessions.current(result.sid)).ok, false);
+  const none = harness();
+  const s2 = await signIn(none);
+  assert.equal((await none.sessions.current(s2.result.sid)).mobile, undefined, 'no mobile in Zoho is no mobile');
+});

@@ -30,7 +30,14 @@ async function patch(req: Request) {
   const sessionId = (await cookies()).get(SID_COOKIE)?.value ?? "";
   const r = await meRuntime().profile.update({ credential: s.credential, sessionId },
     { ...("name" in b ? { name: b.name as string } : {}), ...("mobile" in b ? { mobile: b.mobile as string | null } : {}), ...("email" in b ? { email: b.email } : {}) }, req.signal);
-  if (r.ok) return Response.json(r.value, { headers: NO_STORE });
+  if (r.ok) {
+    /* B-26: the session's own name / mobile follow what Zoho just accepted, so /api/session shows it on reload */
+    try {
+      const { userSessions } = await import("@/server/oauth/runtime");
+      await userSessions().noteOwnProfile(sessionId, { ...(r.value.name ? { name: r.value.name } : {}), ...("mobile" in b ? { mobile: r.value.mobile } : {}) });
+    } catch { /* the save stands; the next CurrentUser read brings it */ }
+    return Response.json(r.value, { headers: NO_STORE });
+  }
   if (r.kind === "refused") return Response.json({ error: `Nothing changed — ${r.reason}.`, code: r.reasonCode }, { status: STATUS[r.reasonCode] ?? 422, headers: NO_STORE });
   return Response.json({ error: "Nothing changed — Zoho did not accept it. Try again.", code: r.errorKind }, { status: 502, headers: NO_STORE });
 }

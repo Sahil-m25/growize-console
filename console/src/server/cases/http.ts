@@ -69,7 +69,7 @@ const WRITE_STATUS: Readonly<Record<string, number>> = Object.freeze({
   "not-found": 404, "invalid-request": 400, "not-in-book": 422, "identity-in-reply": 422, "identity-in-text": 422,
   "audience-not-in-zoho": 422, "empty-segment": 422, "segment-too-large": 422,
   "not-finance-work": 422, "already-finance": 409, "no-finance": 409,   /* M13-S04 hand to Finance */
-  "owner-change-refused": 403, "handover-refused": 502,                 /* W2-KAM-6: Zoho refused the one hand-over write; nothing written */
+  "owner-change-refused": 403, "owner-change-half": 409, "handover-refused": 502,                /* W2-KAM-6: Zoho refused the one hand-over write; nothing written */
 });
 /** W2-KAM-6: Zoho REFUSING a write is not Zoho down — said as a refusal, never "not answering". */
 const WRITE_REFUSED: Readonly<Record<string, readonly [number, string]>> = Object.freeze({

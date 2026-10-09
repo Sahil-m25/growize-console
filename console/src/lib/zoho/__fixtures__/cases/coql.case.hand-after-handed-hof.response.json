@@ -1,0 +1,41 @@
+{
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": {
+  "data": [
+   {
+    "id": "554023000000500114",
+    "Case_Number": "C-114",
+    "Subject": "Change the bank account for payouts",
+    "Description": "fixture",
+    "Related_To": {
+     "id": "554023000000400205",
+     "name": "x"
+    },
+    "Owner": {
+     "id": "554023000000300007",
+     "name": "x"
+    },
+    "Priority": "High",
+    "Status": "New",
+    "Case_Origin": "Web",
+    "Created_Time": "2026-09-26T10:00:00+05:30",
+    "Ticket_Category": "Bank",
+    "SLA_Due": "2026-09-30T10:00:00+05:30",
+    "Closed_At": null,
+    "Handed_By": {
+     "id": "554023000000300011",
+     "name": "x"
+    },
+    "Handed_At": "2026-09-28T11:30:00+05:30",
+    "Modified_Time": "2026-09-28T11:30:00+05:30"
+   }
+  ],
+  "info": {
+   "count": 1,
+   "more_records": false
+  }
+ }
+}
