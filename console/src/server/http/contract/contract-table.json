@@ -567,6 +567,9 @@
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
    }
   },
+  "/api/investors/app-activity": {
+   "GET": {}
+  },
   "/api/investors/finance": {
    "GET": {
     "needsSandbox": "needs sandbox: every seat the suite can sign in is refused inside the handler or its reads need Zoho records (no recorded fixture for this book)"
