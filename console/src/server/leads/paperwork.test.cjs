@@ -684,7 +684,7 @@ test('G1: "Ask Finance to send the supplementary" once the final draft is agreed
   const r = rig({ ...routes, [LEAD_PUT]: 'lead.updated' });
   const res = await r.svc.step(principal(), { leadId: LEAD, round: 'supp', beat: 'request', rowToken: o.rowToken });
   assert.equal(res.ok, true, JSON.stringify(res));
-  assert.deepEqual(r.writes()[0].body.data[0], { Supp_Requested_At: '2026-09-28T11:00:00+05:30', Supp_Requested_By: { id: IR } });
+  assert.deepEqual(r.writes()[0].body.data[0], { Supp_Requested_At: '2026-09-28T11:00:00+05:30' });
   const sent = rig({ ...routes, 'COQL from LLP_UnitAllocation_Module': 'coql.allotment-supp-sent' });
   assert.equal((await sent.svc.step(principal(), { leadId: LEAD, round: 'supp', beat: 'request', rowToken: o.rowToken })).reasonCode, 'already-sent');
 });

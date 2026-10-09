@@ -88,10 +88,11 @@ export const BACK_FIELDS = Object.freeze({
 });
 /** G1: the IR's ask that Finance send the round's paper (PROPOSED names, D136) — written here by the IR, read by Finance's queue. */
 export const REQUEST_FIELDS = Object.freeze({
-  nda: Object.freeze({ at: "NDA_Requested_At", by: "NDA_Requested_By" }),
-  supp: Object.freeze({ at: "Supp_Requested_At", by: "Supp_Requested_By" }),
+  nda: Object.freeze({ at: "NDA_Requested_At", by: "NDA_Requested_By" } as { readonly at: string; readonly by?: string }),
+  /* No "by" for the supplementary: Leads is at its user-lookup limit (Zoho LIMIT_EXCEEDED), so Finance reads the lead's Owner. */
+  supp: Object.freeze({ at: "Supp_Requested_At" } as { readonly at: string; readonly by?: string }),
 });
-export const REQUEST_LEAD_FIELDS: readonly string[] = Object.freeze(Object.values(REQUEST_FIELDS).flatMap((f) => [f.at, f.by]));
+export const REQUEST_LEAD_FIELDS: readonly string[] = Object.freeze(Object.values(REQUEST_FIELDS).flatMap((f) => (f.by ? [f.at, f.by] : [f.at])));
 type AnyRoundFields = { readonly [k: string]: string };
 const fieldsOf = (rk: RoundKey): AnyRoundFields => ROUND_FIELDS[rk] as AnyRoundFields;
 /** Every proposed field, for the report and the field-contract test. */
@@ -505,7 +506,7 @@ export function createPaperwork(deps: PaperworkDependencies) {
           draftVersion = int(L[f.draftVersion!]) || null;
           Object.assign(fields, { [f.agreedAt!]: now, [f.agreedBy!]: meRef, [f.agreedVersion!]: draftVersion, [f.agreedRef!]: ref ?? str(L[f.draftRef!]) });
           break;
-        case "request": Object.assign(fields, { [REQUEST_FIELDS[rk].at]: now, [REQUEST_FIELDS[rk].by]: meRef }); break;
+        case "request": { const rf = REQUEST_FIELDS[rk]; Object.assign(fields, { [rf.at]: now, ...(rf.by ? { [rf.by]: meRef } : {}) }); break; }
       }
       const snapshot: Record<string, string | number | null | { id: string }> = {};
       for (const k of Object.keys(fields)) {

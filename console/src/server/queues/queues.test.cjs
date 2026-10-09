@@ -234,7 +234,7 @@ test('W2-KAM-3 / W2-KAM-4: Last heard counts only the account KAM\'s own touches
 const LEAD_A = `${P}740996101`, LEAD_B = `${P}740996102`, LEAD_C = `${P}740996103`;
 const reqLead = (id, first, at, by, extra = {}) => ({ id, First_Name: first, Last_Name: 'Synthetic', NDA_Requested_At: at, NDA_Requested_By: { id: IR },
   'NDA_Requested_By.full_name': by, NDA_Sign_Req_Id: null, NDA_Verified_At: null, ...extra });
-const suppLead = (id, first, at) => ({ id, First_Name: first, Last_Name: 'Synthetic', Supp_Requested_At: at, Supp_Requested_By: { id: IR }, 'Supp_Requested_By.full_name': 'Rohit Iyer' });
+const suppLead = (id, first, at) => ({ id, First_Name: first, Last_Name: 'Synthetic', Supp_Requested_At: at, Owner: { id: IR, name: 'Rohit Iyer' }, 'Owner.full_name': 'Rohit Iyer' });
 
 test('G1: "Send the NDA — requested by <IR> n days ago" for each lead asked for and not yet sent, oldest first, linking to the send panel', async () => {
   const ndaReq = ok([reqLead(LEAD_A, 'Kiran', '2026-09-26T09:00:00+05:30', 'Rohit Iyer'), reqLead(LEAD_B, 'Meera', '2026-09-28T09:00:00+05:30', 'Kavya Rao'),

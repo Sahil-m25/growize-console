@@ -55,7 +55,7 @@ const KYC_FIELDS: readonly string[] = (() => {
 /* G1 (D136 proposed): the IRs' "ask Finance to send it" (Leads.*_Requested_At / _Requested_By, written by server/leads/paperwork). */
 export const LEADS_MODULE = "Leads";
 const NDA_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "NDA_Requested_At", "NDA_Requested_By", "NDA_Sign_Req_Id", "NDA_Verified_At"]);
-const SUPP_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "Supp_Requested_At", "Supp_Requested_By"]);
+const SUPP_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "Supp_Requested_At", "Owner"]);   // the requester is the lead's Owner: Leads has no room for a Supp_Requested_By user lookup
 const NDA_REQUEST_WHERE = coqlAll(["NDA_Requested_At is not null", "NDA_Sign_Req_Id is null", "NDA_Verified_At is null", "Lost_At is null"]);
 const SUPP_REQUEST_WHERE = coqlAll(["Supp_Requested_At is not null", "Lost_At is null"]);
 const KYC_WHERE ="(KYC not in ('Completed', 'NA') or KYC is null) or (FEMA_Applicable = true and FEMA_Verified_At is null)";
@@ -288,7 +288,7 @@ export function createInvestorQueues(deps: QueueDeps) {
 
     // Supplementary: asked for on the Lead; it is sent on the investor's allotment, so a live allotment carrying a Sign request
     // (or a verified copy) means it is out. A read that cannot say is a problem, never a row and never a silent "nothing".
-    const sp = await requestedLeads(cred, SUPP_REQUEST_FIELDS, "Supp_Requested_By", SUPP_REQUEST_WHERE, signal);
+    const sp = await requestedLeads(cred, SUPP_REQUEST_FIELDS, "Owner", SUPP_REQUEST_WHERE, signal);
     if (!sp.ok) failedOn(sp.kind === "refused" ? sp.reason : sp.errorKind);
     else if (sp.rows.length) {
       if (sp.truncated) problems.push("send-requests:truncated");
@@ -312,7 +312,7 @@ export function createInvestorQueues(deps: QueueDeps) {
             const at = str(r, "Supp_Requested_At", 40), days = daysSince(at, now);
             rows.push(Object.freeze({ key: `send:supp:${r.id}`, kind: "send",
               investor: Object.freeze({ id: ct ? ct.id : r.id, name: (ct && leadName(ct)) || leadName(r) }),
-              text: sendText("supplementary", byName(r, "Supp_Requested_By"), days), urg: "now", days, action: "Send it",
+              text: sendText("supplementary", byName(r, "Owner"), days), urg: "now", days, action: "Send it",
               ref: Object.freeze({ leadId: r.id, ...(ct ? { contactId: ct.id } : {}), paper: "supplementary" }) }));
           }
         }
