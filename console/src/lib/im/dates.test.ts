@@ -65,3 +65,17 @@ describe("W3-2: the origin lead is named in words, never a raw Zoho record id", 
     expect(leadWords({ lead: "1454168000003022169" })).toBeNull();
   });
 });
+
+describe("W3-E2E-6: one hold end, one count (rule 9)", () => {
+  it("holdDaysLeft counts IST calendar days, whatever the hour or the browser zone, and is the server's daysLeft", async () => {
+    const { holdDaysLeft } = await import("./dates");
+    const { daysLeft } = await import("../../server/holds/rules");
+    const at = (iso: string) => Date.parse(iso);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-09T12:00:00+05:30"))).toBe(16);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-09T23:59:00+05:30"))).toBe(16);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-10T00:01:00+05:30"))).toBe(15);
+    expect(holdDaysLeft("2026-10-25T00:00:00+05:30", at("2026-10-25T09:00:00+05:30"))).toBe(0);
+    expect(holdDaysLeft("2026-10-25", at("2026-10-27T09:00:00+05:30"))).toBe(-2);
+    for (const t of ["2026-10-09T12:00:00+05:30", "2026-10-09T23:59:00+05:30", "2026-10-10T00:01:00+05:30"]) expect(daysLeft("2026-10-25", at(t))).toBe(holdDaysLeft("2026-10-25", at(t)));
+  });
+});

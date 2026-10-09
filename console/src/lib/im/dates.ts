@@ -84,3 +84,14 @@ export const inr = (n: number | null | undefined): string => "₹" + Math.round(
 export const money = (v: number): string =>
   v >= 1e7 ? "₹" + (v / 1e7).toFixed(v % 1e7 ? 2 : 0) + " Cr"
     : v >= 1e5 ? "₹" + (v / 1e5).toFixed(v % 1e5 ? 1 : 0) + " L" : inr(v);
+
+/* ── THE hold clock (rule 9): days from today's Asia/Kolkata calendar day to the hold's last day ───────────────
+   The server (holds/rules daysLeft: Finance's Today, the holds read, the record banner) and the screens that count it
+   themselves (the IR's lead alert) all call this one function, so one hold end is one number. */
+const DAY_MS = 86_400_000;
+/** The Asia/Kolkata calendar day ("YYYY-MM-DD") of an instant. */
+export const istDayOf = (ms: number): string => new Date(ms + IST_MS).toISOString().slice(0, 10);
+/** Days from today (IST) to `holdDay` ("YYYY-MM-DD"); 0 on the last day, negative once the hold has run out. */
+export function holdDaysLeft(holdDay: string, nowMs: number): number {
+  return Math.round((Date.parse(`${holdDay.slice(0, 10)}T00:00:00Z`) - Date.parse(`${istDayOf(nowMs)}T00:00:00Z`)) / DAY_MS);
+}

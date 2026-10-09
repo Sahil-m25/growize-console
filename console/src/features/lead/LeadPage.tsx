@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { FCAT, LADDER, LOSTWHY, NAV, OBJS, ST, TOUCHCHANNELS, UNIT } from "@/domain";
 import type { Channel, Lead, NavKey } from "@/domain";
 import type { DrawerKind } from "@/lib/store";
+import { holdDaysLeft } from "@/lib/im/dates";
 import { DAY, dISOtoDisp, hhmm, iso, money, nowT, plusD, when, whenT } from "@/lib/format";
 import {
   active, canAssign, canClaim, canDecideMove, canLose, canNote, canOperateLeads, canPlan, canReach,
@@ -520,7 +521,7 @@ export function LeadPage({ id }: { id: string }) {
   /* M08-S04-W1: the reservation clock's day is the gate route's `holdUntil` */
   if (gate.state === "ok" && gate.data.holdUntil) {
     const hold = holdDay(gate.data.holdUntil);
-    const dl = Math.round((new Date(gate.data.holdUntil + "T00:00:00").getTime() - state.NOW.getTime()) / DAY);
+    const dl = holdDaysLeft(gate.data.holdUntil, state.NOW.getTime());   /* rule 9: the one IST function Finance's Today uses */
     al("hold", dl <= 3 ? "bad" : "due", <><b>Reservation {dl < 0 ? "lapsed " + -dl + " days ago" : dl + " days left"}</b> — the balance is due by {hold}.</>, <button type="button" className="chip" onClick={() => open("hold")}>Details</button>);
   }
   if (!TOUCHCHANNELS.some((k) => conFor(l, k))) al("perm", "bad", <><b>No contact permission yet.</b> Record it before reaching out.</>,

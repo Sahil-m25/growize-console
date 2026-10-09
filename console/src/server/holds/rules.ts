@@ -18,6 +18,7 @@
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { FORFEIT } from "../../lib/im/constants";
+import { holdDaysLeft } from "../../lib/im/dates";
 import { factEventId, holdUntilFrom, istDay, istIso } from "../money/match";
 import { INBOUND_KINDS as LEDGER_INBOUND, ledgerOf, LEDGER_KINDS, REFUND_KIND as LEDGER_REFUND, signedOf, standingOf, type LedgerEntry } from "../money/ledger";
 
@@ -31,16 +32,13 @@ export const URGENT_DAYS = 3;
 export const INBOUND_KINDS: ReadonlySet<string> = LEDGER_INBOUND;
 export const REFUND_KIND = LEDGER_REFUND;
 
-const DAY_MS = 86_400_000;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** "YYYY-MM-DD" of a Zoho date/datetime, or null. */
 export const dayOf = (v: unknown): string | null => (typeof v === "string" && DAY.test(v.slice(0, 10)) ? v.slice(0, 10) : null);
 
 /** Days from today (IST) to the hold's last day; 0 on the last day, negative once it has run out. */
-export function daysLeft(holdDay: string, nowMs: number): number {
-  return Math.round((Date.parse(`${holdDay}T00:00:00Z`) - Date.parse(`${istDay(nowMs)}T00:00:00Z`)) / DAY_MS);
-}
+export const daysLeft = (holdDay: string, nowMs: number): number => holdDaysLeft(holdDay, nowMs);
 
 /** The deadline as the contract carries it: the end of the hold's last day in Asia/Kolkata. */
 export const deadlineIso = (holdDay: string): string => `${holdDay}T23:59:59+05:30`;
