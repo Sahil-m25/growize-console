@@ -1007,6 +1007,9 @@
    }
   },
   "/api/leads/[id]/touches": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads the lead's Touches on the person's own Zoho token (no recorded fixture for this read)"
+   },
    "POST": {
     "body": {
      "type": "json",
