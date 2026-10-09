@@ -29,7 +29,9 @@ import { appCard } from "@/lib/data/endpoints/app";
 import { amBook, amManagers, financeInvestors, investorRecord, investorSearch, irInvestorList, type AmManagers } from "@/lib/data/endpoints/investors";
 import { caseList } from "@/lib/data/endpoints/cases";
 import { dayOf as docDay, documentsList } from "@/lib/data/endpoints/documents";
-import { SIGN_CLOSED, type DocRow } from "@/server/documents/list";
+import type { DocRow } from "@/server/documents/list";
+/* the same closed-state test as server/documents/list (kept here so the client bundle never imports server code) */
+const SIGN_CLOSED = /^(declined|recalled|expired)$/i;
 import { useGoLead } from "@/features/leads/nav";
 import type { NavKey } from "@/domain";
 import type { IrInvestorRow } from "@/server/investors/ir-list";
