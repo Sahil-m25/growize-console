@@ -18,6 +18,8 @@ import { DocTag, ImPname, ImSecBar, KycTag, Pii, ProvIR, StTag } from "../common
 import type { ImPageProps, ImSec } from "../common";
 import { TkRow } from "./TkRow";
 import { KamControl } from "./KamControl";
+import { AppActivityCard, AppBadge, useAppActivity } from "./AppActivity";
+import { nudgeIds } from "@/lib/im/app-activity";
 import { AllotCard, AppAccessCard, ArlHoldings, MoneyBlocks } from "../money/record";
 import { AddInvestorButton } from "../money/pages";
 import { InvEmails } from "../paper2/Emails";
@@ -109,10 +111,13 @@ function VInv({ s, me, dispatch }: ImPageProps) {
   const dq = useDebounced(s.ui.IQ, 200);
   const sr = useApiRead(investorSearch, { s, me }, { q: dq, farm: null });
   const frows = fin.state === "ok" ? fin.data.rows : [];
+  /* GC-1525: the "App:" column and the "Invited, never signed in" cut come from what the investor app wrote back */
+  const act = useAppActivity({ s, me }, am ? base.map(x => x.id) : null);
   /* each cut is its title and the ids it holds (the AM seat's over the book, Finance's over the route's rows) */
   const EXC: Record<string, [string, Set<string>]> = {};
   if (am) for (const [k, [t, f]] of Object.entries(invExceptions(s, me))) EXC[k] = [t, new Set(base.filter(f).map(x => x.id))];
   else for (const [k, [t, f]] of Object.entries(FIN_EXC)) EXC[k] = [t, new Set(frows.filter(f).map(x => x.id))];
+  if (am && act.map) EXC.appnever = ["Invited, never signed in", nudgeIds([...act.map.values()], act.unavailable)];
   /* the prototype clears an IFILT this seat has no cut for; the render simply reads it as none */
   const IFILT = s.ui.IFILT && EXC[s.ui.IFILT] ? s.ui.IFILT : null;
   const cut = IFILT ? EXC[IFILT][1] : null;
@@ -147,13 +152,13 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           const n = count(k, f.size);
           return n ? (
             <button key={k} className={`sc ${IFILT === k ? "on" : ""}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: k } })}>{t}{" "}
-              <i className={["kyc", "fema", "quiet", "nokam", "conc"].includes(k) ? "warn" : ""}>{n}</i></button>
+              <i className={["kyc", "fema", "quiet", "nokam", "conc", "appnever"].includes(k) ? "warn" : ""}>{n}</i></button>
           ) : null;
         })}
       </div>
       <div className="secw"><div className="card fill"><div className="tw"><table>
         <thead><tr><th>Investor</th><th>ARL ID</th><th className="n">Units</th>
-          {am ? <><th>Tier</th><th>Manager</th><th>Last heard</th><th>Next owed</th><th>Land</th></>
+          {am ? <><th>Tier</th><th>Manager</th><th>Last heard</th><th>Next owed</th><th>Land</th><th>App</th></>
             : <><th>Land</th><th>State</th><th>KYC</th><th className="n">Paid</th><th className="n">Due</th><th>IR</th></>}
         </tr></thead>
         <tbody>{(am ? rows.length : finShown.length) || stubs.length ? (am ? rows.map(x => {
@@ -170,6 +175,7 @@ function VInv({ s, me, dispatch }: ImPageProps) {
                 : o > 0 ? <span className="tag late"><span className="dot" />{o}d overdue</span>
                   : <span className={`tag ${o > -14 ? "due" : ""}`}>in {-o}d</span>}</td>
               <td className="sm">{blocksText(x) || "—"}</td>
+              <td><AppBadge a={act.map?.get(x.id)} loaded={!!act.map} unavailable={act.unavailable} /></td>
             </tr>
           );
         }) : finShown.map(x => (
@@ -186,9 +192,9 @@ function VInv({ s, me, dispatch }: ImPageProps) {
           <tr key={h.id} className="k" tabIndex={0} onClick={() => go(h.id)} onKeyDown={e => { if (e.key === "Enter") go(h.id); }}>
             <td><b>{h.name}</b><div className="sm">{h.city ?? ""}</div></td>
             <td className="mono sm">{h.code}</td>
-            <td className="sm" colSpan={am ? 6 : 7}>{h.phoneLast4 ? "mobile ····" + h.phoneLast4 : "—"}</td>
-          </tr>))) : sr.state === "loading" ? <tr><td colSpan={am ? 8 : 9}><div className="empty">Searching…</div></td></tr>
-        : <tr><td colSpan={am ? 8 : 9}><div className="empty">Nobody matches that.{s.ui.IQ.trim()
+            <td className="sm" colSpan={7}>{h.phoneLast4 ? "mobile ····" + h.phoneLast4 : "—"}</td>
+          </tr>))) : sr.state === "loading" ? <tr><td colSpan={9}><div className="empty">Searching…</div></td></tr>
+        : <tr><td colSpan={9}><div className="empty">Nobody matches that.{s.ui.IQ.trim()
           ? <div className="sm">{"No investor you can open matches “" + s.ui.IQ.trim() + "”"
             + (IFILT ? " under " + EXC[IFILT][0] : "") + "."}</div> : null}</div></td></tr>}
         </tbody></table></div></div></div>
@@ -214,7 +220,11 @@ function VIrInv({ s, me, dispatch }: ImPageProps) {
   const r = useApiRead(irInvestorList, { s, me }, true);
   const q = s.ui.IQ.trim().toLowerCase();
   const all = r.state === "ok" ? r.data.rows : [];
-  const rows = q ? all.filter(x => irText(x).includes(q)) : all;
+  /* GC-1525: "App:" per investor, and the cut "Invited, never signed in" — who still needs a nudge until they convert */
+  const act = useAppActivity({ s, me }, all.map(x => x.id));
+  const never = act.map ? nudgeIds([...act.map.values()], act.unavailable) : new Set<string>();
+  const cut = s.ui.IFILT === "appnever" && never.size ? never : null;
+  const rows = (q ? all.filter(x => irText(x).includes(q)) : all).filter(x => !cut || cut.has(x.id));
   const go = (id: string) => dispatch({ type: "go", v: "inv", id });
   return (
     <>
@@ -224,9 +234,13 @@ function VIrInv({ s, me, dispatch }: ImPageProps) {
         <input className="inp" style={{ width: 210 }} placeholder="Name, ARL ID, farm…" value={s.ui.IQ} aria-labelledby="inv-sub"
           id="iq" onChange={e => dispatch({ type: "setFilter", patch: { IQ: e.target.value } })} /></div>
       {r.state === "error" ? <div className="note bad" role="alert" style={{ marginBottom: 8 }}>{r.err.error}</div> : null}
-      <div className="secbar"><button className="sc on">Everyone <i>{all.length}</i></button></div>
+      <div className="secbar">
+        <button className={`sc ${cut ? "" : "on"}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: null } })}>Everyone <i>{all.length}</i></button>
+        {never.size ? <button className={`sc ${cut ? "on" : ""}`} onClick={() => dispatch({ type: "setFilter", patch: { IFILT: "appnever" } })}>
+          Invited, never signed in <i className="warn">{never.size}</i></button> : null}
+      </div>
       <div className="secw"><div className="card fill"><div className="tw"><table>
-        <thead><tr>{IR_COLS.map(c => <th key={c}>{c}</th>)}</tr></thead>
+        <thead><tr>{IR_COLS.map(c => <th key={c}>{c}</th>)}<th>App</th></tr></thead>
         <tbody>{rows.length ? rows.map(x => (
           <tr key={x.id} className="k" tabIndex={0} onClick={() => go(x.id)} onKeyDown={e => { if (e.key === "Enter") go(x.id); }}>
             <td><b>{x.name}</b></td>
@@ -234,8 +248,9 @@ function VIrInv({ s, me, dispatch }: ImPageProps) {
             <td className="sm">{irFarms(x)}</td>
             <td>{x.state ? <StTag x={{ st: x.state } as ImInvestor} st={x.state} /> : <span className="sm">—</span>}</td>
             <td>{x.leadId ? <LeadLink id={x.leadId} name={x.name} /> : <span className="sm">—</span>}</td>
+            <td><AppBadge a={act.map?.get(x.id)} loaded={!!act.map} unavailable={act.unavailable} /></td>
           </tr>
-        )) : <tr><td colSpan={IR_COLS.length}>{r.state === "loading" || r.state === "idle" ? <div className="empty">Reading your investors…</div>
+        )) : <tr><td colSpan={IR_COLS.length + 1}>{r.state === "loading" || r.state === "idle" ? <div className="empty">Reading your investors…</div>
           : <div className="empty">{q ? "Nobody matches that." : "None of your leads has said yes yet."}
             {q ? <div className="sm">{"No investor from your leads matches “" + s.ui.IQ.trim() + "”."}</div> : null}</div>}</td></tr>}
         </tbody></table></div></div></div>
@@ -354,6 +369,8 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         {/* M12-S09 — the record's emails sit under "Who they are" rather than as a section of their own,
             so the record keeps exactly the prototype's sections */}
         {S === "who" ? <InvEmails s={s} me={me} id={x.id} /> : null}
+        {/* GC-1525 — App activity: what the investor app wrote back about sign-ins (KAM, Head of AM, Finance; the IR read-only) */}
+        {S === "who" ? <AppActivityCard s={s} me={me} id={x.id} /> : null}
         {S === "hold" ? (p.irSeat ? <IrHold s={s} x={x} /> : <SecHold {...p} ho={ho} rec={rec} />) : null}
         {S === "care" ? <SecCare {...p} heard={heard} hr={hr} o={o} /> : null}
         {S === "money" ? (

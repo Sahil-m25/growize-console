@@ -164,6 +164,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/activity": { kind: "session" },
   "/api/investors": { kind: "session" },
   "/api/investors/search": { kind: "page", page: "inv" },   /* M09-S07 Investors search: scope decided inside (ir-guard contactsWhere) */
+  "/api/investors/app-activity": { kind: "page", page: "inv" },   /* GC-1525 App activity (sign-ins the investor app wrote back): read on the person's own token; server/investors/app-activity applies the seat's own book scope inside */
   "/api/investors/mine": { kind: "page", page: "inv" },   /* M09-S08 an IR's Investors list: the IR holds the Investors page (D113); server/investors/ir-list refuses any seat but the IR's own-lead scope inside */
   "/api/investors/add-paid": { kind: "page", page: "inv" },
   "/api/investors/[id]/unlock": { kind: "page", page: "inv" },
