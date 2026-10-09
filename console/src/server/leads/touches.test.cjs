@@ -238,6 +238,15 @@ test('list: touches newest first with the channel the IR picked (WhatsApp stays 
   assert.match(q, new RegExp(`from Touches where Lead = '${LEAD}' order by Occurred_At desc`));
 });
 
+test('W5-2: two touches in the same minute list the later-entered one first (Created_Time), whatever order Zoho returns', async () => {
+  const r = listRig([
+    trow({ n: 1, Channel: 'WhatsApp', Is_Reply: true, Note: 'Reply received', Created_Time: '2026-10-09T11:53:10+05:30' }),
+    trow({ n: 2, Channel: 'Call', Note: 'Connected', Created_Time: '2026-10-09T11:53:40+05:30' }),
+  ]);
+  const res = await r.svc.list(principal(), LEAD);
+  assert.deepEqual(res.value.touches.map((t) => t.channel), ['call', 'msg']);
+});
+
 test('list: a lead this token cannot open is not-visible, and a bad id is refused before any call', async () => {
   const hidden = listRig([], { visible: false });
   const res = await hidden.svc.list(principal(), LEAD);

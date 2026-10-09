@@ -113,10 +113,14 @@ export function createTouches(deps: TouchesDependencies) {
       if (!got.value || got.value.id !== leadId) return refuse(me, "not-visible", [leadId]);
       let q: Awaited<ReturnType<NonNullable<typeof crm.coql>>>;
       try {
-        q = await crm.coql(cred, `select id, Channel, Occurred_At, Is_Reply, Note, Owner, Voided_At from Touches where Lead = '${leadId}' order by Occurred_At desc limit 0, ${TOUCH_LIST_MAX + 1}`, { signal });
+        q = await crm.coql(cred, `select id, Channel, Occurred_At, Is_Reply, Note, Owner, Created_Time, Voided_At from Touches where Lead = '${leadId}' order by Occurred_At desc limit 0, ${TOUCH_LIST_MAX + 1}`, { signal });
       } catch { return zoho("unexpected"); }
       if (!q.ok) return zoho(q.error.kind);
-      const touches = q.value.records.filter((t) => validId(t.id) && !(typeof t.Voided_At === "string" && t.Voided_At)).slice(0, TOUCH_LIST_MAX).map((t): TouchRow => {
+      /* W5-2: touches are stamped to the minute; two in the same minute come back in no fixed order, so the later-entered
+       one (Created_Time) goes first; otherwise Zoho's order is kept (stable sort) — the same tie-break Last contact uses (W4-E-3). */
+    const ms = (v: unknown) => (typeof v === "string" && !Number.isNaN(Date.parse(v)) ? Date.parse(v) : 0);
+    const ordered = [...q.value.records].sort((a, b) => ms(b.Occurred_At) - ms(a.Occurred_At) || ms(b.Created_Time) - ms(a.Created_Time));
+    const touches = ordered.filter((t) => validId(t.id) && !(typeof t.Voided_At === "string" && t.Voided_At)).slice(0, TOUCH_LIST_MAX).map((t): TouchRow => {
         const words = typeof t.Note === "string" ? t.Note.trim() : "";
         const cut = words.indexOf(" — ");
         const reply = t.Is_Reply === true;
