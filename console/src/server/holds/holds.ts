@@ -32,7 +32,7 @@ import {
 const ALLOT = MODULES.allotments;
 /** The hold line without money: units, farm, deadline, extension (the AM/IR wall, checked at load). */
 export const HOLD_FIELDS = checkAmProjection(MODULES.amAllotments, [
-  "id", "Customer", "Customer.Full_Name", "Customer.Origin_Lead", "Customer.Originating_IR", "Customer.KAM",
+  "id", "Customer", "Customer.Full_Name", "Customer.ARL_ID", "Customer.Origin_Lead", "Customer.Originating_IR", "Customer.KAM",
   "LLP", "LLP.Name", "Allocation_Status", "Reserved_Units", "Hold_Until", "Hold_Extension_State", "Hold_Extension_Days", "Modified_Time",
 ]);
 /** The same for a Money seat: plus the unit price, so the balance due is committed − matched receipts. */
@@ -54,7 +54,7 @@ export interface HoldsPrincipal {
 
 export interface HoldLine {
   readonly allotmentId: string;
-  readonly investor: { readonly id: string; readonly name: string | null };
+  readonly investor: { readonly id: string; readonly name: string | null; readonly code: string | null };
   readonly llp: { readonly id: string; readonly name: string | null };
   readonly units: number;
   /** The hold's last day, "YYYY-MM-DD" (Asia/Kolkata). */
@@ -114,7 +114,7 @@ export function createHolds(deps: HoldsDeps) {
     }
     const d = daysLeft(holdEnds, now), st = str(x, "Hold_Extension_State", 20);
     return Object.freeze({
-      allotmentId, investor: Object.freeze({ id: investorId, name: str(x, "Customer.Full_Name", 120) }),
+      allotmentId, investor: Object.freeze({ id: investorId, name: str(x, "Customer.Full_Name", 120), code: str(x, "Customer.ARL_ID", 40) }),
       llp: Object.freeze({ id: llpId, name: str(x, "LLP.Name", 120) }), units, holdEnds, daysLeft: d,
       urgent: d <= URGENT_DAYS, ranOut: d < 0, forfeitPerUnit: FORFEIT_PER_UNIT, forfeit: FORFEIT_PER_UNIT * units,
       due, received: net === null ? null : Math.max(0, net),

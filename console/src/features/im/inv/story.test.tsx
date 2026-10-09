@@ -89,5 +89,11 @@ describe("StoryJourney — the whole story, in place", () => {
     expect(t).not.toContain("App account");
     expect(t).toContain("The lead itself is not readable for your seat");
     expect(t).toContain("the lead's touches are not readable for your seat");
+    expect(t).not.toContain("Open lead ›");   /* W6-KAM-1: no link to a lead this seat cannot read */
+  });
+  it("W6-KAM-1: a KAM or Finance seat that cannot read the lead gets the note and no Open lead link", () => {
+    const t = text(renderToStaticMarkup(<StoryJourney s={s} me="rohit" x={x} rec={{ ...rec, story: { ...story, leadSide: "contact", touches: null } }} irSeat={false} />));
+    expect(t).toContain("The lead itself is not readable for your seat");
+    expect(t).not.toContain("Open lead ›");
   });
 });

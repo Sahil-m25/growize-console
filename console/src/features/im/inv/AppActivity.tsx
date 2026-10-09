@@ -7,7 +7,7 @@
 import { useApiRead } from "@/lib/data/api";
 import { appActivity } from "@/lib/data/endpoints/app-activity";
 import { nowFull } from "@/lib/im";
-import { activityBadge, activityHealth, stampIst, type AppActivity, type AppActivityAnswer } from "@/lib/im/app-activity";
+import { APP_ACCOUNT_FIELDS, activityBadge, activityHealth, stampIst, type AppActivity, type AppActivityAnswer } from "@/lib/im/app-activity";
 import type { ImPageProps } from "../common";
 
 type Book = Pick<ImPageProps, "s" | "me">;
@@ -33,11 +33,16 @@ export function AppActivityCard({ s, me, id }: Book & { id: string }) {
   if (r.state === "idle" || r.state === "loading") return <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading app activity…</p></div></div>;
   if (r.state === "error") return r.err.status === 403 ? null : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>App activity: {r.err.error}</p></div></div>;
   const a = r.data.rows.find(x => x.contactId === id);
-  return a ? <AppActivityView a={a} now={nowFull(s.data.NOW)} off={r.data.activityUnavailable} /> : null;
+  return a ? <AppActivityView a={a} now={nowFull(s.data.NOW)} off={r.data.activityUnavailable} hidden={r.data.hiddenFields} /> : null;
 }
 
 /** The card itself, from the facts (exported so a render test can feed it any combination). */
-export function AppActivityView({ a, now, off }: { a: AppActivity; now: number; off: boolean }) {
+export function AppActivityView({ a, now, off, hidden = [] }: { a: AppActivity; now: number; off: boolean; hidden?: readonly string[] }) {
+  const accountHidden = (APP_ACCOUNT_FIELDS as readonly string[]).some(f => hidden.includes(f));
+  const seatHidden = hidden.length > 0;
+  if (accountHidden) return (
+    <div className="card" style={{ marginTop: 8 }}><div className="ch"><h3>App activity</h3></div><div className="cb">
+      <p className="sm" style={{ margin: 0 }}>App account details are not visible for your seat.</p></div></div>);
   const h = activityHealth(a, now, off);
   const failed = (a.failedCount ?? 0) > 0;
   return (
@@ -58,7 +63,8 @@ export function AppActivityView({ a, now, off }: { a: AppActivity; now: number; 
             <span className={`tag ${failed ? "late" : ""}`.trim()}>{(a.failedCount ?? 0) + " since last success"}</span></> : <span className="sm">none</span>}</dd>
         </>}
       </dl>
-      {off ? <p className="sm" style={{ margin: "10px 0 0" }}>Sign-in activity is not recorded yet: the investor app has not started writing it back to Zoho. The account facts above are live.</p>
+      {seatHidden ? <p className="sm" style={{ margin: "10px 0 0" }}>Sign-in activity is not visible for your seat.</p>
+        : off ? <p className="sm" style={{ margin: "10px 0 0" }}>Sign-in activity is not recorded yet: the investor app has not started writing it back to Zoho. The account facts above are live.</p>
         : <p className="sm" style={{ margin: "10px 0 0" }}>Written by the investor app when someone signs in. Use it to see whether they got the welcome and whether they are stuck.</p>}
     </div></div>
   );

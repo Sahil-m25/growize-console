@@ -22,6 +22,16 @@ describe("useDocTitle", () => {
     (cleanups[0] as () => void)();
     expect(doc.title).toBe(BASE);
   });
+  it("W6-KAM-2: closing a record always lands on the console title, even when the title it found was blank or a record's name", () => {
+    doc.title = "";
+    const c1 = mount(NAME);
+    (c1[0] as () => void)();
+    expect(doc.title).toBe(BASE);
+    doc.title = NAME;   /* a stale record name found at mount (a second record opened over the first) */
+    const c2 = mount("Harish Gowda · Investor · Growize console");
+    (c2[0] as () => void)();
+    expect(doc.title).toBe(BASE);
+  });
   it("does nothing while no record is open", () => {
     mount(null);
     expect(doc.title).toBe(BASE);

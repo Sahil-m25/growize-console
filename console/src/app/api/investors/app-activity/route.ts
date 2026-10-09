@@ -3,9 +3,9 @@
    App_Failed_Sign_In_Count, plus App_Access, App_Welcome_At/Channel) on the signed-in person's own token (D53), for the ids asked
    (at most 200) that the seat may see: a KAM their own accounts, the Head of AM and Finance the book, an IR their own leads'
    investors. An id the seat may not see is simply absent. If Zoho has no sign-in columns yet the answer carries only the account
-   facts and activityUnavailable: true. Read only; nothing kept (D45). Timestamps and counts, never a value in a log.
+   facts and activityUnavailable: true; a column hidden from the seat by field security is left out of the read and named in hiddenFields (never a 502). Read only; nothing kept (D45). Timestamps and counts, never a value in a log.
    200 → { rows: [{ contactId, access, welcomeAt, welcomeChannel, firstSignInAt, lastSignInAt, signInCount, lastFailedAt, failedCount }],
-           activityUnavailable }  · 400 bad ids · 403 seat / scope · 502 Zoho refused · 503 Zoho not answering. */
+           activityUnavailable, hiddenFields }  · 400 bad ids · 403 seat / scope · 502 Zoho refused · 503 Zoho not answering. */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
 import { failureResponse, investorsContext, NO_STORE } from "@/server/investors/http";
@@ -20,7 +20,7 @@ async function get(req: Request) {
   const { createAppActivity } = await import("@/server/investors/app-activity");
   const { rt, crm, principal } = c.ctx;
   const r = await createAppActivity({ crm, events: rt.events }).read(principal.credential, principal.session.seat, ids, req.signal);
-  if (r.ok) return Response.json({ rows: r.rows, activityUnavailable: r.activityUnavailable }, { headers: NO_STORE });
+  if (r.ok) return Response.json({ rows: r.rows, activityUnavailable: r.activityUnavailable, hiddenFields: r.hiddenFields }, { headers: NO_STORE });
   if (r.kind === "refused" && r.reason === "invalid-request") return Response.json({ error: "Ask for at most 200 investors by id.", code: r.reason }, { status: 400, headers: NO_STORE });
   return failureResponse(r);
 }

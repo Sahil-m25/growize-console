@@ -254,7 +254,7 @@ export function QRow({ s, me, dispatch, x, claims }: ImPageProps & { x: MoneyRow
        keyboard/screen-reader stop that opens the record; a click anywhere else on the card still does, for the pointer. */
     <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} onClick={open}>
       <div className="who2"><b><button type="button" className="lnk qc-open" onClick={stop(open)}>{x.investor.name ?? id}</button></b><span>{x.text}{x.kind === "claim" && from ? <>{" · "}<ProvIR t={"from " + from} /></> : null}
-        {" · "}<span className="mono">{("code" in x.investor && x.investor.code) || id}</span>
+        {" · "}<span className="mono">{"code" in x.investor ? x.investor.code : null}</span>
       </span></div>{b}</div>
   );
 }

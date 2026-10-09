@@ -9,14 +9,14 @@ const C1 = `${P}740100001`, C2 = `${P}740100002`, LEAD = `${P}740200001`;
 const cred = (userId: string) => ({ userId }) as never;
 
 type Call = string;
-function stub(answer: (q: string, n: number) => { ok: true; records: Record<string, unknown>[] } | { ok: false; kind: string }) {
+function stub(answer: (q: string, n: number) => { ok: true; records: Record<string, unknown>[] } | { ok: false; kind: string; field?: string | null }) {
   const calls: Call[] = [];
   const refusals: string[][] = [];
   const crm = {
     async coql(_c: unknown, q: string) {
       calls.push(q);
       const a = answer(q, calls.length);
-      return a.ok ? { ok: true, value: { records: a.records, moreRecords: false } } : { ok: false, error: { kind: a.kind } };
+      return a.ok ? { ok: true, value: { records: a.records, moreRecords: false } } : { ok: false, error: { kind: a.kind, field: (a as { field?: string | null }).field ?? null } };
     },
   };
   const events = { refusal: (...a: unknown[]) => { refusals.push(a.map(String)); } };
@@ -83,12 +83,13 @@ describe("read", () => {
     expect(await svc.read(cred(KAM), "kam", Array.from({ length: 201 }, (_, i) => `${P}7402${String(i).padStart(5, "0")}`))).toMatchObject({ reason: "invalid-request" });
     expect(calls).toHaveLength(0);
     expect(refusals.length).toBe(3);
-    expect(await svc.read(cred(KAM), "kam", [])).toEqual({ ok: true, rows: [], activityUnavailable: false });
+    expect(await svc.read(cred(KAM), "kam", [])).toEqual({ ok: true, rows: [], activityUnavailable: false, hiddenFields: [] });
   });
   it("a sign-in field missing in Zoho (invalid-data): retried without them, marked unavailable, the account facts still come back", async () => {
     const { svc, calls } = stub((q) => q.includes("App_Sign_In_Count") ? { ok: false, kind: "invalid-data" } : { ok: true, records: [row(C1)] });
     const r = await svc.read(cred(KAM), "kam", [C1]);
     expect(r).toMatchObject({ ok: true, activityUnavailable: true });
+    expect(r.ok && r.hiddenFields).toEqual(expect.arrayContaining(["App_Sign_In_Count", "App_First_Sign_In_At"]));
     expect(r.ok && r.rows[0]).toMatchObject({ contactId: C1, access: "Invite", welcomeChannel: "Email", signInCount: null, firstSignInAt: null });
     expect(calls).toHaveLength(2);
     expect(calls[1]).not.toContain("App_Sign_In_Count");
@@ -105,5 +106,37 @@ describe("read", () => {
     const { svc } = stub(() => ({ ok: true, records: [row(C1)] }));
     const r = await svc.read(cred(KAM), "kam", [C1, C2]);
     expect(r.ok && r.rows.map((x) => x.contactId)).toEqual([C1]);
+  });
+});
+
+describe("read — a field hidden from the seat degrades per field (W6-IRA-1), never a 502", () => {
+  const hiddenFor = (hidden: string[], named: boolean) => (q: string): { ok: true; records: Record<string, unknown>[] } | { ok: false; kind: string; field?: string | null } => {
+    const bad = hidden.find((h) => q.includes(h));
+    return bad ? { ok: false, kind: "invalid-data", field: named ? bad : null } : { ok: true, records: [row(C1)] };
+  };
+  it("Zoho names the hidden field: only that one is dropped and the rest of the row still comes back", async () => {
+    const { svc, calls } = stub(hiddenFor(["App_Welcome_Channel"], true));
+    const r = await svc.read(cred(IR), "ir", [C1]);
+    expect(r).toMatchObject({ ok: true, activityUnavailable: false, hiddenFields: ["App_Welcome_Channel"] });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).not.toContain("App_Welcome_Channel");
+    expect(calls[1]).toContain("App_Sign_In_Count");
+  });
+  it("Zoho names nothing and the account columns are hidden too: each field is probed alone, the readable ones are kept", async () => {
+    const hidden = ["App_Access", "App_Welcome_At", "App_Welcome_Channel", "App_Last_Sign_In_At"];
+    const { svc } = stub(hiddenFor(hidden, false));
+    const r = await svc.read(cred(IR), "ir", [C1]);
+    expect(r).toMatchObject({ ok: true, activityUnavailable: true });
+    expect(r.ok && [...r.hiddenFields!].sort()).toEqual([...hidden].sort());
+    expect(r.ok && r.rows[0]).toMatchObject({ contactId: C1, signInCount: null });
+  });
+  it("the scope fields themselves are never dropped: if they are refused it is still a source error", async () => {
+    const { svc } = stub((q) => q.includes("Originating_IR") ? { ok: false, kind: "invalid-data" } : { ok: true, records: [row(C1)] });
+    expect(await svc.read(cred(IR), "ir", [C1])).toMatchObject({ ok: false, kind: "source-error", errorKind: "invalid-data" });
+  });
+  it("an outage during a probe is a source error, not a hidden field", async () => {
+    let n = 0;
+    const { svc } = stub((q) => { n++; return n <= 2 ? { ok: false, kind: "invalid-data" } : { ok: false, kind: "server" }; });
+    expect(await svc.read(cred(IR), "ir", [C1])).toMatchObject({ ok: false, kind: "source-error", errorKind: "server" });
   });
 });

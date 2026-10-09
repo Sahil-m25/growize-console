@@ -18,7 +18,8 @@ const zdt = (now: string, at: string | null): string | null => {
 
 export const appActivity: ReadEndpoint<ImBook, readonly string[] | null, AppActivityAnswer> = {
   path: ids => (ids && ids.length ? `/api/investors/app-activity?ids=${ids.slice(0, MAX_ACTIVITY_IDS).map(encodeURIComponent).join(",")}` : null),
-  pick: j => ({ rows: Array.isArray((j as AppActivityAnswer).rows) ? (j as AppActivityAnswer).rows : [], activityUnavailable: (j as AppActivityAnswer).activityUnavailable === true }),
+  pick: j => ({ rows: Array.isArray((j as AppActivityAnswer).rows) ? (j as AppActivityAnswer).rows : [], activityUnavailable: (j as AppActivityAnswer).activityUnavailable === true,
+    hiddenFields: Array.isArray((j as AppActivityAnswer).hiddenFields) ? (j as AppActivityAnswer).hiddenFields!.filter(f => typeof f === "string") : [] }),
   fixture({ s, me }, ids) {
     const rows: AppActivity[] = [];
     for (const id of ids ?? []) {

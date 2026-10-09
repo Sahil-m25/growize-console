@@ -24,7 +24,7 @@ const urg = (x: ImQ): "now" | "soon" => (x.urg === "now" ? "now" : "soon");
 const NO_PAGE = () => fail(403, "no-book", "This page is not part of your seat.");
 
 function moneyRow({ s, me }: ImBook, x: ImQ): MoneyRowView | null {
-  const investor = { id: x.inv.id, name: x.inv.n };
+  const investor = { id: x.inv.id, name: x.inv.n, code: x.inv.code ?? x.inv.id };
   const base = { key: `${x.kind}:${x.inv.id}`, investor, text: x.t, urg: urg(x), days: null };
   switch (x.kind) {
     case "claim": return { ...base, key: `claim:${x.n.id}`, kind: "claim", action: "Answer it", ref: { claimId: x.n.id }, from: who(s, x.n.ir).n.split(" ")[0] };
@@ -38,7 +38,7 @@ function moneyRow({ s, me }: ImBook, x: ImQ): MoneyRowView | null {
 
 export function careRowOf({ s, me }: ImBook, x: ImQ): CareRow | null {
   const t = tierOf(x.inv);
-  const base = { key: `${x.kind}:${x.inv.id}`, investor: { id: x.inv.id, name: x.inv.n }, tier: (t ? t.k : "C") as CareRow["tier"], text: x.t, urg: urg(x), days: null };
+  const base = { key: `${x.kind}:${x.inv.id}`, investor: { id: x.inv.id, name: x.inv.n, code: x.inv.code ?? x.inv.id }, tier: (t ? t.k : "C") as CareRow["tier"], text: x.t, urg: urg(x), days: null };
   if (x.kind === "nokam") return { ...base, kind: "nokam", action: may(s, me, "assign") ? "Assign manager" : null };
   if (x.kind === "intro") return { ...base, kind: "intro", action: "Record the introduction" };
   if (x.kind === "due") return { ...base, kind: "due", days: x.days, action: "Log a conversation" };

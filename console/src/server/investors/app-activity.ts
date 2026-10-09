@@ -10,8 +10,10 @@
  * One read serves the card (one id) and the list badge (a page of ids): `select … from Contacts where id in (…) and <scope>`.
  *   - the scope's own filter rides in the WHERE (ir-guard contactsWhere) and every row is re-admitted by admitContact; one row
  *     outside the scope refuses the whole read (never trimmed). Seats with no Investors book are refused, no Zoho call.
- *   - if Zoho refuses the new columns (not created yet, or hidden from the seat: COQL answers invalid-data) the read is
- *     repeated without them and the answer says `activityUnavailable` — the page never goes blank.
+ *   - the read degrades PER FIELD: if Zoho refuses a column (not created yet, or hidden from the seat by field-level security:
+ *     COQL answers invalid-data) the field Zoho names is dropped (or, when it names none, the sign-in group, then each field is
+ *     probed alone) and the read repeats; the answer lists `hiddenFields` and says `activityUnavailable` when a sign-in column is
+ *     among them — the page never goes blank and field security is never touched here.
  * Timestamps and counts only; nothing is cached or kept (D45); logs carry ids and codes, never values.
  */
 
@@ -30,6 +32,8 @@ import { scopesFor } from "../data/scope";
 export const APP_ACTIVITY_BASE_FIELDS: readonly string[] = checkAmProjection(MODULES.contacts, [
   "id", "ARL_ID", ...APP_ACCOUNT_FIELDS, "KAM", "Origin_Lead", "Originating_IR",
 ]);
+/** What the scope and the admit check need: without these the read cannot be made safely, so a refusal here is a real 502. */
+export const APP_ACTIVITY_CORE_FIELDS: readonly string[] = checkAmProjection(MODULES.contacts, ["id", "KAM", "Origin_Lead", "Originating_IR"]);
 export const APP_ACTIVITY_FIELDS: readonly string[] = checkAmProjection(MODULES.contacts, [...APP_ACTIVITY_BASE_FIELDS, ...APP_SIGN_IN_FIELDS]);
 
 export const MAX_IDS = 200;
@@ -70,7 +74,7 @@ export function parseActivity(r: ZohoRecord): AppActivity | null {
 export function createAppActivity(deps: AppActivityDeps) {
   if (!deps || typeof deps.crm?.coql !== "function" || typeof deps.events?.refusal !== "function") throw new TypeError("app activity needs a CRM client and the investor events");
 
-  type Page = { ok: true; rows: ZohoRecord[] } | { ok: false; errorKind: ZohoFailureKind | "unexpected" };
+  type Page = { ok: true; rows: ZohoRecord[] } | { ok: false; errorKind: ZohoFailureKind | "unexpected"; field?: string | null };
   async function select(cred: UserCredential, fields: readonly string[], ids: readonly string[], scopeWhere: string, signal?: AbortSignal): Promise<Page> {
     const rows: ZohoRecord[] = [];
     for (let i = 0; i < ids.length; i += IN_CHUNK) {
@@ -78,7 +82,7 @@ export function createAppActivity(deps: AppActivityDeps) {
       for (let page = 0; ; page++) {
         let r: Awaited<ReturnType<typeof deps.crm.coql>>;
         try { r = await deps.crm.coql(cred, `select ${fields.join(", ")} from ${MODULES.contacts} where ${where} order by id asc limit ${page * PAGE}, ${PAGE}`, { signal }); } catch { return { ok: false, errorKind: "unexpected" }; }
-        if (!r.ok) return { ok: false, errorKind: r.error.kind };
+        if (!r.ok) return { ok: false, errorKind: r.error.kind, field: r.error.kind === "invalid-data" ? ((r.error as { field?: string | null }).field ?? null) : null };
         rows.push(...r.value.records);
         if (!r.value.moreRecords) break;
       }
@@ -100,15 +104,30 @@ export function createAppActivity(deps: AppActivityDeps) {
       return { ok: false, kind: "refused", reason: "invalid-request" };
     }
     const ids = [...new Set(wanted as string[])];
-    if (!ids.length) return { ok: true, rows: [], activityUnavailable: false };
+    if (!ids.length) return { ok: true, rows: [], activityUnavailable: false, hiddenFields: [] };
 
-    let unavailable = false;
-    let got = await select(cred, APP_ACTIVITY_FIELDS, ids, scopeWhere, signal);
-    if (!got.ok && got.errorKind === "invalid-data") {
-      /* a sign-in column is not in Zoho yet (or hidden from this seat): the account facts still stand */
-      unavailable = true;
-      got = await select(cred, APP_ACTIVITY_BASE_FIELDS, ids, scopeWhere, signal);
+    const optional = APP_ACTIVITY_FIELDS.filter((f) => !APP_ACTIVITY_CORE_FIELDS.includes(f));
+    let fields: readonly string[] = APP_ACTIVITY_FIELDS;
+    let got = await select(cred, fields, ids, scopeWhere, signal);
+    let triedGroup = false;
+    while (!got.ok && got.errorKind === "invalid-data" && fields.length > APP_ACTIVITY_CORE_FIELDS.length) {
+      const named = got.field && optional.includes(got.field) && fields.includes(got.field) ? got.field : null;
+      if (named) fields = fields.filter((f) => f !== named);
+      else if (!triedGroup) { triedGroup = true; fields = fields.filter((f) => !(APP_SIGN_IN_FIELDS as readonly string[]).includes(f)); }
+      else {
+        /* Zoho names no field: probe each optional field alone (rare path) and keep the ones this seat can read */
+        const keep: string[] = [];
+        for (const f of optional) {
+          const probe = await select(cred, [...APP_ACTIVITY_CORE_FIELDS, f], ids.slice(0, 1), scopeWhere, signal);
+          if (probe.ok) keep.push(f);
+          else if (probe.errorKind !== "invalid-data") return { ok: false, kind: "source-error", errorKind: probe.errorKind };
+        }
+        fields = [...APP_ACTIVITY_CORE_FIELDS, ...keep];
+      }
+      got = await select(cred, fields, ids, scopeWhere, signal);
     }
+    const hiddenFields = optional.filter((f) => !fields.includes(f) && f.startsWith("App_"));
+    const unavailable = APP_SIGN_IN_FIELDS.some((f) => hiddenFields.includes(f));
     if (!got.ok) return { ok: false, kind: "source-error", errorKind: got.errorKind };
 
     const rows: AppActivity[] = [];
@@ -123,7 +142,7 @@ export function createAppActivity(deps: AppActivityDeps) {
       }
       rows.push(a);
     }
-    return { ok: true, rows: Object.freeze(rows), activityUnavailable: unavailable };
+    return { ok: true, rows: Object.freeze(rows), activityUnavailable: unavailable, hiddenFields: Object.freeze(hiddenFields) };
   }
 
   return Object.freeze({ read });

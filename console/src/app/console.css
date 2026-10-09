@@ -2506,7 +2506,7 @@ body.ux-redesign .g2-leads .g2-row{cursor:pointer}
 body.ux-redesign .g2-leads .g2-leads-table td.g2-act{text-align:right;width:1%;white-space:nowrap}
 body.ux-redesign .g2-leads .g2-leads-table td.g2-act .act{white-space:nowrap}
 body.ux-redesign .g2-leads .g2-leads-table td[data-label="Stage"] .tag{white-space:nowrap}
-.g2-leads .sub .g2-lnk{font:inherit;font-weight:500;color:var(--brand);background:none;border:0;padding:0 2px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;min-height:0}
+.g2-leads .sub .g2-lnk{font:inherit;font-weight:500;color:var(--brand);background:none;border:0;padding:0 2px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;min-height:24px;display:inline-flex;align-items:center}
 .g2-ok{color:var(--go)}
 /* The list gets narrow when the Add lead drawer docks beside it: stack each row instead of squeezing
    five columns into 560px (the old table wrapped "Record follow-up" one letter per line). */

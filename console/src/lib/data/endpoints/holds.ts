@@ -32,7 +32,7 @@ export function fixtureHoldLine(b: ImBook, x: ImInvestor): HoldLine | null {
   const a = allotsOf(s, me, x.id).find(y => y.Allocation_Status === "Reserved") ?? allotsOf(s, me, x.id)[0];
   const money = !notFin(s, me);
   return {
-    allotmentId: a ? a.id : x.id, investor: { id: x.id, name: x.n },
+    allotmentId: a ? a.id : x.id, investor: { id: x.id, name: x.n, code: x.code ?? x.id },
     llp: a ? { id: a.LLP_Lookup, name: llpName(s, a) } : { id: "", name: null },
     units: x.units, holdEnds: ends, daysLeft: days, urgent: days <= 3, ranOut: days < 0,
     forfeitPerUnit: FORFEIT, forfeit: FORFEIT * x.units,

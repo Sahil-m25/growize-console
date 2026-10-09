@@ -63,11 +63,12 @@ export function StoryJourney({ s, me, x, rec, irSeat }: { s: ImPageProps["s"]; m
   const st = rec.story;
   const lead = st.steps.filter((e) => e.side === "lead"), inv = st.steps.filter((e) => e.side === "investor");
   const kam = inv.find((e) => e.k === "KAM_Since");
+  /* W6-KAM-1: the link is offered only when this seat read the lead (leadSide "lead"); otherwise it landed on /today unexplained */
   const leadId = rec.origin.leadId ?? x.lead ?? null;
   return (
     <div className="card fill" data-testid="inv-story"><div className="ch"><h3>The journey</h3><div className="sp" />
       <span className="tag ir">Lead side</span><span className="tag br">Investors side</span>
-      {leadId ? <OpenLead id={leadId} name={x.n} /> : null}</div>
+      {leadId && st.leadSide === "lead" ? <OpenLead id={leadId} name={x.n} /> : null}</div>
       <div className="cb">
         <div className="jrn">{lead.map((e) => <Step key={e.k} e={e} />)}</div>
         {st.leadSide === "contact" ? <p className="sm" style={{ margin: "6px 0 0" }}>The lead itself is not readable for your seat, so the lead side shows what the investor record holds.</p> : null}

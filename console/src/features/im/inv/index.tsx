@@ -656,7 +656,7 @@ function SecCare({ s, me, dispatch, x, heard, hr, o }: ImPageProps & { x: ImInve
         <dl className="kv" style={{ marginTop: 0 }}>
           <dt>Manager</dt><dd>{kamGone(s, x)
             ? <><span className="tag late"><span className="dot" />nobody</span> <span className="sm">{who(s, x.kam).n + " held it and has left the team"}</span></>
-            : x.kam ? <><ImPname s={s} k={x.kam} b /> <span className="sm">{"since " + (x.kamOn || "—")}</span></>
+            : x.kam ? <><ImPname s={s} k={x.kam} b /> <span className="sm">{"since " + (x.kamOn ? day6(x.kamOn) : "—")}</span></>
               : T.pool ? <><span className="tag">the shared pool</span> <span className="sm">single-unit holdings are not individually named</span></>
                 : <><span className="tag late"><span className="dot" />nobody</span>{" "}
                   <span className="sm">{"a " + T.t + " holding should have a name on it"}</span></>}

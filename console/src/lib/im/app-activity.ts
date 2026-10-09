@@ -29,7 +29,12 @@ export interface AppActivity {
 }
 
 /** GET /api/investors/app-activity?ids=… — `activityUnavailable`: Zoho has no sign-in fields yet, so only the account facts came back */
-export interface AppActivityAnswer { readonly rows: readonly AppActivity[]; readonly activityUnavailable: boolean }
+export interface AppActivityAnswer {
+  readonly rows: readonly AppActivity[];
+  readonly activityUnavailable: boolean;
+  /** App_* Contact fields Zoho would not let this seat read (field-level security) or that do not exist yet; the card says so per field */
+  readonly hiddenFields?: readonly string[];
+}
 
 export type Tone = "go" | "due" | "late" | "";
 export interface Line { readonly tone: Tone; readonly text: string }

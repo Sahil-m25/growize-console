@@ -44,7 +44,7 @@ describe("G1 on the lead page Paperwork row", () => {
     const l = mine();
     h.row = { leadId: l.id, modifiedTime: "t", rounds: [round("nda", { requested: { at: "2026-09-26T10:30:00+05:30" } }), round("supp", wait)], offers: [], suppUnread: false };
     const t = page(l.id);
-    expect(t).toContain("Asked Finance to send it · 2026-09-26 — it is on Finance's to-do list.");
+    expect(t).toContain("Asked Finance to send it · 26 Sep — it is on Finance's to-do list.");
     expect(t).not.toContain("Ask Finance to send the NDA");
   });
   it("the agreed supplementary waiting on Finance offers 'Ask Finance to send the supplementary'", () => {
