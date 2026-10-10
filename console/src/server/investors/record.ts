@@ -40,6 +40,7 @@ import { FINANCE_CONTACT_FIELDS, type FinanceKyc } from "./finance-list";
 import { LIFECYCLE_FIELD, resolveIrs, stateLabel, type InvestorStateLabel } from "./lifecycle";
 import { readStory, type InvestorStory } from "./story";
 import { readConverted } from "./full-paid";
+import { readIrMoney, type IrAllotmentMoney } from "./ir-money";
 
 const RECORD_ID = /^\d{15,22}$/;
 
@@ -78,9 +79,21 @@ export interface HoldingLine {
   /** Payment_Status from matched receipts (money/allotment-receipts); null where Money is hidden. */
   readonly paymentStatus: PaymentStatus | null;
   readonly holdUntil: string | null;
+  /** D139 (W2-KAM-1): the rupee figures Zoho showed the account-management seat on this allotment; null for every other seat. */
+  readonly amounts: HoldingAmounts | null;
   /** The allotment's Modified_Time as read: a typed-slot upload on it sends this back as `expected` (M12-S02). */
   readonly version: string | null;
 }
+
+/** D139 (W2-KAM-1, owner ruling 10 Oct): a KAM / Head of AM sees rupees. Each figure is Zoho's own value on the seat's token, field by field;
+ *  null where Zoho hid it — never the prototype unit price, never a figure worked out from anything else. `value` = committed units x the
+ *  recorded Unit_Price (only when the price was shown). */
+export interface HoldingAmounts {
+  readonly unitPrice: number | null; readonly value: number | null;
+  readonly receivable: number | null; readonly received: number | null; readonly due: number | null;
+}
+/** The record-level totals over the live allotments; a total is null unless Zoho showed that field on every live allotment. */
+export interface RecordAmounts { readonly value: number | null; readonly received: number | null; readonly due: number | null }
 
 export type { AttachmentLine };
 
@@ -98,6 +111,8 @@ export interface InvestorRecord {
   readonly hold: { readonly until: string; readonly extension: string | null } | null;
   /** `committed` (D138): units × each live allotment's recorded Unit_Price — the figure the Money header and the 10% read. */
   readonly money: { readonly paid: number; readonly due: number; readonly committed?: number; readonly receipts: readonly ReceiptRow[] } | null;
+  /** D139 (W2-KAM-1): what an account-management seat (KAM, Head of AM) reads of the rupees; null for every other seat. Not the Money section. */
+  readonly amounts: RecordAmounts | null;
   /** D70's three scopes: Personal (Contact), per allotment (per farm), Farm documents (LLP). */
   readonly paper: {
     readonly personal: readonly AttachmentLine[];
@@ -187,6 +202,15 @@ export function createInvestorRecordReader(deps: RecordDeps) {
     }
     const moneyOfAllot = new Map(allots.map((a) => [a.id, moneyOf({ id: a.id, status: a.Allocation_Status, units: a.Committed_Units, unitPrice: a.Unit_Price }, receipts)]));
     const live = allots.filter((a) => a.Allocation_Status !== "Cancelled");
+    /* D139 (W2-KAM-1): an account-management seat reads the allotments' own rupee fields on its own token, per field (./ir-money) */
+    const amMoney: ReadonlyMap<string, IrAllotmentMoney> | null = isAmSeat(seat) && allots.length ? await readIrMoney(deps.crm, cred, allots.map((a) => a.id), signal) : null;
+    const amountsOf = (a: { id: string; Committed_Units: number }): HoldingAmounts | null => {
+      if (!isAmSeat(seat)) return null;
+      const m = amMoney?.get(a.id);
+      const unitPrice = m?.unitPrice ?? null;
+      return Object.freeze({ unitPrice, value: unitPrice === null ? null : a.Committed_Units * unitPrice,
+        receivable: m?.receivable ?? null, received: m?.received ?? null, due: m?.due ?? null });
+    };
     const holdings: HoldingLine[] = allots.map((a) => {
       const l = llps.get(a.LLP_Lookup);
       return Object.freeze({
@@ -194,11 +218,18 @@ export function createInvestorRecordReader(deps: RecordDeps) {
         status: a.Allocation_Status, agreementSigned: paper ? !!a.agreementSignedAt : null,
         paymentStatus: money ? moneyOfAllot.get(a.id)!.paymentStatus : null,
         holdUntil: a.holdUntil,
+        amounts: amountsOf(a),
         version: a.modifiedTime,
       });
     });
     const paid = live.reduce((t, a) => t + moneyOfAllot.get(a.id)!.paid, 0);
     const due = live.reduce((t, a) => t + moneyOfAllot.get(a.id)!.due, 0);
+
+    const total = (k: keyof HoldingAmounts): number | null => {
+      const xs = live.map((a) => amountsOf(a)?.[k] ?? null);
+      return xs.length && xs.every((x) => x !== null) ? (xs as number[]).reduce((t, x) => t + x, 0) : null;
+    };
+    const amounts: RecordAmounts | null = isAmSeat(seat) ? Object.freeze({ value: total("value"), received: total("received"), due: total("due") }) : null;
 
     let paperOut: InvestorRecord["paper"] = null;
     if (paper) {
@@ -243,6 +274,7 @@ export function createInvestorRecordReader(deps: RecordDeps) {
       fema: money && femaApplies ? (str(raw, "FEMA_Verified_At", 40) ? "done" : "outstanding") : null,
       holdings: Object.freeze(holdings),
       hold: holdUntil ? Object.freeze({ until: holdUntil, extension: holdRow?.holdExtension ?? null }) : null,
+      amounts,
       money: money ? Object.freeze({ paid, due, committed: live.reduce((t, a) => t + a.Committed_Units * a.Unit_Price, 0), receipts }) : null,
       paper: paperOut,
       origin: Object.freeze({ leadId: c.originLeadId, irId: ir ?? null, irVia: c.originatingIrId ? "contact" as const : ir ? "lead" as const : null, saidYesAt: c.saidYesAt }),

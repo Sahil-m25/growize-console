@@ -6,7 +6,7 @@
 
 import type { AllotmentLine } from "@/server/investors/allotments";
 import type { Allotted } from "@/server/investors/allot";
-import { I, agreementSigned, allotAmount, allotPayStatus, allotUnits, allotsOf, allotsOnLlp, llpOf, llpName, may, notFin, pageReadable, type ImAllot } from "@/lib/im";
+import { I, agreementSigned, allotAmount, allotPayStatus, allotUnits, allotsOf, allotsOnLlp, llpOf, llpName, isAM, may, notFin, pageReadable, type ImAllot } from "@/lib/im";
 import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
 
@@ -17,11 +17,11 @@ const NO_PAGE = () => fail(403, "seat-denied", "This page is not part of your se
 
 /** One demo allotment as the route's AllotmentLine (money and paper fields null where the seat has neither). */
 export function fixtureLine({ s, me }: ImBook, a: ImAllot): AllotmentLine {
-  const fin = !notFin(s, me), x = I(s, me, a.Customer);
+  const fin = !notFin(s, me), x = I(s, me, a.Customer), rupees = fin || isAM(s, me);   /* D139: a KAM / Head of AM sees the price and amount */
   return {
     id: a.id, investor: { id: a.Customer, name: x ? x.n : null }, llp: { id: a.LLP_Lookup, name: llpName(s, a) },
     status: a.Allocation_Status, reservedUnits: a.Allocation_Status === "Reserved" ? a.Committed_Units : 0, issuedUnits: a.Issued_Units,
-    committedUnits: allotUnits(a), unitPrice: fin ? a.Unit_Price : null, amount: fin ? allotAmount(a) : null,
+    committedUnits: allotUnits(a), unitPrice: rupees ? a.Unit_Price : null, amount: rupees ? allotAmount(a) : null,
     capitalInvested: fin ? allotAmount(a) : null, paymentStatus: fin ? allotPayStatus(s, a) : null,
     agreementSigned: fin ? agreementSigned(s, a) : null, investedOn: a.Issued_On, holdUntil: null, linked: !!(a.Customer && llpOf(s, a.LLP_Lookup)),
   };

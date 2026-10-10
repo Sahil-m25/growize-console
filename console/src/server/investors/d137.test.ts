@@ -280,7 +280,7 @@ describe("ir-list buildChase — the IR's balance to-do (D137 ruling 3)", () => 
     const rows = buildChase([contact], [allot(ALLOT, "2026-10-20"), allot(R1, null), allot(R2, "2026-10-12")], farms, new Map([[R1, {}]]),
       new Map([[ALLOT, money(1_000_000, 100_000)], [R2, money(1_000_000, 1_000_000)]]), NOW);
     expect(rows).toEqual([{ contactId: CONTACT, code: "ARL-INV-0137", name: "Synth Investor", leadId: LEAD, allotmentId: ALLOT, farm: "Synthetic Farm", units: 10,
-      holdUntil: "2026-10-20", daysLeft: 11, due: 900_000, fromDay: "2026-09-20", extendedBy: 0 }]);
+      holdUntil: "2026-10-20", daysLeft: 11, due: 900_000, fromDay: "2026-09-20", extendedBy: 0, claims: [] }]);
   });
   it("the amount is null when Zoho hides it from the IR (field-level security)", () => {
     expect(buildChase([contact], [allot(ALLOT, "2026-10-20")], farms, new Map(), null, NOW)[0]!.due).toBeNull();

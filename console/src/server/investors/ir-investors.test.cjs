@@ -118,11 +118,13 @@ test('AC4 (as amended by D138): the list rows carry no price, amount, yield or r
   for (const q of r.calls) {
     const sel = q.split(' from ')[0];
     assert.ok(!/PAN|Aadhaar|Bank|IFSC|KYC|FEMA|Mobile|Email|Mailing|Nominee/.test(sel), sel);
+    /* D139: the IR's OWN payment reports (CLAIM- keys) — state, amount claimed, date said, answer day; never a receipt line */
+    if (/from Receipts/.test(q)) { assert.equal(sel, 'select id, UTR, Match_State, Amount, Received_On, Modified_Time'); assert.match(q, /where UTR like 'CLAIM-/); assert.ok(!/Matched_By|Kind|Mode|Allotment|Reversal_Of/.test(sel), sel); continue; }
     if (sel === IR_MONEY_SELECT) { assert.match(q, /from LLP_UnitAllocation_Module where id in \('\d+'/); continue; }
     assert.ok(!MONEY.test(sel), sel);
   }
   assert.ok(r.calls.some((q) => q.startsWith(IR_MONEY_SELECT)), 'the reserved allotment\'s money is asked of Zoho on the IR\'s token');
-  assert.equal(r.calls.some((c) => /from Receipts|from Cases/.test(c)), false, 'no receipt, no case is read for the list');
+  assert.equal(r.calls.some((c) => /from Cases/.test(c) || (/from Receipts/.test(c) && !/where UTR like 'CLAIM-/.test(c))), false, 'no case, and no receipt but the IR\'s own claims, is read for the list');
   /* Zoho returned nothing for the money columns here: the amount is null, never a figure from anywhere else */
   assert.ok((res.chase ?? []).every((c) => c.due === null), JSON.stringify(res.chase));
   assert.equal(res.dueReadable, false);

@@ -64,6 +64,12 @@ before(async () => {
 
 const CONTACT = { [PRAKASH]: 'record.contact-prakash', [KIRAN]: 'record.contact-kiran', [RADHIKA]: 'record.contact-radhika', [NEHA_ACCOUNT]: 'record.contact-neha-account' };
 let receiptsFx = 'record.receipts-prakash';
+/* the money read for Radhika's one Issued allotment (2 units): all three fields shown, unless a test hides one */
+let hidden = null;
+const moneyReadFx = (q) => {
+  if (hidden && q.includes(hidden)) return { status: 400, body: { code: 'INVALID_QUERY', message: 'invalid', details: { api_name: hidden } } };
+  return { status: 200, body: { data: [{ id: `${P}740996101`, Unit_Price: 250000, Total_Amount_Receivable: 500000, Total_Amount_Received: 200000 }], info: { count: 1, more_records: false } } };
+};
 function route(url, q) {
   const u = String(url);
   if (!q) {
@@ -82,6 +88,8 @@ function route(url, q) {
   if (/from Leads/.test(q)) return recorded('investors', 'coql.said-yes-leads');
   if (/from Contacts/.test(q)) return /Originating_IR = /.test(q) ? recorded('investors', 'coql.said-yes-own-lead') : recorded('investors', 'coql.said-yes-contacts');
   if (/from LLP_UnitAllocation_Module/.test(q)) {
+    /* D139 (W2-KAM-1): the account-management seat's per-field money read, by allotment id (./ir-money) — what Zoho shows that seat */
+    if (/where id in/.test(q) && q.includes(`${P}740996101`)) return moneyReadFx(q);
     if (q.includes(PRAKASH)) return recorded('investors', 'record.allotments-prakash');
     if (q.includes(RADHIKA)) return recorded('investors', 'record.allotments-radhika');
     return recorded('data', 'coql.none');
@@ -161,8 +169,34 @@ test('TC-IM04-008 (data): a KAM\'s record of Radhika has Care, no Money, no Pape
   assert.deepEqual([res.record.money, res.record.paper, res.record.kyc], [null, null, null]);
   assert.deepEqual(res.record.holdings.map((h) => [h.committed, h.status, h.paymentStatus, h.agreementSigned]), [[2, 'Issued', null, null]]);
   assert.equal(r.calls.some((c) => /from Receipts|Attachments/.test(c)), false);
-  for (const c of r.calls.filter((x) => /from LLP_UnitAllocation_Module/.test(x))) assert.ok(!/Unit_Price|Amount|Token/.test(c.split(' from ')[0]), c);
+  /* the allotment LIST read stays on the no-money projection; the rupees come from the one per-field read by id (D139) */
+  for (const c of r.calls.filter((x) => /from LLP_UnitAllocation_Module/.test(x) && !/where id in/.test(x))) assert.ok(!/Unit_Price|Amount|Token/.test(c.split(' from ')[0]), c);
   assert.ok(!/KYC|FEMA/.test(decodeURIComponent(r.calls.find((c) => /\/Contacts\/\d+\?/.test(c)))), 'no Finance status for a KAM');
+});
+
+test('D139 (W2-KAM-1 ruled): a KAM sees rupees on the record — Zoho\'s own values, per field; no Money section, no Receipts read', async () => {
+  const r = rig();
+  const res = await r.reader.read(creds.get(IMRAN), 'kam', RADHIKA);
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.record.amounts, { value: 500000, received: 200000, due: 300000 }, '2 units x the recorded Unit_Price; due = receivable - received');
+  assert.deepEqual(res.record.holdings.map((h) => h.amounts), [{ unitPrice: 250000, value: 500000, receivable: 500000, received: 200000, due: 300000 }]);
+  assert.equal(res.record.money, null, 'the Money section (receipts, KYC) is still not a KAM section');
+  assert.equal(r.calls.some((c) => /from Receipts/.test(c)), false);
+  const money = r.calls.find((c) => /where id in/.test(c));
+  assert.ok(money && !/PAN|Aadhaar|Bank|UTR|Receipt/i.test(money), 'no identity or receipt field in the money read');
+  /* an IR / Finance seat never gets this block */
+  const fin = await rig().reader.read(creds.get(HARSHA), 'head', PRAKASH);
+  assert.equal(fin.record.amounts, null);
+});
+
+test('D139: a field Zoho hides from the KAM is left empty, never guessed — the other figures still show', async () => {
+  hidden = 'Total_Amount_Received';
+  try {
+    const res = await rig().reader.read(creds.get(IMRAN), 'kam', RADHIKA);
+    assert.equal(res.ok, true, JSON.stringify(res));
+    assert.deepEqual(res.record.amounts, { value: 500000, received: null, due: null });
+    assert.deepEqual(res.record.holdings.map((h) => [h.amounts.unitPrice, h.amounts.receivable, h.amounts.received, h.amounts.due]), [[250000, 500000, null, null]]);
+  } finally { hidden = null; }
 });
 
 test('a KAM opening another KAM\'s account, or an IR another IR\'s investor, is refused (logged), never read further', async () => {

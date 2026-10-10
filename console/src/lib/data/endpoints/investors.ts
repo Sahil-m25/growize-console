@@ -13,7 +13,7 @@ import type { InvestorSearchResult } from "@/server/investors/search";
 import type { IrChaseRow, IrInvestorRow } from "@/server/investors/ir-list";
 import type { FinanceInvestorRow, FinanceSummary } from "@/server/investors/finance-list";
 import {
-  I, KAMS, allots, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
+  I, KAMS, allots, committedOf, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
   overdue, pageReadable, poolBook, quiet, tierOf, when, who, MOODS,
 } from "@/lib/im";
 import type { ImInvestor, ImState } from "@/lib/im";
@@ -46,11 +46,11 @@ function irRecord(s: ImBook["s"], me: string, id: string | null) {
   const holdings = allots(s).filter(a => a.Customer === x.id).map(a => {
     const l = llpOf(s, a.LLP_Lookup);
     return { id: a.id, llpId: a.LLP_Lookup, llpName: l ? l.Name : "", block: l ? l.Block_Code : "", committed: a.Committed_Units, issued: a.Issued_Units,
-      status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION };
+      status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, amounts: null, version: FIXTURE_VERSION };
   });
   return ok({ record: {
     id: x.id, version: null, sections: IR_SIDE, investor: irView(x), state: x.st as InvestorStateLabel,
-    kyc: null, fema: null, holdings, hold: x.hold ? { until: x.hold, extension: null } : null, money: null, paper: null,
+    kyc: null, fema: null, holdings, hold: x.hold ? { until: x.hold, extension: null } : null, amounts: null, money: null, paper: null,
     origin: { leadId: x.lead ?? null, irId: x.ir ?? null, irVia: null, saidYesAt: null },
     story: null,   /* GC-1524: the demo book's Journey reads the book (journey()), not a story */
   } });
@@ -69,7 +69,9 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
     const holdings = allotsOf(s, me, x.id).map(a => {
       const l = llpOf(s, a.LLP_Lookup);
       return { id: a.id, llpId: a.LLP_Lookup, llpName: llpName(s, a), block: l ? l.Block_Code : "", committed: a.Committed_Units, issued: a.Issued_Units,
-        status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION };
+        status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION,
+        /* D139 (W2-KAM-1): the demo book's recorded amount for an account-management seat */
+        amounts: isAM(s, me) ? { unitPrice: null, value: a.Allocation_Status === "Cancelled" ? 0 : a.Ticket_Snapshot, receivable: null, received: null, due: null } : null };
     });
     return ok({ record: {
       id: x.id, version: null, sections, investor: x,
@@ -79,6 +81,7 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
       holdings,
       hold: x.hold ? { until: x.hold, extension: null } : null,
       /* receipts: not projected — the Money section still reads the book until M10-S08-W1 */
+      amounts: isAM(s, me) ? { value: committedOf(s, me, x.id), received: gotBy(s, me, x.id), due: dueBy(s, me, x.id) } : null,
       money: money ? { paid: gotBy(s, me, x.id), due: dueBy(s, me, x.id), receipts: [] } : null,
       /* not projected — the Paper section still reads the book until M12-S01-W1 */
       paper: null,
@@ -111,7 +114,7 @@ export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
     const chase: IrChaseRow[] = irInvestors(s, me).filter(x => x.st === "reserved").map(x => ({
       contactId: x.id, code: x.id, name: x.n, leadId: x.lead ?? null, allotmentId: allotsOf(s, me, x.id)[0]?.id ?? x.id,
       farm: Object.keys(x.blocks).map(b => s.data.FARMS.find(f => f.k === b)?.n ?? b).join(", "), units: x.units, holdUntil: null, daysLeft: null, due: null,
-      fromDay: null, extendedBy: 0,
+      fromDay: null, extendedBy: 0, claims: [],   /* the demo's reports live in the console book, not this one */
     }));
     return ok({ rows, truncated: false, chase, dueReadable: false });
   },

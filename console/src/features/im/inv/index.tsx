@@ -620,8 +620,11 @@ function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne>; rec: Inves
       <div className="card"><div className="ch"><h3>What they hold</h3><div className="sp" />
         <StTag x={x} /></div><div className="cb">
         <dl className="kv" style={{ marginBottom: 12 }}>
-          {/* D138 (B-10): the value only where Money shows, from Zoho's recorded amounts — a KAM sees units, no rupees (W2-KAM-1 is not ruled) */}
-          <dt>Units</dt><dd><b>{x.units}</b>{rec.money?.committed != null ? " · " + money(rec.money.committed) : ""}</dd>
+          {/* D138 (B-10) / D139 (W2-KAM-1): rupees only from Zoho's recorded amounts — the Money section's committed figure, or for a KAM / Head
+              of AM the figures Zoho showed on their own token; a figure Zoho hides is left out, never guessed */}
+          <dt>Units</dt><dd><b>{x.units}</b>{(rec.money?.committed ?? rec.amounts?.value) != null ? " · " + money((rec.money?.committed ?? rec.amounts?.value) as number) : ""}</dd>
+          {rec.amounts?.received != null ? <><dt>Received</dt><dd>{money(rec.amounts.received)}</dd></> : null}
+          {rec.amounts?.due != null ? <><dt>Amount due</dt><dd>{rec.amounts.due > 0 ? <b>{money(rec.amounts.due)}</b> : "Nothing due"}</dd></> : null}
           <dt>Land</dt><dd>{Object.keys(x.blocks).length
             ? Object.entries(x.blocks).map(([k, n], i) => {
               const f = s.data.FARMS.find(y => y.k === k);

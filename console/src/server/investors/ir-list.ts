@@ -30,6 +30,7 @@ import { readConverted } from "./full-paid";
 import { daysLeft } from "../holds/rules";
 import { balanceClock } from "../../lib/money/balance-clock";
 import { readIrMoney, type IrAllotmentMoney } from "./ir-money";
+import { readClaimLines, type IrClaimLine } from "../leads/claim-lines";
 
 /** What an IR's list reads of a Contact. Checked against identity and money names when this module loads. */
 export const IR_LIST_FIELDS: readonly string[] = checkAmProjection(MODULES.contacts, [
@@ -75,11 +76,14 @@ export interface IrChaseRow {
   readonly fromDay: string | null;
   /** days added by an approved hold extension (0 when none, or when Zoho hides the extension from the IR) */
   readonly extendedBy: number;
+  /** D139: the IR's OWN payment reports on this investor's lead, newest first — pending / matched / rejected, amount, the date said, the day Finance answered. Never a receipt line. */
+  readonly claims: readonly IrClaimLine[];
 }
 
 /** Pure: the chase rows, soonest deadline first (no deadline last). */
 export function buildChase(contacts: readonly ContactRow[], reserved: readonly AllotmentRow[], farms: ReadonlyMap<string, { readonly name: string; readonly block: string }>,
-  stamps: ReadonlyMap<string, unknown>, money: ReadonlyMap<string, IrAllotmentMoney> | null, nowMs: number): IrChaseRow[] {
+  stamps: ReadonlyMap<string, unknown>, money: ReadonlyMap<string, IrAllotmentMoney> | null, nowMs: number,
+  claims: ReadonlyMap<string, readonly IrClaimLine[]> = new Map()): IrChaseRow[] {
   const byId = new Map(contacts.map((c) => [c.id, c]));
   const rows: IrChaseRow[] = [];
   for (const a of reserved) {
@@ -94,6 +98,7 @@ export function buildChase(contacts: readonly ContactRow[], reserved: readonly A
       allotmentId: a.id, farm: farms.get(a.LLP_Lookup)?.name ?? "", units: a.Committed_Units,
       holdUntil: a.holdUntil, daysLeft: a.holdUntil ? daysLeft(a.holdUntil, nowMs) : null, due,
       fromDay: clock ? clock.fromDay : null, extendedBy: clock ? clock.extendedBy : 0,
+      claims: (c.originLeadId ? claims.get(c.originLeadId) : undefined) ?? Object.freeze([]),
     }));
   }
   return rows.sort((x, y) => (x.daysLeft ?? 1e9) - (y.daysLeft ?? 1e9) || x.name.localeCompare(y.name, "en-IN"));
@@ -105,7 +110,7 @@ export type IrListResult =
   | { readonly ok: false; readonly kind: "source-error"; readonly book: string; readonly errorKind: ZohoFailureKind | "unexpected" };
 
 export interface IrListDeps {
-  readonly crm: Pick<ZohoClient, "coql">;
+  readonly crm: Pick<ZohoClient, "coql"> & Partial<Pick<ZohoClient, "getRelated">>;
   readonly events: InvestorEvents;
   readonly planeCRefusal?: (e: PlaneCRefusal) => void;
   readonly maxPages?: number;
@@ -195,7 +200,12 @@ export function createIrInvestorList(deps: IrListDeps) {
     /* D138 (B-10): the amount due as Zoho shows it to this IR — per field, nothing where it is hidden */
     const open = reserved.filter((a) => !(stamps ?? new Map()).has(a.id));
     const money = open.length ? await readIrMoney(deps.crm, cred, open.map((a) => a.id), signal) : null;
-    const chase = buildChase(admitted.rows, reserved, farms, stamps ?? new Map(), money, deps.clock ? deps.clock() : Date.now());
+    /* D139: the state of the IR's own payment reports on each chased lead (their own Claimed receipts only; a failed read shows none) */
+    const chasedLeads = [...new Set(open.map((a) => admitted.rows.find((c) => c.id === a.Customer)?.originLeadId).filter((x): x is string => !!x))];
+    const cl = chasedLeads.length ? await readClaimLines(deps.crm, cred, chasedLeads, signal) : null;
+    const claimsByLead = new Map<string, IrClaimLine[]>();
+    if (cl && cl.ok) for (const x of cl.lines) claimsByLead.set(x.leadId, [...(claimsByLead.get(x.leadId) ?? []), x]);
+    const chase = buildChase(admitted.rows, reserved, farms, stamps ?? new Map(), money, deps.clock ? deps.clock() : Date.now(), claimsByLead);
     return { ok: true, rows: Object.freeze(buildIrRows(admitted.rows, al.rows, farms, blueprint)), truncated, chase: Object.freeze(chase),
       dueReadable: chase.some((x) => x.due !== null) };
   }

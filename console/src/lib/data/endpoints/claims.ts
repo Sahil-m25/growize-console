@@ -10,7 +10,7 @@
 
 import type { ClaimStateView, ClaimView } from "@/server/leads/claim";
 import type { Prepared, RecordedReceipt } from "@/server/money/record-receipt";
-import { claimFieldsError, claimOf, claimOpen, canClaim, claimWhy, openable } from "@/lib/selectors";
+import { claimArchiveOf, claimFieldsError, claimOf, claimOpen, canClaim, claimWhy, openable } from "@/lib/selectors";
 import { may, roundOf } from "@/lib/im";
 import { fail, ok, type ReadEndpoint, type WriteEndpoint } from "../api";
 import { imFixtureWrite, imLiveError, type ImBook, type ImDispatch } from "./im";
@@ -51,8 +51,15 @@ export const leadClaimRead: ReadEndpoint<ConsoleBook, string | null, ClaimRead> 
     if (!l || !openable(state).some(x => x.id === l.id)) return NOT_YOURS();
     const c = claimOf(state, l.id);
     const answer = c && c.state === "notfound" ? "not-found" as const : c && c.state === "confirmed" ? "found" as const : null;
+    /* D139: every report on the lead, newest first (the archive holds the earlier ones) */
+    const lines = [...(c ? [c] : []), ...claimArchiveOf(state, l.id)].map((x, i, all) => ({
+      claimId: x.id, leadId: l.id, seq: all.length - i,
+      state: x.state === "waiting" ? "pending" as const : x.state === "confirmed" ? "matched" as const : "rejected" as const,
+      amount: x.amount, claimedOn: x.said_on, answeredOn: x.state === "waiting" || !x.on ? null : String(x.on).slice(0, 10),
+      reason: x.state === "notfound" ? x.why || null : null,
+    }));
     return ok({ leadId: l.id, claimId: c ? c.id : null, state: !c ? "none" as const : c.state === "waiting" ? "waiting" as const : "answered" as const,
-      answer, reason: answer === "not-found" ? c!.why || null : null, says: answer === "not-found" ? `Finance did not find it: ${c!.why || ""}` : null });
+      answer, reason: answer === "not-found" ? c!.why || null : null, says: answer === "not-found" ? `Finance did not find it: ${c!.why || ""}` : null, claims: lines });
   },
 };
 

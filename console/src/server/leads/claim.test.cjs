@@ -247,7 +247,7 @@ test('maskRef keeps the last four only', () => {
 
 test('M10-S03: the lead page reads the latest report — none, waiting, found, not found with Finance\'s reason', async () => {
   const none = await rig().svc.read(principal(), L7);
-  assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null });
+  assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null, claims: [] });
   const waiting = await rig({ claims: 'claims.open' }).svc.read(principal(), L7);
   assert.equal(waiting.value.state, 'waiting');
   assert.equal(waiting.value.says, null);
@@ -296,13 +296,15 @@ test('B-06b: a report Zoho refuses (no Receipts create) says the profile cannot 
  * COQL refused the query because it selected allotment and money fields the IR profile cannot see. Owner ruling: an IR
  * creates and views only their own Receipts rows. The read now names only the claim key and its state. */
 const IR_HIDDEN = ['Allotment', 'Kind', 'Amount', 'Mode', 'Received_On', 'Matched_By', 'Reversal_Of', 'Idempotency_Key'];
-test('B-06: the lead page\'s read selects only id, UTR and Match_State — an IR with no reports reads "none", never an error', async () => {
+test('B-06 (D139): the lead page\'s read falls back to id, UTR, Match_State and Modified_Time — an IR with no reports reads "none", never an error', async () => {
   const r = rig({ hidden: IR_HIDDEN });
   const none = await r.svc.read(principal(), L7);
   assert.equal(none.ok, true, JSON.stringify(none));
-  assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null });
-  const q = r.calls.find((c) => c.op === 'coql' && c.q.includes('where UTR like')).q;
-  assert.match(q, /^select id, UTR, Match_State from Receipts where UTR like 'CLAIM-\d+-%' limit 0, 200$/);
+  assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null, claims: [] });
+  /* D139: the read asks for amount and dates first (the IR profile can read them since 10 Oct); a profile that hides one gets the key, state and answer day alone */
+  const qs = r.calls.filter((c) => c.op === 'coql' && c.q.includes('where UTR like')).map((c) => c.q);
+  assert.match(qs[0], /^select id, UTR, Match_State, Amount, Received_On, Modified_Time from Receipts where UTR like 'CLAIM-\d+-%' limit 0, 200$/);
+  assert.match(qs[qs.length - 1], /^select id, UTR, Match_State, Modified_Time from Receipts where UTR like 'CLAIM-\d+-%' limit 0, 200$/);
   const waiting = await rig({ hidden: IR_HIDDEN, claims: 'claims.open' }).svc.read(principal(), L7);
   assert.deepEqual([waiting.ok, waiting.value.state, waiting.value.claimId], [true, 'waiting', R], 'the IR\'s own waiting report reads back');
   const answered = await rig({ hidden: IR_HIDDEN, claims: 'claims.not-found', notes: 'notes.not-found' }).svc.read(principal(), L7);

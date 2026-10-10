@@ -18,7 +18,7 @@
  * The fields follow the record's section rules (./record sectionsFor, read-only): a seat without Money
  * (KAM, Head of AM, IR) reads the account-management projection — units, farm, status, hold; no price, no
  * amount — so a number it may not see is never even read. D138 (B-10): an IR's rows then carry the allotment's
- * Unit_Price where Zoho shows it to the IR (./ir-money, per field); a KAM's stay without (W2-KAM-1 is not ruled). Agreement_Signed is given only where Paper shows.
+ * Unit_Price where Zoho shows it to the IR (./ir-money, per field); and (D139, W2-KAM-1 ruled) so do a KAM's and the Head of AM's — on their own token, per field. Agreement_Signed is given only where Paper shows.
  * Payment_Status: the org has no such field on the module (getFields, 28 Sep 2026), so it is worked out from
  * the linked Receipts with money/allotment-receipts' rule (../money/by-allotment moneyOf) — Money seats only.
  *
@@ -33,6 +33,7 @@ import { createInvestorsAdapters, type ReceiptRow } from "../data/adapters";
 import type { InvestorEvents } from "../data/events";
 import { admitContact, createInvestorGuard, type GuardRefusal, type PlaneCRefusal } from "../data/ir-guard";
 import { checkAmProjection, checkProjection, MODULES } from "../data/projections";
+import { isAmSeat } from "../data/am-scope";
 import { scopesFor } from "../data/scope";
 import { moneyOf } from "../money/by-allotment";
 import type { PaymentStatus } from "../money/allotment-receipts";
@@ -194,9 +195,9 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
         receipts = rc.rows;
         out = rows.map((a) => Object.freeze({ ...a, paymentStatus: moneyOf({ id: a.id, status: a.status, units: a.committedUnits, unitPrice: a.unitPrice ?? 0 }, rc.rows).paymentStatus }));
       } else if (money) receipts = Object.freeze([]);
-      /* D138 (B-10 ruling): an IR sees the unit price as Zoho returns it on their own token (read-only for the IR profile since
+      /* D138 (B-10) / D139 (W2-KAM-1): an IR, a KAM and the Head of AM see the unit price as Zoho returns it on their own token (read-only for the IR profile since
          10 Oct); where Zoho hides it the row keeps null — never a figure worked out from anything else */
-      if (!money && rows.length && scopesFor(seat, me).investors.kind === "own-lead") {
+      if (!money && rows.length && (scopesFor(seat, me).investors.kind === "own-lead" || isAmSeat(seat))) {
         const m = await readIrMoney(crm, cred, rows.map((a) => a.id), signal);
         if (m) out = out.map((a) => {
           const price = m.get(a.id)?.unitPrice ?? null;
@@ -230,6 +231,14 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
           : { ok: false, kind: "source-error", errorKind: mine.errorKind };
         const admitted = new Set(mine.rows.filter((c) => admitContact(scope, c).ok).map((c) => c.id));
         rows = rows.filter((a) => admitted.has(a.investor.id));
+      }
+      /* D139 (W2-KAM-1): a KAM / Head of AM reads the unit price the same way (per field, on their own token) */
+      if (!money && isAmSeat(seat) && rows.length) {
+        const m = await readIrMoney(crm, cred, rows.map((a) => a.id), signal);
+        if (m) rows = rows.map((a) => {
+          const price = m.get(a.id)?.unitPrice ?? null;
+          return price === null ? a : Object.freeze({ ...a, unitPrice: price, amount: a.committedUnits * price });
+        });
       }
       const live = rows.filter((a) => a.status !== "Cancelled");
       return {

@@ -23,8 +23,8 @@ import {
   financePaymentHistory, financePaySummary, hasFinanceSource, isFin, knownUnitIntent, may, P,
 } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
-import { useApiMode, useApiWrite } from "@/lib/data/api";
-import { leadClaim } from "@/lib/data/endpoints/claims";
+import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
+import { leadClaim, leadClaimRead } from "@/lib/data/endpoints/claims";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
 import { useGo } from "@/features/pay/common";
 import { ClaimBlock } from "@/features/pay/ClaimBlock";
@@ -168,6 +168,32 @@ function ClaimHistory({ l }: { l: Lead }) {
   );
 }
 
+/* D139 (owner ruling 10 Oct, Jev p=1.00): the IR does not see receipt lines; they see each of THEIR OWN reports — pending, matched
+   or rejected — with the amount claimed, the date the investor said they paid, and the day Finance answered. Live only: the demo
+   book keeps its own history blocks below. */
+export function ClaimStates({ l }: { l: Lead }) {
+  const { state } = useConsole();
+  const live = useApiMode() === "live";
+  const r = useApiRead(leadClaimRead, state, live ? l.id : null);
+  if (!live || r.state !== "ok" || !r.data.claims.length) return null;
+  const WORD = { pending: "Pending — waiting for Finance", matched: "Matched by Finance", rejected: "Finance did not find it", answered: "Answered by Finance" } as const;
+  return (
+    <div className="drwsec" data-testid="claim-states">
+      <p className="lbl">Your payment reports</p>
+      {r.data.claims.map((c) => (
+        <div className="mini" key={c.claimId}><span>
+          <b>{c.amount !== null ? money(c.amount) : "Amount not shown"}</b> · <span className={`tag ${c.state === "rejected" ? "late" : c.state === "matched" ? "go" : "due"}`}>{WORD[c.state]}</span>
+          <span className="sm">
+            {c.claimedOn ? "Investor said they paid on " + c.claimedOn : "Date not shown"}
+            {c.answeredOn ? (c.state === "matched" ? " · matched on " : " · answered on ") + c.answeredOn : ""}
+            {c.reason ? " · " + c.reason : ""}
+          </span>
+        </span></div>
+      ))}
+    </div>
+  );
+}
+
 function ClaimArchive({ l }: { l: Lead }) {
   const { state } = useConsole();
   const list = claimArchiveOf(state, l.id);
@@ -257,6 +283,7 @@ export function ClaimBody({ lead }: DrawerProps) {
     return (
       <>
         <ClaimBlock l={l} actions={false} />
+        <ClaimStates l={l} />
         <p className="sm" style={{ margin: 0 }}>Finance records the bank receipt in the {IMP}. Matching this report creates no receipt and changes no stage, forecast or payment total.</p>
         <button type="button" className="btn" style={{ marginTop: "12px" }} onClick={() => dispatch({ type: "openDrawer", k: "money", id: l.id })}>
           Review recorded payments
@@ -273,7 +300,7 @@ export function ClaimBody({ lead }: DrawerProps) {
         <button type="button" className="act" onClick={() => dispatch({ type: "openDrawer", k: "details", id: l.id })}>Record unit count</button>
       </>
     );
-  return <><ClaimForm l={l} /><ClaimArchive l={l} /></>;
+  return <><ClaimStates l={l} /><ClaimForm l={l} /><ClaimArchive l={l} /></>;
 }
 
 function FinanceFoot({ lead }: DrawerProps) {

@@ -99,7 +99,7 @@ describe("M11-S02-W1 — allotment rows", () => {
     expect(investorAllotments.path(null)).toBeNull();
     expect(farmAllotments.path("LLP-B")).toBe("/api/farms/LLP-B/allotments");
   });
-  it("fixture: Finance sees money on the rows; a KAM sees none and only their own investor", () => {
+  it("fixture: Finance sees money on the rows; a KAM sees the price and amount (D139) but not Money, and only their own investor", () => {
     const s = demo();
     const fin = ok<{ allotments: { amount: number | null; investor: { id: string } }[]; money: boolean }>(investorAllotments.fixture({ s, me: "harsha" }, "ARL-INV-0208"));
     expect(fin.money).toBe(true);
@@ -108,7 +108,8 @@ describe("M11-S02-W1 — allotment rows", () => {
     const kamOwn = s.data.INV.find(x => x.kam === "imran")!.id;
     const own = ok<{ allotments: { amount: number | null; unitPrice: number | null }[]; money: boolean }>(investorAllotments.fixture({ s, me: "imran" }, kamOwn));
     expect(own.money).toBe(false);
-    expect(own.allotments.every(a => a.amount === null && a.unitPrice === null)).toBe(true);
+    expect(own.allotments.length).toBeGreaterThan(0);
+    expect(own.allotments.every(a => a.amount !== null && a.unitPrice !== null)).toBe(true);   /* W2-KAM-1 ruled: a KAM sees rupees */
     expect(investorAllotments.fixture({ s, me: "imran" }, "ARL-INV-0208")).toMatchObject({ ok: false, status: 404 });
   });
   it("fixture: the LLP's allotments and units; unknown LLP is 404", () => {
