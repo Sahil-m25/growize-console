@@ -8776,7 +8776,7 @@
    "id": "REG-W2KAM1",
    "story": null,
    "seat": "imran",
-   "title": "W2-KAM-1 regression: KAM sees unit price and holding value in rupees on the record and Farms",
+   "title": "W2-KAM-1 regression (ruled 10 Oct, D139): a KAM SEES rupees — holding value on the record and the unit price on Farms",
    "steps": [
     "Press Imran Sheikh on the sign-in screen",
     "Press 'Investors' in the menu",
@@ -8784,8 +8784,8 @@
     "Press 'What they hold'"
    ],
    "expected": [
-    "No rupee amount is shown on the page.",
-    "The units are shown without a price."
+    "The units are shown with the holding value in rupees beside them.",
+    "The rupee figure is the investor's recorded allotment amount, not a unit price multiplied by the prototype's price."
    ],
    "fixtures": [
     "DEMO_BOOK",
@@ -8793,7 +8793,8 @@
    ],
    "group": "REG",
    "bug": "W2-KAM-1",
-   "jira": "GC-1493"
+   "jira": "GC-1493",
+   "ruling": "D139: KAMs and the Head of AM DO see rupee amounts — the allotment's Unit_Price / Total_Amount_Receivable / Total_Amount_Received on their own token, per field; empty where Zoho hides one."
   },
   {
    "id": "REG-W2KAM2",

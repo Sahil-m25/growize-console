@@ -44,7 +44,7 @@ Sources (outside the repo, kept with the harness): `report/bugs.md`, `harness/bu
 | B-25 | GC-1490 | S3 | IR A | Lead > Set the next step | Opened with 'Call - permission needed' pre-selected; Save gave 403. | Default channel ignored permission. | **Fixed+verified** | 9628d67 | `W1B-LB-NEXT-DEFAULT-CHANNEL`, `REG-B25` |
 | B-26 | GC-1491 | S3 | IR A | /me | Mobile/Initials not saved while display name blank (PATCH /api/me 422). | Whole profile saved; name empty (B-15). | **Fixed+verified** | 9628d67 | `W1B-ME-MOBILE-PERSIST`, `REG-B26` |
 | B-27 | GC-1492 | S3 | IR A | /activity | Activity showed 0 actions after notes, lost/re-open, forecast, absence; export unusable. | Lead actions not written to the activity log; nightly Zoho audit export job not scheduled. | **Env** | 9628d67 | `W1B-WF-LOST-AUDIT`, `W2K-ACT-AFTER-WRITES (B-27)`, `W3-REG-B27`, `REG-B27` |
-| W2-KAM-1 | GC-1493 | S3 | KAM | /inv record > What they hold; /farms | KAM sees unit price and holding value in rupees on the record and Farms. | SecHold and Farms render unit price unconditionally; farm API did not mask Unit_Price. | **Ruling** (NOT ruled on 10 Oct — still open, D138; KAM money stays hidden. The record's "What they hold" no longer shows a rupee figure to a KAM since the UNIT figure went (d138-rulings); Farms still shows the LLP price) | - | `W2K-INV-REC-NOMONEY (bug W2-KAM-1)`, `W2K-FARMS-NOMONEY (bug W2-KAM-1)`, `REG-W2KAM1` |
+| W2-KAM-1 | GC-1493 | S3 | KAM | /inv record > What they hold; /farms | KAM sees unit price and holding value in rupees on the record and Farms. | SecHold and Farms render unit price unconditionally; farm API did not mask Unit_Price. | **Ruled: KAM sees rupees** (D139, 10 Oct round 9: KAMs and the Head of AM see rupee amounts — the allotment's Unit_Price / Total_Amount_Receivable / Total_Amount_Received on their own token, per field, empty where Zoho hides one; the Farms unit price stays) | d139-kam-money | `W2K-INV-REC-NOMONEY (bug W2-KAM-1)` and `W2K-FARMS-NOMONEY (bug W2-KAM-1)` — re-label to EXPECT rupees (harness, outside the repo); `REG-W2KAM1` (re-labelled here) |
 | W2-KAM-2 | GC-1494 | S3 | KAM | /tkt; record > Tickets | Ticket rows read 'opened 2026-1 - null days old, SLA' (live ISO dates parsed as demo dates). | day6()/aged()/when() parse only demo date formats. | **Fixed in code** | 8471c5d | `W2K-TKT-DATES (bug W2-KAM-2)`, `REG-W2KAM2` |
 | W2-KAM-3 | GC-1495 | S3 | KAM | /today Last heard; /inv My accounts; Care | 'Last heard' disagreed across screens and was printed as a raw timestamp; lead-side touches reset the KAM cadence. | Today read the latest touch on the origin lead (any IR); My accounts and Care read the empty demo book. | **Fixed in code** | 8471c5d | `W2K-DASH-LASTHEARD-FORMAT (bug W2-KAM-3)`, `W2K-DASH-LASTHEARD-AGREE (bug W2-KAM-3)`, `REG-W2KAM3` |
 | W2-KAM-4 | GC-1496 | S4 | KAM | /inv ARL ID column, record header, Today rows | ARL ID showed the Zoho record id instead of the ARL code. | Row and header printed x.id rather than x.code. | **Fixed in code** | 8471c5d | `W2K-INV-ARLID (bug W2-KAM-4)`, `REG-W2KAM4` |
@@ -81,11 +81,11 @@ carries one case per area (`pm/plan-merged/ui-cases.json` REG-B22, REG-B22-EV, R
 | Fixed in code | 16 | B-02 (remainder), B-06, B-15 (remainder), B-16, B-19, B-23, W2-KAM-2, 3, 4, 6, W2-IRB-2, W2-REG-1, W7-FIN-1, 2, 3, 4 (branch `w7-fixes`) |
 | Seed | 3 | B-07, W2-KAM-5, W2-IRB-1 |
 | Ruled 10 Oct (D138) | 3 | B-10 (fixed in code on `d138-rulings`), B-20 (by design), B-22 (matrix corrected) |
-| Ruling | 1 | W2-KAM-1 |
+| Ruled 10 Oct (D139) | 1 | W2-KAM-1 (KAM sees rupees; fixed in code on `d139-kam-money`) |
 | Env | 1 | B-27 |
 
 D138 (10 Oct) split what was one ruling: B-10 — IRs DO see rupee amounts, only real Zoho values their own token reads (never the
-prototype unit price); W2-KAM-1 (the KAM) was not ruled and stays open — KAM money stays hidden. B-22 is a matrix correction, not an
+prototype unit price); W2-KAM-1 (the KAM) was ruled later the same day (D139): KAMs see rupees too. B-22 is a matrix correction, not an
 app defect. The status words added: **Ruled: fixed in code**, **Ruled: by design**, **Ruled: matrix corrected**.
 
 ## Notes on individual rows
@@ -101,7 +101,7 @@ app defect. The status words added: **Ruled: fixed in code**, **Ruled: by design
 - **B-22** (Ruling): Cases assert the server-policy side (hidden/refused). Owner to confirm per the ruling list.
 - **B-23** (Fixed in code): Not in the verified list handed over; classed Fixed in code (code 9628d67, sandbox seed e581ef7).
 - **B-27** (Env): Code in 9628d67 (POST /api/jobs/audit-export); `LOG_SINK=state` (b27-archive) keeps the archive and Plane C in the existing NoSQL store. Owner steps: `docs/runbooks/b27-activity-archive-staging.md`.
-- **W2-KAM-1** (Ruling): Same ruling as B-10.
+- **W2-KAM-1** (Ruled: KAM sees rupees): D139. The harness cases W2K-INV-REC-NOMONEY / W2K-FARMS-NOMONEY assert the old behaviour; re-label them to expect rupees (unit price, holding value, amount due on the record; unit price on Farms).
 - **W2-KAM-5** (Seed): Fails on staging until seed contacts get Origin_Lead.
 - **W2-KAM-6** (Fixed in code): Needs Change Owner on Cases for the KAM/AM Head profiles in Zoho (not made).
 - **W2-IRB-1** (Seed): W2-IRB-INV-D113 asserts '0 from your leads'; flip it when the seed is fixed.
