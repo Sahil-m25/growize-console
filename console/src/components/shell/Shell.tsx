@@ -26,6 +26,7 @@ import { useThemeSync } from "./ThemeButton";
 import { curSide, MNote, useIm } from "@/features/im/host";
 import { ImDrawer, DRAWERS as IMDRAWERS } from "@/features/im/drawers";
 import { useDocked } from "./useDocked";
+import { releaseStaleDocTitle } from "./useDocTitle";
 import { Live } from "./Live";
 import { LiveRoster } from "./LiveRoster";
 import { LeadPage } from "@/features/lead/LeadPage";
@@ -94,6 +95,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { view, id } = viewOf(pathname ?? "/");
+  /* W6-KAM-2: a record's tab title never outlives its page, whichever way the person left it */
+  useEffect(() => { releaseStaleDocTitle(pathname); }, [pathname]);
   /* THEME — reads/writes localStorage (try/catch) and the <html data-theme> attribute. Mounted
      once, here, rather than by whatever control happens to open the account menu. */
   useThemeSync();

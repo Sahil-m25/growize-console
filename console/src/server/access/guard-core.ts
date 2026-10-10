@@ -171,6 +171,7 @@ export const API_ROUTES: Readonly<Record<string, ApiRule>> = Object.freeze({
   "/api/investors/[id]/unlock": { kind: "page", page: "inv" },   /* M10-S21 + G2/GC-1526 (D136, D137): release = "pay" right and matched receipts summing to 10%; the override = Finance Operations / Head of Finance / Digital Infrastructure, decided inside */
   "/api/investors/[id]/full-paid": { kind: "page", page: "inv" },   /* D137 ruling 3 / D138: mark a Reserved allotment fully paid by hand — Finance or DI (not a KAM), decided inside (server/investors/full-paid) */
   "/api/investors/[id]/full-paid/request": { kind: "page", page: "inv" },   /* D138: a KAM asks Finance to confirm the full payment — KAM seat decided inside (server/investors/full-paid-request) */
+  "/api/investors/[id]/origin": { kind: "page", page: "inv" },   /* W6-KAM-1 read-only origin lead (GET, viewer's own token) / W7-FIN-2 DI sets Originating_IR from the lead owner (POST, DI decided inside: server/investors/origin) */
   "/api/investors/[id]/preview": { kind: "page", page: "inv" },   /* M10-S22 app preview: the record's own admission decides inside */
   "/api/investors/[id]/test-link": { kind: "page", page: "inv" }, /* M10-S23: super user only, decided inside */
   "/api/logs": { kind: "session" },   /* M15-S05 Planes B/C reader: server/logs/reader logAccessOf decides inside */

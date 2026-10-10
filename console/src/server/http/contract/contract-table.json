@@ -1195,6 +1195,18 @@
      "schema": "route doc (D138: a KAM asks Finance to confirm the full payment; note 10-500 chars; 409 supplementary-not-signed)"
     }
    }
+  },
+  "/api/investors/[id]/origin": {
+   "GET": {
+    "needsSandbox": "needs sandbox: reads one record by id from Zoho (GET /Contacts/:id, GET /Leads/:id) — the recorded fixtures replay COQL selects only"
+   },
+   "POST": {
+    "body": {
+     "type": "none",
+     "required": [],
+     "schema": "route doc (W7-FIN-2: Digital Infrastructure only; Originating_IR = Origin_Lead.Owner, empty field only, guarded, read back; no body)"
+    }
+   }
   }
  }
 }

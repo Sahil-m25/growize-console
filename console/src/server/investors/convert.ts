@@ -16,7 +16,8 @@
  *              1. the Contact — read first by Origin_Lead (already converted → `already`); else inserted with the lead's name,
  *                 email and mobile, a fresh ARL_ID, App_Access = Hold (D115 ruling 1), Origin_Lead = the lead, Said_Yes_At copied,
  *                 Originating_IR = the lead's Owner (D122 keeps that field to Admin / AM Head / DI: if Zoho refuses it the Contact
- *                 is written without it and the answer says `originatingIr: "not-written"` — a Zoho workflow fills it, see D137);
+ *                 is written without it; and since Zoho may also ACCEPT the insert and drop the field, the answer says `originatingIr:
+ *                 "written"` only when the Contact read back carries it (W7-FIN-2), else "not-written" — see D137 / D138 §7);
  *              2. the allotment — Reserved, Reserved_Units, Unit_Price, Investment_Date = today (IST), Hold_Until = 30 days from
  *                 this confirmation (the 10% is in: the balance is due within 30 days, D136's workflow), through the oversell
  *                 guard first (farms/oversell);
@@ -275,12 +276,20 @@ export function createConversion(deps: ConvertDeps) {
     return typeof v === "string" && ARL_CODE.test(v) ? v : null;
   }
 
+  /** W7-FIN-2: "written" only when the Contact READ BACK on Finance's token carries an Originating_IR. Zoho accepts an insert
+   *  naming a field the profile may not edit and silently drops it (D122 keeps Originating_IR to Admin / AM Head / DI), so the
+   *  insert's success proves nothing. A refused or failed read is not proof either: "not-written". */
+  async function originatingIrOf(cred: UserCredential, contactId: string, signal?: AbortSignal): Promise<"written" | "not-written"> {
+    const r = await crm.getRecord(cred, CONTACTS, contactId, { fields: ["Originating_IR"], signal }).catch(() => null);
+    return r && r.ok && r.value && validId(idOf(r.value.Originating_IR)) ? "written" : "not-written";
+  }
+
   /** Step 1: the Contact (resumable: found by Origin_Lead first). */
   async function ensureContact(p: ConvertPrincipal, leadId: string, lead: ZohoRecord, signal?: AbortSignal)
     : Promise<{ contactId: string; code: string; originatingIr: "written" | "not-written"; created: boolean } | "duplicate-email"> {
     const cred = p.credential;
     const have = await investorOf(cred, leadId, signal);
-    if (have) return { contactId: have.contactId, code: have.code ?? "", originatingIr: "written", created: false };
+    if (have) return { contactId: have.contactId, code: have.code ?? "", originatingIr: await originatingIrOf(cred, have.contactId, signal), created: false };
     /* Zoho needs Last_Name: the lead's, else the last word of its first name (splitName, as add-paid does) */
     const leadFirst = typeof lead.First_Name === "string" ? lead.First_Name.trim() : "";
     const hasLast = typeof lead.Last_Name === "string" && !!lead.Last_Name.trim();
@@ -305,16 +314,16 @@ export function createConversion(deps: ConvertDeps) {
         originatingIr = "not-written";
         w = await insertOne(cred, CONTACTS, base, signal);
       }
-      if ("id" in w) return { contactId: w.id, code, originatingIr, created: true };
+      if ("id" in w) return { contactId: w.id, code, originatingIr: originatingIr === "written" ? await originatingIrOf(cred, w.id, signal) : originatingIr, created: true };
       if (w.failed?.code === "DUPLICATE_DATA" && w.failed.field === "ARL_ID") { highest = code; continue; }
       if (w.failed?.code === "DUPLICATE_DATA" && w.failed.field === "Email") {
         const raced = await investorOf(cred, leadId, signal);   // a racing press of the same conversion took it
-        if (raced) return { contactId: raced.contactId, code: raced.code ?? "", originatingIr: "written", created: false };
+        if (raced) return { contactId: raced.contactId, code: raced.code ?? "", originatingIr: await originatingIrOf(cred, raced.contactId, signal), created: false };
         return "duplicate-email";
       }
       if (w.kind === "network" || w.kind === "server") {
         const late = await investorOf(cred, leadId, signal);
-        if (late) return { contactId: late.contactId, code: late.code ?? code, originatingIr, created: true };
+        if (late) return { contactId: late.contactId, code: late.code ?? code, originatingIr: await originatingIrOf(cred, late.contactId, signal), created: true };
       }
       throw new Fail("contact", w.kind);
     }

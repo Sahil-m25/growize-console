@@ -10,13 +10,19 @@ import type { ImInvestor } from "@/lib/im";
 import type { InvestorRecord } from "@/server/investors/record";
 import { storyOf, touchSummary, type InvestorStory } from "@/server/investors/story";
 
-const h = vi.hoisted(() => ({ card: null as unknown, asked: [] as unknown[] }));
+const h = vi.hoisted(() => ({ card: null as unknown, asked: [] as unknown[], lead: null as unknown, leadsPage: true, mode: "fixture" }));
 vi.mock("@/features/leads/nav", () => ({ useGoLead: () => () => {} }));
+vi.mock("@/lib/store", () => ({ useConsole: () => ({ state: {}, dispatch: () => {} }) }));
+vi.mock("@/lib/selectors", async () => ({ ...(await vi.importActual<typeof import("@/lib/selectors")>("@/lib/selectors")), canReach: () => h.leadsPage }));
 vi.mock("@/lib/data/api", async () => {
   const real = await vi.importActual<typeof import("@/lib/data/api")>("@/lib/data/api");
-  return { ...real, useApiRead: (_ep: unknown, _b: unknown, id: unknown) => { h.asked.push(id); return id && h.card ? { state: "ok", data: { card: h.card } } : { state: "idle" }; } };
+  return { ...real, useApiMode: () => h.mode, useApiWrite: () => async () => ({ ok: false, status: 503, code: "x", error: "x" }),
+    useApiRead: (ep: { path: (a: unknown) => string | null }, _b: unknown, id: unknown) => {
+      if (id && String(ep.path(id)).endsWith("/origin")) return h.lead ? { state: "ok", data: { lead: h.lead } } : { state: "idle" };
+      h.asked.push(id); return id && h.card ? { state: "ok", data: { card: h.card } } : { state: "idle" };
+    } };
 });
-const { StoryJourney, journeyFirst, touchLine } = await import("./Story");
+const { StoryJourney, OriginLeadCard, journeyFirst, touchLine } = await import("./Story");
 
 const text = (x: string) => x.replace(/<[^>]+>/g, " ").replace(/&#x27;/g, "'").replace(/&quot;/g, "\"").replace(/&amp;/g, "&").replace(/\s+/g, " ");
 const CONTACT = { saidYesAt: "2026-08-20T11:00", createdAt: "2026-08-21T09:00", kamId: null, kamSince: null };
@@ -90,6 +96,39 @@ describe("StoryJourney — the whole story, in place", () => {
     expect(t).toContain("The lead itself is not readable for your seat");
     expect(t).toContain("the lead's touches are not readable for your seat");
     expect(t).not.toContain("Open lead ›");   /* W6-KAM-1: no link to a lead this seat cannot read */
+  });
+  it("W6-KAM-1 (w7): a seat without the Leads page that CAN read the lead gets a read-only toggle, never a navigation", () => {
+    h.leadsPage = false;
+    try {
+      const html = renderToStaticMarkup(<StoryJourney s={s} me="harsha" x={x} rec={rec} irSeat={false} />);
+      expect(text(html)).toContain("Open lead ›");
+      expect(html).toContain('aria-expanded="false"');   /* a disclosure on this page, not a link to /leads (which bounced to /today) */
+    } finally { h.leadsPage = true; }
+    expect(renderToStaticMarkup(<StoryJourney s={s} me="harsha" x={x} rec={rec} irSeat={false} />)).not.toContain("aria-expanded");
+  });
+  it("W6-KAM-1: the read-only lead card shows where the lead stands, and says when Zoho hides a column", () => {
+    h.lead = { contactId: x.id, leadId: LEAD.id, readable: true, reason: null, status: "Reserved - 10% in", source: "Events", owner: { id: "554023000000300001", name: "IR A Test" },
+      unitsInterested: 2, createdAt: "2026-07-01T10:00:00+05:30", saidYesAt: "2026-08-20T11:00:00+05:30", lostAt: null, hiddenFields: ["Lead_Source"], originatingIrSet: true };
+    const t = text(renderToStaticMarkup(<OriginLeadCard s={s} me="harsha" id={x.id} />));
+    for (const w of ["The lead — read only", "Reserved - 10% in", "IR A Test", "Units interested 2", "Source not shown for your seat", "20 Aug 11:00"]) expect(t).toContain(w);
+    h.lead = { ...(h.lead as object), readable: false, reason: "not-shared" };
+    expect(text(renderToStaticMarkup(<OriginLeadCard s={s} me="harsha" id={x.id} />))).toContain("Zoho does not share this lead with your seat");
+    h.lead = null;
+  });
+  it("W7-FIN-2: live, an investor with no Originating IR says the IR cannot see them; only Digital Infrastructure gets the one-click fix", () => {
+    const seat = (r: string) => { const d = imDemoData(); const k = Object.keys(d.P).find((w) => d.P[w].r === r)!; return { s2: { data: d, ui: initialImUi() }, k }; };
+    h.mode = "live";
+    try {
+      const di = seat("di"), fin = seat("ops");
+      const tDi = text(renderToStaticMarkup(<StoryJourney s={di.s2} me={di.k} x={x} rec={rec} irSeat={false} />));
+      expect(tDi).toContain("The IR won't see this investor until Digital Infrastructure sets Originating IR.");
+      expect(tDi).toContain("Set originating IR from the lead owner");
+      const tFin = text(renderToStaticMarkup(<StoryJourney s={fin.s2} me={fin.k} x={x} rec={rec} irSeat={false} />));
+      expect(tFin).toContain("The IR won't see this investor");
+      expect(tFin).not.toContain("Set originating IR from the lead owner");
+      const set = { ...rec, origin: { ...rec.origin, irVia: "contact" } } as typeof rec;
+      expect(text(renderToStaticMarkup(<StoryJourney s={di.s2} me={di.k} x={x} rec={set} irSeat={false} />))).not.toContain("The IR won't see");
+    } finally { h.mode = "fixture"; }
   });
   it("W6-KAM-1: a KAM or Finance seat that cannot read the lead gets the note and no Open lead link", () => {
     const t = text(renderToStaticMarkup(<StoryJourney s={s} me="rohit" x={x} rec={{ ...rec, story: { ...story, leadSide: "contact", touches: null } }} irSeat={false} />));

@@ -20,6 +20,7 @@ import type { ImPageProps } from "../common";
 import { newIdempotencyKey, useApiRead, useApiWrite } from "@/lib/data/api";
 import { farmList } from "@/lib/data/endpoints/farms";
 import { askFullPaid, leadConfirm, leadConversion, markFullPaid } from "@/lib/data/endpoints/conversion";
+import { ORIGINATING_IR_MISSING_TEXT } from "@/lib/data/endpoints/origin";
 import { RECEIPT_MODES } from "@/lib/money/receipt-modes";
 import { TenTrail } from "@/components/money/TenTrail";
 import { balanceDueFor } from "@/lib/money/balance-clock";
@@ -97,7 +98,8 @@ function ConvertFoot(c: Ctx) {
         + (v.relinkLeft.length ? ` · ${v.relinkLeft.length} receipt(s) still to link — press Save again` : "")
         /* D138: the money may cover the commitment, but the full conversion waits for the signed supplementary */
         + (v.fullPaid?.value === "waiting-supplementary" ? " · fully paid waits for the signed supplementary agreement" : "")
-        + (v.originatingIr === "not-written" ? " · the originating IR is filled by Zoho's workflow" : "")
+        /* W7-FIN-2: "not-written" is now the truth read back from Zoho — the IR cannot see this investor yet */
+        + (v.originatingIr === "not-written" ? " · " + ORIGINATING_IR_MISSING_TEXT : "")
       : r.data.recorded ? "Recorded and matched · " + r.data.recorded.refMasked + (r.data.money.trail.reached ? "" : " — the 10% is not reached yet") : "Saved.");
   });
   return <button className="act" disabled={!ready} title={ready ? undefined : "Fill in a receipt or pick the farm"} onClick={ready ? press : undefined}>

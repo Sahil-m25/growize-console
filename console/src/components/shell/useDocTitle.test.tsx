@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const fx = vi.hoisted(() => ({ run: [] as Array<() => void | (() => void)> }));
 vi.mock("react", async () => ({ ...(await vi.importActual<typeof import("react")>("react")), useEffect: (f: () => void | (() => void)) => { fx.run.push(f); } }));
-const { useDocTitle } = await import("./useDocTitle");
+const { useDocTitle, releaseStaleDocTitle } = await import("./useDocTitle");
 
 const BASE = "Growize IR Console — Investor workspace";
 const NAME = "Radhika Menon · Investor · Growize console";
@@ -31,6 +31,24 @@ describe("useDocTitle", () => {
     const c2 = mount("Harish Gowda · Investor · Growize console");
     (c2[0] as () => void)();
     expect(doc.title).toBe(BASE);
+  });
+  it("W6-KAM-2 (Open lead): off the record's page the record's name is put back, even while its hook is still mounted", () => {
+    const loc = { pathname: "/inv" };
+    (globalThis as unknown as { location: typeof loc }).location = loc;
+    try {
+      mount(NAME);
+      expect(doc.title).toBe(NAME);
+      loc.pathname = "/today";                 /* "Open lead" moved the page; the record re-renders once before it unmounts */
+      fx.run.slice(1).forEach(f => f());       /* the per-render effect only */
+      useDocTitle(NAME); fx.run.slice(-1).forEach(f => f());
+      expect(doc.title).toBe(BASE);
+      doc.title = NAME;
+      releaseStaleDocTitle("/today");          /* the shell's path-change guard */
+      expect(doc.title).toBe(BASE);
+      loc.pathname = "/inv"; doc.title = NAME;
+      releaseStaleDocTitle("/inv");            /* still on the record's page: untouched */
+      expect(doc.title).toBe(NAME);
+    } finally { delete (globalThis as unknown as { location?: unknown }).location; }
   });
   it("does nothing while no record is open", () => {
     mount(null);

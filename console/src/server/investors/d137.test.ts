@@ -35,10 +35,11 @@ const made = (id: string) => ok([{ index: 0, ok: true, id, code: "SUCCESS", fiel
 
 type Call = [string, string, unknown?];
 /** A Zoho double: `state` drives the answers; every call is kept. */
-function double(o: { receipts?: Record<string, unknown>[]; contact?: boolean; leadMissing?: boolean; noLeadField?: boolean; originatingIrRefused?: boolean;
+function double(o: { receipts?: Record<string, unknown>[]; contact?: boolean; leadMissing?: boolean; noLeadField?: boolean; originatingIrRefused?: boolean; originatingIrDropped?: boolean;
   allot?: Record<string, unknown> | null; noConverted?: boolean; noMatchedAt?: boolean } = {}) {
   const calls: Call[] = [];
-  const st = { receipts: [...(o.receipts ?? [])], contact: o.contact ? CONTACT : null as string | null, allot: o.allot === undefined ? null : o.allot };
+  const st = { receipts: [...(o.receipts ?? [])], contact: o.contact ? CONTACT : null as string | null, allot: o.allot === undefined ? null : o.allot,
+    contactIr: (o.contact ? { id: IR } : null) as { id: string } | null };
   const crm = {
     async getRecord(_c: unknown, module: string, id: string) {
       calls.push(["GET", `${module}/${id}`]);
@@ -47,6 +48,7 @@ function double(o: { receipts?: Record<string, unknown>[]; contact?: boolean; le
       if (module === "LLP_Creation_Module") return ok({ id, Name: "Synthetic Farm", Pet_Unit_Price: 100_000, LLP_Status: "Open for Reservation" });
       if (module === "LLP_UnitAllocation_Module") return st.allot ? ok({ id, ...st.allot }) : ok(null);
       if (module === "Receipts") return ok(st.receipts.find((r) => r.id === id) ?? null);
+      if (module === "Contacts") return st.contact === id ? ok({ id, Originating_IR: st.contactIr }) : ok(null);
       return ok(null);
     },
     async coql(_c: unknown, q: string) {
@@ -71,6 +73,8 @@ function double(o: { receipts?: Record<string, unknown>[]; contact?: boolean; le
       }
       if (module === "Contacts") {
         if (o.originatingIrRefused && "Originating_IR" in r) return bad("invalid-data", { records: [{ index: 0, ok: false, id: null, code: "INVALID_DATA", field: "Originating_IR", action: null }] });
+        /* W7-FIN-2: Zoho may accept the insert and silently drop a field the profile may not edit */
+        st.contactIr = o.originatingIrDropped ? null : (r.Originating_IR as { id: string } | undefined) ?? null;
         st.contact = CONTACT; return made(CONTACT);
       }
       if (module === "LLP_UnitAllocation_Module") { st.allot = { ...r, Modified_Time: MT }; return made(ALLOT); }
@@ -159,6 +163,18 @@ describe("GC-1527 — the investor is created only after Finance confirms the 10
     const contacts = d.calls.filter((c) => c[0] === "POST" && c[1] === "Contacts");
     expect(contacts.length).toBe(2);
     expect(contacts[1]![2]).not.toHaveProperty("Originating_IR");
+  });
+
+  it("W7-FIN-2: Zoho accepts the insert but drops Originating_IR — the answer reads the Contact back and says not-written", async () => {
+    const d = double({ receipts: [leadReceipt(R1, 100_000, "Advance")], originatingIrDropped: true });
+    const conv = createConversion({ crm: d.crm, oversell, authority: finance, log: d.log, recordIdPrefix: P, clock: () => NOW });
+    const r = await conv.confirm(principal(), LEAD, { terms: { llpId: LLP, units: 10 } });
+    expect(r.ok && r.value.converted?.originatingIr).toBe("not-written");
+    expect(d.calls.filter((c) => c[0] === "POST" && c[1] === "Contacts").length).toBe(1);
+    expect(d.calls.some((c) => c[0] === "GET" && c[1] === `Contacts/${CONTACT}`)).toBe(true);
+    /* a second press (the Contact exists) reads it back too — never a blind "written" */
+    const again = await conv.confirm(principal(), LEAD, { terms: { llpId: LLP, units: 10 } });
+    expect(again.ok && again.value.converted?.originatingIr).toBe("not-written");
   });
 
   it("degrades: no Receipts.Lead field → fields-missing; lead not shared → lead-not-visible; not Finance → refused before any read", async () => {
