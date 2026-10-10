@@ -144,3 +144,9 @@ now names the real fields.
    the request answers `fields-missing`; make it read-only for KAM (proposed, item A).
 4. **IR Manager rights flagged on 10 Oct** — IR read/write on allotment `Total_LLP_Units`, IR Manager read/write on `Unit_Price` look wider
    than intended (sandbox note); not touched here.
+
+**Amendment, 11 Oct 2026 (B-25, settled by Jev under the standing rule).** Ruling 7 said there would be no code for Originating_IR. W7-FIN-2 later added the Digital Infrastructure stopgap button. Question put to Jev: keep the button or remove it? Asked twice, swapping the option order the second time, using jev/questions/decide.mjs with the cache off.
+- Run 1: keep 0.98, remove 0.02
+- Run 2: keep 0.97, remove 0.03
+
+Outcome: the button stays as a stopgap until the `gz_set_originating_ir` workflow is live in Zoho, and is removed after that.
