@@ -30,7 +30,7 @@ const receiptsLedger = (q, extra = []) => receiptRows(q, [...recorded('today-inv
 const readRoute = (one = 'coql.hold-prakash', extra = []) => (q) => {
   if (/from Receipts/.test(q)) return receiptsLedger(q, extra);
   if (/group by LLP, Allocation_Status/.test(q)) return ['farms', 'agg.occupancy'];
-  if (/Total_Amount_Receivable = 0/.test(q)) return ['farms', 'agg.occupancy-paid'];
+  if (/Total_Amount_Receivable > 0/.test(q)) return ['farms', 'agg.occupancy-paid'];
   if (/from LLP_UnitAllocation_Module where \(Allocation_Status in/.test(q)) return ['farms', 'coql.occupants'];
   if (/Hold_Until <= /.test(q)) return ['holds', 'coql.holds'];
   if (/from LLP_UnitAllocation_Module where \(id = /.test(q)) return ['holds', one];

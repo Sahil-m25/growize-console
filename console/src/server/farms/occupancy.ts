@@ -9,7 +9,7 @@
  * Issued_Units, Cancelled counts nothing (../investors/allotments' rule). Per LLP:
  *     released  = Units_Released (the LLP's field; null or 0 → not released)
  *     allotted  = Σ Issued_Units of Issued allotments
- *     reservedOrPaid = Σ Reserved_Units of Reserved allotments   (paid = the part whose Receivable is 0 and Received > 0 —
+ *     reservedOrPaid = Σ Reserved_Units of Reserved allotments   (paid = the part whose Receivable − Received ≤ 0, Receivable being the total committed, D140 addendum —
  *                      Money seats only; the account-management wall never names a money field, D12/D40)
  *     free      = max(0, released − allotted − reservedOrPaid); oversold when that difference is negative.
  * The tiles sum the LLPs; the free tile is released − allotted − reservedOrPaid (negative → oversold), as the page reads it.
@@ -49,7 +49,13 @@ export const OCCUPANT_FIELDS = checkAmProjection(MODULES.amAllotments, [
 /** The same, for a Money seat: plus Received / Receivable to tell a paid reservation. */
 export const OCCUPANT_MONEY_FIELDS = checkProjection(MODULES.allotments, [...OCCUPANT_FIELDS, "Total_Amount_Received", "Total_Amount_Receivable"]);
 export const COUNT_QUERY = `select LLP, Allocation_Status, SUM(Reserved_Units), SUM(Issued_Units) from ${ALLOT} where ${LIVE} group by LLP, Allocation_Status`;
-export const PAID_QUERY = `select LLP, SUM(Reserved_Units) from ${ALLOT} where ${coqlAll(["Allocation_Status = 'Reserved'", "Total_Amount_Receivable = 0", "Total_Amount_Received > 0"])} group by LLP`;
+/** B-24 / D140 addendum: Total_Amount_Receivable is the TOTAL committed (units × Unit_Price), so "paid" is receivable − received ≤ 0.
+ *  COQL cannot compare two fields, so the Reserved allotments with money in are read as rows (id order, paged) and compared here. */
+export const PAID_FIELDS = Object.freeze(["id", "LLP", "Reserved_Units", "Total_Amount_Receivable", "Total_Amount_Received"]);
+export const PAID_WHERE = coqlAll(["Allocation_Status = 'Reserved'", "Total_Amount_Receivable > 0", "Total_Amount_Received > 0"]);
+/** The balance due is receivable − received; a reservation is paid when a committed amount exists and nothing is left. Unknown → not paid. */
+export const isPaidInFull = (receivable: number | null, received: number | null): boolean =>
+  receivable !== null && receivable > 0 && (received ?? 0) > 0 && receivable - (received ?? 0) <= 0;
 
 export interface LlpShelf {
   readonly id: string;
@@ -124,7 +130,6 @@ export function createFarmOccupancy(deps: FarmsDeps) {
       const add = (k: string, v: unknown) => { if (typeof v === "number" && Number.isFinite(v)) out[k] = (out[k] ?? 0) + v; };
       if (st === "Issued") add(`${llp}:i`, row["SUM(Issued_Units)"]);
       else if (st === "Reserved") add(`${llp}:r`, row["SUM(Reserved_Units)"]);
-      else if (st === undefined) add(`${llp}:p`, row["SUM(Reserved_Units)"]);
     }
     return out;
   };
@@ -144,8 +149,14 @@ export function createFarmOccupancy(deps: FarmsDeps) {
       let paidCounts: Counts | null = null;
       if (money) {
         const pc = await deps.cache.readSettled<Counts>(scopedKey<Counts>(cScope, "farms.occupancy.paid"), async () => {
-          const raw = await aggregate(p.credential, PAID_QUERY, signal);
-          return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k.replace(/:p$/, ":paid"), v]));
+          const r = await pagedSelect(deps.crm, p.credential, PAID_FIELDS, ALLOT, PAID_WHERE, "id asc", signal, deps.maxPages);
+          if (!r.ok) throw Object.assign(new Error("zoho"), { kind: r.kind === "source-error" ? r.errorKind : "unexpected" });
+          const out: Record<string, number> = {};
+          for (const x of r.rows) {
+            const llp = idOf(x.LLP), units = num(x, "Reserved_Units");
+            if (llp && units !== null && units > 0 && isPaidInFull(num(x, "Total_Amount_Receivable"), num(x, "Total_Amount_Received"))) out[`${llp}:paid`] = (out[`${llp}:paid`] ?? 0) + units;
+          }
+          return out;
         });
         if (pc.state === "error") return { ok: false, kind: "source-error", errorKind: pc.reason, retryable: retryable(pc.reason) };
         paidCounts = pc.value;
@@ -212,7 +223,7 @@ function occupantOf(x: ZohoRecord, money: boolean): Occupant | null {
   return Object.freeze({
     allotmentId, investorId, llpId, status: st, units,
     name: str(x, "Customer.Full_Name", 120), code: str(x, "Customer.ARL_ID", 40),
-    paid: money ? st === "Reserved" && receivable === 0 && (received ?? 0) > 0 : null,
+    paid: money ? st === "Reserved" && isPaidInFull(receivable, received) : null,
   });
 }
 

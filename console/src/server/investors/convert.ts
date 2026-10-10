@@ -352,7 +352,7 @@ export function createConversion(deps: ConvertDeps) {
     const holdUntil = holdFrom(now());
     const w = await insertOne(cred, ALLOTMENTS, {
       Name: (`${code || contactId} — ${farm.name}`).slice(0, 120), Customer: { id: contactId }, LLP: { id: farm.llpId },
-      Unit_Price: farm.unitPrice, Investment_Date: istDay(now()), Allocation_Status: "Reserved", Reserved_Units: units, Issued_Units: 0, Hold_Until: holdUntil,
+      Unit_Price: farm.unitPrice, Total_Amount_Receivable: units * farm.unitPrice, Investment_Date: istDay(now()), Allocation_Status: "Reserved", Reserved_Units: units, Issued_Units: 0, Hold_Until: holdUntil,
     }, signal);
     if ("id" in w) return { allotmentId: w.id, holdUntil, created: true };
     throw new Fail("allotment", w.kind);

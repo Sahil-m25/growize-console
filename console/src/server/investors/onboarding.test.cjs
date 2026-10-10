@@ -179,7 +179,7 @@ test('paid in full: one Contact (App_Access = Hold — D115 ruling 1), one Issue
     Mobile: '+91 90000 00001', ARL_ID: 'ARL-INV-0206', App_Access: 'Hold' });
   assert.ok(!w.some((c) => JSON.stringify(c[2]).includes('Invite')), 'D115: nothing add-paid writes opens app access');
   assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
-    Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Issued', Issued_Units: 2, Reserved_Units: 0, Capital_Invested: 5_000_000 });
+    Unit_Price: 2_500_000, Total_Amount_Receivable: 5_000_000, Investment_Date: '2026-09-01', Allocation_Status: 'Issued', Issued_Units: 2, Reserved_Units: 0, Capital_Invested: 5_000_000 });
   const rc = w[2][2].data[0];
   assert.equal(rc.Kind, 'Full'); assert.equal(rc.Amount, 5_000_000); assert.equal(rc.Match_State, 'Pending');
   assert.equal(rc.Received_On, '2026-09-01T00:00:00+05:30'); assert.deepEqual(rc.Allotment, { id: ALLOT });
@@ -195,7 +195,7 @@ test('part paid: the allotment is Reserved with NO hold written here (M09-S09-NO
   assert.equal(res.value.allocationStatus, 'Reserved');
   const w = r.writes();
   assert.deepEqual(w[1][2].data[0], { Name: 'ARL-INV-0206 — Synthetic Farm LLP', Customer: { id: CONTACT }, LLP: { id: LLP },
-    Unit_Price: 2_500_000, Investment_Date: '2026-09-01', Allocation_Status: 'Reserved', Reserved_Units: 2, Issued_Units: 0 });
+    Unit_Price: 2_500_000, Total_Amount_Receivable: 5_000_000, Investment_Date: '2026-09-01', Allocation_Status: 'Reserved', Reserved_Units: 2, Issued_Units: 0 });
   assert.ok(!r.writes().some((c) => 'Hold_Until' in (c[2]?.data?.[0] ?? {})), 'add-paid never writes the hold deadline — one fact, one writer');
   assert.equal(w[2][2].data[0].Kind, 'Advance');
   assert.equal(w[2][2].data[0].Match_State, 'Pending', 'Pending money starts no hold (D21)');

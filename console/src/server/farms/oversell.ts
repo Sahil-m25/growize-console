@@ -148,7 +148,11 @@ export function createOversellGuard(deps: OversellDeps) {
     > {
       const pre = await check(cred, ask, signal);
       if (!pre.ok) return pre;
-      const r = await deps.crm.insert(cred, ALLOTMENT_MODULE, [fields], { signal });
+      // B-24 / D140 addendum: the total committed (units × Unit_Price) is written once, here, on the creator's own token.
+      const price = fields.Unit_Price;
+      const row: ZohoFields = fields.Total_Amount_Receivable === undefined && typeof price === "number" && Number.isSafeInteger(price * ask.units) && price * ask.units > 0
+        ? { ...fields, Total_Amount_Receivable: price * ask.units } : fields;
+      const r = await deps.crm.insert(cred, ALLOTMENT_MODULE, [row], { signal });
       if (r.ok) {
         const first = r.value[0];
         if (first && first.ok) return { ok: true, id: first.id, free: pre.free - ask.units };

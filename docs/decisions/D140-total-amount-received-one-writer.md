@@ -38,9 +38,23 @@ cleaner — Zoho would keep it with no console writer and no backfill. Two catch
 (it needs two roll-ups and a formula), and it is computed on Zoho's schedule, not at the match. If Digital Infrastructure adds it,
 `ir-money` reads the formula field and `received-total` is deleted — the console path ships now so the IR is right today.
 
-## Open
-- **`Total_Amount_Receivable` has no writer either.** `investors/convert` creates an allotment with `Unit_Price` and units but no
-  receivable, so for a newly converted investor the IR's due is empty ("no amount") until someone sets it; the seeded ones carry a
-  value. D75 left open whether it is the total ever due or the balance still due, and the code reads it both ways (`ir-money`: total;
-  `farms/occupancy` "paid" = receivable 0). Owner to rule; then either the convert path writes it (units × Unit_Price) or a Zoho
-  formula does.
+## Open (closed by the addendum below)
+- `Total_Amount_Receivable` had no writer, and D75 left open whether it is the total ever due or the balance still due; the code read it both ways.
+
+## Addendum (10 Oct 2026): `Total_Amount_Receivable` is the TOTAL committed amount (carry-forward B-24)
+**Ruling.** `Total_Amount_Receivable` = the total committed amount for the allotment = `Total_LLP_Units × Unit_Price` (the investor's ticket).
+It is set once, when the allotment is created, by the creator on their own token. It changes only through the future G5 amount-change flow.
+The balance due, everywhere, is `Total_Amount_Receivable − Total_Amount_Received` (the received side is D140's one writer).
+
+1. **Writers (create paths, all three).** `investors/convert` (Finance, D137 convert: `units × farm Pet_Unit_Price`, with `Unit_Price`);
+   `investors/add-paid` (Finance: `units × farm Pet_Unit_Price` = its `total`, with `Unit_Price`); `farms/oversell insertAllotment`
+   (the oversell-guarded insert, no caller today: derives `Unit_Price × ask.units` when the caller did not set it). An allotment that already
+   exists is never rewritten by these paths. `investors/receivable-writer.test.ts` fails if any other source file sets the field.
+2. **Readers fixed.** `farms/occupancy`: "paid" was `Total_Amount_Receivable = 0 and Total_Amount_Received > 0` (the balance reading); it is now
+   `receivable > 0 and receivable − received ≤ 0`. COQL cannot compare two fields, so the shelf's paid count reads the Reserved allotments with money in as rows
+   (paged, Finance's token) and compares in code (`isPaidInFull`); the per-occupant flag uses the same function. A missing or zero total is never paid.
+   `investors/ir-money` (IR and KAM due) and `numbers/transfers` (value = the total) already read it as the total and are unchanged.
+3. **Backfill.** `zoho/sandbox/backfill-received.mjs` plan() also proposes `Total_Amount_Receivable = Total_LLP_Units × Unit_Price` where it is empty or 0 and both
+   inputs are positive (`receivableChanges`); apply() writes both fields of an allotment in ONE guarded PUT. Same sandbox-zgid guard and dry-run pattern.
+   Note: `Total_LLP_Units` is the allotment's older "history" field (D82); the console's own units are `Reserved_Units` / `Issued_Units`. An allotment with no
+   `Total_LLP_Units` is not proposed: set it, or extend the backfill to fall back to those, deliberately.

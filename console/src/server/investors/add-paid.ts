@@ -411,7 +411,7 @@ export function createAddPaid(deps: AddPaidDependencies): AddPaidService {
     // 3. the allotment
     const allot: ZohoFields = {
       Name: (code + " — " + farm.name).slice(0, 120),
-      Customer: { id: contactId }, LLP: { id: f.llpId }, Unit_Price: farm.price, Investment_Date: f.investmentDate,
+      Customer: { id: contactId }, LLP: { id: f.llpId }, Unit_Price: farm.price, Total_Amount_Receivable: total, Investment_Date: f.investmentDate,
       ...(full
         ? { Allocation_Status: "Issued", Issued_Units: f.units, Reserved_Units: 0, Capital_Invested: total }
         : { Allocation_Status: "Reserved", Reserved_Units: f.units, Issued_Units: 0 }),

@@ -13,7 +13,7 @@ const ok = (data) => ({ status: 200, headers: { 'content-type': 'application/jso
 const routeWith = (over = {}) => (q) => {
   if (/COUNT\(id\)/.test(q)) return ['farms', 'agg.units'];
   if (/group by LLP, Allocation_Status/.test(q)) return over.counts ?? ['farms', 'agg.occupancy'];
-  if (/Total_Amount_Receivable = 0/.test(q)) return over.paid ?? ['farms', 'agg.occupancy-paid'];
+  if (/Total_Amount_Receivable > 0/.test(q)) return over.paid ?? ['farms', 'agg.occupancy-paid'];
   if (/from LLP_UnitAllocation_Module where \(/.test(q)) return over.occupants ? over.occupants(q) : ['farms', 'coql.occupants'];
   return ['farms', 'coql.demo-llps'];
 };
@@ -49,11 +49,14 @@ test('who is on which LLP: every live allotment the seat may open, with name and
   assert.ok(!/Total_Amount|50000/.test(JSON.stringify(r)));
   await read(rig, FIN, 'fin');
   assert.equal(rig.queries.filter((q) => /group by LLP, Allocation_Status/.test(q)).length, 1);   // counts cached (org)
-  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).length, 2); // rows re-read
+  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by|Total_Amount_Receivable > 0/.test(q)).length, 2); // rows re-read
 });
 
 test('a paid reservation is split out for a Money seat', async () => {
-  const rig = await makeRig(load, routeWith({ paid: ok([{ LLP: { id: B }, 'SUM(Reserved_Units)': 1 }]) }));
+  const rig = await makeRig(load, routeWith({ paid: ok([
+    { id: `${P}740998901`, LLP: { id: B }, Reserved_Units: 1, Total_Amount_Receivable: 200000, Total_Amount_Received: 200000 },   // balance 0 -> paid
+    { id: `${P}740998902`, LLP: { id: B }, Reserved_Units: 4, Total_Amount_Receivable: 750000, Total_Amount_Received: 250000 },   // balance 500000 -> not paid (B-24)
+  ]) }));
   const b = (await read(rig, FIN, 'fin')).llps.find((x) => x.id === B);
   assert.deepEqual([b.reservedOrPaid, b.paid, b.reserved, b.free], [5, 1, 4, 23]);
 });
@@ -74,10 +77,10 @@ test('a KAM: no money field, KAM = me through the lookup, own counts key (not Fi
   assert.equal(r.countsComplete, false);
   assert.ok(r.llps.every((x) => x.paid === null && x.recordedDiffers === false));
   assert.deepEqual(r.occupants.map((o) => o.code), ['ARL-INV-0216']);
-  const occ = rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).pop();
+  const occ = rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by|Total_Amount_Receivable > 0/.test(q)).pop();
   assert.match(occ, new RegExp(`Customer.KAM = '${NEHA}'`));
   assert.ok(!/Total_Amount/.test(occ));
-  assert.equal(rig.queries.filter((q) => /Total_Amount_Receivable = 0/.test(q)).length, 1); // Finance's only
+  assert.equal(rig.queries.filter((q) => /Total_Amount_Receivable > 0/.test(q)).length, 1); // Finance's only
   assert.equal(rig.queries.filter((q) => /group by LLP, Allocation_Status/.test(q)).length, 2); // a KAM never reads Finance's cached count
   assert.ok(!OCCUPANT_FIELDS.some((f) => /amount|price|pan|bank/i.test(f)));
 });
@@ -86,7 +89,7 @@ test("an IR sees only their own-lead investors on the land; a row from another I
   const rig = await makeRig(load, routeWith({ occupants: () => ['farms', 'coql.occupants-ir'] }));
   const r = await read(rig, ROHIT, 'ir');
   assert.deepEqual(r.occupants.map((o) => o.code), ['ARL-INV-0208']);
-  assert.match(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).pop(), new RegExp(`Customer.Originating_IR = '${ROHIT}'\\) and Customer.Origin_Lead is not null`));
+  assert.match(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by|Total_Amount_Receivable > 0/.test(q)).pop(), new RegExp(`Customer.Originating_IR = '${ROHIT}'\\) and Customer.Origin_Lead is not null`));
   const leak = await makeRig(load, routeWith());
   const bad = await read(leak, ROHIT, 'ir');
   assert.deepEqual(bad, { ok: false, kind: 'refused', reason: 'scope-drift' });
@@ -98,7 +101,7 @@ test('a seat with no Investors book sees the numbers and no names; the Auditor r
   const r = await read(rig, CONV, 'conv');
   assert.equal(r.namesShown, false);
   assert.deepEqual(r.occupants, []);
-  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by/.test(q)).length, 0);
+  assert.equal(rig.queries.filter((q) => /from LLP_UnitAllocation_Module where \(/.test(q) && !/group by|Total_Amount_Receivable > 0/.test(q)).length, 0);
   const au = await read(rig, AUD, 'audit');
   assert.equal(au.tiles.free, 56);
 });
@@ -107,4 +110,18 @@ test('a Zoho failure on the count is a source error, never a zero shelf', async 
   const rig = await makeRig(load, routeWith({ counts: { status: 500, body: { code: 'INTERNAL_ERROR' } } }));
   const r = await read(rig, FIN, 'fin');
   assert.equal(r.kind, 'source-error');
+});
+
+test('B-24: paid = Total_Amount_Receivable (the total committed) minus Total_Amount_Received <= 0; a zero or missing total is never paid', async () => {
+  const { isPaidInFull } = load('server/farms/occupancy.js');
+  assert.equal(isPaidInFull(200000, 200000), true);
+  assert.equal(isPaidInFull(200000, 250000), true);
+  assert.equal(isPaidInFull(750000, 250000), false);
+  assert.equal(isPaidInFull(0, 500000), false);
+  assert.equal(isPaidInFull(null, 500000), false);
+  assert.equal(isPaidInFull(200000, 0), false);
+  const rig = await makeRig(load, routeWith());
+  await read(rig, FIN, 'fin');
+  const q = rig.queries.find((x) => /Total_Amount_Receivable > 0/.test(x));
+  assert.ok(q && !/group by/.test(q) && /Allocation_Status = 'Reserved'/.test(q));
 });

@@ -11,9 +11,9 @@ import { planBackfill } from "./backfill-received.mjs";
 const A1 = "100000000000000001", A2 = "100000000000000002", A3 = "100000000000000003";
 const MT = "2026-10-10T10:00:00+05:30";
 const allots = [
-  { id: A1, Total_Amount_Received: 0, Modified_Time: MT },
-  { id: A2, Total_Amount_Received: 250000, Modified_Time: MT },
-  { id: A3, Total_Amount_Received: null, Modified_Time: MT },
+  { id: A1, Total_Amount_Received: 0, Total_Amount_Receivable: 0, Total_LLP_Units: 10, Unit_Price: 100000, Modified_Time: MT },
+  { id: A2, Total_Amount_Received: 250000, Total_Amount_Receivable: 500000, Total_LLP_Units: 5, Unit_Price: 100000, Modified_Time: MT },
+  { id: A3, Total_Amount_Received: null, Total_Amount_Receivable: null, Total_LLP_Units: null, Unit_Price: 100000, Modified_Time: MT },
 ];
 const receipts = [
   { id: "r1", Allotment: { id: A1 }, Kind: "Advance", Amount: 1000000, Match_State: "Matched" },
@@ -31,6 +31,24 @@ test("plan: matched inbound minus refunds, never below 0; equal rows are left al
     { id: A3, from: null, to: 0, modifiedTime: MT },
   ]);
   assert.equal(p.skipped, 1);
+});
+
+test("plan (B-24): Total_Amount_Receivable = Total_LLP_Units x Unit_Price only where it is empty or 0 and both inputs exist", () => {
+  const rows = [
+    { id: A1, Total_Amount_Receivable: 0, Total_LLP_Units: 10, Unit_Price: 100000, Modified_Time: MT },        // 0 -> 1,000,000
+    { id: A2, Total_Amount_Receivable: 500000, Total_LLP_Units: 5, Unit_Price: 100000, Modified_Time: MT },     // already set: left alone, never recomputed
+    { id: A3, Total_Amount_Receivable: null, Total_LLP_Units: 3, Unit_Price: 250000, Modified_Time: MT },       // empty -> 750,000
+    { id: "100000000000000004", Total_Amount_Receivable: null, Total_LLP_Units: 3, Unit_Price: null, Modified_Time: MT },   // no price
+    { id: "100000000000000005", Total_Amount_Receivable: 0, Total_LLP_Units: 0, Unit_Price: 100000, Modified_Time: MT },    // no units
+  ];
+  const p = planBackfill(rows, []);
+  assert.deepEqual(p.receivableChanges, [
+    { id: A1, from: 0, to: 1000000, modifiedTime: MT },
+    { id: A3, from: null, to: 750000, modifiedTime: MT },
+  ]);
+  // idempotent: once written, the next plan proposes nothing
+  const after = rows.map((r) => ({ ...r, Total_Amount_Receivable: p.receivableChanges.find((c) => c.id === r.id)?.to ?? r.Total_Amount_Receivable }));
+  assert.deepEqual(planBackfill(after, []).receivableChanges, []);
 });
 
 const out = join(mkdtempSync(join(tmpdir(), "gzbackfill-")), "b.js");
@@ -68,6 +86,9 @@ test("bundle: plan is read-only; apply writes the planned rows guarded, skips a 
   assert.deepEqual(JSON.parse(JSON.stringify(r)), { written: 2, moved: 0, failed: [] });
   const puts = calls.filter((c) => c.method === "PUT");
   assert.deepEqual(puts.map((c) => c.body.data[0].Total_Amount_Received), [1000000, 0]);
+  assert.deepEqual(JSON.parse(JSON.stringify(p.receivableChanges.map((c) => [c.id, c.to]))), [[A1, 1000000]]);
+  assert.equal(puts[0].body.data[0].Total_Amount_Receivable, 1000000);          // A1 needs both: ONE guarded PUT carries both fields
+  assert.equal("Total_Amount_Receivable" in puts[1].body.data[0], false);
   assert.ok(puts.every((c) => c.headers["If-Unmodified-Since"] === MT));
   const m = load("60090668120", true);
   assert.deepEqual(JSON.parse(JSON.stringify(await m.api.apply(await m.api.plan()))), { written: 0, moved: 2, failed: [] });
