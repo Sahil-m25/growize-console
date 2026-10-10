@@ -72,6 +72,9 @@ D122 (Originating_IR's writers), rule 7 (no identity or full bank reference in a
      with farm, units, Hold_Until and days left (IST). The amount due is NOT read: D69 keeps every amount off the IR side and the
      IR list's own test (AC4) forbids selecting one, so `due` is null, `dueReadable` false and the row says "Finance holds the amount
      due" until the owner answers open question 1. Drawn as "Balances to chase" on the IR's Today.
+     **Superseded 10 Oct by D138 §1 (B-10):** the row now carries the amount due — `Total_Amount_Receivable − Total_Amount_Received`
+     read per field on the IR's own token (`investors/ir-money`), nothing where Zoho hides it — so ruling 3's "balance due (amount,
+     deadline)" is met; the "Finance holds the amount due" wording is gone.
    "Fully converted" deliberately is a stamp, not `Allocation_Status = Issued`: Issued stays the verified allocation letter's
    blueprint transition (`investors/allot`), and `Payment_Status` stays Zoho's workflow's.
 
