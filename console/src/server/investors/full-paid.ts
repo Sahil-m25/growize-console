@@ -21,6 +21,15 @@
  *             `fully-paid-manual`) — who, when, which allotment; never the reason's words.
  * Org without the fields: the write is refused by Zoho as invalid-data naming one of them → `fields-missing`, reported, never
  * thrown; the match that called it stands. Logs carry ids and codes only.
+ *
+ * D138 (owner rulings, 10 Oct 2026):
+ *   - conversion waits for the signed supplementary agreement: until the allotment's Supplementary_Verified_At is set, NO stamp is
+ *     written, automatic or manual — `auto` answers `waiting-supplementary` (code `supplementary-not-signed`), `manual` refuses
+ *     `supplementary-not-signed` (409) before any Note is written. Recording money stays allowed (rule 3); matching an allotment
+ *     receipt is already gated on the same field (money/match `supplementary-not-verified`); a receipt matched on the LEAD before the
+ *     allotment exists still counts toward the 10% (D137), but the full conversion it may cover waits here.
+ *   - a KAM can NOT mark an allotment fully paid: the manual stamp is Finance Operations, Head of Finance and Digital Infrastructure
+ *     only (the route's MANUAL_SEATS). A KAM asks Finance to confirm instead (./full-paid-request), a row on Finance's to-do.
  */
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import { isUserCredential } from "../../lib/zoho/client";
@@ -37,11 +46,15 @@ export const MANUAL_REASON_MIN = 10;
 export const MANUAL_REASON_MAX = 500;
 export const MANUAL_NOTE_TITLE = "Allotment marked fully paid by hand (D137)";
 export const FIELDS_MISSING_TEXT = "Not stamped — the allotment's Converted_At / Converted_By / Converted_Via fields are not in Zoho yet. Digital Infrastructure creates them (D137).";
-const ALLOT_FIELDS = Object.freeze(["Name", "Customer", "LLP", "Allocation_Status", "Reserved_Units", "Issued_Units", "Unit_Price", "Hold_Until", "Modified_Time"]);
+const ALLOT_FIELDS = Object.freeze(["Name", "Customer", "LLP", "Allocation_Status", "Reserved_Units", "Issued_Units", "Unit_Price", "Hold_Until", "Supplementary_Verified_At", "Modified_Time"]);
 const RECORD_ID = /^\d{15,22}$/;
 const RECORD_PREFIX = /^\d{6,16}$/;
 const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
 const ZDT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/;
+
+/** D138: the supplementary agreement is signed and verified on this allotment. */
+export const supplementarySigned = (a: ZohoRecord): boolean => typeof a.Supplementary_Verified_At === "string" && ZDT.test(a.Supplementary_Verified_At);
+export const SUPPLEMENTARY_NOT_SIGNED_TEXT = "Not converted — the supplementary agreement is not signed and verified yet. Until Finance verifies it, the allotment cannot be marked fully paid; you can still log a contact and add notes.";
 
 export const istIso = (ms: number): string => `${new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 19)}+05:30`;
 
@@ -76,9 +89,9 @@ export async function readConverted(crm: Pick<ZohoClient, "coql">, cred: UserCre
   return out;
 }
 
-export type AutoOutcome = { readonly ok: boolean; readonly value: "converted" | "already" | "not-yet" | "not-reserved" | null; readonly code: string | null };
+export type AutoOutcome = { readonly ok: boolean; readonly value: "converted" | "already" | "not-yet" | "not-reserved" | "waiting-supplementary" | null; readonly code: string | null };
 
-export type ManualRefusal = "invalid-request" | "not-allowed" | "not-visible" | "reason-short" | "changed" | "not-reserved" | "fields-missing" | "note-failed";
+export type ManualRefusal = "invalid-request" | "not-allowed" | "not-visible" | "reason-short" | "changed" | "not-reserved" | "fields-missing" | "note-failed" | "supplementary-not-signed";
 export type ManualResult =
   | { readonly ok: true; readonly value: { readonly allotmentId: string; readonly contactId: string; readonly stamp: ConvertedStamp; readonly already: boolean; readonly trail: TenPercentTrail | null } }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: ManualRefusal; readonly message: string; readonly retryable: false }
@@ -86,18 +99,19 @@ export type ManualResult =
 
 const MESSAGE: Readonly<Record<ManualRefusal, string>> = Object.freeze({
   "invalid-request": "Not stamped — reload the investor and try again.",
-  "not-allowed": "Finance, Digital Infrastructure or the account's KAM marks an allotment fully paid.",
+  "not-allowed": "Finance or Digital Infrastructure marks an allotment fully paid. A KAM asks Finance to confirm the full payment.",
   "not-visible": "Not stamped — this allotment is not visible to you.",
   "reason-short": `Say why it is being marked fully paid by hand — at least ${MANUAL_REASON_MIN} characters. It goes on the record with your name.`,
   changed: "Not stamped — the allotment changed while you were looking at it. Reload and try again.",
   "not-reserved": "Only a Reserved allotment converts in full — this one is not Reserved.",
   "fields-missing": FIELDS_MISSING_TEXT,
   "note-failed": "Not stamped — the reason could not be written on the investor's record, so nothing was changed. Try again.",
+  "supplementary-not-signed": SUPPLEMENTARY_NOT_SIGNED_TEXT,
 });
 
 export interface FullPaidDeps {
   readonly crm: Pick<ZohoClient, "getRecord" | "coql" | "update" | "insert"> & Partial<Pick<ZohoClient, "deleteRecord">>;
-  /** Fresh on the live session: Finance Operations, Head of Finance, Digital Infrastructure or a KAM. */
+  /** Fresh on the live session: Finance Operations, Head of Finance or Digital Infrastructure (D138: not a KAM). */
   readonly authority?: { mayMarkManually(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<boolean> };
   readonly log: OpsLog;
   /** Plane C (data/events.ts): investor-converted lines. Absent: no Plane C line (tests). */
@@ -150,6 +164,8 @@ export function createFullPaid(deps: FullPaidDeps) {
       if (a === "error" || !a) return { ok: false, value: null, code: "allotment-unread" };
       if (stampOf(a)) return { ok: true, value: "already", code: null };
       if (a.Allocation_Status !== "Reserved") return { ok: true, value: "not-reserved", code: null };
+      /* D138: no full conversion before the signed supplementary — the money stays matched, the stamp waits */
+      if (!supplementarySigned(a)) { note(me, "auto-waiting-supplementary", [allotmentId]); return { ok: true, value: "waiting-supplementary", code: "supplementary-not-signed" }; }
       const t = await trailOf(cred, a, signal);
       if (!t) return { ok: false, value: null, code: "receipts-unread" };
       if (!t.fullyPaid) return { ok: true, value: "not-yet", code: null };
@@ -168,7 +184,7 @@ export function createFullPaid(deps: FullPaidDeps) {
       return { ok: true, value: "converted", code: null };
     },
 
-    /** Finance, Digital Infrastructure or a KAM marks it by hand, with a reason (D137 ruling 3). */
+    /** Finance or Digital Infrastructure marks it by hand, with a reason (D137 ruling 3; D138: not a KAM, not before the supplementary). */
     async manual(principal: unknown, allotmentId: unknown, reason: unknown, expectedModifiedTime?: unknown, signal?: AbortSignal, pageContactId?: string): Promise<ManualResult> {
       const p = principal && typeof principal === "object" ? (principal as { credential?: unknown; sessionId?: unknown; seat?: unknown }) : null;
       const refuse = (me: string, code: ManualRefusal, ids: readonly unknown[] = [], seat: string | null = null): ManualResult => {
@@ -195,6 +211,8 @@ export function createFullPaid(deps: FullPaidDeps) {
       const already = stampOf(a);
       if (already && contactId) return { ok: true, value: { allotmentId, contactId, stamp: already, already: true, trail: null } };
       if (a.Allocation_Status !== "Reserved" || !contactId) return refuse(me, "not-reserved", [allotmentId], seat);
+      /* D138: refused before the Note — nothing is written while the supplementary is unsigned */
+      if (!supplementarySigned(a)) return refuse(me, "supplementary-not-signed", [allotmentId, contactId], seat);
       const mt = typeof a.Modified_Time === "string" && ZDT.test(a.Modified_Time) ? a.Modified_Time : null;
       if (typeof expectedModifiedTime === "string" && mt && expectedModifiedTime !== mt) return refuse(me, "changed", [allotmentId], seat);
       /* the reason first, on the Contact, under their own name — no Note, no stamp */

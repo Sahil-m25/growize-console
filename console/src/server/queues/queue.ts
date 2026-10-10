@@ -6,6 +6,8 @@
  *   money seats ("pay")   open IR payment claims across the org     ../money/claim-answer waiting()  (Receipts, Match_State = Claimed)
  *                         + the investor of each claim               one COQL on the claims' allotments (AM projection: no money)
  *                         reservations ending within 21 days         ../holds/holds list()
+ *                         D138: KAMs' "confirm the full payment"     one COQL on allotments, Convert_Requested_At set, Reserved,
+ *                         requests (../investors/full-paid-request)  not yet stamped Converted_At
  *   paper seats ("doc")   papers out for signature / back to verify  ../documents/list read("out")
  *   the KYC owner ("kyc") KYC not passed, FEMA declaration outstanding  COQL on Contacts (status fields only) on a live allotment
  *   viewers               nothing — "read-only seat"
@@ -34,7 +36,7 @@ import { daysLeft } from "../holds/rules";
 import type { KamBookService } from "../investors/book";
 import type { ClaimAnswers } from "../money/claim-answer";
 import {
-  careRows, claimText, femaText, goneQuiet, overdueDays, holdText, isReadOnly, kycText, remindText, REMIND_AFTER_DAYS, sortQueue, tierFor, verifyText,
+  careRows, claimText, confirmText, femaText, goneQuiet, overdueDays, holdText, isReadOnly, kycText, remindText, REMIND_AFTER_DAYS, sortQueue, tierFor, verifyText,
   sendText, REQUESTS_NO_FIELDS_TEXT, REQUESTS_PARTIAL_TEXT, REQUESTS_UNREAD_TEXT,
   type CareAccount, type CareRow, type MoneyRow, type Tier,
 } from "./rules";
@@ -52,12 +54,16 @@ const KYC_FIELDS: readonly string[] = (() => {
   if (off.length) throw new TypeError(`The KYC queue selects only Finance's status fields (${off.join(", ")}) — D52/D53.`);
   return Object.freeze(f);
 })();
-/* G1 (D136 proposed): the IRs' "ask Finance to send it" (Leads.*_Requested_At / _Requested_By, written by server/leads/paperwork). */
+/* G1 (D136 proposed): the IRs' "ask Finance to send it" (Leads.NDA_Requested_At / Supp_Requested_At, written by server/leads/paperwork;
+   the requester is the lead's Owner — no *_Requested_By user lookup exists, D136 10 Oct note). */
 export const LEADS_MODULE = "Leads";
 const NDA_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "NDA_Requested_At", "Owner", "NDA_Sign_Req_Id", "NDA_Verified_At"]);
 const SUPP_REQUEST_FIELDS = Object.freeze(["id", "First_Name", "Last_Name", "Supp_Requested_At", "Owner"]);   // the requester is the lead's Owner: Leads has no room for a Supp_Requested_By user lookup
 const NDA_REQUEST_WHERE = coqlAll(["NDA_Requested_At is not null", "NDA_Sign_Req_Id is null", "NDA_Verified_At is null", "Lost_At is null"]);
 const SUPP_REQUEST_WHERE = coqlAll(["Supp_Requested_At is not null", "Lost_At is null"]);
+/* D138: a KAM's request that Finance confirm the full payment (../investors/full-paid-request). No money name (AM wall). */
+const CONFIRM_FIELDS = checkAmProjection(MODULES.amAllotments, ["id", "Customer", "Customer.Full_Name", "Customer.ARL_ID", "Convert_Requested_At"]);
+const CONFIRM_WHERE = coqlAll(["Convert_Requested_At is not null", "Allocation_Status = 'Reserved'", "Converted_At is null"]);
 const KYC_WHERE ="(KYC not in ('Completed', 'NA') or KYC is null) or (FEMA_Applicable = true and FEMA_Verified_At is null)";
 
 export interface QueuePrincipal {
@@ -176,6 +182,21 @@ export function createInvestorQueues(deps: QueueDeps) {
             }
           }
         }
+      }
+      // D138: the KAMs' "confirm the full payment" requests — oldest first, gone once the allotment is stamped Converted_At.
+      const cr = await pagedSelect(deps.crm, cred, CONFIRM_FIELDS, MODULES.allotments, CONFIRM_WHERE, "id asc", signal, deps.maxPages);
+      if (!cr.ok) failed("confirm-requests", cr.kind === "refused" ? cr.reason : cr.errorKind === "invalid-data" ? "fields-missing" : cr.errorKind);
+      else {
+        const asks: { row: MoneyRow; days: number | null }[] = [];
+        for (const r of cr.rows) {
+          const inv = idOf(r.Customer);
+          if (!idOf(r.id) || !inv) continue;
+          const days = daysSince(str(r, "Convert_Requested_At", 40), now);
+          asks.push({ days, row: Object.freeze({ key: `confirm:${r.id}`, kind: "confirm", investor: Object.freeze({ id: inv, name: str(r, "Customer.Full_Name", 120), code: str(r, "Customer.ARL_ID", 40) }),
+            text: confirmText(days), urg: "now", days, action: "Open the record", ref: Object.freeze({ allotmentId: r.id }) }) });
+        }
+        asks.sort((a, b) => (b.days ?? -1) - (a.days ?? -1));
+        for (const x of asks) out.push(x.row);
       }
       const h = await deps.holds.list({ credential: cred, seat: p.seat }, signal);
       if (!h.ok) failed("holds", h.kind === "refused" ? h.reason : h.errorKind);

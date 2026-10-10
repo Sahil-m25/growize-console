@@ -9,7 +9,8 @@
  * What it selects: id, ARL code, name, the lead link and Said_Yes_At — never a phone, an email, an address, a nominee,
  * KYC, PAN, Aadhaar or bank (checkAmProjection refuses identity AND money names when this module loads). Allotments
  * come through the no-money projection (adapters.allotments money:false: units, farm, status — no price, no amount, no
- * receipt) and the farm is read by name and block only (no price, no yield). The answer is rebuilt from an allow-list:
+ * receipt) and the farm is read by name and block only (no price, no yield). D138 (B-10): the chase rows' amount due is the one
+ * money read, ./ir-money on the IR's own token, per field — the list rows themselves still carry no amount. The answer is rebuilt from an allow-list:
  * no Zoho record is spread into it. Rows live for this response only (D45); nothing is cached.
  *
  * Offered to the `own-lead` book scope only (the IR seat); any other seat is refused and the refusal logged, no Zoho call.
@@ -27,6 +28,8 @@ import { scopesFor } from "../data/scope";
 import { LIFECYCLE_FIELD, stateLabel, type InvestorStateLabel } from "./lifecycle";
 import { readConverted } from "./full-paid";
 import { daysLeft } from "../holds/rules";
+import { balanceClock } from "../../lib/money/balance-clock";
+import { readIrMoney, type IrAllotmentMoney } from "./ir-money";
 
 /** What an IR's list reads of a Contact. Checked against identity and money names when this module loads. */
 export const IR_LIST_FIELDS: readonly string[] = checkAmProjection(MODULES.contacts, [
@@ -52,11 +55,10 @@ export interface IrInvestorRow {
 
 /**
  * D137 ruling 3 — one row on the IR's to-do per Reserved allotment of their own-lead investor whose balance is still due (not
- * stamped Converted_At). `holdUntil` / `daysLeft`: the balance deadline (Hold_Until, IST days). `due`: the amount still due —
- * ALWAYS null today: D69 keeps every amount off the IR side (this module selects no money name, AC4 of ir-investors.test.cjs), and
- * the owner's 9 Oct ruling asking for "amount due" on the IR's to-do is D137 open question 1. The row says Finance holds the
- * figure. If the owner opens it, the read is the allotment's Total_Amount_Receivable on the IR's own token, shown only where field
- * security lets the IR profile read it — the slot is here so the screen does not change.
+ * stamped Converted_At). `holdUntil` / `daysLeft`: the balance deadline (Hold_Until, IST days). D138 (B-10 ruling, 10 Oct): the IR
+ * DOES see the amount due — `due` = Total_Amount_Receivable − Total_Amount_Received as Zoho returns them on the IR's own token
+ * (./ir-money, per field); null when Zoho hides either (the row then shows no amount, never a guess). `fromDay`: the IST day
+ * Finance confirmed the 10% — the 30 days count from it (D138 G4, lib/money/balance-clock); `extendedBy`: an approved extension.
  */
 export interface IrChaseRow {
   readonly contactId: string;
@@ -69,22 +71,29 @@ export interface IrChaseRow {
   readonly holdUntil: string | null;
   readonly daysLeft: number | null;
   readonly due: number | null;
+  /** the IST day the 30 days count from (Finance confirming the 10%); null without a deadline */
+  readonly fromDay: string | null;
+  /** days added by an approved hold extension (0 when none, or when Zoho hides the extension from the IR) */
+  readonly extendedBy: number;
 }
 
 /** Pure: the chase rows, soonest deadline first (no deadline last). */
 export function buildChase(contacts: readonly ContactRow[], reserved: readonly AllotmentRow[], farms: ReadonlyMap<string, { readonly name: string; readonly block: string }>,
-  stamps: ReadonlyMap<string, unknown>, dues: ReadonlyMap<string, number> | null, nowMs: number): IrChaseRow[] {
+  stamps: ReadonlyMap<string, unknown>, money: ReadonlyMap<string, IrAllotmentMoney> | null, nowMs: number): IrChaseRow[] {
   const byId = new Map(contacts.map((c) => [c.id, c]));
   const rows: IrChaseRow[] = [];
   for (const a of reserved) {
     const c = byId.get(a.Customer);
     if (!c || stamps.has(a.id)) continue;
-    const due = dues ? dues.get(a.id) ?? null : null;
-    if (due === 0) continue;   // Zoho says nothing is receivable: nothing to chase
+    const m = money ? money.get(a.id) ?? null : null;
+    const due = m ? m.due : null;
+    if (due === 0) continue;   // Zoho says nothing more is receivable: nothing to chase
+    const clock = balanceClock(a.holdUntil, m ? m.extension : null);
     rows.push(Object.freeze({
       contactId: c.id, code: c.code, name: [c.firstName, c.lastName].filter(Boolean).join(" ").slice(0, 121), leadId: c.originLeadId,
       allotmentId: a.id, farm: farms.get(a.LLP_Lookup)?.name ?? "", units: a.Committed_Units,
       holdUntil: a.holdUntil, daysLeft: a.holdUntil ? daysLeft(a.holdUntil, nowMs) : null, due,
+      fromDay: clock ? clock.fromDay : null, extendedBy: clock ? clock.extendedBy : 0,
     }));
   }
   return rows.sort((x, y) => (x.daysLeft ?? 1e9) - (y.daysLeft ?? 1e9) || x.name.localeCompare(y.name, "en-IN"));
@@ -183,9 +192,12 @@ export function createIrInvestorList(deps: IrListDeps) {
     /* D137 ruling 3: the IR chases the balance of each Reserved allotment not yet converted in full */
     const reserved = al.rows.filter((a) => a.Allocation_Status === "Reserved");
     const stamps = reserved.length ? await readConverted(deps.crm, cred, reserved.map((a) => a.id), signal) : new Map();
-    const dues = null;   // D69: no amount on the IR side (D137 open question 1)
-    const chase = buildChase(admitted.rows, reserved, farms, stamps ?? new Map(), dues, deps.clock ? deps.clock() : Date.now());
-    return { ok: true, rows: Object.freeze(buildIrRows(admitted.rows, al.rows, farms, blueprint)), truncated, chase: Object.freeze(chase), dueReadable: false };
+    /* D138 (B-10): the amount due as Zoho shows it to this IR — per field, nothing where it is hidden */
+    const open = reserved.filter((a) => !(stamps ?? new Map()).has(a.id));
+    const money = open.length ? await readIrMoney(deps.crm, cred, open.map((a) => a.id), signal) : null;
+    const chase = buildChase(admitted.rows, reserved, farms, stamps ?? new Map(), money, deps.clock ? deps.clock() : Date.now());
+    return { ok: true, rows: Object.freeze(buildIrRows(admitted.rows, al.rows, farms, blueprint)), truncated, chase: Object.freeze(chase),
+      dueReadable: chase.some((x) => x.due !== null) };
   }
 
   return Object.freeze({ list });

@@ -27,6 +27,8 @@ const route = (o = {}) => (q) => {
     const r = /NDA_Requested_At is not null/.test(q) ? o.ndaReq : o.suppReq;
     return typeof r === 'function' ? r(q) : r ?? ok([]);
   }
+  /* D138: the KAMs' "confirm the full payment" requests (none unless a test says so) */
+  if (/Convert_Requested_At is not null/.test(q)) return o.confirmReq ?? ok([]);
   if (/select id, Origin_Lead, First_Name, Last_Name from Contacts/.test(q)) return o.suppContacts ?? ok([]);
   if (/Supplementary_Sign_Req_Id/.test(q)) return o.suppAllots ?? ok([]);
   if (/from Receipts/.test(q)) return receiptsLedger(q);
@@ -291,6 +293,24 @@ test('G1: the supplementary asked for is listed against the investor until a Sig
     [LEAD_C, 'Nobody Synthetic', 'Send the supplementary agreement — requested by Rohit Iyer 2 days ago', { leadId: LEAD_C, paper: 'supplementary' }],
   ], 'Meera\'s supplementary is out on her allotment');
   assert.ok(rig.queries.some((x) => /Supplementary_Sign_Req_Id.*Allocation_Status != 'Cancelled'/.test(x)), 'only live allotments count as sent');
+});
+
+test('D138: a KAM\'s "confirm the full payment" request is a row on Finance\'s to-do (oldest first), opening the record; no money name is selected', async () => {
+  const confirmReq = ok([
+    { id: `${P}740996301`, Customer: { id: C(1) }, 'Customer.Full_Name': 'Synth One', 'Customer.ARL_ID': 'ARL-INV-0301', Convert_Requested_At: '2026-09-01T10:00:00+05:30' },
+    { id: `${P}740996302`, Customer: { id: C(2) }, 'Customer.Full_Name': 'Synth Two', 'Customer.ARL_ID': 'ARL-INV-0302', Convert_Requested_At: '2026-08-30T10:00:00+05:30' },
+  ]);
+  const rig = await makeRig(load, route({ confirmReq })); rig.refusals = [];
+  const r = await queues(rig, { now: SEP02, claims: [] }).q.today(await principal(rig, HARSHA, 'head', 'head'));
+  const rows = r.queue.rows.filter((y) => y.kind === 'confirm');
+  assert.deepEqual(rows.map((y) => [y.investor.name, y.text, y.action, y.ref.allotmentId]), [
+    ['Synth Two', 'Confirm the full payment — the KAM asked 3 days ago', 'Open the record', `${P}740996302`],
+    ['Synth One', 'Confirm the full payment — the KAM asked 1 day ago', 'Open the record', `${P}740996301`],
+  ]);
+  const q = rig.queries.find((x) => /Convert_Requested_At is not null/.test(x));
+  assert.match(q, /Allocation_Status = 'Reserved'/);
+  assert.match(q, /Converted_At is null/);
+  assert.ok(!/Price|Amount|Receivable|Received/.test(q.split(' from ')[0]), q);
 });
 
 test('G1: a seat without the paper right (Head of AM, Auditor) never reads the requests', async () => {

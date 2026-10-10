@@ -111,7 +111,7 @@ export function careRows(accounts: readonly CareAccount[], now: number, o: { rea
 
 /* ---------------------------------------------- Finance's queue ---------------------------------------------- */
 
-export type MoneyKind = "claim" | "hold" | "verify" | "remind" | "kyc" | "fema" | "send";
+export type MoneyKind = "claim" | "hold" | "verify" | "remind" | "kyc" | "fema" | "send" | "confirm";
 export interface MoneyRow {
   readonly key: string;
   readonly kind: MoneyKind;
@@ -139,6 +139,11 @@ export const REQUESTS_NO_FIELDS_TEXT = "The IRs' requests to send an NDA or a su
 export const REQUESTS_PARTIAL_TEXT = "Requests to send an NDA show only for leads Zoho shares with Finance. The Finance sharing rule on Leads is not confirmed yet, so a request on a lead not shared with you is not listed here.";
 
 export const claimText = "An IR says the money has arrived — confirm it";
+/** D138: a KAM asked Finance to confirm the full payment (the KAM's note is on the investor's record). */
+export function confirmText(days: number | null): string {
+  const when = days === null ? "" : days <= 0 ? " today" : ` ${plural(days, "day")} ago`;
+  return `Confirm the full payment — the KAM asked${when}`;
+}
 export function holdText(d: number): { text: string; urg: Urgency } {
   return {
     text: d < 0 ? `The hold ran out ${plural(-d, "day")} ago — release it or extend it` : `Balance due — hold ends in ${plural(d, "day")}`,

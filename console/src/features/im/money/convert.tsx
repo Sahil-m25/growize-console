@@ -8,7 +8,10 @@
                Digital Infrastructure reads it; only Finance Operations and the Head of Finance write (the route decides).
      fullpaid  (id = the Contact id; MX "fp:allot" = the allotment) D137 ruling 3: mark a Reserved allotment fully paid by hand,
                with a reason that goes on the record under the person's name (POST /api/investors/[id]/full-paid). The automatic
-               path needs no drawer: Finance matching the remainder stamps it.
+               path needs no drawer: Finance matching the remainder stamps it. D138: Finance and Digital Infrastructure only, and
+               only once the supplementary agreement is signed and verified (the route refuses 409 supplementary-not-signed).
+     fullpaidask (id = the Contact id; MX "fp:allot") D138: a KAM can NOT mark it fully paid — "Ask Finance to confirm full payment"
+               sends a request to Finance's to-do with the KAM's note (POST /api/investors/[id]/full-paid/request).
    No native dialogs (M18-S11). Live only: the fixture answers "live-only". */
 
 import type { ReactNode } from "react";
@@ -16,9 +19,10 @@ import { who } from "@/lib/im";
 import type { ImPageProps } from "../common";
 import { newIdempotencyKey, useApiRead, useApiWrite } from "@/lib/data/api";
 import { farmList } from "@/lib/data/endpoints/farms";
-import { leadConfirm, leadConversion, markFullPaid } from "@/lib/data/endpoints/conversion";
+import { askFullPaid, leadConfirm, leadConversion, markFullPaid } from "@/lib/data/endpoints/conversion";
 import { RECEIPT_MODES } from "@/lib/money/receipt-modes";
 import { TenTrail } from "@/components/money/TenTrail";
+import { balanceDueFor } from "@/lib/money/balance-clock";
 
 type Ctx = ImPageProps & { id: string | null };
 const mx = (c: Ctx, k: string): string => (c.s.ui.MX || {})[k] || "";
@@ -89,8 +93,10 @@ function ConvertFoot(c: Ctx) {
     for (const k of ["amt", "utr", "kind", "mode", "on"]) setMx(c, `cv:${k}:${c.id}`, "");
     const v = r.data.converted;
     setMx(c, "cv:done:" + c.id, v
-      ? (v.already ? "Already an investor" : "Investor created") + (v.code ? " · " + v.code : "") + " — Reserved, balance due by " + v.holdUntil
+      ? (v.already ? "Already an investor" : "Investor created") + (v.code ? " · " + v.code : "") + " — Reserved. " + (balanceDueFor(v.holdUntil) || "Balance due by " + v.holdUntil)
         + (v.relinkLeft.length ? ` · ${v.relinkLeft.length} receipt(s) still to link — press Save again` : "")
+        /* D138: the money may cover the commitment, but the full conversion waits for the signed supplementary */
+        + (v.fullPaid?.value === "waiting-supplementary" ? " · fully paid waits for the signed supplementary agreement" : "")
         + (v.originatingIr === "not-written" ? " · the originating IR is filled by Zoho's workflow" : "")
       : r.data.recorded ? "Recorded and matched · " + r.data.recorded.refMasked + (r.data.money.trail.reached ? "" : " — the 10% is not reached yet") : "Saved.");
   });
@@ -123,7 +129,33 @@ function FullPaidFoot(c: Ctx): ReactNode {
   return <button className="act" disabled={!ok} onClick={ok ? press : undefined}>Mark fully paid</button>;
 }
 
+function FullPaidAskBody(c: Ctx): ReactNode {
+  if (!c.id) return null;
+  return (
+    <>
+      <p className="sm" style={{ marginTop: 0 }}>Finance confirms a full payment — by matching the remaining money, or by hand. Tell them what you were told;
+        the request goes on Finance&apos;s to-do and your note goes on the investor&apos;s record under your name.</p>
+      <label className="fi"><span>What the investor told you</span>
+        <textarea className="nta" rows={3} value={mx(c, "fpa:note:" + c.id)} onChange={(e) => setMx(c, "fpa:note:" + c.id, e.target.value)} /></label>
+      <p className="sm">At least {MANUAL_MIN} characters.</p>
+      {mx(c, "fpa:done:" + c.id) ? <p className="note" role="status">{mx(c, "fpa:done:" + c.id)}</p> : null}
+    </>
+  );
+}
+function FullPaidAskFoot(c: Ctx): ReactNode {
+  const write = useApiWrite(askFullPaid, { s: c.s, me: c.me }, c.dispatch);
+  if (!c.id) return null;
+  const note = mx(c, "fpa:note:" + c.id).trim(), allot = mx(c, "fp:allot:" + c.id);
+  const ok = note.length >= MANUAL_MIN && !!allot;
+  const press = () => void write({ contactId: c.id!, allotmentId: allot, note }).then((r) => {
+    setMx(c, "fpa:done:" + c.id, r.ok ? (r.data.requested.already ? "Already asked — Finance has it on their to-do." : "Sent to Finance's to-do.") : r.error);
+    if (r.ok) setMx(c, "fpa:note:" + c.id, "");
+  });
+  return <button className="act" disabled={!ok} onClick={ok ? press : undefined}>Ask Finance</button>;
+}
+
 export const CONVERT_DRAWER_DEFS = {
   convert: { w: 520, t: "Money on this lead", sub: () => "the investor is created at the 10%", body: (c: Ctx) => <ConvertBody {...c} />, foot: (c: Ctx) => <ConvertFoot {...c} /> },
   fullpaid: { w: 430, t: "Mark fully paid by hand", sub: () => "logged under your name", body: (c: Ctx) => <FullPaidBody {...c} />, foot: (c: Ctx) => <FullPaidFoot {...c} /> },
+  fullpaidask: { w: 430, t: "Ask Finance to confirm full payment", sub: () => "lands on Finance's to-do", body: (c: Ctx) => <FullPaidAskBody {...c} />, foot: (c: Ctx) => <FullPaidAskFoot {...c} /> },
 };

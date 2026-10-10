@@ -11,8 +11,6 @@
 import type { ReactNode } from "react";
 import { LADDER } from "@/domain";
 import type { Lead, PersonKey, SortKey } from "@/domain";
-import { UNIT } from "@/domain";
-import { money } from "@/lib/format";
 import {
   acting,
   bookFor,
@@ -418,7 +416,6 @@ export function LeadsPage() {
                         <b>
                           {l.units} unit{l.units === 1 ? "" : "s"}
                         </b>
-                        <div className="ux-list-meta">{money(l.units * UNIT)}</div>
                       </>
                     ) : (
                       <span className="ux-secondary">—</span>

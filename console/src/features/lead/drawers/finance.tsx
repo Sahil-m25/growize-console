@@ -14,7 +14,7 @@ import { useLpHere } from "./here";
    read raw off `Claim.ref`. That mask-and-reveal reading is `ClaimBlock` (`@/features/pay`), so
    the claim drawer imports it rather than keeping a second copy of the same block. */
 
-import { CLAIMKINDS, CLAIMMODES, IMP, UNIT } from "@/domain";
+import { CLAIMKINDS, CLAIMMODES, IMP } from "@/domain";
 import type { Lead } from "@/domain";
 import { iso, maskRef, money } from "@/lib/format";
 import {
@@ -114,7 +114,7 @@ export function MoneyBody({ lead }: DrawerProps) {
       {account ? <p className="sm mono">Account {account}</p> : null}
       {p ? (
         <dl className="kv">
-          <dt>Confirmed received</dt><dd className="mono">{money(p.got)} of {money(l.units * UNIT)}</dd>
+          <dt>Confirmed received</dt><dd className="mono">{money(p.got)}</dd>
           <dt>Payment state</dt><dd>{p.state === "full" ? "Fully paid" : "Part paid"}</dd>
           {p.hold ? <><dt>Hold ends</dt><dd className="mono">{p.hold}</dd></> : null}
         </dl>
@@ -147,7 +147,7 @@ export function AccountBody({ lead }: DrawerProps) {
         <dt>ARL ID</dt><dd className="mono"><b>{code || a!.code}</b></dd>
         {a && !hasSource ? <><dt>Created</dt><dd className="mono">{a.at}</dd><dt>Account state</dt><dd>{a.state}</dd></> : null}
         <dt>Units</dt><dd>{l.units} {acctUnits(l)}</dd>
-        {p ? <><dt>Money received</dt><dd className="mono">{money(p.got)} of {money(l.units * UNIT)}</dd></> : null}
+        {p ? <><dt>Money received</dt><dd className="mono">{money(p.got)}</dd></> : null}
       </dl>
       {canReadFinance(state, l, "docs") ? <DocumentHistoryBlock l={l} /> : null}
     </>

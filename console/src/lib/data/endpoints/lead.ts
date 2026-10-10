@@ -52,7 +52,7 @@ export const leadEmailSend: WriteEndpoint<ConsoleBook, EmailArgs, EmailSent, Con
 };
 
 /* ---- the finance gate on the next rung ----------------------------------------------------------- */
-export type GateRead = Pick<GateState, "leadId" | "gate" | "met" | "who" | "says" | "holdUntil" | "payment">;
+export type GateRead = Pick<GateState, "leadId" | "gate" | "met" | "who" | "says" | "holdUntil" | "payment"> & Partial<Pick<GateState, "heldFor">>;
 
 export const leadGate: ReadEndpoint<ConsoleBook, string | null, GateRead> = {
   path: id => (id ? `/api/leads/${encodeURIComponent(id)}/gate` : null),

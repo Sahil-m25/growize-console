@@ -26,7 +26,7 @@
 import { Tw } from "@/components/ui";
 import { Fragment, type CSSProperties } from "react";
 import {
-  FCAT, FORFEIT, GOALS, LADDER, LOSTWHY, ST, TOUCHDONE, TOUCHSLA, UNIT,
+  FCAT, FORFEIT, GOALS, LADDER, LOSTWHY, ST, TOUCHDONE, TOUCHSLA,
 } from "@/domain";
 import type { Channel, Lead, PersonKey } from "@/domain";
 import {
@@ -197,8 +197,8 @@ export function NumbersLive({ sec }: { sec: string }) {
     .filter(x => !!x.l);
   const advIn = pays.filter(x => x.p.state === "part").reduce((a, x) => a + x.p.got, 0);
   const fullIn = pays.filter(x => x.p.state === "full").reduce((a, x) => a + x.p.got, 0);
-  const balDue = pays.filter(x => x.p.state === "part")
-    .reduce((a, x) => a + x.l.units * UNIT - x.p.got, 0);
+  /* D138 (B-10): the balance outstanding is not worked out from the prototype's unit price — units still owing are counted */
+  const balUnits = pays.filter(x => x.p.state === "part").reduce((a, x) => a + x.l.units, 0);
   const risk = hot.reduce((a, h) => a + FORFEIT * h.l.units, 0);
 
   /* ---- why leads are lost — counted off the closes, not remembered ---- */
@@ -244,7 +244,7 @@ export function NumbersLive({ sec }: { sec: string }) {
 
       {S("lost") && (
         <div className="card fill"><Hd t="Why we lose" right={
-          <span className="sm">{gone.length} closed · {lostUnits} unit{lostUnits === 1 ? "" : "s"}{seeMoney(state) ? ` · ${money(lostUnits * UNIT)} of demand` : ""}</span>} />
+          <span className="sm">{gone.length} closed · {lostUnits} unit{lostUnits === 1 ? "" : "s"}</span>} />
           <div className="cb">
             {lostRows.length ? (<>
               {lostRows.map(r => (
@@ -447,7 +447,7 @@ export function NumbersLive({ sec }: { sec: string }) {
               {seeMoney(state) ? (
                 <div className="stats" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
                   <div className="stat"><b>{money(advIn)}</b><span>advances held</span></div>
-                  <div className="stat"><b>{money(balDue)}</b><span>balance outstanding</span></div>
+                  <div className="stat"><b>{balUnits}</b><span>unit{balUnits === 1 ? "" : "s"} with a balance outstanding</span></div>
                   <div className="stat"><b>{money(fullIn)}</b><span>fully paid receipts</span></div>
                   <div className={`stat ${hot.length ? "bad" : ""}`}><b>{money(risk)}</b><span>forfeit at stake in 7 days</span></div>
                 </div>

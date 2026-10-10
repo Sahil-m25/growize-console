@@ -48,9 +48,13 @@ function TxLine({ s, t }: { s: ImPageProps["s"]; t: Line }) {
   );
 }
 
-/** D137 ruling 3: who may mark an allotment fully paid by hand — Finance Operations, Head of Finance, Digital Infrastructure, a KAM
- *  (the route re-checks the seat: server/investors/full-paid via /api/investors/[id]/full-paid). */
-export const mayMarkFullPaid = (s: P["s"], me: string): boolean => ["ops", "head", "di", "kam"].includes(who(s, me).r);
+/** D137 ruling 3 as amended by D138 (10 Oct): who may mark an allotment fully paid by hand — Finance Operations, Head of Finance,
+ *  Digital Infrastructure (the route re-checks the seat: server/investors/full-paid via /api/investors/[id]/full-paid). */
+export const mayMarkFullPaid = (s: P["s"], me: string): boolean => ["ops", "head", "di"].includes(who(s, me).r);
+/** D138: a KAM can NOT mark it — the KAM asks Finance to confirm the full payment (/api/investors/[id]/full-paid/request). */
+export const mayAskFullPaid = (s: P["s"], me: string): boolean => who(s, me).r === "kam";
+/** D138: until the supplementary agreement is signed and verified the allotment cannot be marked fully paid (the route says 409). */
+export const SUPP_WAIT_TEXT = "Waiting for the signed supplementary agreement — until Finance verifies it, this allotment cannot be marked fully paid.";
 
 /* ---- Allotments card on "What they hold" ---- */
 export function AllotCard(p: P) {
@@ -92,10 +96,16 @@ export function AllotCard(p: P) {
                   <button className={`chip ${oid === l.id && otab === "receipts" ? "on" : ""}`} onClick={() => toggle(l.id, "receipts")}>Receipts <span className="u">{n}</span></button>{" "}
                   {mayPayouts(s, me) ? <PayoutsChip s={s} me={me} a={a} on={oid === l.id && otab === "payouts"} onClick={() => toggle(l.id, "payouts")} /> : null}
                 </> : null}
-                  {/* D137 ruling 3: Finance, Digital Infrastructure or the KAM may convert a Reserved allotment in full by hand (logged) */}
-                  {l.status === "Reserved" && mayMarkFullPaid(s, me) ? <>{" "}<button className="chip" onClick={() => {
-                    dispatch({ type: "mset", k: "fp:allot:" + x.id, v: l.id }); dispatch({ type: "openDrawer", k: "fullpaid", id: x.id });
-                  }}>Mark fully paid…</button></> : null}</td>
+                  {/* D137 ruling 3 / D138: Finance or Digital Infrastructure convert a Reserved allotment in full by hand (logged); a KAM
+                      asks Finance instead; neither before the supplementary is signed (agreementSigned false: the reason, no button) */}
+                  {l.status === "Reserved" && (mayMarkFullPaid(s, me) || mayAskFullPaid(s, me)) && l.agreementSigned === false
+                    ? <div className="sm" data-testid="supp-wait">{SUPP_WAIT_TEXT}</div>
+                    : l.status === "Reserved" && mayMarkFullPaid(s, me) ? <>{" "}<button className="chip" onClick={() => {
+                      dispatch({ type: "mset", k: "fp:allot:" + x.id, v: l.id }); dispatch({ type: "openDrawer", k: "fullpaid", id: x.id });
+                    }}>Mark fully paid…</button></>
+                      : l.status === "Reserved" && mayAskFullPaid(s, me) ? <>{" "}<button className="chip" onClick={() => {
+                        dispatch({ type: "mset", k: "fp:allot:" + x.id, v: l.id }); dispatch({ type: "openDrawer", k: "fullpaidask", id: x.id });
+                      }}>Ask Finance to confirm full payment…</button></> : null}</td>
               </>}
               open={oid === l.id ? otab : ""} />
           );

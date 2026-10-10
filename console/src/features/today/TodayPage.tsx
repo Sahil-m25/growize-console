@@ -15,7 +15,7 @@
 
 import { useEffect } from "react";
 import { Icon } from "@/components/ui";
-import { CHAN, LADDER, ST, UNIT } from "@/domain";
+import { CHAN, LADDER, ST } from "@/domain";
 import type { Channel, Lead, LogEntry } from "@/domain";
 import { dAdd, dISO, dISOtoDisp, money, whenT } from "@/lib/format";
 import type { NextUp } from "@/lib/selectors";
@@ -748,7 +748,8 @@ function InvestorPanel({
   const hasPref = typeof pref === "string" ? !!pref.trim() : !!(pref && typeof pref === "object");
   const w = workAction(state, dispatch, writes, goLead, goPaper, l, u);
   const special = w.kind === "special" ? w.node : null;
-  const sub = [LADDER[Math.max(0, l.done - 1)]!.t, l.unitsKnown === false ? "" : money(l.units * UNIT)].filter(Boolean).join(" · ");
+  /* D138 (B-10): units, never units × the prototype's unit price */
+  const sub = [LADDER[Math.max(0, l.done - 1)]!.t, l.unitsKnown === false ? "" : l.units + " unit" + (l.units === 1 ? "" : "s")].filter(Boolean).join(" · ");
   const planned = act && hasNext(l);
   return (
     <section className="work-context card g1-focus" id="work-context" tabIndex={-1} aria-label={`${l.n} — investor in focus`}>
@@ -1030,9 +1031,10 @@ function FinanceToday() {
           <FinanceGroup id="finance-reservations" title="Reservation clocks" count={w.holds.length}>
             {w.holds.map(({ l, left }) => {
               const pay = payOf(state, l.id);
+              /* D138 (B-10): what is in, as recorded — no balance worked out from the prototype's unit price */
               const balance =
                 knownUnitIntent(l) && pay
-                  ? money(Math.max(0, l.units * UNIT - pay.got)) + " balance"
+                  ? money(pay.got) + " in · " + l.units + " unit" + (l.units === 1 ? "" : "s")
                   : "Unit count not recorded";
               return (
                 <li className="ux-finance-row" key={l.id} data-finance-investor={l.id}>

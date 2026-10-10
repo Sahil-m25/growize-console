@@ -82,6 +82,12 @@ export const openAllots = (s: ImCtx, WHO: string, inv: string): ImAllot[] =>
 export const allotUnits = (a: ImAllot): number => (a.Allocation_Status === "Issued" ? a.Issued_Units : a.Committed_Units);
 /** the amount as recorded (the ticket snapshot) — never recomputed from today's LLP price */
 export const allotAmount = (a: ImAllot): number => a.Ticket_Snapshot;
+/** D138 (B-10): what the investor committed, from the allotments as recorded (units × each allotment's own Unit_Price), Cancelled
+ *  excluded; null when nothing recorded can say (no allotment, or a seat whose rows carry no price). Never the prototype's UNIT. */
+export function committedOf(s: ImCtx, WHO: string, inv: string): number | null {
+  const n = allotsOf(s, WHO, inv).filter(a => a.Allocation_Status !== "Cancelled").reduce((t, a) => t + allotAmount(a), 0);
+  return n > 0 ? n : null;
+}
 /** which allotment a receipt belongs to: its own link, or the investor's only allotment */
 export function allotOfTxn(s: ImCtx, t: Pick<ImTxn, "inv" | "Allotment">): string | null {
   if (t.Allotment) return t.Allotment;

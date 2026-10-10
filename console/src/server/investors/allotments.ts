@@ -17,7 +17,8 @@
  *                org / subtree / all see every allotment the token returns.
  * The fields follow the record's section rules (./record sectionsFor, read-only): a seat without Money
  * (KAM, Head of AM, IR) reads the account-management projection — units, farm, status, hold; no price, no
- * amount — so a number it may not see is never even read. Agreement_Signed is given only where Paper shows.
+ * amount — so a number it may not see is never even read. D138 (B-10): an IR's rows then carry the allotment's
+ * Unit_Price where Zoho shows it to the IR (./ir-money, per field); a KAM's stay without (W2-KAM-1 is not ruled). Agreement_Signed is given only where Paper shows.
  * Payment_Status: the org has no such field on the module (getFields, 28 Sep 2026), so it is worked out from
  * the linked Receipts with money/allotment-receipts' rule (../money/by-allotment moneyOf) — Money seats only.
  *
@@ -36,6 +37,7 @@ import { scopesFor } from "../data/scope";
 import { moneyOf } from "../money/by-allotment";
 import type { PaymentStatus } from "../money/allotment-receipts";
 import { sectionsFor } from "./record";
+import { readIrMoney } from "./ir-money";
 
 const RECORD_ID = /^\d{15,22}$/;
 export const CONTACT_ALLOTMENTS_LIST = "Customer1";
@@ -192,6 +194,15 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
         receipts = rc.rows;
         out = rows.map((a) => Object.freeze({ ...a, paymentStatus: moneyOf({ id: a.id, status: a.status, units: a.committedUnits, unitPrice: a.unitPrice ?? 0 }, rc.rows).paymentStatus }));
       } else if (money) receipts = Object.freeze([]);
+      /* D138 (B-10 ruling): an IR sees the unit price as Zoho returns it on their own token (read-only for the IR profile since
+         10 Oct); where Zoho hides it the row keeps null — never a figure worked out from anything else */
+      if (!money && rows.length && scopesFor(seat, me).investors.kind === "own-lead") {
+        const m = await readIrMoney(crm, cred, rows.map((a) => a.id), signal);
+        if (m) out = out.map((a) => {
+          const price = m.get(a.id)?.unitPrice ?? null;
+          return price === null ? a : Object.freeze({ ...a, unitPrice: price, amount: a.committedUnits * price });
+        });
+      }
       return { ok: true, contactId, rows: Object.freeze(out), money, paper, receipts, truncated: got.truncated };
     },
 

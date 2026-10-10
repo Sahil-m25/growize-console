@@ -1180,7 +1180,19 @@
       "allotmentId",
       "reason"
      ],
-     "schema": "route doc (D137 ruling 3: reason 10-500 chars, optional expectedModifiedTime)"
+     "schema": "route doc (D137 ruling 3 / D138: Finance or DI only, reason 10-500 chars, optional expectedModifiedTime; 409 supplementary-not-signed)"
+    }
+   }
+  },
+  "/api/investors/[id]/full-paid/request": {
+   "POST": {
+    "body": {
+     "type": "json",
+     "required": [
+      "allotmentId",
+      "note"
+     ],
+     "schema": "route doc (D138: a KAM asks Finance to confirm the full payment; note 10-500 chars; 409 supplementary-not-signed)"
     }
    }
   }

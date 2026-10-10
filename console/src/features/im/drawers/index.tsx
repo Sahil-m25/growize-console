@@ -21,7 +21,7 @@ import { leadHints, NO_WORD } from "@/lib/data/endpoints/paperwork";
 import { allotmentOf, HAND_METHODS, METHOD_OF, NOTHING_CAME_BACK, PAPER_OF_TEMPLATE, signBlock, signPrefill, signSend, signVerify, type HandMethod } from "@/lib/data/endpoints/sign";
 import type { Paper } from "@/server/documents/list";
 import {
-  CHANS, FSTATE, I, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UNIT, UPCATS, UPTO,
+  CHANS, FSTATE, I, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UPCATS, UPTO, committedOf,
   aged, cadence, docRefOf, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
   mayDetails, mayCareOn, mayDetailsOn, money, notFin, plusDays, readBook, roundOf, safeNote, tierOf, who,
   fileKind, llpOf, UPLOAD_ACCEPT, uploadCheck, uploadKey,
@@ -247,7 +247,8 @@ function ClaimBody(c: Ctx) {
         what writes the receipt — the IR never types one and never will.</p>
       <div className="drwsec"><dl className="kv" style={{ marginTop: 0 }}>
         <dt>Investor</dt><dd><b>{x ? x.n : cl.investorId}</b> <span className="mono sm">{cl.investorId}</span></dd>
-        <dt>Holding</dt><dd>{x ? x.units + " unit" + (x.units > 1 ? "s" : "") + " · " + money(x.units * UNIT) : "—"}</dd>
+        {/* D138 (B-10): the holding's value is what Finance's own read says is in plus outstanding — never units × a prototype price */}
+        <dt>Holding</dt><dd>{x ? x.units + " unit" + (x.units > 1 ? "s" : "") + " · " + money(cl.alreadyInRupees + cl.outstandingRupees) : "—"}</dd>
         <dt>Already in</dt><dd className="mono">{money(cl.alreadyInRupees)}</dd>
         <dt>Outstanding</dt><dd className="mono"><b>{money(cl.outstandingRupees)}</b></dd>
         {cl.holdUntil ? <><dt>Hold ends</dt><dd className="mono">{dayOfIso(cl.holdUntil)}</dd></> : null}
@@ -285,7 +286,9 @@ function ClaimFoot(c: Ctx) {
 function payBody(c: Ctx): ReactNode {
   const { s, me, id } = c; const x = I(s, me, id); if (!x || !id) return null;
   const { PKIND, PMODE, PUTR } = draft(c);
-  const adv = Math.round(x.units * UNIT * 0.1), due = dueBy(s, me, id), got = gotBy(s, me, id);
+  /* D138 (B-10): the 10% and the balance from the allotments' recorded amounts (Unit_Price as Zoho holds it), never a prototype price */
+  const committed = committedOf(s, me, id), got = gotBy(s, me, id);
+  const adv = committed === null ? 0 : Math.ceil(committed / 10), due = committed === null ? dueBy(s, me, id) : Math.max(0, committed - got);
   const supp = roundOf(s, me, id, "supp");
   return (
     <>

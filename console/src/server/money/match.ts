@@ -153,7 +153,7 @@ export interface MatchView {
   readonly converted?: FullPaidOutcome | null;
 }
 /** investors/full-paid AutoOutcome, restated so this module does not import the investors side. */
-export type FullPaidOutcome = { readonly ok: boolean; readonly value: "converted" | "already" | "not-yet" | "not-reserved" | null; readonly code: string | null };
+export type FullPaidOutcome = { readonly ok: boolean; readonly value: "converted" | "already" | "not-yet" | "not-reserved" | "waiting-supplementary" | null; readonly code: string | null };
 
 export type MatchResult =
   | { readonly ok: true; readonly value: MatchView }

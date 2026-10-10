@@ -3,9 +3,9 @@
  *
  * Each section is COQL COUNT/SUM … GROUP BY on Leads in the person's scope (their own book, their
  * team, or every book for an org-wide seat), so what is fetched is already counts. The result sits in
- * the scope-keyed cache (D53: two seats with different visibility never share figures). Rupee values
- * are never cached: they are units × the unit price, added at read time only for a seat that may see
- * money (D60: the IR Manager may not).
+ * the scope-keyed cache (D53: two seats with different visibility never share figures). D138 (B-10 ruling,
+ * 10 Oct 2026): no rupee value is worked out here. A lead carries no price in Zoho, and the old figure was
+ * units × the prototype's unit price (plan.ts UNIT) — a guess. `money` is always null; the forecast is in units.
  */
 
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
@@ -15,7 +15,6 @@ import { cacheKey } from "../../lib/zoho/cache";
 import type { OpsLog } from "../../lib/zoho/log";
 import { coqlAll, coqlWhere } from "../../lib/zoho/coql";
 import type { SeatedZohoUser } from "../oauth/seat";
-import { UNIT } from "../../domain/plan";
 
 export const SECTIONS = ["funnel", "checks", "owners", "sources", "lost", "forecast"] as const;
 export type Section = (typeof SECTIONS)[number];
@@ -119,9 +118,8 @@ export function createNumbersSections(deps: SectionsDependencies) {
       const key = cacheKey<Readonly<Record<string, number>>>(seat.scope, `numbers.${section}`);
       const got = await cache.readSettled(key, () => load(cred, seat, section)) as CacheFresh<Record<string, number>> | CacheStale<Record<string, number>> | CacheError<Record<string, number>>;
       if (got.state === "error") return { ok: false, kind: "source-error", reason: got.reason, retryable: true };
-      const money = section === "forecast" && a.seesMoney
-        ? Object.fromEntries(Object.entries(got.value).filter(([k]) => k.startsWith("units:")).map(([k, v]) => [k.replace("units:", "value:"), v * UNIT]))
-        : null;
+      /* D138: never units × the prototype's unit price — a lead has no price in Zoho, so there is no rupee figure to give */
+      const money = null;
       return { ok: true, value: { section, counts: got.value, money, asOf: got.asOf, stale: got.state !== "fresh" } };
     },
   });

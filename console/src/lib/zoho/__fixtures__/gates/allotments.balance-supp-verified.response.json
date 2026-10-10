@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "data": [
+      {
+        "id": "9007199254740994001",
+        "Customer": {
+          "id": "9007199254740993001",
+          "name": "x"
+        },
+        "Allocation_Status": "Reserved",
+        "Reserved_Units": 10,
+        "Issued_Units": null,
+        "Unit_Price": 100000,
+        "Hold_Until": "2026-10-02",
+        "Supplementary_Verified_At": "2026-09-20T10:00:00+05:30"
+      },
+      {
+        "id": "9007199254740994009",
+        "Customer": {
+          "id": "9007199254740993001",
+          "name": "x"
+        },
+        "Allocation_Status": "Cancelled",
+        "Reserved_Units": 5,
+        "Issued_Units": null,
+        "Unit_Price": 100000,
+        "Hold_Until": null,
+        "Supplementary_Verified_At": null
+      }
+    ],
+    "info": {
+      "count": 2,
+      "more_records": false
+    }
+  }
+}

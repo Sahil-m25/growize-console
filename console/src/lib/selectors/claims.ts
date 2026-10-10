@@ -8,7 +8,7 @@
    own contact answer them without asking anybody. Finance's answer comes back to the lead.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { CLAIMKINDS, CLAIMMODES, ST, UNIT } from "@/domain";
+import { CLAIMKINDS, CLAIMMODES, ST } from "@/domain";
 import type { Claim, Lead, LeadId, PayReceipt } from "@/domain";
 import { dISO, dISOtoDisp, money } from "@/lib/format";
 import type { Ctx } from "./ctx";
@@ -169,8 +169,8 @@ export function claimBlock(ctx: Ctx, l: Lead, actions = true): ClaimBlock | null
      old 10%-or-whole-ticket guess so an in-flight fixture never crashes the block. */
   return {
     c, advance, label: claimReportLabel(ctx, c), match: claimReceiptMatch(ctx, l.id),
-    amt: Number.isFinite(c.amount) ? money(c.amount)
-      : advance ? money(Math.round(l.units * UNIT * 0.1)) : money(l.units * UNIT),
+    /* D138 (B-10): the amount the IR reported, or nothing — never a figure from the prototype's unit price */
+    amt: Number.isFinite(c.amount) ? money(c.amount) : "—",
     waiting: c.state === "waiting",
     answerable: actions && canAnswerClaim(ctx, l.id),
     reopenable: actions && canReopenClaim(ctx, l),

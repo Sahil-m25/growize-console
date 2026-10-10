@@ -4,6 +4,7 @@
    vDashFin, qRow. Not a wall of figures — a worklist. The first thing on it is the thing that will
    cost money if nobody does it today, and every row carries the control that does it. */
 
+import { balanceDueFor } from "@/lib/money/balance-clock";
 import type { KeyboardEvent, MouseEvent } from "react";
 import {
   careQueue, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad, may,
@@ -260,7 +261,6 @@ export function QRow({ s, me, dispatch, x, claims }: ImPageProps & { x: MoneyRow
 }
 
 /* M08-S04-T05 — Holds running: the forfeit exposure and each hold by days left, from GET /api/holds */
-const dayMon = (iso: string) => fmtDay(Date.parse(iso + "T00:00:00Z"));
 function HoldsRunning({ r }: { r: ReturnType<typeof useApiRead<ImPageProps, void, HoldsList>> }) {
   if (r.state === "idle") return null;
   if (r.state === "loading") return <div className="empty sm">Reading the holds…</div>;
@@ -273,7 +273,9 @@ function HoldsRunning({ r }: { r: ReturnType<typeof useApiRead<ImPageProps, void
         <div className="led" key={h.allotmentId}>
           <span className={`tag ${h.urgent ? "late" : h.daysLeft <= 7 ? "due" : "go"}`}>{h.ranOut ? -h.daysLeft + "d over" : h.daysLeft + "d"}</span>
           <span style={{ minWidth: 0 }}><b>{h.investor.name}</b>{h.llp.name ? <span className="sm">{" · " + h.llp.name}</span> : null}
-            <div className="sm">{h.units + " unit" + (h.units === 1 ? "" : "s") + (h.due != null ? " · " + money(h.due) + " due by " + dayMon(h.holdEnds) : " · hold ends " + dayMon(h.holdEnds))}</div></span>
+            <div className="sm">{h.units + " unit" + (h.units === 1 ? "" : "s") + (h.due != null ? " · " + money(h.due) + " due" : "")}</div>
+            {/* D138 G4: the deadline and the day it counts from (Finance confirming the 10%) */}
+            <div className="sm">{balanceDueFor(h.holdEnds, h.extension)}</div></span>
         </div>
       )) : <div className="empty">No reservation is close to its deadline.</div>}</div></div>
   );

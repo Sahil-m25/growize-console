@@ -65,6 +65,26 @@ describe("LeadPage on the live console", () => {
     h.gate = { leadId: l.id, gate: null, met: true, who: null, says: null, holdUntil: null, payment: null };
     expect(page(l.id)).toMatch(/Mark done|Mark first contact made/);
   });
+  it("D138: held for the signed supplementary — says why, offers Log a contact, no milestone, forecast, email or Undo", () => {
+    const l = mine();
+    h.gate = { leadId: l.id, gate: "balance", met: false, who: null, says: "Waiting for the signed supplementary agreement.", holdUntil: "2026-11-09", payment: null, heldFor: "supplementary" };
+    const t = page(l.id);
+    expect(t).toContain("Waiting for the signed supplementary agreement.");
+    expect(t).toContain("you can log a contact and add notes");
+    expect(t).toContain("Log a contact");
+    expect(t).not.toContain("Mark done");
+    expect(t).not.toContain("Set forecast");
+    expect(t).not.toMatch(/>\s*Email\s*</);
+    /* G4: the reservation alert names the day the 30 days count from */
+    expect(t).toContain("Balance due 9 Nov — 30 days from Finance confirming the 10% on 10 Oct");
+  });
+  it("D138 (B-10): the lead header shows units, never a rupee figure", () => {
+    const l = state.LEADS.find((x) => x.own === "rohit" && !x.lost && x.unitsKnown !== false && x.units > 0)!;
+    h.gate = { leadId: l.id, gate: null, met: true, who: null, says: null, holdUntil: null, payment: null };
+    const head = renderToStaticMarkup(<LeadPage id={l.id} />).match(/<span class="ux-secondary">([^<]*)<\/span>/)?.[1] ?? "";
+    expect(head).toContain(l.units + " unit");
+    expect(head).not.toMatch(/₹|Cr|\bL\b/);
+  });
   it("the Latest note is the one read back from Zoho", () => {
     const l = mine();
     h.notes = [{ t: "Read back from Zoho", who: "rohit", at: "27 Sep 10:00", d: "2026-09-27" }];

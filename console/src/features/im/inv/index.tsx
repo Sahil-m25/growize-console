@@ -4,6 +4,7 @@
    record. The record is built as one page with sections rather than a wall: who they are, what
    they hold, what they have paid, what paper exists, and the journey that got them here. */
 
+import { balanceDueFor } from "@/lib/money/balance-clock";
 import { Tw } from "@/components/ui";
 import { useDocTitle } from "@/components/shell/useDocTitle";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
@@ -12,7 +13,7 @@ import {
   ago, APPLOCK, appOf, cared, CHANS, cOf, day6, docOf, dueBy, gotBy, holdDays, I, inr, invExceptions,
   isAM, isSys, journey, KAMS, kamGone, lastC, markAge, markLeft, markLocked, may, mayCare,
   mayDetails, mayCareOn, mayDetailsOn, money, MOODS, myBook, notFin, overdue, pageReadable, quiet, roundsFor, secOf, tierOf,
-  tkOf, txOf, leadWords, originNote, UNIT, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtAt, fmtDay, fmtStamp, mid, nowDay, when, DAY,
+  tkOf, txOf, leadWords, originNote, committedOf, allocated, reserved, who, FORFEIT, IR_COLS, accessOf, accessView, fmtAt, fmtDay, fmtStamp, mid, nowDay, when, DAY,
 } from "@/lib/im";
 import { EXTDAYS } from "@/domain";
 import type { ImInvestor } from "@/lib/im";
@@ -334,6 +335,9 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
   const hr = heard?.get(x.id), o = heard === undefined ? overdue(s, me, x) : hr?.overdue ?? null;
   const isQuiet = o != null && o > 0;
   const showMoney = rec.sections.includes("money");
+  /* D138 (B-10): the record's committed amount from Zoho (server: units × each live allotment's recorded Unit_Price); the demo book's
+     allotments carry their own recorded price. Never units × the prototype's unit price. */
+  const committed = rec.money?.committed ?? (showMoney ? committedOf(s, me, x.id) : null);
   const SECT: Record<RecordSection, () => ImSec> = {
     who: () => ({ k: "who", t: "Who they are" }),
     hold: () => ({ k: "hold", t: "What they hold" }),
@@ -359,7 +363,8 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         <StTag x={x} st={rec.state} />{showMoney ? <KycTag x={x} /> : null}{x.nri ? <span className="tag">NRI</span> : null}
         {!p.irSeat && cared(x) ? <span className={`tag ${T.k === "A" ? "br" : ""}`}>{T.t}</span> : null}
         <div className="sp" />
-        <span className="sm">{x.units + " unit" + plural(x.units) + (showMoney ? " · " + money(x.units * UNIT) : "")}</span></div>
+        {/* D138 (B-10): the committed amount as Zoho records it (units × the allotment's Unit_Price), shown only where Money shows */}
+        <span className="sm">{x.units + " unit" + plural(x.units) + (showMoney && committed !== null ? " · " + money(committed) : "")}</span></div>
 
       {am && isQuiet ? <div className="note bad" style={{ marginBottom: 8 }}><b>{"Gone quiet — " + o + " day" + (o === 1 ? "" : "s") + " past the " + T.t + " cadence."}</b>
         {" " + (x.kam ? "" : "And nobody is named on it. ") + "An account nobody has spoken to since "
@@ -380,7 +385,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
         {S === "care" ? <SecCare {...p} heard={heard} hr={hr} o={o} /> : null}
         {S === "money" ? (
           <div className="card"><div className="ch"><h3>Money</h3><div className="sp" />
-            <span className="sm">{money(got) + " of " + money(x.units * UNIT) + (due ? " · " + money(due) + " due" : "")}</span></div><div className="cb">
+            <span className="sm">{money(got) + (committed !== null ? " of " + money(committed) : "") + (due ? " · " + money(due) + " due" : "")}</span></div><div className="cb">
             {rec.holdings.length > 1 ? <MoneyBlocks {...p} /> : txOf(s, me, x.id).length ? txOf(s, me, x.id).map(t => (
               <div className="led" key={t.id}>
                 <span className={`tag ${t.kind === "refund" ? "late" : t.kind === "advance" ? "hold" : "go"}`}>{t.kind}</span>
@@ -395,7 +400,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
               <div className="drwsec"><p className="lbl">Record a receipt</p>
                 <div className="chips">
                   {got === 0 ? <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "pay", id: x.id, seed: { PUTR: "", PKIND: "advance" } })}>
-                    The 10% advance <span className="u">{money(Math.round(x.units * UNIT * 0.1))}</span></button> : null}
+                    The 10% advance{committed !== null ? <> <span className="u">{money(Math.ceil(committed / 10))}</span></> : null}</button> : null}
                   <button className="chip" onClick={() => dispatch({ type: "openDrawer", k: "pay", id: x.id, seed: { PUTR: "", PKIND: "balance" } })}>
                     {got ? "The balance" : "Paid in full"} <span className="u">{money(due)}</span></button>
                 </div>
@@ -507,7 +512,7 @@ function HoldBanner({ h }: { h: HoldOne["hold"] }) {
     <div className={`note ${d <= 7 ? "bad" : "warn"}`} style={{ marginBottom: 8 }}>
       <b>{h.due != null ? money(h.due) + " " + (d < 0 ? "is overdue — the hold ran out " + (-d) + " day" + (d === -1 ? "" : "s") + " ago" : "due in " + d + " day" + (d === 1 ? "" : "s")) + "."
         : d < 0 ? "The hold ran out " + (-d) + " day" + (d === -1 ? "" : "s") + " ago." : "The hold has " + d + " day" + (d === 1 ? "" : "s") + " left."}</b>
-      {" The hold " + (d < 0 ? "ended" : "ends") + " " + dayMon(h.holdEnds) + ". A lapse forfeits " + inr(h.forfeit)
+      {" " + balanceDueFor(h.holdEnds, h.extension) + ". A lapse forfeits " + inr(h.forfeit)
         + " and puts " + h.units + " unit" + plural1(h.units) + " back on the shelf."}</div>
   );
 }
@@ -615,7 +620,8 @@ function SecHold(p: ImPageProps & { x: ImInvestor; ho: Read<HoldOne>; rec: Inves
       <div className="card"><div className="ch"><h3>What they hold</h3><div className="sp" />
         <StTag x={x} /></div><div className="cb">
         <dl className="kv" style={{ marginBottom: 12 }}>
-          <dt>Units</dt><dd><b>{x.units}</b>{" · " + money(x.units * UNIT) + " at " + money(UNIT) + " a unit"}</dd>
+          {/* D138 (B-10): the value only where Money shows, from Zoho's recorded amounts — a KAM sees units, no rupees (W2-KAM-1 is not ruled) */}
+          <dt>Units</dt><dd><b>{x.units}</b>{rec.money?.committed != null ? " · " + money(rec.money.committed) : ""}</dd>
           <dt>Land</dt><dd>{Object.keys(x.blocks).length
             ? Object.entries(x.blocks).map(([k, n], i) => {
               const f = s.data.FARMS.find(y => y.k === k);

@@ -6,7 +6,7 @@
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
 import { Tw } from "@/components/ui";
-import { FORFEIT, IMP, ST, UNIT } from "@/domain";
+import { FORFEIT, IMP, ST } from "@/domain";
 import type { Lead, PayRec } from "@/domain";
 import { DAY, money, when } from "@/lib/format";
 import { financeBook, financePaySummary, invAlloc, invFree, invRes, may, P, refShown, refTxt, scopedFinanceReader, seeMoney } from "@/lib/selectors";
@@ -64,7 +64,7 @@ export function PayPage() {
           <tr className="k" key={l.id} tabIndex={0} onClick={() => open(l.id)}
             onKeyDown={e => { if (e.key === "Enter") open(l.id); }}>
             <td><b>{l.n}</b><div className="sm">{l.units} unit{l.units === 1 ? "" : "s"}</div></td>
-            <td className="n">{see ? money(p.got) : "•••"}<div className="sm">of {see ? money(l.units * UNIT) : "•••"}</div></td>
+            <td className="n">{see ? money(p.got) : "•••"}<div className="sm">{l.units} unit{l.units === 1 ? "" : "s"}</div></td>
             <td><span className={`tag ${p.state === "full" ? "go" : "due"}`}>{p.state === "full" ? "Full" : "Part"}</span></td>
             <td className="sm mono">{p.mode} · {refTxt(state, k)}
               {!p.utr || p.utr === "—" || scopedFinanceReader(state) || !see ? null : shown

@@ -92,8 +92,9 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
    The investors that came from the signed-in IR's own leads (Contacts.Originating_IR = me): id, ARL code, name, farms, state,
    lead link — the columns of M09-S08-NOTE-3 and nothing else (no price, amount, yield, receipt, phone, email or identity).
    Arg: whether this seat is an IR (nothing to read for any other). The fixture is `irInvestors` over the demo book. */
-/** D137 ruling 3: `chase` is the IR's balance to-do (Reserved allotments not yet converted in full); `dueReadable` false = Zoho
- *  hides the amount from this IR and the row says Finance holds it. */
+/** D137 ruling 3: `chase` is the IR's balance to-do (Reserved allotments not yet converted in full). D138 (B-10): `due` is the
+ *  amount still due as Zoho shows it to the IR (receivable − received); `dueReadable` false = Zoho hid it, and the row shows no
+ *  amount (never a guess). The demo book holds no Zoho amount, so its rows carry none. */
 export type IrListAnswer = { rows: IrInvestorRow[]; truncated: boolean; chase?: IrChaseRow[]; dueReadable?: boolean };
 
 export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
@@ -106,10 +107,11 @@ export const irInvestorList: ReadEndpoint<ImBook, boolean, IrListAnswer> = {
       /* the demo's farm is its block letter (the live route reads the LLP's own id, name and block) */
       farms: Object.entries(x.blocks).map(([block, units]) => ({ llpId: block, name: s.data.FARMS.find(f => f.k === block)?.n ?? "", block, units })),
     })).sort((a, b) => a.name.localeCompare(b.name, "en-IN") || a.id.localeCompare(b.id));
-    /* D137 ruling 3: the demo's reserved investors are the IR's balance to-do; the demo keeps no IR-readable amount (dueReadable false) */
+    /* D137 ruling 3: the demo's reserved investors are the IR's balance to-do; the demo keeps no Zoho amount (dueReadable false, D138) */
     const chase: IrChaseRow[] = irInvestors(s, me).filter(x => x.st === "reserved").map(x => ({
       contactId: x.id, code: x.id, name: x.n, leadId: x.lead ?? null, allotmentId: allotsOf(s, me, x.id)[0]?.id ?? x.id,
       farm: Object.keys(x.blocks).map(b => s.data.FARMS.find(f => f.k === b)?.n ?? b).join(", "), units: x.units, holdUntil: null, daysLeft: null, due: null,
+      fromDay: null, extendedBy: 0,
     }));
     return ok({ rows, truncated: false, chase, dueReadable: false });
   },

@@ -29,6 +29,11 @@
  * the IR's token — gets `moneyKnown: false`: the three gates count as not met, nobody is blamed (`who: null`), and the
  * drawer says the confirmation cannot be read here yet (GATE_UNKNOWN_TEXT). PROVISIONAL until Finance's
  * Advance_Confirmed_At / Balance_Confirmed_At Lead fields exist (ir-write-map.md "Claim redesign" step 5).
+ *
+ * D138 (owner ruling 10 Oct 2026): conversion waits for the signed supplementary agreement. While the lead's investor holds a live
+ * Reserved allotment whose Supplementary_Verified_At is empty, the answer says `heldFor: "supplementary"`: the lead does not move
+ * forward — the balance gate is not met (no "Fully paid", so no "Allocated") and the lead page offers only "Log a contact" and
+ * notes. The journey's rung writes behind it are refused already (its GateReader never opens a money rung on the IR's token).
  */
 
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
@@ -58,6 +63,9 @@ const MATCH_STATES: ReadonlySet<string> = new Set(["Pending", "Matched", "Not fo
 export const MONEY_SEATS: ReadonlySet<string> = new Set(["head-of-finance", "finance-operations"]);
 /** What a shut money gate says to a seat that cannot read Finance's confirmation (D69). */
 export const GATE_UNKNOWN_TEXT = "Finance confirms this in the Investor Management portal; the console cannot read that confirmation here yet.";
+
+/** D138: what the lead page says while the lead waits for the signed supplementary agreement. */
+export const SUPPLEMENTARY_HELD_TEXT = "Waiting for the signed supplementary agreement. Until Finance verifies it this lead does not move forward — you can log a contact and add notes.";
 
 /** The prototype's words (ladder.ts GATES), so the drawer and the refusal say the same thing. */
 export const GATE_TEXT: Readonly<Record<GateKey, { readonly t: string; readonly chase: string; readonly wait: string }>> = Object.freeze({
@@ -121,6 +129,10 @@ export interface GateState {
   /** false: the money facts were not read for this seat (D69); `payment` is null and a money gate reads not met. */
   readonly moneyKnown: boolean;
   readonly docs: { readonly nda: boolean; readonly supplementary: boolean };
+  /** D138: "supplementary" — Reserved, and the supplementary agreement is not signed and verified yet: the lead does not move
+   *  forward (only "Log a contact" and notes) until Finance verifies it; the page says SUPPLEMENTARY_HELD_TEXT beside the gate's own
+   *  words (which still say who the money waits on). null otherwise. */
+  readonly heldFor: "supplementary" | null;
   /** Finance clears every gate, in the Investor Management portal. */
   readonly doer: "finance";
   /** No console seat confirms, matches or rejects a payment — not the IR Manager, not the super user. */
@@ -157,7 +169,7 @@ export function gateMet(gate: GateKey, f: GateFacts): boolean {
   if (!f.moneyKnown) return false;
   const full = f.amountRupees > 0 && f.matchedRupees >= f.amountRupees;
   if (gate === "advance") return f.matchedRupees > 0;
-  if (gate === "balance") return full;
+  if (gate === "balance") return full && f.supplementaryVerified;   // D138: no "Fully paid" before the signed supplementary
   return full && f.ndaVerified && f.supplementaryVerified;
 }
 /** The prototype's `gateWho`: "fin" only when the IR has handed something over and is stuck. */
@@ -286,6 +298,7 @@ export function createGates(deps: GateDependencies) {
         return failure(me, e, leadId);
       }
       const met = gate ? gateMet(gate, f) : true;
+      const held = f.allotmentIds.length > 0 && f.holdUntil !== null && !f.supplementaryVerified;   // D138
       const who = gateWho(gate, f);
       const status = f.allotmentIds.length === 0 ? null
         : f.matchedRupees <= 0 ? "Yet to initiate" as const : f.matchedRupees < f.amountRupees ? "Partial" as const : "Full" as const;
@@ -297,6 +310,7 @@ export function createGates(deps: GateDependencies) {
         holdUntil: f.holdUntil,
         moneyKnown: f.moneyKnown,
         docs: Object.freeze({ nda: f.ndaVerified, supplementary: f.allotmentIds.length > 0 && f.supplementaryVerified }),
+        heldFor: held ? "supplementary" as const : null,
         doer: "finance" as const,
         mayConfirm: false as const,
         superUser: a.actor.seat === "digital-infrastructure",

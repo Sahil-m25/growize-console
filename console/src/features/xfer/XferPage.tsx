@@ -6,8 +6,7 @@
    and what has happened since. Read only: nothing here writes. Rules: `@/lib/selectors/xfer`. ── */
 
 import { Tw } from "@/components/ui";
-import { UNIT } from "@/domain";
-import { P, median, may, seeMoney } from "@/lib/selectors";
+import { P, median, may } from "@/lib/selectors";
 import { xfAfter, xfHow, xfMonths } from "@/lib/selectors/xfer";
 import type { XfMonth, XfRow } from "@/lib/selectors/xfer";
 import { useConsole } from "@/lib/store";
@@ -23,16 +22,16 @@ declare module "@/lib/store" {
 }
 
 const mName = (d: Date): string => d.toLocaleString("en-GB", { month: "long", year: "numeric" });
-const inr = (v: number): string => v >= 1e7 ? "₹" + String(+(v / 1e7).toFixed(2)) + " Cr" : "₹" + String(+(v / 1e5).toFixed(2)) + " L";
 
 export function XferPage() {
   const { state, dispatch } = useConsole();
   const go = useGo();
   if (!may(state, "xfer", "view")) return null;
-  const months = xfMonths(state), all = months.flatMap(m => m.rows), cash = seeMoney(state);
+  const months = xfMonths(state), all = months.flatMap(m => m.rows);
   const XFMON = state.ui.XFMON ?? null;
   const units = (rs: XfRow[]) => rs.reduce((a, r) => a + (Number(r.l.units) || 0), 0);
-  const size = (rs: XfRow[]) => { const u = units(rs); return u + " unit" + (u === 1 ? "" : "s") + (cash ? " · " + inr(u * UNIT) : ""); };
+  /* D138 (B-10): units only — no rupee value from the prototype's unit price */
+  const size = (rs: XfRow[]) => { const u = units(rs); return u + " unit" + (u === 1 ? "" : "s"); };
   const med = median(all.map(r => r.days));
   const medT = med == null ? "" : " · median " + (Math.round(med * 10) / 10) + " day" + (med === 1 ? "" : "s") + " from capture";
   const xfToggle = (k: string) => dispatch({ type: "setUi", patch: { XFMON: XFMON === k ? null : k } });
@@ -69,7 +68,7 @@ export function XferPage() {
               {open ? <div id={`d60c-l-${m.k}`}>{list(m)}</div> : null}</div>
           );
         })}</div>
-        <p className="sm d60c-foot">A lead is transferred on the day Finance confirms its 10% — that is when its investor record is created, on Finance's own sign-in (D137). Nobody copies a lead by hand. A lead lost afterwards still counts, on that date.{cash ? " Value is units × " + inr(UNIT) + "." : ""}</p>
+        <p className="sm d60c-foot">A lead is transferred on the day Finance confirms its 10% — that is when its investor record is created, on Finance's own sign-in (D137). Nobody copies a lead by hand. A lead lost afterwards still counts, on that date.</p>
       </>) : (
         <div className="card"><div className="empty">No transfers yet. A lead appears here the day Finance confirms its 10%.</div></div>
       )}</section>

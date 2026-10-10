@@ -96,7 +96,8 @@ export interface InvestorRecord {
   readonly fema: "outstanding" | "done" | null;
   readonly holdings: readonly HoldingLine[];
   readonly hold: { readonly until: string; readonly extension: string | null } | null;
-  readonly money: { readonly paid: number; readonly due: number; readonly receipts: readonly ReceiptRow[] } | null;
+  /** `committed` (D138): units × each live allotment's recorded Unit_Price — the figure the Money header and the 10% read. */
+  readonly money: { readonly paid: number; readonly due: number; readonly committed?: number; readonly receipts: readonly ReceiptRow[] } | null;
   /** D70's three scopes: Personal (Contact), per allotment (per farm), Farm documents (LLP). */
   readonly paper: {
     readonly personal: readonly AttachmentLine[];
@@ -242,7 +243,7 @@ export function createInvestorRecordReader(deps: RecordDeps) {
       fema: money && femaApplies ? (str(raw, "FEMA_Verified_At", 40) ? "done" : "outstanding") : null,
       holdings: Object.freeze(holdings),
       hold: holdUntil ? Object.freeze({ until: holdUntil, extension: holdRow?.holdExtension ?? null }) : null,
-      money: money ? Object.freeze({ paid, due, receipts }) : null,
+      money: money ? Object.freeze({ paid, due, committed: live.reduce((t, a) => t + a.Committed_Units * a.Unit_Price, 0), receipts }) : null,
       paper: paperOut,
       origin: Object.freeze({ leadId: c.originLeadId, irId: ir ?? null, irVia: c.originatingIrId ? "contact" as const : ir ? "lead" as const : null, saidYesAt: c.saidYesAt }),
       story,

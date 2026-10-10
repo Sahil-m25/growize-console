@@ -17,9 +17,8 @@
 
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { KINDS, SOURCES, SRCNEEDS, UNIT, UNITS } from "@/domain";
+import { KINDS, SOURCES, SRCNEEDS, UNITS } from "@/domain";
 import type { EventId, LeadId, PersonKey, Source } from "@/domain";
-import { money } from "@/lib/format";
 import {
   active, assignees, canReach, channelPartners, isIR, isMgr, may, mgrOf,
   openable, P, roleOf,
@@ -343,7 +342,7 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
 
         <Fld
           k="want" t="Investment intent · optional"
-          val={units ? `${units} unit${units === 1 ? "" : "s"} · ${money(units * UNIT)}` : "Not known yet"}
+          val={units ? `${units} unit${units === 1 ? "" : "s"}` : "Not known yet"}
           open={d.ADDF === "want"} onToggle={() => dispatch({ type: "setAddF", k: "want" })}
         >
           <div className="frow">
@@ -352,7 +351,7 @@ export function AddPage({ bare = false }: { bare?: boolean } = {}) {
                 onChange={(e) => set({ ADDU: e.target.value })}>
                 <option value="">Not known yet</option>
                 {UNITS.map((u) => (
-                  <option key={u} value={u}>{u} unit{u > 1 ? "s" : ""} · {money(u * UNIT)}</option>
+                  <option key={u} value={u}>{u} unit{u > 1 ? "s" : ""}</option>
                 ))}
                 <option value="custom">More than ten…</option>
               </select>

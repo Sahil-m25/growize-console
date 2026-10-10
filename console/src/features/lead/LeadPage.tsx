@@ -14,7 +14,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { FCAT, LADDER, LOSTWHY, NAV, OBJS, ST, TOUCHCHANNELS, UNIT } from "@/domain";
+import { FCAT, LADDER, LOSTWHY, NAV, OBJS, ST, TOUCHCHANNELS } from "@/domain";
 import type { Channel, Lead, NavKey } from "@/domain";
 import type { DrawerKind } from "@/lib/store";
 import { day6, holdDaysLeft } from "@/lib/im/dates";
@@ -50,6 +50,7 @@ import { useLeadNote, useLeadNotes } from "@/lib/data/endpoints/record";
 import { useAssignToMe } from "@/lib/data/endpoints/ownership";
 import { ConvertedAlert, LpPaperDone } from "./Converted";   /* GC-1523 */
 import { currentRound, ndaSigned, paperworkRow, paperworkStep, paperworkUndo, stepSaved, type IrBeat, type PwChannel } from "@/lib/data/endpoints/paperwork";
+import { balanceDueFor } from "@/lib/money/balance-clock";   /* D138 G4 */
 
 type Ctx = ReturnType<typeof useConsole>;
 
@@ -498,6 +499,10 @@ export function LeadPage({ id }: { id: string }) {
   };
   /* GC-1523: a converted lead is read-only — no milestone, no forecast, no contact controls; the banner leads to the investor */
   const conv = converted(l);
+  /* D138: Reserved and the supplementary agreement not yet signed and verified — the lead does not move forward; only
+     "Log a contact" (Call / WhatsApp open the same log) and notes stay. The gate route says so (heldFor), and the server
+     refuses what would move it (no Fully paid rung, the full-paid stamp 409 supplementary-not-signed). */
+  const suppHeld = !conv && gate.state === "ok" && gate.data.heldFor === "supplementary";
   const u = nextUp(state, l), due = nxDue(l, state.NOW), work = canWork(state, l), act = active(l) && !lost(l) && l.done < ST.ONBOARDED && !conv;
   const sig = ragOf(state, l), last = fuLatest(state, l), here = LADDER[l.done], und = undoStage(state, l);
   const flow = lpl.f?.flow || null;
@@ -511,6 +516,7 @@ export function LeadPage({ id }: { id: string }) {
   if (!l.own) al("own", "bad", <b>No owner yet.</b>, canAssign(state) ? <button type="button" className="act" onClick={() => open("owner")}>Assign owner</button>
     : isIR(state.ROLE) ? <button type="button" className="act" onClick={() => void assignMe(l.id).then(said)}>Assign to me</button> : null);
   if (conv) A.push(<ConvertedAlert key="conv" l={l} />);
+  if (suppHeld) al("supp", "due", <><b>Waiting for the signed supplementary agreement.</b> Until Finance verifies it this lead does not move forward — you can log a contact and add notes.</>);
   else if (watching(state, l)) al("watch", "", <><b>{whyLocked(state, l)}</b> You can see everything; changes are not yours to make.</>);
   const cv = covOf(state, l);
   if (cv) al("cov", "due", <><b>{P(state.PEOPLE, cv.by).n} is covering</b> for {P(state.PEOPLE, l.own).n} until {cv.to}.</>);
@@ -532,7 +538,7 @@ export function LeadPage({ id }: { id: string }) {
   if (gate.state === "ok" && gate.data.holdUntil) {
     const hold = holdDay(gate.data.holdUntil);
     const dl = holdDaysLeft(gate.data.holdUntil, state.NOW.getTime());   /* rule 9: the one IST function Finance's Today uses */
-    al("hold", dl <= 3 ? "bad" : "due", <><b>Reservation {dl < 0 ? "lapsed " + -dl + " days ago" : dl + " days left"}</b> — the balance is due by {hold}.</>, <button type="button" className="chip" onClick={() => open("hold")}>Details</button>);
+    al("hold", dl <= 3 ? "bad" : "due", <><b>Reservation {dl < 0 ? "lapsed " + -dl + " days ago" : dl + " days left"}</b> — {balanceDueFor(gate.data.holdUntil) || "the balance is due by " + hold}.</>, <button type="button" className="chip" onClick={() => open("hold")}>Details</button>);
   }
   if (!TOUCHCHANNELS.some((k) => conFor(l, k))) al("perm", "bad", <><b>No contact permission yet.</b> Record it before reaching out.</>,
     work ? <button type="button" className="act" onClick={() => open("details", { DTAB: "permission" })}>Record permission</button> : null);
@@ -563,19 +569,19 @@ export function LeadPage({ id }: { id: string }) {
   /* rows that exist only while they apply */
   const owned = !!here && stepOwner(state, l.done, l), rows: ReactNode[] = [];
   if (gate.state === "error") rows.push(<p key="gerr" className="lp-err" role="alert">{gate.err.error}</p>);
-  if (act && here && owned && gate.state === "ok" && !gw && gateShut && work)
+  if (act && !suppHeld && here && owned && gate.state === "ok" && !gw && gateShut && work)
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b><span className="sm">{gateShut}</span></div>);
-  else if (act && here && owned && gate.state === "ok" && !gw && work)
+  else if (act && !suppHeld && here && owned && gate.state === "ok" && !gw && work)
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b>
       <button type="button" className="btn" onClick={tick}>{here.t === "First touch made" ? "Mark first contact made" : "Mark done"}</button>
       {here.skip ? <button type="button" className="lp-link" onClick={() => void jw.skip(l).then(said)}>Not needed</button> : null}</div>);
-  else if (act && here && owned && gw && gw.who === "fin")
+  else if (act && !suppHeld && here && owned && gw && gw.who === "fin")
     rows.push(<div key="ms" className="lp-stage"><span className="sm">Next milestone</span><b>{here.t}</b><span className="tag due">Waiting on Finance</span></div>);
-  if (act && gw && canClaim(state, l) && !cm && !reported && !notFound && !live)
+  if (act && !suppHeld && gw && canClaim(state, l) && !cm && !reported && !notFound && !live)
     rows.push(<div key="pay" className="lp-stage"><span className="sm">Payment</span><b>Has the investor paid?</b>
       <button type="button" className="btn" onClick={() => open("claim", { CKIND: l.done >= ST.RESERVED ? "full" : "advance", CREF: "", CNOTE: "" })}>Investor says they paid</button></div>);
   rows.push(conv ? <LpPaperDone key="paper" l={l} /> : <LpPaperRow key="paper" l={l} />);
-  if (act && l.done >= ST.QUALIFIED && canPlan(state, l)) {
+  if (act && !suppHeld && l.done >= ST.QUALIFIED && canPlan(state, l)) {
     const fc = fcOf(l);
     rows.push(<div key="fc" className="lp-stage"><span className="sm">Forecast</span><b>{fc ? FCAT[fc as keyof typeof FCAT].t : "Not set"}</b>
       <button type="button" className="lp-link" onClick={() => open("forecast")}>{fc ? "Change" : "Set forecast"}</button></div>);
@@ -590,7 +596,7 @@ export function LeadPage({ id }: { id: string }) {
     <div className="lp-actions">
       {num && conFor(l, "call") ? <a className="btn" href={`tel:+${num}`} onClick={() => lpl.open("log", "call")}><Icon name="call" />Call</a> : null}
       {num && conFor(l, "msg") ? <a className="btn" href={`https://wa.me/${num}`} target="_blank" rel="noopener" onClick={() => lpl.open("log", "msg")}><Icon name="wa" />WhatsApp</a> : null}
-      {l.em && conFor(l, "email") ? <button type="button" className="btn" onClick={() => lpl.open("email")}>Email</button> : null}
+      {l.em && conFor(l, "email") && !suppHeld ? <button type="button" className="btn" onClick={() => lpl.open("email")}>Email</button> : null}
       <button type="button" className="act" onClick={() => lpl.open("log")}>Log a contact</button>
     </div>
   ) : null;
@@ -605,10 +611,11 @@ export function LeadPage({ id }: { id: string }) {
       {showOwner ? <p className="lp-meta">Owner: {P(state.PEOPLE, l.own).n}{l.sec ? " · backup " + P(state.PEOPLE, l.sec).n : ""}</p> : null}
       {buttons}
       {work && act && flow === "log" && canPlan(state, l) ? <LpLogger l={l} /> : null}
-      {work && act && flow === "email" ? <LpComposer l={l} /> : null}
+      {work && act && !suppHeld && flow === "email" ? <LpComposer l={l} /> : null}
     </div></section>
   );
-  const sub = [l.city, ph(state, l), l.unitsKnown === false ? "" : money(l.units * UNIT) + " · " + l.units + " unit" + (l.units === 1 ? "" : "s"), l.nri ? "NRI" : ""].filter(Boolean).join(" · ");
+  /* D138 (B-10): units only — a lead has no price in Zoho, and units × the prototype's unit price was a guess */
+  const sub = [l.city, ph(state, l), l.unitsKnown === false ? "" : l.units + " unit" + (l.units === 1 ? "" : "s"), l.nri ? "NRI" : ""].filter(Boolean).join(" · ");
   const fileOpen = !!(state.DRW && state.ui.FILEON && state.DRW.id === l.id && fileDrw);
   const steps = !!((state.ui.LPSTEPS as Record<string, boolean> | undefined) || {})[l.id];
   const ndOn = state.ui.NDRAFTID === l.id ? String(state.ui.NDRAFT ?? "") : "";
@@ -633,7 +640,7 @@ export function LeadPage({ id }: { id: string }) {
         <div className="lp-journey">
           <button type="button" className="lp-link lp-jl" aria-expanded={steps} onClick={() => dispatch({ type: "setUi", patch: { LPSTEPS: { ...((state.ui.LPSTEPS as Record<string, boolean>) || {}), [l.id]: !steps } } })}>
             {LADDER[Math.max(0, l.done - 1)].t} · step {Math.max(1, l.done)} of {LADDER.length}</button>
-          {l.done > 1 && und.ok ? <button type="button" className="lp-link lp-undo" title={und.why || ""} onClick={untick}>Undo</button> : null}
+          {l.done > 1 && und.ok && !suppHeld ? <button type="button" className="lp-link lp-undo" title={und.why || ""} onClick={untick}>Undo</button> : null}
         </div>
       )}
       {steps && !flow ? <LpStepper l={l} /> : null}

@@ -188,14 +188,15 @@ test('Sources, Owners and Why we lose are grouped counts; no name leaves', async
   assert.ok(!JSON.stringify(o).includes('Synthetic IR'));
 });
 
-test('no rupee value for a seat that may not see money; units only', async () => {
+test('no rupee value for any seat (D138: no prototype unit price); units only', async () => {
   let r = sectionsRig();
   let res = await r.svc.read(principal(MANAGER), 'forecast');
   assert.equal(res.value.money, null);
   assert.deepEqual({ ...res.value.counts }, { 'leads:Commit': 2, 'units:Commit': 5, 'leads:Pipeline': 3, 'units:Pipeline': 4 });
   r = sectionsRig({ recheck: (b) => ({ ...b, seesMoney: true, actor: { ...b.actor, seat: 'digital-infrastructure' } }) });
   res = await r.svc.read(principal(MANAGER), 'forecast');
-  assert.deepEqual({ ...res.value.money }, { 'value:Commit': 12500000, 'value:Pipeline': 10000000 });
+  assert.equal(res.value.money, null, 'D138: a lead has no Zoho price — no rupee figure, even for a seat that may see money');
+  assert.deepEqual({ ...res.value.counts }, { 'leads:Commit': 2, 'units:Commit': 5, 'leads:Pipeline': 3, 'units:Pipeline': 4 });
 });
 
 test('two seats with different visibility never share cached figures (D53)', async () => {

@@ -10,6 +10,7 @@ import { createMemorySink, createOpsLog } from "@/lib/zoho/log";
 import { createConversion, holdFrom } from "./convert";
 import { createFullPaid, VIA_AUTO, VIA_MANUAL } from "./full-paid";
 import { buildChase } from "./ir-list";
+import { irMoneyOf } from "./ir-money";
 import { createReceiptMatch } from "../money/match";
 
 const P = "9007199254";
@@ -185,7 +186,9 @@ describe("GC-1527 — the investor is created only after Finance confirms the 10
 });
 
 describe("D137 ruling 3 — full conversion", () => {
-  const reservedAllot = { Customer: { id: CONTACT }, LLP: { id: LLP }, Allocation_Status: "Reserved", Reserved_Units: 10, Issued_Units: 0, Unit_Price: 100_000, Modified_Time: MT };
+  /* D138: the supplementary is signed and verified here — without it no stamp is written (d138.test.ts) */
+  const reservedAllot = { Customer: { id: CONTACT }, LLP: { id: LLP }, Allocation_Status: "Reserved", Reserved_Units: 10, Issued_Units: 0, Unit_Price: 100_000,
+    Supplementary_Verified_At: MT, Modified_Time: MT };
   const onAllot = (id: string, amount: number, kind = "Part") => ({ ...leadReceipt(id, amount, kind), Allotment: { id: ALLOT } });
 
   it("auto: matched money covering units × price stamps Converted_At / _By (the matcher) / _Via 'Finance match', guarded", async () => {
@@ -203,14 +206,14 @@ describe("D137 ruling 3 — full conversion", () => {
     d = double({ allot: { ...reservedAllot }, receipts: [onAllot(R1, 1_000_000, "Full")], noConverted: true });
     expect(await createFullPaid({ crm: d.crm, log: d.log, recordIdPrefix: P }).auto(cred, ALLOT)).toEqual({ ok: false, value: null, code: "fields-missing" });
   });
-  it("manual: Finance / DI / KAM with a reason — the Note first (under their name), then Converted_Via 'Manual'; a short reason or another seat is refused", async () => {
+  it("manual: Finance / DI with a reason — the Note first (under their name), then Converted_Via 'Manual'; a short reason or another seat is refused", async () => {
     const d = double({ allot: { ...reservedAllot }, receipts: [] });
     const fp = createFullPaid({ crm: d.crm, log: d.log, events: d.events, recordIdPrefix: P, clock: () => NOW, authority: { async mayMarkManually() { return true; } } });
-    const r = await fp.manual({ ...principal(), seat: "kam" }, ALLOT, "  Paid by demand draft, cleared  ", MT, undefined, CONTACT);
+    const r = await fp.manual({ ...principal(), seat: "di" }, ALLOT, "  Paid by demand draft, cleared  ", MT, undefined, CONTACT);
     expect(r.ok).toBe(true);
     expect(d.calls.filter((c) => c[0] !== "GET" && c[0] !== "COQL").map((c) => c[0] + " " + c[1])).toEqual(["POST Notes", `PUT LLP_UnitAllocation_Module/${ALLOT}`]);
     expect((d.calls.find((c) => c[0] === "PUT")![2] as { fields: Record<string, unknown> }).fields.Converted_Via).toBe(VIA_MANUAL);
-    expect(d.planeC).toEqual([[FIN, "kam", [ALLOT, CONTACT], "ok", "fully-paid-manual"]]);
+    expect(d.planeC).toEqual([[FIN, "di", [ALLOT, CONTACT], "ok", "fully-paid-manual"]]);
     expect(JSON.stringify(d.sink.records())).not.toContain("demand draft");
     expect(await fp.manual(principal(), ALLOT, "short", MT)).toMatchObject({ ok: false, reasonCode: "reason-short" });
     expect(await fp.manual(principal(), ALLOT, "a long enough reason here", MT, undefined, "9007199254740999999")).toMatchObject({ ok: false, reasonCode: "not-visible" });
@@ -257,9 +260,11 @@ describe("ir-list buildChase — the IR's balance to-do (D137 ruling 3)", () => 
   const allot = (id: string, holdUntil: string | null) => ({ id, Customer: CONTACT, LLP_Lookup: LLP, Committed_Units: 10, Allocation_Status: "Reserved", holdUntil }) as never;
   const farms = new Map([[LLP, { name: "Synthetic Farm", block: "S" }]]);
   it("lists Reserved allotments with the deadline and days left; drops converted ones and ones Zoho says owe nothing", () => {
-    const rows = buildChase([contact], [allot(ALLOT, "2026-10-20"), allot(R1, null), allot(R2, "2026-10-12")], farms, new Map([[R1, {}]]), new Map([[ALLOT, 900_000], [R2, 0]]), NOW);
+    const money = (receivable: number, received: number) => irMoneyOf({ id: "x", Total_Amount_Receivable: receivable, Total_Amount_Received: received }, ["Total_Amount_Receivable", "Total_Amount_Received"]);
+    const rows = buildChase([contact], [allot(ALLOT, "2026-10-20"), allot(R1, null), allot(R2, "2026-10-12")], farms, new Map([[R1, {}]]),
+      new Map([[ALLOT, money(1_000_000, 100_000)], [R2, money(1_000_000, 1_000_000)]]), NOW);
     expect(rows).toEqual([{ contactId: CONTACT, code: "ARL-INV-0137", name: "Synth Investor", leadId: LEAD, allotmentId: ALLOT, farm: "Synthetic Farm", units: 10,
-      holdUntil: "2026-10-20", daysLeft: 11, due: 900_000 }]);
+      holdUntil: "2026-10-20", daysLeft: 11, due: 900_000, fromDay: "2026-09-20", extendedBy: 0 }]);
   });
   it("the amount is null when Zoho hides it from the IR (field-level security)", () => {
     expect(buildChase([contact], [allot(ALLOT, "2026-10-20")], farms, new Map(), null, NOW)[0]!.due).toBeNull();

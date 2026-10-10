@@ -6,9 +6,9 @@
    a lost reason — a lead can raise price and still convert.
    ────────────────────────────────────────────────────────────────────────────────────────── */
 
-import { CALLOUT, KINDS, OBJS, SRCNEEDS, ST, TOUCHCHANNELS, UNIT } from "@/domain";
+import { CALLOUT, KINDS, OBJS, SRCNEEDS, ST, TOUCHCHANNELS } from "@/domain";
 import type { Channel, Lead } from "@/domain";
-import { hhmm, iso, money, nowT } from "@/lib/format";
+import { hhmm, iso, nowT } from "@/lib/format";
 import { canPlan, canSee, canWork, conFor, everyone, P, sourceLabel, whyLocked } from "@/lib/selectors";
 import { useConsole } from "@/lib/store";
 import type { ConsoleState } from "@/lib/store";
@@ -274,7 +274,7 @@ function DetailsBody({ lead }: DrawerProps) {
             ) : (
               <dl className="kv">
                 <dt>Reserved units</dt>
-                <dd>{l.units} · {money(l.units * UNIT)}. Corrections belong to the Finance process.</dd>
+                <dd>{l.units}. Corrections belong to the Finance process.</dd>
               </dl>
             )}
             {l.src !== "Channel partner" && SRCNEEDS[l.src] === "person" ? (

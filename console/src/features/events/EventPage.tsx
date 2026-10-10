@@ -21,8 +21,7 @@
 import { Tw } from "@/components/ui";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ASSIGNRULE, UNIT } from "@/domain";
-import { money } from "@/lib/format";
+import { ASSIGNRULE } from "@/domain";
 import {
   P, assignees, canAssign, isIR, may,
 } from "@/lib/selectors";
@@ -284,7 +283,7 @@ export function EventPage({ id }: { id: string }) {
             <Tw className="scroll"><table>
               <thead><tr>
                 <th scope="col">Lead</th><th scope="col">Stage</th>
-                <th scope="col" style={{ textAlign: "right" }}>Total</th>
+                <th scope="col" style={{ textAlign: "right" }}>Units</th>
               </tr></thead>
               <tbody>
                 {L.length ? L.map((l) => (
@@ -298,8 +297,8 @@ export function EventPage({ id }: { id: string }) {
                         {l.status ?? "—"}
                       </span>
                     </td>
-                    {/* PROVISIONAL: Units_Interested × the unit price; the allotment's own value is an investor-side read (D69) */}
-                    <td className="n">{l.units ? money(l.units * UNIT) : "—"}</td>
+                    {/* D138 (B-10): Units_Interested — no rupee value from the prototype's unit price */}
+                    <td className="n">{l.units ? l.units : "—"}</td>
                   </tr>
                 )) : (
                   <tr><td colSpan={3} className="empty">

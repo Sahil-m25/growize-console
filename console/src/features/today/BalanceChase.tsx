@@ -1,18 +1,24 @@
 "use client";
 
 /* D137 ruling 3 — after Reserved, the IR chases the balance. One queue item on the IR's Today per Reserved allotment of their
-   own-lead investor that is not yet converted in full: who, which farm, units, the amount due (only where Zoho's field security
-   shows it to the IR — else "Finance holds the amount") and the deadline (Hold_Until, days left in IST). The rows are
+   own-lead investor that is not yet converted in full: who, which farm, units, the amount due (D138 / B-10: receivable − received
+   as Zoho returns them on the IR's own token; nothing where Zoho hides them — never a figure worked out here) and the deadline with
+   the day it counts from (D138 G4: "Balance due 9 Nov — 30 days from Finance confirming the 10% on 10 Oct", lib/money/balance-clock,
+   days left in IST). The rows are
    GET /api/investors/mine `chase` (server/investors/ir-list buildChase); a row is gone the moment Finance matches the remainder
    (the allotment is stamped Converted_At automatically) or someone marks it fully paid by hand. Read-only: no write here. */
 
 import { useApiRead } from "@/lib/data/api";
 import { irInvestorList } from "@/lib/data/endpoints/investors";
 import { useIm } from "@/features/im/host";
+import { balanceClock, balanceDueText } from "@/lib/money/balance-clock";
 
 const inr = (n: number): string => "₹" + n.toLocaleString("en-IN");
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const dayLabel = (d: string): string => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d); return m ? `${+m[3]!} ${MONTHS[+m[2]! - 1]}` : d; };
+/** the balance clock from the row's own deadline and the extension the server read (fromDay is the server's, from the same function) */
+const dueLine = (x: { holdUntil: string | null; extendedBy?: number }): string => {
+  const c = balanceClock(x.holdUntil, x.extendedBy ? { state: "Approved", days: x.extendedBy } : null);
+  return c ? balanceDueText(c) : "";
+};
 
 export function BalanceChase({ onOpenLead }: { onOpenLead: (leadId: string) => void }) {
   const { s, me } = useIm();
@@ -29,8 +35,8 @@ export function BalanceChase({ onOpenLead }: { onOpenLead: (leadId: string) => v
           <li key={x.allotmentId} className="led">
             <span className={`tag ${x.daysLeft != null && x.daysLeft <= 7 ? "late" : "due"}`}>{x.daysLeft == null ? "no deadline" : x.daysLeft < 0 ? -x.daysLeft + "d over" : x.daysLeft + "d left"}</span>
             <span style={{ minWidth: 0, flex: 1 }}><b>{x.name || x.code}</b>{" "}<span className="sm mono">{x.code}</span>
-              <div className="sm">{x.farm ? x.farm + " · " : ""}{x.units} unit{x.units === 1 ? "" : "s"} · {x.due != null ? inr(x.due) + " due" : "Finance holds the amount due"}
-                {x.holdUntil ? " · by " + dayLabel(x.holdUntil) : ""}</div></span>
+              <div className="sm">{x.farm ? x.farm + " · " : ""}{x.units} unit{x.units === 1 ? "" : "s"}{x.due != null ? " · " + inr(x.due) + " due" : ""}</div>
+              {x.holdUntil ? <div className="sm" data-testid="balance-due-line">{dueLine(x)}</div> : null}</span>
             {x.leadId ? <button type="button" className="chip" onClick={() => onOpenLead(x.leadId!)}>Open lead</button> : null}
           </li>))}</ul>
       </div>

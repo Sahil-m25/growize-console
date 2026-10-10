@@ -141,9 +141,21 @@ test('TC-E08-007/024: on a Finance seat a reported balance waits on Finance, rea
   assert.ok(receipts.includes(`'${A1}'`) && !receipts.includes(A9), 'a Cancelled allotment carries no money');
 });
 
-test('TC-E08-010: once Finance matches the balance the gate has cleared, read live (Finance seat)', async () => {
+test('D138: the balance matched but the supplementary not signed — the gate stays shut and the lead is held for it', async () => {
   const r = rig('gates', gatesRoute('lead.balance-reported', 'receipts.balance-matched'));
   const v = (await financeGates(r).read(principal(SUPER), L_BAL)).value;
+  assert.equal(v.met, false, 'no Fully paid before the signed supplementary');
+  assert.equal(v.heldFor, 'supplementary');
+  assert.equal(v.payment.status, 'Full', 'the money itself is in and still reads so');
+  const ir = (await gates(rig('gates', gatesRoute('lead.balance-reported')), IR).read(principal(IR), L_BAL)).value;
+  assert.equal(ir.heldFor, 'supplementary', 'the IR\'s page is told too (the supplementary stamp is not money)');
+});
+
+test('TC-E08-010: once Finance matches the balance (and the supplementary is verified, D138) the gate has cleared, read live (Finance seat)', async () => {
+  const route = gatesRoute('lead.balance-reported', 'receipts.balance-matched');
+  const r = rig('gates', (c) => (c.query && c.query.includes('from LLP_UnitAllocation_Module') ? 'allotments.balance-supp-verified' : route(c)));
+  const v = (await financeGates(r).read(principal(SUPER), L_BAL)).value;
+  assert.equal(v.heldFor, null);
   assert.equal(v.met, true);
   assert.equal(v.who, null);
   assert.equal(v.says, null);

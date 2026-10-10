@@ -39,7 +39,9 @@ describe("ImInv — vInv, the list", () => {
 describe("ImInv — vOne, the record", () => {
   it("Finance (harsha) on a reservation: the hold note, masked PII, money and paper", () => {
     const who = rec("harsha", "ARL-INV-0208", "who").t;
-    expect(who).toContain("₹22.5 L due in 21 days. The hold ends 23 Sep. A lapse forfeits ₹50,000 and puts 1 unit back on the shelf.");
+    /* D138 G4: the deadline names the day it counts from; B-10: the header value is the allotments' recorded amount */
+    expect(who).toContain("₹22.5 L due in 21 days. Balance due 23 Sep — 30 days from Finance confirming the 10% on 24 Aug. A lapse forfeits ₹50,000 and puts 1 unit back on the shelf.");
+    expect(who).toContain("1 unit · ₹25 L");
     expect(who).toContain("JourneyWho they areWhat they holdMoney1PaperTickets");   /* GC-1524: Journey first */
     expect(who).toContain("PANAFT•••••Lreveal");
     expect(who).toContain("HDFC0000911 · PRAKASH BHAT · name match matched");

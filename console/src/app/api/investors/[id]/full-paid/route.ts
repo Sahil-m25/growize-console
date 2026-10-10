@@ -1,10 +1,12 @@
 /* /api/investors/[id]/full-paid — D137 ruling 3: mark a Reserved allotment fully paid BY HAND (server/investors/full-paid manual).
    The automatic conversion happens when Finance matches the remaining money (money/match → full-paid auto); this route is the
-   manual path for Finance Operations, the Head of Finance, Digital Infrastructure or a KAM, logged like the unlock override.
+   manual path for Finance Operations, the Head of Finance or Digital Infrastructure (D138: not a KAM — a KAM asks Finance through
+   ./request), logged like the unlock override. D138: refused 409 `supplementary-not-signed` until the allotment's
+   Supplementary_Verified_At is set (nothing is written).
    POST { allotmentId, reason (10-500 chars), expectedModifiedTime? }
    The reason is a Note on the Contact under the person's own name first, then Converted_At / Converted_By / Converted_Via = Manual
    on the allotment (guarded, D44); ops log `full-paid` / `manual` and Plane C `investor-converted` (fully-paid-manual).
-   200 → { stamped }  ·  403 not allowed / not visible  ·  409 changed  ·  422 reason-short / not-reserved / fields-missing  ·
+   200 → { stamped }  ·  403 not allowed / not visible  ·  409 changed / supplementary-not-signed  ·  422 reason-short / not-reserved / fields-missing  ·
    502 note-failed  ·  503 Zoho not answering. */
 import { guardApi } from "@/server/access/guard";
 import { withErrorCapture } from "@/server/ops/runtime";
@@ -13,9 +15,10 @@ import type { ManualResult } from "@/server/investors/full-paid";
 
 export const dynamic = "force-dynamic";
 const MAX_BODY = 4 * 1024;
-const STATUS: Record<string, number> = { "invalid-request": 400, "not-allowed": 403, "not-visible": 403, changed: 409, "note-failed": 502 };
-/** D137 ruling 3: Finance, Digital Infrastructure or KAM may convert by hand. */
-const MANUAL_SEATS: ReadonlySet<string> = new Set(["finance-operations", "head-of-finance", "digital-infrastructure", "key-account-manager"]);
+const STATUS: Record<string, number> = { "invalid-request": 400, "not-allowed": 403, "not-visible": 403, changed: 409, "supplementary-not-signed": 409, "note-failed": 502 };
+/** D137 ruling 3 as amended by D138 (10 Oct): Finance or Digital Infrastructure may convert by hand — NOT a KAM (a KAM asks Finance:
+ *  POST /api/investors/[id]/full-paid/request). */
+const MANUAL_SEATS: ReadonlySet<string> = new Set(["finance-operations", "head-of-finance", "digital-infrastructure"]);
 type Ctx = { params: Promise<{ id: string }> };
 
 async function post_(req: Request, { params }: Ctx) {

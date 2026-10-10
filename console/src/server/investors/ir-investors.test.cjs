@@ -105,18 +105,41 @@ test('AC1: Rohit lists exactly the investors from his own leads — on his own t
   assert.equal(contactsQ.split(' from ')[0], `select ${IR_LIST_FIELDS.join(', ')}`);
 });
 
-test('AC4: no price, amount, yield or receipt comes out — and none is selected — though the recorded allotment row carries them', async () => {
+/* D138 (B-10 ruling, 10 Oct): IRs DO see the amount due on their balance to-do — read on their own token, per field, from the
+   allotment's Total_Amount_Receivable / Total_Amount_Received only. The list rows themselves still carry no money. */
+const IR_MONEY_SELECT = 'select id, Unit_Price, Total_Amount_Receivable, Total_Amount_Received, Hold_Extension_State, Hold_Extension_Days';
+test('AC4 (as amended by D138): the list rows carry no price, amount, yield or receipt; the one money select is the chase\'s, on the allotments by id', async () => {
   const r = rig();
   const res = await r.list.list(creds.get(ROHIT), 'ir');
   assert.ok(JSON.stringify(recorded('investors', 'record.allotments-prakash')).match(/2500000/), 'the replayed Zoho row does carry a price');
-  const out = JSON.stringify(res);
-  assert.ok(!MONEY.test(out), out);
-  assert.ok(!IDENT.test(out.replace(/ARL_ID/g, '')), out);
+  const rows = JSON.stringify(res.rows);
+  assert.ok(!MONEY.test(rows), rows);
+  assert.ok(!IDENT.test(JSON.stringify(res).replace(/ARL_ID/g, '')), JSON.stringify(res));
   for (const q of r.calls) {
     const sel = q.split(' from ')[0];
-    assert.ok(!MONEY.test(sel) && !/PAN|Aadhaar|Bank|IFSC|KYC|FEMA|Mobile|Email|Mailing|Nominee/.test(sel), sel);
+    assert.ok(!/PAN|Aadhaar|Bank|IFSC|KYC|FEMA|Mobile|Email|Mailing|Nominee/.test(sel), sel);
+    if (sel === IR_MONEY_SELECT) { assert.match(q, /from LLP_UnitAllocation_Module where id in \('\d+'/); continue; }
+    assert.ok(!MONEY.test(sel), sel);
   }
+  assert.ok(r.calls.some((q) => q.startsWith(IR_MONEY_SELECT)), 'the reserved allotment\'s money is asked of Zoho on the IR\'s token');
   assert.equal(r.calls.some((c) => /from Receipts|from Cases/.test(c)), false, 'no receipt, no case is read for the list');
+  /* Zoho returned nothing for the money columns here: the amount is null, never a figure from anywhere else */
+  assert.ok((res.chase ?? []).every((c) => c.due === null), JSON.stringify(res.chase));
+  assert.equal(res.dueReadable, false);
+});
+
+test('D138: where Zoho shows the IR both totals, the chase row carries receivable − received and dueReadable is true', async () => {
+  const allotId = recorded('investors', 'record.allotments-prakash').body.data.find((a) => a.Allocation_Status === 'Reserved').id;
+  const money = (url, q) => (q && q.startsWith(IR_MONEY_SELECT)
+    ? { status: 200, headers: { 'content-type': 'application/json' }, body: { data: [{ id: allotId, Unit_Price: 2500000, Total_Amount_Receivable: 2500000, Total_Amount_Received: 250000 }], info: { count: 1, more_records: false } } }
+    : route(url, q));
+  const r = rig(money);
+  const res = await r.list.list(creds.get(ROHIT), 'ir');
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const row = res.chase.find((c) => c.allotmentId === allotId);
+  assert.equal(row.due, 2250000);
+  assert.equal(res.dueReadable, true);
+  assert.ok(!MONEY.test(JSON.stringify(res.rows)), 'the list rows still carry no money');
 });
 
 test('AC2: another IR lists none of Rohit\'s investors — Zoho is asked with that IR\'s own filter and returns nothing', async () => {
