@@ -1,5 +1,5 @@
 {
- "note": "Generated 25 Sep 2026 from growize-console-plan.json tests with ui_mode=ui on In-plan stories; one expect_fail calibration case per epic (D85 build start). REG-* cases (group REG, one per staging defect of the 6-9 Oct 2026 test waves, fields bug and jira) are hand-added and not produced by the generator; see docs/uat/STAGING-DEFECTS.md.",
+ "note": "Generated 25 Sep 2026 from growize-console-plan.json tests with ui_mode=ui on In-plan stories; one expect_fail calibration case per epic (D85 build start). REG-* cases (group REG, one per staging defect of the 6-9 Oct 2026 test waves, fields bug and jira) are hand-added and not produced by the generator; see docs/uat/STAGING-DEFECTS.md. D138 (10 Oct 2026): REG-B10, REG-B20 and REG-B22 carry the owner's rulings (field `ruling`); REG-B22-EV/-ABS/-ACT/-TEAMS split the B-22 matrix corrections by area.",
  "cases": [
   {
    "id": "TC-E01-001",
@@ -8304,21 +8304,23 @@
    "id": "REG-B10",
    "story": null,
    "seat": "rohit",
-   "title": "B-10 regression: IR sees rupee figures (Rs 1 Cr, Rs 25 L) from a hard-coded prototype unit price although price is hidden from ",
+   "title": "B-10 regression (ruled 10 Oct, D138): IR rupee figures come only from Zoho — none from the prototype unit price",
    "steps": [
     "Press Rohit Deshpande on the sign-in screen",
     "Press the Leads link in the menu",
     "Open Joseph Mathew"
    ],
    "expected": [
-    "No rupee amount is shown anywhere on the lead record."
+    "The lead record shows Joseph Mathew's units and no rupee amount.",
+    "No rupee amount on the lead record is worked out from a unit price."
    ],
    "fixtures": [
     "DEMO_BOOK"
    ],
    "group": "REG",
    "bug": "B-10",
-   "jira": "GC-1475"
+   "jira": "GC-1475",
+   "ruling": "D138: IRs DO see rupee amounts (they chase the balance) but only real Zoho values their own token reads — allotment Unit_Price, Total_Amount_Receivable, Total_Amount_Received; a lead has none."
   },
   {
    "id": "REG-B11",
@@ -8515,7 +8517,7 @@
    "id": "REG-B20",
    "story": null,
    "seat": "harsha",
-   "title": "B-20 regression: Receipt reference (UTR) shown in clear with no step-up",
+   "title": "B-20 (ruled 10 Oct, D138: by design): Finance sees the receipt reference (UTR) in full on the investor record",
    "steps": [
     "Press Harsha Bhat on the sign-in screen",
     "Press 'Investors'",
@@ -8524,7 +8526,7 @@
     "Press 'Receipts'"
    ],
    "expected": [
-    "The receipt's payment reference is masked until revealed."
+    "The receipt's payment reference is shown in full to Finance on the investor record."
    ],
    "fixtures": [
     "DEMO_BOOK",
@@ -8532,7 +8534,8 @@
    ],
    "group": "REG",
    "bug": "B-20",
-   "jira": "GC-1485"
+   "jira": "GC-1485",
+   "ruling": "D138: Finance keeps seeing the receipt UTR in full on the investor record — works as intended. The D119 mask stays on /pay and for non-Finance seats."
   },
   {
    "id": "REG-B21",
@@ -8558,7 +8561,7 @@
    "id": "REG-B22",
    "story": null,
    "seat": "rohit",
-   "title": "B-22 regression: Matrix expected controls the app hides by design and contradicted itself for Finance Ops",
+   "title": "B-22 (ruled 10 Oct, D138: matrix corrected) — IR Investors: the page is visible, read-only, own-lead only (D113)",
    "steps": [
     "Press Rohit Deshpande on the sign-in screen",
     "Press 'Investors' in the menu"
@@ -8572,7 +8575,94 @@
    ],
    "group": "REG",
    "bug": "B-22",
-   "jira": "GC-1487"
+   "jira": "GC-1487",
+   "ruling": "D138: correct the test matrix, not the app. Matrix rows CM-3166 / CM-3182 re-labelled 'visible, read-only' (D113)."
+  },
+  {
+   "id": "REG-B22-EV",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-22 (ruled 10 Oct, D138: matrix corrected) — Events edit is hidden for an IR (events: view and load only)",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Open Events from the menu"
+   ],
+   "expected": [
+    "No row or heading on the Events page offers an 'Add event' button.",
+    "No event offers 'Edit event'."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-22",
+   "jira": "GC-1487",
+   "ruling": "D138: matrix rows CM-0575..0614, CM-0623, CM-0626, CM-0647, CM-0656, CM-3493, CM-3496 re-labelled 'hidden' for IR seats. No events:edit for IR."
+  },
+  {
+   "id": "REG-B22-ABS",
+   "story": null,
+   "seat": "kavya",
+   "title": "B-22 (ruled 10 Oct, D138: matrix corrected) — the absence reason select is not offered on live",
+   "steps": [
+    "Press Kavya Nair on the sign-in screen",
+    "Press 'Your account' in the top bar",
+    "Press 'Set your availability'"
+   ],
+   "expected": [
+    "The availability panel offers an Out from date and a return date.",
+    "The 'Absence reason · private' choice is the demo book's: the live console does not offer it (matrix CM-0242: conditional)."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-22",
+   "jira": "GC-1487",
+   "ruling": "D138: matrix row CM-0242 re-labelled 'conditional — hidden in live mode'. CM-0227 / CM-0230 (other members' availability and details) 'conditional — needs roster rights'."
+  },
+  {
+   "id": "REG-B22-ACT",
+   "story": null,
+   "seat": "rohit",
+   "title": "B-22 (ruled 10 Oct, D138: matrix corrected) — Activity has no 'All people' filter for a seat that sees only itself",
+   "steps": [
+    "Press Rohit Deshpande on the sign-in screen",
+    "Press 'Activity' in the menu"
+   ],
+   "expected": [
+    "Activity lists only Rohit's own actions.",
+    "The page does not offer an 'All people' filter."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-22",
+   "jira": "GC-1487",
+   "ruling": "D138: matrix row CM-0440 re-labelled 'conditional — hidden for a solo seat' (shown to a manager with a team)."
+  },
+  {
+   "id": "REG-B22-TEAMS",
+   "story": null,
+   "seat": "meena",
+   "title": "B-22 (ruled 10 Oct, D138: matrix corrected) — Finance Operations reads Teams read-only, with no seat editing",
+   "steps": [
+    "Press Meena Raghavan on the sign-in screen",
+    "Press 'Teams' in the menu"
+   ],
+   "expected": [
+    "The Teams page is marked read only.",
+    "The page does not offer 'Edit what a seat may do'.",
+    "No row offers a seat dropdown."
+   ],
+   "fixtures": [
+    "DEMO_BOOK"
+   ],
+   "group": "REG",
+   "bug": "B-22",
+   "jira": "GC-1487",
+   "ruling": "D138: the Finance Ops contradictions resolved on the server-policy side (hidden / refused): CM-1903, CM-1911, CM-3535, CM-1322, CM-0895, CM-1490, CM-1656 re-labelled 'hidden'; CM-1935 / CM-1943 / CM-3789 / CM-3794 / CM-3795 stand."
   },
   {
    "id": "REG-B23",

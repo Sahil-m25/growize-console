@@ -1,0 +1,40 @@
+void automation.gz_set_originating_ir(String contactId)
+{
+// D138 (DRAFT, not installed) — answers D137 open question 3. Contacts.Originating_IR is what scopes an IR's view of the
+// investors they brought in: Zoho field sharing on it (D122/D123) shares the Contact read-only with that IR, gz_sync_ir_access
+// copies it onto the allotments' IR_Access, and the console's IR reads filter on it (Investors list, Balances to chase, App activity).
+// Finance creates the investor Contact at the 10% (D137, GC-1527) on Finance's own token, and Finance's profile cannot write
+// Originating_IR (D122: its writers are the admin and this kind of workflow), so a Finance-created investor has it EMPTY and
+// does not reach its IR anywhere. This function fills it from the origin lead's Owner.
+// Copies Leads.Owner (via Contacts.Origin_Lead) into Contacts.Originating_IR ONLY when Originating_IR is empty — it never
+// overwrites (a hand-off is the admin's edit, D123) and never touches anything else. Writes only what differs. Logs ids only.
+// Wire to workflow rule "GZ Set Originating IR" (Contacts, on CREATE, and on edit when Origin_Lead is modified to any value;
+// repeat off), contactId = Contacts.Contact Id. The update fires "GZ IR Access Sync" (Originating_IR modified), so the allotments'
+// IR_Access follows by itself. Run the connection-free form (zoho.crm.* as the workflow's own context), like gz_sync_ir_access.
+// Backfill: run once per Contact with Origin_Lead set and Originating_IR empty (a COQL list from Setup > Functions > Execute).
+contact = zoho.crm.getRecordById("Contacts",contactId.toLong());
+if(contact.get("Originating_IR") != null)
+{
+	info "contact " + contactId + " originating ir already set";
+	return;
+}
+origin = contact.get("Origin_Lead");
+if(origin == null)
+{
+	info "contact " + contactId + " no origin lead";
+	return;
+}
+leadId = origin.get("id").toString();
+lead = zoho.crm.getRecordById("Leads",leadId.toLong());
+owner = lead.get("Owner");
+if(owner == null)
+{
+	info "contact " + contactId + " lead " + leadId + " no owner";
+	return;
+}
+// The lead's Owner is the IR who carried it (a cover IR is Cover_By, never the Owner — D123), so the investor goes to the owner.
+up = Map();
+up.put("Originating_IR",owner.get("id").toString());
+r = zoho.crm.updateRecord("Contacts",contactId.toLong(),up,{"trigger":{"workflow"}});
+info "contact " + contactId + " originating ir set from lead " + leadId + " result " + r.get("id");
+}

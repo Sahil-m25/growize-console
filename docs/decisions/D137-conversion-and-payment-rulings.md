@@ -128,6 +128,10 @@ pressure there) and its user lookups live on the new module.
 Nothing on Leads (at its user-lookup limit). G5's fields are design only and not proposed for creation yet.
 
 ## Open — needs the owner
+**10 Oct 2026 (D138):** 1 answered — the IR sees the amount due, read from Zoho on the IR's token; 2 answered — the full conversion
+waits for the signed supplementary (409 `supplementary-not-signed`); 3 answered — why Originating_IR matters and a workflow draft
+(`zoho/deluge/gz_set_originating_ir.deluge`); 6 answered — a KAM does NOT stamp, the KAM asks Finance. 4 and 5 remain open.
+
 1. **The IR sees the amount due (ruling 3) vs D69** (the IR side reads no money). Built: the chase row carries the deadline and
    units, and `due: null` ("Finance holds the amount due") — the console does not read any amount on an IR's token. If the owner
    confirms the IR should see it: unhide `Total_Amount_Receivable` for the IR profile (`zoho/changes` item E), relax D69 for this one

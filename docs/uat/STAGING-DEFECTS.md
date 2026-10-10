@@ -26,7 +26,7 @@ Sources (outside the repo, kept with the harness): `report/bugs.md`, `harness/bu
 | B-07 | GC-1472 | S2 | IR A (safety) | Sandbox data, all leads | Sandbox seed not regenerated after D131: leads still carried pre-sink phone numbers and emails. | Data, not code: sandbox not reseeded (zoho/sandbox README step 4). | **Seed** | - | `W3-REG-B07`, `REG-B07` |
 | B-08 | GC-1473 | S3 | Finance Ops | Investor record > What they hold; Holds | Holdings stuck on 'Reading the allotments'; hold controls never rendered. | Finance Ops had no ARL_Holdings permission; hold read failed on seeds with no Hold_Until/Unit_Price. | **Fixed+verified** | 9628d67 | `W1-FIN-HOLD-READ`, `W1B-FIN-HOLD-JOSEPH`, `W1FIN-REC-MONEY`, `REG-B08` |
 | B-09 | GC-1474 | S3 | IR A | API walls: /api/statements, /api/claims | Investors-side endpoints answered an IR without a seat refusal. | No seat check on statements; claims checked configuration before seat. | **Fixed+verified** | 9628d67 | `W1-IRA-CLAIMS-WALL`, `W1-IRA-STATEMENTS-WALL`, `REG-B09` |
-| B-10 | GC-1475 | S3 | IR A | Lead header; Today focus card | IR sees rupee figures (Rs 1 Cr, Rs 25 L) from a hard-coded prototype unit price although price is hidden from IR. | Client multiplies units by plan.ts UNIT; API masks Unit_Price. | **Ruling** | - | `W1-IRA-LEAD-NO-RUPEE`, `W3-REG-B10`, `REG-B10` |
+| B-10 | GC-1475 | S3 | IR A | Lead header; Today focus card | IR sees rupee figures (Rs 1 Cr, Rs 25 L) from a hard-coded prototype unit price although price is hidden from IR. | Client multiplies units by plan.ts UNIT; API masks Unit_Price. | **Ruled: fixed in code** (D138, 10 Oct: IRs DO see rupees, only real Zoho values on their own token; no UNIT figure anywhere on the lead side; amount due on Balances to chase) | d138-rulings | `W1-IRA-LEAD-NO-RUPEE`, `W3-REG-B10`, `REG-B10` |
 | B-11 | GC-1476 | S3 | IR A | Lead > Profile tab | Free-text contact preference invited but refused; the whole save (city, units) lost. | Zoho keeps the preference as Email/WhatsApp/Phone only; field copy invited text. | **Fixed+verified** | 9628d67 | `W1IR-W-S-PREF-FREETEXT`, `REG-B11` |
 | B-12 | GC-1477 | S3 | IR A | Add lead > mobile duplicate hint | Own-book duplicate mobile reported as 'No existing record with this number' while the blocker said it was on the book. | Client duplicate hint ignored own-book matches. | **Fixed+verified** | 9628d67 | `W1-IRA-DUP-OWNBOOK`, `REG-B12` |
 | B-13 | GC-1478 | S3 | IR A | Profile > Badge | Badge colour change acknowledged (200) but never showed or persisted. | Style write dropped or roster read ignored it. | **Fixed+verified** | 9628d67 | `W1-W-ME-BADGE-CHANGE-AND-RESTORE`, `REG-B13` |
@@ -36,15 +36,15 @@ Sources (outside the repo, kept with the harness): `report/bugs.md`, `harness/bu
 | B-17 | GC-1482 | S3 | Finance Ops | Shell: Collapse the sidebar | Collapse button did nothing for Finance Ops. | Rail dispatch lost while data reads failed (B-02/B-06). | **Fixed+verified** | 9628d67 | `W1FIN-RAIL-COLLAPSE`, `REG-B17` |
 | B-18 | GC-1483 | S3 | Finance Ops | Investor record > Identity and contact | Residency 'Resident' but Aadhaar line said 'not applicable - non-resident'. | Residency to Aadhaar mapping. | **Fixed+verified** | 9628d67 | `W1FIN-REC-RESIDENCY`, `REG-B18` |
 | B-19 | GC-1484 | S3 | Finance Ops | Documents > Send one | Opening the send panel called a prefill that returned a bodiless 500 (templates and NDA prefill too). | /api/documents/sign/{prefill,templates} threw on the Sign config; Sign 503 not worded as not-configured. | **Fixed in code** | 8471c5d | `W1FIN-DOCS-SEND-PANEL`, `W3-REG-B19`, `REG-B19` |
-| B-20 | GC-1485 | S4 | Finance Ops | Investor record > Money > Receipts | Receipt reference (UTR) shown in clear with no step-up. | Open question whether the D119 mask covers the investor record. | **Ruling** | - | `W1-FIN-STEPUP-REVEAL-RO`, `REG-B20` |
+| B-20 | GC-1485 | S4 | Finance Ops | Investor record > Money > Receipts | Receipt reference (UTR) shown in clear with no step-up. | Open question whether the D119 mask covers the investor record. | **Ruled: by design** (D138, 10 Oct: Finance keeps seeing the UTR in full on the investor record; the D119 mask stays on /pay and for non-Finance seats). Cases expecting a mask for Finance re-labelled: CM-3363 "visible to Finance", `REG-B20`; harness `W1-FIN-STEPUP-REVEAL-RO` to expect the full reference | - | `W1-FIN-STEPUP-REVEAL-RO`, `REG-B20` |
 | B-21 | GC-1486 | S4 | Finance Ops | Teams (read only) | Dead 'Edit what a seat may do' button on a read-only page; banner said IRs hold no Investors pages, against D113. | Edit control not gated on the assign right; banner copy stale. | **Fixed+verified** | 9628d67 | `W1-FIN-TEAMS-RO`, `W3-REG-B21`, `REG-B21` |
-| B-22 | GC-1487 | S4 | IR A/B, Finance Ops | Events edit, absence reason, Activity filter, IR Investors, Finance Teams | Matrix expected controls the app hides by design and contradicted itself for Finance Ops. | Not an app defect: matrix rows to re-label (or grant events:edit). | **Ruling** | - | `W1-IRA-INV-D113`, `W1-FIN-TEAMS-RO`, `W1-EV-NOEDIT-DETAIL`, `REG-B22` |
+| B-22 | GC-1487 | S4 | IR A/B, Finance Ops | Events edit, absence reason, Activity filter, IR Investors, Finance Teams | Matrix expected controls the app hides by design and contradicted itself for Finance Ops. | Not an app defect: matrix rows to re-label (or grant events:edit). | **Ruled: matrix corrected** (D138, 10 Oct: correct the matrix, not the app; rows re-labelled below, "B-22 matrix corrections") | - | `W1-IRA-INV-D113`, `W1-FIN-TEAMS-RO`, `W1-EV-NOEDIT-DETAIL`, `REG-B22`, `REG-B22-EV`, `REG-B22-ABS`, `REG-B22-ACT`, `REG-B22-TEAMS` |
 | B-23 | GC-1488 | S3 | Finance Ops | /inv > Add investor | Farm list empty, so an already-paid investor could never be added. | Add-paid read Unit_Price from the LLP (it is Pet_Unit_Price); seed LLPs had no price/status. | **Fixed in code** | 9628d67, e581ef7 | `W3-REG-B23`, `REG-B23` |
 | B-24 | GC-1489 | S3 | Finance Ops | Shell: Help | Help could not be opened ('?' did nothing; no Help row in the account drawer). | account.tsx drew Profile/Availability/Help only for lead seats. | **Fixed+verified** | 9628d67 | `W1B-FIN-SH-HELP-OPENS (new bug w1b-fin-rest-1)`, `REG-B24` |
 | B-25 | GC-1490 | S3 | IR A | Lead > Set the next step | Opened with 'Call - permission needed' pre-selected; Save gave 403. | Default channel ignored permission. | **Fixed+verified** | 9628d67 | `W1B-LB-NEXT-DEFAULT-CHANNEL`, `REG-B25` |
 | B-26 | GC-1491 | S3 | IR A | /me | Mobile/Initials not saved while display name blank (PATCH /api/me 422). | Whole profile saved; name empty (B-15). | **Fixed+verified** | 9628d67 | `W1B-ME-MOBILE-PERSIST`, `REG-B26` |
 | B-27 | GC-1492 | S3 | IR A | /activity | Activity showed 0 actions after notes, lost/re-open, forecast, absence; export unusable. | Lead actions not written to the activity log; nightly Zoho audit export job not scheduled. | **Env** | 9628d67 | `W1B-WF-LOST-AUDIT`, `W2K-ACT-AFTER-WRITES (B-27)`, `W3-REG-B27`, `REG-B27` |
-| W2-KAM-1 | GC-1493 | S3 | KAM | /inv record > What they hold; /farms | KAM sees unit price and holding value in rupees on the record and Farms. | SecHold and Farms render unit price unconditionally; farm API did not mask Unit_Price. | **Ruling** | - | `W2K-INV-REC-NOMONEY (bug W2-KAM-1)`, `W2K-FARMS-NOMONEY (bug W2-KAM-1)`, `REG-W2KAM1` |
+| W2-KAM-1 | GC-1493 | S3 | KAM | /inv record > What they hold; /farms | KAM sees unit price and holding value in rupees on the record and Farms. | SecHold and Farms render unit price unconditionally; farm API did not mask Unit_Price. | **Ruling** (NOT ruled on 10 Oct — still open, D138; KAM money stays hidden. The record's "What they hold" no longer shows a rupee figure to a KAM since the UNIT figure went (d138-rulings); Farms still shows the LLP price) | - | `W2K-INV-REC-NOMONEY (bug W2-KAM-1)`, `W2K-FARMS-NOMONEY (bug W2-KAM-1)`, `REG-W2KAM1` |
 | W2-KAM-2 | GC-1494 | S3 | KAM | /tkt; record > Tickets | Ticket rows read 'opened 2026-1 - null days old, SLA' (live ISO dates parsed as demo dates). | day6()/aged()/when() parse only demo date formats. | **Fixed in code** | 8471c5d | `W2K-TKT-DATES (bug W2-KAM-2)`, `REG-W2KAM2` |
 | W2-KAM-3 | GC-1495 | S3 | KAM | /today Last heard; /inv My accounts; Care | 'Last heard' disagreed across screens and was printed as a raw timestamp; lead-side touches reset the KAM cadence. | Today read the latest touch on the origin lead (any IR); My accounts and Care read the empty demo book. | **Fixed in code** | 8471c5d | `W2K-DASH-LASTHEARD-FORMAT (bug W2-KAM-3)`, `W2K-DASH-LASTHEARD-AGREE (bug W2-KAM-3)`, `REG-W2KAM3` |
 | W2-KAM-4 | GC-1496 | S4 | KAM | /inv ARL ID column, record header, Today rows | ARL ID showed the Zoho record id instead of the ARL code. | Row and header printed x.id rather than x.code. | **Fixed in code** | 8471c5d | `W2K-INV-ARLID (bug W2-KAM-4)`, `REG-W2KAM4` |
@@ -54,6 +54,21 @@ Sources (outside the repo, kept with the harness): `report/bugs.md`, `harness/bu
 | W2-IRB-2 | GC-1500 | S4 | IR B (and IR A) | Lead page after Record follow-up | A follow-up saved as 'Interested' showed 'Reply received' on the lead; the outcome was lost. | Outcome had no field; read back from the Touch subject only. | **Fixed in code** | 8471c5d | `W1IR-W-D-LOG-REPLY`, `W1IR-W-G-LOGNOTNOW`, `W3-REG-W2-IRB-2`, `REG-W2IRB2` |
 | W2-REG-1 | GC-1501 | S4 | IR A | Top bar: Undo the rung | Top-bar 'Undo the rung' never offered after a live tick. | TJUST set only by the fixture reducer's tick; live tick only reloaded data. | **Fixed in code** | 8471c5d | `W1-W-TOPBAR-UNDO-RUNG`, `REG-W2REG1` |
 
+
+## B-22 matrix corrections (owner ruling 10 Oct 2026, D138: correct the matrix, not the app)
+
+The coverage matrix (harness, outside the repo: `report/matrix-corrections.csv`) is re-labelled as below; the repo's catalogue
+carries one case per area (`pm/plan-merged/ui-cases.json` REG-B22, REG-B22-EV, REG-B22-ABS, REG-B22-ACT, REG-B22-TEAMS).
+
+| Area | Matrix rows | Matrix said | Re-labelled | Why (as built) |
+|---|---|---|---|---|
+| Events edit (IR) | CM-0575..0614, CM-0623, CM-0626, CM-0647, CM-0656, CM-3493, CM-3496 | IR may Add / Edit an event | **hidden** for IR seats | IR holds `events: ["view", "load"]`; only an editor (IR Manager) adds or edits events. No events:edit for IR. |
+| Absence reason | CM-0242 | "Choose a reason" offered | **conditional — hidden in live mode** | The reason select is the demo book's; live availability writes dates only. |
+| Team availability | CM-0227, CM-0230 | other members' availability / details visible | **conditional — needs roster rights** | A solo IR sees only their own. |
+| Activity person filter | CM-0440 | "All people" offered | **conditional — hidden for a solo seat** | Shown to a manager with a team; an IR's Activity is their own actions. |
+| IR Investors page | CM-3166, CM-3182 | hidden for IR | **visible, read-only, own-lead only** | D113: the IR reads the investors that came from their own leads. |
+| Finance Ops contradictions | CM-1903, CM-1911, CM-3535 (visible) vs CM-1935, CM-1943 (hidden); CM-1322 / CM-0895 vs CM-3789; CM-1490 vs CM-3795; CM-1656 vs CM-3794 | both | **hidden / refused** (the "visible" rows re-labelled) | The server policy refuses them for Finance Ops; Teams is read only and offers no seat edit (B-21). |
+
 ## Totals
 
 | Status | Count | Defects |
@@ -61,10 +76,13 @@ Sources (outside the repo, kept with the harness): `report/bugs.md`, `harness/bu
 | Fixed+verified | 16 | B-01, 03, 04, 05, 08, 09, 11, 12, 13, 14, 17, 18, 21, 24, 25, 26 |
 | Fixed in code | 12 | B-02 (remainder), B-06, B-15 (remainder), B-16, B-19, B-23, W2-KAM-2, 3, 4, 6, W2-IRB-2, W2-REG-1 |
 | Seed | 3 | B-07, W2-KAM-5, W2-IRB-1 |
-| Ruling | 4 | B-10, B-20, B-22, W2-KAM-1 |
+| Ruled 10 Oct (D138) | 3 | B-10 (fixed in code on `d138-rulings`), B-20 (by design), B-22 (matrix corrected) |
+| Ruling | 1 | W2-KAM-1 |
 | Env | 1 | B-27 |
 
-B-10 and W2-KAM-1 are one ruling (no price-derived rupee figure for an IR or a KAM, D69/D123). B-22 is a matrix correction, not an app defect.
+D138 (10 Oct) split what was one ruling: B-10 — IRs DO see rupee amounts, only real Zoho values their own token reads (never the
+prototype unit price); W2-KAM-1 (the KAM) was not ruled and stays open — KAM money stays hidden. B-22 is a matrix correction, not an
+app defect. The status words added: **Ruled: fixed in code**, **Ruled: by design**, **Ruled: matrix corrected**.
 
 ## Notes on individual rows
 

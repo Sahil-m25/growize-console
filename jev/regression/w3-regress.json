@@ -144,17 +144,12 @@
  },
  {
   "id": "W3-REG-B10",
-  "title": "B-10 / GC-1475 regression (owner ruling pending): IR Today focus card and lead header show no rupee figure",
+  "title": "B-10 / GC-1475 regression (ruled 10 Oct, D138): no rupee figure from the prototype unit price; the IR's lead header shows units only",
   "seat": "irA",
   "tier": "opus",
   "kind": "permission",
   "route": "/today",
   "steps": [
-   {
-    "action": "expectText",
-    "value": "₹",
-    "not": true
-   },
    {
     "action": "goto",
     "value": "/leads"
@@ -190,7 +185,8 @@
    "CM-3824"
   ],
   "facts": [
-   "No rupee amount is shown on the Today page or on Joseph Mathew's lead header"
+   "Joseph Mathew's lead header shows units and no rupee amount (a lead has no price in Zoho; units × the prototype price was a guess)",
+   "Any rupee figure on the IR's Today is the Balances to chase amount, which comes only from Zoho on the IR's token (D138)"
   ],
   "judge": "both"
  },
