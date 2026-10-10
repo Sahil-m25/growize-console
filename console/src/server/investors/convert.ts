@@ -22,7 +22,9 @@
  *                 this confirmation (the 10% is in: the balance is due within 30 days, D136's workflow), through the oversell
  *                 guard first (farms/oversell);
  *              3. every lead receipt not yet on an allotment is linked to it (Receipts.Allotment, guarded by its Modified_Time);
- *              4. if the money already covers the commitment, the full conversion runs (investors/full-paid auto).
+ *              4. D140: the allotment's Total_Amount_Received is brought in line with its matched receipts (money/received-total,
+ *                 its one writer, on Finance's token, guarded) — reported as `received`, never undoing the conversion;
+ *              5. if the money already covers the commitment, the full conversion runs (investors/full-paid auto).
  *            Not reached → nothing is written and the answer carries the trail and what is still to go.
  *   trail    the same reads, no writes: what Finance (and Digital Infrastructure, read-only) sees on the lead's Money view.
  *
@@ -37,6 +39,7 @@ import { maskReference, tenPercentTrail, type TenPercentTrail } from "../../lib/
 import type { OversellGuard } from "../farms/oversell";
 import { MATCHED_AT_FIELD, RECEIPT_LEAD_FIELD, readReceipts } from "../money/matched-receipts";
 import { RECEIPT_MODES } from "../money/receipt-replay";
+import { syncReceived, type ReceivedSync } from "../money/received-total";
 import { nextArlCode, splitName } from "./add-paid";
 import { istIso, type FullPaid, type AutoOutcome } from "./full-paid";
 
@@ -111,6 +114,8 @@ export interface Converted {
   readonly originatingIr: "written" | "not-written";
   readonly fullPaid: AutoOutcome | null;
   readonly already: boolean;
+  /** D140: Total_Amount_Received on the allotment after this press (money/received-total), or why it was not written */
+  readonly received?: ReceivedSync | null;
 }
 export type ConvertResult =
   | { readonly ok: true; readonly value: { readonly money: LeadMoney; readonly recorded: { readonly receiptId: string; readonly duplicate: boolean; readonly refMasked: string } | null; readonly converted: Converted | null } }
@@ -433,6 +438,7 @@ export function createConversion(deps: ConvertDeps) {
         const a = await ensureAllotment(p, c.contactId, c.code, m.farm, t.units, signal);
         if (a === "units-not-free" || a === "farm-closed") return refuse(p, a, [id, c.contactId, m.farm.llpId], m);
         const rl = await relink(p, id, a.allotmentId, signal);
+        const received = await syncReceived(crm, p.credential, a.allotmentId, signal, log, now).catch((): ReceivedSync => ({ ok: false, value: null, code: "unexpected" }));
         let full: AutoOutcome | null = null;
         if (m.trail.fullyPaid && deps.fullPaid) full = await deps.fullPaid.auto(p.credential, a.allotmentId, signal).catch(() => ({ ok: false, value: null, code: "unexpected" }));
         const already = !c.created && !a.created;
@@ -441,7 +447,7 @@ export function createConversion(deps: ConvertDeps) {
         const fresh = await money(p, id, lead, t, signal).catch(() => m);
         return { ok: true, value: { money: typeof fresh === "string" ? m : fresh, recorded, converted: Object.freeze({
           contactId: c.contactId, code: c.code, allotmentId: a.allotmentId, holdUntil: a.holdUntil, relinked: rl.done, relinkLeft: Object.freeze(rl.left),
-          originatingIr: c.originatingIr, fullPaid: full, already,
+          originatingIr: c.originatingIr, fullPaid: full, already, received,
         }) } };
       } catch (e) { return failed(p, e instanceof Fail ? e : new Fail("convert", "unexpected")); }
     },

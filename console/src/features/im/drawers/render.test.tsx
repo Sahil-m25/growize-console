@@ -58,6 +58,9 @@ describe("the drawers", () => {
     expect(t).toContain("Reserved, with a 30-day clock to");
     expect(t).toContain("The receipt is written here and appears on the IR's lead within the minute. They do not record it and cannot.");
     expect(t).toContain("Record it");
+    /* W8-FIN-2: the land line carries THAT farm's free units as the shelf answers them, never a negative book-wide figure */
+    expect(t).toMatch(/Land Block [A-Z] ×\d+ · \d+ free on the shelf/);
+    expect(t).not.toMatch(/-\d+ free on the shelf/);
   });
   it("send — an NRI on Aadhaar OTP is refused", () => {
     const h = html(st("send", "ARL-INV-0209", { DTPL: "Allocation letter" }), "meena");

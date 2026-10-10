@@ -51,6 +51,8 @@
  *   6. D137 ruling 3: when matched money on the allotment now covers units × Unit_Price, the Reserved allotment converts in full
  *      automatically — investors/full-paid `auto` stamps Converted_At / Converted_By (the matcher) / Converted_Via "Finance match"
  *      on the matcher's own token (`converted` in the view; `fields-missing` until the fields exist).
+ *   7. D140 (W8-IRA-1): the allotment's Total_Amount_Received = matched inbound − matched refunds, written by ./received-total (its
+ *      one writer) on the matcher's own token, guarded; after the hold write so the two guarded writes never race (`received`).
  * D137 ruling 2(a): the match write also carries Receipts.Matched_At (IST) for the 10% trail; an org without the field gets the
  * match written without it.
  *
@@ -67,6 +69,7 @@ import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "./receipt-replay";
 import { ALLOTMENT_UNLINKED, missingLinks } from "../investors/allotment-guard";
 import { holdChangedEvent } from "../holds/rules";
 import { MATCHED_AT_FIELD } from "./matched-receipts";
+import { syncReceived, type ReceivedSync } from "./received-total";
 
 export const CONTACTS_MODULE = "Contacts";
 export const HOLD_DAYS = 30;
@@ -151,6 +154,8 @@ export interface MatchView {
   readonly holdChanged: Published | null;
   /** D137 ruling 3: the full conversion this match triggered ("converted"), or why not; null when not wired / not inbound. */
   readonly converted?: FullPaidOutcome | null;
+  /** D140: the allotment's Total_Amount_Received brought in line with its matched receipts (./received-total), or why not. */
+  readonly received?: ReceivedSync | null;
 }
 /** investors/full-paid AutoOutcome, restated so this module does not import the investors side. */
 export type FullPaidOutcome = { readonly ok: boolean; readonly value: "converted" | "already" | "not-yet" | "not-reserved" | "waiting-supplementary" | null; readonly code: string | null };
@@ -318,22 +323,26 @@ export function createReceiptMatch(deps: MatchDependencies) {
         }
       }
     }
+    /* D140: the derived total on the allotment, by its one writer — after the hold (both are guarded writes on the allotment) and
+       before the conversion (which re-reads the allotment). Inbound money and refunds alike. */
+    let received: ReceivedSync | null = null;
+    try { received = await syncReceived(crm, cred, t.allotmentId, signal, log, now); } catch { received = { ok: false, value: null, code: "unexpected" }; }
     /* D137 ruling 3: the remaining amount confirmed by Finance converts the Reserved allotment in full, automatically, on the
        matcher's own token (investors/full-paid auto: Converted_At / _By / _Via = "Finance match"). Reported, never undoing the match. */
     let converted: FullPaidOutcome | null = null;
     if (inbound && deps.fullPaid) {
       try { converted = await deps.fullPaid.auto(cred, t.allotmentId, signal); } catch { converted = { ok: false, value: null, code: "unexpected" }; }
     }
-    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound, holdChanged, converted);
+    return view(t, investorId, paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, inbound, holdChanged, converted, received);
   }
 
   const view = (t: Target, investorId: string, paymentStatus: PaymentStatusReading | null, moneyConfirmed: Published | null, firstMoney: boolean,
     accountOpened: Published | null, appAccess: MatchView["appAccess"], appMark: MatchView["appMark"], hold: MatchView["hold"], inbound: boolean,
-    holdChanged: Published | null = null, converted: FullPaidOutcome | null = null): MatchView => Object.freeze({
+    holdChanged: Published | null = null, converted: FullPaidOutcome | null = null, received: ReceivedSync | null = null): MatchView => Object.freeze({
     receiptId: t.id, state: "matched" as const, duplicate: t.duplicate, matchedBy: t.matchedBy, matchedAt: istIso(t.matchedAt),
     kind: t.kind, amountRupees: t.amount, link: Object.freeze({ allotmentId: t.allotmentId, investorId }),
     gate: inbound ? "opens-through-receipts" as const : "not-money" as const,
-    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, holdChanged, converted,
+    paymentStatus, moneyConfirmed, firstMoney, accountOpened, appAccess, appMark, hold, holdChanged, converted, received,
   });
 
   /** Publish, and log the delivery result (type + status code + record ids — never the payload). */

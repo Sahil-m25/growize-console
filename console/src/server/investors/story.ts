@@ -89,14 +89,16 @@ export function storyOf(input: {
   const issued = live.filter((a) => a.Allocation_Status === "Issued");
   const matchedIn = (money?.receipts ?? []).filter((x) => x.matched && x.kind !== "Refund" && !x.reversalOf);
   const advanceOn = earliest(matchedIn.filter((x) => x.kind === "Advance").map((x) => x.on)) ?? earliest(matchedIn.map((x) => x.on));
-  const paidUp = !!money && live.length > 0 && money.paid > 0 && money.due === 0;
   const stamp = (f: string) => at(L, f);
   const reservedAt = stamp("Reserved_At"), paidAt = stamp("Fully_Paid_At"), allocAt = stamp("Allocated_At"), onboardAt = stamp("Onboarded_At");
   add({ k: "Reserved_At", t: "Reserved — 10% in", side: "investor", done: !!reservedAt || live.length > 0 || matchedIn.length > 0,
     at: reservedAt ?? advanceOn, src: reservedAt ? "lead" : advanceOn ? "receipt" : live.length ? "allotment" : null });
+  /* W8-FIN-1: "Fully paid" is the conversion (D137 ruling 3 / D138), never the money totals — a paid-up investor whose conversion the
+     supplementary gate refused is still "not yet". Ticked by the lead's Fully_Paid_At stamp, the allotment's Converted_At, or an
+     Issued allotment (issuance follows the full payment). */
   const conv = input.convertedAt ?? null;
-  add({ k: "Fully_Paid_At", t: "Fully paid", side: "investor", done: !!paidAt || paidUp || issued.length > 0 || !!conv,
-    at: paidAt ?? (paidUp ? latest(matchedIn.map((x) => x.on)) : conv), src: paidAt ? "lead" : paidUp ? "receipt" : issued.length || conv ? "allotment" : null });
+  add({ k: "Fully_Paid_At", t: "Fully paid", side: "investor", done: !!paidAt || issued.length > 0 || !!conv,
+    at: paidAt ?? conv, src: paidAt ? "lead" : issued.length || conv ? "allotment" : null });
   const issuedOn = earliest(issued.map((a) => a.Issued_On));
   add({ k: "Allocated_At", t: "Allocated", side: "investor", done: !!allocAt || issued.length > 0,
     at: allocAt ?? issuedOn, src: allocAt ? "lead" : issued.length ? "allotment" : null });

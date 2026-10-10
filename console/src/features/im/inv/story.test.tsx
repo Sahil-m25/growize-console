@@ -50,12 +50,15 @@ describe("storyOf — the story from what this seat read", () => {
     expect([inv.Reserved_At.done, inv.Fully_Paid_At.done, inv.Allocated_At.at, inv.Allocated_At.src]).toEqual([true, true, "2026-09-01", "allotment"]);
     expect([inv.KAM_Since.done, inv.KAM_Since.at, inv.KAM_Since.who]).toEqual([true, "2026-09-02T10:00", "554023000000300009"]);
   });
-  it("a Money seat dates reserved and fully paid off the matched receipts; a refund or an unmatched one is not money in", () => {
-    const st = storyOf({ contact: CONTACT, lead: null, allotments: [{ Allocation_Status: "Reserved", Issued_On: null }],
-      money: { paid: 2_500_000, due: 0, receipts: [receipt({}), receipt({ kind: "Balance", on: "2026-09-10" }), receipt({ kind: "Balance", on: "2026-09-30", matched: false }), receipt({ kind: "Refund", on: "2026-10-01" })] }, touches: null });
-    const inv = Object.fromEntries(st.steps.map((e) => [e.k, e]));
+  it("a Money seat dates reserved off the matched receipts; 'Fully paid' is the conversion stamp, never the money totals (W8-FIN-1)", () => {
+    const input = { contact: CONTACT, lead: null, allotments: [{ Allocation_Status: "Reserved" as const, Issued_On: null }],
+      money: { paid: 2_500_000, due: 0, receipts: [receipt({}), receipt({ kind: "Balance", on: "2026-09-10" }), receipt({ kind: "Balance", on: "2026-09-30", matched: false }), receipt({ kind: "Refund", on: "2026-10-01" })] }, touches: null };
+    const inv = Object.fromEntries(storyOf(input).steps.map((e) => [e.k, e]));
     expect([inv.Reserved_At.at, inv.Reserved_At.src]).toEqual(["2026-08-24", "receipt"]);
-    expect([inv.Fully_Paid_At.done, inv.Fully_Paid_At.at]).toEqual([true, "2026-09-10"]);
+    /* paid up, but the supplementary gate refused the conversion: not yet */
+    expect([inv.Fully_Paid_At.done, inv.Fully_Paid_At.at, inv.Fully_Paid_At.src]).toEqual([false, null, null]);
+    const conv = Object.fromEntries(storyOf({ ...input, convertedAt: "2026-09-12T10:00:00+05:30" }).steps.map((e) => [e.k, e]));
+    expect([conv.Fully_Paid_At.done, conv.Fully_Paid_At.at, conv.Fully_Paid_At.src]).toEqual([true, "2026-09-12T10:00:00+05:30", "allotment"]);
   });
   it("touchSummary counts human touches by channel and replies apart, first and last by Occurred_At", () => {
     const t = touchSummary([

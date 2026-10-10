@@ -107,7 +107,10 @@ function rig(f = {}, opts = {}) {
       ...(opts.stepUp === undefined ? {} : { async stepUpOutbound(sid) { (opts.stepUpAsked ??= []).push(sid); if (opts.stepUp instanceof Error) throw opts.stepUp; return opts.stepUp; } }) } });
   return { svc, calls, events, sink };
 }
-const puts = (calls) => calls.filter((c) => c[0] === 'put');
+/* D140: the received-total write (the allotment's Total_Amount_Received alone) is asserted on its own; `puts` is every other write */
+const isReceivedPut = (c) => c[0] === 'put' && c[1] === 'LLP_UnitAllocation_Module' && Object.keys(c[3]).join() === 'Total_Amount_Received';
+const puts = (calls) => calls.filter((c) => c[0] === 'put' && !isReceivedPut(c));
+const receivedPuts = (calls) => calls.filter(isReceivedPut);
 
 test('the Head of Finance matches Meena\'s pending balance: one guarded PUT, money.confirmed, Payment_Status recomputed', async () => {
   const r = rig();
@@ -516,4 +519,20 @@ test('M08-S08: an unmatched (pending) receipt never reaches the consequences —
     assert.equal(puts(r.calls).filter((c) => c[1] === 'Contacts').length, 0);
     assert.equal(r.events.length, 0);
   }
+});
+
+test('D140 (W8-IRA-1): every match brings the allotment\'s Total_Amount_Received to its matched receipts — one guarded write, by the matcher', async () => {
+  const r = rig();
+  const res = await r.svc.match(principal(), R, { expectedModifiedTime: '2026-09-02T08:00:00+05:30' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const w = receivedPuts(r.calls);
+  assert.equal(w.length, 1);
+  assert.equal(w[0][2], A);
+  assert.equal(w[0][3].Total_Amount_Received, 2_500_000, 'the matched receipts: ₹2.5 L advance + ₹22.5 L balance');
+  assert.match(String(w[0][4]), /^\d{4}-\d{2}-\d{2}T/, 'If-Unmodified-Since is the allotment as read (D44)');
+  assert.deepEqual(res.value.received, { ok: true, value: { received: w[0][3].Total_Amount_Received, written: true }, code: null });
+  /* the write comes after any hold write and before nothing else on the allotment */
+  const allot = r.calls.filter((c) => c[0] === 'put' && c[1] === 'LLP_UnitAllocation_Module');
+  assert.equal(allot[allot.length - 1], w[0]);
+  noSecrets(r.sink.records());
 });

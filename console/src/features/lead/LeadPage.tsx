@@ -297,7 +297,8 @@ function LpComposer({ l }: { l: Lead }) {
    M12-S11-W1 (D104): the row is GET /api/leads/[id]/paperwork (what is next, what may be pressed, and each press's rowToken);
    a tap is POST /api/leads/[id]/paperwork with that token, and its Undo (10 s) is the token's own. Fixture mode runs the reducer's
    lpPaper / lpRestore. Finance's beats are never offered here. ---- */
-function LpPaperRow({ l }: { l: Lead }) {
+/* W8-IRA-2: `held` — Reserved and waiting for the signed supplementary (D138): the row reads only, it offers no step */
+function LpPaperRow({ l, held = false }: { l: Lead; held?: boolean }) {
   const { state, dispatch } = useConsole();
   const mode = useApiMode();
   const r = useApiRead(paperworkRow, state, l ? l.id : null);
@@ -311,7 +312,7 @@ function LpPaperRow({ l }: { l: Lead }) {
   const outNote = alsoOut ? <span className="d60d-sub d60d-out">{lpPaperName(alsoOut.round) + " — already sent for signature by Finance; the investor has the link."}</span> : null;
   if (!cur) return outNote ? <div className="lp-stage d60d-paper"><span className="sm">Paperwork</span><div className="d60d-pbody">{outNote}</div></div> : null;
   const n = cur.next, nm = lpPaperName(cur.round);
-  const offers = r.data.offers.filter((o) => o.round === cur.round), mine = n.who === "IR" && offers.length > 0;
+  const offers = held ? [] : r.data.offers.filter((o) => o.round === cur.round), mine = n.who === "IR" && offers.length > 0;
   const offer = (beat: IrBeat) => offers.find((o) => o.beat === beat);
   const paper = (beat: IrBeat, channel?: PwChannel, link?: string) => {
     const o = offer(beat);
@@ -500,7 +501,7 @@ export function LeadPage({ id }: { id: string }) {
   /* GC-1523: a converted lead is read-only — no milestone, no forecast, no contact controls; the banner leads to the investor */
   const conv = converted(l);
   /* D138: Reserved and the supplementary agreement not yet signed and verified — the lead does not move forward; only
-     "Log a contact" (Call / WhatsApp open the same log) and notes stay. The gate route says so (heldFor), and the server
+     "Log a contact" and notes stay (W8-IRA-2: no Call / WhatsApp / Email button, no paperwork step). The gate route says so (heldFor), and the server
      refuses what would move it (no Fully paid rung, the full-paid stamp 409 supplementary-not-signed). */
   const suppHeld = !conv && gate.state === "ok" && gate.data.heldFor === "supplementary";
   const u = nextUp(state, l), due = nxDue(l, state.NOW), work = canWork(state, l), act = active(l) && !lost(l) && l.done < ST.ONBOARDED && !conv;
@@ -580,7 +581,7 @@ export function LeadPage({ id }: { id: string }) {
   if (act && !suppHeld && gw && canClaim(state, l) && !cm && !reported && !notFound && !live)
     rows.push(<div key="pay" className="lp-stage"><span className="sm">Payment</span><b>Has the investor paid?</b>
       <button type="button" className="btn" onClick={() => open("claim", { CKIND: l.done >= ST.RESERVED ? "full" : "advance", CREF: "", CNOTE: "" })}>Investor says they paid</button></div>);
-  rows.push(conv ? <LpPaperDone key="paper" l={l} /> : <LpPaperRow key="paper" l={l} />);
+  rows.push(conv ? <LpPaperDone key="paper" l={l} /> : <LpPaperRow key="paper" l={l} held={suppHeld} />);
   if (act && !suppHeld && l.done >= ST.QUALIFIED && canPlan(state, l)) {
     const fc = fcOf(l);
     rows.push(<div key="fc" className="lp-stage"><span className="sm">Forecast</span><b>{fc ? FCAT[fc as keyof typeof FCAT].t : "Not set"}</b>
@@ -594,8 +595,8 @@ export function LeadPage({ id }: { id: string }) {
   const note0 = notes[0];
   const buttons = work && act && !flow ? (
     <div className="lp-actions">
-      {num && conFor(l, "call") ? <a className="btn" href={`tel:+${num}`} onClick={() => lpl.open("log", "call")}><Icon name="call" />Call</a> : null}
-      {num && conFor(l, "msg") ? <a className="btn" href={`https://wa.me/${num}`} target="_blank" rel="noopener" onClick={() => lpl.open("log", "msg")}><Icon name="wa" />WhatsApp</a> : null}
+      {num && conFor(l, "call") && !suppHeld ? <a className="btn" href={`tel:+${num}`} onClick={() => lpl.open("log", "call")}><Icon name="call" />Call</a> : null}
+      {num && conFor(l, "msg") && !suppHeld ? <a className="btn" href={`https://wa.me/${num}`} target="_blank" rel="noopener" onClick={() => lpl.open("log", "msg")}><Icon name="wa" />WhatsApp</a> : null}
       {l.em && conFor(l, "email") && !suppHeld ? <button type="button" className="btn" onClick={() => lpl.open("email")}>Email</button> : null}
       <button type="button" className="act" onClick={() => lpl.open("log")}>Log a contact</button>
     </div>

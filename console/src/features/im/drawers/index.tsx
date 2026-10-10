@@ -22,7 +22,7 @@ import { allotmentOf, HAND_METHODS, METHOD_OF, NOTHING_CAME_BACK, PAPER_OF_TEMPL
 import type { Paper } from "@/server/documents/list";
 import {
   CHANS, FSTATE, I, fmtDate, MOODS, PMODES, primaryDoer, SIGS, TIERS, TKCATS, TKPRI, TPL, UPCATS, UPTO, committedOf,
-  aged, cadence, docRefOf, drawerReadable, dueBy, freeUnits, gotBy, isSuper, may, mayCare,
+  aged, cadence, docRefOf, drawerReadable, dueBy, gotBy, isSuper, may, mayCare,
   mayDetails, mayCareOn, mayDetailsOn, money, notFin, plusDays, readBook, roundOf, safeNote, tierOf, who,
   fileKind, llpOf, UPLOAD_ACCEPT, uploadCheck, uploadKey,
 } from "@/lib/im";
@@ -40,6 +40,7 @@ import type { Prepared } from "@/server/money/record-receipt";
 import { amManagers, investorRecord, kamAssign } from "@/lib/data/endpoints/investors";
 import { careContact, careDetails, careKyc, liveDetailChanges } from "@/lib/data/endpoints/care";
 import { investorAllot } from "@/lib/data/endpoints/allotments";
+import { farmList } from "@/lib/data/endpoints/farms";
 
 type Ctx = ImPageProps & { id: string | null };
 type Part = (c: Ctx) => ReactNode;
@@ -282,6 +283,18 @@ function ClaimFoot(c: Ctx) {
   );
 }
 
+/* W8-FIN-2: each block the investor holds, with THAT farm's free units as the shelf answers them (server/farms/shelf freeUnits —
+   the figure Today, Farms and the lead's money drawer show), never the demo book's book-wide released − allocated − reserved */
+function LandFree({ s, me, blocks }: { s: Ctx["s"]; me: string; blocks: ImInvestor["blocks"] }) {
+  const farms = useApiRead(farmList, { s, me }, undefined);
+  const rows = farms.state === "ok" ? farms.data.rows : [];
+  const parts = Object.entries(blocks).map(([k, n]) => {
+    const f = rows.find((r) => r.id === k || r.block === k);
+    return "Block " + (f?.block ?? k) + " ×" + n + (f && f.freeUnits != null ? " · " + Math.max(0, f.freeUnits) + " free on the shelf" : "");
+  });
+  return <>{parts.join(", ") || "—"}</>;
+}
+
 /* ---- pay — imx.js 2712–2746 ---- */
 function payBody(c: Ctx): ReactNode {
   const { s, me, id } = c; const x = I(s, me, id); if (!x || !id) return null;
@@ -312,8 +325,7 @@ function payBody(c: Ctx): ReactNode {
         <dt>Agreement</dt><dd>{supp.state === "done"
           ? <TagDot c="go">signed and verified</TagDot>
           : <TagDot c="late">{supp.t}</TagDot>}</dd>
-        <dt>Land</dt><dd>{Object.entries(x.blocks).map(([k, n]) => "Block " + k + " ×" + n).join(", ") || "—"}
-          {" "}<span className="sm">· {freeUnits(s)} free on the shelf</span></dd>
+        <dt>Land</dt><dd><LandFree s={s} me={me} blocks={x.blocks} /></dd>
         <dt>After this</dt><dd>{PKIND === "advance"
           ? `Reserved, with a 30-day clock to ${plusDays(s.data.NOW, 30)}`
           : "Paid in full — allotment is the next step"}</dd>

@@ -138,7 +138,7 @@ test('Rohit opens his own investor: status and allotments, no money, no receipts
   assert.ok(r.queries.filter((q) => /LLP_UnitAllocation_Module/.test(q)).every((q) => q.includes(`Customer in ('${OWN}')`)));
   assert.deepEqual(res.receipts, [], 'an IR is never handed a Receipt');
   assert.equal(r.queries.some((q) => /from Receipts/.test(q)), false, 'no Receipt is even read for an IR');
-  assert.ok(res.allotments.every((a) => a.Unit_Price === 0 && a.Ticket_Snapshot === 0 && a.Annual_Rental_Yield === 0), 'no price, ticket or yield, though the recorded row carried one');
+  assert.ok(res.allotments.every((a) => a.Unit_Price === null && a.Ticket_Snapshot === null && a.Annual_Rental_Yield === null), 'no price, ticket or yield (null, never a 0 that reads as a figure — W8-IRA-1), though the recorded row carried one');
   for (const q of r.queries.filter((x) => /from (Contacts|LLP_UnitAllocation_Module)/.test(x))) {
     assert.equal(/Unit_Price|Amount|Token|Capital|Yield|Mailing_Street|Nominee/.test(q.split(' from ')[0]), false, q);
   }

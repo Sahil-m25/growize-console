@@ -96,8 +96,13 @@ export interface AmSummary {
 }
 
 /** One investor opened by URL or API: the Contact, its allotments and receipts — or a logged refusal. */
+/** W8-IRA-1: an allotment as a seat without money is answered — the price, ticket and yield are absent (null), never a 0 that reads
+ *  as a real figure. The rupees such a seat may see come from Zoho per field (investors/ir-money, investors/allotments). */
+export type NoMoneyAllot = Omit<ImAllot, "Unit_Price" | "Ticket_Snapshot" | "Annual_Rental_Yield">
+  & { readonly Unit_Price: null; readonly Ticket_Snapshot: null; readonly Annual_Rental_Yield: null };
+export const withoutMoney = (a: ImAllot): NoMoneyAllot => ({ ...a, Unit_Price: null, Ticket_Snapshot: null, Annual_Rental_Yield: null });
 export type OneInvestor =
-  | { readonly ok: true; readonly investor: ImInvestor; readonly allotments: Dataset["im"]["ALLOT"]; readonly receipts: readonly ReceiptRow[] }
+  | { readonly ok: true; readonly investor: ImInvestor; readonly allotments: Dataset["im"]["ALLOT"] | readonly NoMoneyAllot[]; readonly receipts: readonly ReceiptRow[] }
   | GuardRefusal
   | { readonly ok: false; readonly kind: "source-error"; readonly errorKind: string };
 
@@ -524,7 +529,7 @@ export function createLiveDataLayer(deps: LiveDeps) {
       const res = own.filter((a) => a.Allocation_Status === "Reserved").map((a) => a.id);
       const stamps = res.length ? await readConverted(deps.crm, p.credential, res, signal) : null;   // D137 ruling 3
       const conv = new Set(stamps ? stamps.keys() : []);
-      if (noMoney) return { ok: true, investor: investorOf(one.contact, own, () => "", conv), allotments: own.map(toImAllot), receipts: [] };
+      if (noMoney) return { ok: true, investor: investorOf(one.contact, own, () => "", conv), allotments: own.map((a) => withoutMoney(toImAllot(a))), receipts: [] };
       const rc = await adapters.receipts(p.credential, scopes.money, own.map((a) => a.id), signal, true);
       if (!rc.ok) return rc.kind === "refused" ? guard.refuse(p.credential.userId, p.session.seat, "investor-open", "not-own-lead", [one.contact.id]) : { ok: false, kind: "source-error", errorKind: rc.errorKind };
       return {

@@ -10,7 +10,7 @@ import { ST } from "@/domain";
 import { initialState, reducer, type ConsoleState } from "@/lib/state";
 import type { ApiMode, Read } from "@/lib/data/api";
 
-const h = vi.hoisted(() => ({ mode: "live" as "live" | "fixture", gate: null as unknown, notes: [] as unknown[], state: null as unknown }));
+const h = vi.hoisted(() => ({ mode: "live" as "live" | "fixture", gate: null as unknown, notes: [] as unknown[], state: null as unknown, paper: null as unknown }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, replace: () => {} }) }));
 vi.mock("@/lib/store", async (orig) => ({
   ...(await orig() as object),
@@ -27,6 +27,7 @@ vi.mock("@/lib/data/api", async () => {
       const p = ep.path(args) || "";
       if (/\/gate$/.test(p) && h.gate) return { state: "ok", data: h.gate };
       if (/\/notes$/.test(p)) return { state: "ok", data: h.notes };
+      if (/\/paperwork$/.test(p) && h.paper) return { state: "ok", data: h.paper };
       return { state: "loading" };
     },
   };
@@ -40,7 +41,7 @@ const { drawerDef } = await import("@/components/shell/drawers/registry");
 type DrawerProps = import("@/components/shell/drawers/registry").DrawerProps;
 
 let state: ConsoleState;
-beforeEach(() => { h.mode = "live"; state = as("rohit"); h.state = state; h.gate = null; h.notes = []; });
+beforeEach(() => { h.mode = "live"; state = as("rohit"); h.state = state; h.gate = null; h.notes = []; h.paper = null; });
 
 /** One of rohit's open leads past first touch, with its next rung his to mark. */
 const mine = () => state.LEADS.find((l) => l.own === "rohit" && !l.lost && l.done >= ST.TOUCH && l.done < ST.RESERVED)!;
@@ -77,6 +78,22 @@ describe("LeadPage on the live console", () => {
     expect(t).not.toMatch(/>\s*Email\s*</);
     /* G4: the reservation alert names the day the 30 days count from */
     expect(t).toContain("Balance due 9 Nov — 30 days from Finance confirming the 10% on 10 Oct");
+  });
+  it("W8-IRA-2: held for the supplementary — no Call / WhatsApp, and the paperwork row offers no step (no 'Ask Finance to send the NDA')", () => {
+    const l = state.LEADS.find((x) => x.own === "rohit" && !x.lost && x.done >= ST.TOUCH && x.done < ST.RESERVED && !!x.ph)!;
+    const nda = { round: "nda", title: "NDA", next: { k: "sent", t: "Send it for signature", who: "Finance" }, told: null, reminders: 0, said: null, draft: null,
+      agreed: null, back: null, requested: null, sent: false, verified: false };
+    h.paper = { leadId: l.id, modifiedTime: "t", rounds: [nda], offers: [{ round: "nda", beat: "request", channels: [], rowToken: "tok" }], suppUnread: false };
+    h.gate = { leadId: l.id, gate: null, met: true, who: null, says: null, holdUntil: null, payment: null };
+    const open = renderToStaticMarkup(<LeadPage id={l.id} />);
+    expect(text(open)).toContain("Ask Finance to send the NDA");   // the control: not held, the offer and Call show
+    expect(open).toContain("tel:");
+    h.gate = { leadId: l.id, gate: "balance", met: false, who: null, says: "Waiting for the signed supplementary agreement.", holdUntil: "2026-11-09", payment: null, heldFor: "supplementary" };
+    const held = renderToStaticMarkup(<LeadPage id={l.id} />), t = text(held);
+    expect(t).not.toContain("Ask Finance to send the NDA");
+    expect(held).not.toContain("tel:");
+    expect(held).not.toContain("wa.me");
+    expect(t).toContain("Log a contact");
   });
   it("D138 (B-10): the lead header shows units, never a rupee figure", () => {
     const l = state.LEADS.find((x) => x.own === "rohit" && !x.lost && x.unitsKnown !== false && x.units > 0)!;

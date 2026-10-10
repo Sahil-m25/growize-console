@@ -37,6 +37,16 @@ describe("ImInv — vInv, the list", () => {
 });
 
 describe("ImInv — vOne, the record", () => {
+  it("W8-FIN-1: a paid-up reservation's hold banner says it waits on the supplementary — no ₹0 due, no forfeit line", () => {
+    const data = imDemoData();
+    const t0 = data.TXN.find((x) => x.inv === "ARL-INV-0208")!;
+    data.TXN = [...data.TXN, { ...t0, id: "T-W8", kind: "balance", amt: 2_250_000, utr: "SYNTHW8FIN1" }];
+    const s = { data, ui: { ...initialImUi(), SEL: "ARL-INV-0208", SEC: { "inv:ARL-INV-0208": "who" } } };
+    const t = text(renderToStaticMarkup(<ImInv s={s} me="harsha" dispatch={() => {}} />));
+    expect(t).toContain("All money in — waiting for the signed supplementary agreement.");
+    expect(t).not.toContain("₹0 due");
+    expect(t).not.toContain("A lapse forfeits");
+  });
   it("Finance (harsha) on a reservation: the hold note, masked PII, money and paper", () => {
     const who = rec("harsha", "ARL-INV-0208", "who").t;
     /* D138 G4: the deadline names the day it counts from; B-10: the header value is the allotments' recorded amount */

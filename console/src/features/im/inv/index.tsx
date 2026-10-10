@@ -508,6 +508,8 @@ const plural1 = (n: number) => (n > 1 ? "s" : "");
 /* the record's hold banner, from the route's clock (M08-S04-T03): days left and the hold's end by the one IST function */
 function HoldBanner({ h }: { h: HoldOne["hold"] }) {
   const d = h.daysLeft;
+  /* W8-FIN-1: nothing left to pay — the hold is waiting on the signed supplementary (D138), not on money; no forfeit line */
+  if (h.due === 0) return <div className="note" style={{ marginBottom: 8 }}><b>All money in — waiting for the signed supplementary agreement.</b></div>;
   return (
     <div className={`note ${d <= 7 ? "bad" : "warn"}`} style={{ marginBottom: 8 }}>
       <b>{h.due != null ? money(h.due) + " " + (d < 0 ? "is overdue — the hold ran out " + (-d) + " day" + (d === -1 ? "" : "s") + " ago" : "due in " + d + " day" + (d === 1 ? "" : "s")) + "."
