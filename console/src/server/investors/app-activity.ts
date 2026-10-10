@@ -78,7 +78,9 @@ export function createAppActivity(deps: AppActivityDeps) {
   async function select(cred: UserCredential, fields: readonly string[], ids: readonly string[], scopeWhere: string, signal?: AbortSignal): Promise<Page> {
     const rows: ZohoRecord[] = [];
     for (let i = 0; i < ids.length; i += IN_CHUNK) {
-      const where = coqlWhere(coqlAll([`id in (${ids.slice(i, i + IN_CHUNK).map((x) => `'${x}'`).join(", ")})`, scopeWhere]));
+      /* W6-IRA-1: the IR's scope is itself `A and B`; folded flat beside the id list it made a three-condition WHERE, which Zoho
+         refuses (400 → invalid-data, naming no field), so every IR read was a 502. The scope goes in as ONE bracketed group. */
+      const where = coqlWhere(coqlAll([`id in (${ids.slice(i, i + IN_CHUNK).map((x) => `'${x}'`).join(", ")})`, coqlWhere(scopeWhere)]));
       for (let page = 0; ; page++) {
         let r: Awaited<ReturnType<typeof deps.crm.coql>>;
         try { r = await deps.crm.coql(cred, `select ${fields.join(", ")} from ${MODULES.contacts} where ${where} order by id asc limit ${page * PAGE}, ${PAGE}`, { signal }); } catch { return { ok: false, errorKind: "unexpected" }; }

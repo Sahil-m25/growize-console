@@ -67,6 +67,8 @@ describe("read", () => {
     expect(r.ok).toBe(true);
     expect(calls[0]).toContain(`Originating_IR = '${IR}'`);
     expect(calls[0]).toContain("Origin_Lead is not null");
+    /* W6-IRA-1: Zoho refuses more than two conditions unless nested pairwise — the IR scope is one bracketed group */
+    expect(calls[0]).toContain(`where (id in ('${C1}') and (Originating_IR = '${IR}' and Origin_Lead is not null))`);
   });
   it("a row outside the scope refuses the whole read — never trimmed", async () => {
     const { svc, refusals } = stub(() => ({ ok: true, records: [row(C1), row(C2, { Originating_IR: { id: OTHER_IR } })] }));

@@ -28,10 +28,15 @@ export function AppBadge({ a, loaded, unavailable }: { a: AppActivity | undefine
 
 const statusOf = (a: AppActivity): string => (!a.access ? "No account" : a.access === "Hold" ? "On hold" : "Invited");
 
+export const APP_ACTIVITY_UNAVAILABLE_TEXT = "App activity is not available for your seat right now — Zoho did not let this read through. Digital Infrastructure can see why.";
+
 export function AppActivityCard({ s, me, id }: Book & { id: string }) {
   const r = useApiRead(appActivity, { s, me }, [id]);
   if (r.state === "idle" || r.state === "loading") return <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" style={{ margin: 0 }}>Reading app activity…</p></div></div>;
-  if (r.state === "error") return r.err.status === 403 ? null : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>App activity: {r.err.error}</p></div></div>;
+  if (r.state === "error") return r.err.status === 403 ? null
+    /* W6-IRA-1: a read Zoho refuses (field security, or a query it will not take) is a quiet "not available", not Zoho's text as an alert */
+    : r.err.code === "invalid-data" ? <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="status" data-testid="appact-unavailable" style={{ margin: 0 }}>{APP_ACTIVITY_UNAVAILABLE_TEXT}</p></div></div>
+      : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>App activity: {r.err.error}</p></div></div>;
   const a = r.data.rows.find(x => x.contactId === id);
   return a ? <AppActivityView a={a} now={nowFull(s.data.NOW)} off={r.data.activityUnavailable} hidden={r.data.hiddenFields} /> : null;
 }
