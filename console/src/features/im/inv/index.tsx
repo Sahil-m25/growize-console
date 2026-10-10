@@ -371,7 +371,7 @@ function VOne(p: ImPageProps & { x: ImInvestor; rec: InvestorRecord }) {
           + (lc ? day6(lc.at) : "it was allotted") + " is the one that is surprised by everything."}</div> : null}
 
       {rec.fema === "outstanding" ? <div className="note bad" style={{ marginBottom: 8 }}><b>FEMA declaration outstanding.</b> An NRI holding cannot be allotted without one, whatever the money says. The declaration is out for signature and <ProvIR t="the IR is chasing it" />.</div> : null}
-      {ho.state === "ok" ? <HoldBanner h={ho.data.hold} /> : null}
+      {ho.state === "ok" ? <HoldBanner h={ho.data.hold} signed={rec.holdings.find(h => h.status === "Reserved")?.agreementSigned ?? null} /> : null}
 
       <ImSecBar s={s} dispatch={dispatch} v={v} list={SECS} />
       <div className="secw">
@@ -506,10 +506,10 @@ const dayMon = (iso: string) => fmtDay(Date.parse(iso + "T00:00:00Z"));
 const plural1 = (n: number) => (n > 1 ? "s" : "");
 
 /* the record's hold banner, from the route's clock (M08-S04-T03): days left and the hold's end by the one IST function */
-function HoldBanner({ h }: { h: HoldOne["hold"] }) {
+function HoldBanner({ h, signed }: { h: HoldOne["hold"]; signed: boolean | null }) {
   const d = h.daysLeft;
-  /* W8-FIN-1: nothing left to pay — the hold is waiting on the signed supplementary (D138), not on money; no forfeit line */
-  if (h.due === 0) return <div className="note" style={{ marginBottom: 8 }}><b>All money in — waiting for the signed supplementary agreement.</b></div>;
+  /* W8-FIN-1: nothing left to pay — the hold is not waiting on money; no forfeit line. Blame the paper only when it is unsigned (review 9) */
+  if (h.due === 0) return <div className="note" style={{ marginBottom: 8 }}><b>All money in — {signed === false ? "waiting for the signed supplementary agreement." : "Finance to confirm conversion."}</b></div>;
   return (
     <div className={`note ${d <= 7 ? "bad" : "warn"}`} style={{ marginBottom: 8 }}>
       <b>{h.due != null ? money(h.due) + " " + (d < 0 ? "is overdue — the hold ran out " + (-d) + " day" + (d === -1 ? "" : "s") + " ago" : "due in " + d + " day" + (d === 1 ? "" : "s")) + "."

@@ -41,11 +41,21 @@ describe("ImInv — vOne, the record", () => {
     const data = imDemoData();
     const t0 = data.TXN.find((x) => x.inv === "ARL-INV-0208")!;
     data.TXN = [...data.TXN, { ...t0, id: "T-W8", kind: "balance", amt: 2_250_000, utr: "SYNTHW8FIN1" }];
+    data.DOCS.find((d) => d.inv === "ARL-INV-0208" && d.t === "Supplementary agreement")!.state = "awaiting";   /* review 9: only an unsigned paper is blamed */
     const s = { data, ui: { ...initialImUi(), SEL: "ARL-INV-0208", SEC: { "inv:ARL-INV-0208": "who" } } };
     const t = text(renderToStaticMarkup(<ImInv s={s} me="harsha" dispatch={() => {}} />));
     expect(t).toContain("All money in — waiting for the signed supplementary agreement.");
     expect(t).not.toContain("₹0 due");
     expect(t).not.toContain("A lapse forfeits");
+  });
+  it("review 9: a paid-up reservation whose supplementary IS signed (the demo's) says Finance confirms conversion, not that it waits on paper", () => {
+    const data = imDemoData();
+    const t0 = data.TXN.find((x) => x.inv === "ARL-INV-0208")!;
+    data.TXN = [...data.TXN, { ...t0, id: "T-W9", kind: "balance", amt: 2_250_000, utr: "SYNTHW9REV9" }];
+    const s = { data, ui: { ...initialImUi(), SEL: "ARL-INV-0208", SEC: { "inv:ARL-INV-0208": "who" } } };
+    const t = text(renderToStaticMarkup(<ImInv s={s} me="harsha" dispatch={() => {}} />));
+    expect(t).toContain("All money in — Finance to confirm conversion.");
+    expect(t).not.toContain("waiting for the signed supplementary");
   });
   it("Finance (harsha) on a reservation: the hold note, masked PII, money and paper", () => {
     const who = rec("harsha", "ARL-INV-0208", "who").t;

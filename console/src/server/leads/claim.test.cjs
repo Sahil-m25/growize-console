@@ -84,7 +84,7 @@ function rig(o = {}) {
         if (q.includes('from LLP_UnitAllocation_Module')) return toResponse(recorded(f.allotments));
         // `hidden`: the IR profile's field-level security — COQL refuses the whole query when it names a hidden field (B-06).
         if (o.hidden && q.includes('from Receipts') && o.hidden.some((h) => new RegExp(`\\b${h}\\b`).test(q))) return toResponse(recorded('claims.invalid-query'));
-        if (q.includes('where UTR like')) return toResponse(recorded(f.claims));
+        if (/where \(?UTR like/.test(q)) return toResponse(recorded(f.claims));
         if (q.includes('where UTR =')) return toResponse(recorded(f.readBack));
         if (q.includes('from Receipts where Allotment in')) return toResponse(recorded(f.receipts));
         throw new Error(`unrouted ${q}`);
@@ -302,9 +302,9 @@ test('B-06 (D139): the lead page\'s read falls back to id, UTR, Match_State and 
   assert.equal(none.ok, true, JSON.stringify(none));
   assert.deepEqual(none.value, { leadId: L7, claimId: null, state: 'none', answer: null, reason: null, says: null, claims: [] });
   /* D139: the read asks for amount and dates first (the IR profile can read them since 10 Oct); a profile that hides one gets the key, state and answer day alone */
-  const qs = r.calls.filter((c) => c.op === 'coql' && c.q.includes('where UTR like')).map((c) => c.q);
-  assert.match(qs[0], /^select id, UTR, Match_State, Amount, Received_On, Modified_Time from Receipts where UTR like 'CLAIM-\d+-%' limit 0, 200$/);
-  assert.match(qs[qs.length - 1], /^select id, UTR, Match_State, Modified_Time from Receipts where UTR like 'CLAIM-\d+-%' limit 0, 200$/);
+  const qs = r.calls.filter((c) => c.op === 'coql' && c.q.includes('where (UTR like')).map((c) => c.q);
+  assert.match(qs[0], /^select id, UTR, Match_State, Amount, Received_On, Modified_Time from Receipts where \(UTR like 'CLAIM-\d+-%'\) order by id asc limit 0, 200$/);
+  assert.match(qs[qs.length - 1], /^select id, UTR, Match_State, Modified_Time from Receipts where \(UTR like 'CLAIM-\d+-%'\) order by id asc limit 0, 200$/);
   const waiting = await rig({ hidden: IR_HIDDEN, claims: 'claims.open' }).svc.read(principal(), L7);
   assert.deepEqual([waiting.ok, waiting.value.state, waiting.value.claimId], [true, 'waiting', R], 'the IR\'s own waiting report reads back');
   const answered = await rig({ hidden: IR_HIDDEN, claims: 'claims.not-found', notes: 'notes.not-found' }).svc.read(principal(), L7);

@@ -13,7 +13,7 @@ import type { InvestorSearchResult } from "@/server/investors/search";
 import type { IrChaseRow, IrInvestorRow } from "@/server/investors/ir-list";
 import type { FinanceInvestorRow, FinanceSummary } from "@/server/investors/finance-list";
 import {
-  I, KAMS, allots, committedOf, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
+  I, KAMS, agreementSigned, allots, committedOf, irInvestors, irMayOpen, allotsOf, bookOf, cOf_all, cared, dueBy, dupEmail, gotBy, invMatch, isAM, lastC, llpName, llpOf, may, mayAddInvestor, myBook, needsKam, nextInvId,
   overdue, pageReadable, poolBook, quiet, tierOf, when, who, MOODS,
 } from "@/lib/im";
 import type { ImInvestor, ImState } from "@/lib/im";
@@ -69,7 +69,7 @@ export const investorRecord: ReadEndpoint<ImBook, string | null, RecordAnswer> =
     const holdings = allotsOf(s, me, x.id).map(a => {
       const l = llpOf(s, a.LLP_Lookup);
       return { id: a.id, llpId: a.LLP_Lookup, llpName: llpName(s, a), block: l ? l.Block_Code : "", committed: a.Committed_Units, issued: a.Issued_Units,
-        status: a.Allocation_Status, agreementSigned: null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION,
+        status: a.Allocation_Status, agreementSigned: sections.includes("paper") ? agreementSigned(s, a) : null, paymentStatus: null, holdUntil: null, version: FIXTURE_VERSION,
         /* D139 (W2-KAM-1): the demo book's recorded amount for an account-management seat */
         amounts: isAM(s, me) ? { unitPrice: null, value: a.Allocation_Status === "Cancelled" ? 0 : a.Ticket_Snapshot, receivable: null, received: null, due: null } : null };
     });

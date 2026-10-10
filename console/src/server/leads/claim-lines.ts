@@ -17,6 +17,7 @@
  */
 import type { UserCredential, ZohoClient, ZohoRecord } from "../../lib/zoho/client";
 import type { ZohoFailureKind } from "../../lib/zoho/errors";
+import { pagedSelect } from "../cases/predicate";
 import { FOUND_TITLE, NOT_FOUND_TITLE, ANSWERED_STATE } from "../money/claim-answer";
 
 export const CLAIM_KEY = /^CLAIM-(\d{15,22})-(\d{1,4})$/;
@@ -66,45 +67,41 @@ export function claimLineOf(r: ZohoRecord, answer: "found" | "not-found" | null,
 export type ClaimLinesResult = { readonly ok: true; readonly lines: readonly IrClaimLine[] } | { readonly ok: false; readonly kind: ZohoFailureKind | "invalid" | "unexpected" };
 
 /**
- * The IR's own reports, newest first. `leadIds`: only these leads' reports (the key names the lead). One COQL on the IR's token
- * (their own rows are all Zoho returns); more than one page is refused as "invalid" rather than showing a part.
+ * The IR's own reports, newest first. `leadIds`: only these leads' reports (the key names the lead). COQL on the IR's token
+ * (their own rows are all Zoho returns), paged 200 at a time; more than pagedSelect's cap is refused as "invalid" rather than showing a part.
+ * shortcut: 10 pages = 2000 reports in all, then "invalid"; upgrade by reading only the chased leads' keys.
  */
 export async function readClaimLines(crm: Pick<ZohoClient, "coql"> & Partial<Pick<ZohoClient, "getRelated">>, cred: UserCredential,
   leadIds: readonly string[], signal?: AbortSignal): Promise<ClaimLinesResult> {
   const ids = new Set(leadIds.filter((x) => typeof x === "string" && RECORD_ID.test(x)));
   if (!ids.size) return { ok: true, lines: Object.freeze([]) };
   const like = ids.size === 1 ? `CLAIM-${[...ids][0]}-%` : "CLAIM-%";
-  let rows: readonly ZohoRecord[] = [];
-  for (const fields of [FIELDS, FIELDS_MIN]) {
-    let r: Awaited<ReturnType<typeof crm.coql>>;
-    try { r = await crm.coql(cred, `select ${fields} from Receipts where UTR like '${like}' limit 0, 200`, { signal }); } catch { return { ok: false, kind: "unexpected" }; }
-    if (!r.ok) {
-      if (r.error.kind === "invalid-data" && fields === FIELDS) continue;   // a hidden field: repeat with the key and state alone
-      return { ok: false, kind: r.error.kind };
-    }
-    if (r.value.invalidRecordIds || r.value.moreRecords) return { ok: false, kind: "invalid" };
-    rows = r.value.records;
-    break;
-  }
-  const mine = rows.filter((x) => { const m = typeof x.UTR === "string" ? CLAIM_KEY.exec(x.UTR) : null; return !!m && ids.has(m[1]!); });
+  const read = (fields: string) => pagedSelect(crm, cred, fields.split(", "), "Receipts", `UTR like '${like}'`, "id asc", signal);
+  let paged = await read(FIELDS);
+  // a hidden field: repeat with the key and state alone
+  if (!paged.ok && paged.kind === "source-error" && paged.errorKind === "invalid-data") paged = await read(FIELDS_MIN);
+  if (!paged.ok) return { ok: false, kind: paged.kind === "refused" ? "invalid" : paged.errorKind };
+  if (paged.truncated) return { ok: false, kind: "invalid" };
+  const mine = paged.rows.filter((x) => { const m = typeof x.UTR === "string" ? CLAIM_KEY.exec(x.UTR) : null; return !!m && ids.has(m[1]!); });
+  const sorted = [...mine].sort((a, b) => Number(CLAIM_KEY.exec(String(b.UTR))![2]) - Number(CLAIM_KEY.exec(String(a.UTR))![2]));
+  /* the newest answered reports' Notes, read together: at most MAX_NOTE_READS calls, inside Zoho's sub-concurrency of 10 */
+  const noted = new Set(typeof crm.getRelated === "function" ? sorted.filter((x) => x.Match_State === ANSWERED_STATE).slice(0, MAX_NOTE_READS) : []);
+  const answers = await Promise.all(sorted.map(async (x): Promise<{ answer: "found" | "not-found" | null; reason: string | null } | ZohoFailureKind | "unexpected"> => {
+    if (!noted.has(x)) return { answer: null, reason: null };
+    try {
+      const n = await crm.getRelated!(cred, "Receipts", String(x.id), "Notes", { fields: ["Note_Title", "Note_Content"], perPage: 200, signal });
+      if (!n.ok && n.error.kind !== "not-found") return n.error.kind;
+      const list = n.ok ? n.value.records : [];
+      if (list.some((y) => y.Note_Title === FOUND_TITLE)) return { answer: "found", reason: null };
+      const nf = list.find((y) => y.Note_Title === NOT_FOUND_TITLE);
+      return nf ? { answer: "not-found", reason: typeof nf.Note_Content === "string" ? nf.Note_Content : null } : { answer: null, reason: null };
+    } catch { return "unexpected"; }
+  }));
   const lines: IrClaimLine[] = [];
-  let notes = 0;
-  for (const x of [...mine].sort((a, b) => Number(CLAIM_KEY.exec(String(b.UTR))![2]) - Number(CLAIM_KEY.exec(String(a.UTR))![2]))) {
-    let answer: "found" | "not-found" | null = null, reason: string | null = null;
-    if (x.Match_State === ANSWERED_STATE && typeof crm.getRelated === "function" && notes < MAX_NOTE_READS) {
-      notes++;
-      try {
-        const n = await crm.getRelated(cred, "Receipts", String(x.id), "Notes", { fields: ["Note_Title", "Note_Content"], perPage: 200, signal });
-        if (!n.ok && n.error.kind !== "not-found") return { ok: false, kind: n.error.kind };
-        const list = n.ok ? n.value.records : [];
-        if (list.some((y) => y.Note_Title === FOUND_TITLE)) answer = "found";
-        else {
-          const nf = list.find((y) => y.Note_Title === NOT_FOUND_TITLE);
-          if (nf) { answer = "not-found"; reason = typeof nf.Note_Content === "string" ? nf.Note_Content : null; }
-        }
-      } catch { return { ok: false, kind: "unexpected" }; }
-    }
-    const line = claimLineOf(x, answer, reason);
+  for (const [i, x] of sorted.entries()) {
+    const a = answers[i]!;
+    if (typeof a === "string") return { ok: false, kind: a };
+    const line = claimLineOf(x, a.answer, a.reason);
     if (!line) return { ok: false, kind: "invalid" };
     lines.push(line);
   }

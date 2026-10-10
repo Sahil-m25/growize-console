@@ -80,6 +80,24 @@ describe("IR claims — the state of the IR's OWN payment reports, never a recei
     expect(await readClaimLines({ async coql() { return bad("server"); } } as never, cred, [LEAD])).toEqual({ ok: false, kind: "server" });
     expect(await readClaimLines({ async coql() { throw new Error("x"); } } as never, cred, [])).toEqual({ ok: true, lines: [] });
   });
+  it("review 7: more than 200 reports in all are paged, so no claim line is lost", async () => {
+    const qs: string[] = [];
+    const many = Array.from({ length: 250 }, (_, i) => ({ id: `9007199254741${String(i).padStart(6, "0")}`, UTR: `CLAIM-${LEAD}-${i + 1}`, Match_State: "Claimed", Amount: 1, Received_On: "2026-10-01", Modified_Time: "2026-10-01T10:00:00+05:30" }));
+    const crm = { async coql(_c: unknown, q: string) { qs.push(q); const at = Number(/limit (\d+),/.exec(q)![1]); return page(many.slice(at, at + 200), at + 200 < many.length); } };
+    const r = await readClaimLines(crm as never, cred, [LEAD]);
+    expect(r.ok && r.lines.length).toBe(250);
+    expect(qs).toHaveLength(2);
+  });
+  it("review 8: the answered reports' Notes are read together, at most 10, never one after another", async () => {
+    let live = 0, peak = 0, reads = 0;
+    const many = Array.from({ length: 14 }, (_, i) => ({ id: `9007199254742${String(i).padStart(6, "0")}`, UTR: `CLAIM-${LEAD}-${i + 1}`, Match_State: "Not found", Modified_Time: "2026-10-01T10:00:00+05:30" }));
+    const crm = { async coql() { return page(many); },
+      async getRelated() { reads++; peak = Math.max(peak, ++live); await new Promise((r) => setTimeout(r, 5)); live--; return page([{ Note_Title: FOUND_TITLE }]); } };
+    const r = await readClaimLines(crm as never, cred, [LEAD]);
+    expect(r.ok && r.lines.filter((x) => x.state === "matched").length).toBe(10);
+    expect(reads).toBe(10);
+    expect(peak).toBe(10);
+  });
   it("an answered report whose Note cannot be told apart stays 'answered'; a state that is neither Claimed nor Not found is 'answered'", () => {
     expect(claimLineOf(rows[0]!, null, null)!.state).toBe("answered");
     expect(claimLineOf({ ...rows[0]!, Match_State: "Matched" }, null, null)!.state).toBe("answered");

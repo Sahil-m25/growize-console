@@ -5,7 +5,7 @@
  * team, or every book for an org-wide seat), so what is fetched is already counts. The result sits in
  * the scope-keyed cache (D53: two seats with different visibility never share figures). D138 (B-10 ruling,
  * 10 Oct 2026): no rupee value is worked out here. A lead carries no price in Zoho, and the old figure was
- * units × the prototype's unit price (plan.ts UNIT) — a guess. `money` is always null; the forecast is in units.
+ * units × the prototype's unit price (plan.ts UNIT) — a guess. The forecast is in units; there is no money field.
  */
 
 import type { UserCredential, ZohoClient } from "../../lib/zoho/client";
@@ -26,7 +26,6 @@ const SESSION_ID = /^[A-Za-z0-9_-]{16,128}$/;
 export interface SectionsAccess {
   readonly actor: SeatedZohoUser;
   readonly seesNumbers: boolean;
-  readonly seesMoney: boolean;
   /** Owners in scope; null with orgWide for every book. An IR's is themselves. */
   readonly ownerIds: readonly string[] | null;
   readonly orgWide: boolean;
@@ -37,7 +36,7 @@ export interface SectionsAccessAuthority {
   recheck(credential: UserCredential, sessionId: string, signal?: AbortSignal): Promise<SectionsAccess | null>;
 }
 export type SectionResult =
-  | { readonly ok: true; readonly value: { readonly section: Section; readonly counts: Readonly<Record<string, number>>; readonly money: Readonly<Record<string, number>> | null; readonly asOf: number; readonly stale: boolean } }
+  | { readonly ok: true; readonly value: { readonly section: Section; readonly counts: Readonly<Record<string, number>>; readonly asOf: number; readonly stale: boolean } }
   | { readonly ok: false; readonly kind: "refused"; readonly reasonCode: "invalid-request" | "session-changed" | "capability-missing" }
   | { readonly ok: false; readonly kind: "source-error"; readonly reason: string; readonly retryable: boolean };
 
@@ -119,8 +118,7 @@ export function createNumbersSections(deps: SectionsDependencies) {
       const got = await cache.readSettled(key, () => load(cred, seat, section)) as CacheFresh<Record<string, number>> | CacheStale<Record<string, number>> | CacheError<Record<string, number>>;
       if (got.state === "error") return { ok: false, kind: "source-error", reason: got.reason, retryable: true };
       /* D138: never units × the prototype's unit price — a lead has no price in Zoho, so there is no rupee figure to give */
-      const money = null;
-      return { ok: true, value: { section, counts: got.value, money, asOf: got.asOf, stale: got.state !== "fresh" } };
+      return { ok: true, value: { section, counts: got.value, asOf: got.asOf, stale: got.state !== "fresh" } };
     },
   });
 }

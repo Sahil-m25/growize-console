@@ -160,9 +160,9 @@ function sectionsRig(overrides = {}) {
       const name = /group by Lead_Source/.test(q) ? 'agg.sources' : /group by Owner/.test(q) ? 'agg.owners' : /group by Forecast/.test(q) ? 'agg.forecast' : 'agg.count';
       return toResponse(recorded(name)); } });
   const base = (c) => c.userId === MANAGER
-    ? { actor: { userId: MANAGER, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'ir-manager' }, seesNumbers: true, seesMoney: false,
+    ? { actor: { userId: MANAGER, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'ir-manager' }, seesNumbers: true,
         ownerIds: [IR, IR2], orgWide: false, unassignedQueueUserId: null, scope: { kind: 'subtree', managerId: MANAGER } }
-    : { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, seesNumbers: true, seesMoney: true,
+    : { actor: { userId: c.userId, roleId: `${P}740998001`, profileId: `${P}740998002`, seat: 'investor-relations' }, seesNumbers: true,
         ownerIds: [IR, IR2], orgWide: false, unassignedQueueUserId: null, scope: { kind: 'subtree', managerId: MANAGER } };
   const access = { async recheck(c) { return overrides.recheck ? overrides.recheck(base(c)) : base(c); } };
   const cache = overrides.cache ?? createScopedCache({ clock: () => NOW });
@@ -191,11 +191,11 @@ test('Sources, Owners and Why we lose are grouped counts; no name leaves', async
 test('no rupee value for any seat (D138: no prototype unit price); units only', async () => {
   let r = sectionsRig();
   let res = await r.svc.read(principal(MANAGER), 'forecast');
-  assert.equal(res.value.money, null);
+  assert.ok(!('money' in res.value));
   assert.deepEqual({ ...res.value.counts }, { 'leads:Commit': 2, 'units:Commit': 5, 'leads:Pipeline': 3, 'units:Pipeline': 4 });
-  r = sectionsRig({ recheck: (b) => ({ ...b, seesMoney: true, actor: { ...b.actor, seat: 'digital-infrastructure' } }) });
+  r = sectionsRig({ recheck: (b) => ({ ...b, actor: { ...b.actor, seat: 'digital-infrastructure' } }) });
   res = await r.svc.read(principal(MANAGER), 'forecast');
-  assert.equal(res.value.money, null, 'D138: a lead has no Zoho price — no rupee figure, even for a seat that may see money');
+  assert.ok(!('money' in res.value), 'D138: a lead has no Zoho price — no rupee figure');
   assert.deepEqual({ ...res.value.counts }, { 'leads:Commit': 2, 'units:Commit': 5, 'leads:Pipeline': 3, 'units:Pipeline': 4 });
 });
 

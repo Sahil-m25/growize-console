@@ -26,6 +26,7 @@ import { useConsole } from "@/lib/store";
 import { useApiMode, useApiRead, useApiWrite } from "@/lib/data/api";
 import { leadClaim, leadClaimRead } from "@/lib/data/endpoints/claims";
 import { registerDrawer, type DrawerProps } from "@/components/shell/drawers/registry";
+import { shortDay } from "@/lib/money/balance-clock";
 import { useGo } from "@/features/pay/common";
 import { ClaimBlock } from "@/features/pay/ClaimBlock";
 import { acctUnits, CAMOUNT, CKIND, CMODE, CNOTE, CREF, CSAIDON } from "@/features/pay/reducer";
@@ -184,8 +185,8 @@ export function ClaimStates({ l }: { l: Lead }) {
         <div className="mini" key={c.claimId}><span>
           <b>{c.amount !== null ? money(c.amount) : "Amount not shown"}</b> · <span className={`tag ${c.state === "rejected" ? "late" : c.state === "matched" ? "go" : "due"}`}>{WORD[c.state]}</span>
           <span className="sm">
-            {c.claimedOn ? "Investor said they paid on " + c.claimedOn : "Date not shown"}
-            {c.answeredOn ? (c.state === "matched" ? " · matched on " : " · answered on ") + c.answeredOn : ""}
+            {c.claimedOn ? "Investor said they paid on " + shortDay(c.claimedOn) : "Date not shown"}
+            {c.answeredOn ? (c.state === "matched" ? " · matched on " : " · answered on ") + shortDay(c.answeredOn) : ""}
             {c.reason ? " · " + c.reason : ""}
           </span>
         </span></div>

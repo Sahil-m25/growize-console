@@ -11,15 +11,9 @@
 import { useApiRead } from "@/lib/data/api";
 import { irInvestorList } from "@/lib/data/endpoints/investors";
 import { useIm } from "@/features/im/host";
-import { balanceClock, balanceDueText } from "@/lib/money/balance-clock";
+import { balanceDueText, shortDay } from "@/lib/money/balance-clock";
 
 const inr = (n: number): string => "₹" + n.toLocaleString("en-IN");
-/** the balance clock from the row's own deadline and the extension the server read (fromDay is the server's, from the same function) */
-const dueLine = (x: { holdUntil: string | null; extendedBy?: number }): string => {
-  const c = balanceClock(x.holdUntil, x.extendedBy ? { state: "Approved", days: x.extendedBy } : null);
-  return c ? balanceDueText(c) : "";
-};
-
 export function BalanceChase({ onOpenLead }: { onOpenLead: (leadId: string) => void }) {
   const { s, me } = useIm();
   const r = useApiRead(irInvestorList, { s, me }, true);
@@ -36,15 +30,15 @@ export function BalanceChase({ onOpenLead }: { onOpenLead: (leadId: string) => v
             <span className={`tag ${x.daysLeft != null && x.daysLeft <= 7 ? "late" : "due"}`}>{x.daysLeft == null ? "no deadline" : x.daysLeft < 0 ? -x.daysLeft + "d over" : x.daysLeft + "d left"}</span>
             <span style={{ minWidth: 0, flex: 1 }}><b>{x.name || x.code}</b>{" "}<span className="sm mono">{x.code}</span>
               <div className="sm">{x.farm ? x.farm + " · " : ""}{x.units} unit{x.units === 1 ? "" : "s"}{x.due != null ? " · " + inr(x.due) + " due" : ""}</div>
-              {x.holdUntil ? <div className="sm" data-testid="balance-due-line">{dueLine(x)}</div> : null}
+              {x.holdUntil && x.fromDay ? <div className="sm" data-testid="balance-due-line">{balanceDueText({ dueDay: x.holdUntil, fromDay: x.fromDay, extendedBy: x.extendedBy })}</div> : null}
               {/* D139: the state of the IR's own payment reports — never a receipt line (Jev p=1.00, owner 10 Oct) */}
               {(x.claims ?? []).map((c) => (
                 <div className="sm" key={c.claimId} data-testid="chase-claim">
-                  {"You reported " + (c.amount != null ? inr(c.amount) : "a payment") + (c.claimedOn ? " (paid " + c.claimedOn + ")" : "") + " — "}
+                  {"You reported " + (c.amount != null ? inr(c.amount) : "a payment") + (c.claimedOn ? " (paid " + shortDay(c.claimedOn) + ")" : "") + " — "}
                   {c.state === "pending" ? "pending, Finance has not found it yet"
-                    : c.state === "matched" ? "matched by Finance" + (c.answeredOn ? " on " + c.answeredOn : "")
-                    : c.state === "rejected" ? "Finance did not find it" + (c.answeredOn ? " on " + c.answeredOn : "") + (c.reason ? ": " + c.reason : "")
-                    : "answered by Finance" + (c.answeredOn ? " on " + c.answeredOn : "")}
+                    : c.state === "matched" ? "matched by Finance" + (c.answeredOn ? " on " + shortDay(c.answeredOn) : "")
+                    : c.state === "rejected" ? "Finance did not find it" + (c.answeredOn ? " on " + shortDay(c.answeredOn) : "") + (c.reason ? ": " + c.reason : "")
+                    : "answered by Finance" + (c.answeredOn ? " on " + shortDay(c.answeredOn) : "")}
                 </div>))}</span>
             {x.leadId ? <button type="button" className="chip" onClick={() => onOpenLead(x.leadId!)}>Open lead</button> : null}
           </li>))}</ul>
