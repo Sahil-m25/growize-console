@@ -64,6 +64,21 @@ stage sheets and D32 still cite it by number. What survives: a callback is a hin
 source (rule 7), the bank statement stands behind every receipt, and an off-platform heartbeat behind
 every scheduled job. The nightly reconcile it named went with the mirror.
 
+## Standing rule — ponytail and Jev, every round (owner, 10 Oct 2026)
+
+Every agent, every round, no exceptions:
+
+1. **Before writing code, apply ponytail** (`.claude/skills/ponytail/SKILL.md`, full level, vendored from
+   github.com/DietrichGebert/ponytail @ 9b58c1f, MIT). Take the first rung of the ladder that fully works, and
+   end your report with what you skipped and the risk.
+2. **Before committing, run ponytail-review on your own diff** (`.claude/skills/ponytail-review/SKILL.md`).
+   Fix every "Must fix" finding, and put the verdict line and the `Lean: -N lines` line in your report.
+3. **Jev decides, a model does not:**
+   - Staging acceptance is a Jev verdict (harness `judge-fact`). A REVIEW result is never reported as a pass.
+   - Any either/or the owner hands back ("ask Jev"), and any PROVISIONAL choice, goes through `jev/questions/decide.mjs`
+     or `ruling.mjs`. Ask it twice with the option order swapped. If the two answers disagree, it is the owner's call.
+   - Record the probabilities in the decision file.
+
 ## How to work here
 
 - **Write the least code that works.** Check in order: does it need to exist; is it already here;
