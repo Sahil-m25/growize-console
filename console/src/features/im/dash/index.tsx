@@ -7,7 +7,7 @@
 import { balanceDueFor } from "@/lib/money/balance-clock";
 import type { KeyboardEvent, MouseEvent } from "react";
 import {
-  careQueue, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad, may,
+  careQueue, holdDays, inr, isAM, isSuper, isSys, KAMS, kamLoad, may, mayConvertLead,
   money, pageReadable, poolBook, tierOf, TIERS, who, FORFEIT, primaryName, fmtAt, fmtDay,
 } from "@/lib/im";
 import type { ImInvestor } from "@/lib/im";
@@ -243,7 +243,7 @@ export function QRow({ s, me, dispatch, x, claims }: ImPageProps & { x: MoneyRow
                   : x.action === "Send it" ? <>
                     <button className="act" onClick={stop(() => sendIt(dispatch, ref))}>Send it</button>
                     {/* GC-1527 / D137: a lead with no investor yet — Finance records its money here and confirms the 10% */}
-                    {ref.leadId && !ref.contactId && may(s, me, "pay")
+                    {ref.leadId && !ref.contactId && mayConvertLead(s, me)
                       ? <button className="act ghost" onClick={stop(() => dispatch({ type: "openDrawer", k: "convert", id: ref.leadId ?? null }))}>Money and the 10%</button> : null}
                   </>
                   : <button className="act ghost" onClick={stop(() => dispatch({ type: "go", v: "inv", id }))}>Open the record</button>;
@@ -255,7 +255,8 @@ export function QRow({ s, me, dispatch, x, claims }: ImPageProps & { x: MoneyRow
        keyboard/screen-reader stop that opens the record; a click anywhere else on the card still does, for the pointer. */
     <div className={`qc ${x.urg === "now" ? "now" : "soon"}`} onClick={open}>
       <div className="who2"><b><button type="button" className="lnk qc-open" onClick={stop(open)}>{x.investor.name ?? id}</button></b><span>{x.text}{x.kind === "claim" && from ? <>{" · "}<ProvIR t={"from " + from} /></> : null}
-        {" · "}<span className="mono">{"code" in x.investor ? x.investor.code : null}</span>
+        {/* W7-FIN-4: a lead row has no ARL ID — no separator left dangling */}
+        {"code" in x.investor && x.investor.code ? <>{" · "}<span className="mono">{x.investor.code}</span></> : null}
       </span></div>{b}</div>
   );
 }

@@ -12,7 +12,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   I, accessOf, accessView, allotAmount, allotDue, allotOf, allotPaid, allotPayStatus, allotTxns, allotUnits, allotsOf,
   arlTxnsOf, day6, fmtDate, holdingsOf, inr, isSuper, llpName, llpOf, may, mayAccess, mayHoldings, mayPayouts, mayPreview,
-  mayTestLink, money, notFin, payoutsOf, thisMonth, unlinkedTxns, who,
+  mayAskFullPaid, mayMarkFullPaid, mayTestLink, money, notFin, payoutsOf, thisMonth, unlinkedTxns, who,
 } from "@/lib/im";
 import type { ImAllot, ImInvestor } from "@/lib/im";
 import { ImPname, type ImPageProps } from "../common";
@@ -48,11 +48,9 @@ function TxLine({ s, t }: { s: ImPageProps["s"]; t: Line }) {
   );
 }
 
-/** D137 ruling 3 as amended by D138 (10 Oct): who may mark an allotment fully paid by hand — Finance Operations, Head of Finance,
- *  Digital Infrastructure (the route re-checks the seat: server/investors/full-paid via /api/investors/[id]/full-paid). */
-export const mayMarkFullPaid = (s: P["s"], me: string): boolean => ["ops", "head", "di"].includes(who(s, me).r);
-/** D138: a KAM can NOT mark it — the KAM asks Finance to confirm the full payment (/api/investors/[id]/full-paid/request). */
-export const mayAskFullPaid = (s: P["s"], me: string): boolean => who(s, me).r === "kam";
+/* D137 ruling 3 / D138 ruling 6: who may mark fully paid by hand, or ask Finance to — lib/im/money.ts, where the drawer gate
+   (drawerReadable) reads the same functions so a button never opens a drawer its gate refuses (W7-FIN-1) */
+export { mayAskFullPaid, mayMarkFullPaid } from "@/lib/im";
 /** D138: until the supplementary agreement is signed and verified the allotment cannot be marked fully paid (the route says 409). */
 export const SUPP_WAIT_TEXT = "Waiting for the signed supplementary agreement — until Finance verifies it, this allotment cannot be marked fully paid.";
 

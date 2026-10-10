@@ -353,7 +353,13 @@ export function addInvestorGate(s: ImCtx, WHO: string, f: AddInvForm): Gate {
 }
 
 /* ============================ the drawers these screens open ============================ */
-export const MONEY_DRAWERS: ImDrawerKey[] = ["payout", "llp", "addinv", "applock", "testlink", "preview"];
+export const MONEY_DRAWERS: ImDrawerKey[] = ["payout", "llp", "addinv", "applock", "testlink", "preview", "convert", "fullpaid", "fullpaidask"];
+/** GC-1527 / D137: Finance records a lead's money and confirms the 10% ("Money and the 10%" on Finance's Today) */
+export const mayConvertLead = (s: ImCtx, WHO: string): boolean => may(s, WHO, "pay");
+/** D137 ruling 3 / D138 ruling 6: Finance Operations, Head of Finance and Digital Infrastructure stamp "fully paid" by hand */
+export const mayMarkFullPaid = (s: ImCtx, WHO: string): boolean => ["ops", "head", "di"].includes(who(s, WHO).r);
+/** D138 ruling 6: a KAM can NOT stamp — the KAM asks Finance */
+export const mayAskFullPaid = (s: ImCtx, WHO: string): boolean => who(s, WHO).r === "kam";
 export function moneyDrawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: string | null | undefined): boolean {
   /* M10-S20…S23-W1: whether the payout / investor exists is the route's answer (403/404 in the drawer), not the book's —
      these gates keep only the seat's rule */
@@ -365,6 +371,11 @@ export function moneyDrawerReadable(s: ImCtx, WHO: string, k: ImDrawerKey, id: s
     case "applock": return mayAccess(s, WHO) && !!id;
     case "testlink": return mayTestLink(s, WHO) && !!id;
     case "preview": return !!id;
+    /* W7-FIN-1: these three had no case and fell to `false`, so their buttons did nothing. The gates are the buttons' own;
+       whether the lead / allotment exists and may move is the route's answer (409 / 422 in the drawer). */
+    case "convert": return mayConvertLead(s, WHO) && !!id;
+    case "fullpaid": return mayMarkFullPaid(s, WHO) && !!id;
+    case "fullpaidask": return mayAskFullPaid(s, WHO) && !!id;
     default: return false;
   }
 }

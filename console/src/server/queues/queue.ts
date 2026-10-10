@@ -83,7 +83,7 @@ export interface QueueDeps {
   readonly amBook: Pick<KamBookService, "list">;
   readonly clock?: () => number;
   readonly maxPages?: number;
-  /** G1: Digital Infrastructure has confirmed the Finance sharing rule on Leads (GZ_FINANCE_LEADS_SHARED=1). Until then the
+  /** G1: the Finance sharing rule on Leads is in place (runtime: on unless GZ_FINANCE_LEADS_SHARED=0, W7-FIN-4). When false the
    *  queue says that requests on leads not shared with Finance cannot be listed (Zoho returns them as absent, not refused). */
   readonly financeLeadsShared?: boolean;
 }
@@ -270,10 +270,14 @@ export function createInvestorQueues(deps: QueueDeps) {
   }
 
   /* ------------------------------------- G1: the IRs' "send it" requests ------------------------------------- */
-  /** One Leads select; with the requester's name through the user lookup when Zoho takes the column, else without it. */
+  /** One Leads select; with the requester's name through the user lookup when Zoho takes the columns, else without it.
+   *  W7-FIN-4: COQL's `Owner.full_name` came back as the last name alone on staging ("requested by Test" for IR A Test), so the
+   *  name is first + last; `full_name` only when Zoho refuses those two; no name ("an IR") when it refuses that too. */
   async function requestedLeads(cred: UserCredential, fields: readonly string[], byField: string, where: string, signal?: AbortSignal) {
-    const named = await pagedSelect(deps.crm, cred, [...fields, `${byField}.full_name`], LEADS_MODULE, where, "id asc", signal, deps.maxPages);
-    if (named.ok || named.kind !== "source-error" || named.errorKind !== "invalid-data") return named;
+    for (const cols of [[`${byField}.first_name`, `${byField}.last_name`], [`${byField}.full_name`], []]) {
+      const r = await pagedSelect(deps.crm, cred, [...fields, ...cols], LEADS_MODULE, where, "id asc", signal, deps.maxPages);
+      if (!cols.length || r.ok || r.kind !== "source-error" || r.errorKind !== "invalid-data") return r;
+    }
     return pagedSelect(deps.crm, cred, fields, LEADS_MODULE, where, "id asc", signal, deps.maxPages);
   }
   const daysSince = (at: string | null, now: number): number | null => {
@@ -281,6 +285,8 @@ export function createInvestorQueues(deps: QueueDeps) {
     return s ? 0 - daysLeft(s.slice(0, 10), now) : null;   // 0 - x: today is 0, never -0
   };
   const byName = (r: ZohoRecord, f: string): string | null => {
+    const fl = [str(r, `${f}.first_name`, 40), str(r, `${f}.last_name`, 40)].filter(Boolean).join(" ");
+    if (fl) return fl;
     const n = str(r, `${f}.full_name`, 80);
     if (n) return n;
     const v = r[f] && typeof r[f] === "object" ? (r[f] as { name?: unknown }).name : undefined;

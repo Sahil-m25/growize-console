@@ -281,6 +281,21 @@ test('G1: request fields Zoho does not know yet are named as such; the requester
   assert.equal(r2.queue.requestsNote, rules.REQUESTS_PARTIAL_TEXT);
 });
 
+test('W7-FIN-4: the requester is named first + last (COQL full_name gave the last name alone); full_name only when Zoho refuses those', async () => {
+  const bad = { status: 400, headers: { 'content-type': 'application/json' }, body: { code: 'INVALID_QUERY', message: 'invalid column', status: 'error', details: {} } };
+  const ndaReq = (q) => (/first_name/.test(q)
+    ? ok([{ ...reqLead(LEAD_A, 'Kiran', '2026-09-27T09:00:00+05:30', 'Test'), 'Owner.first_name': 'IR A', 'Owner.last_name': 'Test' }])
+    : ok([reqLead(LEAD_A, 'Kiran', '2026-09-27T09:00:00+05:30', 'Test')]));
+  const rig = await makeRig(load, route({ ndaReq })); rig.refusals = [];
+  const r = await queues(rig, { claims: [] }).q.today(await principal(rig, HARSHA, 'head', 'head'));
+  assert.deepEqual(r.queue.rows.filter((y) => y.kind === 'send').map((y) => y.text), ['Send the NDA — requested by IR A Test 1 day ago']);
+  assert.match(rig.queries.find((x) => /NDA_Requested_At is not null/.test(x)), /Owner\.first_name, Owner\.last_name/);
+  const ndaReq2 = (q) => (/first_name/.test(q) ? bad : ok([reqLead(LEAD_A, 'Kiran', '2026-09-27T09:00:00+05:30', 'Rohit Iyer')]));
+  const rig2 = await makeRig(load, route({ ndaReq: ndaReq2 })); rig2.refusals = [];
+  const r2 = await queues(rig2, { claims: [] }).q.today(await principal(rig2, HARSHA, 'head', 'head'));
+  assert.deepEqual(r2.queue.rows.filter((y) => y.kind === 'send').map((y) => y.text), ['Send the NDA — requested by Rohit Iyer 1 day ago']);
+});
+
 test('G1: the supplementary asked for is listed against the investor until a Sign request is on a live allotment; no investor yet → the lead', async () => {
   const suppReq = ok([suppLead(LEAD_A, 'Kiran', '2026-09-25T09:00:00+05:30'), suppLead(LEAD_B, 'Meera', '2026-09-27T09:00:00+05:30'), suppLead(LEAD_C, 'Nobody', '2026-09-26T09:00:00+05:30')]);
   const suppContacts = ok([{ id: C(1), Origin_Lead: { id: LEAD_A }, First_Name: 'Kiran', Last_Name: 'Investor' }, { id: C(2), Origin_Lead: { id: LEAD_B }, First_Name: 'Meera', Last_Name: 'Investor' }]);

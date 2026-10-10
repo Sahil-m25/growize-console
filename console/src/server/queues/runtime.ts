@@ -72,9 +72,10 @@ export async function queuesContext(env: NodeJS.ProcessEnv = process.env) {
   const claims = receiptsConfigured() ? await (await import("../money/runtime")).claimAnswers(env) : null;
   const queues = createInvestorQueues({
     crm, log: rt.log, claims,
-    /* G1: set once Digital Infrastructure has created the Finance sharing rule on Leads (B-21 / W3-E2E-2); until then the queue says
-       that a request on a lead Zoho does not share with Finance cannot be listed */
-    financeLeadsShared: env.GZ_FINANCE_LEADS_SHARED === "1",
+    /* G1 / W7-FIN-4: the Finance criteria sharing rules on Leads exist since 10 Oct (zoho/changes/2026-10-10-sandbox.md), so the
+       "not confirmed yet" note is off by default. An org without them (live, until applied) sets GZ_FINANCE_LEADS_SHARED=0 and the
+       queue says again that a request on a lead Zoho does not share with Finance cannot be listed. */
+    financeLeadsShared: env.GZ_FINANCE_LEADS_SHARED !== "0",
     holds: createHolds({ crm, cache: rt.cache, events: rt.events }),
     documents: documentsList(crm, rt.log, env), // with the per-viewer Sign status (sent dates, Viewed/Declined/Recalled)
     cases: createCasesRegister({ crm, cache: rt.cache, events: rt.events }),
