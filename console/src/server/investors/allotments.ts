@@ -161,6 +161,16 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
     });
   };
 
+  /** The unit price as Zoho returns it on the seat's own token, per field (./ir-money); where Zoho hides it the row keeps null —
+   *  never a figure worked out from anything else. */
+  async function withZohoPrice(cred: UserCredential, rows: readonly AllotmentLine[], signal?: AbortSignal): Promise<readonly AllotmentLine[]> {
+    const m = await readIrMoney(crm, cred, rows.map((a) => a.id), signal);
+    return m ? rows.map((a) => {
+      const price = m.get(a.id)?.unitPrice ?? null;
+      return price === null ? a : Object.freeze({ ...a, unitPrice: price, amount: a.committedUnits * price });
+    }) : rows;
+  }
+
   const failure = (userId: string, action: string, e: unknown): AllotmentRefusal | SourceError => {
     if (e instanceof Invalid) { events.refusal(userId, action, "source-invalid", e.ids); return { ok: false, kind: "refused", reason: "source-invalid" }; }
     return { ok: false, kind: "source-error", errorKind: e instanceof Fail ? e.kind : "unexpected" };
@@ -195,15 +205,8 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
         receipts = rc.rows;
         out = rows.map((a) => Object.freeze({ ...a, paymentStatus: moneyOf({ id: a.id, status: a.status, units: a.committedUnits, unitPrice: a.unitPrice ?? 0 }, rc.rows).paymentStatus }));
       } else if (money) receipts = Object.freeze([]);
-      /* D138 (B-10) / D139 (W2-KAM-1): an IR, a KAM and the Head of AM see the unit price as Zoho returns it on their own token (read-only for the IR profile since
-         10 Oct); where Zoho hides it the row keeps null — never a figure worked out from anything else */
-      if (!money && rows.length && (scopesFor(seat, me).investors.kind === "own-lead" || isAmSeat(seat))) {
-        const m = await readIrMoney(crm, cred, rows.map((a) => a.id), signal);
-        if (m) out = out.map((a) => {
-          const price = m.get(a.id)?.unitPrice ?? null;
-          return price === null ? a : Object.freeze({ ...a, unitPrice: price, amount: a.committedUnits * price });
-        });
-      }
+      /* D138 (B-10) / D139 (W2-KAM-1): an IR, a KAM and the Head of AM see the unit price as Zoho shows it to them */
+      if (!money && rows.length && (scopesFor(seat, me).investors.kind === "own-lead" || isAmSeat(seat))) out = await withZohoPrice(cred, out, signal);
       return { ok: true, contactId, rows: Object.freeze(out), money, paper, receipts, truncated: got.truncated };
     },
 
@@ -219,7 +222,7 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
       let got: { rows: ZohoRecord[]; truncated: boolean };
       try { got = await related(cred, MODULES.llps, llpId, LLP_ALLOTMENTS_LIST, money ? ALLOTMENT_FIELDS : AM_ALLOTMENT_FIELDS, signal); }
       catch (e) { return failure(me, action, e); }
-      let rows = got.rows.map((x) => line(x, money, false)).filter((x): x is AllotmentLine => x !== null);
+      let rows: readonly AllotmentLine[] = got.rows.map((x) => line(x, money, false)).filter((x): x is AllotmentLine => x !== null);
       const foreignLlp = rows.filter((a) => a.llp.id !== llpId);
       if (foreignLlp.length) { events.refusal(me, action, "scope-drift", foreignLlp.map((a) => a.id)); return { ok: false, kind: "refused", reason: "scope-drift" }; }
 
@@ -232,14 +235,8 @@ export function createAllotmentReader(deps: AllotmentReaderDeps) {
         const admitted = new Set(mine.rows.filter((c) => admitContact(scope, c).ok).map((c) => c.id));
         rows = rows.filter((a) => admitted.has(a.investor.id));
       }
-      /* D139 (W2-KAM-1): a KAM / Head of AM reads the unit price the same way (per field, on their own token) */
-      if (!money && isAmSeat(seat) && rows.length) {
-        const m = await readIrMoney(crm, cred, rows.map((a) => a.id), signal);
-        if (m) rows = rows.map((a) => {
-          const price = m.get(a.id)?.unitPrice ?? null;
-          return price === null ? a : Object.freeze({ ...a, unitPrice: price, amount: a.committedUnits * price });
-        });
-      }
+      /* D139 (W2-KAM-1): a KAM / Head of AM reads the unit price the same way */
+      if (!money && isAmSeat(seat) && rows.length) rows = await withZohoPrice(cred, rows, signal);
       const live = rows.filter((a) => a.status !== "Cancelled");
       return {
         ok: true, llpId, rows: Object.freeze(rows), money, scoped, truncated: got.truncated,

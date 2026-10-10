@@ -18,8 +18,9 @@ Finance, summing his matched receipts, said ₹90 L (₹10 L advance matched). V
 ## Decision
 1. **One writer.** `server/money/received-total.ts` `syncReceived` is the only code that writes `Total_Amount_Received`. Value =
    matched inbound receipts on the allotment (Advance / Part / Balance / Full) − matched refunds, never below 0 — the same arithmetic
-   as the 10% trail and the full conversion (`lib/money/ten-percent`). It reads the receipts (one page; a page cut short writes
-   nothing), reads the allotment's value and `Modified_Time`, and only when they differ makes ONE guarded PUT (If-Unmodified-Since);
+   as the 10% trail and the full conversion (`lib/money/ten-percent`). It reads the allotment's value and `Modified_Time` first,
+   then the receipts (one page; a page cut short writes nothing) — so a concurrent match's sync that writes in between makes this
+   PUT conflict instead of putting back a stale total (ponytail-review, 10 Oct) — and only when they differ makes ONE guarded PUT (If-Unmodified-Since);
    a conflict re-reads and tries once more. Reported, never thrown; logs carry ids and a code only.
 2. **Called on Finance's own token** after every change to what is matched on an allotment: `money/match` consequences (every match:
    inbound, a refund's second hand, a repeated press — idempotent; after the hold write, before the conversion) and

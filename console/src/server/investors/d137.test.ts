@@ -133,6 +133,9 @@ describe("GC-1527 — the investor is created only after Finance confirms the 10
     expect(contact).toMatchObject({ First_Name: "Synth", Last_Name: "Investor D137", ARL_ID: "ARL-INV-0137", App_Access: "Hold", Origin_Lead: { id: LEAD }, Originating_IR: { id: IR } });
     const allot = d.calls.find((c) => c[0] === "POST" && c[1] === "LLP_UnitAllocation_Module")![2];
     expect(allot).toMatchObject({ Customer: { id: CONTACT }, LLP: { id: LLP }, Allocation_Status: "Reserved", Reserved_Units: 10, Unit_Price: 100_000, Total_Amount_Receivable: 1_000_000, Hold_Until: "2026-11-08" });
+    /* D140: once the lead's receipts are on the allotment, its Total_Amount_Received is the matched sum (one guarded write) */
+    expect(r.value.converted?.received).toEqual({ ok: true, value: { received: 110_000, written: true }, code: null });
+    expect(d.st.allot).toMatchObject({ Total_Amount_Received: 110_000 });
     const links = d.calls.filter((c) => c[0] === "PUT" && String(c[1]).startsWith("Receipts/"));
     expect(links.map((c) => (c[2] as { fields: unknown }).fields)).toEqual([{ Allotment: { id: ALLOT } }, { Allotment: { id: ALLOT } }]);
     expect(d.planeC).toEqual([[FIN, "fin-ops", [LEAD, CONTACT, ALLOT], "ok", "ten-percent-confirmed"]]);

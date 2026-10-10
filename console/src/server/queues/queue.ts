@@ -274,9 +274,9 @@ export function createInvestorQueues(deps: QueueDeps) {
    *  W7-FIN-4: COQL's `Owner.full_name` came back as the last name alone on staging ("requested by Test" for IR A Test), so the
    *  name is first + last; `full_name` only when Zoho refuses those two; no name ("an IR") when it refuses that too. */
   async function requestedLeads(cred: UserCredential, fields: readonly string[], byField: string, where: string, signal?: AbortSignal) {
-    for (const cols of [[`${byField}.first_name`, `${byField}.last_name`], [`${byField}.full_name`], []]) {
+    for (const cols of [[`${byField}.first_name`, `${byField}.last_name`], [`${byField}.full_name`]]) {
       const r = await pagedSelect(deps.crm, cred, [...fields, ...cols], LEADS_MODULE, where, "id asc", signal, deps.maxPages);
-      if (!cols.length || r.ok || r.kind !== "source-error" || r.errorKind !== "invalid-data") return r;
+      if (r.ok || r.kind !== "source-error" || r.errorKind !== "invalid-data") return r;
     }
     return pagedSelect(deps.crm, cred, fields, LEADS_MODULE, where, "id asc", signal, deps.maxPages);
   }

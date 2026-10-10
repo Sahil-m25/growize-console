@@ -76,6 +76,25 @@ describe("D140 received-total", () => {
     expect(JSON.stringify(lines)).not.toMatch(/"amount"|:5[,}]/);
   });
 
+  it("two Finance matches at once: a total written by the other match's sync during this read is never overwritten with a stale one", async () => {
+    /* this sync's receipt read sees only its own match; the other match's sync writes both while that read is in flight */
+    const z = { value: 0 as number, mt: MT, receipts: [rc("01", "Advance", 100_000)] };
+    const crm = {
+      async coql() {
+        const seen = z.receipts;
+        z.receipts = [rc("01", "Advance", 100_000), rc("02", "Part", 50_000)]; z.value = 150_000; z.mt = MT2;   // the other sync lands
+        return ok({ records: seen, moreRecords: false });
+      },
+      async getRecord(_c: unknown, _m: string, id: string) { return ok({ id, [RECEIVED_FIELD]: z.value, Modified_Time: z.mt }); },
+      async update(_c: unknown, _m: string, _id: string, fields: Record<string, unknown>, opts: { ifUnmodifiedSince?: string }) {
+        if (opts.ifUnmodifiedSince !== z.mt) return bad("conflict");
+        z.value = fields[RECEIVED_FIELD] as number; return ok({ id: ALLOT });
+      },
+    };
+    await syncReceived(crm as never, cred, ALLOT);
+    expect(z.value).toBe(150_000);
+  });
+
   it("an unreadable receipt page writes nothing (never a partial total)", async () => {
     const d = crmDouble({ receipts: [{ id: "x" }], current: 0 });
     expect(await syncReceived(d.crm, cred, ALLOT)).toEqual({ ok: false, value: null, code: "receipts-unread" });

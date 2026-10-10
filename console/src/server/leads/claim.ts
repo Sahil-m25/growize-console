@@ -37,7 +37,7 @@ import { ALLOTMENTS_MODULE, RECEIPTS_MODULE } from "../money/receipt-replay";
 import { createIdempotency } from "../state/idempotent";
 import { createMemoryState } from "../state/memory";
 import type { SharedState } from "../state/shared-state";
-import { ANSWERED_STATE, FOUND_TITLE, NOT_FOUND_TITLE, notFoundText } from "../money/claim-answer";
+import { notFoundText } from "../money/claim-answer";
 import type { Gates, GateResult } from "./gates";
 import { readClaimLines, type IrClaimLine } from "./claim-lines";
 
@@ -72,7 +72,6 @@ const MAX_NOTE = 1_000;
  * cannot be changed after it is sent). A validation rule must hold an IR's create to Match_State = Claimed and a
  * UTR starting CLAIM- (rule 3: an IR records a report, never matched money).
  */
-export const CLAIM_READ_FIELDS = "id, UTR, Match_State";
 const CLAIM_REPORT_FIELDS = "id, UTR, Allotment, Kind, Amount, Mode, Received_On, Match_State";
 const MAX_LIVE_ALLOTMENTS = 100;
 
@@ -287,11 +286,10 @@ export function createPaymentClaims(deps: PaymentClaimDependencies) {
 
   interface Existing { readonly id: string; readonly seq: number; readonly allotmentId: string | null; readonly kind: unknown; readonly amount: unknown;
     readonly mode: unknown; readonly receivedOn: unknown; readonly state: unknown }
-  /** Every claim key ever written for this lead (the sequence, and an open one). `fields`: the lead page's read asks only
-   *  for what it shows (CLAIM_READ_FIELDS — B-06: COQL refuses the WHOLE query as INVALID_QUERY when one selected field is
-   *  hidden from the profile, so the IR's read never names a field it does not need); the report asks for what it compares. */
-  async function claimsOf(cred: UserCredential, leadId: string, signal?: AbortSignal, fields: string = CLAIM_REPORT_FIELDS): Promise<readonly Existing[] | { fail: ZohoFailureKind } | "invalid"> {
-    const r = await coql(cred, `select ${fields} from ${RECEIPTS_MODULE} where UTR like '${CLAIM_KEY_PREFIX}${leadId}-%' limit 0, 200`, signal);
+  /** Every claim key ever written for this lead (the sequence, and an open one), with what the report compares. The lead page's
+   *  read is ./claim-lines (B-06: it never names a field the IR profile hides). */
+  async function claimsOf(cred: UserCredential, leadId: string, signal?: AbortSignal): Promise<readonly Existing[] | { fail: ZohoFailureKind } | "invalid"> {
+    const r = await coql(cred, `select ${CLAIM_REPORT_FIELDS} from ${RECEIPTS_MODULE} where UTR like '${CLAIM_KEY_PREFIX}${leadId}-%' limit 0, 200`, signal);
     if ("fail" in r) return { fail: r.fail };
     if ("invalid" in r || r.page.moreRecords) return "invalid";
     const out: Existing[] = [];

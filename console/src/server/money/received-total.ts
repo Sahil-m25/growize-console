@@ -13,8 +13,8 @@
  *   - investors/convert after the lead's receipts are linked to the allotment (the 10% press and the lead-route balance).
  * The console has no unmatch path today (a Reversed receipt is not written by the console); a future one calls this too.
  *
- * The write: read the matched receipts (one page; a read cut short is `receipts-unread`, never a partial total), read the
- * allotment's current value and Modified_Time, and — only when they differ — ONE guarded PUT (If-Unmodified-Since, D44). A
+ * The write: read the allotment's current value and Modified_Time, then the matched receipts (one page; a read cut short is
+ * `receipts-unread`, never a partial total), and — only when they differ — ONE guarded PUT (If-Unmodified-Since, D44). A
  * conflict (someone wrote the allotment between the read and the write) re-reads and tries once more. The outcome is reported,
  * never thrown, and never undoes the match that called it. Logs carry ids and codes only — never the amount.
  */
@@ -52,11 +52,13 @@ export async function syncReceived(crm: Pick<ZohoClient, "getRecord" | "coql" | 
   };
   if (typeof allotmentId !== "string" || !RECORD_ID.test(allotmentId)) return fail("invalid-request");
   for (let attempt = 0; attempt < 2; attempt++) {
+    /* the allotment BEFORE the receipts: a concurrent match's own sync that writes in between moves Modified_Time, so this
+       write conflicts and re-reads instead of putting back a total that misses that match (lost update) */
+    const a = await crm.getRecord(cred, ALLOTMENTS, allotmentId, { fields: [RECEIVED_FIELD, "Modified_Time"], signal }).catch(() => null);
+    if (!a || !a.ok || !a.value || a.value.id !== allotmentId) return fail("allotment-unread");
     const rc = await readReceipts(crm, cred, `Allotment = '${allotmentId}'`, signal).catch(() => null);
     if (!rc || !rc.ok) return fail("receipts-unread");
     const want = receivedOf(rc.rows.filter((r) => r.allotmentId === allotmentId));
-    const a = await crm.getRecord(cred, ALLOTMENTS, allotmentId, { fields: [RECEIVED_FIELD, "Modified_Time"], signal }).catch(() => null);
-    if (!a || !a.ok || !a.value || a.value.id !== allotmentId) return fail("allotment-unread");
     if (current(a.value[RECEIVED_FIELD]) === want) return { ok: true, value: { received: want, written: false }, code: null };
     const mt = typeof a.value.Modified_Time === "string" && ZDT.test(a.value.Modified_Time) ? a.value.Modified_Time : null;
     if (!mt) return fail("allotment-unread");

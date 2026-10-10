@@ -59,6 +59,7 @@ before(async () => {
       fetch: async () => toResponse({ status: 200, body: { users: [{ id, status: 'active' }] } }) }));
 });
 
+let zohoShows = null;
 const CONTACT = { [KIRAN]: 'contact-kiran', [JOSEPH]: 'contact-joseph', [ASHA]: 'contact-asha', [FOREIGN]: 'contact-foreign' };
 function route(url, q) {
   const u = String(url);
@@ -81,6 +82,8 @@ function route(url, q) {
     return recorded('allotments', 'none');
   }
   if (/from Receipts/.test(q)) return q.includes(`${P}740998411`) ? recorded('allotments', 'receipts-joseph') : recorded('allotments', 'none');
+  /* D138/D139: the per-field money read by allotment id (./ir-money); Zoho shows nothing unless a test sets `zohoShows` */
+  if (/^select id, Unit_Price/.test(q)) return zohoShows ? zohoShows(q) : recorded('allotments', 'none');
   throw new Error('unrouted query: ' + q);
 }
 
@@ -142,6 +145,23 @@ test('AC5: a KAM sees only own investors — Joseph (own book) yes, without mone
   assert.deepEqual([other.ok, other.kind, other.reason], [false, 'refused', 'not-own-lead']);
   assert.equal(r2.calls.some((c) => /Customer1/.test(c)), false, 'refused before the allotments are read');
   assert.ok(r2.refusals.some((x) => x.r === 'not-own-lead' && x.ids.includes(KIRAN)));
+});
+
+test('D138/D139: an IR or a KAM gets the unit price only where Zoho shows it on their own token — amount = units x that price; hidden stays null', async () => {
+  zohoShows = (q) => ({ status: 200, body: { data: [{ id: `${P}740998411`, Unit_Price: 2500000 }], info: { count: 1, more_records: false } } });
+  try {
+    const r = rig();
+    const kam = await r.allot.byContact(creds.get(IMRAN), 'kam', JOSEPH);
+    assert.equal(kam.ok, true, JSON.stringify(kam));
+    assert.deepEqual(kam.rows.map((a) => [a.id, a.unitPrice, a.amount]), [[`${P}740998411`, 2500000, 2500000], [`${P}740998412`, null, null], [`${P}740998413`, null, null]]);
+    const q = r.calls.find((c) => /^select id, Unit_Price/.test(c));
+    assert.match(q, /from LLP_UnitAllocation_Module where id in \('\d+'/);
+    assert.equal(r.calls.some((c) => /from Receipts/.test(c)), false, 'still no receipts for a KAM');
+    /* a seat whose rows the rule does not open (Finance reads its own money projection) never makes this read */
+    const f = rig();
+    await f.allot.byContact(creds.get(HARSHA), 'head', KIRAN);
+    assert.equal(f.calls.some((c) => /^select id, Unit_Price/.test(c)), false);
+  } finally { zohoShows = null; }
 });
 
 test('an IR reads allotments only for a Contact from their own lead, and never money', async () => {
