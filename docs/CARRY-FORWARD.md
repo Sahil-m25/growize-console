@@ -103,7 +103,7 @@ creates work and does not add a line here has not finished.
 | C-05 | `console-src-backup-2026-09-17/` is not a clean duplicate — 93 files differ, 22,969 lines of churn. Neither side is in git |
 | C-13 | **Open staging defects from the 6–9 Oct test waves** — 20 of 36 are not yet closed: fixed in code but not deployed or retested (12), seed data to fix (3: B-07, W2-KAM-5, W2-IRB-1), owner rulings (closed 10 Oct: B-10/W2-KAM-1 by D138/D139, B-20, B-22), one env/job (B-27). Each has a regression case. Register, Jira keys and fix commits: `docs/uat/STAGING-DEFECTS.md` | D133, D134, GC-1466…GC-1501 |
 
-| C-14 | **ponytail-review 10 Oct, Should-fix not taken** (`docs/reviews/ponytail-review-2026-10-10.md` 7–9): (7) `leads/claim-lines` reads all of an IR's reports in one page of 200 and refuses a fuller page, so past 200 every Balances-to-chase claim line disappears; (8) up to 10 serial Notes reads per IR Today load; (9) the record's hold banner blames the supplementary whenever nothing is due, also when the stamp failed for another reason | D139, D138 |
+| C-14 | **ponytail-review 10 Oct, Should-fix 7–9 and Nice-to-have 10–12: fixed on `w9-fixes` (6fe5601).** (7) the claim read pages 200 at a time, up to 2000 reports in all, then refuses (`shortcut:` in `leads/claim-lines`); (8) the Notes reads run together, at most 10; (9) the hold banner blames the supplementary only when it is unsigned; (10) `numbers/sections` no longer carries `money`; (11, 12) Balances to chase uses the server's deadline and shows claim dates as "20 Sep". Open: a seat that cannot read every allotment still runs the occupancy aggregate it no longer uses (one avoidable Zoho call) | D139, D138 |
 
 ## D · Unverified, settle in the trial org
 

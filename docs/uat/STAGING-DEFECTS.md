@@ -61,6 +61,8 @@ Sources (outside the repo, kept with the harness): `report/bugs.md`, `harness/bu
 | W8-FIN-1 | - | S3 | Finance Ops | Investor record > Journey; hold banner | Journey ticked "Fully paid — from the receipts" while the supplementary gate refused the conversion; banner said "Rs 0 due in 30 days … A lapse forfeits Rs 50,000" on a paid-up investor. | `story.ts` ticked Fully paid on money totals (paid > 0, due 0); `HoldBanner` had no branch for due 0. | **Fixed in code** | ccfb95e | `features/im/inv/story.test.tsx`, `features/im/inv/render.test.tsx` (W8-FIN-1), `W8-D138-FIN-JOURNEY-FULLPAID-NOT-TICKED` |
 | W8-IRA-2 | - | S4 | IR A | Lead page (Reserved, supplementary unsigned) | Held lead still offered "Ask Finance to send the NDA" and Call. | `LpPaperRow` and the Call / WhatsApp buttons were drawn without the `suppHeld` guard (D138: only Log a contact and notes). | **Fixed in code** | ccfb95e | `features/lead/live-controls.test.tsx` (W8-IRA-2), `W8-D138-IRA-LEAD-HELD-NDA` |
 | W8-FIN-2 | - | S4 | Finance Ops | Investor record > Money > "The balance" drawer | "Block B ×4 · -41 free on the shelf" (Block B is 22 free). | The drawer printed the demo book's book-wide `freeUnits` (released − allocated − reserved over the client model); now each held farm's `freeUnits` from GET /api/farms (server/farms/shelf). | **Fixed in code** | ccfb95e | `features/im/drawers/render.test.tsx` (W8-FIN-2) |
+| W9-KAM-1 | - | S4 | KAM | Investor record > What they hold; GET /api/investors/[id]/holdings | The tab logged a 403 "not part of your book" on every open, though the screen rendered. | `ArlHoldings` called `useApiRead` before its own `mayHoldings` check, so a KAM asked a route that is Finance-side only (`seesHoldings`). | **Fixed in code** | bb73150 | `features/im/money/holdings-call.test.tsx` (W9-KAM-1) |
+| W9-KAM-2 | - | S3 | KAM | Farms > shelf strip vs Farm LLPs table | Strip said 68 free / 28 allotted / 0 reserved; the table and Finance said 54 free / 35 issued / 7 reserved. | `server/farms/occupancy` counted the allotments the seat can read, which is a part for a KAM; the table reads the LLP roll-ups. A seat with `countsComplete` false now takes the roll-ups. | **Fixed in code** | bb73150 | `server/farms/occupancy.test.cjs` (W9-KAM-2) |
 
 
 ## B-22 matrix corrections (owner ruling 10 Oct 2026, D138: correct the matrix, not the app)
@@ -82,7 +84,7 @@ carries one case per area (`pm/plan-merged/ui-cases.json` REG-B22, REG-B22-EV, R
 | Status | Count | Defects |
 |---|---|---|
 | Fixed+verified | 16 | B-01, 03, 04, 05, 08, 09, 11, 12, 13, 14, 17, 18, 21, 24, 25, 26 |
-| Fixed in code | 20 | B-02 (remainder), B-06, B-15 (remainder), B-16, B-19, B-23, W2-KAM-2, 3, 4, 6, W2-IRB-2, W2-REG-1, W7-FIN-1, 2, 3, 4 (branch `w7-fixes`), W8-IRA-1, W8-FIN-1, W8-IRA-2, W8-FIN-2 (branch `w8-fixes`) |
+| Fixed in code | 22 | B-02 (remainder), B-06, B-15 (remainder), B-16, B-19, B-23, W2-KAM-2, 3, 4, 6, W2-IRB-2, W2-REG-1, W7-FIN-1, 2, 3, 4 (branch `w7-fixes`), W8-IRA-1, W8-FIN-1, W8-IRA-2, W8-FIN-2 (branch `w8-fixes`), W9-KAM-1, W9-KAM-2 (branch `w9-fixes`) |
 | Seed | 3 | B-07, W2-KAM-5, W2-IRB-1 |
 | Ruled 10 Oct (D138) | 3 | B-10 (fixed in code on `d138-rulings`), B-20 (by design), B-22 (matrix corrected) |
 | Ruled 10 Oct (D139) | 1 | W2-KAM-1 (KAM sees rupees; fixed in code on `d139-kam-money`) |
