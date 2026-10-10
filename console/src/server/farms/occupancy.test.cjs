@@ -85,6 +85,15 @@ test('a KAM: no money field, KAM = me through the lookup, own counts key (not Fi
   assert.ok(!OCCUPANT_FIELDS.some((f) => /amount|price|pan|bank/i.test(f)));
 });
 
+test('W9-KAM-2: a KAM\'s shelf uses the LLP roll-ups the Farm LLPs table shows, not the allotments the KAM can read', async () => {
+  const mine = () => { const r = recorded('farms', 'coql.occupants'); r.body.data = r.body.data.filter((x) => x['Customer.KAM'] && x['Customer.KAM'].id === NEHA); return r; };
+  const rig = await makeRig(load, routeWith({ occupants: mine }));
+  const r = await read(rig, NEHA, 'kam');
+  const b = r.llps.find((x) => x.id === B);
+  assert.deepEqual([b.allotted, b.reservedOrPaid, b.free], [7, 5, 22]);   // roll-ups: 34 released - 7 issued - 5 reserved, as the table
+  assert.deepEqual([r.tiles.allotted, r.tiles.reservedOrPaid, r.tiles.free], [36, 5, 55]);
+});
+
 test("an IR sees only their own-lead investors on the land; a row from another IR's lead refuses the read (Plane B)", async () => {
   const rig = await makeRig(load, routeWith({ occupants: () => ['farms', 'coql.occupants-ir'] }));
   const r = await read(rig, ROHIT, 'ir');

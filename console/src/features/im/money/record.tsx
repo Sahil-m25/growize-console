@@ -301,7 +301,8 @@ export function AppOverride({ name, onUnlock, start = "", reason = "" }: {
    M10-S09-W1: GET /api/investors/[id]/holdings (the route exports GET and nothing else — the ledger is never written, D70). */
 export function ArlHoldings(p: P) {
   const { s, me, dispatch, x } = p;
-  const r = useApiRead(arlHoldings, { s, me }, x.id);
+  /* a seat the route refuses (a KAM) never calls it: null args = idle (W9-KAM-1) */
+  const r = useApiRead(arlHoldings, { s, me }, mayHoldings(s, me) ? x.id : null);
   if (!mayHoldings(s, me)) return null;
   if (r.state === "idle" || r.state === "loading") return null;
   if (r.state === "error") return r.err.status === 403 ? null : <div className="card" style={{ marginTop: 8 }}><div className="cb"><p className="sm" role="alert" style={{ margin: 0 }}>ARL holdings: {r.err.error}</p></div></div>;

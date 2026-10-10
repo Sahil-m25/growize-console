@@ -165,7 +165,8 @@ export function createFarmOccupancy(deps: FarmsDeps) {
 
       const llps: LlpShelf[] = list.rows.map((f) => {
         const released = Math.max(0, f.releasedUnits ?? 0);
-        const allotted = c[`${f.id}:i`] ?? 0, reservedOrPaid = c[`${f.id}:r`] ?? 0;
+        /* a seat that cannot read every allotment counts only its own; use the LLP roll-ups the Farm LLPs table shows (W9-KAM-2) */
+        const allotted = countsComplete ? c[`${f.id}:i`] ?? 0 : f.issuedUnits, reservedOrPaid = countsComplete ? c[`${f.id}:r`] ?? 0 : f.reservedUnits;
         const paid = paidCounts ? Math.min(reservedOrPaid, paidCounts[`${f.id}:paid`] ?? 0) : null;
         const left = released - allotted - reservedOrPaid;
         return Object.freeze({
