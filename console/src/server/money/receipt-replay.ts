@@ -1188,6 +1188,10 @@ export function createReceiptReplayService(dependencies: ReceiptReplayDependenci
       });
 
     const fields: ZohoFields = {
+      // W7-FIN-3: Name is the Receipts module's record name — mandatory on a custom module, so an insert without it is refused
+      // (MANDATORY_NOT_FOUND → invalid-data → "Zoho refused it"). Every other receipt writer sets one (add-paid, convert, claim).
+      // Ids and the kind only: never a name, an amount or the reference.
+      Name: `Allotment ${intent.allotmentId} · ${intent.kind}`.slice(0, 120),
       Allotment: { id: intent.allotmentId },
       Kind: intent.kind,
       Amount: intent.amountRupees,

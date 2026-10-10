@@ -1098,6 +1098,7 @@ test('unchanged live context creates one pending Receipt with the actor/session-
   assert.ok(rig.calls.every((call) => call.as === principal.credential), 'every source call uses the current person');
   const insertion = rig.insertCalls()[0];
   assert.deepEqual(insertion.records, [{
+    Name: `Allotment ${ALLOTMENT_ID} · Full`,
     Allotment: { id: ALLOTMENT_ID },
     Kind: 'Full',
     Amount: 2250000,
@@ -1151,6 +1152,7 @@ test('caller mutation while permission is awaited cannot change the captured mon
 
   assert.deepEqual(await pending, { ok: true, receiptId: RECEIPT_ID, duplicate: false });
   assert.deepEqual(rig.insertCalls()[0].records, [{
+    Name: `Allotment ${ALLOTMENT_ID} · Full`,
     Allotment: { id: ALLOTMENT_ID },
     Kind: 'Full',
     Amount: 2250000,

@@ -125,6 +125,9 @@ test('TC-IM05-005: Finance records the balance by SWIFT — one receipt (unmatch
   const row = ins[0].data[0];
   assert.deepEqual({ Allotment: row.Allotment, Kind: row.Kind, Amount: row.Amount, Mode: row.Mode, UTR: row.UTR, Received_On: row.Received_On, Match_State: row.Match_State },
     { Allotment: { id: ALLOTMENT }, Kind: 'Part', Amount: 2_250_000, Mode: 'SWIFT', UTR: 'EMIR0209900', Received_On: '2026-09-02T00:00:00+05:30', Match_State: 'Pending' });
+  // W7-FIN-3: the Receipts record name is mandatory in Zoho; without it the insert was refused (502 "Zoho refused it")
+  assert.equal(row.Name, `Allotment ${ALLOTMENT} · Part`);
+  assert.ok(!row.Name.includes('EMIR0209900'), 'the record name never carries the reference');
   assert.match(row.Idempotency_Key, /^receipt-v1_/);
   assert.ok(!('Customer' in row) && !('LLP' in row) && !('Contact' in row), 'only the allotment is linked; Contact and LLP follow from it');
   assert.ok(!JSON.stringify(r.sink.records()).includes('EMIR0209900'), 'the bank reference is never logged');
